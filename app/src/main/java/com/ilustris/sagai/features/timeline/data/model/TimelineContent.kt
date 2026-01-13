@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.timeline.data.model
 import androidx.room.Embedded
 import androidx.room.Junction // Import Junction
 import androidx.room.Relation
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.features.characters.data.model.Character // Already imported
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
@@ -76,4 +77,23 @@ data class TimelineContent(
                 it.message.senderType == SenderType.USER || it.message.characterId == mainCharacter?.id
             }.groupBy { it.message.emotionalTone.toString() }
             .mapValues { entry -> entry.value.size }
+
+    fun statsSummary() =
+        buildList {
+            if (newlyAppearedCharacters.isNotEmpty()) {
+                add(R.string.new_character_message to newlyAppearedCharacters.size)
+            }
+
+            if (updatedWikis.isNotEmpty()) {
+                add(R.string.wiki_updated to updatedWikis.size)
+            }
+
+            if (updatedRelationshipDetails.isNotEmpty()) {
+                add(R.string.saga_detail_relationships_section_title to updatedRelationshipDetails.size)
+            }
+
+            if (characterEventDetails.isNotEmpty()) {
+                add(R.string.character_events to characterEventDetails.size)
+            }
+        }
 }

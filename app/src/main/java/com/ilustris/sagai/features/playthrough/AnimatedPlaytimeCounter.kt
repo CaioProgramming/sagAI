@@ -1,13 +1,10 @@
 package com.ilustris.sagai.features.playthrough
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -102,12 +99,10 @@ fun AnimatedPlaytimeCounter(
 @Composable
 fun CounterText(
     count: Int,
-    label: String,
     textStyle: TextStyle = MaterialTheme.typography.labelMedium,
-    labelStyle: TextStyle? = null,
-    orientation: LabelOrientation = LabelOrientation.VERTICAL,
-    animationDuration: Duration = 1.seconds,
+    animationDuration: Duration = 5.seconds,
     animationEasing: Easing = EaseIn,
+    modifier: Modifier = Modifier,
 ) {
     val countAnimation by animateIntAsState(
         targetValue = count,
@@ -118,49 +113,11 @@ fun CounterText(
             ),
     )
 
-    when (orientation) {
-        LabelOrientation.VERTICAL -> {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .animateContentSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = countAnimation.toString(),
-                    style = textStyle,
-                )
-
-                Text(
-                    text = label,
-                    style = labelStyle ?: textStyle,
-                )
-            }
-        }
-
-        LabelOrientation.HORIZONTAL -> {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .animateContentSize(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = countAnimation.toString(),
-                    style = textStyle,
-                )
-
-                Text(
-                    text = label,
-                    style = labelStyle ?: textStyle,
-                )
-            }
-        }
-    }
+    Text(
+        text = countAnimation.toString(),
+        style = textStyle,
+        modifier = modifier,
+    )
 }
 
 enum class LabelOrientation {

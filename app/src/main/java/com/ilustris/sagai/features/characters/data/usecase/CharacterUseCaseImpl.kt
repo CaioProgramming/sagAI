@@ -202,8 +202,8 @@ class CharacterUseCaseImpl
                 val request =
                     gemmaClient.generate<List<CharacterUpdate>>(
                         prompt,
-                        describeOutput = false,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        temperatureRandomness = .3f,
                     )!!
 
                 val updatedCharacters =
@@ -222,6 +222,13 @@ class CharacterUseCaseImpl
                                     "Character event already exists for this timeline(${timeline.id})",
                                 )
                                 return@mapNotNull null
+                            }
+
+                            if (character == null) {
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "generateCharactersUpdate: Couldn't find character ${it.characterName} on saga.",
+                                )
                             }
 
                             character?.let { character ->

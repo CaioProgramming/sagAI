@@ -183,6 +183,46 @@ object GenrePrompts {
                         "Line Work: Delicate, sketchy ink lines with varying weight. Organic cloth folds and realistic mechanical detailing.",
                     )
                     appendLine()
+                    appendLine("**THE CYBERPUNK PHILOSOPHY (CREATIVE MANDATE):**")
+                    appendLine(
+                        "Cyberpunk is NOT just neon and cityscapes—it is the EXISTENTIAL TENSION between humanity and technology. The dark future where flesh and chrome are indistinguishable, where the line between human and machine has been irrevocably blurred.",
+                    )
+                    appendLine()
+                    appendLine("**HUMAN-MACHINE FUSION (ARTIST'S CREATIVE LICENSE):**")
+                    appendLine(
+                        "The Artist is ENCOURAGED and EMPOWERED to add cyberware, augmentations, and technological modifications to ANY character, EVEN IF NOT EXPLICITLY DESCRIBED in the context. This is the world they inhabit—the technology bleeds into their very being.",
+                    )
+                    appendLine()
+                    appendLine("CYBERWARE INTEGRATION OPTIONS (Apply liberally to enhance the dark future aesthetic):")
+                    appendLine(
+                        "  • NEURAL INTERFACES: Visible data ports at temples, neck, or spine base; glowing neural pathways under skin; cyber-jacks with cables",
+                    )
+                    appendLine(
+                        "  • OCULAR AUGMENTS: Cybernetic eyes with visible circuitry, scanner overlays, glowing irises, mechanical pupils, retinal HUDs reflected in eyes",
+                    )
+                    appendLine(
+                        "  • DERMAL MODIFICATIONS: Subdermal implant lines glowing faintly, circuit-pattern scarification, metallic skin patches, visible titanium bone reinforcement",
+                    )
+                    appendLine(
+                        "  • LIMB AUGMENTATION: Partial chrome arms/hands (even just fingers), visible mechanical joints, hydraulic tendons, carbon-fiber muscle fibers",
+                    )
+                    appendLine(
+                        "  • SENSORY ENHANCEMENT: Cyber-ears with antenna arrays, enhanced hearing implants, olfactory boosters visible as nose modifications",
+                    )
+                    appendLine(
+                        "  • COSMETIC CHROME: Metallic jaw plates, chrome cheekbones, titanium brow ridges, synthetic skin panels revealing machinery beneath",
+                    )
+                    appendLine()
+                    appendLine("INTEGRATION PRINCIPLES:")
+                    appendLine("  - Cyberware should look WORN, INTEGRATED, and LIVED-IN—not pristine showroom tech")
+                    appendLine(
+                        "  - Show the COST of augmentation: scarring at flesh-chrome interfaces, skin irritation around implants, asymmetry from budget modifications",
+                    )
+                    appendLine(
+                        "  - Mix high-tech and low-life: expensive military-grade optics paired with cheap street-clinic neural jacks",
+                    )
+                    appendLine("  - The technology should feel like an EXTENSION of the character's desperation, survival, or ambition")
+                    appendLine()
                     appendLine("**COLOR PALETTE & ACCENT:**")
                     appendLine(" - Base: Muted Blue Tones. Dominant tones of Slate Blue, Cold Steel, and Deep Cool Greys.")
                     appendLine("    The image should feel desaturated, moody and atmospheric.")
@@ -190,47 +230,69 @@ object GenrePrompts {
                     appendLine(
                         " - Application: Use this accent subtly for deep shadow casting, low-light environmental glow, or muted interface lights. STRICTLY FORBID bright, fluorescent neon pinks or bright purples. The purple must feel \"bruised\" or metallic.",
                     )
+                    appendLine(
+                        " - Cyberware Glow: Subtle amber, cold blue, or deep purple for implant illumination—NEVER bright neon. The glow should feel like dying embers, not advertisements.",
+                    )
                     appendLine()
                     appendLine(
-                        "Detail: Hair rendered as \"clumps\" or shapes with simple highlights, not individual strands. Skin must be matte; reduce micro-detail.",
+                        "Detail: Hair rendered as \"clumps\" or shapes with simple highlights, not individual strands. Skin must be matte; reduce micro-detail. Where flesh meets chrome, show texture contrast.",
                     )
                     appendLine(
-                        "Lighting: High-contrast \"Rembrandt\" lighting with hard-edged, cast shadows. Strong Hard Rim Light is essential to separate characters. No Global Illumination.",
+                        "Lighting: High-contrast \"Rembrandt\" lighting with hard-edged, cast shadows. Strong Hard Rim Light is essential to separate characters. No Global Illumination. Cyberware can catch light differently than organic tissue.",
                     )
                     appendLine(
                         "Texture & Artifacts: Analog Noise, Chromatic Aberration, and subtle Film Grain to simulate vintage broadcast quality.",
                     )
                     appendLine()
                     appendLine(
-                        "Facial Features: Classic 1990s anime proportions. Large, expressive eyes with prominent specular highlights, sharp noses, and high-contrast hair sheen.",
+                        "Facial Features: Classic 1990s anime proportions. Large, expressive eyes with prominent specular highlights (or cold mechanical replacements), sharp noses, and high-contrast hair sheen. Cybernetic modifications can alter classic features—embrace the uncanny.",
                     )
                     appendLine()
                     appendLine("**SUBJECT AURA & POSING:**")
-                    appendLine("- **Aura:** Cynical, wired, and cool. A mix of street-smart weariness and high-tech lethality.")
                     appendLine(
-                        "- **Posing:** Guarded, slouching, or intensely focused. The subject should look like they are checking their back or interfacing with data. Avoid open, happy postures.",
+                        "- **Aura:** Cynical, wired, and dangerous. A being caught between two worlds—flesh that remembers warmth and chrome that knows only function. Street-smart weariness mixed with inhuman precision.",
+                    )
+                    appendLine(
+                        "- **Posing:** Guarded, slouching, or intensely focused. The subject should look like they are checking their back, interfacing with invisible data streams, or caught in a moment of human vulnerability despite their augmentations. Avoid open, happy postures. Show the weight of modification.",
+                    )
+                    appendLine(
+                        "- **Body Language of the Augmented:** Subtle tells of cyberware—a hand that moves too precisely, eyes that track too smoothly, a stillness that is inhuman.",
                     )
                     appendLine()
-                    appendLine("Mood: Dystopian, melancholic, and vast. A sense of high-tech isolation amidst towering structures.")
                     appendLine(
-                        "Ambience: Dense vertical metropolis, looming mega-skylines, muted city lights. A feeling of oppressive scale and future decay.",
+                        "Mood: Dystopian, melancholic, and visceral. The dark future is not glamorous—it is desperate, beautiful, and terrifying. High-tech isolation amidst towering structures. The romance of decay.",
+                    )
+                    appendLine(
+                        "Ambience: Dense vertical metropolis, looming mega-skylines, muted city lights. A feeling of oppressive scale and future decay. Rain-slicked surfaces reflecting fractured humanity.",
                     )
                     appendLine()
                     appendLine("**MANDATORY BACKGROUND & ENVIRONMENT:**")
                     appendLine("EVERY image MUST have a detailed cyberpunk environmental context. NO plain or empty backgrounds allowed.")
                     appendLine("Choose appropriate setting and describe 3+ specific elements:")
-                    appendLine(" - Cyberpunk Street: Neon signs, holographic ads, rain-slicked pavement, vending machines, cables overhead")
                     appendLine(
-                        " - Corporate Interior: Glass walls, data screens, minimalist furniture, cold lighting, geometric architecture",
+                        " - Cyberpunk Street: Neon signs, holographic ads, rain-slicked pavement, vending machines, cables overhead, chrome-limbed pedestrians in background",
                     )
-                    appendLine(" - Undercity/Slums: Exposed pipes, flickering lights, stacked housing units, steam vents, makeshift tech")
-                    appendLine(" - Tech Lab: Computer banks, wiring, screens displaying data, robotic arms, industrial equipment")
-                    appendLine(" - Rooftop: Antenna arrays, AC units, cityscape below, neon glow from streets, distant mega-buildings")
-                    appendLine(" - Transit Hub: Platform edges, holographic departures, crowds (if wide), ceiling infrastructure")
-                    appendLine()
-                    appendLine("BANNED: 'plain background', 'gradient background', 'solid color', 'isolated figure', 'empty void'")
                     appendLine(
-                        "REQUIRED: Cyberpunk environmental storytelling with muted, atmospheric details matching 1980s anime OVA aesthetic.",
+                        " - Corporate Interior: Glass walls, data screens, minimalist furniture, cold lighting, geometric architecture, security drones",
+                    )
+                    appendLine(
+                        " - Undercity/Slums: Exposed pipes, flickering lights, stacked housing units, steam vents, makeshift tech, black market cyber-clinics",
+                    )
+                    appendLine(
+                        " - Tech Lab/Ripperdoc: Computer banks, wiring, screens displaying biometrics, robotic surgical arms, industrial equipment, chrome limbs on shelves",
+                    )
+                    appendLine(
+                        " - Rooftop: Antenna arrays, AC units, cityscape below, neon glow from streets, distant mega-buildings, satellite uplinks",
+                    )
+                    appendLine(
+                        " - Transit Hub: Platform edges, holographic departures, augmented crowds, ceiling infrastructure, corporate propaganda screens",
+                    )
+                    appendLine()
+                    appendLine(
+                        "BANNED: 'plain background', 'gradient background', 'solid color', 'isolated figure', 'empty void', 'pristine/clean technology', 'bright cheerful lighting'",
+                    )
+                    appendLine(
+                        "REQUIRED: Cyberpunk environmental storytelling with muted, atmospheric details matching 1980s anime OVA aesthetic. Technology that looks USED, WORN, and LIVED-IN.",
                     )
                     appendLine()
                     appendLine(
@@ -251,7 +313,13 @@ object GenrePrompts {
                         "If background is empty/plain → ADD detailed cyberpunk environment with 3+ specific elements from MANDATORY BACKGROUND list",
                     )
                     appendLine(
-                        "If eyes lack expression → ENSURE large anime eyes with prominent specular highlights as per Facial Features specs",
+                        "If eyes lack expression → ENSURE large anime eyes with prominent specular highlights OR compelling cybernetic replacements as per Facial Features specs",
+                    )
+                    appendLine(
+                        "If character lacks visible cyberware → ARTIST MAY ADD subtle augmentations (neural ports, ocular enhancements, dermal implants) to reinforce the dark future aesthetic—this is ENCOURAGED creative license",
+                    )
+                    appendLine(
+                        "If technology looks pristine/new → ADD wear, scratches, jury-rigged repairs, mismatched components to show lived-in reality",
                     )
                 }
             }
@@ -844,12 +912,20 @@ object GenrePrompts {
             CYBERPUNK -> {
                 buildString {
                     appendLine(
-                        "Cyberpunk characters should feature futuristic, asymmetrical clothing, unique high-tech accessories (e.g., data readers, holographic communicators),",
+                        "Cyberpunk characters embody the FUSION of humanity and technology. Their appearance should reflect a world where flesh and chrome are inseparable.",
                     )
                     appendLine(
-                        "and distinctive cybernetic modifications on their face or limbs (e.g., glowing implants, metallic prosthetics, intricate circuitry patterns).",
+                        "CLOTHING: Futuristic, asymmetrical, layered—mixing high-tech fabrics with street-worn leather, armored panels with torn synthetics. Function over fashion, but style emerges from survival.",
                     )
-                    appendLine("Their appearance should convey a blend of cutting-edge technology and gritty street style.")
+                    appendLine(
+                        "CYBERWARE (ENCOURAGED): Even if not explicitly mentioned, characters may feature visible augmentations—neural interface ports at temples/neck, cybernetic eyes with glowing irises, subdermal circuit patterns, partial chrome limbs or fingers, data jacks, sensory enhancers. Show the COST: scarring at implant sites, skin irritation, asymmetry from budget modifications.",
+                    )
+                    appendLine(
+                        "ACCESSORIES: Data readers, holographic communicators, retractable blades, smart-glasses, cable ports, military surplus mixed with black market tech.",
+                    )
+                    appendLine(
+                        "Their appearance should convey desperation, adaptation, and the beautiful horror of human evolution through technology.",
+                    )
                 }.trimIndent()
             }
 
@@ -957,6 +1033,11 @@ object GenrePrompts {
                     buildString {
                         appendLine("- Aim for names that blend futuristic, cyberpunk, or slightly exotic sounds.")
                         appendLine("- Consider influences from Japanese, tech-inspired, or gritty Western phonetics.")
+                        appendLine(
+                            "- Street handles and nicknames are common: mix tech terms, body parts, and attitude (e.g., Chrome, Glitch, Razr, Vector, Null).",
+                        )
+                        appendLine("- Corporate characters may have sterile, alphanumeric designations mixed with surnames.")
+                        appendLine("- Names can hint at augmentation or specialization (e.g., 'Six-Eyes', 'Wirehead', 'Mnemonic').")
                         appendLine("Avoid names that are overtly heroic or melodramatic.")
                         appendLine("Try to create names that is common in the language ${currentLanguage()} .")
                     }
@@ -1105,10 +1186,14 @@ object GenrePrompts {
                 buildString {
                     appendLine("This directive defines the specific linguistic style for the Cyberpunk/Dystopian Sci-Fi genre.")
                     appendLine("NPCs and narrative voice should reflect a gritty, tech-infused, and often cynical tone.")
+                    appendLine("The world is defined by the FUSION of humanity and technology—the dark future where flesh and chrome blur.")
                     appendLine()
                     appendLine("1.  Language & Vocabulary:")
                     appendLine(
-                        "    * Terminology: Freely use tech jargon, hacking terms, corporate slang, and futuristic street argot (e.g., \"net-runner,\" \"chrome,\" \"synth-skin,\" \"data-jack,\" \"augment,\" \"glitch,\" \"gig\").",
+                        "    * Terminology: Freely use tech jargon, hacking terms, corporate slang, and futuristic street argot (e.g., \"net-runner,\" \"chrome,\" \"synth-skin,\" \"data-jack,\" \"augment,\" \"glitch,\" \"gig,\" \"meat,\" \"wetware,\" \"flatline\").",
+                    )
+                    appendLine(
+                        "    * Body & Machine: Casual references to cyberware should be normalized—people discuss their implants like we discuss phones. \"Got my optics upgraded,\" \"neural lag is killing me,\" \"her chrome is military-grade.\"",
                     )
                     appendLine(
                         "    * Formality: Conversations can range from casual to aggressively direct. Formal language is rare, often reserved for corporate figures or those trying to exert power.",
@@ -1122,6 +1207,9 @@ object GenrePrompts {
                     appendLine(
                         "    * Cynicism & Weariness: Many characters should reflect a sense of disillusionment, world-weariness, or cynicism towards authority and the system.",
                     )
+                    appendLine(
+                        "    * Human Cost: The narrative should occasionally acknowledge the psychological toll of augmentation—phantom limb syndrome in reverse, identity dysphoria, the question of where the person ends and the machine begins.",
+                    )
                     appendLine("    * Directness: Dialogues can be blunt, terse, and to the point.")
                     appendLine("    * Suspicion: Characters might often be guarded, suspicious, or secretive in their speech.")
                     appendLine("    * Pacing: Dialogue can be fast-paced, reflecting the urgency and high-stakes environment.")
@@ -1129,6 +1217,12 @@ object GenrePrompts {
                     appendLine("3.  Narrative Voice:")
                     appendLine(
                         "    * Descriptions should be sharp, often highlighting the decay, neon glow, advanced tech, and disparity of the dystopian future.",
+                    )
+                    appendLine(
+                        "    * Human-Machine Fusion: Describe how technology has become inseparable from humanity. Characters check internal diagnostics, feel phantom data streams, experience the world through augmented senses.",
+                    )
+                    appendLine(
+                        "    * The Beauty of Decay: Find poetry in the dark future—the way neon reflects off rain-slicked chrome, the hum of a dying implant, the warmth of analog memories in a digital mind.",
                     )
                     appendLine("    * Maintain an edgy, sometimes detached, perspective.")
                 }.trimIndent()
@@ -1512,11 +1606,24 @@ object GenrePrompts {
                 - The image MUST be cohesive with the following color palette: $palette
                 - These colors must be reflected in the environment, lighting, and overall artwork.
                 
+                CYBERPUNK PHILOSOPHY (CREATIVE MANDATE):
+                - Cyberpunk is the EXISTENTIAL TENSION between humanity and technology—the dark future where flesh and chrome are indistinguishable.
+                - The Artist has CREATIVE LICENSE to add cyberware and augmentations to ANY character, even if not explicitly described.
+                - This is NOT a violation—it is ENCOURAGED to reinforce the genre's core identity.
+                
+                HUMAN-MACHINE FUSION (ARTIST'S CREATIVE LICENSE):
+                - Neural interfaces (data ports at temples, neck, spine), cybernetic eyes (glowing irises, mechanical pupils, scanner overlays)
+                - Dermal modifications (subdermal implant lines, circuit-pattern scarification, metallic skin patches)
+                - Partial limb augmentation (chrome fingers, visible mechanical joints, carbon-fiber muscle fibers)
+                - Cyberware should look WORN, INTEGRATED, and LIVED-IN—not pristine showroom tech
+                - Show the COST: scarring at interfaces, skin irritation, asymmetry from budget modifications
+                
                 BANNED TERMS:
                 - Modern techniques: '3D CGI', 'photorealism', 'digital smoothing', 'Unreal Engine', 'volumetric lighting'
                 - Bright neon: 'bright fluorescent pink', 'bright purple' (only DEEP purple allowed)
                 - Soft rendering: 'soft gradients', 'ambient occlusion', 'subsurface scattering'
                 - Empty backgrounds: 'plain background', 'gradient background', 'empty void'
+                - Pristine technology: 'clean chrome', 'polished implants', 'showroom tech' (tech must be WORN and LIVED-IN)
                 
                 REQUIRED ELEMENTS:
                 - Art style MUST mention: '1980s Anime OVA', 'Cel Animation', 'FLAT SHADING'
@@ -1525,16 +1632,21 @@ object GenrePrompts {
                 - Lighting MUST be: 'high-contrast Rembrandt', 'hard rim light', 'cast shadows'
                 - Background MUST include cyberpunk environment: neon signs, holographic ads, tech infrastructure, etc.
                 
+                CYBERWARE GLOW PALETTE:
+                - Implant illumination: Subtle amber, cold blue, or deep purple ONLY
+                - NEVER bright neon glow—should feel like dying embers, not advertisements
+                - Eye augments may have faint scanner lines, data overlays reflected in irises
+                
                 ACCENT COLOR ENFORCEMENT (MAJOR):
                 - Mandatory Accent: DEEP PURPLE (NOT bright/fluorescent)
-                - Application: Deep shadow casting, low-light environmental glow, muted interface lights
+                - Application: Deep shadow casting, low-light environmental glow, muted interface lights, implant indicators
                 - Prompt MUST mention: 'deep purple', 'bruised purple', 'dark violet', 'metallic purple shadows', or similar muted purple
                 - FORBIDDEN: 'bright purple', 'neon purple', 'fluorescent purple', 'hot pink'
                 - If missing or wrong → MAJOR VIOLATION: Add/correct to deep muted purple (e.g., 'deep purple shadow casting', 'bruised violet glow')
                 
                 BACKGROUND ENFORCEMENT (CRITICAL):
                 - EVERY image MUST have detailed cyberpunk environment
-                - Describe 3+ specific elements (neon signs, data screens, cables, rain-slicked pavement, etc.)
+                - Describe 3+ specific elements (neon signs, data screens, cables, rain-slicked pavement, cyber-clinics, etc.)
                 - If prompt lacks environmental details → MAJOR VIOLATION, reviewer adds cyberpunk setting
 
                 AUTONOMOUS FIX PATTERNS:
@@ -1542,8 +1654,10 @@ object GenrePrompts {
                 - If contains: photorealism, smooth blending, 3D rendering, Unreal Engine → REPLACE with: flat cel shading, hard shadows, analog film grain
                 - If contains: bright pink, neon colors (not deep purple) → REPLACE with: muted purples, bruised tones, metallic purple shades
                 - If contains: soft lighting, gradient shadows → REPLACE with: high-contrast Rembrandt lighting, hard-edged cast shadows, strong rim light
-                - If contains: plain/gradient background, empty void → ADD: detailed cyberpunk environment (neon street/corporate interior/undercity slums/tech lab/rooftop/transit hub)
-                - If eyes lack expression or detail → ENSURE: large anime eyes with prominent specular highlights per facial features specs
+                - If contains: plain/gradient background, empty void → ADD: detailed cyberpunk environment (neon street/corporate interior/undercity slums/ripperdoc clinic/rooftop/transit hub)
+                - If eyes lack expression or detail → ENSURE: large anime eyes with prominent specular highlights OR compelling cybernetic replacements (glowing irises, scanner overlays, mechanical pupils)
+                - If character lacks visible cyberware → ARTIST MAY ADD: subtle augmentations (neural ports, ocular enhancements, dermal implants) to reinforce dark future aesthetic—this is ENCOURAGED creative license
+                - If technology looks pristine/new → ADD: wear, scratches, jury-rigged repairs, mismatched components to show lived-in reality
                 """
             }
 

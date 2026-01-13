@@ -4,19 +4,15 @@ import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
-import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import kotlinx.coroutines.delay
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class CharacterRelationUseCaseImpl
     @Inject
@@ -30,7 +26,8 @@ class CharacterRelationUseCaseImpl
         ): RequestResult<Unit> =
             executeRequest {
                 val prompt = CharacterPrompts.generateCharacterRelation(timeline, saga)
-                val generatedRelationsData = gemmaClient.generate<List<RelationGeneration>>(prompt, describeOutput = false)!!
+                val generatedRelationsData =
+                    gemmaClient.generate<List<RelationGeneration>>(prompt)!!
 
                 val updatedRelations =
                     generatedRelationsData.map { relationData ->

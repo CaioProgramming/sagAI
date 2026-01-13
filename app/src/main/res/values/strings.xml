@@ -286,6 +286,7 @@
     <string name="permission_required_description">This feature needs a little help to work its magic. Could you please grant the required permission?</string>
     <string name="confirm_permission_button">Grant Permission</string>
     <string name="backup">Backup</string>
+    <string name="new_characters_label">new characters</string>
     <string name="new_character_message">%s joined the history</string>
     <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
     <string name="signatures_title">Subscriptions</string>
@@ -348,7 +349,7 @@
     <string name="character_details_aka">aka: %s</string>
     <string name="read_more">Read more...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
-
+    <string name="character_events">Character events</string>
     <!-- BackupViewModel: Status and Error Messages -->
     <string name="backup_loading_recovering_content">Recovering content...</string>
     <string name="backup_error_recovery_failed">An unexpected error occurred, could not recover backup contents :(</string>

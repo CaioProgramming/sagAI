@@ -97,13 +97,45 @@ fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id =
 
 fun SagaContent.findCharacter(name: String?): CharacterContent? {
     if (name == null) return null
-    val normalizedInputNameTokens = name.lowercase().split(" ")
+    val normalizedInput = name.lowercase().trim()
+    val normalizedInputTokens = normalizedInput.split(" ").filter { it.isNotBlank() }
+
+    // Helper to get all name tokens (name + lastName + nicknames)
+    fun CharacterContent.getAllNameTokens(): List<String> {
+        val tokens = mutableListOf<String>()
+        tokens.addAll(data.name.lowercase().split(" "))
+        data.lastName
+            ?.lowercase()
+            ?.split(" ")
+            ?.let { tokens.addAll(it) }
+        data.nicknames?.forEach { nickname -> tokens.addAll(nickname.lowercase().split(" ")) }
+        return tokens.filter { it.isNotBlank() }
+    }
+
+    // Helper to get full name (name + lastName)
+    fun CharacterContent.getFullName(): String =
+        buildString {
+            append(data.name.lowercase().trim())
+            data.lastName?.takeIf { it.isNotBlank() }?.let {
+                append(" ")
+                append(it.lowercase().trim())
+            }
+        }
+
+    // 1. Try exact full name match first (name + lastName)
+    characters.find { it.getFullName() == normalizedInput }?.let { return it }
+
+    // 2. Try to find a character where all input tokens match (e.g., "John Wick" matches name="John" lastName="Wick")
+    characters
+        .find { characterContent ->
+            val allTokens = characterContent.getAllNameTokens()
+            normalizedInputTokens.all { inputToken -> allTokens.contains(inputToken) }
+        }?.let { return it }
+
+    // 3. Fall back to finding first character where any input token matches
     return characters.find { characterContent ->
-        val characterNameTokens =
-            characterContent.data.name
-                .lowercase()
-                .split(" ")
-        normalizedInputNameTokens.any { inputToken -> characterNameTokens.contains(inputToken) }
+        val allTokens = characterContent.getAllNameTokens()
+        normalizedInputTokens.any { inputToken -> allTokens.contains(inputToken) }
     }
 }
 

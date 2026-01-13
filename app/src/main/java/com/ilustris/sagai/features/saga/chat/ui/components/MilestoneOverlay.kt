@@ -52,7 +52,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
@@ -64,6 +67,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.playMilestoneSound
@@ -75,18 +80,20 @@ import com.ilustris.sagai.features.home.data.model.findChapter
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.fadeColors
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -304,13 +311,14 @@ fun MilestoneOverlay(
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier =
-                                    Modifier.graphicsLayer {
-                                        clip = false
-                                    },
-                                // Prevent shadow clipping
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
+                                val textStyle =
+                                    if (milestone.isIntrusive) {
+                                        MaterialTheme.typography.headlineMedium
+                                    } else {
+                                        MaterialTheme.typography.labelLarge
+                                    }
                                 if (milestone is SagaMilestone.NewCharacter) {
                                     val character = saga.findCharacter(milestone.character.id)
                                     character?.let {
@@ -323,13 +331,6 @@ fun MilestoneOverlay(
                                         }
                                     }
                                 }
-
-                                val textStyle =
-                                    if (milestone.isIntrusive) {
-                                        MaterialTheme.typography.headlineMedium
-                                    } else {
-                                        MaterialTheme.typography.labelLarge
-                                    }
 
                                 Text(
                                     text = milestone.subtitle,
@@ -349,48 +350,32 @@ fun MilestoneOverlay(
                                         Modifier
                                             .reactiveShimmer(
                                                 milestone.isIntrusive,
-                                                listOf(Color.Transparent).plus(genre.color.fadeColors()),
+                                                genre.shimmerColors(),
                                                 repeatMode = RepeatMode.Restart,
+                                                targetValue = 1000f,
                                             ).padding(8.dp),
                                 )
 
                                 if (milestone is SagaMilestone.NewEvent) {
+                                    val brush =
+                                        Brush.horizontalGradient(genre.color.darkerPalette(factor = .25f))
                                     val event = saga.findTimeline(milestone.timeline.id)
                                     event?.let {
-                                        Row {
-                                            if (it.numberOfRelationshipUpdates() > 0) {
-                                                CounterText(
-                                                    it.numberOfRelationshipUpdates(),
-                                                    stringResource(R.string.saga_detail_relationships_section_title),
-                                                    textStyle =
-                                                        MaterialTheme.typography.titleMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                        ),
-                                                    labelStyle =
-                                                        MaterialTheme.typography.labelMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                            color =
-                                                                MaterialTheme.colorScheme.onBackground.copy(
-                                                                    alpha = 0.7f,
-                                                                ),
-                                                        ),
-                                                )
+                                        val stats = event.statsSummary()
 
-                                                CounterText(
-                                                    it.updatedWikis.size,
-                                                    stringResource(R.string.wiki_updated),
-                                                    textStyle =
-                                                        MaterialTheme.typography.titleMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                        ),
-                                                    labelStyle =
-                                                        MaterialTheme.typography.labelMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                            color =
-                                                                MaterialTheme.colorScheme.onBackground.copy(
-                                                                    alpha = 0.7f,
-                                                                ),
-                                                        ),
+                                        LazyRow(
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier =
+                                                Modifier.fillMaxWidth(),
+                                        ) {
+                                            items(stats) {
+                                                MilestoneBadge(
+                                                    it.second,
+                                                    stringResource(it.first),
+                                                    brush,
+                                                    glowBlurRadius,
+                                                    genre,
                                                 )
                                             }
                                         }
@@ -400,7 +385,7 @@ fun MilestoneOverlay(
                                 if (milestone is SagaMilestone.ChapterFinished) {
                                     val chapter = saga.findChapter(milestone.chapter.id)
                                     chapter?.let {
-                                        Column {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             val characters =
                                                 it.fetchCharacters(saga).filterNotNull()
                                             Text("Personagens mais importantes")
@@ -428,8 +413,7 @@ fun MilestoneOverlay(
                                     message?.let {
                                         Text(
                                             text =
-                                                message
-                                                    ?: stringResource(R.string.milestone_encouragement),
+                                            message,
                                             style =
                                                 MaterialTheme.typography.bodyMedium.copy(
                                                     fontFamily = genre.bodyFont(),
@@ -467,7 +451,13 @@ fun MilestoneOverlay(
                                 onClick = onDismiss,
                                 enabled = !isLoading,
                                 colors = buttonColors,
-                                shape = genre.shape(),
+                                shape =
+                                    genre.bubble(
+                                        BubbleTailAlignment.BottomLeft,
+                                        0.dp,
+                                        0.dp,
+                                        true,
+                                    ),
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -492,5 +482,74 @@ fun MilestoneOverlay(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MilestoneBadge(
+    count: Int,
+    labelText: String,
+    brush: Brush,
+    glowBlurRadius: Float,
+    genre: Genre,
+    modifier: Modifier = Modifier,
+) {
+    val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
+    ConstraintLayout(
+        modifier =
+            modifier
+                .padding(8.dp)
+                .clip(shape)
+                .dropShadow(shape, {
+                    color = genre.color
+                    radius = glowBlurRadius
+                })
+                .background(brush, shape),
+    ) {
+        val (label, counter) = createRefs()
+        Text(
+            labelText,
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = genre.bodyFont(),
+                    color = genre.iconColor,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            modifier =
+                Modifier
+                    .padding(horizontal = 8.dp, 4.dp)
+                    .constrainAs(label) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    },
+        )
+
+        CounterText(
+            count,
+            textStyle =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = genre.headerFont(),
+                    brush = brush,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                ),
+            modifier =
+                Modifier
+                    .padding(2.dp)
+                    .constrainAs(counter) {
+                        top.linkTo(label.bottom)
+                        start.linkTo(label.start)
+                        end.linkTo(label.end)
+                        width = Dimension.fillToConstraints
+                    }.background(
+                        MaterialTheme.colorScheme.background,
+                        shape,
+                    ).padding(4.dp)
+                    .reactiveShimmer(
+                        true,
+                        repeatMode = RepeatMode.Restart,
+                    ),
+        )
     }
 }

@@ -194,29 +194,9 @@ class ChapterUseCaseImpl
                             imageReference = coverBitmap,
                             context =
                                 buildString {
-                                    if (characters.size > 1) {
                                     appendLine("Integrate the following characters in the artwork scene (MANDATORY): ")
                                     appendLine(
-                                        characters.mapNotNull { it?.data }.joinToString {
-                                            it.toAINormalize(
-                                                listOf(
-                                                    "id",
-                                                    "image",
-                                                    "sagaId",
-                                                    "joinedAt",
-                                                    "emojified",
-                                                    "hexColor",
-                                                    "firstSceneId",
-                                                    "carriedItems",
-                                                    "smartZoom",
-                                                ),
-                                            )
-                                        },
-                                    )
-                                } else {
-                                    appendLine("Integrate the following character in the artwork scene: ")
-                                    appendLine(
-                                        characters.first().toAINormalize(
+                                        characters.mapNotNull { it?.data }.toAINormalize(
                                             listOf(
                                                 "id",
                                                 "image",
@@ -225,38 +205,22 @@ class ChapterUseCaseImpl
                                                 "emojified",
                                                 "hexColor",
                                                 "firstSceneId",
-                                                "abilities",
                                                 "carriedItems",
-                                                "backstory",
+                                                "smartZoom",
                                             ),
                                         ),
                                     )
-                                }
-                                appendLine("Use this context to guide the mood and ambience: ")
-                                appendLine(
-                                    chapter.data.toAINormalize(
-                                        listOf(
-                                            "id",
-                                            "actId",
-                                            "currentEventId",
-                                            "coverImage",
-                                            "emotionalReview",
-                                            "createdAt",
-                                            "featuredCharacters",
-                                        ),
-                                    ),
-                                )
-                                appendLine("## CHARACTER RELATIONSHIPS (CRITICAL FOR SCENE COMPOSITION):")
-                                characters
-                                    .filter {
-                                        it?.data?.id != saga.mainCharacter?.data?.id
-                                    }.forEach {
-                                        appendLine(
-                                            saga.mainCharacter!!
-                                                .findRelationship(it!!.data.id)
-                                                ?.summarizeRelation(),
-                                        )
-                                    }
+                                    appendLine("## CHARACTER RELATIONSHIPS (CRITICAL FOR SCENE COMPOSITION):")
+                                    characters
+                                        .filter {
+                                            it?.data?.id != saga.mainCharacter?.data?.id
+                                        }.forEach {
+                                            appendLine(
+                                                saga.mainCharacter!!
+                                                    .findRelationship(it!!.data.id)
+                                                    ?.summarizeRelation(),
+                                            )
+                                        }
                                 },
                             imageType = AnalyticsConstants.ImageType.COVER,
                         ).getSuccess()!!

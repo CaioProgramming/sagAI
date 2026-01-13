@@ -59,8 +59,6 @@ class AudioTranscriptionService
                 val transcription =
                     gemmaClient.generate<String>(
                         prompt = transcriptionPrompt,
-                        requireTranslation = false, // Audio is in user's language
-                        describeOutput = false, // Expecting plain text, not JSON
                     )
 
                 transcription?.let { text ->

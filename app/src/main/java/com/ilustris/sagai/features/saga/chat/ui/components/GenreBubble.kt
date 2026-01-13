@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -91,12 +92,16 @@ fun Genre.bubble(
         }
 
         else -> {
-            CurvedChatBubbleShape(
-                cornerRadius = cornerSize,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
-                tailAlignment = tailAlignment,
-            )
+            if (isNarrator) {
+                RoundedCornerShape(cornerSize)
+            } else {
+                CurvedChatBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailWidth = tailWidth,
+                    tailHeight = tailHeight,
+                    tailAlignment = tailAlignment,
+                )
+            }
         }
     }
 }

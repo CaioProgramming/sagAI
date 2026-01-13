@@ -176,6 +176,7 @@
     <string name="home_new_chat_start_button">Começar</string>
     <string name="no_internet_connection_title">Sem conexão de internet</string>
     <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="continue_to_saga">Continuar saga</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
     <string name="notification_title">Nova mensagem em %s</string>
@@ -322,6 +323,7 @@
     <string name="message_effects_description">Dê vida à sua história com animações dinâmicas que refletem o clima de cada momento</string>
 
     <!-- BackupViewModel: Mensagens de Status e Erro -->
+    <string name="character_events">Eventos de personagens</string>
     <string name="backup_loading_recovering_content">Recuperando conteúdo...</string>
     <string name="backup_error_recovery_failed">Ocorreu um erro inesperado, não foi possível recuperar os conteúdos de backup :(</string>
     <string name="backup_message_all_good">Parece que está tudo em ordem!</string>
@@ -380,6 +382,7 @@
     <string name="your_playthrough_subtitle">Descubra seu estilo de joogo</string>
     <string name="total_playtime_label">Tempo Total de Jogo</string>
     <string name="playthrough_message_title">Análise de Estilo</string>
+    <string name="new_characters_label">Novos personagens</string>
 
     <!-- FAQ -->
     <string name="faq_loading_message">Buscando informações...</string>

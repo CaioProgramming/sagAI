@@ -30,10 +30,8 @@ object ImagePrompts {
             appendLine()
             appendLine("COMPOSITION ENFORCEMENTS:")
             appendLine(
-                "- The artwork must fill the entire output canvas. The subject must be anchored in the bottom 2/3rds of the frame.",
+                "- The artwork must fill the entire output canvas.",
             )
-            appendLine("- The top 1/3rd MUST be empty of main subject details (sky/background only).")
-            appendLine("- The composition must be **VERTICALLY BIASED** for lock-screen usage.")
             appendLine(
                 "- The output must be a flattened raster (e.g., PNG/JPEG with no alpha) representing final artwork; do not present layered, masked, or panelled compositions.",
             )
@@ -184,42 +182,75 @@ object ImagePrompts {
         appendLine(
             "1. **ABSOLUTE ART STYLE COMPLIANCE:** Adhere to the techniques, color palettes, and forbidden elements from the **ART STYLE** section. Cross-reference every descriptor against these rules. No exceptions.",
         )
-        appendLine("2. **VISIBILITY DICTATED BY FRAMING:** Your description must be a direct reflection of the **VISUAL DIRECTION**.")
-        appendLine("   - ONLY describe what is visible within the specified framing.")
+        appendLine(
+            "2. **VISIBILITY DICTATED BY FRAMING + SCALE (CRITICAL):** Your description must be a direct reflection of the **VISUAL DIRECTION**.",
+        )
+        appendLine("   - ONLY describe what is visible within the specified framing—prioritize details at this framing level.")
         appendLine(
             "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'CU: Head and Shoulders,' do NOT mention the character's boots).",
+        )
+        appendLine(
+            "   - **SCALE & ZOOM ENFORCEMENT:** ALWAYS define how much of the frame the subject occupies. This is as critical as the framing code itself:",
+        )
+        appendLine(
+            "     - Describe frame fill percentage (e.g., 'filling 85% of the frame', 'occupying 50% with environment visible')",
+        )
+        appendLine(
+            "     - Describe perceived distance (e.g., 'intimate proximity', 'comfortable portrait distance', 'telephoto compression')",
         )
         appendLine(
             "   - **EXCEPTION:** Hands and gestures are ALLOWED and ENCOURAGED if they enter the frame to support the expression (e.g., touching face, adjusting glasses, hand over mouth), even in portraits.",
         )
         appendLine("   - ALL 'CRITICAL' and 'IMPORTANT' character traits that *are* visible within the frame MUST be described in detail.")
-        appendLine("   - Examples:")
-        appendLine("     - ECU (extreme close-up): Face dominates. Eyes, nose, mouth, skin texture, and facial marks are the entire focus.")
         appendLine(
-            "     - CU: Head and Shoulders: Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible.",
+            "   - **DETAIL PRIORITY HIERARCHY:** Focus descriptive energy on elements at the center of the framing level. For tighter shots, dedicate more words to face/eyes/expression; for wider shots, balance subject details with environment.",
         )
-        appendLine("     - MS (medium shot): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible.")
+        appendLine("   - Examples:")
+        appendLine(
+            "     - ECU (extreme close-up): Face dominates (90%+ frame fill). Eyes, nose, mouth, skin texture, and facial marks are the entire focus. PRIORITIZE: Exact eye color, pupil details, catchlights, iris patterns.",
+        )
+        appendLine(
+            "     - CU: Head and Shoulders (75-90% fill): Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible. PRIORITIZE: Expression nuances, eye details, hair texture.",
+        )
+        appendLine(
+            "     - MS (medium shot, 50-70% fill): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible. PRIORITIZE: Pose, gesture, outfit details from waist up.",
+        )
         appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
         appendLine(
-            "3. **ALIVE & SOULFUL EXPRESSION (INTENSE STORYTELLING):** Focus on intensifying the emotional storytelling through body language, hand gestures, and facial expressions. The character must feel like a living part of their world, captured in a spontaneous moment, not as a static subject.",
+            "3. **ALIVE & SOULFUL EXPRESSION (INTENSE EMOTIONAL STORYTELLING):** Intensify emotional storytelling through UNIFIED body language, hand gestures, and facial expressions. Every element must work together to convey a single, specific, nuanced emotion. The character must feel like a living part of their world, captured in a spontaneous moment, not as a static subject.",
+        )
+        appendLine(
+            "   - **EMOTIONAL UNITY PRINCIPLE (CRITICAL):** The pose and facial expression MUST be unified and convey ONE specific, nuanced emotion. Ask: 'What singular feeling does this character embody in this moment?' Then ensure every visible element reinforces it.",
         )
         appendLine(
             "   - **CANDID GAZE (GENERAL RULE):** Avoid direct eye contact with the viewer/camera unless strictly necessary for a specific dramatic moment. The subject should be looking at something within the scene (an object, another character, the horizon, or lost in thought). This creates the feeling of 'Spontaneous Photography' and deepens immersion.",
         )
         appendLine(
-            "   - **NUANCED INTERACTIONS:** Use specific, evocative physical descriptors to anchor the character in the scene (e.g., 'lightly trailing a hand in the water', 'subtle tension in the shoulders', 'fingers nervously twisting a ring').",
+            "   - **HAND GESTURES AS EMOTIONAL ANCHORS (MANDATORY):** Hands are the second most expressive feature after the face. ALWAYS describe hands if the framing allows—they must support and amplify the emotion. Examples: 'clenched fists betraying hidden anger', 'fingertips brushing lips in contemplation', 'palms open in surrender', 'fingers digging into arms in self-comfort'. Hands must tell the same emotional story as the face.",
         )
         appendLine(
-            "   - **FACIAL EXPRESSION:** Provide a specific, nuanced emotion. Avoid vague terms like 'thoughtful concern'. Instead, use 'a flicker of ancient regret' or 'a sharp, cynical smirk'.",
+            "   - **NUANCED BODY LANGUAGE:** Use specific, evocative physical descriptors to anchor the character in the scene. Focus on micro-expressions of tension, weight, and posture (e.g., 'shoulders hunched forward in defeat', 'spine arched in defiance', 'weight shifting nervously from foot to foot', 'neck tensed with unspoken words').",
         )
         appendLine(
-            "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing.",
+            "   - **FACIAL EXPRESSION SPECIFICITY:** Provide a specific, nuanced emotion that goes beyond generic descriptors. BANNED: 'thoughtful', 'concerned', 'happy', 'sad'. REQUIRED: 'a flicker of ancient regret pooling in downcast eyes', 'a sharp, cynical smirk tugging at the corner of the mouth', 'brows knitted in barely contained fury'. The face tells a micro-story.",
         )
         appendLine(
-            "     - Examples: Leaning against walls, crouching in stealth, flying mid-air, running with urgency, sitting regally, kneeling in defeat, dynamic weight distribution.",
+            "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing. The entire body participates in the emotional narrative.",
         )
         appendLine(
-            "   - **HANDS & GESTURES (MANDATORY):** Always describe hands if the framing allows (even if subtly interacting with the body), as they are crucial for conveying emotion. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out).",
+            "     - Examples: Leaning against walls with arms crossed defensively, crouching in predatory readiness, flying mid-air with cape billowing triumphantly, running with desperation in every stride, sitting regally with chin lifted in superiority, kneeling with shoulders slumped in defeat.",
+        )
+        appendLine(
+            "   - **FRAMING + SCALE & ZOOM INTEGRATION (MANDATORY):** When describing framing, ALWAYS include BOTH the framing code AND scale/zoom parameters. This defines exactly how much of the frame the subject occupies and the perceived camera distance. Examples:",
+        )
+        appendLine(
+            "     - 'CU: Head and Shoulders, subject filling 85% of frame with intimate proximity' (NOT just 'close-up')",
+        )
+        appendLine(
+            "     - 'MS: Head-Waist, subject at 60% frame fill with balanced portrait distance' (NOT just 'medium shot')",
+        )
+        appendLine(
+            "     - 'FS: Full-Body, subject at 40% scale with environment visible around them' (NOT just 'full shot')",
         )
         appendLine(
             "4. **SPECIFIC ENVIRONMENT:** Name at least 3 specific environmental details (objects, weather, atmospheric elements) to establish a clear scene atmosphere. The artist MUST integrate these details to ground the subjects and establish the scene's unique vibe.",
@@ -247,7 +278,7 @@ object ImagePrompts {
         appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
         appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
         appendLine("[6] LIGHTING - Specific direction, quality, color temperature, visible effects")
-        appendLine("[7] COMPOSITION - Technical: placement, subject orientation, depth, lock-screen vertical bias")
+        appendLine("[7] COMPOSITION - Technical: placement, subject orientation, depth")
         appendLine("[8] DETAIL - Signature element, texture quality, final emphasis on genre compliance")
         appendLine()
 
@@ -311,13 +342,37 @@ object ImagePrompts {
                 "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
             )
             appendLine(
-                "3. FRAMING: Use specific codes: [ECU: Face / CU: Head and Shoulders / MCU: Head-Chest / MS: Head-Waist / MWS: Head-Knees / FS: Full-Body / WS: Body+Env / EWS: Small-in-Vast]",
+                "3. FRAMING: Use PRECISE codes with exact visibility boundaries. BANNED: Generic terms like 'close-up', 'medium shot'. REQUIRED: Specific codes with anatomical boundaries:",
+            )
+            appendLine(
+                "   [ECU: Face Only (eyes-to-chin) / CU: Head-Shoulders (above chest line) / MCU: Head-Chest (above nipple line) / MS: Head-Waist (above hip bones) / MWS: Head-Knees (above kneecaps) / FS: Full-Body (head-to-feet) / WS: Body+Environment / EWS: Small-in-Vast (subject <30% frame)]",
             )
             appendLine("4. PLACEMENT: [H: left/center/right third] [V: upper/center/lower third]")
             appendLine(
                 "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE shadow interplay, contrast intensity, and lighting ratio (e.g., 'Strong 3:1 side lighting with deep shadows').",
             )
             appendLine("6. COLOR: [cool / neutral / warm] + dominant palette")
+            appendLine(
+                "   - **EYE DETAIL (CRITICAL for ECU/CU):** When framing shows face clearly, specify EXACT eye details:",
+            )
+            appendLine(
+                "     • Iris color with specificity (e.g., 'stormy grey-blue', 'amber with gold flecks', 'deep brown nearly black')",
+            )
+            appendLine(
+                "     • Catchlight position and quality (e.g., 'twin catchlights at 10 o'clock', 'soft diffused highlight')",
+            )
+            appendLine(
+                "     • Pupil state (e.g., 'dilated pupils', 'pinpoint pupils in bright light')",
+            )
+            appendLine(
+                "     • Sclera tone (e.g., 'crisp white sclera', 'slightly bloodshot', 'yellowed')",
+            )
+            appendLine(
+                "     • Eyelid/lash detail (e.g., 'heavy-lidded', 'wide-open alert', 'thick dark lashes')",
+            )
+            appendLine(
+                "     BANNED: Generic 'expressive eyes', 'beautiful eyes'. REQUIRED: Specific physical descriptors.",
+            )
             appendLine(
                 "7. ENVIRONMENT: General setting vibe and specific architectural details (e.g., 'Neo-Brutalist skyscrapers with holographic advertisements'), NOT specific objects from reference.",
             )
@@ -429,37 +484,55 @@ object ImagePrompts {
             appendLine()
             appendLine("⚠️⚠️⚠️ PARAMETER 18 IS MANDATORY - YOU MUST OUTPUT IT - DO NOT SKIP ⚠️⚠️⚠️")
             appendLine(
-                "18. SCALE & ZOOM: [How much visual space the subject occupies + perceived camera distance]. ⚠️ THIS PARAMETER IS NON-NEGOTIABLE AND MUST BE PRESENT IN EVERY EXTRACTION.",
+                "18. SCALE & ZOOM: [Frame fill + perceived camera distance]. ⚠️ NON-NEGOTIABLE AND MUST BE PRESENT IN EVERY EXTRACTION.",
             )
             appendLine(
-                "   CRITICAL for framing precision. Describe TWO aspects:",
+                "   CRITICAL for framing precision. Describe THREE aspects with specificity:",
             )
             appendLine(
-                "   1. FRAME FILL PERCENTAGE: How much space the subject occupies (e.g., 'Subject fills 85% of frame', 'Subject occupies 40% with environment visible')",
+                "   1. FRAME FILL PERCENTAGE: Exact space the subject occupies (e.g., 'Subject fills 85% of frame', 'Subject occupies 40%')",
             )
             appendLine(
-                "   2. PERCEIVED DISTANCE: Camera proximity feel (e.g., 'Intimate close proximity', 'Comfortable portrait distance', 'Telephoto compression', 'Wide perspective with space')",
+                "   2. PERCEIVED DISTANCE: Camera proximity feel using specific descriptors:",
             )
             appendLine(
-                "   ALIGNMENT with framing codes:",
+                "      - Intimate (touching distance, pore-visible detail)",
             )
             appendLine(
-                "   - ECU/CU = high fill (75-100%) + intimate/tight proximity → 'Subject fills 90% of frame with intimate proximity'",
+                "      - Close (arm's length, subtle expression visible)",
             )
             appendLine(
-                "   - MS/MWS = medium fill (50-75%) + comfortable distance → 'Subject occupies 60% with balanced portrait framing'",
+                "      - Comfortable (conversation distance, full gesture range)",
             )
             appendLine(
-                "   - FS/WS = lower fill (30-50%) + expanded view → 'Subject at 40% scale showing expanded environment'",
+                "      - Observational (across-the-room, full body context)",
             )
             appendLine(
-                "   - EWS = minimal fill (10-30%) + distant/epic scale → 'Subject at 15% scale emphasizing vast environment'",
+                "      - Distant (environmental scale dominates)",
             )
             appendLine(
-                "   ⚠️ This ensures the DISTANCE and DETAIL LEVEL match the reference exactly. Missing this parameter = CRITICAL FAILURE.",
+                "   3. COMPRESSION EFFECT: Lens impact on spatial perception (e.g., 'telephoto compression flattening depth', 'wide-angle exaggerating foreground scale')",
             )
             appendLine(
-                "   EXAMPLE: 'Subject fills 85% of frame with tight intimate framing' or 'Subject compressed by telephoto at 70% fill with minimal background separation'",
+                "   MANDATORY ALIGNMENT with framing codes:",
+            )
+            appendLine(
+                "   - ECU/CU = 75-100% fill + intimate/close proximity → 'Subject fills 90% of frame, intimate proximity with pore-level detail visible'",
+            )
+            appendLine(
+                "   - MS/MWS = 50-75% fill + comfortable distance → 'Subject at 65% frame fill, comfortable portrait distance capturing full upper-body gesture'",
+            )
+            appendLine(
+                "   - FS/WS = 30-50% fill + observational view → 'Subject at 40% scale, observational distance showing full stance and immediate environment'",
+            )
+            appendLine(
+                "   - EWS = 10-30% fill + distant/epic scale → 'Subject at 15% scale, distant perspective emphasizing environmental vastness'",
+            )
+            appendLine(
+                "   ⚠️ CRITICAL: This parameter ensures the DISTANCE and DETAIL LEVEL match the reference exactly. Missing = CRITICAL FAILURE.",
+            )
+            appendLine(
+                "   EXAMPLE: 'Subject fills 85% of frame, intimate proximity with telephoto compression minimizing background separation'",
             )
             appendLine()
             appendLine("SUBJECT POSITIONING ANALYSIS (CRITICAL FOR ACCURATE EXTRACTION):")
@@ -522,6 +595,25 @@ object ImagePrompts {
             appendLine("⚠️ CRITICAL: Analyze the image HONESTLY. DO NOT assume or hallucinate body parts that aren't visible.")
             appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OBSCURED")
             appendLine("Analyze: 1.HEAD 2.FACE 3.NECK 4.SHOULDERS 5.TORSO 6.ARMS/HANDS 7.LEGS/FEET 8.BODY LANGUAGE 9.ENVIRONMENT")
+            appendLine()
+            appendLine("**DETAIL PRIORITIZATION BY FRAMING (CRITICAL):**")
+            appendLine("Allocate descriptive precision based on what the framing emphasizes:")
+            appendLine("- ECU/CU: 70% of detail should focus on FACE (eyes, expression, skin texture, facial features)")
+            appendLine("  • Eye color, pupil dilation, catchlight positions are MANDATORY")
+            appendLine("  • Micro-expressions, skin pores, facial hair texture are PRIMARY focus")
+            appendLine("  • Environment becomes secondary/atmospheric only")
+            appendLine("- MCU/MS: 50% face/expression, 30% pose/gesture, 20% environment")
+            appendLine("  • Hand positions and body language become critical")
+            appendLine("  • Clothing details in frame should be specific")
+            appendLine("- MWS/FS: 30% subject details, 40% full-body pose, 30% environment")
+            appendLine("  • Full stance and body dynamics are primary")
+            appendLine("  • Environmental context becomes important for grounding")
+            appendLine("- WS/EWS: 20% subject, 60% environment, 20% atmospheric/mood")
+            appendLine("  • Subject silhouette and scale relationship to environment")
+            appendLine()
+            appendLine(
+                "⚠️ FRAMING DICTATES DETAIL DEPTH: Don't describe pore-level skin texture in an EWS, don't skimp on eye detail in an ECU.",
+            )
             appendLine()
             appendLine("⚠️ HONESTY PRINCIPLE:")
             appendLine("- If shoulders are barely/not visible → BODY AXIS = 'unclear from framing' or 'not visible'")
@@ -758,6 +850,18 @@ object ImagePrompts {
             "   - Provide concrete, technical advice on how the artist can avoid the detected violations in the next prompt.",
         )
         appendLine(
+            "   - **EMOTIONAL UNITY:** Ensure pose and facial expression are unified to convey ONE specific, nuanced emotion. Suggest: 'Ask what singular feeling the character embodies, then ensure every visible element reinforces it.'",
+        )
+        appendLine(
+            "   - **HAND GESTURES AS ANCHORS:** Hands are the second most expressive feature—they must support and amplify the emotion. Suggest: 'Describe hands as emotional storytellers (e.g., \"clenched fists betraying hidden anger\" not just \"hands at sides\").'",
+        )
+        appendLine(
+            "   - **SCALE & ZOOM IN FRAMING:** When describing framing, always include scale and zoom. Suggest: 'Instead of just \"medium shot\", write \"MS: Head-Waist, subject at 60% frame fill with comfortable portrait distance\".'",
+        )
+        appendLine(
+            "   - **DETAIL VISIBILITY:** Prioritize details visible within the specified framing; avoid describing elements outside the frame. Suggest: 'For CU framing, focus 70% of description on facial details and expression nuances.'",
+        )
+        appendLine(
             "   - Focus on precision: 'Include 3 specific environment objects', 'Use more dramatic verbs for body language', 'Ensure hands are always described if the framing is CU/MCU'.",
         )
         appendLine("   - Use a constructive but firm tone to guide better initial output.")
@@ -774,9 +878,23 @@ object ImagePrompts {
             "   - Suggest *concrete terminology replacements* to improve future extractions. Tell the Visual Director exactly what terms to use instead.",
         )
         appendLine(
-            "   - Examples: 'Replace generic \"close-up\" with \"CU: Head and Shoulders\" for clarity', 'Instead of \"dramatic angle\", request \"Low-Angle Dutch Tilt 10°\"', 'Specify exact lighting ratio (e.g., 3:1) instead of just \"contrast\"'.",
+            "   - **FRAMING PRECISION:** Replace generic framing descriptions (e.g., 'Medium Shot', 'close-up') with precise framing codes that include anatomical boundaries (e.g., 'MS: Head-Waist', 'CU: Head-Shoulders above chest line').",
         )
-        appendLine("   - GOAL: Calibrate the Visual Director to be a precise cinematographer, not a creative writer.")
+        appendLine(
+            "   - **SCALE & ZOOM ENFORCEMENT:** ALWAYS verify SCALE & ZOOM parameters are present and specific. Suggest: 'Include frame fill percentage (e.g., \"85% fill\") AND perceived distance descriptor (e.g., \"intimate proximity\").'",
+        )
+        appendLine(
+            "   - **EYE DETAIL REQUIREMENT (ECU/CU):** For tight framings, demand exact eye specifications: 'Instead of \"expressive eyes\", specify iris color (e.g., \"stormy grey-blue\"), catchlight position (e.g., \"twin catchlights at 2 o'clock\"), and pupil state.'",
+        )
+        appendLine(
+            "   - **DETAIL PRIORITIZATION:** Ensure the Visual Director prioritizes details visible within the specified framing. Suggest: 'At CU framing, dedicate 70% of description to facial details; environment should be atmospheric only.'",
+        )
+        appendLine(
+            "   - Examples: 'Replace generic \"close-up\" with \"CU: Head-Shoulders (above chest line)\" for clarity', 'Instead of \"dramatic angle\", request \"Low-Angle Dutch Tilt 10°\"', 'Specify exact lighting ratio (e.g., 3:1) instead of just \"contrast\"', 'Add \"Subject fills 80% of frame with intimate proximity\" to enforce scale'.",
+        )
+        appendLine(
+            "   - GOAL: Calibrate the Visual Director to be a precise cinematographer with exact technical specifications, not a creative writer using generic terms.",
+        )
         appendLine()
 
         appendLine("VIOLATION DETECTION:")

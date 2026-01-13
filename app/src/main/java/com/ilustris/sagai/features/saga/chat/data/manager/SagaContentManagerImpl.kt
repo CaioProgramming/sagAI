@@ -143,8 +143,8 @@ class SagaContentManagerImpl
             milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
             if (objective == null) {
                 checkObjective(true)
+            }
         }
-    }
 
         override suspend fun loadSaga(sagaId: String) {
             Log.d(javaClass.simpleName, "Loading saga: $sagaId")
@@ -733,19 +733,8 @@ class SagaContentManagerImpl
                     }
                 }
 
-                // Wait for user to see the updated achievements
-                val delayDuration =
-                    when (milestone) {
-                        is SagaMilestone.NewCharacter -> 0L
-                        is SagaMilestone.CurrentObjective -> 0L
-                        else -> 5000L
-                    }
+                delay(milestone.delay)
 
-                if (delayDuration > 0) {
-                    delay(delayDuration)
-                }
-
-                // Finally dismiss the milestone
                 dismissMilestone()
             }
         }
@@ -922,18 +911,16 @@ class SagaContentManagerImpl
             timeline: Timeline,
             saga: SagaContent,
         ) {
-            withContext(Dispatchers.IO) {
-                saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
-                    timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
+            saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
+                timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
 
-                    characterUseCase.updateCharacterKnowledge(timeline, saga)
+                characterUseCase.updateCharacterKnowledge(timeline, saga)
 
-                    updateSnackBar(
-                        snackBar(
-                            context.getString(R.string.timeline_generated_successfully, timeline.title),
-                        ),
-                    )
-                }
+                updateSnackBar(
+                    snackBar(
+                        context.getString(R.string.timeline_generated_successfully, timeline.title),
+                    ),
+                )
             }
         }
 
