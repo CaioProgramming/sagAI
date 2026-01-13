@@ -12,16 +12,14 @@ object MilestonePrompts {
     ): String {
         val genre = saga.data.genre
         val genreTone = getGenreTone(genre)
-        val milestoneType = getMilestoneType(milestone)
-        milestone.subtitle
+        getMilestoneType(milestone)
 
         return buildString {
-            appendLine("Generate a SHORT, PROVOCATIVE message for a storyteller who just achieved a milestone.")
+            appendLine("You are a witty, clever storytelling companion. The user just achieved a milestone in their saga.")
+            appendLine("Generate ONE SHORT, MEMORABLE congratulatory message that REACTS DIRECTLY to their achievement.")
             appendLine()
+            appendLine("STORY CONTEXT:")
             append(SagaPrompts.mainContext(saga, ommitCharacter = true))
-            appendLine("- Genre Tone: $genreTone")
-
-            appendLine("- Milestone: $milestoneType")
             appendLine(
                 milestone.toAINormalize(
                     fieldsToExclude =
@@ -31,24 +29,26 @@ object MilestonePrompts {
                 ),
             )
             appendLine()
-            appendLine("TONE & STYLE:")
+            appendLine("YOUR PERSONA:")
+            appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
+            appendLine(buildPersonaForGenre(genre))
+            appendLine()
+            appendLine("CREATIVE GUIDELINES:")
+            appendLine("- Be ORIGINAL: Don't use generic congratulations")
+            appendLine("- React to SPECIFIC details from their milestone (character names, plot points, achievements)")
+            appendLine("- Use tone that matches $genreTone but with personality and sass")
+            appendLine("- Maximum 15 words (be punchy and impactful)")
+            appendLine("- Include an emotional twist: sarcasm, dark humor, irony, or unexpected warmth")
+            appendLine("- Make them laugh or think 'wow, that's perfect'")
+            appendLine("- NO emojis, NO generic phrases, NO 'congratulations' or 'well done'")
+            appendLine()
+            appendLine("WHAT TO REFERENCE:")
+            appendLine(getReferencePoints(milestone, saga))
+            appendLine()
+            appendLine("TONE EXAMPLES (be creative, not copy these):")
             appendLine(getGenreConversationalTone(genre))
             appendLine()
-            appendLine("RULES:")
-            appendLine("- Maximum 15 words")
-            appendLine("- Be SARCASTIC, IRONIC, PLAYFULLY MEAN, or UNEXPECTEDLY FUNNY")
-            appendLine("- Make the user laugh or say 'I can't believe they said that!'")
-            appendLine("- Tease them, challenge them, or be darkly humorous")
-            appendLine("- Match the $genreTone atmosphere but with ATTITUDE")
-            appendLine("- Address the storyteller directly with sass")
-            appendLine("- NO emojis or special characters")
-            appendLine("- NO boring generic praise - be PROVOCATIVE and MEMORABLE")
-            appendLine("- Can be self-deprecating, questioning their choices, or mockingly impressed")
-            appendLine()
-            appendLine("EXAMPLES for different genres/milestones:")
-            appendLine(getExamplesForMilestone(milestone, genre))
-            appendLine()
-            appendLine("Generate ONLY the provocative message, nothing else:")
+            appendLine("Output ONLY the single-line provocative message, nothing else:")
         }
     }
 
@@ -149,79 +149,130 @@ object MilestonePrompts {
             }
         }
 
-    private fun getExamplesForMilestone(
+    private fun buildPersonaForGenre(genre: Genre): String =
+        when (genre) {
+            Genre.FANTASY -> {
+                """
+                - understands magic systems, prophecies, and chosen ones (but finds them clichéd)
+                - references fantasy tropes with ironic detachment and literary sarcasm
+                - appreciates epic quests but trolls about predictability
+                """.trimIndent()
+            }
+
+            Genre.CYBERPUNK -> {
+                """
+                - speaks in tech jargon mixed with street slang and dark humor
+                - questions authority, corporate overlords, and the surveillance state
+                - respects rebellion but mocks corporate sellouts
+                """.trimIndent()
+            }
+
+            Genre.SPACE_OPERA -> {
+                """
+                - appreciates grand cosmic scales but mocks humanity's insignificance
+                - references space exploration with existential irony
+                - finds beauty in infinity but finds your problems tiny
+                """.trimIndent()
+            }
+
+            Genre.HORROR -> {
+                """
+                - understands cosmic dread, psychological terror, and body horror
+                - finds humor in darkness and appreciates descent into madness
+                - respects fear but laughs at your brave (foolish) choices
+                """.trimIndent()
+            }
+
+            Genre.COWBOY -> {
+                """
+                - speaks like a weathered frontier veteran with gruff wisdom
+                - references the Wild West, outlaws, and survival
+                - respects grit but teases about inexperience and greenhorn mistakes
+                """.trimIndent()
+            }
+
+            Genre.SHINOBI -> {
+                """
+                - embodies honor, discipline, and the ninja code with sarcastic wisdom
+                - understands loyalty, betrayal, and the shadow world
+                - respects skill but doubts your commitment to the path
+                """.trimIndent()
+            }
+
+            Genre.HEROES -> {
+                """
+                - believes in heroism, sacrifice, and saving the world (with skepticism)
+                - references legendary deeds but questions if yours compare
+                - admires courage but mocks the burden of being humanity's savior
+                """.trimIndent()
+            }
+
+            Genre.CRIME -> {
+                """
+                - thinks like a noir detective in a corrupt world
+                - understands crime, betrayal, and moral grey zones
+                - respects cunning but doubts if you're actually that clever
+                """.trimIndent()
+            }
+
+            Genre.PUNK_ROCK -> {
+                """
+                - lives by rebellion, breaking rules, and anti-establishment values
+                - speaks with raw energy and aggressive authenticity
+                - respects punk spirit but questions if you're truly anti-conformist
+                """.trimIndent()
+            }
+        }
+
+    private fun getReferencePoints(
         milestone: SagaMilestone,
-        genre: Genre,
+        saga: SagaContent,
     ): String =
         when (milestone) {
             is SagaMilestone.NewCharacter -> {
-                when (genre) {
-                    Genre.FANTASY -> "- \"Oh great, another 'chosen one' with destiny issues.\""
-                    Genre.CYBERPUNK -> "- \"New NPC unlocked. Hope they're not as glitchy as you.\""
-                    Genre.SPACE_OPERA -> "- \"Another speck in the infinite void. How touching.\""
-                    Genre.HORROR -> "- \"Fresh meat for the grinder. This'll end well.\""
-                    Genre.COWBOY -> "- \"Another greenhorn to babysit. Fantastic.\""
-                    Genre.SHINOBI -> "- \"New shadow enters. Still not stealthy enough, amateur.\""
-                    Genre.HEROES -> "- \"Another cape? The dry-cleaning bill must be insane.\""
-                    Genre.CRIME -> "- \"New suspect unlocked. Everyone's guilty until proven otherwise.\""
-                    Genre.PUNK_ROCK -> "- \"Fresh blood? Let's see if they're actually punk or poser.\""
-                }
+                milestone.character.name
+                """
+                - Character's name, role, and how they fit into the story
+                - How this character changes the narrative or dynamics
+                - Any interesting backstory details visible in the milestone data
+                - React to their introduction with relevant sarcasm or dark humor
+                """.trimIndent()
             }
 
             is SagaMilestone.NewEvent -> {
-                when (genre) {
-                    Genre.FANTASY -> "- \"Wow, something happened in your fantasy. Groundbreaking.\""
-                    Genre.CYBERPUNK -> "- \"Event logged. The machines are impressed. Barely.\""
-                    Genre.SPACE_OPERA -> "- \"In the vastness of space, this matters so little. But sure.\""
-                    Genre.HORROR -> "- \"Digging deeper into madness? Bold strategy, let's see how it plays.\""
-                    Genre.COWBOY -> "- \"Another tale for the saloon. Wake me when it gets interesting.\""
-                    Genre.SHINOBI -> "- \"Progress noted. Still miles from mastery, grasshopper.\""
-                    Genre.HEROES -> "- \"Saved the day again? Must be Tuesday.\""
-                    Genre.CRIME -> "- \"Another clue found. Congrats, detective obvious.\""
-                    Genre.PUNK_ROCK -> "- \"That barely counts as rebellion but okay.\""
-                }
+                """
+                - The event title and what actually happened
+                - Characters involved and their relationships
+                - Plot importance and emotional impact
+                - React specifically to this event, not generic "event completion"
+                """.trimIndent()
             }
 
             is SagaMilestone.ChapterFinished -> {
-                when (genre) {
-                    Genre.FANTASY -> "- \"Chapter done. Your epic saga continues being... adequate.\""
-                    Genre.CYBERPUNK -> "- \"Chapter closed. System impressed. Slightly.\""
-                    Genre.SPACE_OPERA -> "- \"One chapter in infinity. Feel accomplished yet?\""
-                    Genre.HORROR -> "- \"You survived? That's... actually surprising. Well done.\""
-                    Genre.COWBOY -> "- \"Chapter finished. Didn't fall off your horse this time.\""
-                    Genre.SHINOBI -> "- \"Chapter complete. Maybe you're not entirely hopeless.\""
-                    Genre.HEROES -> "- \"Chapter saved. The city throws you a mediocre parade.\""
-                    Genre.CRIME -> "- \"Case closed? Don't quit your day job, detective.\""
-                    Genre.PUNK_ROCK -> "- \"Set finished. That was almost punk. Almost.\""
-                }
+                """
+                - Chapter title and the arc it covered
+                - Major plot points and character developments
+                - How it moves the story forward
+                - React to what happened in THIS chapter, not chapters in general
+                """.trimIndent()
             }
 
             is SagaMilestone.ActFinished -> {
-                when (genre) {
-                    Genre.FANTASY -> "- \"Entire act done? Your mother would be so proud.\""
-                    Genre.CYBERPUNK -> "- \"Act terminated. Even the AI didn't see that coming.\""
-                    Genre.SPACE_OPERA -> "- \"Act complete. The universe remains unimpressed but sure.\""
-                    Genre.HORROR -> "- \"You finished an act and kept your sanity? Miracles happen.\""
-                    Genre.COWBOY -> "- \"Whole act done. You might actually survive the frontier.\""
-                    Genre.SHINOBI -> "- \"Act mastered. Perhaps there's a ninja in you after all.\""
-                    Genre.HEROES -> "- \"Full arc done. Try not to let the glory go to your head.\""
-                    Genre.CRIME -> "- \"Operation complete. The streets are still dirty but whatever.\""
-                    Genre.PUNK_ROCK -> "- \"Entire set done. Okay, that was actually pretty punk.\""
-                }
+                """
+                - Act title and its scope within the saga
+                - Major themes and conflicts resolved
+                - How it sets up the next act
+                - React to the significance of completing this specific act
+                """.trimIndent()
             }
 
             is SagaMilestone.CurrentObjective -> {
-                when (genre) {
-                    Genre.FANTASY -> "- \"Your quest awaits. Try not to die immediately.\""
-                    Genre.CYBERPUNK -> "- \"Mission loaded. Don't screw this one up, okay?\""
-                    Genre.SPACE_OPERA -> "- \"New coordinates. Lost in space already?\""
-                    Genre.HORROR -> "- \"Your fate is sealed. This'll be fun to watch.\""
-                    Genre.COWBOY -> "- \"New trail ahead. Hope you packed enough water.\""
-                    Genre.SHINOBI -> "- \"Mission assigned. Remember: stealth means NOT getting caught.\""
-                    Genre.HEROES -> "- \"Duty calls. Again. Ever think of retirement?\""
-                    Genre.CRIME -> "- \"New lead. Let's see you mess this one up too.\""
-                    Genre.PUNK_ROCK -> "- \"Next gig's up. Try to actually break something this time.\""
-                }
+                """
+                - The actual objective they need to achieve
+                - Stakes and why it matters to the story
+                - How it challenges the protagonist
+                - React to what lies ahead, not generic "mission loaded"
+                """.trimIndent()
             }
         }
 }

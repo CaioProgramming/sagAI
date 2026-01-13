@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
@@ -89,8 +88,6 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                billingService.isPremium()
-
                 val portraitReference =
                     genreReferenceHelper.getRandomPortraitReference().getSuccess()
 
@@ -101,8 +98,6 @@ class CharacterUseCaseImpl
                             imageReference = portraitReference,
                             context =
                                 buildString {
-                                    appendLine("Saga Context: ")
-                                    appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
                                     appendLine("Character Context: ")
                                     appendLine(
                                         character.toAINormalize(

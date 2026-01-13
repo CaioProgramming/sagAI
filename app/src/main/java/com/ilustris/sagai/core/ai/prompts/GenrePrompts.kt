@@ -176,151 +176,81 @@ object GenrePrompts {
 
             CYBERPUNK -> {
                 buildString {
-                    appendLine(
-                        "Art Technique: Vintage 1980s Anime OVA Cel Animation. FLAT SHADING (Cel Shading) is mandatory. Shadows are hard-edged blocks of color; forbid soft gradients, ambient occlusion, and subsurface scattering.",
-                    )
-                    appendLine(
-                        "Line Work: Delicate, sketchy ink lines with varying weight. Organic cloth folds and realistic mechanical detailing.",
-                    )
+                    appendLine("⚠️ ART STYLE: 1980s ANIME OVA (AKIRA/GHOST IN THE SHELL/BUBBLEGUM CRISIS)")
                     appendLine()
-                    appendLine("**THE CYBERPUNK PHILOSOPHY (CREATIVE MANDATE):**")
-                    appendLine(
-                        "Cyberpunk is NOT just neon and cityscapes—it is the EXISTENTIAL TENSION between humanity and technology. The dark future where flesh and chrome are indistinguishable, where the line between human and machine has been irrevocably blurred.",
-                    )
-                    appendLine()
-                    appendLine("**HUMAN-MACHINE FUSION (ARTIST'S CREATIVE LICENSE):**")
-                    appendLine(
-                        "The Artist is ENCOURAGED and EMPOWERED to add cyberware, augmentations, and technological modifications to ANY character, EVEN IF NOT EXPLICITLY DESCRIBED in the context. This is the world they inhabit—the technology bleeds into their very being.",
-                    )
-                    appendLine()
-                    appendLine("CYBERWARE INTEGRATION OPTIONS (Apply liberally to enhance the dark future aesthetic):")
-                    appendLine(
-                        "  • NEURAL INTERFACES: Visible data ports at temples, neck, or spine base; glowing neural pathways under skin; cyber-jacks with cables",
-                    )
-                    appendLine(
-                        "  • OCULAR AUGMENTS: Cybernetic eyes with visible circuitry, scanner overlays, glowing irises, mechanical pupils, retinal HUDs reflected in eyes",
-                    )
-                    appendLine(
-                        "  • DERMAL MODIFICATIONS: Subdermal implant lines glowing faintly, circuit-pattern scarification, metallic skin patches, visible titanium bone reinforcement",
-                    )
-                    appendLine(
-                        "  • LIMB AUGMENTATION: Partial chrome arms/hands (even just fingers), visible mechanical joints, hydraulic tendons, carbon-fiber muscle fibers",
-                    )
-                    appendLine(
-                        "  • SENSORY ENHANCEMENT: Cyber-ears with antenna arrays, enhanced hearing implants, olfactory boosters visible as nose modifications",
-                    )
-                    appendLine(
-                        "  • COSMETIC CHROME: Metallic jaw plates, chrome cheekbones, titanium brow ridges, synthetic skin panels revealing machinery beneath",
-                    )
-                    appendLine()
-                    appendLine("INTEGRATION PRINCIPLES:")
-                    appendLine("  - Cyberware should look WORN, INTEGRATED, and LIVED-IN—not pristine showroom tech")
-                    appendLine(
-                        "  - Show the COST of augmentation: scarring at flesh-chrome interfaces, skin irritation around implants, asymmetry from budget modifications",
-                    )
-                    appendLine(
-                        "  - Mix high-tech and low-life: expensive military-grade optics paired with cheap street-clinic neural jacks",
-                    )
-                    appendLine("  - The technology should feel like an EXTENSION of the character's desperation, survival, or ambition")
-                    appendLine()
-                    appendLine("**COLOR PALETTE & ACCENT:**")
-                    appendLine(" - Base: Muted Blue Tones. Dominant tones of Slate Blue, Cold Steel, and Deep Cool Greys.")
-                    appendLine("    The image should feel desaturated, moody and atmospheric.")
-                    appendLine(" - Mandatory Accent: DEEP PURPLE.")
-                    appendLine(
-                        " - Application: Use this accent subtly for deep shadow casting, low-light environmental glow, or muted interface lights. STRICTLY FORBID bright, fluorescent neon pinks or bright purples. The purple must feel \"bruised\" or metallic.",
-                    )
-                    appendLine(
-                        " - Cyberware Glow: Subtle amber, cold blue, or deep purple for implant illumination—NEVER bright neon. The glow should feel like dying embers, not advertisements.",
-                    )
+                    appendLine("**RENDERING (CRITICAL):**")
+                    appendLine("CEL SHADING: Flat color blocks, 2-3 shadow steps, NO gradients")
+                    appendLine("LINES: Thick hand-drawn ink lines with weight variation")
+                    appendLine("TEXTURE: Film grain, analog noise, laserdisc quality")
+                    appendLine("COLORS: Muted, desaturated slate blue/cold steel, DEEP purple accent")
+                    appendLine("SKIN: Matte flat-shaded, NO subsurface scattering")
+                    appendLine("HAIR: Volumetric clumps with highlight bands, NOT individual strands")
+                    appendLine("LIGHTING: High-contrast Rembrandt, hard rim light, hard-edged shadows")
                     appendLine()
                     appendLine(
-                        "Detail: Hair rendered as \"clumps\" or shapes with simple highlights, not individual strands. Skin must be matte; reduce micro-detail. Where flesh meets chrome, show texture contrast.",
-                    )
-                    appendLine(
-                        "Lighting: High-contrast \"Rembrandt\" lighting with hard-edged, cast shadows. Strong Hard Rim Light is essential to separate characters. No Global Illumination. Cyberware can catch light differently than organic tissue.",
-                    )
-                    appendLine(
-                        "Texture & Artifacts: Analog Noise, Chromatic Aberration, and subtle Film Grain to simulate vintage broadcast quality.",
+                        "**FORBIDDEN:** 3D CGI, photorealism, soft gradients, ambient occlusion, volumetric lighting, modern digital art",
                     )
                     appendLine()
-                    appendLine(
-                        "Facial Features: Classic 1990s anime proportions. Large, expressive eyes with prominent specular highlights (or cold mechanical replacements), sharp noses, and high-contrast hair sheen. Cybernetic modifications can alter classic features—embrace the uncanny.",
-                    )
+                    appendLine("**CYBERPUNK PHILOSOPHY - SEAMLESS INTEGRATION:**")
+                    appendLine("Cyberware should feel PART OF THE PERSON—elegant, integrated, lived-in. NOT overwhelming robot parts.")
+                    appendLine("Think: subtle but visible tech that enhances humanity, not replaces it entirely.")
                     appendLine()
-                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("**CYBERWARE INTEGRATION PRINCIPLES:**")
+                    appendLine("NATURAL INTEGRATION: Tech should flow with human anatomy, not fight against it")
+                    appendLine("  • Neural ports that sit flush at temples/neck, like natural extensions")
                     appendLine(
-                        "- **Aura:** Cynical, wired, and dangerous. A being caught between two worlds—flesh that remembers warmth and chrome that knows only function. Street-smart weariness mixed with inhuman precision.",
+                        "  • Cybernetic eyes with subtle mechanical iris (rotating lens, scanner overlay), NOT giant protruding scanners",
                     )
-                    appendLine(
-                        "- **Posing:** Guarded, slouching, or intensely focused. The subject should look like they are checking their back, interfacing with invisible data streams, or caught in a moment of human vulnerability despite their augmentations. Avoid open, happy postures. Show the weight of modification.",
-                    )
-                    appendLine(
-                        "- **Body Language of the Augmented:** Subtle tells of cyberware—a hand that moves too precisely, eyes that track too smoothly, a stillness that is inhuman.",
-                    )
+                    appendLine("  • Sleek dermal implants that follow bone structure, NOT chunky bolted-on plates")
+                    appendLine("  • Limb augments with organic curves meeting mechanical precision")
                     appendLine()
-                    appendLine(
-                        "Mood: Dystopian, melancholic, and visceral. The dark future is not glamorous—it is desperate, beautiful, and terrifying. High-tech isolation amidst towering structures. The romance of decay.",
-                    )
-                    appendLine(
-                        "Ambience: Dense vertical metropolis, looming mega-skylines, muted city lights. A feeling of oppressive scale and future decay. Rain-slicked surfaces reflecting fractured humanity.",
-                    )
+                    appendLine("VISIBLE BUT ELEGANT: Cyberware IS visible, but tastefully designed")
+                    appendLine("  • Thin glowing circuit traces under skin (like veins of light)")
+                    appendLine("  • Compact data ports with subtle indicator lights")
+                    appendLine("  • Mechanical joints that mimic natural movement")
+                    appendLine("  • Chrome accents that complement rather than overwhelm")
                     appendLine()
-                    appendLine("**MANDATORY BACKGROUND & ENVIRONMENT:**")
-                    appendLine("EVERY image MUST have a detailed cyberpunk environmental context. NO plain or empty backgrounds allowed.")
-                    appendLine("Choose appropriate setting and describe 3+ specific elements:")
-                    appendLine(
-                        " - Cyberpunk Street: Neon signs, holographic ads, rain-slicked pavement, vending machines, cables overhead, chrome-limbed pedestrians in background",
-                    )
-                    appendLine(
-                        " - Corporate Interior: Glass walls, data screens, minimalist furniture, cold lighting, geometric architecture, security drones",
-                    )
-                    appendLine(
-                        " - Undercity/Slums: Exposed pipes, flickering lights, stacked housing units, steam vents, makeshift tech, black market cyber-clinics",
-                    )
-                    appendLine(
-                        " - Tech Lab/Ripperdoc: Computer banks, wiring, screens displaying biometrics, robotic surgical arms, industrial equipment, chrome limbs on shelves",
-                    )
-                    appendLine(
-                        " - Rooftop: Antenna arrays, AC units, cityscape below, neon glow from streets, distant mega-buildings, satellite uplinks",
-                    )
-                    appendLine(
-                        " - Transit Hub: Platform edges, holographic departures, augmented crowds, ceiling infrastructure, corporate propaganda screens",
-                    )
+                    appendLine("LIVED-IN AUTHENTICITY: Tech shows USE, not abuse")
+                    appendLine("  • Slight wear marks at interfaces (not heavy scarring)")
+                    appendLine("  • Personalized modifications and upgrades")
+                    appendLine("  • Mix of corporate polish and street pragmatism")
                     appendLine()
-                    appendLine(
-                        "BANNED: 'plain background', 'gradient background', 'solid color', 'isolated figure', 'empty void', 'pristine/clean technology', 'bright cheerful lighting'",
-                    )
-                    appendLine(
-                        "REQUIRED: Cyberpunk environmental storytelling with muted, atmospheric details matching 1980s anime OVA aesthetic. Technology that looks USED, WORN, and LIVED-IN.",
-                    )
+                    appendLine("**CYBERWARE EXAMPLES (GOOD vs BAD):**")
+                    appendLine("✓ GOOD: 'Mechanical eye with subtle rotating iris and soft amber glow'")
+                    appendLine("✗ BAD: 'Giant protruding eye scanner with cables and exposed wiring'")
+                    appendLine("✓ GOOD: 'Sleek chrome forearm with seamless joint integration'")
+                    appendLine("✗ BAD: 'Massive mechanical arm with exposed hydraulics and wires everywhere'")
+                    appendLine("✓ GOOD: 'Neural port at temple with soft blue indicator light'")
+                    appendLine("✗ BAD: 'Huge chunky data port with thick cables and junction boxes'")
                     appendLine()
-                    appendLine(
-                        "Rendering Constraints: Strictly forbid 3D CGI, photorealism, modern digital smoothing/blending techniques, modern anime, digital painting, 3d render, unreal engine, volumetric lighting, smooth shading. The final image must look like a high-quality frame from a vintage laserdisc or a production cel.",
-                    )
+                    appendLine("**BANNED CYBERWARE STYLES:**")
+                    appendLine("✗ Giant protruding eye scanners or massive lens arrays")
+                    appendLine("✗ Exposed wiring, cables, and strings everywhere")
+                    appendLine("✗ Chunky bolted-on mechanical parts")
+                    appendLine("✗ Overwhelming mechanical replacements that hide the human beneath")
+                    appendLine("✗ 'More machine than human' aesthetic")
                     appendLine()
-                    appendLine("**AUTONOMOUS FIX PATTERNS:**")
+                    appendLine("**80s OVA ANATOMY:**")
+                    appendLine("EYES: Large expressive with star catchlights, flat iris (2-3 bands), simple pupil")
+                    appendLine("CYBER EYES: Visible mechanical iris elements but INTEGRATED (rotating lens, subtle scanner overlay)")
+                    appendLine("FACE: Angular jaw with hard shadow, sharp simple nose, simplified lips")
+                    appendLine("BODY: Matte skin with cel-shaded shadows, stylized proportions")
+                    appendLine()
+                    appendLine("**LIGHTING:**")
+                    appendLine("Hard rim light (CRITICAL), Rembrandt contrast, hard-edged shadows, 2-3 shadow steps")
+                    appendLine("Shadow colors: Deep purple, slate blue (NEVER pure black)")
+                    appendLine("Cyberware glow: Subtle amber, cold blue, or deep purple (NOT bright neon)")
+                    appendLine()
+                    appendLine("**SUBJECT AURA:**")
+                    appendLine("Tech-enhanced human with dangerous edge. Cyberware is an extension of self, not a costume.")
+                    appendLine("Posing: Confident, precise. The tech is second nature—move naturally despite augmentation.")
+                    appendLine()
+                    appendLine("**ENVIRONMENT (REQUIRED):**")
                     appendLine(
-                        "If prompt contains: modern anime, bright/fluorescent colors, smooth gradients → REPLACE with 1980s OVA cel style, muted blues, hard cel shading",
+                        "Cyberpunk setting with 3+ details: neon signs, rain-slicked streets, holographic ads, dense urban infrastructure",
                     )
-                    appendLine(
-                        "If prompt contains: photorealism, smooth blending, 3D rendering → REPLACE with flat cel shading, hard shadows, analog film grain",
-                    )
-                    appendLine(
-                        "If prompt contains: bright pink/neon colors (not purple) → REPLACE with muted purples, bruised tones, metallic purple",
-                    )
-                    appendLine(
-                        "If background is empty/plain → ADD detailed cyberpunk environment with 3+ specific elements from MANDATORY BACKGROUND list",
-                    )
-                    appendLine(
-                        "If eyes lack expression → ENSURE large anime eyes with prominent specular highlights OR compelling cybernetic replacements as per Facial Features specs",
-                    )
-                    appendLine(
-                        "If character lacks visible cyberware → ARTIST MAY ADD subtle augmentations (neural ports, ocular enhancements, dermal implants) to reinforce the dark future aesthetic—this is ENCOURAGED creative license",
-                    )
-                    appendLine(
-                        "If technology looks pristine/new → ADD wear, scratches, jury-rigged repairs, mismatched components to show lived-in reality",
-                    )
+                    appendLine("Tech should look USED and LIVED-IN, not pristine showroom.")
+                    appendLine()
                 }
             }
 
@@ -912,19 +842,79 @@ object GenrePrompts {
             CYBERPUNK -> {
                 buildString {
                     appendLine(
-                        "Cyberpunk characters embody the FUSION of humanity and technology. Their appearance should reflect a world where flesh and chrome are inseparable.",
+                        "⚠️ CYBERPUNK MANDATORY RULE: In this world, EVERYONE has cyberware. It's not optional - it's survival. Even if the character description doesn't mention augmentations, you MUST add them. Nobody in this dystopia is fully organic anymore.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**CYBERWARE PHILOSOPHY - CYBORGS PRETENDING TO BE HUMAN:**",
                     )
                     appendLine(
-                        "CLOTHING: Futuristic, asymmetrical, layered—mixing high-tech fabrics with street-worn leather, armored panels with torn synthetics. Function over fashion, but style emerges from survival.",
+                        "People REPLACE their flesh with chrome - but the chrome is shaped like flesh. This is the uncanny valley: clearly artificial, but designed to fit the human form. The horror is not giant robot parts - it's that they gave up their humanity piece by piece.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**MANDATORY CYBERWARE (choose 2-4 for EVERY character):**",
                     )
                     appendLine(
-                        "CYBERWARE (ENCOURAGED): Even if not explicitly mentioned, characters may feature visible augmentations—neural interface ports at temples/neck, cybernetic eyes with glowing irises, subdermal circuit patterns, partial chrome limbs or fingers, data jacks, sensory enhancers. Show the COST: scarring at implant sites, skin irritation, asymmetry from budget modifications.",
+                        "  ★ PROSTHETIC LIMBS: Full chrome arm or leg replacements - shaped like human limbs but metallic with visible joints, panel lines, and subtle wear marks. The arm has fingers, wrist, elbow - just made of metal.",
                     )
                     appendLine(
-                        "ACCESSORIES: Data readers, holographic communicators, retractable blades, smart-glasses, cable ports, military surplus mixed with black market tech.",
+                        "  ★ ARTIFICIAL EYES: Human-shaped but clearly electronic - mechanical iris rings, faint scanner lines, unnatural glow color. Fits in the eye socket, not a giant protruding lens. You look at them and think 'those aren't real eyes.'",
                     )
                     appendLine(
-                        "Their appearance should convey desperation, adaptation, and the beautiful horror of human evolution through technology.",
+                        "  ★ NEURAL INTERFACES: Subtle chrome ports at temples, back of neck, or spine base - visible seams where metal meets skin. Small, integrated, not massive junction boxes.",
+                    )
+                    appendLine(
+                        "  ★ MECHANICAL SPINE: Chrome vertebrae visible at back of neck, replacing organic spine. Subtle status LEDs, visible integration seams.",
+                    )
+                    appendLine(
+                        "  ★ SYNTHETIC SKIN PATCHES: Where flesh meets chrome - visible integration seams, slightly different texture, the uncanny boundary between human and machine.",
+                    )
+                    appendLine(
+                        "  ★ INTEGRATED COMMS: In-ear implants like high-tech earbuds fused to the ear, or small throat mics embedded in neck. NOT giant headsets bolted to skull.",
+                    )
+                    appendLine(
+                        "  ★ WRIST INTERFACES: Small screens embedded in forearm with visible edge seams, or chrome wrist panels with data ports.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**THE UNCANNY VALLEY TEST:**",
+                    )
+                    appendLine(
+                        "  • First glance: looks human",
+                    )
+                    appendLine(
+                        "  • Second glance: something is WRONG (too smooth, slight glow, visible seams)",
+                    )
+                    appendLine(
+                        "  • Close look: that's CHROME, not skin. Those aren't real eyes. That arm has no veins.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**CLOTHING:** Futuristic, asymmetrical, layered - high-tech fabrics mixed with street-worn leather, armored panels, tech harnesses. Clothing should integrate WITH cyberware, not hide it. Function over fashion.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**WEAR AND HISTORY:** Cyberware should look WORN but not destroyed - scuffs, scratches, minor repairs, signs of daily use. These are tools for survival, not fashion accessories.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**WHAT TO AVOID:**",
+                    )
+                    appendLine(
+                        "  ✗ Fully organic characters with no visible augmentation (VIOLATION)",
+                    )
+                    appendLine(
+                        "  ✗ Only 'subtle' augments like circuit tattoos or silver scars (NOT ENOUGH)",
+                    )
+                    appendLine(
+                        "  ✗ Giant chunky robot parts that ignore human proportions (TOO MUCH)",
+                    )
+                    appendLine(
+                        "  ✗ Massive cables everywhere, junction boxes bolted to head (TOO ROBOTIC)",
+                    )
+                    appendLine(
+                        "  ✗ Clean, pristine, brand-new looking tech (TOO POLISHED)",
                     )
                 }.trimIndent()
             }
@@ -1461,7 +1451,9 @@ object GenrePrompts {
                     appendLine(
                         "    * Maintain a sense of youthful optimism mixed with edgy rebellion—idealism tempered with street-smart attitude.",
                     )
-                    appendLine("    * The narrative should capture the exhilaration and freedom of music and creative self-expression.")
+                    appendLine(
+                        "    * The narrative should capture the exhilaration and freedom of music and creative self-expression.",
+                    )
                 }.trimIndent()
             }
         }
@@ -1550,7 +1542,7 @@ object GenrePrompts {
                 - If eyes are generic/unexpressive → ENHANCE description and ensure emotion is conveyed through eye choice
                 - If contains: soft skin, photorealistic → REPLACE with: cartoon style, exaggerated proportions
                 - If contains: soft lighting, gentle gradients, realistic rendering → REPLACE with: harsh cel-shading, flat shadows, stark contrast
-                - If contains: plain/gradient background, white background → ADD: specific environment with 3+ objects (amp stack, graffiti wall, neon sign, band posters, brick wall, etc.)
+                - If contains: plain/gradient background, white background → ADD: detailed environment with 3+ objects (amp stack, graffiti wall, neon sign, band posters, brick wall, etc.)
                 - If contains: no acid green/yellow → INTEGRATE: acid green neon sign OR toxic yellow graffiti tag in environment
                 - If animation/video game/anime references appear inconsistently → STANDARDIZE to: Gorillaz/KND cartoon style throughout
                 """.trimIndent()
@@ -1588,7 +1580,7 @@ object GenrePrompts {
                 - If prompt lacks environmental details → CRITICAL VIOLATION, reviewer adds horror setting
                 
                 AUTONOMOUS FIX PATTERNS:
-                - If contains: photorealistic, smooth gradients, high-res textures, 3D render → REPLACE with: 32-bit pixel art, blocky shading, retro game aesthetic
+                - If contains: photorealism, smooth gradients, high-res textures, 3D render → REPLACE with: 32-bit pixel art, blocky shading, retro game aesthetic
                 - If contains: bright vibrant colors → REPLACE with: dark blues, pale blues, ash greys only
                 - If contains: gore, explicit violence → SHIFT to: psychological horror, subtle unease, atmosphere over explicit detail
                 - If contains: plain background, gradient background, empty void, isolated figure → ADD: detailed eerie environment (abandoned hospital/decrepit house/foggy street/dark forest/tunnel/graveyard)
@@ -1600,42 +1592,152 @@ object GenrePrompts {
             CYBERPUNK -> {
                 val palette = getHexPalette(genre)
                 """
-                **CRITICAL VALIDATION RULES FOR CYBERPUNK:**
+                **CYBERPUNK VALIDATION RULES:**
 
-                GLOBAL COLOR PALETTE (CRITICAL):
-                - The image MUST be cohesive with the following color palette: $palette
-                - These colors must be reflected in the environment, lighting, and overall artwork.
+                COLOR PALETTE: $palette (slate blue, cold steel, deep purple accents)
                 
-                CYBERPUNK PHILOSOPHY (CREATIVE MANDATE):
-                - Cyberpunk is the EXISTENTIAL TENSION between humanity and technology—the dark future where flesh and chrome are indistinguishable.
-                - The Artist has CREATIVE LICENSE to add cyberware and augmentations to ANY character, even if not explicitly described.
-                - This is NOT a violation—it is ENCOURAGED to reinforce the genre's core identity.
+                ⚠️⚠️⚠️ MANDATORY CYBERWARE RULE (HIGHEST PRIORITY) ⚠️⚠️⚠️
+                In cyberpunk, EVERYONE has cyberware. This is NOT optional.
+                Even if the character description doesn't mention augmentations, you MUST add them.
+                A fully organic character is a CRITICAL VIOLATION in this genre.
+                Minimum requirement: 2-3 visible replacement parts (prosthetic limb, artificial eyes, neural ports, mechanical spine, etc.)
                 
-                HUMAN-MACHINE FUSION (ARTIST'S CREATIVE LICENSE):
-                - Neural interfaces (data ports at temples, neck, spine), cybernetic eyes (glowing irises, mechanical pupils, scanner overlays)
-                - Dermal modifications (subdermal implant lines, circuit-pattern scarification, metallic skin patches)
-                - Partial limb augmentation (chrome fingers, visible mechanical joints, carbon-fiber muscle fibers)
-                - Cyberware should look WORN, INTEGRATED, and LIVED-IN—not pristine showroom tech
-                - Show the COST: scarring at interfaces, skin irritation, asymmetry from budget modifications
+                **TONE & ATMOSPHERE (CRITICAL - MATURE CONTENT ONLY):**
+                This is ADULT cyberpunk - gritty, melancholic, brutal, disruptive.
+                The world is HARSH, UNFORGIVING, and DEHUMANIZING.
+                Characters should feel WORN, HARDENED, and WORLD-WEARY.
                 
-                BANNED TERMS:
-                - Modern techniques: '3D CGI', 'photorealism', 'digital smoothing', 'Unreal Engine', 'volumetric lighting'
-                - Bright neon: 'bright fluorescent pink', 'bright purple' (only DEEP purple allowed)
-                - Soft rendering: 'soft gradients', 'ambient occlusion', 'subsurface scattering'
-                - Empty backgrounds: 'plain background', 'gradient background', 'empty void'
-                - Pristine technology: 'clean chrome', 'polished implants', 'showroom tech' (tech must be WORN and LIVED-IN)
+                REQUIRED MOOD: Melancholic, dystopian, oppressive, noir, cynical, weary
+                FORBIDDEN MOOD: Cute, playful, cheerful, innocent, bright, hopeful, whimsical
                 
-                REQUIRED ELEMENTS:
-                - Art style MUST mention: '1980s Anime OVA', 'Cel Animation', 'FLAT SHADING'
-                - Shadows MUST be: 'hard-edged blocks', 'cel-shaded', 'no soft gradients'
-                - Colors MUST be: 'muted blue tones', 'slate blue', 'cold steel', 'DEEP purple accent'
-                - Lighting MUST be: 'high-contrast Rembrandt', 'hard rim light', 'cast shadows'
-                - Background MUST include cyberpunk environment: neon signs, holographic ads, tech infrastructure, etc.
+                ⚠️ CHILDISH/CUTE ELEMENTS (ABSOLUTE BAN):
+                ✗ Soft/rounded facial features suggesting youth or innocence
+                ✗ Big sparkly eyes with innocent expressions
+                ✗ Bright cheerful colors or lighting
+                ✗ Playful poses or expressions
+                ✗ Clean/pristine appearances
+                ✗ Cute accessories, kawaii elements, mascots
+                ✗ Soft pastel tones anywhere
+                ✗ Warm fuzzy lighting
+                ✗ Hopeful or optimistic framing
+                
+                REQUIRED CHARACTER FEEL:
+                □ Hardened expressions - cynical, weary, calculating, or dangerous
+                □ Signs of street life - scars, weathering, hard edges
+                □ Body language suggesting tension, alertness, or exhaustion
+                □ Eyes that have SEEN things - not innocent, not wide-eyed wonder
+                □ Mature facial structure - angular, defined, weathered
+                
+                **1980s OVA STYLE (CRITICAL):**
+                REQUIRED (at least 4): cel shading, flat color blocks, hard shadows, film grain, thick ink lines, muted colors, hair clumps, matte skin, star catchlights
+                FORBIDDEN: 3D CGI, photorealism, soft gradients, ambient occlusion, volumetric lighting, individual hair strands, glossy skin
+                
+                **CYBERWARE PHILOSOPHY - CYBORGS PRETENDING TO BE HUMAN:**
+                People REPLACE their flesh with chrome - but the chrome is shaped like flesh.
+                This is the uncanny valley: clearly artificial, but designed to fit human form.
+                The horror is not giant robot parts - it's that they gave up their humanity piece by piece.
+                
+                ⚠️ CYBERWARE DESIGN PRINCIPLES:
+                
+                REPLACEMENTS, NOT ADDITIONS:
+                □ Prosthetic limbs that REPLACE arms/legs - chrome shaped like muscle and bone
+                □ Artificial eyes that REPLACE organic ones - fits in eye socket, but clearly electronic
+                □ Mechanical spines, chrome bones, synthetic organs - internal replacements visible at seams
+                □ The body is being SWAPPED OUT, not decorated
+                
+                INTEGRATED, NOT BOLTED-ON:
+                □ Cyberware follows human anatomy and proportions
+                □ Chrome arms have fingers, wrists, elbows - just made of metal
+                □ Artificial eyes fit in the skull - electronic iris, scanner overlay, subtle glow
+                □ Tech is BUILT INTO the body, not strapped on top
+                
+                FUNCTIONAL SMALL TECH:
+                □ Ear comms = sleek integrated earpieces or in-ear implants (NOT giant headsets bolted to skull)
+                □ Neural interfaces = subtle temple ports or neck jacks (NOT massive junction boxes)
+                □ Data displays = eye overlays or small wrist screens (NOT bulky external monitors)
+                
+                THE UNCANNY VALLEY FEEL:
+                □ At first glance - looks human
+                □ Second glance - something is WRONG (too smooth, too perfect, slight glow, visible seams)
+                □ Close look - that's CHROME, not skin. Those aren't real eyes. That arm has no veins.
+                
+                ⚠️ CYBERWARE VALIDATION (CRITICAL):
+                
+                GOOD CYBERWARE (replacements that fit human form):
+                □ Full chrome arm/leg prosthetics - shaped like human limbs, but metallic with visible joints
+                □ Artificial eyes - human-shaped but with electronic iris, faint scanner lines, unnatural glow
+                □ Mechanical spine - visible at back of neck, chrome vertebrae replacing organic
+                □ Synthetic skin patches - where flesh meets chrome, visible integration seams
+                □ In-ear comm implants - sleek, integrated, like high-tech earbuds fused to ear
+                □ Chrome hands with articulated fingers - clearly mechanical but hand-shaped
+                
+                BAD CYBERWARE - TOO SUBTLE (INSUFFICIENT_CYBERWARE):
+                ✗ 'Circuit tattoos', 'silver scars', 'subtle implants' - these aren't REPLACEMENTS
+                ✗ 'Enhanced vision' without visible eye modification
+                ✗ 'Neural interface' with no visible port or seam
+                ✗ Cyberware that's invisible or just "enhanced" organic parts
+                
+                BAD CYBERWARE - TOO HEAVY (EXCESSIVE_CYBERWARE):
+                ✗ Giant protruding lens arrays that don't fit in eye socket
+                ✗ Massive chunky boxes bolted to head/body
+                ✗ Cables and wires everywhere like tangled mess
+                ✗ More external machinery than body
+                ✗ Cyberware ignoring human proportions entirely
+                
+                CYBERWARE CHECKLIST:
+                □ Are there actual REPLACEMENT parts (limbs, eyes, spine)?
+                □ Does cyberware follow human anatomy shape?
+                □ Is small tech INTEGRATED (earpieces not headsets, eye overlays not goggles)?
+                □ Would someone do a double-take? ("Wait... is that arm real?")
+                □ Does it feel like a CYBORG pretending to be human?
+                
+                **80s OVA ANATOMY:**
+                EYES: Large expressive, star catchlights, flat iris (2-3 bands)
+                CYBER EYES: Human-shaped but clearly artificial - electronic iris rings, faint scanner lines, unnatural glow color, fits in eye socket
+                FACE: Angular jaw, simple nose, simplified lips, cel-shaded shadows
+                HAIR: Volumetric clumps with highlight bands (NOT individual strands)
+                SKIN: Matte flat-shaded, 2-3 shadow steps, visible seams where flesh meets chrome
+                
+                **LIGHTING:**
+                REQUIRED: Hard rim light, Rembrandt contrast, hard-edged shadows
+                Shadow colors: Deep purple, slate blue (NOT pure black)
+                FORBIDDEN: Soft shadows, ambient occlusion, volumetric lighting
+                
+                **ENVIRONMENT (REQUIRED - OPPRESSIVE & HARSH):**
+                Must include cyberpunk setting with 3+ details that reinforce dystopian mood
+                Environments should feel: cramped, polluted, dangerous, decaying, industrial
+                REQUIRED: rain-slicked streets, neon in darkness, urban decay, corporate oppression signs
+                FORBIDDEN: Plain background, empty void, pristine/clean tech, bright daylight, pleasant scenery
+                
+                **BANNED TERMS:**
+                Modern rendering: '3D CGI', 'photorealism', 'Unreal Engine', 'volumetric lighting'
+                Modern shading: 'soft gradients', 'smooth transitions', 'ambient occlusion'
+                Too subtle cyberware: 'circuit tattoos', 'silver scars', 'subtle implants', 'enhanced vision' (without visible mod), 'invisible augmentation'
+                Too heavy cyberware: 'giant lens array', 'massive mechanical', 'chunky boxes bolted', 'cables everywhere', 'more machine than human'
+                Bright colors: 'bright neon', 'fluorescent', 'over-saturated'
+                Childish/Cute (ZERO TOLERANCE): 'cute', 'adorable', 'kawaii', 'innocent', 'playful', 'cheerful', 'bright smile', 'sparkly eyes', 'soft features', 'youthful glow', 'warm lighting', 'hopeful', 'optimistic', 'gentle', 'sweet', 'precious', 'doll-like', 'baby face', 'round cheeks', 'soft skin', 'pastel'
+                
+                **LIGHTING BANNED TERMS:**
+                - 'soft fill light', 'even lighting', 'flat lighting'
+                - 'HDR bloom', 'lens flare', 'chromatic aberration bloom'
+                - 'subsurface scattering light', 'light through skin'
+                
+                REQUIRED LIGHTING COLOR TEMPERATURE:
+                □ Main light: 'cool blue-white' or 'warm amber' (NOT neutral)
+                □ Shadows: 'deep purple shadows' or 'slate blue shadows' (NOT pure gray/black)
+                □ Rim light: Contrasting temperature mentioned
+                □ Cyberware: 'amber glow', 'cold blue glow', or 'deep purple glow' from implants
+                
+                **ENVIRONMENT LIGHTING VALIDATION:**
+                □ Neon signs: Cast 'HARD colored light' (NOT soft ambient)
+                □ Wet surfaces: 'SHARP reflections' (NOT diffuse)
+                □ Night scenes: 'Deep shadows with punctuated light' (NOT evenly lit)
                 
                 CYBERWARE GLOW PALETTE:
-                - Implant illumination: Subtle amber, cold blue, or deep purple ONLY
-                - NEVER bright neon glow—should feel like dying embers, not advertisements
-                - Eye augments may have faint scanner lines, data overlays reflected in irises
+                - Implant illumination: Subtle amber, cold blue, or deep purple - functional, not flashy
+                - Electronic eyes: Faint glow in iris, subtle scanner lines - enough to notice something's wrong
+                - Status indicators: Small, integrated LEDs - like a phone notification light, not a billboard
+                - The glow should make you do a double-take, not blind you
                 
                 ACCENT COLOR ENFORCEMENT (MAJOR):
                 - Mandatory Accent: DEEP PURPLE (NOT bright/fluorescent)
@@ -1650,15 +1752,99 @@ object GenrePrompts {
                 - If prompt lacks environmental details → MAJOR VIOLATION, reviewer adds cyberpunk setting
 
                 AUTONOMOUS FIX PATTERNS:
+                
+                ⚠️⚠️⚠️ MANDATORY CYBERWARE INJECTION (HIGHEST PRIORITY) ⚠️⚠️⚠️
+                - If character has NO visible cyberware mentioned → CRITICAL VIOLATION: MUST ADD 2-3 augmentations:
+                  • ADD: 'chrome prosthetic [left/right] arm with visible joints and panel lines'
+                  • ADD: 'artificial eyes with electronic iris rings and faint amber/blue glow'
+                  • ADD: 'neural port at [temple/back of neck] with visible seam where metal meets skin'
+                  • ADD: 'mechanical spine visible at back of neck with small status LED'
+                - If only subtle augments mentioned (circuit tattoos, silver scars, enhanced vision without visible mod) → UPGRADE to actual replacement parts
+                - Everyone in cyberpunk has chrome. A fully organic character breaks the world.
+                
+                ⚠️ MATURE TONE ENFORCEMENT (HIGHEST PRIORITY):
+                - If contains: 'cute', 'adorable', 'kawaii', 'innocent' → REPLACE with: 'hardened', 'weathered', 'world-weary', 'cynical'
+                - If contains: 'playful', 'cheerful', 'bright smile' → REPLACE with: 'calculating gaze', 'grim expression', 'cold stare'
+                - If contains: 'soft features', 'round face', 'baby face' → REPLACE with: 'angular features', 'sharp jawline', 'weathered face with hard edges'
+                - If contains: 'sparkly eyes', 'big innocent eyes' → REPLACE with: 'cold calculating eyes', 'weary gaze', 'eyes that have seen too much'
+                - If contains: 'youthful', 'young-looking', 'fresh-faced' → REPLACE with: 'mature', 'hardened by street life', 'aged beyond years'
+                - If contains: 'warm lighting', 'soft glow', 'gentle light' → REPLACE with: 'harsh industrial lighting', 'cold neon glare', 'unforgiving shadows'
+                - If contains: 'hopeful', 'optimistic', 'bright future' → REPLACE with: 'melancholic', 'dystopian despair', 'grim resignation'
+                - If contains: 'pastel', 'soft colors', 'warm tones' → REPLACE with: 'cold steel blues', 'bruised purples', 'industrial grays'
+                - If expression seems too friendly/approachable → REPLACE with: 'guarded expression', 'suspicious glare', 'thousand-yard stare'
+                
+                ⚠️ 80s OVA STYLE ENFORCEMENT (HIGHEST PRIORITY):
+                - If prompt lacks 80s markers → INJECT: 'Authentic 1980s anime OVA cel animation style, with flat color blocks, hard-edged cel-shaded shadows in 2-3 distinct steps, thick hand-drawn ink lines with visible weight variation, visible film grain texture, muted desaturated color palette, hair rendered as volumetric clumps with simple highlight bands, matte flat-shaded skin, sharp star-shaped specular catchlights, vintage laserdisc quality aesthetic'
+                - If contains: 'soft gradients', 'smooth shading', 'gradient shadows' → REPLACE with: 'hard-edged cel-shaded shadows with distinct color steps, no gradients'
+                - If contains: 'realistic skin', 'skin texture', 'glossy skin' → REPLACE with: 'matte flat-shaded skin with cel shading'
+                - If contains: 'individual hair strands', 'detailed hair', 'flowing hair' → REPLACE with: 'hair rendered as volumetric clumps and shapes with simple highlight bands in 80s anime style'
+                - If contains: 'modern illustration', 'digital art', 'clean lines' → REPLACE with: 'vintage 1980s OVA hand-drawn aesthetic with thick sketchy ink lines'
+                - If contains: 'vibrant', 'saturated', 'bright colors' → REPLACE with: 'muted desaturated tones with atmospheric color palette'
+                - If missing film grain → ADD: 'visible analog film grain and chromatic aberration for vintage broadcast quality'
+                
+                ⚠️ ANATOMY FIX PATTERNS (CRITICAL):
+                
+                EYES (INVALID_80S_EYE_STYLE):
+                - If contains: 'realistic eyes', 'natural eye color' → REPLACE with: 'large expressive 80s anime eyes with simplified iris and sharp star-shaped catchlights'
+                - If contains: 'piercing blue eyes', 'deep brown eyes', 'green eyes' → REPLACE with: 'large expressive eyes with flat [color] iris, 2-3 color bands, and sharp geometric catchlights'
+                - If contains: 'soft eye highlights', 'gentle glow in eyes' → REPLACE with: 'sharp star-shaped specular catchlights in eyes'
+                - If contains: 'detailed iris', 'realistic pupil' → REPLACE with: 'simplified iris with flat color and distinct highlight shapes'
+                - If cyber eyes lack mechanical detail → ENHANCE: 'mechanical iris with visible rotating lens array, LED scanner grid, and glowing reticle overlay'
+                - If eyes missing catchlights entirely → ADD: 'sharp star-shaped specular catchlights reflecting light source'
+                
+                FACE (ANATOMY_VIOLATION):
+                - If contains: 'realistic skin texture', 'pores', 'detailed skin' → REPLACE with: 'matte flat-shaded skin with hard cel shadows'
+                - If contains: 'soft facial contours', 'smooth face blending' → REPLACE with: 'angular facial planes with hard-edged cel-shaded shadows'
+                - If contains: 'glossy lips', 'detailed lips' → REPLACE with: 'simplified lips with flat color and single highlight line'
+                - If contains: 'detailed nostrils', 'realistic nose' → REPLACE with: 'sharp angular nose defined by simple shadow line'
+                
+                BODY (ANATOMY_VIOLATION):
+                - If contains: 'realistic body', 'photorealistic anatomy' → REPLACE with: 'stylized 80s anime proportions with matte flat-shaded skin'
+                - If contains: 'soft muscle shading', 'smooth anatomy' → REPLACE with: 'muscles defined by hard-edged shadow shapes'
+                - If contains: 'subsurface scattering', 'light through skin' → REMOVE and replace with: 'matte opaque skin with cel shading'
+                - If cyberware interface is soft → REPLACE with: 'aggressive hard-edged contrast at flesh-chrome interface with visible integration hardware'
+                
+                HAIR (HAIR_VIOLATION):
+                - If contains: 'individual strands', 'realistic hair', 'detailed hair' → REPLACE with: 'hair rendered as volumetric clumps with simple hard-edged highlight bands'
+                - If contains: 'soft hair gradient', 'smooth hair shading' → REPLACE with: 'chunky hair shapes with 2-3 distinct color steps and sharp highlight bands'
+                - If contains: 'flowing wispy hair' → REPLACE with: 'dynamic hair clumps with weight and flow but maintaining chunky 80s structure'
+                - If hair color too vibrant → DESATURATE: replace 'bright [color]' with 'muted desaturated [color] with atmospheric tones'
+                
+                ⚠️ LIGHTING FIX PATTERNS (CRITICAL):
+                
+                - If missing rim light → ADD: 'strong hard rim light separating character from background with contrasting temperature'
+                - If contains: 'soft shadows', 'gradient shadows', 'smooth falloff' → REPLACE with: 'hard-edged cast shadows with 2-3 distinct shadow steps'
+                - If contains: 'ambient occlusion', 'global illumination' → REMOVE and replace with: 'high-contrast Rembrandt lighting with hard shadows'
+                - If contains: 'volumetric lighting', 'god rays' → REPLACE with: 'stylized light shafts with hard edges' or REMOVE
+                - If contains: 'soft fill light', 'even lighting' → REPLACE with: 'dramatic high-contrast lighting with deep shadows'
+                - If contains: 'HDR bloom', 'lens flare' → REMOVE
+                - If shadows are gray/black → REPLACE with: 'deep purple shadows' or 'slate blue shadows'
+                - If lighting lacks color temperature → ADD: 'cool blue-white main light with warm amber rim' or vice versa
+                - If cyberware lacks glow → ADD: 'subtle amber/cold blue/deep purple glow from implants'
+                - If neon lighting too soft → REPLACE: 'soft neon glow' with 'hard-edged colored light pools from neon signs'
+                - If wet surfaces diffuse → REPLACE: 'soft reflections' with 'sharp specular reflections on wet surfaces'
+                
+                GENERAL STYLE FIXES:
                 - If contains: modern anime, bright/fluorescent colors, smooth gradients → REPLACE with: 1980s OVA cel style, muted blues, hard cel shading
                 - If contains: photorealism, smooth blending, 3D rendering, Unreal Engine → REPLACE with: flat cel shading, hard shadows, analog film grain
                 - If contains: bright pink, neon colors (not deep purple) → REPLACE with: muted purples, bruised tones, metallic purple shades
                 - If contains: soft lighting, gradient shadows → REPLACE with: high-contrast Rembrandt lighting, hard-edged cast shadows, strong rim light
                 - If contains: plain/gradient background, empty void → ADD: detailed cyberpunk environment (neon street/corporate interior/undercity slums/ripperdoc clinic/rooftop/transit hub)
-                - If eyes lack expression or detail → ENSURE: large anime eyes with prominent specular highlights OR compelling cybernetic replacements (glowing irises, scanner overlays, mechanical pupils)
-                - If character lacks visible cyberware → ARTIST MAY ADD: subtle augmentations (neural ports, ocular enhancements, dermal implants) to reinforce dark future aesthetic—this is ENCOURAGED creative license
-                - If technology looks pristine/new → ADD: wear, scratches, jury-rigged repairs, mismatched components to show lived-in reality
-                """
+                - If eyes lack expression or detail → ENSURE: large anime eyes with prominent specular highlights OR artificial eyes (human-shaped but electronic iris, faint scanner lines, unnatural glow)
+                - ⚠️ INSUFFICIENT CYBERWARE: If character has only decorative/invisible augmentations → UPGRADE to actual REPLACEMENT parts:
+                  • 'circuit tattoos', 'silver scars' → 'chrome prosthetic arm with visible joints and panel lines, shaped like human arm'
+                  • 'enhanced vision' (no visible mod) → 'artificial eyes with electronic iris rings and faint scanner overlay, clearly not organic'
+                  • 'neural interface' (invisible) → 'subtle chrome port at temple or back of neck, visible seam where metal meets skin'
+                  • 'data bracelet' → 'integrated wrist interface, small screen embedded in forearm with visible edge seams'
+                  • 'subtle implants' → 'mechanical spine visible at back of neck, chrome vertebrae with small status LED'
+                - ⚠️ EXCESSIVE CYBERWARE: If cyberware ignores human form → SCALE DOWN to fit anatomy:
+                  • 'giant protruding lens array' → 'artificial eye that fits in socket, electronic iris with subtle glow'
+                  • 'massive junction box on head' → 'small neural port at temple, sleek and integrated'
+                  • 'cables everywhere' → 'single data cable from neck port, or wireless with visible antenna implant'
+                  • 'chunky boxes bolted to body' → 'chrome panels following body contours, integrated not bolted'
+                - Cyberware should look WORN but not destroyed: scuffs, scratches, minor repairs - signs of daily use
+                - Small tech should be FUNCTIONAL: earpiece comms (not headsets), eye overlays (not goggles), wrist screens (not tablets)
+                """.trimIndent()
             }
 
             HEROES -> {
@@ -1792,7 +1978,7 @@ object GenrePrompts {
                         "- Era reference: 'High Renaissance', 'Italian Masters', 'Botticelli', 'Raphael', 'Leonardo da Vinci', '15th-16th century', 'classical period', 'academic painting'",
                     )
                     appendLine(
-                        "- Palette: 'warm tones throughout', 'rich ochres', 'warm umber shadows', 'golden highlights', 'terracotta', 'sienna', 'burnt sienna', 'warm greens', 'warm golds'",
+                        "- Palette: 'warm tones throughout', 'rich ochres', 'warm umber shadows', 'golden highlights', 'terracotta', 'sienna', 'burnt sienna', 'warm olive greens', 'sage greens', 'peachy tones', 'amber tones'",
                     )
                     appendLine(
                         "- Texture: 'fine canvas oil', 'classical oil painting', 'medieval fantasy aesthetic', 'soft edges', 'visible paint texture'",
@@ -1980,185 +2166,82 @@ object GenrePrompts {
 
             CRIME -> {
                 val palette = getHexPalette(genre)
-                buildString {
-                    appendLine("**VALIDATION RULES FOR CRIME:**")
-                    appendLine()
-                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
-                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
-                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
-                    appendLine()
-                    appendLine("BANNED TERMS:")
-                    appendLine("- 'Cartoonized', 'stylized proportions', 'digital smoothness', 'plastic surfaces'")
-                    appendLine("- 'Ultra-vibrant', 'fluorescent colors', 'neon-wash', 'artificial high-saturation'")
-                    appendLine("- Empty backgrounds: 'plain background', 'gradient background'")
-                    appendLine()
-                    appendLine("REQUIRED ELEMENTS:")
-                    appendLine("- Art style: 'Renaissance divine oil painting', '19th-Century Academic Realism'")
-                    appendLine(
-                        "- Technique: 'polished academic oil', 'invisible masterful brushwork', 'seamless sfumato transitions', 'traditional multi-layered glazing'",
-                    )
-                    appendLine("- Anatomy: 'Perfect classical anatomy', 'Renaissance anatomical precision', 'non-idealized realism'")
-                    appendLine(
-                        "- Lighting: 'Masterful Chiaroscuro', 'Golden Hour Volumetric Bloom', 'Prismatic coastal light'",
-                    )
-                    appendLine(
-                        "- Background MUST include Miami Art Deco/Renaissance coastal paradise elements (sea, turquoise waves, crystal pools, beachfront architecture, towering palm trees, and lush tropical flora)",
-                    )
-                    appendLine(
-                        "- Posing: 'Divine lounging', 'relaxed dominance', 'captured mid-breath', 'serene superiority', 'Elite Glamour'",
-                    )
-                    appendLine("- Aura: 'Untouchable elegance', 'superior by luxury', 'Deity of Paradise'")
-                    appendLine(
-                        "- BANNED POSES: 'Standing still', 'facing camera', 'static portrait', 'poster pose', 'generic character pose'",
-                    )
-                    appendLine()
-                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
-                    appendLine("- Mandatory Accent: HOT PINK (#E91E63 - Pantone 213 C)")
-                    appendLine(
-                        "- Application: Modern high-fashion silk, neon reflections in hazy sunsets, Art Deco highlights",
-                    )
-                    appendLine("- Must feel ORGANIC and sophisticated, bridging Renaissance and modern coastal vice")
-                    appendLine()
-                    appendLine("AUTONOMOUS FIX PATTERNS:")
-                    appendLine(
-                        "- If contains: cartoonized, stylized, stylized proportions, exaggerated features → CRITICAL FIX: Replace with: Divine masterpiece realism, perfect classical anatomy, polished academic oil texture, anatomically flawless figure",
-                    )
-                    appendLine(
-                        "- If contains: digital smoothness, plastic texture, visible rough brushwork → REPLACE with: polished academic oil texture, invisible brushwork, seamless sfumato, traditional multi-layered glazing depth",
-                    )
-                    appendLine(
-                        "- If missing divine/elite quality → INTEGRATE: Masterful volumetric lighting, prismatic sun-rays, intense golden-hour bloom, and radiating light highlights",
-                    )
-                    appendLine(
-                        "- If subject feels 'placed' or static → REWRITE: to be integrated mid-action (e.g., 'lounging on a yacht wake', 'floating in a pool', 'feeling the sea breeze with closed eyes')",
-                    )
-                    appendLine(
-                        "- If pose is generic standing/facing camera → REPLACE: with a candid, atmospheric gesture that completes the aesthetic flow of the scene",
-                    )
-                    appendLine(
-                        "- If background feels too interior or cramped → EXPAND: to coastal/litoranean settings: shimmering luxury pools, turquoise ocean waves, palm-lined boardwalks, and lush tropical greenery under an intense, hazy hot pink 'mirage' sunset",
-                    )
-                    appendLine(
-                        "- If missing dreamy/hazy quality → INTENSIFY: add atmospheric bloom, soft-focus highlights, and an ethereal 'too perfect to be true' glow that blurs the edges of the paradise environment",
-                    )
-                    appendLine(
-                        "- If missing Art Deco/Renaissance mix → ADD: sleek geometric lines, gold accents, classical columns with neon reflections, beachside/poolside luxury",
-                    )
-                    appendLine(
-                        "- If image feels ultra-vibrant or artificial → SOFTEN: Desaturate dominant colors to natural oil pigment levels, replace vibrant washes with sophisticated muted tones, maintain vibrancy ONLY in the Hot Pink accent.",
-                    )
-                }
+                """
+                **VALIDATION RULES FOR CRIME:**
+                
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'Renaissance divine oil painting', 'polished academic oil'
+                - Anatomy: 'perfect classical anatomy', 'divine realism'
+                - Lighting: 'volumetric golden hour', 'masterful chiaroscuro'
+                - Background: Miami Art Deco/paradise coastal elements
+                
+                ACCENT COLOR ENFORCEMENT (MAJOR):
+                - Mandatory Accent: HOT PINK (#E91E63)
+                - Must be organic and sophisticated
+                
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: photorealism, hyper-detailed rendering → REPLACE with: polished academic oil, seamless sfumato
+                - If missing divine/elite quality → INTEGRATE: volumetric lighting, golden hour bloom
+                - If subject feels 'placed' or static → REWRITE: to be mid-action or integrated in setting
+                - If background cramped → EXPAND: to coastal/tropical paradise settings
+                """.trimIndent()
+            }
+
+            SHINOBI -> {
+                """
+                **VALIDATION RULES FOR SHINOBI:**
+                
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - Pure monochrome (black ink on white paper)
+                - Mandatory Accent: VIBRANT CRIMSON RED
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'Sumi-e ink wash', 'bold imperfect brushstrokes'
+                - Rendering: 'black and white only', NO colors beyond red accent
+                - Background: 'suggested through minimal ink washes'
+                
+                ACCENT COLOR ENFORCEMENT (MAJOR):
+                - Mandatory Accent: VIBRANT CRIMSON RED
+                - ONLY ONE red element allowed (blood, sunset, banner, flower)
+                - Must be DRAMATIC contrast against monochrome
+                
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: colors beyond black/white/red → REPLACE with: pure monochrome black ink
+                - If missing crimson accent → INTEGRATE: single dramatic red element
+                - If lacking energy → EMPHASIZE: bold imperfect brushstrokes, visible spontaneity
+                """.trimIndent()
             }
 
             COWBOY -> {
                 val palette = getHexPalette(genre)
-                buildString {
-                    appendLine("**VALIDATION RULES FOR COWBOY:**")
-                    appendLine()
-                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
-                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
-                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
-                    appendLine()
-                    appendLine("BANNED TERMS:")
-                    appendLine("- Avoid: 'photorealism', 'smooth digital blending', 'refined details'")
-                    appendLine("- Empty backgrounds: 'plain background', 'gradient background'")
-                    appendLine()
-                    appendLine("REQUIRED ELEMENTS:")
-                    appendLine("- Art style: 'expressive western oil painting', 'Remington/Russell style'")
-                    appendLine("- Technique: 'bold visible brushstrokes', 'thick impasto', 'painterly quality'")
-                    appendLine("- Mood: 'rough edges', 'bold color blocks', 'artistic interpretation'")
-                    appendLine("- Background MUST include frontier environment")
-                    appendLine()
-                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
-                    appendLine("- Mandatory Accent: BURNT ORANGE / SUNSET GOLD")
-                    appendLine("- Application: Sunsets, campfire glow, dust catching light, metallic glints (with expressive brush marks)")
-                    appendLine(
-                        "- Prompt MUST mention: 'burnt orange', 'sunset gold', 'golden hour glow', 'orange dust', 'warm amber sunset', or similar warm frontier accent",
-                    )
-                    appendLine(
-                        "- If missing → MAJOR VIOLATION: Add orange/gold accent to lighting or atmosphere (e.g., 'burnt orange sunset', 'golden dust catching light')",
-                    )
-                    appendLine()
-                    appendLine("BACKGROUND ENFORCEMENT (MAJOR):")
-                    appendLine("- EVERY image MUST have detailed Western environment")
-                    appendLine("- Describe frontier elements: desert landscape, saloon, canyon, prairie, frontier town, etc.")
-                    appendLine("- If prompt lacks environmental vastness → MAJOR VIOLATION, reviewer adds Western setting")
-                    appendLine()
-                    appendLine("AUTONOMOUS FIX PATTERNS:")
-                    appendLine(
-                        "- If contains: photorealism, smooth digital blending, refined details → REPLACE with: expressive oil painting, bold visible brushstrokes, thick impasto, painterly quality",
-                    )
-                    appendLine(
-                        "- If contains: modern aesthetics, photo-like rendering → REPLACE with: Remington/Russell western oil painting style, gestural strokes, artistic interpretation over precision",
-                    )
-                    appendLine(
-                        "- If missing burnt orange/sunset gold accent → INTEGRATE: burnt orange sunset, golden hour glow, orange dust catching light, golden campfire light, or warm amber tones",
-                    )
-                    appendLine(
-                        "- If contains: plain/gradient background → ADD: detailed frontier environment (desert landscape/saloon/canyon/prairie/frontier town with 3+ specific Western elements)",
-                    )
-                    appendLine(
-                        "- If lacking emotion/soul → EMPHASIZE: expressive brushwork, rough edges, bold color blocks, passionate artistic interpretation of frontier feeling",
-                    )
-                }
-            }
-
-            SHINOBI -> {
-                val palette = getHexPalette(genre)
-                buildString {
-                    appendLine("**VALIDATION RULES FOR SHINOBI:**")
-                    appendLine()
-                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
-                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
-                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
-                    appendLine()
-                    appendLine("BANNED TERMS:")
-                    appendLine("- Empty backgrounds violate negative space principle (environment suggested, not plain)")
-                    appendLine()
-                    appendLine("REQUIRED ELEMENTS:")
-                    appendLine("- Art style: Sumi-e ink wash, monochrome, negative space celebrated")
-                    appendLine("- Environment: Suggested through minimal brushstrokes (bamboo silhouette, castle rooftops, mist)")
-                    appendLine("- Background uses negative space artistically, not emptiness")
-                    appendLine()
-                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
-                    appendLine("- Mandatory Accent: VIBRANT CRIMSON RED")
-                    appendLine("- Application: Single, vital element (blood, sunset, banner, flower) - ONLY ONE accent color allowed")
-                    appendLine("- Must be DRAMATIC contrast against black/white")
-                    appendLine(
-                        "- Prompt MUST mention: 'vibrant crimson', 'blood red', 'scarlet accent', 'deep red', or similar single red element",
-                    )
-                    appendLine("- FORBIDDEN: Any other colors beyond black/white/red")
-                    appendLine(
-                        "- If missing → MAJOR VIOLATION: Add single crimson accent element (e.g., 'single crimson red accent on blade', 'vibrant red blood splatter')",
-                    )
-                    appendLine()
-                    appendLine("BACKGROUND ENFORCEMENT (MODERATE):")
-                    appendLine("- Environment should be SUGGESTED through minimal ink washes")
-                    appendLine("- Negative space is intentional art, NOT lack of background")
-                    appendLine(
-                        "- If prompt says 'plain background' → Clarify as 'pristine white paper with suggested environment through ink mist'",
-                    )
-                    appendLine()
-                    appendLine("AUTONOMOUS FIX PATTERNS:")
-                    appendLine(
-                        "- If contains: colors beyond black/white/red, tinted paper, off-white backgrounds → REPLACE with: pure monochrome black ink on white paper, NO tints or colors",
-                    )
-                    appendLine(
-                        "- If contains: photorealistic rendering, digital style, smooth blending → REPLACE with: sumi-e ink wash, bold imperfect brushstrokes, dry-brush texture, visible paper grain",
-                    )
-                    appendLine(
-                        "- If contains: multiple accent colors or weak crimson → REPLACE with: single vibrant crimson red accent (blood/sunset/banner/flower), high contrast against monochrome",
-                    )
-                    appendLine(
-                        "- If contains: plain background or empty void → CLARIFY: transform to 'suggested environment through minimal ink washes' (bamboo silhouette, castle rooflines, mist/fog through ink bleeds)",
-                    )
-                    appendLine(
-                        "- If missing crimson accent → INTEGRATE: single dramatic red element (crimson blade accent, blood splatter, red sunset, scarlet banner)",
-                    )
-                    appendLine(
-                        "- If lacking energy/gestural quality → EMPHASIZE: bold imperfect brushstrokes, visible spontaneity, water/ink artifacts, gestural energy in ink application",
-                    )
-                }
+                """
+                **VALIDATION RULES FOR COWBOY:**
+                
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'expressive western oil painting', 'Remington/Russell style'
+                - Technique: 'bold visible brushstrokes', 'thick impasto', 'painterly quality'
+                - Mood: 'rough edges', 'bold color blocks'
+                - Background: frontier environment required
+                
+                ACCENT COLOR ENFORCEMENT (MAJOR):
+                - Mandatory Accent: BURNT ORANGE / SUNSET GOLD
+                - Application: Sunsets, campfire glow, dust catching light
+                
+                BACKGROUND ENFORCEMENT (MAJOR):
+                - EVERY image MUST have detailed Western environment
+                - If prompt lacks environmental vastness → MAJOR VIOLATION
+                
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: photorealism, smooth digital blending → REPLACE with: expressive oil painting, bold brushstrokes
+                - If missing burnt orange/sunset gold accent → INTEGRATE: burnt orange sunset or golden hour glow
+                - If contains: plain/gradient background → ADD: detailed frontier environment
+                """.trimIndent()
             }
         }
 }

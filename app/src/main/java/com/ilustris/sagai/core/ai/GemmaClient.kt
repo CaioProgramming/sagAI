@@ -43,7 +43,7 @@ class GemmaClient
             const val INPUT_TOKEN_LIMIT = 15000
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
             const val MAX_RETRIES = 2
-            const val RETRY_DELAY = 10
+            const val RETRY_DELAY = 20
         }
 
         enum class ModelRequirement(
@@ -285,9 +285,9 @@ class GemmaClient
                     fieldType == String::class.java -> true
                     fieldType.isPrimitive || fieldType.isEnum -> false
                     else -> containsStringFields(fieldType, visited)
+                }
             }
         }
-    }
     }
 
 const val KEY_FLAG = "FIREBASE_KEY"

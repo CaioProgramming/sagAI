@@ -1099,14 +1099,15 @@ class ChatViewModel
                             sceneSummary = sceneSummary,
                             isAudio = isAudio,
                         )
-                        if (newMessage.message.status == MessageStatus.ERROR || newMessage.message.status == MessageStatus.LOADING) {
+
+                        sagaContentManager.setProcessing(false)
+                        if (newMessage.message.status != MessageStatus.OK) {
                             messageUseCase.updateMessage(
-                                newMessage.message.copy(
+                                message.copy(
                                     status = MessageStatus.OK,
                                 ),
                             )
                         }
-                        sagaContentManager.setProcessing(false)
                         delay(3.seconds)
                         generateSuggestions(sceneSummary)
                     }.onFailureAsync {

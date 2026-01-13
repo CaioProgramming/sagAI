@@ -50,6 +50,19 @@ object CharacterPrompts {
             appendLine("- Don't force info into fields if it doesn't fit naturally")
             appendLine("- Keep what's already good unless they're clearly changing it")
             appendLine("- Remember: we're building a living character, not filling a database")
+
+            // Genre-specific guidance
+            sagaContext?.let {
+                if (it.genre.name == "CYBERPUNK") {
+                    appendLine()
+                    appendLine("⚠️ CYBERPUNK GENRE RULE:")
+                    appendLine("- If the user hasn't mentioned cyberware, SUGGEST adding some - everyone in this world has chrome")
+                    appendLine(
+                        "- Acceptable cyberware: prosthetic limbs, artificial eyes, neural ports, mechanical spine, integrated comms",
+                    )
+                    appendLine("- These are REPLACEMENTS that fit human form (cyborgs pretending to be human)")
+                }
+            }
         }
 
     fun identifyNextCharacterFieldPrompt(characterInfo: CharacterInfo): String =
@@ -146,12 +159,24 @@ object CharacterPrompts {
                     appendLine(
                         "- Focus on: distinctive features, what they say about the character, scars/marks with stories, style choices that reveal character",
                     )
-                    appendLine(
-                        "- Examples: \"Weathered hands and kind eyes, always in practical clothes with hidden pockets\"",
-                    )
-                    appendLine(
-                        "         \"Sharp features framed by wild hair, moves like a dancer, dresses to intimidate\"",
-                    )
+                    if (sagaContext?.genre?.name == "CYBERPUNK") {
+                        appendLine(
+                            "- ⚠️ CYBERPUNK: MUST include visible cyberware (prosthetic limbs, artificial eyes, neural ports, mechanical spine). Everyone in this world has chrome - it's survival, not choice.",
+                        )
+                        appendLine(
+                            "- Examples: \"Chrome left arm with visible joints, artificial eyes with amber glow, neural port scars at temples\"",
+                        )
+                        appendLine(
+                            "         \"Mechanical spine visible at neck, prosthetic legs from the knees down, in-ear comm implants\"",
+                        )
+                    } else {
+                        appendLine(
+                            "- Examples: \"Weathered hands and kind eyes, always in practical clothes with hidden pockets\"",
+                        )
+                        appendLine(
+                            "         \"Sharp features framed by wild hair, moves like a dancer, dresses to intimidate\"",
+                        )
+                    }
                 }
 
                 else -> {
@@ -246,6 +271,19 @@ object CharacterPrompts {
             appendLine()
             if (sagaContext?.genre != null) {
                 appendLine("Make sure character suggestions fit the ${sagaContext.genre.name} genre and complement the saga world!")
+                if (sagaContext.genre.name == "CYBERPUNK") {
+                    appendLine()
+                    appendLine("⚠️ CYBERPUNK MANDATORY CYBERWARE RULE:")
+                    appendLine("In this world, EVERYONE has cyberware. It's not optional - it's survival.")
+                    appendLine("Every character suggestion MUST include visible cybernetic augmentations:")
+                    appendLine("  • Prosthetic limbs (chrome arms/legs shaped like human limbs)")
+                    appendLine("  • Artificial eyes (electronic iris, scanner lines, unnatural glow)")
+                    appendLine("  • Neural ports (at temples, neck, or spine)")
+                    appendLine("  • Mechanical spine sections")
+                    appendLine("  • Integrated tech (in-ear comms, wrist interfaces)")
+                    appendLine("The cyberware should be REPLACEMENTS that fit human form - cyborgs pretending to be human.")
+                    appendLine("NOT circuit tattoos or subtle implants (too light), NOT giant chunky robot parts (too heavy).")
+                }
             }
             appendLine(
                 "Each suggestion should make the user think 'I want to know more about this person' and feel like a character they'd root for or against.",
@@ -344,6 +382,29 @@ object CharacterPrompts {
             "- **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
         )
         appendLine()
+
+        // Genre-specific mandatory elements
+        if (saga.data.genre.name == "CYBERPUNK") {
+            appendLine("## ⚠️ CYBERPUNK MANDATORY CYBERWARE ⚠️")
+            appendLine("In this world, EVERYONE has cyberware. This is NOT optional - it's survival.")
+            appendLine("Even if the discovery seed doesn't mention augmentations, you MUST add them to the character.")
+            appendLine("A fully organic character is a CRITICAL VIOLATION in cyberpunk.")
+            appendLine()
+            appendLine("**REQUIRED: Include 2-4 of these visible augmentations:**")
+            appendLine("  • Prosthetic limbs - chrome arms/legs shaped like human limbs with visible joints")
+            appendLine("  • Artificial eyes - electronic iris, scanner lines, unnatural glow (fits in socket)")
+            appendLine("  • Neural ports - at temples, neck, or spine base with visible seams")
+            appendLine("  • Mechanical spine - chrome vertebrae visible at back of neck")
+            appendLine("  • Integrated comms - in-ear implants, throat mics embedded in neck")
+            appendLine("  • Wrist interfaces - small screens embedded in forearm")
+            appendLine()
+            appendLine("**CYBERWARE PHILOSOPHY:** Cyborgs pretending to be human.")
+            appendLine("  • Replacements that fit human form (NOT giant chunky robot parts)")
+            appendLine("  • Clearly artificial but shaped like flesh (the uncanny valley)")
+            appendLine("  • Worn, used, signs of daily life (NOT pristine or brand new)")
+            appendLine("  • NOT subtle circuit tattoos or silver scars (too light)")
+            appendLine()
+        }
 
         appendLine("## ✨ RADICAL DIVERSITY & UNIQUE PERSONAS ✨")
         appendLine("Break away from common standards. Your characters should reflect a rich, global range of human and humanoid forms.")

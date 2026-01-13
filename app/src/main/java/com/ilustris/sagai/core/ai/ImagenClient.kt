@@ -27,12 +27,6 @@ import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
-    suspend fun generateImage(
-        prompt: String,
-        references: List<ImageReference> = emptyList(),
-        canByPass: Boolean = false,
-    ): Bitmap?
-
     suspend fun generateIntegratedImage(
         genre: Genre,
         imageReference: Pair<Bitmap, String>?,
@@ -59,10 +53,9 @@ class ImagenClientImpl
             remoteConfigService.getString(IMAGE_PREMIUM_MODEL_FLAG)
                 ?: error("Couldn't find model for Image generation")
 
-        override suspend fun generateImage(
+        private suspend fun generateImage(
             prompt: String,
             references: List<ImageReference>,
-            canByPass: Boolean,
         ): Bitmap? {
             val modelName = modelName()
             val logData =
@@ -146,15 +139,24 @@ class ImagenClientImpl
                         finalPrompt = artisticPrompt,
                     ).getSuccess()
 
+                reviewedResult?.let {
+                    Log.d(TAG, "⚖️ Final prompt reviewed.")
+                } ?: run {
+                    Log.e(TAG, "generateIntegratedImage: Failed to review")
+                }
                 val finalPrompt = reviewedResult?.correctedPrompt ?: artisticPrompt
-                Log.d(TAG, "⚖️ Final prompt reviewed.")
 
-                // 4. IMAGE GENERATION
-                val generatedImage =
-                    generateImage(finalPrompt) ?: error("Failed to generate image from prompt")
-                Log.i(TAG, "✅ Image successfully generated.")
+                val generatedImage = generateImage(finalPrompt, references = emptyList())
 
-                generatedImage
+                Log.d(TAG, "generateIntegratedImage: Used reference: ${imageReference.second}")
+
+                if (generatedImage == null) {
+                    Log.e(TAG, "Failed to generate image")
+                } else {
+                    Log.i(TAG, "✅ Image successfully generated.")
+                }
+
+                generatedImage!!
             }
 
         private suspend fun extractComposition(bitmap: Bitmap?) =
@@ -211,6 +213,7 @@ class ImagenClientImpl
                     artStyleValidationRules,
                     strictness,
                     finalPrompt,
+                    genre,
                 )
 
             Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")

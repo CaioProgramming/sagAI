@@ -104,8 +104,12 @@ fun CounterText(
     animationEasing: Easing = EaseIn,
     modifier: Modifier = Modifier,
 ) {
+    var counter by remember {
+        mutableIntStateOf(0)
+    }
+
     val countAnimation by animateIntAsState(
-        targetValue = count,
+        targetValue = counter,
         animationSpec =
             tween(
                 durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS),
@@ -118,6 +122,10 @@ fun CounterText(
         style = textStyle,
         modifier = modifier,
     )
+
+    LaunchedEffect(count) {
+        counter = count
+    }
 }
 
 enum class LabelOrientation {

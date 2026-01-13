@@ -4,39 +4,312 @@ import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 object ImagePrompts {
+    /**
+     * Genre-critical rules that MUST be at the TOP of prompts.
+     * These define the SOUL of each genre - the elements that make it unmistakably that style.
+     */
+    private fun genreCriticalRules(genre: Genre): String =
+        buildString {
+            when (genre) {
+                Genre.CYBERPUNK -> {
+                    appendLine("⚠️⚠️⚠️ CYBERPUNK MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. MANDATORY CYBERWARE - EVERYONE has chrome. Not optional. Add 2-3 visible augmentations:")
+                    appendLine("   • Prosthetic limb (chrome arm/leg shaped like human limb, visible joints)")
+                    appendLine("   • Artificial eyes (electronic iris, scanner lines, unnatural glow - fits in socket)")
+                    appendLine("   • Neural port (at temple/neck/spine - visible seam where metal meets skin)")
+                    appendLine("   • Mechanical spine (chrome vertebrae at back of neck)")
+                    appendLine("   REPLACEMENTS that fit human form. NOT circuit tattoos. NOT giant robot parts.")
+                    appendLine()
+                    appendLine("2. MATURE TONE - Gritty, melancholic, world-weary. NO cute/innocent/playful elements.")
+                    appendLine()
+                    appendLine("3. 1980s OVA STYLE - Cel shading, hard shadows, film grain, muted colors, thick ink lines.")
+                    appendLine()
+                }
+
+                Genre.PUNK_ROCK -> {
+                    appendLine("⚠️⚠️⚠️ PUNK ROCK MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. CARTOON STYLE - This is GORILLAZ/KND style cartoon, NOT realistic art.")
+                    appendLine("   Characters are 2D CARTOON CHARACTERS with exaggerated features.")
+                    appendLine()
+                    appendLine("2. EYES - ONLY these 3 options (NO realistic eye colors):")
+                    appendLine("   • Simplified stylized (almond shape, X-eyes, single line)")
+                    appendLine("   • Full white with no pupil")
+                    appendLine("   • Black void (classic Gorillaz)")
+                    appendLine("   BANNED: 'brown eyes', 'blue eyes', 'green eyes', any natural eye color.")
+                    appendLine()
+                    appendLine("3. MANDATORY BACKGROUND - Every image needs detailed environment.")
+                    appendLine("   Include: graffiti, amps, neon signs, posters, brick walls.")
+                    appendLine("   BANNED: plain/gradient/white/solid color backgrounds.")
+                    appendLine()
+                    appendLine("4. FLAT RENDERING - Hard cel-shading, flat colors, bold outlines.")
+                    appendLine("   BANNED: soft lighting, soft gradients, realistic rendering.")
+                    appendLine()
+                }
+
+                Genre.HORROR -> {
+                    appendLine("⚠️⚠️⚠️ HORROR MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. 32-BIT PIXEL ART - PS1/Sega Saturn retro game aesthetic.")
+                    appendLine("   Blocky shading, pixelated texture, limited color palette.")
+                    appendLine()
+                    appendLine("2. DARK BLUE PALETTE - Limited to dark blues, pale blues, ash grays.")
+                    appendLine("   BANNED: bright colors, vibrant tones, warm colors.")
+                    appendLine()
+                    appendLine("3. MANDATORY EERIE ENVIRONMENT - NO empty backgrounds.")
+                    appendLine("   Include 3+ elements: abandoned hospital, foggy street, dark forest, etc.")
+                    appendLine()
+                    appendLine("4. PSYCHOLOGICAL HORROR - Oppressive mood, creeping dread.")
+                    appendLine("   Focus on atmosphere over explicit gore.")
+                    appendLine()
+                }
+
+                Genre.FANTASY -> {
+                    appendLine("⚠️⚠️⚠️ FANTASY MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. CLASSICAL OIL PAINTING - Romantic academic style (Waterhouse, Leighton).")
+                    appendLine("   Visible brushwork, luminous glazing, sfumato transitions.")
+                    appendLine("   BANNED: digital art, concept art, anime, modern illustration.")
+                    appendLine()
+                    appendLine("2. CRIMSON RED DOMINANCE - Red must dominate the composition.")
+                    appendLine("   Crimson skies, red fabrics, rose gardens, sunset light.")
+                    appendLine("   Accent: Radiant gold for divine/mystical elements.")
+                    appendLine()
+                    appendLine("3. CLASSICAL ANATOMY - Renaissance proportions, graceful poses.")
+                    appendLine("   BANNED: exaggerated muscles, comic book proportions.")
+                    appendLine()
+                    appendLine("4. MANDATORY BACKGROUND - Classical environments with red integration.")
+                    appendLine("   BANNED: plain backgrounds, cool blues, greens.")
+                    appendLine()
+                }
+
+                Genre.HEROES -> {
+                    appendLine("⚠️⚠️⚠️ HEROES MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. MODERN COMIC BOOK STYLE - Bold ink lines, dynamic foreshortening.")
+                    appendLine("   Think: Into the Spider-Verse meets Arkham City concept art.")
+                    appendLine()
+                    appendLine("2. URBAN VERTICALITY - Vast cityscapes, towering skyscrapers.")
+                    appendLine("   Dizzying perspectives, looking up/down at buildings.")
+                    appendLine()
+                    appendLine("3. ELECTRIC BLUE ACCENT - In sky, reflections, rim lighting.")
+                    appendLine("   Subtle unifying element, not dominant wash.")
+                    appendLine()
+                    appendLine("4. HEROIC POSING - Dynamic, vertical, larger-than-life.")
+                    appendLine("   Low angles looking up, or high vantage points.")
+                    appendLine()
+                }
+
+                Genre.CRIME -> {
+                    appendLine("⚠️⚠️⚠️ CRIME MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. RENAISSANCE MASTERPIECE - High Renaissance + Art Deco glamour.")
+                    appendLine("   Perfect anatomy, polished academic oil texture, sfumato.")
+                    appendLine()
+                    appendLine("2. DIVINE PERFECTION - Subjects are 'Deities of Paradise'.")
+                    appendLine("   Untouchable elegance, relaxed dominance, serene superiority.")
+                    appendLine()
+                    appendLine("3. TROPICAL COASTAL PARADISE - Miami Vice golden hour.")
+                    appendLine("   Turquoise seas, palm trees, luxury pools, yachts.")
+                    appendLine()
+                    appendLine("4. HOT PINK ACCENT - Sparingly in fabrics, sunset hues, neon.")
+                    appendLine()
+                    appendLine("5. CANDID POSING - NOT facing camera. Lounging, looking away.")
+                    appendLine()
+                }
+
+                Genre.SHINOBI -> {
+                    appendLine("⚠️⚠️⚠️ SHINOBI MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. SUMI-E INK WASH - Japanese brush painting technique.")
+                    appendLine("   Bold imperfect strokes, economy of brushwork.")
+                    appendLine()
+                    appendLine("2. BLACK AND WHITE ONLY - Pure monochrome, no color tints.")
+                    appendLine("   Form through ink density and negative space.")
+                    appendLine()
+                    appendLine("3. SINGLE CRIMSON RED ACCENT - One vital color element only.")
+                    appendLine()
+                    appendLine("4. NEGATIVE SPACE - White paper is part of composition.")
+                    appendLine("   Environment suggested, not fully drawn.")
+                    appendLine()
+                    appendLine("5. RICE PAPER TEXTURE - Visible washi paper grain.")
+                    appendLine()
+                }
+
+                Genre.SPACE_OPERA -> {
+                    appendLine("⚠️⚠️⚠️ SPACE OPERA MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. 1950s ATOMIC AGE ILLUSTRATION - Gouache/oil, painterly finish.")
+                    appendLine("   Retro-futurism, raygun gothic, pulp cover art style.")
+                    appendLine()
+                    appendLine("2. VAST COSMIC ENVIRONMENTS - Nebulae, star fields, galaxies.")
+                    appendLine("   Overwhelming scale and beauty of space.")
+                    appendLine()
+                    appendLine("3. CHERRY RED/ROCKET ORANGE ACCENT - For engines, energy, stars.")
+                    appendLine()
+                    appendLine("4. OPTIMISTIC HEROIC TONE - Awe-inspired, adventurous.")
+                    appendLine("   BANNED: dark, brooding, cynical postures.")
+                    appendLine()
+                }
+
+                Genre.COWBOY -> {
+                    appendLine("⚠️⚠️⚠️ COWBOY MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("1. WESTERN OIL PAINTING - Remington/Russell style.")
+                    appendLine("   Bold visible brushstrokes, thick impasto, canvas texture.")
+                    appendLine("   BANNED: photorealism, smooth digital blending.")
+                    appendLine()
+                    appendLine("2. EXPRESSIVE BRUSHWORK - Loose gestural strokes.")
+                    appendLine("   'Painted with passion' not 'photographed and polished'.")
+                    appendLine()
+                    appendLine("3. WARM EARTHY PALETTE - Burnt sienna, raw ochre, desert sand.")
+                    appendLine("   Accent: Burnt orange/sunset gold for warmth.")
+                    appendLine()
+                    appendLine("4. GOLDEN HOUR LIGHTING - Dramatic chiaroscuro, long shadows.")
+                    appendLine()
+                }
+            }
+        }
+
+    /**
+     * Genre-critical VALIDATION rules for the reviewer.
+     * Put at TOP of validation to ensure they're checked first.
+     */
+    private fun genreCriticalValidation(genre: Genre): String =
+        buildString {
+            when (genre) {
+                Genre.CYBERPUNK -> {
+                    appendLine("⚠️⚠️⚠️ CYBERPUNK CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: CYBERWARE COUNT - Minimum 2-3 visible augmentations required.")
+                    appendLine("□ Valid: prosthetic limbs, artificial eyes, neural ports, mechanical spine")
+                    appendLine("□ Invalid: circuit tattoos, silver scars, 'enhanced' without visible mod")
+                    appendLine("□ If <2 → INSUFFICIENT_CYBERWARE → ADD chrome arm/artificial eyes/neural port")
+                    appendLine()
+                    appendLine("CHECK 2: CYBERWARE STYLE - Must be 'cyborg pretending to be human'")
+                    appendLine("□ TOO SUBTLE → UPGRADE to replacement parts")
+                    appendLine("□ TOO HEAVY → SCALE DOWN to fit human anatomy")
+                    appendLine()
+                    appendLine("CHECK 3: MATURE TONE - No cute/kawaii/innocent/playful.")
+                    appendLine()
+                    appendLine("CHECK 4: 80s OVA STYLE - cel shading, hard shadows, film grain, muted colors.")
+                    appendLine()
+                }
+
+                Genre.PUNK_ROCK -> {
+                    appendLine("⚠️⚠️⚠️ PUNK ROCK CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: CARTOON STYLE - Must be Gorillaz/KND 2D cartoon, NOT realistic.")
+                    appendLine()
+                    appendLine("CHECK 2: EYES - Only 3 valid options:")
+                    appendLine("□ Simplified stylized | Full white no pupil | Black void")
+                    appendLine("□ VIOLATION if: 'brown eyes', 'blue eyes', any realistic eye color")
+                    appendLine()
+                    appendLine("CHECK 3: BACKGROUND - Must have detailed environment (graffiti, amps, etc.)")
+                    appendLine("□ VIOLATION if: plain/gradient/white/empty background")
+                    appendLine()
+                    appendLine("CHECK 4: FLAT RENDERING - Hard cel-shading, flat colors.")
+                    appendLine("□ VIOLATION if: soft lighting, soft gradients, realistic shading")
+                    appendLine()
+                }
+
+                Genre.HORROR -> {
+                    appendLine("⚠️⚠️⚠️ HORROR CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: PIXEL ART STYLE - 32-bit PS1/Saturn aesthetic required.")
+                    appendLine()
+                    appendLine("CHECK 2: COLOR PALETTE - Dark blues, pale blues, ash grays only.")
+                    appendLine("□ VIOLATION if: bright/vibrant/warm colors")
+                    appendLine()
+                    appendLine("CHECK 3: ENVIRONMENT - Eerie setting with 3+ details required.")
+                    appendLine("□ VIOLATION if: empty/plain background")
+                    appendLine()
+                }
+
+                Genre.FANTASY -> {
+                    appendLine("⚠️⚠️⚠️ FANTASY CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: CLASSICAL OIL PAINTING - Must feel like Renaissance art.")
+                    appendLine("□ VIOLATION if: digital art, anime, concept art, modern illustration")
+                    appendLine()
+                    appendLine("CHECK 2: CRIMSON RED DOMINANCE - Red must be present in composition.")
+                    appendLine()
+                    appendLine("CHECK 3: CLASSICAL ENVIRONMENT - Renaissance setting required.")
+                    appendLine("□ VIOLATION if: plain background, cool blues/greens dominating")
+                    appendLine()
+                }
+
+                Genre.HEROES -> {
+                    appendLine("⚠️⚠️⚠️ HEROES CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: COMIC BOOK STYLE - Bold ink lines, dynamic foreshortening.")
+                    appendLine()
+                    appendLine("CHECK 2: URBAN ENVIRONMENT - Cityscape with verticality required.")
+                    appendLine()
+                    appendLine("CHECK 3: ELECTRIC BLUE ACCENT - Present in sky/reflections/rim light.")
+                    appendLine()
+                }
+
+                Genre.CRIME -> {
+                    appendLine("⚠️⚠️⚠️ CRIME CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: RENAISSANCE QUALITY - Perfect anatomy, academic oil texture.")
+                    appendLine()
+                    appendLine("CHECK 2: TROPICAL PARADISE SETTING - Coastal, golden hour, luxury.")
+                    appendLine()
+                    appendLine("CHECK 3: HOT PINK ACCENT - Present somewhere in composition.")
+                    appendLine()
+                    appendLine("CHECK 4: CANDID POSING - NOT stiff facing camera.")
+                    appendLine()
+                }
+
+                Genre.SHINOBI -> {
+                    appendLine("⚠️⚠️⚠️ SHINOBI CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: SUMI-E INK STYLE - Brush strokes, ink wash technique.")
+                    appendLine()
+                    appendLine("CHECK 2: MONOCHROME - Black and white only, no color tints.")
+                    appendLine("□ Only exception: single crimson red accent")
+                    appendLine()
+                    appendLine("CHECK 3: NEGATIVE SPACE - White paper as compositional element.")
+                    appendLine()
+                }
+
+                Genre.SPACE_OPERA -> {
+                    appendLine("⚠️⚠️⚠️ SPACE OPERA CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: 1950s ILLUSTRATION STYLE - Gouache/oil, retro-futurism.")
+                    appendLine()
+                    appendLine("CHECK 2: COSMIC ENVIRONMENT - Nebulae, stars, vast space required.")
+                    appendLine()
+                    appendLine("CHECK 3: CHERRY RED/ORANGE ACCENT - For energy, engines, stars.")
+                    appendLine()
+                    appendLine("CHECK 4: OPTIMISTIC TONE - Heroic, adventurous, awe-inspired.")
+                    appendLine()
+                }
+
+                Genre.COWBOY -> {
+                    appendLine("⚠️⚠️⚠️ COWBOY CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine()
+                    appendLine("CHECK 1: OIL PAINTING STYLE - Visible brushstrokes, impasto texture.")
+                    appendLine("□ VIOLATION if: photorealism, smooth digital blending")
+                    appendLine()
+                    appendLine("CHECK 2: WARM EARTHY PALETTE - Burnt sienna, ochre, desert tones.")
+                    appendLine()
+                    appendLine("CHECK 3: GOLDEN HOUR LIGHTING - Sunset warmth, long shadows.")
+                    appendLine()
+                }
+            }
+        }
+
     fun criticalGenerationRule() =
         buildString {
-            appendLine("*CRITICAL RULE* — ABSOLUTE FULL-BLEED FINAL ART (NON-NEGOTIABLE):")
-            appendLine(
-                "The generated image MUST be a finished, full-canvas (full-bleed) raster artwork that fills the entire frame. Under no circumstances may the image contain borders, frames, panels, inset artwork, or any graphic element that implies a framed or unfinished asset.",
-            )
-            appendLine()
-            appendLine("ABSOLUTE FORBIDDEN ELEMENTS (Do NOT render any of the following within the image):")
-            appendLine("- Any text or typography (titles, captions, labels, EXIF overlays)")
-            appendLine("- Logos, brand marks, signatures, trademarks, watermarks, stamps, or artist credits")
-            appendLine(
-                "- Borders, decorative frames, matting, rounded-corner masks, inset panels, picture-in-picture, film strips, polaroid edges",
-            )
-            appendLine("- UI elements, overlays, HUDs, icons, progress bars, buttons, or any interface chrome")
-            appendLine("- Letterbox/pillarbox bars, black bars, bleed/crop marks, registration marks, rulers, or guide lines")
-            appendLine("- Transparent background, alpha channel output, or any partially rendered region implying non-final art")
-            appendLine()
-            appendLine("GENRE STYLE ADHERENCE (CRITICAL):")
-            appendLine("- The artwork MUST strictly follow the genre's art style requirements (technique, color palette, mood, era)")
-            appendLine("- FORBIDDEN elements specified in the genre rules MUST NOT appear in the image")
-            appendLine("- REQUIRED elements specified in the genre rules MUST be present")
-            appendLine("- Character design, clothing, and aesthetics MUST match the genre specifications exactly")
-            appendLine("- DO NOT mix incompatible styles or include elements from other genres")
-            appendLine()
-            appendLine("COMPOSITION ENFORCEMENTS:")
-            appendLine(
-                "- The artwork must fill the entire output canvas.",
-            )
-            appendLine(
-                "- The output must be a flattened raster (e.g., PNG/JPEG with no alpha) representing final artwork; do not present layered, masked, or panelled compositions.",
-            )
-            appendLine("- Do not render frames or simulated frames as visual effects (no faux-matte or simulated print borders).")
-            appendLine()
+            appendLine("**CRITICAL RULES:**")
+            appendLine("- Full-bleed artwork filling entire canvas. NO borders, frames, panels, insets.")
+            appendLine("- FORBIDDEN: Text, logos, watermarks, UI elements, letterbox bars, transparent backgrounds.")
+            appendLine("- STRICT genre style adherence: technique, palette, mood, era as specified.")
+            appendLine("- NO mixing incompatible styles. Character design MUST match genre.")
         }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -45,927 +318,314 @@ object ImagePrompts {
         context: String,
         visualDirection: String?,
     ) = buildString {
-        appendLine(
-            "You are the **Art Director AI**, a master visual artist with an encyclopedic knowledge of cinematography, composition, and art history. Your mission is to translate a narrative context and a technical visual direction into a flawless, concrete, and unambiguous prompt for an image generation model. You follow rules with absolute precision and leave no room for creative interpretation by the image model. Your output is a technical specification, not creative writing.",
-        )
+        appendLine("ROLE: Art Director AI. Convert narrative + visual direction into precise image generation prompt.")
         appendLine()
-        appendLine(
-            "**PROMPT STRUCTURE:** [Art Style] → [Subjects Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
-        )
-        appendLine()
+
+        // Genre-critical rules at TOP for maximum visibility
+        val criticalRules = genreCriticalRules(genre)
+        if (criticalRules.isNotBlank()) {
+            appendLine(criticalRules)
+        }
+
         appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
         appendLine()
         appendLine(criticalGenerationRule())
-        appendLine()
-
-        appendLine("**GOOGLE BEST PRACTICES - APPLY STRICTLY:**")
-        appendLine("1. CLARITY OVER ABSTRACTION: Concrete descriptions, NOT poetic language or metaphors")
-        appendLine("2. EXPLICIT ATTRIBUTES: Specify what IS present, not what to avoid")
-        appendLine("3. FRAMING + VISIBILITY: Detail what's visible at this framing level")
-        appendLine("4. FEATURE HIERARCHY: Lead with critical character details, follow with environment")
-        appendLine("5. ELIMINATE AMBIGUITY: Every descriptor must be specific and actionable")
-        appendLine("6. COMPOSITION STRUCTURE: Subject position → Environment context → Technical parameters")
-        appendLine()
 
         visualDirection?.let {
-            appendLine("**VISUAL DIRECTION (NON-NEGOTIABLE MANDATE):** $it")
-            appendLine(
-                "This is your primary source of truth. You MUST parse these cinematographic parameters and translate them into a concrete visual description with ZERO deviation.",
-            )
-            appendLine("Your task is to convert the technical data below into descriptive language for the final prompt:")
-            appendLine(
-                "- **Framing & Visibility:** The 'framing' parameter dictates exactly what is visible. Be METICULOUS: clearly define what is visible and what is intentionally obscured. Your description MUST NOT mention any body part, clothing, or object that is outside this frame. This is a hard rule.",
-            )
-            appendLine(
-                "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Always explicitly state the camera angle (avoiding generic terms like 'close-up') and ensure it aligns with the desired mood and subject orientation. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
-            )
-            appendLine(
-                "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment'). When applicable, specify a lighting ratio to further refine the output (e.g., '3:1 contrast ratio')",
-            )
-            appendLine(
-                "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
-            )
-            appendLine(
-                "- **Subject Orientation:** The 'subject_orientation' parameter has THREE critical components you must translate separately:",
-            )
-            appendLine(
-                "  1. BODY AXIS: Describe the torso/shoulder line direction with precision:",
-            )
-            appendLine(
-                "     - Front-facing: 'torso facing forward with shoulders parallel to camera', 'chest visible, body square to viewer'",
-            )
-            appendLine(
-                "     - 3/4 turn: 'body turned 3/4 to the right with right shoulder forward', 'torso angled left'",
-            )
-            appendLine(
-                "     - Back-facing: 'body turned away showing back', 'rear view with back of shoulders visible'",
-            )
-            appendLine(
-                "     - Back-with-head-turn: 'body facing away but head turned back over shoulder' (CRITICAL: this creates dynamic tension)",
-            )
-            appendLine(
-                "     - Profile: 'shown in profile with body perpendicular to camera'",
-            )
-            appendLine(
-                "  2. HEAD DIRECTION: Describe where the face is pointing:",
-            )
-            appendLine(
-                "     - 'head turned front', 'face angled 3/4 left', 'looking over left shoulder', 'head in profile'",
-            )
-            appendLine(
-                "     - CRITICAL: 'over-shoulder' head positions create dynamic compositions - describe explicitly",
-            )
-            appendLine(
-                "  3. GAZE: Describe eye contact direction:",
-            )
-            appendLine(
-                "     - 'eyes meeting the viewer', 'gaze averted right', 'looking down', 'eyes closed'",
-            )
-            appendLine(
-                "  **CRITICAL:** All three components MUST be reflected in your description with precision.",
-            )
-            appendLine(
-                "  **DIVERSITY PRINCIPLE:** Dynamic poses (back-facing with head turn, 3/4 angles, over-shoulder looks) create VISUAL VARIETY and prevent repetitive compositions. Translate these EXACTLY as specified.",
-            )
-            appendLine(
-                "  EXAMPLES:",
-            )
-            appendLine(
-                "  • Visual: 'Body back-facing, Head over-shoulder-left, Gaze direct' → YOU MUST WRITE: 'shown from behind with body turned away, head looking back over the left shoulder with direct eye contact to viewer'",
-            )
-            appendLine(
-                "  • Visual: 'Body front, Head 3/4 left, Gaze averted' → YOU MUST WRITE: 'facing forward with shoulders square, head turned slightly left, gaze drifting away to the right'",
-            )
-            appendLine(
-                "  • Visual: 'Body 3/4 right, Head front, Gaze direct' → YOU MUST WRITE: 'body angled to the right with left shoulder forward, face turned to meet the viewer's eyes directly'",
-            )
-            appendLine(
-                "  **NOTE:** Left/Right directions are relative to the screen. These body positions create compelling, diverse compositions.",
-            )
-            appendLine(
-                "- **Form & Posture:** The 'form_and_posture' parameter defines complete physical stance. Translate into detailed pose description: stance (standing/sitting/crouching/etc.), weight distribution, spine position, arm/leg positions (e.g., 'standing with weight on left leg, arms crossed, right knee bent', 'sitting leaning forward, hand on knee'). This captures the complete body positioning and physical tension.",
-            )
-            appendLine(
-                "- **Scale & Zoom:** The 'scale_and_zoom' parameter defines how much of the frame the subject occupies and the perceived camera distance. This MUST align with the framing code. Translate this into spatial descriptors (e.g., 'The character's face fills nearly the entire frame with intimate proximity', 'The subject occupies 40% of the frame with the environment visible around them', 'Telephoto compression creates tight framing around the subject'). This ensures the final image matches the reference's DETAIL LEVEL and FRAMING DISTANCE exactly.",
-            )
-            appendLine(
-                "- **Cinematographic Precision:** Use technical codes and precise angles where possible (e.g., 'FS: Full-Body', 'Low-Angle Dutch Tilt 10°').",
-            )
+            appendLine("**VISUAL DIRECTION:** $it")
+            appendLine()
+            appendLine("TRANSLATE PARAMETERS:")
+            appendLine("- FRAMING: Describe exactly what's visible. OMIT anything outside frame.")
+            appendLine("- ANGLE: State camera position explicitly ('seen from high angle', 'low angle looking up')")
+            appendLine("- LENS/DOF: Describe focus ('sharp focus, blurred background', 'wide-angle capturing environment')")
+            appendLine("- PLACEMENT: State subject position ('positioned in lower-left third')")
+            appendLine("- SUBJECT ORIENTATION: Describe body axis + head direction + gaze separately")
+            appendLine("- SCALE_ZOOM: State frame fill % and perceived distance")
+            appendLine()
+            appendLine("NARRATIVE DNA (CRITICAL):")
+            appendLine("- ACTION: What subject is DOING. Adapt to our character's world, preserve energy.")
+            appendLine("- EMOTIONAL_BEAT: Emotion being PROJECTED. Drives expression + body language.")
+            appendLine("- TENSION_SOURCE: What creates visual interest. Include equivalent element.")
             appendLine()
         }
 
-        appendLine("**Scene CONTEXT &  PRESERVATION (MANDATORY):**")
-        appendLine(context)
+        appendLine("**CONTEXT:** $context")
         appendLine()
-        appendLine("TRAIT PRESERVATION RULES (NO NORMALIZATION ALLOWED):")
-        appendLine(
-            "- CRITICAL (ALWAYS VISIBLE): Specific Race/Ethnicity (do NOT normalize to generic standards), Exact Skin Tone (deeply pigmentated, vitiligo, freckled, etc.), Hair Texture/Style (coils, braids, mohawks, unique colors), Facial Structure",
-        )
-        appendLine(
-            "- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type (stout, lanky, curvy, weathered), Age indicators, Primary clothing/outfit",
-        )
-        appendLine(
-            "- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks, physical build details",
-        )
-        appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
+        appendLine("TRAIT PRESERVATION:")
+        appendLine("- CRITICAL: Race/ethnicity, exact skin tone, hair texture/style, facial structure")
+        appendLine("- IMPORTANT: Body type, age, primary outfit (if visible at framing)")
+        appendLine("- DISTINCTIVE: Tattoos, scars, piercings, jewelry (if not cut by framing)")
         appendLine()
-        appendLine("CONCRETE EXAMPLES:")
-        appendLine(
-            "- SINGLE SUBJECT: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in CU: Head and Shoulders with a warm, shrewd smile'",
-        )
-        appendLine(
-            "- MULTIPLE SUBJECTS: 'A tall warrior in obsidian plate armor standing protectively over a small, wide-eyed child in tattered rags; the warrior looks ahead with grim resolve while the child clings to their cape.'",
-        )
-        appendLine("- BAD: 'A woman with a merchant look' or 'A dark character with styled hair'")
+        appendLine("DIRECTIVES:")
+        appendLine("1. STRICT ART STYLE COMPLIANCE: Follow genre rendering exactly")
+        appendLine("2. FRAMING DICTATES VISIBILITY: Only describe what's visible. Include scale/zoom.")
+        appendLine("3. EMOTIONAL UNITY: Expression + pose + hands must convey ONE specific emotion")
+        appendLine("4. ENVIRONMENT: 3+ specific details to establish atmosphere")
+        appendLine("5. LIGHTING: Direction + quality + color (match genre requirements)")
+        appendLine("6. COMPOSITION: State perspective, placement, depth layers")
         appendLine()
-        appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION (STRICTLY ENFORCED):**")
         appendLine(
-            "1. **ABSOLUTE ART STYLE COMPLIANCE:** Adhere to the techniques, color palettes, and forbidden elements from the **ART STYLE** section. Cross-reference every descriptor against these rules. No exceptions.",
-        )
-        appendLine(
-            "2. **VISIBILITY DICTATED BY FRAMING + SCALE (CRITICAL):** Your description must be a direct reflection of the **VISUAL DIRECTION**.",
-        )
-        appendLine("   - ONLY describe what is visible within the specified framing—prioritize details at this framing level.")
-        appendLine(
-            "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'CU: Head and Shoulders,' do NOT mention the character's boots).",
-        )
-        appendLine(
-            "   - **SCALE & ZOOM ENFORCEMENT:** ALWAYS define how much of the frame the subject occupies. This is as critical as the framing code itself:",
-        )
-        appendLine(
-            "     - Describe frame fill percentage (e.g., 'filling 85% of the frame', 'occupying 50% with environment visible')",
-        )
-        appendLine(
-            "     - Describe perceived distance (e.g., 'intimate proximity', 'comfortable portrait distance', 'telephoto compression')",
-        )
-        appendLine(
-            "   - **EXCEPTION:** Hands and gestures are ALLOWED and ENCOURAGED if they enter the frame to support the expression (e.g., touching face, adjusting glasses, hand over mouth), even in portraits.",
-        )
-        appendLine("   - ALL 'CRITICAL' and 'IMPORTANT' character traits that *are* visible within the frame MUST be described in detail.")
-        appendLine(
-            "   - **DETAIL PRIORITY HIERARCHY:** Focus descriptive energy on elements at the center of the framing level. For tighter shots, dedicate more words to face/eyes/expression; for wider shots, balance subject details with environment.",
-        )
-        appendLine("   - Examples:")
-        appendLine(
-            "     - ECU (extreme close-up): Face dominates (90%+ frame fill). Eyes, nose, mouth, skin texture, and facial marks are the entire focus. PRIORITIZE: Exact eye color, pupil details, catchlights, iris patterns.",
-        )
-        appendLine(
-            "     - CU: Head and Shoulders (75-90% fill): Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible. PRIORITIZE: Expression nuances, eye details, hair texture.",
-        )
-        appendLine(
-            "     - MS (medium shot, 50-70% fill): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible. PRIORITIZE: Pose, gesture, outfit details from waist up.",
-        )
-        appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
-        appendLine(
-            "3. **ALIVE & SOULFUL EXPRESSION (INTENSE EMOTIONAL STORYTELLING):** Intensify emotional storytelling through UNIFIED body language, hand gestures, and facial expressions. Every element must work together to convey a single, specific, nuanced emotion. The character must feel like a living part of their world, captured in a spontaneous moment, not as a static subject.",
-        )
-        appendLine(
-            "   - **EMOTIONAL UNITY PRINCIPLE (CRITICAL):** The pose and facial expression MUST be unified and convey ONE specific, nuanced emotion. Ask: 'What singular feeling does this character embody in this moment?' Then ensure every visible element reinforces it.",
-        )
-        appendLine(
-            "   - **CANDID GAZE (GENERAL RULE):** Avoid direct eye contact with the viewer/camera unless strictly necessary for a specific dramatic moment. The subject should be looking at something within the scene (an object, another character, the horizon, or lost in thought). This creates the feeling of 'Spontaneous Photography' and deepens immersion.",
-        )
-        appendLine(
-            "   - **HAND GESTURES AS EMOTIONAL ANCHORS (MANDATORY):** Hands are the second most expressive feature after the face. ALWAYS describe hands if the framing allows—they must support and amplify the emotion. Examples: 'clenched fists betraying hidden anger', 'fingertips brushing lips in contemplation', 'palms open in surrender', 'fingers digging into arms in self-comfort'. Hands must tell the same emotional story as the face.",
-        )
-        appendLine(
-            "   - **NUANCED BODY LANGUAGE:** Use specific, evocative physical descriptors to anchor the character in the scene. Focus on micro-expressions of tension, weight, and posture (e.g., 'shoulders hunched forward in defeat', 'spine arched in defiance', 'weight shifting nervously from foot to foot', 'neck tensed with unspoken words').",
-        )
-        appendLine(
-            "   - **FACIAL EXPRESSION SPECIFICITY:** Provide a specific, nuanced emotion that goes beyond generic descriptors. BANNED: 'thoughtful', 'concerned', 'happy', 'sad'. REQUIRED: 'a flicker of ancient regret pooling in downcast eyes', 'a sharp, cynical smirk tugging at the corner of the mouth', 'brows knitted in barely contained fury'. The face tells a micro-story.",
-        )
-        appendLine(
-            "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing. The entire body participates in the emotional narrative.",
-        )
-        appendLine(
-            "     - Examples: Leaning against walls with arms crossed defensively, crouching in predatory readiness, flying mid-air with cape billowing triumphantly, running with desperation in every stride, sitting regally with chin lifted in superiority, kneeling with shoulders slumped in defeat.",
-        )
-        appendLine(
-            "   - **FRAMING + SCALE & ZOOM INTEGRATION (MANDATORY):** When describing framing, ALWAYS include BOTH the framing code AND scale/zoom parameters. This defines exactly how much of the frame the subject occupies and the perceived camera distance. Examples:",
-        )
-        appendLine(
-            "     - 'CU: Head and Shoulders, subject filling 85% of frame with intimate proximity' (NOT just 'close-up')",
-        )
-        appendLine(
-            "     - 'MS: Head-Waist, subject at 60% frame fill with balanced portrait distance' (NOT just 'medium shot')",
-        )
-        appendLine(
-            "     - 'FS: Full-Body, subject at 40% scale with environment visible around them' (NOT just 'full shot')",
-        )
-        appendLine(
-            "4. **SPECIFIC ENVIRONMENT:** Name at least 3 specific environmental details (objects, weather, atmospheric elements) to establish a clear scene atmosphere. The artist MUST integrate these details to ground the subjects and establish the scene's unique vibe.",
-        )
-        appendLine(
-            "5. **LIGHTING AS A TOOL:** Describe lighting with direction, quality (hard/soft), and color. Avoid technical jargon and use visual descriptors instead to enhance mood and form (e.g., 'lit by a single, harsh overhead light, casting deep shadows').",
-        )
-        appendLine(
-            "6. **COMPOSITION & PERSPECTIVE:** Explicitly state the perspective (e.g., 'One-point perspective', 'Dramatic foreshortening') along with the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
-        )
-        appendLine(
-            "7. **MULTI-SUBJECT COHERENCE:** If the context mentions multiple characters (e.g., 'A scientist and his robot assistant'), you MUST include both. Describe their relative positions, physical interactions, and emotional connection in the scene. Never omit secondary subjects that are key to the narrative moment.",
-        )
-        appendLine(
-            "8. **RELATIONSHIP DYNAMICS:** You MUST translate the provided relationship data (e.g., 'Enemies', 'Allies') into visible body language and composition. Enemies should have physical distance or aggressive tension; allies should have proximity or mutual support. Never contradict the emotional status of the subjects.",
+            "PROMPT FORMAT: [Art Style] → [Subject + Traits] → [Action] → [Framing] → [Expression] → [Environment] → [Lighting] → [Composition] → [Tension]",
         )
         appendLine()
-
-        appendLine("**FINAL PROMPT FORMAT (ASSEMBLE IN THIS ORDER):**")
-        appendLine("[1] OPENING - Art style + critical rendering rules")
-        appendLine("[2] SUBJECTS - Specific, concrete description of ALL characters/subjects WITH ALL VISIBLE TRAITS")
-        appendLine(
-            "[3] FRAMING - Explicit camera framing and what's visible (e.g., 'full shot showing the interaction between characters from the waist up')",
-        )
-        appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
-        appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
-        appendLine("[6] LIGHTING - Specific direction, quality, color temperature, visible effects")
-        appendLine("[7] COMPOSITION - Technical: placement, subject orientation, depth")
-        appendLine("[8] DETAIL - Signature element, texture quality, final emphasis on genre compliance")
-        appendLine()
-
-        appendLine("**PROMPT QUALITY CHECKLIST:**")
-        appendLine("✓ No vague words ('nice', 'beautiful', 'realistic', 'soft', 'subtle')")
-        appendLine("✓ All traits visible at this framing level are explicitly described")
-        appendLine("✓ Genre-specific terminology used (NOT generic descriptors)")
-        appendLine("✓ 3+ specific environment details established for atmosphere")
-        appendLine("✓ Perspective explicitly stated (e.g., 'Three-point perspective')")
-        appendLine("✓ Lighting described with direction + quality + color")
-        appendLine("✓ Composition structure followed (subjects → environment → technical)")
-        appendLine("✓ No forbidden elements mentioned")
-        appendLine("✓ All required elements mentioned")
-        appendLine("✓ Framing impact on visibility explicitly stated")
-        appendLine("✓ Feature hierarchy observed (critical details first)")
-        appendLine("✓ Candid gaze (subject looking away or into the world, not at camera)")
-        appendLine("✓ Spontaneous, 'caught in the moment' photographic vibe established")
-        appendLine()
-        appendLine("OUTPUT RESULT:")
-        appendLine("A single flowing paragraph that reads like a concrete visual specification (not creative writing).")
-        appendLine("Suitable for direct input to image generation AI with minimal corrections needed.")
+        appendLine("OUTPUT: Single flowing paragraph. Concrete visual specification, not creative writing.")
     }
 
+    /**
+     * TOKEN-OPTIMIZED Visual Direction Extraction.
+     * Extracts PHOTOGRAPHY DNA (10 params) + NARRATIVE DNA (3 params).
+     * Genre-dependent elements (environment, mood, atmosphere, texture, color) come from GenrePrompts.
+     */
     @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
-            appendLine("SYSTEM ROLE: Senior Director of Photography & AI Prompt Engineer")
-            appendLine("TASK: Perform a technical CINEMATOGRAPHY EXTRACTION from the provided reference image.")
+            appendLine("TASK: Extract PHOTOGRAPHY DNA + NARRATIVE DNA from reference image. Output 13 parameters.")
+            appendLine()
+            appendLine("⚠️ CRITICAL PHILOSOPHY:")
+            appendLine("A reference image tells a STORY, not just composition. Extract WHAT is happening, not just HOW it's framed.")
+            appendLine("The goal is NOT to copy the reference, but to capture its EMOTIONAL INTENT and NARRATIVE ENERGY.")
+            appendLine("The artist will adapt this to our specific character while preserving the story/action/feeling.")
+            appendLine()
+            appendLine("RULES:")
+            appendLine("- NO preamble/summary/explanation. Parameters ONLY.")
+            appendLine("- BE HONEST: Don't describe body parts not visible. 'Not visible' > wrong guess.")
+            appendLine("- Genre provides: environment, mood, color, texture, atmosphere. Extract camera/composition + narrative intent.")
+            appendLine()
+            appendLine("10 PARAMETERS (Format: 'N. NAME: value'):")
+            appendLine()
+            appendLine("1. ANGLE - WHERE IS THE CAMERA? (CRITICAL - Most frequently misidentified)")
+            appendLine()
+            appendLine("   ⚠️⚠️⚠️ PRIMARY TEST (DO THIS FIRST): WHERE IS THE SUBJECT'S FACE POINTING?")
+            appendLine("   - If subject's FACE is TILTED UP toward camera → CAMERA IS ABOVE → HIGH-ANGLE")
+            appendLine("   - If subject's FACE is TILTED DOWN toward camera → CAMERA IS BELOW → LOW-ANGLE")
+            appendLine("   - If subject's FACE is LEVEL/STRAIGHT → EYE-LEVEL")
+            appendLine("   This is the MOST RELIABLE indicator. Trust the face orientation!")
+            appendLine()
+            appendLine("   HIGH-ANGLE (camera ABOVE, looking DOWN at subject):")
+            appendLine("   - FACE IS TILTED UP toward camera (chin raised, eyes looking up)")
+            appendLine("   - Top of head/hair PROMINENT and CLOSER to camera")
+            appendLine("   - Forehead appears larger/closer than chin")
+            appendLine("   - Background shows floor/ground/lower areas")
+            appendLine("   - Subject may appear vulnerable, introspective, or intimate")
             appendLine(
-                "OBJECTIVE: Extract pure PHOTOGRAPHIC DNA (lens, lighting, angle, composition). ABSTRACTION IS KEY: Capture the *vibe* and *structure* of the background, NOT specific objects. (e.g., if reference shows spiderwebs, extract 'intricate foreground patterning' or 'dynamic chaotic background', do NOT mention 'webs').",
+                "   - COMMON in portrait photography - camera held at photographer's eye height looking down at seated/shorter subject",
             )
             appendLine()
-            appendLine("⚠️⚠️⚠️ ABSOLUTE REALISM PRINCIPLE (NON-NEGOTIABLE) ⚠️⚠️⚠️")
-            appendLine("YOU MUST BE BRUTALLY HONEST ABOUT WHAT IS ACTUALLY VISIBLE IN THE IMAGE.")
-            appendLine("DO NOT HALLUCINATE, ASSUME, OR INVENT DETAILS THAT AREN'T CLEARLY PRESENT.")
-            appendLine("- If you can't see hands → DO NOT describe hand position")
-            appendLine("- If you can't see legs → DO NOT describe stance or weight distribution")
-            appendLine("- If shoulders are barely visible → State 'Body axis unclear from framing'")
-            appendLine("- If body parts are obscured by framing → Acknowledge it explicitly")
-            appendLine("ACCURACY > COMPLETENESS. Be truthful about framing limitations.")
+            appendLine("   LOW-ANGLE (camera BELOW, looking UP at subject):")
+            appendLine("   - FACE IS TILTED DOWN toward camera (chin tucked, eyes looking down)")
+            appendLine("   - Jaw/chin PROMINENT and CLOSER to camera")
+            appendLine("   - Can see UNDER chin/nostrils")
+            appendLine("   - Shoulders appear ABOVE eye line, looming over camera")
+            appendLine("   - Background shows ceiling/sky/upper areas")
+            appendLine("   - Subject appears dominant, imposing, powerful")
             appendLine()
-            appendLine("CRITICAL DIRECTIVE (NON-NEGOTIABLE):")
-            appendLine("- NO PREAMBLE: Do not start with 'Okay', 'Let's break down', or any introductory filler.")
-            appendLine(
-                "- NO EXPLANATION TEXT: Output ONLY the 18 parameters. Do not explain your choices. Focus 100% on the technical data to best instruct the next AI model.",
-            )
-            appendLine("- NO SUMMARY: Do not provide a concluding summary or 'In summary' section.")
-            appendLine("- NO CONVERSATION: Do not address the user. Do not offer future help. Do not say 'let me know'.")
-            appendLine("- ASSERTIVE TONE: Provide raw, actionable technical data. Use declarative statements.")
-            appendLine("- AI-READY: The output must be directly usable as a visual direction for another AI model.")
-            appendLine("- MANDATORY: ALL 18 PARAMETERS MUST BE PRESENT. Missing even one parameter = CRITICAL FAILURE.")
+            appendLine("   EYE-LEVEL (camera at SAME HEIGHT as subject's eyes):")
+            appendLine("   - Face is LEVEL, neither tilted up nor down")
+            appendLine("   - Neutral perspective, no vertical distortion")
+            appendLine("   - Eyes roughly at center of vertical frame")
+            appendLine("   - Forehead and chin appear equal distance from camera")
             appendLine()
-            appendLine("OUTPUT STRUCTURE (START DIRECTLY WITH PARAMETERS):")
-            appendLine()
-            appendLine("18 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]') - ALL MANDATORY, NO EXCEPTIONS:")
+            appendLine("   DUTCH-TILT: Frame is rotated/tilted sideways (can combine with any vertical angle)")
             appendLine()
             appendLine(
-                "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle / worm's-eye view / bird's-eye view]. DEFINE the CAMERA'S position relative to the PRIMARY SUBJECT(S). EXAMPLE: For greater precision, use descriptors like 'Low-Angle Dutch Tilt 10°' or 'High-Angle 30° POV'.",
-            )
-            appendLine(
-                "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
-            )
-            appendLine(
-                "3. FRAMING: Use PRECISE codes with exact visibility boundaries. BANNED: Generic terms like 'close-up', 'medium shot'. REQUIRED: Specific codes with anatomical boundaries:",
-            )
-            appendLine(
-                "   [ECU: Face Only (eyes-to-chin) / CU: Head-Shoulders (above chest line) / MCU: Head-Chest (above nipple line) / MS: Head-Waist (above hip bones) / MWS: Head-Knees (above kneecaps) / FS: Full-Body (head-to-feet) / WS: Body+Environment / EWS: Small-in-Vast (subject <30% frame)]",
-            )
-            appendLine("4. PLACEMENT: [H: left/center/right third] [V: upper/center/lower third]")
-            appendLine(
-                "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE shadow interplay, contrast intensity, and lighting ratio (e.g., 'Strong 3:1 side lighting with deep shadows').",
-            )
-            appendLine("6. COLOR: [cool / neutral / warm] + dominant palette")
-            appendLine(
-                "   - **EYE DETAIL (CRITICAL for ECU/CU):** When framing shows face clearly, specify EXACT eye details:",
-            )
-            appendLine(
-                "     • Iris color with specificity (e.g., 'stormy grey-blue', 'amber with gold flecks', 'deep brown nearly black')",
-            )
-            appendLine(
-                "     • Catchlight position and quality (e.g., 'twin catchlights at 10 o'clock', 'soft diffused highlight')",
-            )
-            appendLine(
-                "     • Pupil state (e.g., 'dilated pupils', 'pinpoint pupils in bright light')",
-            )
-            appendLine(
-                "     • Sclera tone (e.g., 'crisp white sclera', 'slightly bloodshot', 'yellowed')",
-            )
-            appendLine(
-                "     • Eyelid/lash detail (e.g., 'heavy-lidded', 'wide-open alert', 'thick dark lashes')",
-            )
-            appendLine(
-                "     BANNED: Generic 'expressive eyes', 'beautiful eyes'. REQUIRED: Specific physical descriptors.",
-            )
-            appendLine(
-                "7. ENVIRONMENT: General setting vibe and specific architectural details (e.g., 'Neo-Brutalist skyscrapers with holographic advertisements'), NOT specific objects from reference.",
-            )
-            appendLine("8. MOOD: Emotional tone (epic/intimate/oppressive/nostalgic/etc)")
-            appendLine("9. DOF: [razor / shallow / moderate / deep / infinite]")
-            appendLine("10. ATMOSPHERE: [clear/hazy/misty/foggy/dusty/smoky]")
-            appendLine(
-                "11. PERSPECTIVE: [one-point / two-point / three-point / forced / atmospheric / dramatic foreshortening]. Focus on DEPTH cues and VANISHING points.",
-            )
-            appendLine("12. TEXTURE: [razor-sharp/film-grain/digital-noise/soft-diffused/gritty]")
-            appendLine("13. TIME: [golden-hour/midday/blue-hour/night/overcast/studio]")
-            appendLine(
-                "14. SIGNATURE: The core compositional/artistic element that makes this image impactful (e.g., 'intense portrait expressiveness', 'dramatic subject isolation', 'powerful gaze connection'). Focus on WHAT makes it compelling, NOT on specific physical attributes of the subject.",
-            )
-            appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
-            appendLine(
-                "16. SUBJECT_ORIENTATION: [BODY + HEAD positioning]. CRITICAL - Analyze THREE components separately based ONLY on what's ACTUALLY VISIBLE:",
-            )
-            appendLine(
-                "   • BODY AXIS - MANDATORY VISUAL CHECKLIST (answer these BEFORE determining orientation):",
-            )
-            appendLine(
-                "     🔍 STEP 1 - CHECK THESE VISUAL CUES IN ORDER:",
-            )
-            appendLine(
-                "       □ Can you see the BACK of shoulders? (rear deltoids, shoulder blades, or back of neck visible)",
-            )
-            appendLine(
-                "       □ Can you see the FRONT of chest/torso? (front of neck, clavicles, or chest visible)",
-            )
-            appendLine(
-                "       □ Are BOTH shoulders visible facing square and forward?",
-            )
-            appendLine(
-                "       □ Is ONE shoulder MORE prominent than the other?",
-            )
-            appendLine(
-                "     🎯 STEP 2 - APPLY THESE RULES STRICTLY:",
-            )
-            appendLine(
-                "       ✓ IF back of shoulders/neck visible → Body is BACK-FACING (not front!)",
-            )
-            appendLine(
-                "       ✓ IF front of chest/torso visible + both shoulders square → Body is FRONT-FACING",
-            )
-            appendLine(
-                "       ✓ IF one shoulder more prominent + body rotated ~45° → Body is 3/4 TURN",
-            )
-            appendLine(
-                "       ✓ IF only side of torso visible + single shoulder → Body is SIDE PROFILE",
-            )
-            appendLine(
-                "       ✓ ONLY use OBSCURED if framing is ECU (extreme close-up face only) with ZERO shoulder visibility",
-            )
-            appendLine(
-                "     ⚠️ CRITICAL: Back visibility = back-facing body! Don't assume front-facing unless you see the FRONT of the torso.",
-            )
-            appendLine(
-                "   • BODY AXIS RESULT: [Front-facing / 3/4 turn left/right / Side profile left/right / Back-facing / Back-with-head-turn / OBSCURED]",
-            )
-            appendLine(
-                "   • HEAD DIRECTION: [Front / 3/4 left/right / Profile left/right / Back / Over-shoulder-left/right] - Where the face is pointing",
-            )
-            appendLine(
-                "     - Over-shoulder: Head turned back while body faces away (creates dynamic tension)",
-            )
-            appendLine(
-                "   • GAZE: [Direct-to-camera / Looking away left/right / Looking up/down / Averted / Closed eyes] - Eye contact direction",
-            )
-            appendLine(
-                "   EXAMPLE DYNAMIC POSES:",
-            )
-            appendLine(
-                "   • 'Body back-facing, Head over-shoulder-left, Gaze direct' (body turned away, looking back at camera)",
-            )
-            appendLine(
-                "   • 'Body front, Head front, Gaze direct' (standard front-facing portrait)",
-            )
-            appendLine(
-                "   • 'Body 3/4 right, Head front, Gaze away left' (body turned but face front)",
-            )
-            appendLine(
-                "   • 'Body axis obscured from framing, Head 3/4 left, Gaze away right' (ECU only)",
-            )
-            appendLine(
-                "   NOTE: 'Left/Right' is relative to screen direction. This body positioning creates VISUAL DIVERSITY - be precise!",
-            )
-            appendLine(
-                "17. FORM & POSTURE: [Physical stance description - ONLY DESCRIBE WHAT IS ACTUALLY VISIBLE]. ⚠️ CRITICAL REALISM RULE:",
-            )
-            appendLine(
-                "   • ECU/CU (Head-Shoulders): Describe ONLY head position, neck angle, shoulder position (e.g., 'Head upright, shoulders relaxed and level'). DO NOT mention hands, arms below shoulders, or legs. Use 'Lower body not visible in framing' if needed.",
-            )
-            appendLine(
-                "   • MCU/MS (Head-Chest/Waist): Describe head, neck, shoulders, arms, torso lean (e.g., 'Shoulders square, arms at sides, torso upright'). DO NOT mention legs or feet.",
-            )
-            appendLine(
-                "   • MWS/FS/WS (Knees and beyond): Full stance description including legs, weight distribution, complete pose.",
-            )
-            appendLine(
-                "   ⚠️ DO NOT HALLUCINATE: If you cannot see a body part (hands, legs, feet), DO NOT describe it. Be honest about framing limitations. State 'visible portion shows [X]' rather than inventing unseen details.",
-            )
-            appendLine(
-                "   GOOD: 'Head tilted slightly right, shoulders relaxed and parallel to camera, neck upright' (for CU)",
-            )
-            appendLine(
-                "   BAD: 'Standing upright with hands in lap' (when hands aren't visible in a CU frame)",
+                "   ⚠️ SELF-CHECK: If you say 'LOW-ANGLE' but the subject's face is TILTED UP → YOU ARE WRONG. Switch to HIGH-ANGLE.",
             )
             appendLine()
-            appendLine("⚠️⚠️⚠️ PARAMETER 18 IS MANDATORY - YOU MUST OUTPUT IT - DO NOT SKIP ⚠️⚠️⚠️")
+            appendLine("2. LENS - Analyze visual compression (CRITICAL for perspective feel):")
+            appendLine("   ULTRA-WIDE 14-24mm: Visible barrel distortion, exaggerated depth, close objects HUGE")
+            appendLine("   WIDE 24-35mm: Environment prominent, slight distortion at edges, sense of space")
+            appendLine("   NORMAL 35-50mm: Natural perspective, balanced subject/background, no obvious compression")
+            appendLine("   PORTRAIT 50-85mm: Flattering compression, background slightly compressed, intimate feel")
+            appendLine("   TELEPHOTO 85-200mm+: Strong compression, background flattened, very intimate/tight")
             appendLine(
-                "18. SCALE & ZOOM: [Frame fill + perceived camera distance]. ⚠️ NON-NEGOTIABLE AND MUST BE PRESENT IN EVERY EXTRACTION.",
-            )
-            appendLine(
-                "   CRITICAL for framing precision. Describe THREE aspects with specificity:",
-            )
-            appendLine(
-                "   1. FRAME FILL PERCENTAGE: Exact space the subject occupies (e.g., 'Subject fills 85% of frame', 'Subject occupies 40%')",
-            )
-            appendLine(
-                "   2. PERCEIVED DISTANCE: Camera proximity feel using specific descriptors:",
-            )
-            appendLine(
-                "      - Intimate (touching distance, pore-visible detail)",
-            )
-            appendLine(
-                "      - Close (arm's length, subtle expression visible)",
-            )
-            appendLine(
-                "      - Comfortable (conversation distance, full gesture range)",
-            )
-            appendLine(
-                "      - Observational (across-the-room, full body context)",
-            )
-            appendLine(
-                "      - Distant (environmental scale dominates)",
-            )
-            appendLine(
-                "   3. COMPRESSION EFFECT: Lens impact on spatial perception (e.g., 'telephoto compression flattening depth', 'wide-angle exaggerating foreground scale')",
-            )
-            appendLine(
-                "   MANDATORY ALIGNMENT with framing codes:",
-            )
-            appendLine(
-                "   - ECU/CU = 75-100% fill + intimate/close proximity → 'Subject fills 90% of frame, intimate proximity with pore-level detail visible'",
-            )
-            appendLine(
-                "   - MS/MWS = 50-75% fill + comfortable distance → 'Subject at 65% frame fill, comfortable portrait distance capturing full upper-body gesture'",
-            )
-            appendLine(
-                "   - FS/WS = 30-50% fill + observational view → 'Subject at 40% scale, observational distance showing full stance and immediate environment'",
-            )
-            appendLine(
-                "   - EWS = 10-30% fill + distant/epic scale → 'Subject at 15% scale, distant perspective emphasizing environmental vastness'",
-            )
-            appendLine(
-                "   ⚠️ CRITICAL: This parameter ensures the DISTANCE and DETAIL LEVEL match the reference exactly. Missing = CRITICAL FAILURE.",
-            )
-            appendLine(
-                "   EXAMPLE: 'Subject fills 85% of frame, intimate proximity with telephoto compression minimizing background separation'",
+                "   ⚠️ CUES: Tight head/face shots with blurred background → portrait/tele. Wide environmental context → wide/normal.",
             )
             appendLine()
-            appendLine("SUBJECT POSITIONING ANALYSIS (CRITICAL FOR ACCURATE EXTRACTION):")
-            appendLine("⚠️ FIRST: Determine the FRAMING CODE - this dictates what body parts are visible")
-            appendLine("⚠️ SECOND: Analyze ONLY the body parts that are ACTUALLY VISIBLE at this framing level")
-            appendLine()
-            appendLine("1. BODY AXIS DETERMINATION (Analyze even in tighter frames using visible cues):")
-            appendLine("   - REQUIRES: Look for ANY visible body/shoulder/neck cues to determine orientation")
-            appendLine("   - Analyze SHOULDER LINE, TORSO alignment, NECK/BACK visibility:")
-            appendLine("   - Front-facing: Both shoulders equally visible, torso parallel to camera, chest/front visible")
-            appendLine("   - 3/4 turn: One shoulder more prominent, torso rotated ~45° from camera")
-            appendLine("   - Profile: Only one shoulder visible, torso perpendicular to camera (90°)")
-            appendLine("   - Back-facing: Shoulders turned away, back of torso/neck visible, rear view")
-            appendLine("   - Back-with-head-turn: BACK visible but head turned over shoulder (creates dynamic tension)")
             appendLine(
-                "   - ⚠️ ONLY use 'Body axis obscured from framing' if ECU (extreme face-only close-up) with ZERO shoulder/neck visibility",
-            )
-            appendLine("   ⚠️ CRITICAL: Even in CU frames, if you can see the BACK of the neck/shoulders → it's BACK-FACING")
-            appendLine("   ⚠️ DIVERSITY MATTERS: Back-facing poses, over-shoulder looks, and 3/4 turns create VISUAL VARIETY. Be specific!")
-            appendLine()
-            appendLine("2. HEAD DIRECTION ANALYSIS (Always attempt - head is usually visible):")
-            appendLine("   - Separate from body - head can turn independently (this creates dynamic compositions)")
-            appendLine("   - Front: Both eyes, full nose, symmetrical face visible")
-            appendLine("   - 3/4: Both eyes visible but one more prominent, nose partially blocks far side of face")
-            appendLine("   - Profile: One eye visible, nose silhouette, one side of face only")
-            appendLine("   - Over-shoulder-left/right: Head turned back over shoulder while body faces away (specify which shoulder)")
-            appendLine("   ⚠️ CRITICAL: 'Over-shoulder' head position indicates a DYNAMIC pose - be precise about which direction")
-            appendLine()
-            appendLine("3. STANCE & POSTURE DOCUMENTATION (ONLY for visible portions):")
-            appendLine("   - ⚠️ FRAMING GATES (Honor these strictly):")
-            appendLine("     • ECU/CU: Describe head angle, neck position, shoulder level ONLY")
-            appendLine("     • MCU/MS: Add torso lean, arm positions if visible")
-            appendLine("     • MWS+: Add leg stance, weight distribution, full body dynamics")
-            appendLine("   - DO NOT describe body parts cut off by framing")
-            appendLine("   - Examples:")
-            appendLine("     • CU realistic: 'Head upright, slight tilt right, shoulders relaxed and level'")
-            appendLine("     • CU unrealistic: 'Standing with hands in lap' ← WRONG, hands not visible!")
-            appendLine("     • MS realistic: 'Torso leaning slightly forward, arms crossed, shoulders tense'")
-            appendLine("     • FS realistic: 'Standing with weight on right leg, left knee bent, arms at sides'")
-            appendLine()
-            appendLine("EXAMPLE COMPLETE ANALYSIS (by framing level):")
-            appendLine("- ECU (Face only): 'Body axis obscured from framing, Head front, Gaze direct' + 'Face fills frame, head upright'")
-            appendLine(
-                "- CU (Head-Shoulders): 'Body front (shoulders square and parallel), Head front, Gaze direct' + 'Head upright, shoulders relaxed and level, slight forward neck lean'",
-            )
-            appendLine(
-                "- CU (Back-facing dynamic): 'Body back-facing, Head over-shoulder-left, Gaze direct' + 'Back of shoulders visible, head turned back to look at camera'",
-            )
-            appendLine(
-                "- MS (Head-Waist): 'Body 3/4 left, Head front, Gaze averted down' + 'Torso turned left with right shoulder forward, arms at sides, slight slouch'",
-            )
-            appendLine(
-                "- FS (Full body): 'Body front, Head 3/4 left, Gaze away right' + 'Standing with weight on right leg, left knee slightly bent, arms crossed, shoulders tense'",
-            )
-            appendLine(
-                "- FS (Dynamic back-turn): 'Body back-facing, Head over-shoulder-right, Gaze direct' + 'Walking away with body turned, head looking back over right shoulder'",
+                "3. FRAMING: [ECU: Face Only | CU: Head-Shoulders | MCU: Head-Chest | MS: Head-Waist | MWS: Head-Knees | FS: Full-Body | WS: Body+Env | EWS: <30% frame]",
             )
             appendLine()
-            appendLine("VISIBILITY ANALYSIS (MANDATORY BEFORE EXTRACTING PARAMETERS 16 & 17):")
-            appendLine("⚠️ CRITICAL: Analyze the image HONESTLY. DO NOT assume or hallucinate body parts that aren't visible.")
-            appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OBSCURED")
-            appendLine("Analyze: 1.HEAD 2.FACE 3.NECK 4.SHOULDERS 5.TORSO 6.ARMS/HANDS 7.LEGS/FEET 8.BODY LANGUAGE 9.ENVIRONMENT")
-            appendLine()
-            appendLine("**DETAIL PRIORITIZATION BY FRAMING (CRITICAL):**")
-            appendLine("Allocate descriptive precision based on what the framing emphasizes:")
-            appendLine("- ECU/CU: 70% of detail should focus on FACE (eyes, expression, skin texture, facial features)")
-            appendLine("  • Eye color, pupil dilation, catchlight positions are MANDATORY")
-            appendLine("  • Micro-expressions, skin pores, facial hair texture are PRIMARY focus")
-            appendLine("  • Environment becomes secondary/atmospheric only")
-            appendLine("- MCU/MS: 50% face/expression, 30% pose/gesture, 20% environment")
-            appendLine("  • Hand positions and body language become critical")
-            appendLine("  • Clothing details in frame should be specific")
-            appendLine("- MWS/FS: 30% subject details, 40% full-body pose, 30% environment")
-            appendLine("  • Full stance and body dynamics are primary")
-            appendLine("  • Environmental context becomes important for grounding")
-            appendLine("- WS/EWS: 20% subject, 60% environment, 20% atmospheric/mood")
-            appendLine("  • Subject silhouette and scale relationship to environment")
+            appendLine("4. PLACEMENT: [H: left/center/right] [V: upper/center/lower]")
             appendLine()
             appendLine(
-                "⚠️ FRAMING DICTATES DETAIL DEPTH: Don't describe pore-level skin texture in an EWS, don't skimp on eye detail in an ECU.",
+                "5. LIGHTING: [direction: front/front-left/front-right/side-left/side-right/back/top] + [quality: hard/soft] + shadow description",
             )
             appendLine()
-            appendLine("⚠️ HONESTY PRINCIPLE:")
-            appendLine("- If shoulders are barely/not visible → BODY AXIS = 'unclear from framing' or 'not visible'")
-            appendLine("- If hands are not visible → DO NOT describe hand position in FORM & POSTURE")
-            appendLine("- If legs are not visible → DO NOT describe stance or weight distribution")
-            appendLine("- If arms below shoulders are not visible → DO NOT describe arm position")
-            appendLine("- BE TRUTHFUL: It's better to say 'not visible in frame' than to guess incorrectly")
+            appendLine("6. DOF: [razor/shallow/moderate/deep/infinite]")
             appendLine()
-            appendLine("MANDATORY HIDDEN BY FRAMING (Bullet points of elements GUARANTEED not visible):")
-            appendLine("- ECU: Mid-neck and below (Keep chin, jawline, and top of headgear/accessories).")
-            appendLine("- CU: Lower-chest and below (Keep neck, shoulders, and upper-piece collars/accessories).")
-            appendLine("- MCU: Waist and below (Keep full torso, including jackets or shirts).")
-            appendLine("- MS: Mid-thigh and below (Keep waist and hips).")
-            appendLine("- MWS: Ankles and below (ALL footwear).")
-            appendLine("- FS/WS/EWS: Fine details (scars, intricate patterns) obscured by scale.")
+            appendLine("7. PERSPECTIVE: [one-point/two-point/three-point/forced/foreshortening]")
             appendLine()
-            appendLine("COMPOSITIONAL PRESENCE:")
-            appendLine("- Define structural visual traits: [Silhouette Contrast / Lighting Zones / Tonal Distribution / Edge Definition]")
-            appendLine("- Focus on HOW the subject is shaped by light/shadow, NOT what the subject physically looks like")
-            appendLine("- Example: 'Strong rim lighting defining silhouette edges' vs. 'Black hair with highlights'")
-            appendLine()
-            appendLine("ANGLE & PERSPECTIVE ENFORCEMENT:")
-            appendLine("- BANNED: 'eye-level', 'straight-on', 'plain view' (unless strictly required by composition).")
-            appendLine("- REQUIRED: Establish a dominant, dynamic viewpoint that directs the viewer's eye.")
-            appendLine()
-            appendLine("PARAMETER COMPLETENESS CHECK (VERIFY BEFORE OUTPUT):")
-            appendLine("COUNT YOUR PARAMETERS - YOU MUST HAVE EXACTLY 18:")
-            appendLine("✓ 1-ANGLE ✓ 2-LENS ✓ 3-FRAMING ✓ 4-PLACEMENT ✓ 5-LIGHTING ✓ 6-COLOR")
-            appendLine("✓ 7-ENVIRONMENT ✓ 8-MOOD ✓ 9-DOF ✓ 10-ATMOSPHERE ✓ 11-PERSPECTIVE ✓ 12-TEXTURE")
-            appendLine("✓ 13-TIME ✓ 14-SIGNATURE ✓ 15-DEPTH_LAYERS ✓ 16-SUBJECT_ORIENTATION")
-            appendLine("✓ 17-FORM_&_POSTURE ✓✓✓ 18-SCALE_&_ZOOM ✓✓✓")
-            appendLine()
-            appendLine("⚠️⚠️⚠️ TRIPLE-CHECK: Did you output Parameter 18 (SCALE & ZOOM)? ⚠️⚠️⚠️")
-            appendLine("This parameter is MANDATORY and defines frame space + camera distance.")
-            appendLine("If you output fewer than 18 parameters, your response is INCOMPLETE and REJECTED.")
-            appendLine("SCROLL UP and verify you have '18. SCALE & ZOOM: [description]' in your output.")
-            appendLine()
+            appendLine("8. SUBJECT_ORIENTATION - BE SPECIFIC about direction:")
+            appendLine("   • BODY AXIS: [Front / 3/4-left / 3/4-right / Profile-left / Profile-right / Back-facing]")
             appendLine(
-                "FINAL VERIFICATION: Is the output 100% technical? Is it devoid of pleasantries? Do you have ALL 18 parameters? If yes, output now.",
+                "   • HEAD: [Front / 3/4-left / 3/4-right / Profile-left / Profile-right / Over-shoulder-left / Over-shoulder-right]",
             )
+            appendLine("   • GAZE: [Direct / Away-left / Away-right / Up / Down / Closed]")
+            appendLine("   (left/right = direction subject is turned TOWARD)")
+            appendLine()
+            appendLine("9. FORM_POSTURE - Describe with DETAIL (not just 'relaxed'):")
+            appendLine("   ECU/CU: head tilt (direction), neck angle, shoulder position (level/raised/tension)")
+            appendLine("   Example: 'Head tilted slight right, neck extended, left shoulder raised with tension'")
+            appendLine()
+            appendLine("10. SCALE_ZOOM: [Frame fill %] + [Distance: intimate/close/comfortable/observational/distant]")
+            appendLine()
+            appendLine("=== NARRATIVE DNA (What STORY is being told?) ===")
+            appendLine()
+            appendLine("11. ACTION - What is the subject DOING? (CRITICAL for storytelling)")
+            appendLine("   - Describe the SPECIFIC action/gesture/movement in the image")
+            appendLine("   - Include objects being interacted with (gun, sword, book, cigarette, etc.)")
+            appendLine("   - Include hand positions and what they're doing")
+            appendLine("   Examples:")
+            appendLine("   - 'Pointing a gun directly at viewer with extended arm'")
+            appendLine("   - 'Lighting a cigarette with cupped hands, face illuminated by flame'")
+            appendLine("   - 'Mid-stride running, hair and coat trailing behind'")
+            appendLine("   - 'Leaning against wall with arms crossed, cigarette dangling from lips'")
+            appendLine("   - 'Standing still, no active gesture' (if truly static)")
+            appendLine("   ⚠️ DO NOT write 'standing' if there's ANY action happening!")
+            appendLine()
+            appendLine("12. EMOTIONAL_BEAT - The micro-story/feeling of this exact moment:")
+            appendLine("   - What emotion is the subject PROJECTING? (not just feeling)")
+            appendLine("   - Is this a moment of power, vulnerability, tension, release, anticipation?")
+            appendLine("   - What would you caption this frame if it was a movie still?")
+            appendLine("   Examples:")
+            appendLine("   - 'Aggressive confrontation - daring the viewer to make a move'")
+            appendLine("   - 'Quiet melancholy - lost in painful memory'")
+            appendLine("   - 'Predatory anticipation - about to strike'")
+            appendLine("   - 'Defiant last stand - wounded but refusing to fall'")
+            appendLine("   - 'Cocky superiority - knows they've already won'")
+            appendLine()
+            appendLine("13. TENSION_SOURCE - What creates VISUAL/NARRATIVE tension?")
+            appendLine("   - What element draws the eye and creates interest?")
+            appendLine("   - What makes this image DYNAMIC rather than static?")
+            appendLine("   - Consider: weapon presence, body asymmetry, implied motion, emotional conflict")
+            appendLine("   Examples:")
+            appendLine("   - 'Gun barrel pointed at camera creates direct threat'")
+            appendLine("   - 'Contrast between relaxed pose and intense eyes'")
+            appendLine("   - 'Wind-blown elements suggest motion/urgency'")
+            appendLine("   - 'Clenched fist contradicts calm expression'")
+            appendLine("   - 'Over-shoulder glance creates mystery of what they're looking at'")
+            appendLine()
+            appendLine("OUTPUT: 13 numbered parameters. No explanations. Start with '1. ANGLE:'")
         }
 
     /**
-     * Validates and autonomously corrects image descriptions for generation.
-     * Returns JSON-structured ImagePromptReview data class with corrections and violations.
-     * TOKEN-OPTIMIZED: Compact instructions, redundancy removed. GemmaClient handles output formatting.
-     * CRITICAL: Validates 15 cinematography parameters, visibility matrix, pose/expression, and art style rules.
+     * TOKEN-OPTIMIZED: Validates prompt against 10 core parameters + genre rules.
      */
     fun reviewImagePrompt(
         visualDirection: String?,
         artStyleValidationRules: String,
         strictness: ReviewerStrictness,
         finalPrompt: String,
+        genre: Genre = Genre.CYBERPUNK,
     ) = buildString {
         appendLine(strictness.description)
         appendLine()
-        appendLine("TASK: Analyze the prompt against these criteria. Respond ONLY with JSON matching ImagePromptReview structure.")
+        appendLine("TASK: Validate prompt. Output JSON (ImagePromptReview structure).")
         appendLine()
 
-        appendLine("VALIDATION CRITERIA:")
+        // Genre-critical validation at TOP
+        appendLine(genreCriticalValidation(genre))
+
+        appendLine("VALIDATION RULES:")
         appendLine()
-        appendLine(
-            "1. CINEMATOGRAPHY (18 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers, subject_orientation, form_and_posture, scale_and_zoom",
-        )
-        appendLine("   - All MUST be explicit, specific, and match visual direction (excluding environment/background).")
-        appendLine(
-            "   - **⚠️ PARAMETER 18 (SCALE & ZOOM) IS MANDATORY:** If the visual direction includes SCALE & ZOOM but the prompt doesn't describe frame fill/proximity = CRITICAL VIOLATION. This parameter ensures framing precision and CANNOT be omitted.",
-        )
-        appendLine(
-            "   - **SCALE & ZOOM PRECISION (CRITICAL):** The prompt MUST describe how much frame space the subject occupies, matching the reference exactly. This ensures the generated image has the same detail level and perceived camera distance. If visual direction says 'Subject fills 80% of frame', the prompt must describe intimate proximity and tight framing. Mismatch = MAJOR VIOLATION.",
-        )
-        appendLine(
-            "   - **BACKGROUND & AMBIENCE PRECEDENCE:** The environment MUST strictly adhere to the genre's ambience. If the visual direction's environment conflicts with the genre's requirements (e.g., visual direction says 'studio' but genre is 'cyberpunk'), the genre ambience MUST take absolute precedence. Ignore the visual direction's background perspective entirely if it contradicts the genre's setting.",
-        )
-        appendLine(
-            "   - **ANGLE & PERSPECTIVE ENFORCEMENT:** The prompt's angle MUST be specific, non-generic, and creative, as mandated by the visual direction. It must avoid 'banned perspectives' like flat or plain views. The description must clearly reflect the chosen viewpoint (e.g., 'The camera looks up at the towering figure...').",
-        )
-        appendLine(
-            "   - **SUBJECT ORIENTATION (NON-NEGOTIABLE):** STRICTLY enforce ALL THREE components from visual direction:",
-        )
-        appendLine(
-            "     • BODY AXIS: The prompt must describe the torso/shoulder orientation matching the reference:",
-        )
-        appendLine(
-            "       - Front-facing: 'shoulders parallel to camera', 'chest/torso facing forward', 'body square to viewer'",
-        )
-        appendLine(
-            "       - 3/4 turn: 'body turned 3/4 to the [left/right]', 'torso angled with [X] shoulder forward'",
-        )
-        appendLine(
-            "       - Back-facing: 'body turned away', 'showing back', 'rear view with back visible'",
-        )
-        appendLine(
-            "       - Back-with-head-turn: 'body facing away with head turned back over shoulder' (DYNAMIC POSE - must be explicit)",
-        )
-        appendLine(
-            "       - If visual direction says 'Body axis obscured', the prompt should focus on head/face without body descriptors.",
-        )
-        appendLine(
-            "     • HEAD DIRECTION: The prompt must describe where the head/face is pointing:",
-        )
-        appendLine(
-            "       - 'head turned front', 'face in 3/4 view to the [left/right]', 'looking over [left/right] shoulder', 'head in profile'",
-        )
-        appendLine(
-            "       - CRITICAL: 'over-shoulder' positions must be explicitly described (e.g., 'looking back over left shoulder')",
-        )
-        appendLine(
-            "     • GAZE: The prompt must describe eye contact direction:",
-        )
-        appendLine(
-            "       - 'eyes meeting the viewer', 'gaze averted to the [left/right]', 'looking down/up', 'eyes closed'",
-        )
-        appendLine(
-            "     ⚠️ DIVERSITY ENFORCEMENT: Dynamic poses (back-facing, over-shoulder, 3/4 angles) create VISUAL VARIETY. If visual direction specifies these, the prompt MUST describe them explicitly. Generic front-facing descriptions when direction says 'back-facing' = CRITICAL VIOLATION.",
-        )
-        appendLine(
-            "     CRITICAL: If visual direction says 'Body back-facing, Head over-shoulder-left', the prompt MUST describe: body turned away + head looking back over left shoulder. Any mismatch in ANY component = CRITICAL VIOLATION.",
-        )
-        appendLine(
-            "   - **FORM & POSTURE REALISM (CRITICAL):** The prompt must ONLY describe body parts that are visible at the specified framing level:",
-        )
-        appendLine(
-            "     • ECU/CU (Head-Shoulders): Prompt can only describe head position, neck, shoulders. If it mentions hands, arms below shoulders, legs, or stance = VISIBILITY_VIOLATION.",
-        )
-        appendLine(
-            "     • MCU/MS (Head-Chest/Waist): Prompt can describe torso, arms, but NOT legs or feet unless framing is MS+. Mentioning 'standing' or leg position in MCU = VISIBILITY_VIOLATION.",
-        )
-        appendLine(
-            "     • MWS+ (Knees and beyond): Full body description is appropriate.",
-        )
-        appendLine(
-            "     CRITICAL: If the visual direction's FORM & POSTURE says 'Lower body not visible' or describes only upper body, the final prompt must NOT mention legs, feet, standing stance, or weight distribution. This is an AUTOMATIC VISIBILITY_VIOLATION.",
-        )
-        appendLine(
-            "   - **LIGHTING & CONTRAST FIDELITY:** The prompt MUST embrace the reference's lighting structure (e.g., strong shadows, specific light direction, contrast level) as a compositional tool. Art style lighting acts as a MOOD/PALETTE filter, but it must NOT flatten or compromise the dramatic lighting defined in the reference.",
-        )
-        appendLine("   - NO technical jargon (f-stops/Kelvin/degrees) - use visual descriptors")
+        appendLine("1. CINEMATOGRAPHY (10 params from visual direction):")
+        appendLine("   - angle, lens, framing, placement, lighting, DOF, perspective, subject_orientation, form_posture, scale_zoom")
+        appendLine("   - All must match visual direction. Environment/mood/color come from GENRE, not reference.")
+        appendLine("   - SCALE_ZOOM MANDATORY: Frame fill % + distance descriptor must be present.")
+        appendLine()
+        appendLine("2. NARRATIVE DNA (3 params - CRITICAL FOR STORYTELLING):")
+        appendLine("   - ACTION: Subject must be DOING something that captures reference's narrative energy")
+        appendLine("   - EMOTIONAL_BEAT: Facial expression + body language must project the specified emotion")
+        appendLine("   - TENSION_SOURCE: An equivalent tension-creating element must be present")
+        appendLine("   - STATIC_SUBJECT_VIOLATION if: character is just standing/posing with no action when reference had clear action")
+        appendLine("   - MISSING_NARRATIVE_INTENT if: prompt lacks emotional projection or tension element")
         appendLine()
 
-        appendLine("2. VISIBILITY ENFORCEMENT & CHARACTER CONTINUITY:")
+        appendLine("3. SUBJECT ORIENTATION (3 components):")
+        appendLine("   - BODY: [Front/3/4/Profile/Back-facing/Back-with-head-turn] - must match exactly")
+        appendLine("   - HEAD: [Front/3/4/Profile/Over-shoulder] - must match exactly")
+        appendLine("   - GAZE: [Direct/Away/Up-Down/Closed] - must match exactly")
+        appendLine("   - Back-facing body described as front = CRITICAL VIOLATION")
+        appendLine()
+
+        appendLine("4. VISIBILITY BY FRAMING:")
+        appendLine("   - ECU/CU: head, neck, shoulders ONLY. NO hands/legs/stance.")
+        appendLine("   - MCU/MS: add torso, arms. NO legs.")
+        appendLine("   - MWS+: full body OK.")
+        appendLine("   - Describing invisible parts = VISIBILITY_VIOLATION")
+        appendLine()
+
         visualDirection?.let {
-            appendLine("   VISUAL DIRECTION: \"$it\"")
-            appendLine("   - Analyze this direction to determine what is VISIBLE vs. HIDDEN.")
-            appendLine(
-                "   - **REALISM CHECK (CRITICAL):** Cross-reference the FRAMING code with FORM & POSTURE descriptions. If the visual direction describes tight framing (ECU/CU/MCU) but mentions body parts like 'hands in lap', 'standing', or 'legs', this is EXTRACTION HALLUCINATION and must be corrected in your output.",
-            )
-            appendLine(
-                "   - **POSTURE VISIBILITY MATRIX:** Enforce this strictly:",
-            )
-            appendLine(
-                "     • ECU/CU: Can only describe head angle, neck, shoulders. NO hands (unless touching face), arms below shoulders, torso lean, legs, stance.",
-            )
-            appendLine(
-                "     • MCU: Add upper arms, torso lean. NO legs, feet, standing/sitting stance, weight distribution.",
-            )
-            appendLine(
-                "     • MS: Add full arms, torso, waist. Can describe sitting/leaning but NO leg details or feet.",
-            )
-            appendLine(
-                "     • MWS+: Full body descriptions are valid.",
-            )
-            appendLine(
-                "   - **IDENTITY PRESERVATION:** Do NOT omit core character details like headgear, facial features, or upper-body accessories (necklaces, distinctive collars) unless they are truly outside the frame. These define the character.",
-            )
-            appendLine(
-                "   - **MULTI-SUBJECT INTEGRATION (CRITICAL):** If the visual direction or prompt implies multiple subjects, ensure ALL are described with concrete traits and their spatial relationship/interaction is preserved. Do not normalize multiple subjects into a single figure.",
-            )
-            appendLine(
-                "   - **PORTRAIT FLEXIBILITY:** For CU (Head-Shoulders) or MCU (Head-Chest), ensure subtle outfit details from the chest up are included to ground the character. Do not strip clothing descriptions that characterize the upper-body silhouette.",
-            )
-            appendLine(
-                "   - ABSOLUTE RULE: The final prompt MUST NOT contain descriptions of elements explicitly marked as HIDDEN (e.g., footwear in a headshot).",
-            )
-            appendLine(
-                "   - **HANDS & GESTURE EXCEPTION:** Hands and arms ARE allowed in tighter frames (CU/MCU) if they interact with the face or body (e.g., 'hand covering mouth', 'adjusting glasses'). Do NOT delete these if they enhance the expression.",
-            )
-            appendLine(
-                "   - ACTION: If the prompt describes a truly hidden element (e.g., 'wearing leather boots' in a CU), DELETE it. But retain upper-body details, expressive gestures, and context.",
-            )
+            appendLine("5. VISUAL DIRECTION TO ENFORCE: \"$it\"")
             appendLine()
         }
 
-        appendLine("3. POSE & EXPRESSION (ALIVE, SOULFUL & EXPRESSIVE):")
-        appendLine(
-            "   - **GOAL:** The character must look ALIVE and SOULFUL, caught in a genuine moment, not a static mannequin.",
-        )
-        appendLine(
-            "   - FACIAL EXPRESSION: MUST convey a specific, nuanced emotion (e.g., 'weary resignation', 'mischievous glee').",
-        )
-        appendLine(
-            "   - BODY LANGUAGE & HANDS: Demand expressiveness beyond the face. Look for head tilts, neck tension, shoulder position, and HANDS interacting with the self/environment (e.g., 'tugging at collar', 'hand on forehead').",
-        )
-        appendLine(
-            "   - SYNERGY: Facial expression + body language + hand placement MUST create a powerful, unified emotional storytelling moment.",
-        )
-        appendLine(
-            "   - **BODY LANGUAGE IMPORTANCE:** The pose is as critical as the face. If visual direction implies a specific stance (e.g., 'hunching', 'looking back'), it MUST be present. Static/neutral bodies in dynamic scenes are VIOLATIONS.",
-        )
-        appendLine(
-            "   - **OPEN ANGLE DYNAMICS (MS/FS/WS):** For wider shots, the ENTIRE visible body must express the narrative. Reject 'neutral standing'. Look for leaning, crouching, running, flying, sitting, or dynamic weight distribution.",
-        )
-        appendLine(
-            "   - MOMENT: Character 'caught in a pivotal moment' (mid-action, reacting to an unseen event, lost in thought), NOT 'posed for portrait' or static.",
-        )
+        appendLine("6. GENRE RULES (APPLY STRICTLY):")
+        appendLine("   $artStyleValidationRules")
         appendLine()
 
-        appendLine("4. GOOGLE IMAGE GENERATION BEST PRACTICES:")
-        appendLine("   - CLARITY: Concrete descriptions, NO metaphors/abstractions")
-        appendLine("   - EXPLICIT: Say what IS present, NOT what to avoid")
-        appendLine("   - FEATURE HIERARCHY: Lead with critical details, then context")
-        appendLine("   - AMBIGUITY: Zero vague adjectives - every descriptor must be actionable")
+        appendLine("7. EXPRESSION: Must be specific emotion, not generic ('thoughtful'→'weary resignation')")
         appendLine()
 
-        appendLine("5. ART STYLE RULES:")
-        appendLine("   Genre: $artStyleValidationRules")
-        appendLine("   - Apply ALL rules with ZERO tolerance for violations")
-        appendLine("   - Verify REQUIRED elements present, FORBIDDEN elements absent")
-        appendLine("   - Respect character traits (skin tone, hair, body type, distinctive marks)")
+        appendLine("8. RENDERING STYLE (CRITICAL):")
+        appendLine("   Prompt MUST specify: shading, shadows, line work, colors, texture matching genre.")
+        appendLine("   RENDERING_VIOLATION if: wrong style (e.g., modern anime for vintage OVA genre) or missing rendering specs.")
         appendLine()
 
-        appendLine("6. GENRE-SPECIFIC POSE & AURA:")
-        appendLine(
-            "   - The subject's pose and emotional aura MUST match the genre's specific directive (e.g., Heroes = Dynamic/Vertical, Fantasy = Graceful/Contrapposto, Punk = Rebellious/Slouching).",
-        )
-        appendLine("   - Reject generic poses that don't convey the genre's unique energy.")
-        appendLine()
-
-        appendLine("7. ARTIST MENTORSHIP (FEEDBACK LOOP):")
-        appendLine(
-            "   - **`artistImprovementSuggestions` FIELD:** Act as a senior art director giving feedback to a student artist.",
-        )
-        appendLine(
-            "   - Provide concrete, technical advice on how the artist can avoid the detected violations in the next prompt.",
-        )
-        appendLine(
-            "   - **EMOTIONAL UNITY:** Ensure pose and facial expression are unified to convey ONE specific, nuanced emotion. Suggest: 'Ask what singular feeling the character embodies, then ensure every visible element reinforces it.'",
-        )
-        appendLine(
-            "   - **HAND GESTURES AS ANCHORS:** Hands are the second most expressive feature—they must support and amplify the emotion. Suggest: 'Describe hands as emotional storytellers (e.g., \"clenched fists betraying hidden anger\" not just \"hands at sides\").'",
-        )
-        appendLine(
-            "   - **SCALE & ZOOM IN FRAMING:** When describing framing, always include scale and zoom. Suggest: 'Instead of just \"medium shot\", write \"MS: Head-Waist, subject at 60% frame fill with comfortable portrait distance\".'",
-        )
-        appendLine(
-            "   - **DETAIL VISIBILITY:** Prioritize details visible within the specified framing; avoid describing elements outside the frame. Suggest: 'For CU framing, focus 70% of description on facial details and expression nuances.'",
-        )
-        appendLine(
-            "   - Focus on precision: 'Include 3 specific environment objects', 'Use more dramatic verbs for body language', 'Ensure hands are always described if the framing is CU/MCU'.",
-        )
-        appendLine("   - Use a constructive but firm tone to guide better initial output.")
-        appendLine()
-
-        appendLine("8. VISUAL DIRECTOR MENTORSHIP (META-REVIEW):")
-        appendLine(
-            "   - **`visualDirectorSuggestions` FIELD:** Act as a Lead Technical Director optimizing an upstream AI.",
-        )
-        appendLine(
-            "   - Analyze the `VISUAL DIRECTION` input for ambiguity or lack of technical specificity.",
-        )
-        appendLine(
-            "   - Suggest *concrete terminology replacements* to improve future extractions. Tell the Visual Director exactly what terms to use instead.",
-        )
-        appendLine(
-            "   - **FRAMING PRECISION:** Replace generic framing descriptions (e.g., 'Medium Shot', 'close-up') with precise framing codes that include anatomical boundaries (e.g., 'MS: Head-Waist', 'CU: Head-Shoulders above chest line').",
-        )
-        appendLine(
-            "   - **SCALE & ZOOM ENFORCEMENT:** ALWAYS verify SCALE & ZOOM parameters are present and specific. Suggest: 'Include frame fill percentage (e.g., \"85% fill\") AND perceived distance descriptor (e.g., \"intimate proximity\").'",
-        )
-        appendLine(
-            "   - **EYE DETAIL REQUIREMENT (ECU/CU):** For tight framings, demand exact eye specifications: 'Instead of \"expressive eyes\", specify iris color (e.g., \"stormy grey-blue\"), catchlight position (e.g., \"twin catchlights at 2 o'clock\"), and pupil state.'",
-        )
-        appendLine(
-            "   - **DETAIL PRIORITIZATION:** Ensure the Visual Director prioritizes details visible within the specified framing. Suggest: 'At CU framing, dedicate 70% of description to facial details; environment should be atmospheric only.'",
-        )
-        appendLine(
-            "   - Examples: 'Replace generic \"close-up\" with \"CU: Head-Shoulders (above chest line)\" for clarity', 'Instead of \"dramatic angle\", request \"Low-Angle Dutch Tilt 10°\"', 'Specify exact lighting ratio (e.g., 3:1) instead of just \"contrast\"', 'Add \"Subject fills 80% of frame with intimate proximity\" to enforce scale'.",
-        )
-        appendLine(
-            "   - GOAL: Calibrate the Visual Director to be a precise cinematographer with exact technical specifications, not a creative writer using generic terms.",
-        )
-        appendLine()
-
-        appendLine("VIOLATION DETECTION:")
-        appendLine("- VISIBILITY_VIOLATION: Describes body parts/clothing out of frame (includes unrealistic posture descriptions)")
-        appendLine(
-            "- UNREALISTIC_POSTURE_EXTRACTION: Visual direction's FORM & POSTURE describes body parts not visible at the specified FRAMING level (e.g., 'hands in lap' in a CU, 'standing' in an ECU). This indicates the extraction AI hallucinated details.",
-        )
-        appendLine("- MISSING_FACIAL_EXPRESSION: No specific emotion or generic descriptor")
-        appendLine("- MISSING_DYNAMIC_POSE: Static/neutral pose without emotional content")
-        appendLine("- POSE_EXPRESSION_VIOLATION: Expression + pose don't work together or character seems posed, not in moment")
-        appendLine("- FRAMING_VIOLATION: Describes elements not visible at this framing level")
-        appendLine(
-            "- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.",
-        )
-        appendLine(
-            "- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation doesn't match ANY of the three components from visual direction (body axis, head direction, or gaze). Each must be precisely matched. CRITICAL CHECK: If visual direction states 'Body back-facing' but prompt implies front view, this is a MAJOR violation. Back-facing bodies CANNOT be described as front-facing in the prompt.",
-        )
-        appendLine(
-            "- MISSING_SCALE_ZOOM (CRITICAL): The visual direction provides SCALE & ZOOM parameter but the prompt doesn't describe frame fill or proximity at all. This is a CRITICAL omission that breaks framing precision.",
-        )
-        appendLine(
-            "- SCALE_ZOOM_VIOLATION: The prompt describes scale/zoom but it mismatches the visual direction (e.g., 'distant wide shot' when direction specifies 'subject fills 80% of frame').",
-        )
-        appendLine(
-            "- GENRE_AURA_VIOLATION: Subject pose or vibe contradicts the genre (e.g., static pose in Hero genre, happy pose in Cyberpunk).",
-        )
-        appendLine("- BANNED_TERMINOLOGY: Uses forbidden words from art style")
-        appendLine("- MISSING_CINEMATOGRAPHY_PARAMETER: Any of 16 params missing/vague")
-        appendLine("- LIGHTING_MISSING/WRONG, COLOR_PALETTE_WRONG, ENVIRONMENT_MISSING, etc.")
+        appendLine("VIOLATIONS:")
+        appendLine("- VISIBILITY_VIOLATION: body parts out of frame")
+        appendLine("- SUBJECT_ORIENTATION_VIOLATION: body/head/gaze mismatch")
+        appendLine("- MISSING_SCALE_ZOOM: no frame fill or distance")
+        appendLine("- RENDERING_VIOLATION: wrong/missing rendering style for genre")
+        appendLine("- MISSING_80S_OVA_STYLE (CYBERPUNK): lacks 80s anime markers (cel shading, film grain, etc.)")
+        appendLine("- STATIC_SUBJECT_VIOLATION: character just standing/posing when reference had dynamic action")
+        appendLine("- MISSING_NARRATIVE_INTENT: no emotional projection, no tension element, artwork lacks story")
+        appendLine("- INSUFFICIENT_CYBERWARE (CYBERPUNK): <3 major visible cyberware elements")
+        appendLine("- GENRE_AURA_VIOLATION: pose/vibe contradicts genre")
+        appendLine("- BANNED_TERMINOLOGY: forbidden words")
         appendLine()
 
         appendLine("AUTO-FIX PATTERNS:")
-        appendLine(
-            "- Unrealistic posture extraction → Ignore hallucinated body parts from visual direction, focus only on what the framing actually shows (e.g., if CU with 'hands in lap', remove hand reference and focus on head/shoulder position)",
-        )
-        appendLine("- Missing expression → Add specific, INTENSE emotion matching archetype")
-        appendLine(
-            "- Missing/Weak pose → INJECT DRAMA: Suggest exaggerated gestures, dynamic foreshortening, and intensified body language",
-        )
-        appendLine("- Expression + pose contradictory → Align emotionally and AMPLIFY the storytelling")
-        appendLine("- Out-of-frame descriptions → Remove, replace with visible details")
-        appendLine(
-            "- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.",
-        )
-        appendLine(
-            "- Wrong subject orientation → Correct ALL THREE components (body axis, head direction, gaze) to precisely match the visual direction.",
-        )
-        appendLine(
-            "- Missing scale/zoom (CRITICAL) → IMMEDIATELY inject spatial descriptors matching the visual direction's SCALE & ZOOM parameter (e.g., 'filling 80% of frame with intimate proximity'). This is NON-NEGOTIABLE.",
-        )
-        appendLine(
-            "- Wrong scale/zoom → Correct spatial descriptors to match reference framing distance (e.g., 'intimate close-up filling frame' vs 'subject at 40% scale with environment visible').",
-        )
-        appendLine(
-            "- Wrong genre aura → Rewrite pose/expression to match genre (e.g., 'standing' → 'standing with heroic verticality' for Heroes).",
-        )
-        appendLine("- Static character → Add momentum language ('breathing', 'captured mid-action')")
-        appendLine("- Generic cinematography → Specify exact values from 16 parameters")
-        appendLine("- Missing background/environment → Add 3+ specific objects matching the genre's ambience")
+        appendLine()
+        appendLine("NARRATIVE (CRITICAL - transforms static portraits into storytelling moments):")
+        appendLine("- STATIC_SUBJECT → Add action from visual direction: weapon handling, gesture, interaction")
+        appendLine("- MISSING_EMOTIONAL_BEAT → Inject specific emotional projection into expression and body")
+        appendLine("- MISSING_TENSION → Add tension element: weapon, confrontational pose, dramatic gesture")
+        appendLine("- 'standing' or 'posing' → Replace with specific action verb and gesture from reference")
+        appendLine()
+        appendLine("RENDERING: If missing/wrong, inject genre's required rendering style from GENRE RULES above.")
+        appendLine()
+        appendLine("CYBERWARE (CYBERPUNK):")
+        appendLine("- 'enhanced eyes' → 'mechanical eye with LED array, scanner reticle'")
+        appendLine("- 'silver scars' → 'chrome neural port with cables, junction box'")
+        appendLine("- 'glowing implants' → 'chrome plate with exposed circuitry'")
+        appendLine("- 'circuit tattoo/data bracelet' → 'chrome forearm with hydraulic pistons'")
+        appendLine("- If <3 cyberware: ADD mechanical eye, chrome port, or limb replacement")
         appendLine()
 
-        appendLine("OUTPUT JSON (ImagePromptReview) - ENSURE ALL FIELDS ARE PRESENT:")
-        appendLine("- `originalPrompt`: The raw input prompt")
-        appendLine("- `correctedPrompt`: The final, high-quality, fixed prompt")
-        appendLine(
-            "- `violations`: List of objects { \"type\": \"ENUM_NAME\", \"severity\": \"CRITICAL/MAJOR/MINOR\", \"description\": \"...\", \"example\": \"...\" }",
-        )
-        appendLine("- `changesApplied`: List of strings describing each fix")
-        appendLine("- `artistImprovementSuggestions`: Concrete, technical feedback for the artist on how to improve next time")
-        appendLine("- `visualDirectorSuggestions`: Feedback on the Visual Direction input quality (or null)")
-        appendLine("- `wasModified`: Boolean indicating if any changes were made")
+        appendLine("⚠️ MANDATORY FEEDBACK FIELDS (NEVER NULL):")
+        appendLine()
+        appendLine("artistImprovementSuggestions (REQUIRED - provide concrete advice):")
+        appendLine("- What specific techniques could improve the prompt?")
+        appendLine("- What details were missing or too vague?")
+        appendLine("- How could framing/expression/pose be better described?")
+        appendLine("- Example: 'Specify exact eye color and catchlight position for CU frames'")
+        appendLine()
+        appendLine("visualDirectorSuggestions (REQUIRED - provide extraction improvements):")
+        appendLine("- Was the visual direction extraction precise enough?")
+        appendLine("- What parameters were missing or ambiguous?")
+        appendLine("- How could the extraction be more specific?")
+        appendLine("- Example: 'Include frame fill % in SCALE_ZOOM, specify shadow direction in LIGHTING'")
+        appendLine()
+
+        appendLine("OUTPUT JSON (ImagePromptReview):")
+        appendLine("- originalPrompt: input prompt")
+        appendLine("- correctedPrompt: fixed prompt")
+        appendLine("- violations[]: {type, severity, description, example}")
+        appendLine("- changesApplied[]: list of fixes made")
+        appendLine("- artistImprovementSuggestions: NEVER NULL - concrete feedback for prompt writer")
+        appendLine("- visualDirectorSuggestions: NEVER NULL - feedback for extraction AI")
+        appendLine("- wasModified: boolean")
         appendLine()
         appendLine("PROMPT TO REVIEW:")
         appendLine(finalPrompt)

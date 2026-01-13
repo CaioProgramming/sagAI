@@ -378,7 +378,8 @@ fun LazyListScope.SagaDrawerContent(
                             .reactiveShimmer(
                                 content.data.review != null,
                                 targetValue = 250f,
-                            ).clickable {
+                            )
+                            .clickable {
                                 openReview()
                             },
                 )
@@ -403,7 +404,8 @@ fun LazyListScope.SagaDrawerContent(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                         shape,
-                    ).background(
+                    )
+                    .background(
                         MaterialTheme.colorScheme.background,
                         shape,
                     )
@@ -444,7 +446,8 @@ fun LazyListScope.SagaDrawerContent(
                                     .clip(shape)
                                     .clickable {
                                         expandedEvents = !expandedEvents
-                                    }.fillMaxWidth(),
+                                    }
+                                    .fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
@@ -976,7 +979,7 @@ private fun SagaDetailInitialView(
                                 GridItemSpan(columnCount)
                             }) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    if (saga.data.icon.isNotEmpty()) {
+                                    if (saga.data.icon.isNotBlank()) {
                                         Box(
                                             modifier =
                                                 Modifier
@@ -993,7 +996,8 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    ).reactiveShimmer(
+                                                    )
+                                                    .reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     )
@@ -1071,8 +1075,7 @@ private fun SagaDetailInitialView(
                                                         if (saga.data.icon.isEmpty()) {
                                                             selectSection(DetailAction.REGENERATE)
                                                         }
-                                                    }
-                                                    .gradientFill(
+                                                    }.gradientFill(
                                                         saga.data.genre.gradient(),
                                                     ),
                                         )
@@ -1081,22 +1084,21 @@ private fun SagaDetailInitialView(
                                             saga.data.title,
                                             maxLines = 2,
                                             style =
-                                                MaterialTheme.typography.displayMedium.copy(
+                                                MaterialTheme.typography.headlineLarge.copy(
                                                     fontFamily = saga.data.genre.headerFont(),
                                                     brush = saga.data.genre.gradient(true),
                                                     textAlign = TextAlign.Center,
                                                 ),
                                             modifier =
                                                 Modifier
-                                                    .padding(16.dp)
+                                                    .padding(8.dp)
                                                     .fillMaxWidth()
                                                     .sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     ),
@@ -1335,8 +1337,7 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    )
-                                                    .padding(8.dp)
+                                                    ).padding(8.dp)
                                                     .weight(1f),
                                         )
 
