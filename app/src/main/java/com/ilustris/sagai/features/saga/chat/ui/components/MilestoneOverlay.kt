@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -92,7 +93,6 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -119,7 +119,7 @@ fun MilestoneOverlay(
     var showSubtitle by remember { mutableStateOf(canPlayAnimation.not()) }
     var showButton by remember { mutableStateOf(canPlayAnimation.not()) }
     var showOverlay by remember { mutableStateOf(canPlayAnimation.not()) }
-    var pulsePhase by remember { mutableStateOf(0) } // 0: pulsing, 1: message loaded, 2: complete
+    var pulsePhase by remember { mutableStateOf(0) }
 
     val iconSize by animateDpAsState(
         targetValue =
@@ -225,206 +225,271 @@ fun MilestoneOverlay(
                     } else {
                         Modifier.wrapContentSize()
                     }
-                if (canPlayAnimation) {
-                    MaterialTheme.colorScheme.background.solidGradient()
-                } else {
-                    fadeGradientTop()
-                }
 
                 Box(
                     modifier =
-                        boxModifier
-                            .background(MaterialTheme.colorScheme.background)
+                        Modifier
                             .animateContentSize(),
                     contentAlignment = if (canPlayAnimation) Alignment.Center else Alignment.TopCenter,
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .statusBarsPadding()
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
-                                .animateContentSize(tween(300, easing = EaseIn))
-                                .padding(16.dp),
-                    ) {
-                        AnimatedVisibility(
-                            visible = showIcon,
-                            enter = fadeIn(tween(400)) + scaleIn(),
-                            exit = fadeOut(tween(700)) + scaleOut(),
+                    Column {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier =
+                                boxModifier
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .statusBarsPadding()
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                                    .animateContentSize(tween(300, easing = EaseIn))
+                                    .padding(16.dp),
                         ) {
-                            val fillBrush =
-                                if (canPlayAnimation) {
-                                    genre.gradient(true)
-                                } else {
-                                    genre.gradient(true)
-                                }
-
-                            Image(
-                                painter = painterResource(R.drawable.ic_spark),
-                                contentDescription = null,
-                                colorFilter =
-                                    ColorFilter.tint(
-                                        if (canPlayAnimation) MaterialTheme.colorScheme.background else genre.color,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .gradientFill(fillBrush)
-                                        .size(iconSize)
-                                        .graphicsLayer {
-                                            translationY =
-                                                if (pulsePhase >= 2) levitation else 0f
-                                            scaleX = if (pulsePhase == 0) pulseScale else 1f
-                                            scaleY = if (pulsePhase == 0) pulseScale else 1f
-                                        }.sharedElement(
-                                            rememberSharedContentState(
-                                                key = "saga_${saga.data.id}_spark",
-                                            ),
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                        ),
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = showTitle,
-                            enter = slideInVertically(animationSpec = tween(500)) { it / 2 } + fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            Text(
-                                text = stringResource(milestone.title).uppercase(),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        letterSpacing = 3.sp,
-                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = showSubtitle,
-                            enter =
-                                scaleIn(
-                                    initialScale = 0.8f,
-                                    animationSpec = tween(700, easing = EaseInOutQuad),
-                                ) + fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            AnimatedVisibility(
+                                visible = showIcon,
+                                enter = fadeIn(tween(400)) + scaleIn(),
+                                exit = fadeOut(tween(700)) + scaleOut(),
                             ) {
-                                val textStyle =
-                                    if (milestone.isIntrusive) {
-                                        MaterialTheme.typography.headlineMedium
+                                val fillBrush =
+                                    if (canPlayAnimation) {
+                                        genre.gradient(true)
                                     } else {
-                                        MaterialTheme.typography.labelLarge
+                                        genre.gradient(true)
                                     }
-                                if (milestone is SagaMilestone.NewCharacter) {
-                                    val character = saga.findCharacter(milestone.character.id)
-                                    character?.let {
-                                        if (it.data.image.isNotBlank()) {
-                                            CharacterAvatar(
-                                                milestone.character,
-                                                genre = genre,
-                                                modifier = Modifier.size(120.dp),
-                                            )
-                                        }
-                                    }
-                                }
 
-                                Text(
-                                    text = milestone.subtitle,
-                                    style =
-                                        textStyle.copy(
-                                            fontFamily = if (milestone.isIntrusive) genre.headerFont() else genre.bodyFont(),
-                                            fontWeight = FontWeight.Bold,
-                                            textAlign = TextAlign.Center,
-                                            shadow =
-                                                Shadow(
-                                                    color = genre.color,
-                                                    offset = Offset(0f, 0f),
-                                                    blurRadius = glowBlurRadius,
-                                                ),
+                                Image(
+                                    painter = painterResource(R.drawable.ic_spark),
+                                    contentDescription = null,
+                                    colorFilter =
+                                        ColorFilter.tint(
+                                            if (canPlayAnimation) MaterialTheme.colorScheme.background else genre.color,
                                         ),
                                     modifier =
                                         Modifier
-                                            .reactiveShimmer(
-                                                milestone.isIntrusive,
-                                                genre.shimmerColors(),
-                                                repeatMode = RepeatMode.Restart,
-                                                targetValue = 1000f,
-                                            ).padding(8.dp),
+                                            .gradientFill(fillBrush)
+                                            .size(iconSize)
+                                            .graphicsLayer {
+                                                translationY =
+                                                    if (pulsePhase >= 2) levitation else 0f
+                                                scaleX = if (pulsePhase == 0) pulseScale else 1f
+                                                scaleY = if (pulsePhase == 0) pulseScale else 1f
+                                            }.sharedElement(
+                                                rememberSharedContentState(
+                                                    key = "saga_${saga.data.id}_spark",
+                                                ),
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                            ),
                                 )
+                            }
 
-                                if (milestone is SagaMilestone.NewEvent) {
-                                    val brush =
-                                        Brush.horizontalGradient(genre.color.darkerPalette(factor = .25f))
-                                    val event = saga.findTimeline(milestone.timeline.id)
-                                    event?.let {
-                                        val stats = event.statsSummary()
+                            AnimatedVisibility(
+                                visible = showTitle,
+                                enter = slideInVertically(animationSpec = tween(500)) { it / 2 } + fadeIn(),
+                                exit = fadeOut(),
+                            ) {
+                                Text(
+                                    text = stringResource(milestone.title).uppercase(),
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            letterSpacing = 3.sp,
+                                            color =
+                                                MaterialTheme.colorScheme.onBackground.copy(
+                                                    alpha = .5f,
+                                                ),
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                )
+                            }
 
-                                        LazyRow(
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier =
-                                                Modifier
-                                                    .animateContentSize()
-                                                    .fillMaxWidth(),
-                                        ) {
-                                            items(stats) {
-                                                MilestoneBadge(
-                                                    it.second,
-                                                    stringResource(it.first),
-                                                    brush,
-                                                    glowBlurRadius,
-                                                    genre,
+                            AnimatedVisibility(
+                                visible = showSubtitle,
+                                enter =
+                                    scaleIn(
+                                        initialScale = 0.8f,
+                                        animationSpec = tween(700, easing = EaseInOutQuad),
+                                    ) + fadeIn(),
+                                exit = fadeOut(),
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    val textStyle =
+                                        if (milestone.isIntrusive) {
+                                            MaterialTheme.typography.headlineMedium
+                                        } else {
+                                            MaterialTheme.typography.labelLarge
+                                        }
+                                    if (milestone is SagaMilestone.NewCharacter) {
+                                        val character = saga.findCharacter(milestone.character.id)
+                                        character?.let {
+                                            if (it.data.image.isNotBlank()) {
+                                                CharacterAvatar(
+                                                    milestone.character,
+                                                    genre = genre,
+                                                    modifier = Modifier.size(120.dp),
                                                 )
                                             }
                                         }
                                     }
-                                }
 
-                                if (milestone is SagaMilestone.ChapterFinished) {
-                                    val chapter = saga.findChapter(milestone.chapter.id)
-                                    chapter?.let {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            val characters =
-                                                it.fetchCharacters(saga).filterNotNull()
-                                            Text("Personagens mais importantes")
+                                    Text(
+                                        text = milestone.subtitle,
+                                        style =
+                                            textStyle.copy(
+                                                fontFamily = if (milestone.isIntrusive) genre.headerFont() else genre.bodyFont(),
+                                                fontWeight = FontWeight.Bold,
+                                                textAlign = TextAlign.Center,
+                                                shadow =
+                                                    Shadow(
+                                                        color = genre.color,
+                                                        offset = Offset(0f, 0f),
+                                                        blurRadius = glowBlurRadius,
+                                                    ),
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .reactiveShimmer(
+                                                    milestone.isIntrusive,
+                                                    genre.shimmerColors(),
+                                                    repeatMode = RepeatMode.Restart,
+                                                    targetValue = 1000f,
+                                                ).padding(8.dp),
+                                    )
 
-                                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                items(characters) { character ->
-                                                    CharacterYearbookItem(
-                                                        character.data,
+                                    if (milestone is SagaMilestone.NewEvent) {
+                                        val brush =
+                                            Brush.horizontalGradient(
+                                                genre.color.darkerPalette(
+                                                    factor = .25f,
+                                                ),
+                                            )
+                                        val event = saga.findTimeline(milestone.timeline.id)
+                                        event?.let {
+                                            val stats = event.statsSummary()
+
+                                            LazyRow(
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier =
+                                                    Modifier
+                                                        .animateContentSize()
+                                                        .fillMaxWidth(),
+                                            ) {
+                                                items(stats) {
+                                                    MilestoneBadge(
+                                                        it.second,
+                                                        stringResource(it.first),
+                                                        brush,
+                                                        glowBlurRadius,
                                                         genre,
-                                                        imageModifier =
-                                                            Modifier
-                                                                .size(50.dp)
-                                                                .reactiveShimmer(true),
                                                     )
                                                 }
                                             }
                                         }
                                     }
-                                }
 
-                                AnimatedContent(
-                                    targetState = congratsMessage,
-                                    label = "congrats_message",
-                                ) { message ->
-                                    message?.let {
+                                    if (milestone is SagaMilestone.ChapterFinished) {
+                                        val chapter = saga.findChapter(milestone.chapter.id)
+                                        chapter?.let {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                val characters =
+                                                    it.fetchCharacters(saga).filterNotNull()
+                                                Text("Personagens mais importantes")
+
+                                                LazyRow(
+                                                    horizontalArrangement =
+                                                        Arrangement.spacedBy(
+                                                            8.dp,
+                                                        ),
+                                                ) {
+                                                    items(characters) { character ->
+                                                        CharacterYearbookItem(
+                                                            character.data,
+                                                            genre,
+                                                            imageModifier =
+                                                                Modifier
+                                                                    .size(50.dp)
+                                                                    .reactiveShimmer(true),
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    AnimatedContent(
+                                        targetState = congratsMessage,
+                                        label = "congrats_message",
+                                    ) { message ->
+                                        message?.let {
+                                            Text(
+                                                text =
+                                                message,
+                                                style =
+                                                    MaterialTheme.typography.bodyMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        color = Color.White.copy(alpha = 0.9f),
+                                                        textAlign = TextAlign.Center,
+                                                        fontWeight = FontWeight.Medium,
+                                                    ),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Continue button
+                            AnimatedVisibility(
+                                visible = showButton,
+                                enter =
+                                    slideInVertically { it / 2 } + fadeIn() +
+                                        scaleIn(
+                                            initialScale = 0.8f,
+                                        ),
+                                exit = fadeOut(),
+                            ) {
+                                val buttonColors =
+                                    if (canPlayAnimation) {
+                                        ButtonDefaults.buttonColors(
+                                            containerColor = genre.color,
+                                            contentColor = genre.iconColor,
+                                            disabledContainerColor = genre.color.copy(alpha = 0.5f),
+                                            disabledContentColor = genre.iconColor.copy(alpha = 0.5f),
+                                        )
+                                    } else {
+                                        ButtonDefaults.textButtonColors(
+                                            contentColor = genre.color,
+                                            disabledContentColor = genre.color.copy(alpha = .5f),
+                                        )
+                                    }
+                                Button(
+                                    onClick = onDismiss,
+                                    enabled = !isLoading,
+                                    colors = buttonColors,
+                                    shape =
+                                        genre.bubble(
+                                            BubbleTailAlignment.BottomLeft,
+                                            0.dp,
+                                            0.dp,
+                                            true,
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
                                         Text(
-                                            text =
-                                            message,
+                                            text = stringResource(R.string.continue_button),
                                             style =
-                                                MaterialTheme.typography.bodyMedium.copy(
+                                                MaterialTheme.typography.labelLarge.copy(
                                                     fontFamily = genre.bodyFont(),
-                                                    color = Color.White.copy(alpha = 0.9f),
-                                                    textAlign = TextAlign.Center,
-                                                    fontWeight = FontWeight.Medium,
+                                                    fontWeight = FontWeight.Bold,
                                                 ),
                                         )
                                     }
@@ -432,57 +497,12 @@ fun MilestoneOverlay(
                             }
                         }
 
-                        // Continue button
-                        AnimatedVisibility(
-                            visible = showButton,
-                            enter = slideInVertically { it / 2 } + fadeIn() + scaleIn(initialScale = 0.8f),
-                            exit = fadeOut(),
-                        ) {
-                            val buttonColors =
-                                if (canPlayAnimation) {
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = genre.color,
-                                        contentColor = genre.iconColor,
-                                        disabledContainerColor = genre.color.copy(alpha = 0.5f),
-                                        disabledContentColor = genre.iconColor.copy(alpha = 0.5f),
-                                    )
-                                } else {
-                                    ButtonDefaults.textButtonColors(
-                                        contentColor = genre.color,
-                                        disabledContentColor = genre.color.copy(alpha = .5f),
-                                    )
-                                }
-                            Button(
-                                onClick = onDismiss,
-                                enabled = !isLoading,
-                                colors = buttonColors,
-                                shape =
-                                    genre.bubble(
-                                        BubbleTailAlignment.BottomLeft,
-                                        0.dp,
-                                        0.dp,
-                                        true,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                            ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.continue_button),
-                                        style =
-                                            MaterialTheme.typography.labelLarge.copy(
-                                                fontFamily = genre.bodyFont(),
-                                                fontWeight = FontWeight.Bold,
-                                            ),
-                                    )
-                                }
-                            }
-                        }
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(100.dp)
+                                .background(fadeGradientTop()),
+                        )
                     }
                 }
             }

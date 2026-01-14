@@ -304,7 +304,7 @@ fun ChatView(
                             is ChatState.Success -> {
                                 uiState.sagaContent?.let { cont ->
                                     AnimatedContent(uiState.showTitle, transitionSpec = {
-                                        fadeIn(tween(200)) togetherWith fadeOut(tween(700))
+                                        fadeIn(tween(500)) togetherWith fadeOut(tween(700))
                                     }) {
                                         if (it) {
                                             Box(Modifier.fillMaxSize()) {
@@ -606,8 +606,7 @@ fun ChatContent(
                             shimmerColors = saga.genre.shimmerColors(),
                             duration = 10.seconds,
                             targetValue = 1000f,
-                        )
-                        .fillMaxSize(.5f)
+                        ).fillMaxSize(.5f)
                         .alpha(.3f),
             )
 
@@ -615,8 +614,7 @@ fun ChatContent(
                 Modifier
                     .padding(
                         top = padding.calculateTopPadding(),
-                    )
-                    .fillMaxSize(),
+                    ).fillMaxSize(),
             ) {
                 rememberCoroutineScope()
                 val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -691,8 +689,7 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }
-                            .padding(vertical = padding.calculateBottomPadding())
+                            }.padding(vertical = padding.calculateBottomPadding())
                             .animateContentSize(),
                     enter = slideInVertically(),
                     exit = slideOutVertically { it },
@@ -841,21 +838,20 @@ fun ChatContent(
                                 end.linkTo(parent.end)
                             },
                 ) {
-                    AnimatedVisibility(
-                        uiState.milestone == null,
-                        enter = fadeIn(tween(600)),
-                        exit = fadeOut(tween(600)),
+                    AnimatedContent(
+                        uiState.milestone,
                         modifier =
                             Modifier.align(
                                 Alignment.CenterHorizontally,
                             ),
                     ) {
+                        val tintAlpha = if (it == null) .5f else 1f
                         Image(
                             painterResource(R.drawable.ic_spark),
                             contentDescription = null,
                             colorFilter =
                                 ColorFilter.tint(
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = .3f),
+                                    MaterialTheme.colorScheme.onBackground.copy(alpha = tintAlpha),
                                 ),
                             modifier =
                                 Modifier
@@ -864,8 +860,7 @@ fun ChatContent(
                                     .clip(CircleShape)
                                     .clickable {
                                         onAction(ChatUiAction.ShowObjective)
-                                    }
-                                    .gradientFill(
+                                    }.gradientFill(
                                         progressiveBrush(
                                             content.data.genre.color,
                                             progress,
@@ -1368,7 +1363,7 @@ fun ChatList(
                             it,
                             isLoading = false,
                             content = saga,
-                            canAnimate = timeline.messages.lastOrNull() == it,
+                            canAnimate = true,
                             messageEffectsEnabled = messageEffectsEnabled,
                             audioPlaybackState = audioPlaybackState,
                             modifier =

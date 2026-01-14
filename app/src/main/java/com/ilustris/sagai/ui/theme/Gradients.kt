@@ -178,7 +178,7 @@ fun Color.darkerPalette(
 
 val holographicGradient =
     listOf(
-        MaterialColor.Pink100,
+        MaterialColor.Purple800,
         MaterialColor.Orange400,
         MaterialColor.PinkA200,
         MaterialColor.Pink900,
@@ -186,6 +186,14 @@ val holographicGradient =
         MaterialColor.Blue900,
         MaterialColor.Purple200,
     )
+
+@Composable
+fun themeShimmer() =
+    buildList {
+        add(Color.Transparent)
+        addAll(holographicGradient)
+        add(Color.Transparent)
+    }
 
 @Composable
 fun genresGradient(): List<Color> =

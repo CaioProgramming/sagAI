@@ -22,11 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 
@@ -42,7 +40,9 @@ fun SagaTopBar(
     titleModifier: Modifier = Modifier,
 ) {
     Row(
-        modifier.fillMaxWidth().padding(vertical = 12.dp),
+        modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         onBackClick?.let {
@@ -62,7 +62,11 @@ fun SagaTopBar(
         }
 
         Column(
-            modifier = Modifier.reactiveShimmer(isLoading, genre.shimmerColors()).padding(horizontal = 8.dp).weight(1f),
+            modifier =
+                Modifier
+                    .reactiveShimmer(isLoading, genre.shimmerColors())
+                    .padding(horizontal = 8.dp)
+                    .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -70,10 +74,14 @@ fun SagaTopBar(
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         fontFamily = genre.headerFont(),
-                        brush = genre.gradient(),
+                        brush = genre.gradient(true, targetValue = 1000f),
                         textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.fillMaxWidth().then(titleModifier).reactiveShimmer(isLoading, genre.shimmerColors()),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(titleModifier)
+                        .reactiveShimmer(isLoading, genre.shimmerColors()),
             )
 
             Text(

@@ -65,7 +65,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -326,43 +325,43 @@ fun PremiumCard(
     Column(
         modifier =
             modifier
-                .clickable { onClick() }
-                .clip(RoundedCornerShape(15.dp))
                 .dropShadow(
                     RoundedCornerShape(15.dp),
                     Shadow(
                         5.dp,
                         Brush.verticalGradient(holographicGradient),
                     ),
-                )
+                ).clip(RoundedCornerShape(15.dp))
                 .border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
                     RoundedCornerShape(15.dp),
-                )
-                .background(
+                ).background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     RoundedCornerShape(10.dp),
-                )
+                ).clickable { onClick() }
                 .padding(16.dp),
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            val iconShape = RoundedCornerShape(7.dp)
             Image(
                 painterResource(R.drawable.ic_spark),
                 null,
                 colorFilter = ColorFilter.tint(Color.White),
                 modifier =
                     Modifier
-                        .border(1.dp, Color.White.gradientFade(), RoundedCornerShape(5.dp))
-                        .background(
-                            Brush.verticalGradient(holographicGradient, endY = 150f),
-                            RoundedCornerShape(5.dp),
-                        )
-                        .clip(RoundedCornerShape(10.dp))
-                        .size(24.dp)
-                        .padding(4.dp),
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
+                            iconShape,
+                        ).background(
+                            MaterialTheme.colorScheme.background,
+                            iconShape,
+                        ).size(24.dp)
+                        .padding(4.dp)
+                        .gradientFill(Brush.verticalGradient(holographicGradient)),
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PremiumTitle(
