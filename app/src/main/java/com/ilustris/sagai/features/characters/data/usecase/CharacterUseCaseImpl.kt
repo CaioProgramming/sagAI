@@ -20,9 +20,9 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
+import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult
-import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
+import com.ilustris.sagai.features.characters.data.model.NickNameGen
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
@@ -195,7 +195,7 @@ class CharacterUseCaseImpl
             executeRequest {
                 val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
                 val request =
-                    gemmaClient.generate<List<CharacterUpdate>>(
+                    gemmaClient.generate<CharacterUpdateGen>(
                         prompt,
                         requirement = GemmaClient.ModelRequirement.MEDIUM,
                         temperatureRandomness = .3f,
@@ -203,6 +203,7 @@ class CharacterUseCaseImpl
 
                 val updatedCharacters =
                     request
+                        .updates
                         .mapNotNull {
                             val character = saga.findCharacter(it.characterName)
                             val timelineContent = saga.findTimeline(timeline.id)
@@ -261,10 +262,12 @@ class CharacterUseCaseImpl
                         )
 
                     val suggestions =
-                        gemmaClient.generate<List<NicknameSuggestion>>(
-                            prompt,
-                            requirement = GemmaClient.ModelRequirement.MEDIUM,
-                        )!!
+                        gemmaClient
+                            .generate<NickNameGen>(
+                                prompt,
+                                requirement = GemmaClient.ModelRequirement.MEDIUM,
+                            )!!
+                            .suggestions
 
                     if (suggestions.isEmpty()) {
                         Log.i(javaClass.simpleName, "No new nicknames found.")

@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
+import com.ilustris.sagai.features.characters.relations.data.model.RelationGenerationGen
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findTimeline
@@ -27,10 +28,10 @@ class CharacterRelationUseCaseImpl
             executeRequest {
                 val prompt = CharacterPrompts.generateCharacterRelation(timeline, saga)
                 val generatedRelationsData =
-                    gemmaClient.generate<List<RelationGeneration>>(prompt)!!
+                    gemmaClient.generate<RelationGenerationGen>(prompt)!!
 
                 val updatedRelations =
-                    generatedRelationsData.map { relationData ->
+                    generatedRelationsData.relations.map { relationData ->
                         val firstCharacter =
                             saga.characters
                                 .find { c ->
@@ -66,8 +67,7 @@ class CharacterRelationUseCaseImpl
             checkNotNull(firstCharacter)
             checkNotNull(secondCharacter)
             if (firstCharacter.id == secondCharacter.id) {
-                Log.e(javaClass.simpleName, "A character cannot have a relationship with themselves")
-                return@executeRequest null
+                error("A character cannot have a relationship with themselves")
             }
 
             val existingRelationshipContent =
@@ -101,11 +101,9 @@ class CharacterRelationUseCaseImpl
                         ?.find { it.data.id == existingRelationshipContent.data.id }
 
                 if (relationAlreadyUpdatedAtTimeline != null) {
-                    Log.e(
-                        javaClass.simpleName,
+                    error(
                         "The relation between ${firstCharacter.name} and ${secondCharacter.name} has already been updated in this timeline.",
                     )
-                    return@executeRequest null
                 }
 
                 relationRepository.addEventToRelation(

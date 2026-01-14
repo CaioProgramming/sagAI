@@ -445,7 +445,11 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     cleanedJsonString = cleanedJsonString.replace("`", "")
 
     // 8. Remove duplicate quotes that may have been created during repair
-    cleanedJsonString = cleanedJsonString.replace("\"\"", "\"")
+    //    But preserve empty string values (e.g., "field": "")
+    //    Only remove when we have 3+ consecutive quotes or malformed patterns
+    cleanedJsonString =
+        cleanedJsonString.replace("\"\"\"", "\"\"") // Convert triple quotes to double
+    // Note: We intentionally do NOT replace "" -> " because "" is a valid empty string in JSON
 
     Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
     if (cleanedJsonString.isBlank()) {
