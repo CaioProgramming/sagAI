@@ -200,3 +200,169 @@ fun escapeCursorFromTag(currentValue: TextFieldValue): TextFieldValue {
         selection = TextRange(newCursorPosition),
     )
 }
+
+/**
+ * Removes empty expressive tags from text.
+ * E.g., "<think></think>" or "<action>   </action>" becomes ""
+ *
+ * @param text The text to clean
+ * @return Text with empty tags removed
+ */
+fun cleanEmptyTags(text: String): String {
+    val emptyTagPattern = Regex("<(think|action|narrator)>\\s*</(\\1)>")
+    return emptyTagPattern.replace(text, "").trim()
+}
+
+/**
+ * Escapes cursor from tag and cleans up empty tags.
+ * Use this when user presses Next/Enter to exit a tag.
+ *
+ * @param currentValue Current text field value
+ * @return Updated text field value with cursor escaped and empty tags removed
+ */
+fun escapeCursorFromTagAndClean(currentValue: TextFieldValue): TextFieldValue {
+    val escaped = escapeCursorFromTag(currentValue)
+    val cleaned = cleanEmptyTags(escaped.text)
+
+    // Adjust cursor position if text was cleaned
+    val cursorPosition = minOf(escaped.selection.start, cleaned.length)
+
+    return TextFieldValue(
+        text = cleaned,
+        selection = TextRange(cursorPosition),
+    )
+}
+
+/**
+ * Calculates the length of user's actual content, excluding tag markup.
+ * Used for character limit validation.
+ *
+ * @param text The text to measure
+ * @return The length of content without tag overhead
+ */
+fun getCleanTextLength(text: String): Int {
+    val tagPattern = Regex("<(think|action|narrator)>|</(think|action|narrator)>")
+    return tagPattern.replace(text, "").length
+}
+
+/**
+ * Checks if cursor is positioned right after a closing tag.
+ *
+ * @param text Current text
+ * @param cursorPosition Current cursor position
+ * @return The tag if cursor is after its closing tag, null otherwise
+ */
+fun getCursorAfterClosingTag(
+    text: String,
+    cursorPosition: Int,
+): ExpressiveTag? {
+    for (tag in ExpressiveTag.entries) {
+        val closeTag = tag.closingTag()
+        // Check if the text before cursor ends with this closing tag
+        if (cursorPosition >= closeTag.length) {
+            val textBeforeCursor = text.substring(0, cursorPosition)
+            if (textBeforeCursor.endsWith(closeTag)) {
+                return tag
+            }
+        }
+    }
+    return null
+}
+
+/**
+ * Handles smart backspace for empty tags only.
+ * When cursor is right after an empty closing tag, deletes the entire tag pair.
+ * When cursor is inside an empty tag, also deletes the entire tag pair.
+ * If the tag has content, returns null to allow normal backspace behavior.
+ *
+ * @param currentValue Current text field value
+ * @return Updated text field value with empty tag deleted, or null if normal backspace should occur
+ */
+fun handleSmartBackspace(currentValue: TextFieldValue): TextFieldValue? {
+    val text = currentValue.text
+    val cursorPosition = currentValue.selection.start
+
+    // Only handle if no text is selected
+    if (currentValue.selection.start != currentValue.selection.end) return null
+
+    // Case 1: Cursor is right after a closing tag
+    val tagAfterClose = getCursorAfterClosingTag(text, cursorPosition)
+    if (tagAfterClose != null) {
+        return handleEmptyTagDeletion(text, cursorPosition, tagAfterClose)
+    }
+
+    // Case 2: Cursor is inside an empty tag (user just deleted all content)
+    val tagInside = getCursorInsideTag(text, cursorPosition)
+    if (tagInside != null) {
+        val openTag = tagInside.openingTag()
+        val closeTag = tagInside.closingTag()
+
+        // Find the opening tag position
+        val textBeforeCursor = text.substring(0, cursorPosition)
+        val openTagIndex = textBeforeCursor.lastIndexOf(openTag)
+
+        if (openTagIndex == -1) return null
+
+        // Find closing tag position
+        val afterOpenTag = text.substring(openTagIndex + openTag.length)
+        val closeIndexRelative = afterOpenTag.indexOf(closeTag)
+
+        if (closeIndexRelative == -1) return null
+
+        // Get content between tags
+        val contentStart = openTagIndex + openTag.length
+        val contentEnd = openTagIndex + openTag.length + closeIndexRelative
+        val content = text.substring(contentStart, contentEnd).trim()
+
+        // Only delete if empty - let normal backspace work for tags with content
+        if (content.isNotEmpty()) return null
+
+        // Empty tag - delete the entire tag pair
+        val beforeTag = text.substring(0, openTagIndex)
+        val afterTag = text.substring(contentEnd + closeTag.length)
+        val newText = beforeTag + afterTag
+
+        return TextFieldValue(
+            text = newText,
+            selection = TextRange(openTagIndex),
+        )
+    }
+
+    return null
+}
+
+/**
+ * Helper function to handle deletion when cursor is after a closing tag.
+ */
+private fun handleEmptyTagDeletion(
+    text: String,
+    cursorPosition: Int,
+    tag: ExpressiveTag,
+): TextFieldValue? {
+    val openTag = tag.openingTag()
+    val closeTag = tag.closingTag()
+
+    // Find the matching opening tag
+    val textBeforeCursor = text.substring(0, cursorPosition - closeTag.length)
+    val openTagIndex = textBeforeCursor.lastIndexOf(openTag)
+
+    if (openTagIndex == -1) return null
+
+    // Get the content between tags
+    val contentStart = openTagIndex + openTag.length
+    val contentEnd = cursorPosition - closeTag.length
+    val content = text.substring(contentStart, contentEnd).trim()
+
+    // Only handle empty tags - let normal backspace work for tags with content
+    if (content.isNotEmpty()) return null
+
+    // Empty tag - delete the entire tag pair
+    val beforeTag = text.substring(0, openTagIndex)
+    val afterTag = text.substring(cursorPosition)
+    val newText = beforeTag + afterTag
+
+    return TextFieldValue(
+        text = newText,
+        selection = TextRange(openTagIndex),
+    )
+}

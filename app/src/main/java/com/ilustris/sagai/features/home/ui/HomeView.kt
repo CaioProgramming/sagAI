@@ -162,15 +162,14 @@ fun HomeView(
                     Image(
                         painterResource(R.drawable.ic_spark),
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                         modifier =
                             Modifier
-                                .size(50.dp)
+                                .size(150.dp)
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     holographicGradient.plus(Color.Transparent),
                                     5.seconds,
@@ -351,8 +350,7 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }
-                                    .wrapContentWidth()
+                                    }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(

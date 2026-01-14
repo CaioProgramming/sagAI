@@ -443,8 +443,8 @@ class ChatViewModel
 
                         if (uiState.value.showTitle) {
                             titleAnimation()
-                            validateMessageStatus(sagaContent)
                         }
+                        validateMessageStatus(sagaContent)
                     }
             }
         }
@@ -462,13 +462,21 @@ class ChatViewModel
                 if (uiState.value.isLoading) return@launch
                 val messages = sagaContent.flatMessages()
                 messages
-                    .filter { it.message.status == MessageStatus.LOADING }
+                    .filter { it.message.status != MessageStatus.OK }
                     .forEach { messageContent ->
-                        messageUseCase.updateMessage(
-                            messageContent.message.copy(
-                                status = MessageStatus.ERROR,
-                            ),
-                        )
+                        if (messageContent == messages.last()) {
+                            messageUseCase.updateMessage(
+                                messageContent.message.copy(
+                                    status = MessageStatus.ERROR,
+                                ),
+                            )
+                        } else {
+                            messageUseCase.updateMessage(
+                                messageContent.message.copy(
+                                    status = MessageStatus.OK,
+                                ),
+                            )
+                        }
                     }
             }
         }

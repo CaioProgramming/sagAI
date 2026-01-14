@@ -18,6 +18,11 @@ enum class SenderType(
             SenderType.entries.filter {
                 it.tag != null
             }
+
+        fun senderForTag(tag: ExpressiveTag) =
+            SenderType.entries.firstOrNull {
+                it.tag == tag
+            }
     }
 }
 

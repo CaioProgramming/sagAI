@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
+import MessageStatus
 import android.util.Log
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.AudioGenClient
@@ -117,7 +118,12 @@ class MessageUseCaseImpl
                         message.emotionalTone
                     }
                 if (tone != message.emotionalTone) {
-                    messageRepository.updateMessage(message.copy(emotionalTone = tone))
+                    messageRepository.updateMessage(
+                        message.copy(
+                            emotionalTone = tone,
+                            status = MessageStatus.OK,
+                        ),
+                    )
                 }
             }
 
