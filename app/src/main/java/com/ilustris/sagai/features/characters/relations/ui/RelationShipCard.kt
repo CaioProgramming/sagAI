@@ -61,12 +61,13 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,13 +79,15 @@ fun RelationShipCard(
 ) {
     var showDetailSheet by remember { mutableStateOf(false) }
     val genre = remember { saga.data.genre }
+    val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
+
     val brush = remember { content.getBrush(genre) }
     Column(
         modifier =
             modifier
-                .clip(genre.shape())
+                .clip(shape)
                 .clickable { showDetailSheet = true }
-                .border(1.dp, brush, genre.shape())
+                .border(1.dp, brush, shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -182,6 +185,7 @@ fun SingleRelationShipCard(
     modifier: Modifier = Modifier,
 ) {
     val genre = saga.data.genre
+    val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
 
     val timelineEvents = remember { saga.flatEvents().map { it.data } }
 
@@ -195,10 +199,10 @@ fun SingleRelationShipCard(
     Column(
         modifier =
             modifier
-                .clip(genre.shape())
+                .clip(shape)
                 .clickable {
                     showDetailSheet = true
-                }.border(1.dp, brush, genre.shape())
+                }.border(1.dp, brush, shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -251,7 +255,7 @@ fun SingleRelationShipCard(
         ModalBottomSheet(
             onDismissRequest = { showDetailSheet = false },
             sheetState = rememberModalBottomSheetState(),
-            shape = genre.shape(),
+            shape = shape,
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             RelationShipSheet(saga = saga, content = content)
@@ -597,6 +601,7 @@ fun RelationshipEventCard(
         )
     ConstraintLayout {
         val (avatarsRow, relationshipCard, _, divider) = createRefs()
+        val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
 
         val brush =
             Brush.linearGradient(
@@ -615,9 +620,9 @@ fun RelationshipEventCard(
                         start.linkTo(parent.start)
                         width = Dimension.fillToConstraints
                     }.padding(horizontal = 16.dp)
-                    .clip(genre.shape())
-                    .border(2.dp, brush, genre.shape())
-                    .background(MaterialTheme.colorScheme.background, genre.shape())
+                    .clip(shape)
+                    .border(2.dp, brush, shape)
+                    .background(MaterialTheme.colorScheme.background, shape)
                     .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

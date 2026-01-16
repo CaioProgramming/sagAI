@@ -456,10 +456,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                    sweepGradient(
-                                                        content.data.genre.colorPalette(),
-                                                    ) as ShaderBrush
-                                                    ).createShader(size)
+                                                sweepGradient(
+                                                    content.data.genre.colorPalette(),
+                                                ) as ShaderBrush
+                                            ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -482,14 +482,13 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }
-                    .dropShadow(inputShape, {
+                    }.dropShadow(inputShape, {
                         brush = inputBrush
                         radius = glowRadius
                     })
                     .border(1.dp, inputBrush, inputShape)
                     .background(backgroundColor, inputShape)
-                    .padding(8.dp),
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
@@ -498,15 +497,14 @@ fun ChatInputView(
                     color = MaterialTheme.colorScheme.onBackground,
                     fontFamily = content.data.genre.bodyFont(),
                 )
-            val maxContentLength = 700 // User's actual content limit (excludes tag markup)
+            val maxContentLength = 700
             val tagBackgroundColor = MaterialTheme.colorScheme.background
 
             TooltipBox(
                 positionProvider = tooltipPositionProvider,
                 state = characterToolTipState,
                 modifier =
-                    Modifier
-                        .size(36.dp),
+                    Modifier.size(36.dp),
                 onDismissRequest = {
                     coroutineScope.launch {
                         characterToolTipState.dismiss()
@@ -532,13 +530,11 @@ fun ChatInputView(
                                         radius = 5.dp,
                                         genre.color,
                                     ),
-                                )
-                                .border(1.dp, genre.color.gradientFade(), shape)
+                                ).border(1.dp, genre.color.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
-                                )
-                                .clip(shape)
+                                ).clip(shape)
                                 .padding(8.dp),
                     ) {
                         item(span = { GridItemSpan(4) }) {
@@ -564,8 +560,7 @@ fun ChatInputView(
                                             coroutineScope.launch {
                                                 characterToolTipState.dismiss()
                                             }
-                                        }
-                                        .size(36.dp),
+                                        }.size(36.dp),
                                 textStyle =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -606,7 +601,7 @@ fun ChatInputView(
                 }
             }
 
-            Box(Modifier.weight(1f)) {
+            Box(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                 TooltipBox(
                     positionProvider = queryTooltipPositionProvider,
                     state = queryItemsTooltipState,
@@ -706,7 +701,7 @@ fun ChatInputView(
                             content.data.genre.color
                                 .solidGradient(),
                         decorationBox = { innerTextField ->
-                            val boxPadding = 8.dp
+                            val boxPadding = 12.dp
                             Box(
                                 contentAlignment = Alignment.CenterStart,
                                 modifier =
@@ -815,8 +810,7 @@ fun ChatInputView(
                                                                         )
                                                                     onUpdateInput(newValue)
                                                                 }
-                                                            }
-                                                            .padding(8.dp)
+                                                            }.padding(8.dp)
                                                             .animateContentSize()
                                                             .reactiveShimmer(
                                                                 it.tag == currentTagInside,
@@ -930,8 +924,7 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .reactiveShimmer(
                                     isGenerating,
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     ) { loading ->
                         val icon =
                             if (loading) {

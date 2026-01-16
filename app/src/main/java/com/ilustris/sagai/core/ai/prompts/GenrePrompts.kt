@@ -891,7 +891,109 @@ object GenrePrompts {
                     )
                     appendLine()
                     appendLine(
-                        "**CLOTHING:** Futuristic, asymmetrical, layered - high-tech fabrics mixed with street-worn leather, armored panels, tech harnesses. Clothing should integrate WITH cyberware, not hide it. Function over fashion.",
+                        "**FASHION: 'WOW, THAT CHARACTER HAS AURA' MANDATE**",
+                    )
+                    appendLine(
+                        "The outfit MUST be OUTSTANDING, UNIQUE, MEMORABLE. Mix retro fashion + neo-Tokyo + Y2K aesthetic.",
+                    )
+                    appendLine(
+                        "THIS IS NOT GENERIC CYBERPUNK. This is fashion-forward, personality-driven, visually STRIKING.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**CONTEXT-AWARE ENRICHMENT:**",
+                    )
+                    appendLine(
+                        "• If character description mentions outfit details → KEEP them and ADD depth (texture, color, condition, accessories)",
+                    )
+                    appendLine(
+                        "• If description is vague ('wearing tactical gear') → SPECIFY: what kind? what color? what condition? what makes it unique?",
+                    )
+                    appendLine(
+                        "• If description is generic ('black jacket') → EXPAND: what style? leather/synth/tech fabric? worn/pristine? any patches/mods?",
+                    )
+                    appendLine("• Goal: Transform simple into vivid without losing the original intent")
+                    appendLine()
+                    appendLine(
+                        "**STYLE ELEMENTS TO MIX (choose 3-5 per character):**",
+                    )
+                    appendLine()
+                    appendLine("• RETRO FUSION: 70s/80s/90s callbacks")
+                    appendLine("  - Bomber jackets with patches and pins")
+                    appendLine("  - Vintage band tees layered under tech vests")
+                    appendLine("  - Retro windbreakers in bold color blocks")
+                    appendLine("  - Leather trench coats with asymmetrical cuts")
+                    appendLine("  - Vinyl/PVC materials mixed with technical fabrics")
+                    appendLine()
+                    appendLine("• Y2K AESTHETIC: Late 90s/early 2000s future-nostalgia")
+                    appendLine("  - Low-rise cargo pants with excessive pockets and straps")
+                    appendLine("  - Metallic fabrics (silver, holographic, iridescent)")
+                    appendLine("  - Chunky platform boots or sneakers")
+                    appendLine("  - Tiny sunglasses or wraparound visors")
+                    appendLine("  - Crop tops with tech harnesses")
+                    appendLine("  - Butterfly clips, chokers with tech elements")
+                    appendLine("  - Baggy pants + fitted tops (or inverse)")
+                    appendLine()
+                    appendLine("• NEO-TOKYO STREET: Japanese urban fashion influence")
+                    appendLine("  - Techwear with multiple straps and buckles")
+                    appendLine("  - Oversized silhouettes mixed with fitted pieces")
+                    appendLine("  - Harajuku-inspired layers and accessories")
+                    appendLine("  - Graphic tees with kanji or futuristic logos")
+                    appendLine("  - Utility vests over long sleeves")
+                    appendLine("  - Mask accessories (face masks, cybernetic respirators)")
+                    appendLine()
+                    appendLine("• TECH-ENHANCED STREETWEAR:")
+                    appendLine("  - LED-embedded fabrics with programmable patterns")
+                    appendLine("  - Armored panels integrated into fashion pieces")
+                    appendLine("  - Smart fabrics that change color/texture")
+                    appendLine("  - Modular accessories (detachable sleeves, convertible jackets)")
+                    appendLine("  - Fiber-optic threading in seams")
+                    appendLine("  - Reactive materials (shifts with temperature/mood)")
+                    appendLine()
+                    appendLine("• ACCESSORY AURA-BUILDERS:")
+                    appendLine("  - Statement belts with tech buckles")
+                    appendLine("  - Multiple chain accessories (wallet chains, key chains)")
+                    appendLine("  - Customized gloves (fingerless, cyber-enhanced, tactical)")
+                    appendLine("  - Unique eyewear (colored lenses, HUD glasses, custom frames)")
+                    appendLine("  - Tech jewelry (holographic earrings, circuit bracelets)")
+                    appendLine("  - Bags that show personality (messenger, sling, tactical)")
+                    appendLine()
+                    appendLine(
+                        "**COLOR PALETTE DIVERSITY:**",
+                    )
+                    appendLine("DON'T make everyone wear black/gray/dark. Mix bold colors:")
+                    appendLine("  • Electric blues, hot pinks, acid greens, neon oranges")
+                    appendLine("  • Deep purples, blood reds, cyber yellows")
+                    appendLine("  • Metallics: chrome, gold, copper, holographic")
+                    appendLine("  • Color-blocking: unexpected combinations that POP")
+                    appendLine()
+                    appendLine(
+                        "**OUTFIT CONSTRUCTION RULES:**",
+                    )
+                    appendLine("1. LAYERING: Mix 2-4 layers with different textures/cuts")
+                    appendLine("2. CONTRAST: Combine fitted + oversized, sleek + rugged, vintage + futuristic")
+                    appendLine("3. ASYMMETRY: Uneven hemlines, one-shoulder, diagonal zippers, mismatched sleeves")
+                    appendLine("4. TEXTURE MIX: Leather + mesh, denim + metallic, rubber + fabric")
+                    appendLine("5. PERSONALITY STAMP: Every outfit has 1-2 signature pieces that scream 'THIS IS ME'")
+                    appendLine()
+                    appendLine(
+                        "**EXAMPLES OF 'AURA' OUTFITS:**",
+                    )
+                    appendLine(
+                        "✓ 'Oversized holographic bomber jacket over cropped black turtleneck, low-rise cargo pants with chrome buckles, chunky platform boots with LED soles, tiny pink-tinted visor, chrome left arm visible'",
+                    )
+                    appendLine(
+                        "✓ 'Asymmetrical leather trench coat (one long sleeve, one short), vintage band tee, high-waisted utility pants with excessive straps, combat boots with neon laces, neural ports glowing at temples'",
+                    )
+                    appendLine(
+                        "✓ 'Y2K aesthetic: metallic silver crop top with tech harness, baggy cargo pants in electric blue, fingerless gloves with circuit patterns, artificial eyes with amber glow, tiny rectangular sunglasses'",
+                    )
+                    appendLine(
+                        "✓ 'Neo-Tokyo layers: oversized tech vest with kanji patches over fitted mesh long-sleeve, techwear pants with multiple pockets, tactical boots, face mask with respirator elements, chrome spine visible at neck'",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**CLOTHING:** Futuristic, asymmetrical, layered - high-tech fabrics mixed with street-worn authenticity. Clothing should SHOWCASE cyberware, not hide it. Fashion + function.",
                     )
                     appendLine()
                     appendLine(
@@ -899,22 +1001,31 @@ object GenrePrompts {
                     )
                     appendLine()
                     appendLine(
-                        "**WHAT TO AVOID:**",
+                        "**DEPTH GUIDANCE (Avoid Shallow Descriptions):**",
                     )
                     appendLine(
-                        "  ✗ Fully organic characters with no visible augmentation (VIOLATION)",
+                        "  ⚠ Fully organic characters with no visible augmentation (CYBERPUNK VIOLATION - everyone has chrome)",
                     )
                     appendLine(
-                        "  ✗ Only 'subtle' augments like circuit tattoos or silver scars (NOT ENOUGH)",
+                        "  ⚠ Only 'subtle' augments like circuit tattoos or silver scars (TOO LIGHT - needs actual replacements)",
                     )
                     appendLine(
-                        "  ✗ Giant chunky robot parts that ignore human proportions (TOO MUCH)",
+                        "  ⚠ Giant chunky robot parts that ignore human proportions (TOO HEAVY - should fit human form)",
                     )
                     appendLine(
-                        "  ✗ Massive cables everywhere, junction boxes bolted to head (TOO ROBOTIC)",
+                        "  ⚠ Massive cables everywhere, junction boxes bolted to head (TOO ROBOTIC - should be integrated)",
                     )
                     appendLine(
-                        "  ✗ Clean, pristine, brand-new looking tech (TOO POLISHED)",
+                        "  ⚠ Clean, pristine, brand-new looking tech (TOO POLISHED - should show wear)",
+                    )
+                    appendLine(
+                        "  ⚠ Vague fashion: 'wearing dark clothes' → ADD specifics (what garments? what style? what details?)",
+                    )
+                    appendLine(
+                        "  ⚠ Basic descriptions: 'black leather jacket' → ENRICH (asymmetrical? worn? with patches? what cut?)",
+                    )
+                    appendLine(
+                        "  ⚠ All-black-everything that makes characters visually blend → MIX in color accents and textures",
                     )
                 }.trimIndent()
             }

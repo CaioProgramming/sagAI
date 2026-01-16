@@ -105,9 +105,9 @@ object RichTextParser {
             if (content.isNotEmpty()) {
                 segments.add(
                     when (match.type) {
-                        TagType.ACTION -> TextSegment.Action(content)
-                        TagType.THINK -> TextSegment.Think(content)
-                        TagType.NARRATOR -> TextSegment.Narrator(content)
+                        TagType.ACTION -> TextSegment.Action(content.trimStart())
+                        TagType.THINK -> TextSegment.Think(content.trimStart())
+                        TagType.NARRATOR -> TextSegment.Narrator(content.trimStart())
                     },
                 )
             }

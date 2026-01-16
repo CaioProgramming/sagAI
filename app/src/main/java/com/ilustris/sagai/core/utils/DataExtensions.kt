@@ -556,17 +556,70 @@ private fun repairJsonStructure(
                             val endPosition = findUnquotedStringEnd(currentJson, charIndex + 1)
 
                             if (endPosition > charIndex + 1) {
-                                // Insert closing quote at the found position
-                                Log.w(
-                                    "JsonRepair",
-                                    "Repairing JSON: Adding missing closing quote for field '$name' at index $endPosition",
-                                )
-                                currentJson =
-                                    currentJson.substring(0, endPosition) + "\"" +
-                                    currentJson.substring(endPosition)
-                            }
+                                // The endPosition might include trailing whitespace and possibly an existing quote
+                                // We need to find the actual last content character and check if there's a quote after it
 
-                            startIndex = endPosition + 2 // Move past the inserted quote
+                                var lastContentPos = endPosition - 1
+                                var trailingQuotePos = -1
+
+                                // Scan backwards to find: last content char, and any trailing quote
+                                // Pattern we're looking for: <content><optional_whitespace><optional_quote><optional_whitespace>
+                                var scanPos = endPosition - 1
+                                var foundContent = false
+                                var foundQuoteAfterContent = false
+
+                                while (scanPos >= charIndex) {
+                                    val ch = currentJson[scanPos]
+
+                                    if (!foundContent) {
+                                        // Still looking for the last real content
+                                        if (ch == '"') {
+                                            // Found a quote before any content - this is likely the trailing quote
+                                            trailingQuotePos = scanPos
+                                            scanPos--
+                                            continue
+                                        } else if (ch.isWhitespace()) {
+                                            // Skip whitespace
+                                            scanPos--
+                                            continue
+                                        } else {
+                                            // Found actual content character
+                                            foundContent = true
+                                            lastContentPos =
+                                                scanPos + 1 // Position AFTER the last content char
+                                            if (trailingQuotePos != -1) {
+                                                foundQuoteAfterContent = true
+                                            }
+                                            break
+                                        }
+                                    }
+                                }
+
+                                if (foundQuoteAfterContent) {
+                                    // There's an existing trailing quote - remove everything from lastContentPos onwards
+                                    // and add our own quote
+                                    Log.d(
+                                        "JsonRepair",
+                                        "Field '$name' has existing closing quote at index $trailingQuotePos after content at $lastContentPos, cleaning up",
+                                    )
+                                    currentJson = currentJson.substring(0, lastContentPos) +
+                                        "\"" +
+                                        currentJson.substring(endPosition)
+                                    startIndex = lastContentPos + 2
+                                } else {
+                                    // No existing quote found, just add the closing quote at the right position
+                                    Log.w(
+                                        "JsonRepair",
+                                        "Repairing JSON: Adding missing closing quote for field '$name' at index $lastContentPos",
+                                    )
+                                    currentJson =
+                                        currentJson.substring(0, lastContentPos) + "\"" +
+                                        currentJson.substring(lastContentPos)
+                                    startIndex = lastContentPos + 2
+                                }
+                            } else {
+                                startIndex = endPosition + 1
+                            }
                         }
                     } else {
                         break

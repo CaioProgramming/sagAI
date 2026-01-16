@@ -542,9 +542,12 @@ private fun applyExpressiveTagStyling(annotatedString: AnnotatedString): Annotat
  * @return AnnotatedString with tags removed and text styled
  */
 fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
-    // First, remove all tags but keep track of positions for styling
+    // First, remove think tags since they don't get styled
+    val thinkRegex = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+    var cleanText = text.replace(thinkRegex, "")
+
+    // Now process styled tags on the cleaned text
     val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
-    Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
     val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
 
     data class StyledSection(
@@ -555,49 +558,49 @@ fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
 
     val styledSections = mutableListOf<StyledSection>()
 
-    var cleanText = text
+    // Find all action matches first
+    val actionMatches = actionRegex.findAll(cleanText).toList()
     var offset = 0
 
-    // Process actions - bold
-    actionRegex.findAll(text).forEach { match ->
+    actionMatches.forEach { match ->
         val content = match.groupValues[1]
         val matchStart = match.range.first - offset
-        val contentStart = matchStart
-        val contentEnd = contentStart + content.length
 
         styledSections.add(
             StyledSection(
-                contentStart,
-                contentEnd,
+                matchStart,
+                matchStart + content.length,
                 SpanStyle(fontWeight = FontWeight.Bold),
             ),
         )
 
-        cleanText = cleanText.replaceFirst("<action>", "")
-        cleanText = cleanText.replaceFirst("</action>", "")
         offset += "<action>".length + "</action>".length
     }
 
-    // Process thinks - reduced alpha (just remove tags for simplicity)
-    cleanText = cleanText.replace(Regex("<think>|</think>"), "")
+    // Remove all action tags
+    cleanText = cleanText.replace(actionRegex, "$1")
 
-    // Process narrator - italic
+    // Find all narrator matches
+    val narratorMatches = narratorRegex.findAll(cleanText).toList()
     offset = 0
-    narratorRegex.findAll(text).forEach { match ->
+
+    narratorMatches.forEach { match ->
         val content = match.groupValues[1]
-        val adjustedStart = cleanText.indexOf(content, offset)
-        if (adjustedStart != -1) {
-            styledSections.add(
-                StyledSection(
-                    adjustedStart,
-                    adjustedStart + content.length,
-                    SpanStyle(fontStyle = FontStyle.Italic),
-                ),
-            )
-            offset = adjustedStart + content.length
-        }
+        val matchStart = match.range.first - offset
+
+        styledSections.add(
+            StyledSection(
+                matchStart,
+                matchStart + content.length,
+                SpanStyle(fontStyle = FontStyle.Italic),
+            ),
+        )
+
+        offset += "<narrator>".length + "</narrator>".length
     }
-    cleanText = cleanText.replace(Regex("<narrator>|</narrator>"), "")
+
+    // Remove all narrator tags
+    cleanText = cleanText.replace(narratorRegex, "$1")
 
     return buildAnnotatedString {
         append(cleanText)
@@ -616,9 +619,12 @@ fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
  * @return AnnotatedString with tags removed and text styled
  */
 fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString {
-    // Remove all tags but keep track of positions for styling
+    // First, remove think tags since they don't get styled
+    val thinkRegex = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+    var cleanText = text.replace(thinkRegex, "")
+
+    // Now process styled tags on the cleaned text
     val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
-    Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
     val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
 
     data class StyledSection(
@@ -629,49 +635,49 @@ fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString {
 
     val styledSections = mutableListOf<StyledSection>()
 
-    var cleanText = text
+    // Find all action matches first
+    val actionMatches = actionRegex.findAll(cleanText).toList()
     var offset = 0
 
-    // Process actions - bold
-    actionRegex.findAll(text).forEach { match ->
+    actionMatches.forEach { match ->
         val content = match.groupValues[1]
         val matchStart = match.range.first - offset
-        val contentStart = matchStart
-        val contentEnd = contentStart + content.length
 
         styledSections.add(
             StyledSection(
-                contentStart,
-                contentEnd,
+                matchStart,
+                matchStart + content.length,
                 SpanStyle(fontWeight = FontWeight.Bold),
             ),
         )
 
-        cleanText = cleanText.replaceFirst("<action>", "")
-        cleanText = cleanText.replaceFirst("</action>", "")
         offset += "<action>".length + "</action>".length
     }
 
-    // Process thinks - reduced alpha (just remove tags for simplicity)
-    cleanText = cleanText.replace(Regex("<think>|</think>"), "")
+    // Remove all action tags
+    cleanText = cleanText.replace(actionRegex, "$1")
 
-    // Process narrator - italic
+    // Find all narrator matches
+    val narratorMatches = narratorRegex.findAll(cleanText).toList()
     offset = 0
-    narratorRegex.findAll(text).forEach { match ->
+
+    narratorMatches.forEach { match ->
         val content = match.groupValues[1]
-        val adjustedStart = cleanText.indexOf(content, offset)
-        if (adjustedStart != -1) {
-            styledSections.add(
-                StyledSection(
-                    adjustedStart,
-                    adjustedStart + content.length,
-                    SpanStyle(fontStyle = FontStyle.Italic),
-                ),
-            )
-            offset = adjustedStart + content.length
-        }
+        val matchStart = match.range.first - offset
+
+        styledSections.add(
+            StyledSection(
+                matchStart,
+                matchStart + content.length,
+                SpanStyle(fontStyle = FontStyle.Italic),
+            ),
+        )
+
+        offset += "<narrator>".length + "</narrator>".length
     }
-    cleanText = cleanText.replace(Regex("<narrator>|</narrator>"), "")
+
+    // Remove all narrator tags
+    cleanText = cleanText.replace(narratorRegex, "$1")
 
     return buildAnnotatedString {
         append(cleanText)

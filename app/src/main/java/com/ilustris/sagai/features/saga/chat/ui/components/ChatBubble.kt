@@ -98,6 +98,7 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -277,7 +278,15 @@ fun ChatBubble(
                         Box(
                             Modifier
                                 .clip(CircleShape)
-                                .size(avatarSize),
+                                .clickable {
+                                    messageContent.character?.let {
+                                        onAction(
+                                            MessageAction.ClickCharacter(
+                                                content.findCharacter(it.id),
+                                            ),
+                                        )
+                                    }
+                                }.size(avatarSize),
                         ) {
                             messageContent.character?.let { character ->
                                 AnimatedContent(
@@ -296,14 +305,7 @@ fun ChatBubble(
                                         modifier =
                                             Modifier
                                                 .padding(8.dp)
-                                                .fillMaxSize()
-                                                .clickable {
-                                                    onAction(
-                                                        MessageAction.ClickCharacter(
-                                                            characters.find { c -> c.data.id == character.id },
-                                                        ),
-                                                    )
-                                                },
+                                                .fillMaxSize(),
                                     )
                                 }
 
@@ -665,16 +667,14 @@ fun ChatBubble(
                                                 ),
                                             label = "starAlpha",
                                         )
-                                        val isMainCharacter =
-                                            message.speakerName == mainCharacter?.data?.name
+                                        message.speakerName == mainCharacter?.data?.name
                                         val textColor =
                                             when (sender) {
                                                 SenderType.ACTION -> MaterialColor.Amber400
                                                 SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
                                                 else -> bubbleStyle.textColor
                                             }
-                                        val textAlign =
-                                            if (isMainCharacter.not()) TextAlign.Start else TextAlign.End
+                                        val textAlign = TextAlign.Start
                                         val fontStyle =
                                             if (sender == SenderType.ACTION ||
                                                 sender == SenderType.THOUGHT
@@ -686,7 +686,6 @@ fun ChatBubble(
                                         val text =
                                             if (sender == SenderType.ACTION) "(${message.text})" else message.text
 
-                                        // Check if message contains expressive tags
                                         val hasExpressiveTags =
                                             remember(text) {
                                                 text.contains("<action>") ||
@@ -699,7 +698,6 @@ fun ChatBubble(
                                             verticalArrangement = Arrangement.spacedBy(4.dp),
                                         ) {
                                             if (hasValidAudio) {
-                                                // Show Audio Player
                                                 AudioMessagePlayer(
                                                     transcription = text,
                                                     audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
@@ -710,7 +708,6 @@ fun ChatBubble(
                                                     },
                                                 )
                                             } else if (hasExpressiveTags) {
-                                                // Use ExpressiveText for tag-based messages
                                                 ExpressiveText(
                                                     text = text,
                                                     genre = genre,
@@ -754,6 +751,10 @@ fun ChatBubble(
                                                             textAlign = textAlign,
                                                         ),
                                                 )
+                                            }
+
+                                            if (BuildConfig.DEBUG) {
+                                                ReasoningView(message.reasoning, genre)
                                             }
                                         }
 
@@ -850,9 +851,6 @@ fun ChatBubble(
                                             }
                                         }
                                     }
-                                }
-                                if (BuildConfig.DEBUG) {
-                                    ReasoningView(message.reasoning, genre)
                                 }
                             }
                         }
@@ -1092,7 +1090,6 @@ private fun ReasoningView(
         Row(
             modifier =
                 Modifier
-                    .padding(4.dp)
                     .clickable { isExpanded = !isExpanded }
                     .animateContentSize(),
             verticalAlignment = Alignment.Top,
@@ -1111,7 +1108,7 @@ private fun ReasoningView(
                 if (isExpanded) it else "See reasoning",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        color = genre.iconColor.copy(alpha = 0.5f),
+                        color = genre.iconColor.copy(alpha = .5f),
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.Light,
                     ),

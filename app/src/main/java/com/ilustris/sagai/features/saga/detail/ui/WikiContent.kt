@@ -2,20 +2,17 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
@@ -25,7 +22,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -51,9 +46,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
 
@@ -93,6 +86,7 @@ fun WikiContent(
                     style =
                         MaterialTheme.typography.displayMedium.copy(
                             fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Center,
                         ),
                     modifier =
                         titleModifier
@@ -133,7 +127,6 @@ fun WikiContent(
                             Modifier
                                 .padding(8.dp)
                                 .animateItem()
-                                .clip(genre.shape())
                                 .combinedClickable(
                                     onClick = {
                                         isExpanded = !isExpanded
@@ -141,18 +134,9 @@ fun WikiContent(
                                     onLongClick = {
                                         onHoldWiki(wiki)
                                     },
-                                ).border(
-                                    width = 1.dp,
-                                    brush = genre.color.gradientFade(),
-                                    shape =
-                                        RoundedCornerShape(
-                                            genre.cornerSize(),
-                                        ),
-                                ).padding(16.dp)
-                                .animateContentSize(
-                                    tween(easing = FastOutSlowInEasing),
-                                ).padding(16.dp)
-                                .fillMaxWidth(),
+                                ).animateContentSize(
+                                    tween(600, easing = LinearOutSlowInEasing),
+                                ).fillMaxWidth(),
                         expanded = isExpanded,
                     )
                 }

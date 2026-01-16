@@ -329,6 +329,8 @@ object ImagePrompts {
 
         appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
         appendLine()
+        appendLine("**APPEARANCE GUIDELINES:** ${GenrePrompts.appearanceGuidelines(genre)}")
+        appendLine()
         appendLine(criticalGenerationRule())
 
         visualDirection?.let {

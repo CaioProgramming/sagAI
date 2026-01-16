@@ -62,7 +62,6 @@ fun ExpressiveText(
     onAnnotationClick: (Any?) -> Unit = {},
     onThinkRevealed: () -> Unit = {},
 ) {
-    // Parse text once and cache result
     val parsedMessage =
         remember(text) {
             RichTextParser.parse(text)
@@ -70,7 +69,6 @@ fun ExpressiveText(
 
     val annotationBackgroundColor = MaterialTheme.colorScheme.background
 
-    // If parsing resulted in no segments, just show plain text with annotations
     if (parsedMessage.segments.isEmpty()) {
         AnnotatedPlainText(
             text = text,
@@ -203,4 +201,3 @@ private fun AnnotatedPlainText(
         )
     }
 }
-

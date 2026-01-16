@@ -58,8 +58,7 @@ data class RelationshipContent(
 
     fun summarizeRelation() =
         "${characterOne.name} ${data.emoji} ${characterTwo.name} - ${data.title}:\n${
-            relationshipEvents.reversed().take(UpdateRules.CHAPTER_UPDATE_LIMIT).normalizetoAIItems(
-                listOf("timestamp", "relationId", "timelineId", "id"),
-            )
+            relationshipEvents.takeLast(UpdateRules.CHAPTER_UPDATE_LIMIT)
+                .normalizetoAIItems(listOf("timestamp", "relationId", "timelineId", "id", "emoji"))
         }"
 }

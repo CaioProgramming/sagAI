@@ -142,13 +142,19 @@ class CharacterUseCaseImpl
         ): RequestResult<Character> =
             executeRequest {
                 val bannedNames = repository.getAllCharacterNames()
+                // Generate theme color first to pass to AI for appearance guidance
+                val themeColor = getRandomColorHex()
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         sagaContent,
                         description,
                         bannedNames,
+                        themeColor,
                     )
-                Log.d(javaClass.simpleName, "generateCharacter: Starting character generation...")
+                Log.d(
+                    javaClass.simpleName,
+                    "generateCharacter: Starting character generation with theme color $themeColor...",
+                )
                 val newCharacter =
                     gemmaClient.generate<Character>(
                         prompt,
@@ -175,7 +181,7 @@ class CharacterUseCaseImpl
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
-                            hexColor = getRandomColorHex(),
+                            hexColor = themeColor,
                             smartZoom = null,
                         ),
                     )

@@ -266,13 +266,9 @@ object SagaPrompts {
     fun reviewGeneration(saga: SagaContent) =
         buildString {
             val topInteractiveCharacters =
-                saga
-                    .flatMessages()
-                    .rankTopCharacters(
-                        saga.characters.map { it.data },
-                    ).take(3)
+                saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
             appendLine(
-                "You are the **Chronicler of Legends**, an AI with a soul of a poet and the mind of an analyst. Your purpose is to transform a player's journey into a legendary tale, a personal 'Saga Wrapped' that celebrates their unique path. Your writing style must follow the 'Language Directive' provided below.",
+                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a 'Saga Wrapped' experience—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, and brief.",
             )
             appendLine()
             appendLine("---")
@@ -298,45 +294,36 @@ object SagaPrompts {
             appendLine(GenrePrompts.conversationDirective(saga.data.genre))
             appendLine("---")
             appendLine()
-            appendLine("**INSTRUCTIONS FOR GENERATING THE REVIEW:**")
+            appendLine("**INSTRUCTIONS FOR GENERATING THE WRAPPED REVIEW:**")
             appendLine()
             appendLine(
-                "Your output MUST be a single JSON object with the fields described below. For each field, craft a compelling narrative that is both personal and insightful, using the context provided above. Do NOT invent any fields.",
+                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Keep text SHORT (max 1-2 sentences) and PUNCHY. Think Instagram Caption or Spotify Wrapped.",
             )
             appendLine()
-            appendLine("1.  **Content for Each Field (matching the Review data class):**")
+            appendLine("1.  **Content for Each Field:**")
             appendLine(
-                "    *   **`introduction`**: Begin with a powerful, personal opening. Address the player by their character name from 'Player Character' and welcome them to the reflection of their own legend from the 'Saga Context'. Make it feel like the opening chapter of their personal myth. (e.g., \"Welcome, [Player Name], to the story only you could write. The saga of '${saga.data.title}' is complete, and now, we look back at the legend you forged.\")",
+                "    *   **`introduction`**: A short, intriguing hook. Welcome them back to the memory of the saga. (e.g., \"The house is ready. Come on in, [Player Name].\")",
             )
             appendLine(
-                "    *   **`playstyle`**: This is the heart of their character. Based on the 'Emotional Ranking' and 'Emotional Summary', describe their core identity. Were they a 'Pragmatic Protector,' a 'Hopeful Idealist,' a 'Cautious Strategist'? Go beyond just listing emotions; tell them *how* their emotional style defined their actions and shaped their destiny in the saga.",
+                "    *   **`playstyle`**: DEFINE THEIR VIBE. Use the 'Emotional Ranking'. Give them a cool specific title based on how they played. (e.g., \"Your Vibe? 'Chaos Gremlin with a Heart of Gold'.\")",
             )
             appendLine(
-                "    *   **`topCharacters`**: Relationships are the soul of a story. Using the 'Characters ranking' and 'Player relationships', paint a vivid picture of their most important bonds. Don't just name allies; describe the *emotional texture* of the relationships. Was it a mentorship that provided wisdom? A rivalry that spurred growth? A camaraderie that offered comfort in the darkness?",
+                "    *   **`topCharacters`**: Comment on their squad. Who were they obsessed with? (e.g., \"You and [Character Name]? Inseparable. Seriously, get a room.\")",
             )
             appendLine(
-                "    *   **`actsInsight`**: Based on the 'History', these are not just milestones, but **'Defining Moments.'** Recount 1-2 pivotal events from the saga and frame them as the moments that tested their character and solidified their legend. Focus on the *impact* of their actions in these moments. Also, briefly touch upon the richness of the world they experienced, referencing the number of souls they met (from 'Characters ranking').",
+                "    *   **`actsInsight`**: Summarize the journey in ONE epic sentence. (e.g., \"From a lost wanderer to the King of Ashes. What a ride.\")",
             )
             appendLine(
-                "    *   **`conclusion`**: This is the final, powerful chord. Synthesize their entire journey, drawing from their 'Emotional Summary' and 'History'. Offer a profound, final thought on the person they became and the unique legacy they leave behind in the world of '${saga.data.title}'. This should be a compelling and emotional send-off.",
+                "    *   **`conclusion`**: A final mic-drop moment. A thank you or a lingering thought. (e.g., \"Same time next year? The legend awaits.\")",
             )
             appendLine()
             appendLine("2.  **Tone & Style:**")
-            appendLine("    *   Celebratory, epic, personal, and deeply insightful.")
-            appendLine("    *   Address the player directly as the hero of their own story.")
-            appendLine("    *   The writing style MUST follow the 'Language Directive'.")
+            appendLine("    *   Short. Punchy. Witty.")
+            appendLine("    *   No long paragraphs. Visual impact is key.")
+            appendLine("    *   Adhere to the 'Language Directive' for flavor, but keep the structure modern/wrapped.")
             appendLine()
             appendLine("---")
-            appendLine()
-            appendLine("**Example for `playstyle`:**")
-            appendLine(
-                "\"Your journey was defined by a rare blend of fierce pragmatism and unexpected empathy. You were the 'Pragmatic Protector,' making the tough calls others couldn't, yet always finding a moment to extend a hand to those in need. This duality is what made your path so compelling.\"",
-            )
-            appendLine()
-            appendLine("**Example for `conclusion`:**")
-            appendLine(
-                "\"From the hopeful first steps of your adventure to the determined final stand, your journey was a testament to the power of resilience. You faced down despair and chose to fight, you saw betrayal and chose to trust again. The saga of '${saga.data.title}' is over, but the echo of your choices—the choices of a hero—will resonate forever.\"",
-            )
+            appendLine("OUTPUT JSON OBJECT ONLY.")
         }.trim()
 
     fun generateStoryBriefing(saga: SagaContent) =

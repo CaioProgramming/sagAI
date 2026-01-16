@@ -1,26 +1,17 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInOutCubic
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode.Reverse
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.with
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -33,23 +24,24 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,26 +58,21 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
-import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -93,24 +80,20 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
-import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
-import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
-import com.ilustris.sagai.features.saga.detail.review.ui.ReviewDetails
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryActsSlide
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryCharactersSlide
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryConclusionSlide
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryIntroductionSlide
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryPlaystyleSlide
+import com.ilustris.sagai.features.saga.detail.review.ui.StoryVibeSlide
+import com.ilustris.sagai.features.saga.detail.review.ui.components.StoryProgressIndicator
 import com.ilustris.sagai.features.share.domain.model.ShareType
-import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
-import com.ilustris.sagai.features.share.ui.EmotionShareView
-import com.ilustris.sagai.features.share.ui.HistoryShareView
-import com.ilustris.sagai.features.share.ui.PlayStyleShareView
-import com.ilustris.sagai.features.share.ui.RelationsShareView
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
 import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
@@ -118,37 +101,15 @@ import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.toEasing
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
-import ir.ehsannarmani.compose_charts.ColumnChart
-import ir.ehsannarmani.compose_charts.LineChart
-import ir.ehsannarmani.compose_charts.RowChart
-import ir.ehsannarmani.compose_charts.models.AnimationMode
-import ir.ehsannarmani.compose_charts.models.BarProperties
-import ir.ehsannarmani.compose_charts.models.Bars
-import ir.ehsannarmani.compose_charts.models.DividerProperties
-import ir.ehsannarmani.compose_charts.models.DrawStyle
-import ir.ehsannarmani.compose_charts.models.GridProperties
-import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
-import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
-import ir.ehsannarmani.compose_charts.models.LabelProperties
-import ir.ehsannarmani.compose_charts.models.Line
-import ir.ehsannarmani.compose_charts.models.PopupProperties
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -158,7 +119,8 @@ enum class ReviewPages(
     val shareType: ShareType? = null,
 ) {
     INTRO(ShareType.PLAYSTYLE),
-    PLAYSTYLE(ShareType.EMOTIONS),
+    VIBE(ShareType.EMOTIONS),
+    PLAYSTYLE(ShareType.PLAYSTYLE),
     CHARACTERS(ShareType.RELATIONS),
     CHAPTERS(ShareType.HISTORY),
     CONCLUSION(ShareType.EMOTIONS),
@@ -176,249 +138,174 @@ fun SagaReview(
     generatingReview: Boolean,
     resetReview: () -> Unit = {},
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val pagerState = rememberPagerState { ReviewPages.entries.size }
     val genre = content.data.genre
-    var showIndicators by remember { mutableStateOf(true) }
-
-    val animatedGradientBrush =
-        if (showIndicators) {
-            genre.color.solidGradient()
-        } else {
-            MaterialTheme.colorScheme.background.solidGradient()
-        }
-
-    var currentProgress by remember { mutableFloatStateOf(0f) }
-    var isPlaying by remember { mutableStateOf(true) }
+    LocalContext.current
+    var isPaused by remember { mutableStateOf(false) }
+    var currentStep by remember { mutableIntStateOf(0) }
     var shareSaga by remember { mutableStateOf(false) }
-    val currentPage = ReviewPages.entries[pagerState.currentPage]
-    val shareType = currentPage.shareType
+    val pages = ReviewPages.entries.filter { it != ReviewPages.DETAILS }
+    val totalSteps = pages.size
 
+    val pagerState = rememberPagerState { totalSteps }
+    val coroutineScope = rememberCoroutineScope()
+
+    val onStepComplete = {
+        if (pagerState.currentPage < totalSteps - 1) {
+            coroutineScope.launch {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+            }
+        }
+    }
+
+    // Sync currentStep with pager state for the indicator
     LaunchedEffect(pagerState.currentPage) {
-        showIndicators = pagerState.currentPage != ReviewPages.entries.size - 1
+        currentStep = pagerState.currentPage
     }
 
     Box(
         Modifier
-            .background(animatedGradientBrush)
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPaused = true
+                        tryAwaitRelease()
+                        isPaused = false
+                    },
+                    onTap = { offset ->
+                        // Optional: Keep tap navigation or rely solely on swipe?
+                        // Let's keep tap navigation for accessibility/ease, but map it to pager scroll.
+                        val screenWidth = size.width
+                        if (offset.x < screenWidth / 3) {
+                            if (pagerState.currentPage > 0) {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            }
+                        } else {
+                            if (pagerState.currentPage < totalSteps - 1) {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            }
+                        }
+                    },
+                )
+            },
     ) {
         if (content.data.isEnded.not() || generatingReview) {
+            // Loading/Wait State
             Column(
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .padding(16.dp),
+                modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 SparkIcon(
                     brush = genre.gradient(true),
                     tint = genre.color.copy(alpha = .4f),
-                    modifier =
-                        Modifier
-                            .size(64.dp)
-                            .align(Alignment.CenterHorizontally),
+                    modifier = Modifier.size(64.dp),
                 )
-
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     stringResource(R.string.review_page_surprise_awaits),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.bodyFont(),
                             color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
                         ),
                 )
             }
         } else {
-            ConstraintLayout(
-                Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(onLongPress = {
-                            isPlaying = false
-                        }, onPress = {
-                            awaitRelease()
-                            isPlaying = true
-                        })
-                    },
-            ) {
-                val (reviewIndicators, contentView, topFade, shareButton) = createRefs()
-
-                HorizontalPager(
-                    pagerState,
-                    modifier =
-                        Modifier.constrainAs(contentView) {
-                            top.linkTo(parent.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            bottom.linkTo(parent.bottom)
-                            height = Dimension.fillToConstraints
-                            width = Dimension.fillToConstraints
-                        },
-                ) {
-                    val page = ReviewPages.entries[it]
-                    AnimatedContent(pagerState.currentPage, transitionSpec = {
-                        fadeIn() togetherWith fadeOut()
-                    }, modifier = Modifier.fillMaxSize()) { index ->
-                        if (index == it) {
-                            when (page) {
-                                ReviewPages.INTRO ->
-                                    ReviewIntroduction(
-                                        content,
-                                        content.data.review?.introduction,
-                                    )
-
-                                ReviewPages.PLAYSTYLE ->
-                                    PlayStylePage(
-                                        content,
-                                    )
-
-                                ReviewPages.CHARACTERS ->
-                                    MentionsPage(
-                                        content,
-                                    )
-
-                                ReviewPages.CHAPTERS ->
-                                    ActsInsightPage(content)
-
-                                ReviewPages.CONCLUSION ->
-                                    ConclusionPage(content)
-
-                                ReviewPages.DETAILS -> ReviewDetails(content)
-                            }
-                        } else {
-                            Box {}
-                        }
-                    }
+            // Story Content via VerticalPager
+            VerticalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+            ) { pageIndex ->
+                val page = pages.getOrNull(pageIndex) ?: ReviewPages.INTRO
+                // Ensure we re-trigger animations if needed when page becomes active?
+                // The slides themselves should handle enter animations if possible,
+                // or we can wrap them in a Box that keys on visibility.
+                // For now, simple rendering.
+                when (page) {
+                    ReviewPages.INTRO -> StoryIntroductionSlide(content)
+                    ReviewPages.VIBE -> StoryVibeSlide(content)
+                    ReviewPages.PLAYSTYLE -> StoryPlaystyleSlide(content)
+                    ReviewPages.CHARACTERS -> StoryCharactersSlide(content)
+                    ReviewPages.CHAPTERS -> StoryActsSlide(content)
+                    ReviewPages.CONCLUSION -> StoryConclusionSlide(content)
+                    else -> Box(Modifier.fillMaxSize())
                 }
+            }
 
-                val indicatorsAlpha by animateFloatAsState(
-                    if (showIndicators) 1f else 0f,
-                )
-
-                Column(
-                    modifier =
-                        Modifier
-                            .constrainAs(reviewIndicators) {
-                                top.linkTo(parent.top)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }.background(fadeGradientTop())
-                            .alpha(indicatorsAlpha),
-                ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                    ) {
-                        ReviewPages.entries.forEachIndexed { index, _ ->
-                            val isSelected = index <= pagerState.currentPage
-                            val progress by animateFloatAsState(
-                                targetValue = if (isSelected) 1f else 0.5f,
-                                animationSpec = tween(500),
-                                label = "progressAnimation",
-                            )
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .clickable {
-                                            if (pagerState.currentPage != index) {
-                                                coroutineScope.launch {
-                                                    pagerState.animateScrollToPage(
-                                                        index,
-                                                        animationSpec = tween(500),
-                                                    )
-                                                }
-                                            }
-                                        }.weight(1f)
-                                        .padding(horizontal = 2.dp)
-                                        .height(3.dp)
-                                        .background(
-                                            color =
-                                                MaterialTheme.colorScheme.onBackground.copy(
-                                                    alpha = progress,
-                                                ),
-                                            shape = RoundedCornerShape(content.data.genre.cornerSize()),
-                                        ),
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp)
-                                .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            contentDescription = null,
-                            modifier =
-                                Modifier.size(24.dp),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
-                        )
-
-                        Text(
-                            content.data.title,
-                            style =
-                                MaterialTheme.typography.titleSmall.copy(
-                                    fontFamily = genre.headerFont(),
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                ),
-                        )
-                    }
-                }
-
-                Row(
+            // Progress Indicator (remains at top)
+            StoryProgressIndicator(
+                modifier =
                     Modifier
-                        .constrainAs(shareButton) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }.clickable(enabled = shareType != null) {
-                            shareSaga = true
-                        }.fillMaxWidth()
-                        .background(
-                            fadeGradientBottom(),
-                        ).padding(24.dp)
-                        .gradientFill(genre.gradient(true)),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "Compartilhar",
-                        style =
-                            MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                                fontWeight = FontWeight.SemiBold,
-                            ),
-                    )
+                        .align(Alignment.TopCenter)
+                        .padding(top = 48.dp),
+                totalSteps = totalSteps,
+                currentStep = currentStep,
+                isPaused = isPaused,
+                onStepComplete = {
+                    // This callback is from the *timer* in the indicator.
+                    // We simply trigger the pager scroll.
+                    onStepComplete()
+                },
+            )
 
-                    Icon(
-                        painterResource(R.drawable.ic_share),
-                        contentDescription = null,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .size(12.dp)
-                                .gradientFill(genre.gradient()),
-                    )
-                }
+            // Share Button (Bottom)
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 48.dp) // Bottom Margin
+                        .navigationBarsPadding() // Safe area
+                        .clickable { shareSaga = true }
+                        .background(
+                            genre.gradient(true),
+                            RoundedCornerShape(32.dp),
+                        ).padding(vertical = 12.dp, horizontal = 24.dp),
+            ) {
+                Text(
+                    "Share this Story",
+                    style =
+                        MaterialTheme.typography.labelLarge.copy(
+                            fontFamily = genre.bodyFont(),
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                        ),
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+
+            // Close Button (Top Right)
+            IconButton(
+                onClick = { resetReview() },
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 40.dp, end = 16.dp)
+                        .statusBarsPadding(),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.round_close_24),
+                    contentDescription = "Close",
+                    tint = Color.White.copy(alpha = 0.6f),
+                )
             }
         }
     }
 
+    val currentPage = pages.getOrNull(currentStep)
     ShareSheet(
         content,
         shareSaga,
         onDismiss = {
             shareSaga = false
         },
-        shareType = shareType ?: ShareType.PLAYSTYLE,
+        shareType = currentPage?.shareType ?: ShareType.PLAYSTYLE,
     )
 }
 
@@ -559,17 +446,15 @@ fun PlayStylePage(content: SagaContent) {
         }
     val infiniteTransition = rememberInfiniteTransition()
     val firstTone = remember { topTone.first().first }
-    val shapeA =
-        remember {
-            RoundedPolygon.star(
-                4,
-                rounding = CornerRounding(5f),
-            )
-        }
-    val shapeB =
-        remember {
-            firstTone.starShape()
-        }
+    remember {
+        RoundedPolygon.star(
+            4,
+            rounding = CornerRounding(5f),
+        )
+    }
+    remember {
+        firstTone.starShape()
+    }
 
     val morphProgress by
         infiniteTransition.animateFloat(
@@ -907,18 +792,18 @@ fun MentionsPage(content: SagaContent) {
                                 .padding(8.dp)
                                 .animateItem(),
                     ) {
-                        content.findCharacter(it.getCharacterExcluding(character.data).id)?.let  { character ->
-                            SingleRelationShipCard(
-                                content,
-                                character,
-                                it,
-                                false,
-                                showUpdates = true,
-                                Modifier.fillMaxWidth(),
-                            )
-                        }
-
-
+                        content
+                            .findCharacter(it.getCharacterExcluding(character.data).id)
+                            ?.let { character ->
+                                SingleRelationShipCard(
+                                    content,
+                                    character,
+                                    it,
+                                    false,
+                                    showUpdates = true,
+                                    Modifier.fillMaxWidth(),
+                                )
+                            }
                     }
                 }
             }
@@ -961,7 +846,7 @@ fun ActsInsightPage(content: SagaContent) {
                 .background(MaterialTheme.colorScheme.background.copy(alpha = overlayAlpha)),
         )
 
-        val coroutineScope = rememberCoroutineScope()
+        rememberCoroutineScope()
         val columnScroll = rememberScrollState()
         Column(
             verticalArrangement = Arrangement.Center,

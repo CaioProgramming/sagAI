@@ -112,7 +112,7 @@ private fun DrawScope.drawStar(
 
 @Preview(showBackground = true, backgroundColor = 0xFF0000FF)
 @Composable
-fun StarryTextPlaceholderPreview() {
+private fun StarryTextPlaceholderPreview() {
     Box(modifier = Modifier.size(width = 200.dp, height = 50.dp)) {
         StarryTextPlaceholder(starCount = 50)
     }

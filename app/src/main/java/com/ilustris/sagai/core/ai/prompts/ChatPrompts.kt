@@ -79,21 +79,20 @@ object ChatPrompts {
         appendLine(ChatRules.TAG_BASED_EXPRESSION_SYSTEM.trim())
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trim())
 
-        appendLine("# SCENE STATE")
-        appendLine(sceneSummary.toAINormalize())
+        sceneSummary?.let {
+            appendLine("# SCENE STATE")
+            appendLine(sceneSummary.toAINormalize())
+            charactersInScene?.let {
+                appendLine("## Characters in Immediate Scene:")
+                appendLine(CharacterPrompts.charactersOverview(it))
+            }
+        }
 
         appendLine(SagaPrompts.mainContext(saga))
 
         appendLine("\n# FULL SAGA CAST SUMMARY")
         appendLine("// Use this list to check if a mentioned entity is an established character or a new one.")
-        appendLine(saga.getCharacters().normalizetoAIItems(characterExclusions))
-
-        appendLine("\n# RECENT CONTEXT")
-
-        charactersInScene?.let {
-            appendLine("## Characters in Immediate Scene:")
-            appendLine(CharacterPrompts.charactersOverview(it))
-        }
+        appendLine(saga.getCharacters(true).normalizetoAIItems(characterExclusions))
 
         appendLine("\n# ACTIVE RELATIONSHIPS")
         appendLine(saga.generateCharacterRelationsSummary(sceneSummary?.charactersPresent))

@@ -83,6 +83,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -129,6 +130,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumView
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
@@ -144,6 +146,7 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -378,8 +381,7 @@ fun LazyListScope.SagaDrawerContent(
                             .reactiveShimmer(
                                 content.data.review != null,
                                 targetValue = 250f,
-                            )
-                            .clickable {
+                            ).clickable {
                                 openReview()
                             },
                 )
@@ -404,8 +406,7 @@ fun LazyListScope.SagaDrawerContent(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                         shape,
-                    )
-                    .background(
+                    ).background(
                         MaterialTheme.colorScheme.background,
                         shape,
                     )
@@ -446,8 +447,7 @@ fun LazyListScope.SagaDrawerContent(
                                     .clip(shape)
                                     .clickable {
                                         expandedEvents = !expandedEvents
-                                    }
-                                    .fillMaxWidth(),
+                                    }.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
@@ -591,11 +591,22 @@ fun SagaDetailContentView(
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
+                        val genre = sagaContent.data.genre
+                        val brush = genre.color.gradientFade()
+                        val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                             ModalDrawerSheet(
-                                drawerShape =
-                                    RoundedCornerShape(0.dp),
-                                drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                modifier =
+                                    Modifier
+                                        .statusBarsPadding()
+                                        .padding(16.dp)
+                                        .dropShadow(shape, {
+                                            this.brush = brush
+                                            this.radius = 10f
+                                            this.spread = 5f
+                                        }),
+                                drawerShape = shape,
+                                drawerContainerColor = MaterialTheme.colorScheme.background,
                             ) {
                                 LazyColumn(
                                     Modifier
@@ -996,8 +1007,7 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     )
@@ -1075,7 +1085,8 @@ private fun SagaDetailInitialView(
                                                         if (saga.data.icon.isEmpty()) {
                                                             selectSection(DetailAction.REGENERATE)
                                                         }
-                                                    }.gradientFill(
+                                                    }
+                                                    .gradientFill(
                                                         saga.data.genre.gradient(),
                                                     ),
                                         )
@@ -1098,7 +1109,8 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    ).reactiveShimmer(
+                                                    )
+                                                    .reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     ),
@@ -1203,11 +1215,18 @@ private fun SagaDetailInitialView(
                                 }
 
                                 item(span = { GridItemSpan(columnCount) }) {
+                                    val shape = genre.bubble(
+                                        BubbleTailAlignment.BottomRight,
+                                        0.dp,
+                                        0.dp,
+                                        true,
+                                    )
+
                                     Box(
                                         Modifier
                                             .padding(16.dp)
-                                            .clip(shape = genre.shape())
-                                            .border(1.dp, genre.color.gradientFade(), genre.shape())
+                                            .clip(shape = shape)
+                                            .border(1.dp, genre.color.gradientFade(), shape)
                                             .background(genre.color.gradientFade())
                                             .fillMaxWidth()
                                             .height(300.dp)
@@ -1337,7 +1356,8 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    ).padding(8.dp)
+                                                    )
+                                                    .padding(8.dp)
                                                     .weight(1f),
                                         )
 
@@ -1360,11 +1380,17 @@ private fun SagaDetailInitialView(
                                                 saga.flatMessages(),
                                             ),
                                         ) { char ->
+                                            val shape = genre.bubble(
+                                                BubbleTailAlignment.BottomRight,
+                                                0.dp,
+                                                0.dp,
+                                                true,
+                                            )
 
                                             Column(
                                                 Modifier
                                                     .padding(8.dp)
-                                                    .clip(saga.data.genre.shape())
+                                                    .clip(shape)
                                                     .clickable {
                                                         selectSection(DetailAction.CHARACTERS)
                                                     },
@@ -1629,6 +1655,13 @@ private fun SagaDetailInitialView(
                                 }) {
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         items(chapters) { chapter ->
+                                            val shape = genre.bubble(
+                                                BubbleTailAlignment.BottomRight,
+                                                0.dp,
+                                                0.dp,
+                                                true,
+                                            )
+
                                             val chapterModifier =
                                                 this@with.sharedTransitionActionItemModifier(
                                                     DetailAction.CHAPTERS,
@@ -1640,7 +1673,7 @@ private fun SagaDetailInitialView(
                                                 saga,
                                                 chapter.data,
                                                 chapterModifier
-                                                    .clip(genre.shape())
+                                                    .clip(shape)
                                                     .clickable {
                                                         selectSection(
                                                             DetailAction.CHAPTERS,
@@ -1709,20 +1742,26 @@ private fun SagaDetailInitialView(
                                 }
 
                                 item(span = { GridItemSpan(columnCount) }) {
+                                    val shape = genre.bubble(
+                                        BubbleTailAlignment.BottomRight,
+                                        0.dp,
+                                        0.dp,
+                                        true,
+                                    )
+
                                     Box(
                                         Modifier
                                             .padding(16.dp)
                                             .clip(
-                                                genre.shape(),
-                                            )
-                                            .border(
+                                                shape,
+                                            ).border(
                                                 1.dp,
                                                 MaterialTheme.colorScheme.onBackground.gradientFade(),
-                                                genre.shape(),
+                                                shape,
                                             )
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
-                                                genre.shape(),
+                                                shape,
                                             )
                                             .fillMaxWidth()
                                             .height(200.dp)
@@ -1876,6 +1915,13 @@ private fun SagaDetailInitialView(
                                     tooltipPositionProvider,
                                     state = tooltipState,
                                     tooltip = {
+                                        val shape = genre.bubble(
+                                            BubbleTailAlignment.BottomRight,
+                                            0.dp,
+                                            0.dp,
+                                            true,
+                                        )
+
                                         LazyVerticalGrid(
                                             columns = GridCells.Fixed(2),
                                             modifier =
@@ -1883,7 +1929,7 @@ private fun SagaDetailInitialView(
                                                     .padding(16.dp)
                                                     .background(
                                                         MaterialTheme.colorScheme.surfaceContainer,
-                                                        genre.shape(),
+                                                        shape,
                                                     )
                                                     .padding(8.dp),
                                         ) {

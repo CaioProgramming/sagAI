@@ -18,7 +18,7 @@ import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
 
 fun Genre.bubble(
-    tailAlignment: BubbleTailAlignment,
+    tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
     tailWidth: Dp = 8.dp,
     tailHeight: Dp = 8.dp,
     isNarrator: Boolean = false,

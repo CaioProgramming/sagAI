@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -157,7 +158,7 @@ fun StarryLoader(
                         animationSpec = tween(1500, easing = EaseInOutQuad),
                     )
 
-                    WarpSpeedStarField(
+                    StarryTextPlaceholder(
                         modifier =
                             Modifier
                                 .alpha(starsAlpha)

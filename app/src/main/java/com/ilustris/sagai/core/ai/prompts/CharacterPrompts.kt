@@ -258,6 +258,12 @@ object CharacterPrompts {
             appendLine("  * A compelling backstory hook or internal conflict")
             appendLine("  * Something that makes them feel ALIVE and relatable")
             appendLine()
+            appendLine("**DIVERSITY MANDATE FOR SUGGESTIONS:**")
+            appendLine("  • Each of the 3 suggestions should have DIFFERENT: ethnicity, body type, hair style, fashion sense")
+            appendLine("  • Go beyond basic builds - vary body types (stocky/lanky/curvy/slim/muscular/petite)")
+            appendLine("  • Create varied hairstyles - different lengths, textures, colors, styles")
+            appendLine("  • Clothing should show personality - add 2-3 specific details per outfit (not just 'leather jacket')")
+            appendLine()
             appendLine("Examples of good character suggestions:")
             appendLine(
                 "  * \"A silver-tongued diplomat with burn scars she refuses to hide, who uses charm to mask the guilt of a treaty that destroyed her homeland.\"",
@@ -273,16 +279,26 @@ object CharacterPrompts {
                 appendLine("Make sure character suggestions fit the ${sagaContext.genre.name} genre and complement the saga world!")
                 if (sagaContext.genre.name == "CYBERPUNK") {
                     appendLine()
-                    appendLine("⚠️ CYBERPUNK MANDATORY CYBERWARE RULE:")
+                    appendLine("⚠️ CYBERPUNK MANDATORY CYBERWARE + AURA RULE:")
                     appendLine("In this world, EVERYONE has cyberware. It's not optional - it's survival.")
-                    appendLine("Every character suggestion MUST include visible cybernetic augmentations:")
-                    appendLine("  • Prosthetic limbs (chrome arms/legs shaped like human limbs)")
-                    appendLine("  • Artificial eyes (electronic iris, scanner lines, unnatural glow)")
-                    appendLine("  • Neural ports (at temples, neck, or spine)")
-                    appendLine("  • Mechanical spine sections")
-                    appendLine("  • Integrated tech (in-ear comms, wrist interfaces)")
+                    appendLine("Every character suggestion MUST include:")
+                    appendLine("  1. VISIBLE CYBERWARE (2-3 augmentations):")
+                    appendLine("     • Prosthetic limbs (chrome arms/legs shaped like human limbs)")
+                    appendLine("     • Artificial eyes (electronic iris, scanner lines, unnatural glow)")
+                    appendLine("     • Neural ports (at temples, neck, or spine)")
+                    appendLine("     • Mechanical spine sections")
+                    appendLine("     • Integrated tech (in-ear comms, wrist interfaces)")
+                    appendLine("  2. OUTSTANDING FASHION (Y2K/retro/neo-Tokyo mix):")
+                    appendLine("     • NOT generic 'black leather jacket'")
+                    appendLine("     • 2-3 SPECIFIC outfit details that show personality and aura")
+                    appendLine("     • Mix of: metallic fabrics, asymmetrical cuts, tech accessories, bold colors")
+                    appendLine("     • Each character should make the user think 'WOW, that's a look'")
                     appendLine("The cyberware should be REPLACEMENTS that fit human form - cyborgs pretending to be human.")
                     appendLine("NOT circuit tattoos or subtle implants (too light), NOT giant chunky robot parts (too heavy).")
+                    appendLine()
+                    appendLine(
+                        "Example format: '[Personality] with [cyberware detail], wearing [specific outfit with 2+ details], [backstory hook]'",
+                    )
                 }
             }
             appendLine(
@@ -328,12 +344,31 @@ object CharacterPrompts {
         saga: SagaContent,
         description: String,
         bannedNames: List<String> = emptyList(),
+        themeColor: String? = null,
     ) = buildString {
         appendLine("You are a Master Character Designer and World-Builder AI.")
         appendLine("Your task is to breathe life into a character who has just been discovered or mentioned in the saga's narrative.")
         appendLine("You must generate a complete, detailed, and highly atmospheric character profile in JSON format.")
 
         appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+
+        themeColor?.let {
+            appendLine()
+            appendLine("## 🎨 CHARACTER THEME COLOR: $it 🎨")
+            appendLine("This character has a signature theme color that should influence their visual identity.")
+            appendLine("**USE THIS COLOR AS A GUIDE** for impactful details in their appearance:")
+            appendLine("  • Hair color or highlights")
+            appendLine("  • Eye color or unique iris features")
+            appendLine("  • Dominant outfit color or accent pieces")
+            appendLine("  • Accessories (scarves, jewelry, tech devices)")
+            appendLine("  • Carried items or weapons")
+            appendLine("  • Cyberware LED lights or accents (for cyberpunk)")
+            appendLine()
+            appendLine("**This is NOT mandatory for skin tone** - skin should reflect their ethnicity naturally.")
+            appendLine("**This is a THEME, not an obligation** - use it where it makes sense, creating visual cohesion.")
+            appendLine("If the color doesn't fit the character's aesthetic or story, you can use it subtly or as accent.")
+            appendLine()
+        }
 
         appendLine("## 🧬 THE DISCOVERY SEED (FOUNDATIONAL CONTEXT) 🧬")
         appendLine("// The following description contains the names, roles, or snippets of dialogue that introduced this character.")
@@ -414,6 +449,22 @@ object CharacterPrompts {
         appendLine(
             "- **Silhouette**: Create diverse body shapes and postures that reflect their life journey (e.g., 'a stout, powerful matriarch', 'a lanky, nervous tech-junkie').",
         )
+        appendLine()
+        appendLine("**ANTI-REPETITION ENFORCEMENT:**")
+        appendLine("Every character in this saga should be visually DISTINCT. NO two characters should share the same:")
+        appendLine("  • Build: Avoid defaulting to 'athletic'. Mix: slim/stocky/curvy/lanky/muscular/heavyset/petite")
+        appendLine("  • Hair: DON'T repeat styles. Vary length, texture, color, and styling")
+        appendLine("  • Eye shape AND color: Not just 'brown eyes' - describe the SHAPE and unique qualities")
+        appendLine("  • Facial structure: Unique nose, lips, jaw, distinctive marks")
+        appendLine("  • Fashion sense: Each character needs a SIGNATURE look that shows personality")
+        appendLine()
+        appendLine("**HEAD-TO-TOE UNIQUENESS:**")
+        appendLine("Use ALL the data fields to create truly unique characters:")
+        appendLine("  • PhysicalTraits: height, weight, build, ethnicity, skin tone, facial features")
+        appendLine("  • FacialFeatures: hair (length/texture/color/style), eyes (shape/color), mouth, jawline, distinctive marks")
+        appendLine("  • BodyFeatures: build/posture, skin appearance, distinguishing features")
+        appendLine("  • Clothing: outfit style, accessories, carried items - ALL should reflect personality")
+        appendLine("These fields exist to ensure NO character feels generic or AI-generated.")
         appendLine()
 
         appendLine(GenrePrompts.appearanceGuidelines(saga.data.genre))

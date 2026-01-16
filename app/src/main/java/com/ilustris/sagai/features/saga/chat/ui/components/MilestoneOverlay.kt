@@ -19,7 +19,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -114,7 +113,7 @@ fun MilestoneOverlay(
     val congratsMessage by viewModel.congratsMessage.collectAsState()
     val canPlayAnimation = milestone.isIntrusive
 
-    var showIcon by remember { mutableStateOf(canPlayAnimation.not()) }
+    var showIcon by remember { mutableStateOf(false) }
     var showTitle by remember { mutableStateOf(canPlayAnimation.not()) }
     var showSubtitle by remember { mutableStateOf(canPlayAnimation.not()) }
     var showButton by remember { mutableStateOf(canPlayAnimation.not()) }
@@ -212,6 +211,15 @@ fun MilestoneOverlay(
         label = "glow_pulse",
     )
 
+    val milestoneSharedKey =
+        when (milestone) {
+            is SagaMilestone.ActFinished -> "act-${milestone.act.id}"
+            is SagaMilestone.ChapterFinished -> "chapter-${milestone.chapter.id}"
+            is SagaMilestone.CurrentObjective -> "timeline-objective"
+            is SagaMilestone.NewCharacter -> "character-${milestone.character.id}"
+            is SagaMilestone.NewEvent -> "timeline-${milestone.timeline.id}"
+        }
+
     Box(Modifier.fillMaxSize()) {
         with(sharedTransitionScope) {
             AnimatedVisibility(
@@ -247,15 +255,10 @@ fun MilestoneOverlay(
                         ) {
                             AnimatedVisibility(
                                 visible = showIcon,
-                                enter = fadeIn(tween(400)) + scaleIn(),
-                                exit = fadeOut(tween(700)) + scaleOut(),
+                                enter = fadeIn(tween(400)),
+                                exit = fadeOut(tween(700)),
                             ) {
-                                val fillBrush =
-                                    if (canPlayAnimation) {
-                                        genre.gradient(true)
-                                    } else {
-                                        genre.gradient(true)
-                                    }
+                                val fillBrush = genre.gradient(true)
 
                                 Image(
                                     painter = painterResource(R.drawable.ic_spark),
@@ -277,7 +280,7 @@ fun MilestoneOverlay(
                                                 rememberSharedContentState(
                                                     key = "saga_${saga.data.id}_spark",
                                                 ),
-                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                animatedVisibilityScope = this,
                                             ),
                                 )
                             }
@@ -298,6 +301,11 @@ fun MilestoneOverlay(
                                                     alpha = .5f,
                                                 ),
                                             fontWeight = FontWeight.Bold,
+                                        ),
+                                    modifier =
+                                        Modifier.sharedBounds(
+                                            rememberSharedContentState(milestoneSharedKey),
+                                            this,
                                         ),
                                 )
                             }
