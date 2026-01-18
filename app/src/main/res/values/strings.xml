@@ -359,6 +359,15 @@
     <string name="backup_success_enabled">All set! Enjoy your stories 💜</string>
     <string name="backup_error_enable_failed">Could not enable backup. We\'re sorry about that, shall we try again?</string>
     <string name="backup_loading_restoring_saga">Restoring %s...</string>
+    <string name="backup_loading_restoring_database">Restoring database...</string>
+    <string name="backup_loading_creating">Creating backup...</string>
+    <string name="backup_disabled_warning_title">Backup Disabled</string>
+    <string name="backup_disabled_warning_message">Your sagas are not being backed up automatically. Export your database to keep your progress safe.</string>
+    <string name="export_database_button">Export Database</string>
+    <string name="import_database_button">Import Database</string>
+    <string name="restore_database_title">Database Backups</string>
+    <string name="restore_database_description">Select a backup to restore your entire database.</string>
+    <string name="restore_database_button">Restore Database</string>
 
     <!-- Conversation Snippet Sharing -->
     <string name="messages_selected">%1$d of %2$d messages selected</string>

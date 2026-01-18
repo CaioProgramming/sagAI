@@ -1,12 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen
-import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 
 object SuggestionPrompts {
     @Suppress("ktlint:standard:max-line-length")
@@ -22,10 +19,10 @@ object SuggestionPrompts {
             )
             appendLine(SagaPrompts.mainContext(saga))
             appendLine("Story actual context:")
-            appendLine(sceneSummary.toJsonFormat())
+            appendLine(sceneSummary.toAINormalize())
             appendLine("Latest messages")
             appendLine(
-                ChatPrompts.conversationHistory(saga),
+                ChatPrompts.conversationHistory(saga, 7),
             )
 
             appendLine("\n# TAG-BASED EXPRESSION SYSTEM")
@@ -57,10 +54,5 @@ object SuggestionPrompts {
             appendLine("")
             appendLine("Output: Each suggestion must have `text` (with tags) and `type` (use \"CHARACTER\")")
             appendLine("")
-            appendLine("Output Format:")
-            appendLine("Return ONLY a valid JSON array of objects. Each object must have two fields:")
-            appendLine("{ \"suggestions\": [ ${toJsonMap(Suggestion::class.java)} }")
-            appendLine("Do not include any other text, explanations, or markdown.")
-            appendLine(OutputRules.outputRule(toJsonMap(SuggestionGen::class.java)))
         }.trimIndent()
 }

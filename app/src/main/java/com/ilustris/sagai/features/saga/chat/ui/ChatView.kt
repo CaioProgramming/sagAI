@@ -837,42 +837,46 @@ fun ChatContent(
                                 end.linkTo(parent.end)
                             },
                 ) {
-                    AnimatedVisibility(
-                        uiState.milestone == null,
-                        modifier =
-                            Modifier.align(
+                    Box(
+                        Modifier
+                            .size(32.dp)
+                            .align(
                                 Alignment.CenterHorizontally,
                             ),
                     ) {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            contentDescription = null,
-                            colorFilter =
-                                ColorFilter.tint(
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                                ),
-                            modifier =
-                                Modifier
-                                    .size(24.dp)
-                                    .align(Alignment.CenterHorizontally)
-                                    .clip(CircleShape)
-                                    .clickable {
-                                        onAction(ChatUiAction.ShowObjective)
-                                    }.gradientFill(
-                                        progressiveBrush(
-                                            content.data.genre.color,
-                                            progress,
-                                        ),
-                                    ).reactiveShimmer(
-                                        uiState.isGenerating || uiState.isLoading,
-                                        shimmerColors = saga.genre.shimmerColors(),
-                                    ).sharedElement(
-                                        rememberSharedContentState(
-                                            key = "saga_${saga.id}_spark",
-                                        ),
-                                        animatedVisibilityScope = this,
+                        this@Column.AnimatedVisibility(
+                            uiState.milestone == null,
+                        ) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                contentDescription = null,
+                                colorFilter =
+                                    ColorFilter.tint(
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                                     ),
-                        )
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            onAction(ChatUiAction.ShowObjective)
+                                        }.gradientFill(
+                                            progressiveBrush(
+                                                content.data.genre.color,
+                                                progress,
+                                            ),
+                                        ).reactiveShimmer(
+                                            uiState.isGenerating || uiState.isLoading,
+                                            shimmerColors = saga.genre.shimmerColors(),
+                                        ).sharedElement(
+                                            rememberSharedContentState(
+                                                key = "saga_${saga.id}_spark",
+                                            ),
+                                            animatedVisibilityScope = this,
+                                        ),
+                            )
+                        }
                     }
 
                     val subtitle =

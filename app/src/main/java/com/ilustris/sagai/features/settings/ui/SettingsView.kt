@@ -55,6 +55,7 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -96,6 +97,8 @@ fun SettingsView(
         viewModel.backupEnabled
             .collectAsStateWithLifecycle(false)
 
+    val hasSagasWithChapters by viewModel.hasSagasWithChapters.collectAsStateWithLifecycle(null)
+
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
 
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
@@ -116,6 +119,20 @@ fun SettingsView(
     val blurRadius = if (isWiping || showClearDialog) 16.dp else 0.dp
     var showBackupSheet by remember { mutableStateOf(false) }
     var showBackups by remember { mutableStateOf(true) }
+
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/x-sqlite3"),
+        ) { uri ->
+            uri?.let { viewModel.exportDatabase(it) }
+        }
+
+    val importLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri?.let { viewModel.importDatabase(it) }
+        }
     LazyColumn(
         modifier =
             Modifier
@@ -125,14 +142,18 @@ fun SettingsView(
                 .blur(blurRadius),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
+        stickyHeader {
             Text(
                 text = stringResource(R.string.settings_title),
                 style =
                     MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Black,
                     ),
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(vertical = 16.dp)
+                        .fillMaxWidth(),
             )
         }
 
@@ -174,21 +195,17 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .clickable {
+                        ).clickable {
                             showPlaythroughSheet = true
-                        }
-                        .padding(16.dp),
+                        }.padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -231,8 +248,7 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(12.dp),
+                        ).padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -273,11 +289,9 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .clickable {
+                            ).clickable {
                                 viewModel.clearCache()
-                            }
-                            .padding(16.dp),
+                            }.padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -325,8 +339,7 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -411,8 +424,8 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    )
-                    .padding(8.dp),
+                    ).padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
                     stringResource(R.string.notifications),
@@ -483,51 +496,27 @@ fun SettingsView(
                     }
                 }
 
-                val launcher =
-                    rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
-                        uri?.let {
-                            viewModel.importSaga(it)
-                        }
-                    }
-
-                val iconRes = R.drawable.ic_zip
-                val iconTint = MaterialTheme.colorScheme.primary
-
-                val shape = RoundedCornerShape(15.dp)
-
-                Row(
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth()
-                            .clip(shape)
-                            .background(iconTint.copy(alpha = .2f), shape)
-                            .clickable {
-                                launcher.launch(arrayOf("application/zip"))
-                            }
-                            .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = iconRes),
-                        contentDescription = null,
-                        tint = iconTint,
-                        modifier = Modifier.size(24.dp),
-                    )
+                if (!backupEnabled && hasSagasWithChapters == true) {
                     Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.import_saga),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = iconTint.darker(),
+                            stringResource(R.string.backup_disabled_warning_title),
+                            style =
+                                MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            color = MaterialColor.Red600,
                         )
+
                         Text(
-                            text = stringResource(R.string.import_saga_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = iconTint.darker(),
+                            stringResource(R.string.backup_disabled_warning_message),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Light,
                         )
                     }
                 }
@@ -585,42 +574,62 @@ fun SettingsView(
         }
 
         item {
-            Column(
+            PreferencesContainer(
+                stringResource(R.string.settings_help_center_title),
+                stringResource(R.string.settings_help_center_subtitle),
+                true,
+                showSwitch = false,
+                onClickSwitch = {
+                    navController?.navigateToRoute(Routes.FAQ)
+                },
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(15.dp))
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .clickable {
-                            navController?.navigateToRoute(Routes.FAQ)
-                        }
-                        .padding(16.dp),
+                        ).padding(8.dp),
+            )
+        }
+
+        item {
+            Button(
+                onClick = {
+                    exportLauncher.launch("sagai_database_backup.db")
+                },
+                colors =
+                    ButtonDefaults.buttonColors().copy(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .2f),
+                        contentColor = MaterialTheme.colorScheme.primary.darker(.3f),
+                    ),
+                shape = RoundedCornerShape(15.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_faq),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.settings_help_center_title),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_help_center_subtitle),
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.alpha(0.7f),
-                        )
-                    }
-                }
+                Text(
+                    stringResource(R.string.export_database_button),
+                    textAlign = TextAlign.Start,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                )
+            }
+        }
+
+        item {
+            Button(
+                onClick = {
+                    importLauncher.launch(arrayOf("application/x-sqlite3"))
+                },
+                colors = ButtonDefaults.textButtonColors(),
+                shape = RoundedCornerShape(15.dp),
+            ) {
+                Text(
+                    stringResource(R.string.import_database_button),
+                    textAlign = TextAlign.Start,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                )
             }
         }
 
@@ -637,7 +646,11 @@ fun SettingsView(
             ) {
                 Text(
                     stringResource(R.string.clear_data_button),
-                    modifier = Modifier.padding(8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                    textAlign = TextAlign.Start,
                 )
             }
         }

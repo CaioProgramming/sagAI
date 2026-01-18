@@ -165,7 +165,7 @@ class MessageUseCaseImpl
                                 saga = saga,
                                 message = message.message,
                                 directive = saga.getDirective(),
-                                sceneSummary = sceneSummary,
+                                sceneSummary = sceneSummary!!,
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                         filterOutputFields =

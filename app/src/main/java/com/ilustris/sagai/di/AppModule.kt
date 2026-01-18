@@ -18,6 +18,7 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
 import com.ilustris.sagai.core.file.BackupService
@@ -69,13 +70,13 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
+import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCaseImpl
-import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
@@ -187,6 +188,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSagaDatabase(databaseBuilder: DatabaseBuilder): SagaDatabase = databaseBuilder.buildDataBase()
+
+    @Provides
+    @Singleton
+    fun provideDatabaseBackupService(
+        @ApplicationContext context: Context,
+        preferences: DataStorePreferences,
+        database: SagaDatabase,
+    ): DatabaseBackupService = DatabaseBackupService(context, preferences, database)
 
     @Provides
     @Singleton

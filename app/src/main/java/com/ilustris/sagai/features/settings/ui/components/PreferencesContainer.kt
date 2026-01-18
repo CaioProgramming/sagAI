@@ -1,14 +1,13 @@
 package com.ilustris.sagai.features.settings.ui.components
 
-import android.Manifest
-import android.app.Activity
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -19,9 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 
 @Composable
 fun PreferencesContainer(
@@ -29,7 +30,8 @@ fun PreferencesContainer(
     description: String,
     isActivated: Boolean,
     modifier: Modifier = Modifier,
-    onClickSwitch: (Boolean) -> Unit = {},
+    showSwitch: Boolean = true,
+    onClickSwitch: ((Boolean) -> Unit)? = null,
 ) {
     Row(
         modifier =
@@ -48,7 +50,7 @@ fun PreferencesContainer(
             Text(
                 title,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
             Text(
                 description,
@@ -59,17 +61,35 @@ fun PreferencesContainer(
                 modifier = Modifier.alpha(.7f),
             )
         }
-        Switch(
-            checked = isActivated,
-            colors =
-                SwitchDefaults.colors().copy(
-                    uncheckedBorderColor = Color.Transparent,
-                ),
-            modifier = Modifier.scale(.6f),
-            onCheckedChange = {
-                onClickSwitch(it.not())
-            },
-        )
+        onClickSwitch?.let {
+            if (showSwitch) {
+                Switch(
+                    checked = isActivated,
+                    colors =
+                        SwitchDefaults.colors().copy(
+                            uncheckedBorderColor = Color.Transparent,
+                        ),
+                    modifier = Modifier.scale(.6f),
+                    onCheckedChange = {
+                        onClickSwitch(it.not())
+                    },
+                )
+            } else {
+                IconButton(
+                    onClick = { onClickSwitch(isActivated.not()) },
+                    colors =
+                        IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Transparent,
+                        ),
+                ) {
+                    Icon(
+                        painterResource(R.drawable.round_arrow_forward_ios_24),
+                        null,
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+            }
+        }
     }
 }
 

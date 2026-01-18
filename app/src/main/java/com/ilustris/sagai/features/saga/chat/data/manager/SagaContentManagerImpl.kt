@@ -32,6 +32,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
@@ -140,9 +141,8 @@ class SagaContentManagerImpl
             val saga = content.value ?: return
             val currentTimeline = saga.getCurrentTimeLine() ?: return
             val objective = currentTimeline.data.currentObjective
-            milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
-            if (objective == null) {
-                checkObjective(true)
+            if (objective?.isNotBlank() == true) {
+                milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
             }
         }
 
@@ -717,6 +717,7 @@ class SagaContentManagerImpl
                 when (milestone) {
                     is SagaMilestone.NewEvent -> {
                         generateTimelineContent(milestone.timeline, saga)
+                        endTimeline(saga.currentActInfo?.currentChapterInfo)
                     }
 
                     is SagaMilestone.ChapterFinished -> {
@@ -876,26 +877,6 @@ class SagaContentManagerImpl
                         }
                         val currentEvent = it.currentEventInfo
 
-                        // Check if current objective is null and generate if needed
-                        currentEvent?.let { event ->
-                            if (event.data.currentObjective.isNullOrEmpty()) {
-                                startProcessing {
-                                    val updatedTimeline =
-                                        timelineUseCase
-                                            .getTimelineObjective(saga, event.data)
-                                            .getSuccess()
-
-                                    // Emit CurrentObjective milestone after generating
-                                    updatedTimeline?.let { timeline ->
-
-                                        if (showMilestone && timeline.currentObjective?.isNotEmpty() == true) {
-                                            emitMilestone(SagaMilestone.CurrentObjective(timeline))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                         val currentEventIndex = it.events.indexOf(currentEvent)
                         if (currentEventIndex > 0) {
                             val previousEvent = it.events[currentEventIndex - 1]
@@ -906,6 +887,20 @@ class SagaContentManagerImpl
                     }
                 }
             }
+
+        override suspend fun getCurrentObjective(sceneSummary: SceneSummary) {
+            val saga = content.value ?: return
+            val event = saga.getCurrentTimeLine() ?: return
+            if (event.data.currentObjective.isNullOrEmpty()) {
+                startProcessing {
+                    timelineUseCase
+                        .getTimelineObjective(saga, event.data)
+                        .onSuccessAsync {
+                            emitMilestone(SagaMilestone.CurrentObjective(it))
+                        }
+                }
+        }
+    }
 
         private suspend fun generateTimelineContent(
             timeline: Timeline,
@@ -921,6 +916,8 @@ class SagaContentManagerImpl
                         context.getString(R.string.timeline_generated_successfully, timeline.title),
                     ),
                 )
+
+                endTimeline(saga.currentActInfo?.currentChapterInfo)
             }
         }
 

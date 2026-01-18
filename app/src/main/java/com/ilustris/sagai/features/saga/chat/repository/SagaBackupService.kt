@@ -35,8 +35,8 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
-import jakarta.inject.Inject
 import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
 interface SagaBackupService {
     suspend fun restoreContent(sagaContent: RestorableSaga): RequestResult<SagaContent>

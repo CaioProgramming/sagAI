@@ -56,9 +56,9 @@ data class RelationshipContent(
             events.find { event -> event.id == it.timelineId }?.createdAt
         }
 
-    fun summarizeRelation() =
+    fun summarizeRelation(threshold: Int = UpdateRules.CHAPTER_UPDATE_LIMIT) =
         "${characterOne.name} ${data.emoji} ${characterTwo.name} - ${data.title}:\n${
-            relationshipEvents.takeLast(UpdateRules.CHAPTER_UPDATE_LIMIT)
+            relationshipEvents.takeLast(threshold)
                 .normalizetoAIItems(listOf("timestamp", "relationId", "timelineId", "id", "emoji"))
         }"
 }

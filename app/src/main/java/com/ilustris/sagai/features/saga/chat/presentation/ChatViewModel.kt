@@ -362,8 +362,12 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 updateLoading(true)
                 message?.let {
+                    messageUseCase.updateMessage(message.copy(status = MessageStatus.LOADING))
+
                     val summary = messageUseCase.getSceneContext(currentSaga).getSuccess()
                     replyMessage(message, summary, false)
+                } ?: run {
+                    updateLoading(false)
                 }
             }
         }
@@ -1011,7 +1015,7 @@ class ChatViewModel
                 if (currentSaga.data.isEnded) return@launch
                 val currentTimeline = currentSaga.getCurrentTimeLine() ?: return@launch
                 if (currentTimeline.messages.isEmpty()) return@launch
-
+                if (uiState.value.isLoading || uiState.value.isGenerating) return@launch
                 suggestionUseCase(
                     currentTimeline.messages,
                     currentSaga.mainCharacter?.data,
@@ -1116,8 +1120,13 @@ class ChatViewModel
                                 ),
                             )
                         }
-                        delay(3.seconds)
-                        generateSuggestions(sceneSummary)
+                        sceneSummary?.let {
+                            launch(Dispatchers.IO) {
+                                delay(5.seconds)
+                                generateSuggestions(sceneSummary)
+                                sagaContentManager.getCurrentObjective(sceneSummary)
+                            }
+                        }
                     }.onFailureAsync {
                         messageUseCase.updateMessage(
                             message.copy(

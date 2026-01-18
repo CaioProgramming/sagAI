@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.chat.domain.manager
+package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.Manifest
 import android.app.PendingIntent
@@ -25,7 +25,6 @@ import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.components.NotificationStyle

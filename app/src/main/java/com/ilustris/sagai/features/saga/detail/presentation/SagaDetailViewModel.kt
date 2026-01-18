@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.presentation
 
 import android.graphics.Bitmap
-import android.net.Uri
 import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,10 +17,8 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -45,8 +42,6 @@ class SagaDetailViewModel
         val emotionalCardReference = MutableStateFlow<String>(emptyString())
         val showIntro = MutableStateFlow(false)
         val showReview = MutableStateFlow(false)
-        private val _exportLauncher = MutableSharedFlow<String>()
-        val exportLauncher = _exportLauncher.asSharedFlow()
         private val _loadingMessage = MutableStateFlow<String?>(null)
         val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
         val backupEnabled = sagaDetailUseCase.getBackupEnabled()
@@ -112,10 +107,10 @@ class SagaDetailViewModel
                         android.util.Log.e(
                             "SagaDetailViewModel",
                             "Error generating saga resume: ${it.message}",
-                    )
-                }
+                        )
+                    }
+            }
         }
-    }
 
         fun deleteSaga(saga: Saga) {
             viewModelScope.launch {
@@ -221,33 +216,6 @@ class SagaDetailViewModel
             }
         }
 
-        fun exportSaga() {
-            val currentSaga = saga.value ?: return
-            viewModelScope.launch {
-                val suggestedFileName = "${currentSaga.data.title.replace(" ", "_")}_backup.zip"
-                _exportLauncher.emit(suggestedFileName)
-            }
-        }
-
-        fun handleExportDestination(destinationUri: Uri) {
-            val currentSaga = saga.value ?: return
-            viewModelScope.launch {
-                isGenerating.emit(true)
-                _loadingMessage.value = "Packing up your saga..."
-                sagaDetailUseCase
-                    .exportSaga(currentSaga.data.id, destinationUri)
-                    .onSuccessAsync {
-                        isGenerating.emit(false)
-                        _loadingMessage.value = null
-                    }.onFailureAsync {
-                        _loadingMessage.value = "Sorry, an unexpected error happened :("
-                        delay(3.seconds)
-                        isGenerating.emit(false)
-                        _loadingMessage.value = null
-                    }
-            }
-        }
-
         fun segmentSagaCover(url: String) {
             viewModelScope.launch(Dispatchers.IO) {
                 val cachedBitmap = segmentedImageCache.get(url)
@@ -257,10 +225,10 @@ class SagaDetailViewModel
                 }
                 imageSegmentationHelper.processImage(url).onSuccessAsync {
                     segmentedBitmap.emit(it.second)
-                originalBitmap.emit(it.first)
+                    originalBitmap.emit(it.first)
+                }
             }
         }
-    }
     }
 
 private const val EMOTIONAL_CARD_CONFIG = "mental_card_icon"

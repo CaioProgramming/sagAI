@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -191,8 +190,7 @@ private fun SharedTransitionScope.AiReplyView(
                 .sharedElement(
                     rememberSharedContentState("saga-loader"),
                     animatedContentScope,
-                )
-                .gradientFill(Brush.verticalGradient(holographicGradient))
+                ).gradientFill(Brush.verticalGradient(holographicGradient))
                 .size(24.dp),
         )
 
@@ -261,7 +259,7 @@ private fun SharedTransitionScope.FaqContentView(
                     Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.background)
-                        .padding(vertical = 16.dp),
+                        .padding(16.dp),
             ) {
                 Text(
                     stringResource(R.string.faq_title),
@@ -271,40 +269,41 @@ private fun SharedTransitionScope.FaqContentView(
                         ),
                     textAlign = TextAlign.Start,
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                TextField(
-                    value = query,
-                    onValueChange = onQueryChange,
-                    placeholder = { Text(stringResource(R.string.faq_search_placeholder)) },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(15.dp)),
-                    leadingIcon = {
-                        Icon(painterResource(R.drawable.search), null)
-                    },
-                    trailingIcon = {
-                        if (query.isNotEmpty()) {
-                            IconButton(onClick = { onQueryChange("") }) {
-                                Icon(painterResource(R.drawable.round_close_24), null)
-                            }
-                        }
-                    },
-                    colors =
-                        TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            unfocusedContainerColor =
-                                MaterialTheme.colorScheme.surfaceContainer.copy(
-                                    alpha = .5f,
-                                ),
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        ),
-                    singleLine = true,
-                )
             }
+        }
+
+        item {
+            TextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = { Text(stringResource(R.string.faq_search_placeholder)) },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(15.dp))
+                        .padding(16.dp),
+                leadingIcon = {
+                    Icon(painterResource(R.drawable.search), null)
+                },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(painterResource(R.drawable.round_close_24), null)
+                        }
+                    }
+                },
+                colors =
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        unfocusedContainerColor =
+                            MaterialTheme.colorScheme.surfaceContainer.copy(
+                                alpha = .5f,
+                            ),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    ),
+                singleLine = true,
+            )
         }
 
         if (filteredCategories.isEmpty()) {
@@ -336,8 +335,7 @@ private fun SharedTransitionScope.FaqContentView(
                                     1.dp,
                                     brush,
                                     RoundedCornerShape(25.dp),
-                                )
-                                .fillMaxWidth()
+                                ).fillMaxWidth()
                                 .height(50.dp),
                     ) {
                         Row(

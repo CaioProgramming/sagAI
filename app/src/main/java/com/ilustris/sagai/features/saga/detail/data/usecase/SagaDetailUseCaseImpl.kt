@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
-import android.net.Uri
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -127,11 +126,6 @@ class SagaDetailUseCaseImpl
             wikiUseCase.mergeWikis(currentsaga, wikis)
         }
 
-        override suspend fun exportSaga(
-            sagaId: Int,
-            destinationUri: Uri,
-        ) = sagaBackupService.exportSaga(sagaId, destinationUri)
-
         override fun getBackupEnabled() = backupService.backupEnabled()
 
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
@@ -147,5 +141,5 @@ class SagaDetailUseCaseImpl
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
-        }
+            }
     }

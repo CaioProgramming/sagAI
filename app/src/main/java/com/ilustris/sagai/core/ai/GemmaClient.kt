@@ -107,7 +107,6 @@ class GemmaClient
                     Log.i(javaClass.simpleName, "generate: Core calls don't require delay.")
                 }
 
-                // Retry logic for HIGH priority
                 val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
 
                 for (currentAttempt in 1..maxAttempts) {

@@ -43,19 +43,24 @@ data class ActContent(
             }
         }
 
-    fun actSummary(saga: SagaContent) =
-        buildString {
-            appendLine("${saga.actNumber(data)} Act ${data.title}")
+    fun actSummary(
+        saga: SagaContent,
+        showEvents: Boolean = true,
+    ) = buildString {
+        appendLine("${saga.actNumber(data)} Act ${data.title}")
+        appendLine("Introduction: ")
+        appendLine(data.introduction)
+        appendLine("Chapters: ")
+        chapters.forEach {
+            appendLine("${saga.chapterNumber(it.data)}: ${it.data.title}")
             appendLine("Introduction: ")
-            appendLine(data.introduction)
-            appendLine("Chapters: ")
-            chapters.forEach {
-                appendLine("${saga.chapterNumber(it.data)}: ${it.data.title}")
-                appendLine("Introduction: ")
-                appendLine(it.data.introduction)
+            appendLine(it.data.introduction)
+            if (it.data.overview.isNotBlank()) {
                 appendLine("Overview: ")
                 appendLine(it.data.overview)
+            }
 
+            if (showEvents) {
                 appendLine("Events: ")
                 it.events.forEach {
                     appendLine(
@@ -65,7 +70,10 @@ data class ActContent(
                     )
                 }
             }
+        }
+        if (data.content.isNotBlank()) {
             appendLine("Overview: ")
             appendLine(data.content)
         }
+    }
 }

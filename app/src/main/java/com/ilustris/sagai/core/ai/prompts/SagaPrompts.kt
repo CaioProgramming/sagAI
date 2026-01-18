@@ -44,7 +44,7 @@ object SagaPrompts {
                 }",
             )
             appendLine("Relationships: ${saga.mainCharacter?.summarizeRelationships() ?: "No significant relationships were forged."}")
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga) }}")
+            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
             appendLine("LANGUAGE STYLE:")
             appendLine(GenrePrompts.conversationDirective(saga.data.genre))
             appendLine()
@@ -271,9 +271,6 @@ object SagaPrompts {
                 "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a 'Saga Wrapped' experience—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, and brief.",
             )
             appendLine()
-            appendLine("---")
-            appendLine("CONTEXT:")
-            appendLine("Saga Context:")
             appendLine(mainContext(saga))
             appendLine("Player relationships:")
             appendLine(saga.mainCharacter?.summarizeRelationships())
@@ -283,7 +280,7 @@ object SagaPrompts {
             }
             appendLine("Emotional Summary: ")
             appendLine(saga.emotionalSummary())
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga) }}")
+            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
             appendLine("Characters ranking(name and message number): ")
             appendLine(
                 topInteractiveCharacters.joinToString(";\n") {
@@ -323,7 +320,6 @@ object SagaPrompts {
             appendLine("    *   Adhere to the 'Language Directive' for flavor, but keep the structure modern/wrapped.")
             appendLine()
             appendLine("---")
-            appendLine("OUTPUT JSON OBJECT ONLY.")
         }.trim()
 
     fun generateStoryBriefing(saga: SagaContent) =

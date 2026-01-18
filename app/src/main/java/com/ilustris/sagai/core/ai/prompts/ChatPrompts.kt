@@ -9,7 +9,6 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipC
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.generateCharacterRelationsSummary
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -71,7 +70,7 @@ object ChatPrompts {
     ) = buildString {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
-                saga.findCharacter(it)?.data
+                saga.findCharacter(it)
             }
         appendLine("# IDENTITY & PROTOCOL")
         appendLine(Core.roleDefinition(saga.data))
@@ -84,7 +83,11 @@ object ChatPrompts {
             appendLine(sceneSummary.toAINormalize())
             charactersInScene?.let {
                 appendLine("## Characters in Immediate Scene:")
-                appendLine(CharacterPrompts.charactersOverview(it))
+                appendLine(CharacterPrompts.charactersOverview(it.map { it.data }))
+                it.forEach { characterContent ->
+                    appendLine("${characterContent.data.name} relationships")
+                    appendLine(characterContent.summarizeRelationships(1))
+                }
             }
         }
 
@@ -92,10 +95,13 @@ object ChatPrompts {
 
         appendLine("\n# FULL SAGA CAST SUMMARY")
         appendLine("// Use this list to check if a mentioned entity is an established character or a new one.")
-        appendLine(saga.getCharacters(true).normalizetoAIItems(characterExclusions))
-
-        appendLine("\n# ACTIVE RELATIONSHIPS")
-        appendLine(saga.generateCharacterRelationsSummary(sceneSummary?.charactersPresent))
+        appendLine(
+            saga
+                .getCharacters(true)
+                .map {
+                    it.copy(knowledge = it.knowledge?.takeLast(25))
+                }.normalizetoAIItems(characterExclusions),
+        )
 
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trim())
         appendLine(ActPrompts.actDirective(directive))
@@ -221,6 +227,8 @@ object ChatPrompts {
         messageToReact: Message,
         relationships: List<RelationshipContent>,
     ) = buildString {
+        val mainCharacter = saga.mainCharacter!!
+        val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
         appendLine("You generate character reactions for a chat app.")
         appendLine("### Rules")
         appendLine("1. **Exactly One Reaction**: Generate exactly ONE reaction per character listed in the scene.")
@@ -237,7 +245,11 @@ object ChatPrompts {
         appendLine("Characters present: ${summary.charactersPresent.joinToString()}")
         appendLine("Player message: '${messageToReact.text}'")
         appendLine("Relationships:")
-        appendLine(relationships.joinToString("; ") { it.summarizeRelation() })
+        characters.forEach {
+            mainCharacter.findRelationship(it.id)?.let { relation ->
+                appendLine(relation.summarizeRelation(1))
+            }
+        }
     }.trimIndent()
 
     fun sceneSummarizationPrompt(saga: SagaContent) =
@@ -267,12 +279,12 @@ object ChatPrompts {
 
             saga.currentActInfo?.let { act ->
                 appendLine("\n## Active Segment")
-                appendLine(act.actSummary(saga))
+                appendLine(act.actSummary(saga, true))
             }
 
             appendLine("\n## Historical Context")
             saga.acts.forEach {
-                appendLine(it.actSummary(saga))
+                appendLine(it.actSummary(saga, false))
             }
 
             appendLine("\n## Recent Activity")
@@ -403,16 +415,18 @@ object ChatPrompts {
         appendLine("Your message as ${selectedCharacter.data.name}:")
     }
 
-    fun conversationHistory(saga: SagaContent) =
-        buildString {
-            appendLine("Conversation History (Newest First):")
-            appendLine(
-                saga
-                    .flatMessages()
-                    .map { it.message }
-                    .sortedByDescending { it.timestamp }
-                    .take(UpdateRules.LORE_UPDATE_LIMIT)
-                    .normalizetoAIItems(excludingFields = messageExclusions),
-            )
-        }
+    fun conversationHistory(
+        saga: SagaContent,
+        threshold: Int = UpdateRules.LORE_UPDATE_LIMIT,
+    ) = buildString {
+        appendLine("Conversation History (Newest First):")
+        appendLine(
+            saga
+                .flatMessages()
+                .map { it.message }
+                .sortedByDescending { it.timestamp }
+                .take(threshold)
+                .normalizetoAIItems(excludingFields = messageExclusions),
+        )
+    }
 }

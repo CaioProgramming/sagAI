@@ -43,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -328,17 +327,16 @@ fun PremiumCard(
                 .dropShadow(
                     RoundedCornerShape(15.dp),
                     Shadow(
-                        5.dp,
+                        10.dp,
                         Brush.verticalGradient(holographicGradient),
                     ),
-                ).clip(RoundedCornerShape(15.dp))
-                .border(
+                ).border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
                     RoundedCornerShape(15.dp),
                 ).background(
                     MaterialTheme.colorScheme.surfaceContainer,
-                    RoundedCornerShape(10.dp),
+                    RoundedCornerShape(15.dp),
                 ).clickable { onClick() }
                 .padding(16.dp),
     ) {

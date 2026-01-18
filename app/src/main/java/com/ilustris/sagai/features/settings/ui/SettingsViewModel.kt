@@ -44,10 +44,20 @@ class SettingsViewModel
         val isLoading = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
 
+        private val _hasSagasWithChapters = MutableStateFlow<Boolean?>(null)
+        val hasSagasWithChapters = _hasSagasWithChapters.asStateFlow()
+
         init {
             loadMemoryUsage()
             checkUserPro()
             loadStorageBreakdown()
+            checkHasSagasWithChapters()
+        }
+
+        fun checkHasSagasWithChapters() {
+            viewModelScope.launch {
+                _hasSagasWithChapters.value = settingsUseCase.hasSagasWithChapters()
+        }
         }
 
         fun clearCache() {
@@ -101,29 +111,49 @@ class SettingsViewModel
             }
         }
 
-        fun importSaga(uri: Uri) {
+        fun disableBackup() {
+            viewModelScope.launch {
+                settingsUseCase.disableBackup()
+            }
+        }
+
+        fun exportDatabase(destinationUri: Uri) {
             viewModelScope.launch {
                 isLoading.value = true
-                loadingMessage.emit("Recuperando informações...")
+                loadingMessage.emit("Exportando banco de dados...")
                 settingsUseCase
-                    .restoreSaga(uri)
+                    .exportDatabase(destinationUri)
                     .onSuccessAsync {
-                        isLoading.value = true
-                        loadingMessage.emit("${it.data.title} restaurado com sucesso!")
-                        delay(5.seconds)
+                        loadingMessage.emit("Banco de dados exportado com sucesso!")
+                        delay(3.seconds)
                         isLoading.value = false
+                        loadingMessage.emit(null)
                     }.onFailureAsync {
-                        isLoading.value = true
-                        loadingMessage.emit("Falha ao restaurar saga. Sentimos muito por isso...")
-                        delay(5.seconds)
+                        loadingMessage.emit("Falha ao exportar banco de dados.")
+                        delay(3.seconds)
                         isLoading.value = false
+                        loadingMessage.emit(null)
                     }
             }
         }
 
-        fun disableBackup() {
+        fun importDatabase(sourceUri: Uri) {
             viewModelScope.launch {
-                settingsUseCase.disableBackup()
+                isLoading.value = true
+                loadingMessage.emit("Importando banco de dados...")
+                settingsUseCase
+                    .importDatabase(sourceUri)
+                    .onSuccessAsync {
+                        loadingMessage.emit("Banco de dados importado com sucesso!")
+                        delay(3.seconds)
+                        isLoading.value = false
+                        loadingMessage.emit(null)
+                    }.onFailureAsync {
+                        loadingMessage.emit("Falha ao importar banco de dados.")
+                        delay(3.seconds)
+                        isLoading.value = false
+                        loadingMessage.emit(null)
+                    }
             }
         }
 
