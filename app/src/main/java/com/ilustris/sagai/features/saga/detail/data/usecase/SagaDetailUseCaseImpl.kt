@@ -136,6 +136,9 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateSagaResume(saga: SagaContent): RequestResult<String> =
             executeRequest {
+                if (saga.chaptersSize() < 1) {
+                    return@executeRequest saga.data.description
+                }
                 val prompt = SagaPrompts.sagaResume(saga)
                 textGenClient.generate<String>(
                     prompt,

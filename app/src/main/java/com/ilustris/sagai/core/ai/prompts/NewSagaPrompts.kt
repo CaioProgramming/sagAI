@@ -1,164 +1,87 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
-import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
 
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
-    fun extractDataFromUserInputPrompt(
-        currentSagaForm: SagaForm,
+    fun conversationalSagaReply(
+        currentSagaDraft: SagaDraft,
         userInput: String,
-        lastMessage: String,
+        conversationHistory: List<ChatMessage>,
     ): String =
         buildString {
-            appendLine("You are a friendly AI storytelling assistant helping a user build their saga.")
-            appendLine("Current Saga Data:")
-            appendLine(currentSagaForm.toAINormalize())
+            appendLine(
+                "You are a passionate, brainstorming creative partner. Your goal is to help the user KICKSTART an amazing saga. You are NOT a form-filler; you are a co-creator.",
+            )
+            appendLine()
+            appendLine("Current Saga Context:")
+            appendLine(currentSagaDraft.toAINormalize())
+            appendLine()
+            appendLine("Conversation History:")
+            conversationHistory.takeLast(10).forEach { msg ->
+                appendLine("${msg.sender.name}: ${msg.text}")
+            }
             appendLine()
             appendLine("User's latest input: \"$userInput\"")
             appendLine()
-            appendLine("Your last message to them was:")
-            appendLine(lastMessage)
-            appendLine()
+            appendLine("YOUR OBJECTIVES:")
             appendLine(
-                "Your task: Extract relevant information from the user's input and intelligently update the saga data.",
+                "1. **Listen & Adapt**: Analyze the user's input. Does it change the vibe? If they describe a cyberpunk city but the genre is 'FANTASY', CHANGE the genre to 'CYBERPUNK' in your response data.",
             )
             appendLine(
-                "Guidelines:",
+                "2. **Be the Spark**: Don't just ask \"what next?\". Offer cool ideas. Be excited. If they say \"space pirates\", you say \"Yes! Are they searching for lost tech or running from the law?\"",
             )
-            appendLine("- Only fill or improve fields where the user provided clear information")
-            appendLine("- If they're being creative or adding world-building details, capture the essence")
-            appendLine("- Don't force information into fields if it doesn't naturally fit")
-            appendLine("- Preserve any existing good data unless the user is clearly replacing it")
+            appendLine(
+                "3. **Smart Suggestions**: Your 'suggestions' must be short, predictive replies that the USER might want to say next. Help them complete their thought or answer your question.",
+            )
+            appendLine(
+                "4. **Abstract & Validate**: If the user gives a vague idea (e.g., \"a story about a lost king\"), FILL in the gaps yourself for the Description. Don't ask for every detail.",
+            )
+            appendLine(
+                "5. **DETECT READINESS (CRITICAL)**: If the user says \"Let's go\", \"Start\", \"Perfect\", \"I like it\", or implies they are happy with the current state, IMMEDIATELY set `callback.action` to 'CONTENT_READY'. Do not ask more questions.",
+            )
             appendLine()
-            appendLine("YOUR SOLE OUTPUT MUST BE THE UPDATED draft AS A JSON OBJECT.")
+            appendLine("RESPONSE FIELDS:")
+            appendLine(
+                "- **message**: A short, engaging reply (max 2 sentences). Be conversational, like a friend. Ask a specific, inspiring question to drive the story forward.",
+            )
+            appendLine(
+                "- **inputHint**: A very short \"starter\" text (max 4 words). It should be a subtle nudge, not a full sentence. E.g., \"Describe the world...\", \"Who is the hero?\", \"What happens next?\"",
+            )
+            appendLine(
+                "- **suggestions**: EXACTLY 3 options. Each option is an object with:",
+            )
+            appendLine("  * text: The smart reply text (2-6 words)")
+            appendLine(
+                "  * genre: The most fitting Genre enum for this suggestion (e.g., \"FANTASY\", \"CYBERPUNK\", \"HORROR\", \"HEROES\", \"CRIME\", \"SHINOBI\", \"SPACE_OPERA\", \"COWBOY\", \"PUNK_ROCK\")",
+            )
+            appendLine(
+                "  Example: [{\"text\": \"A cybernetic dragon\", \"genre\": \"CYBERPUNK\"}, {\"text\": \"A cursed sword\", \"genre\": \"FANTASY\"}]",
+            )
+            appendLine()
+            appendLine("- **callback.action**: ")
+            appendLine("  * 'UPDATE_DATA' to update the saga details (title, description, genre).")
+            appendLine(
+                "  * 'CONTENT_READY' if the user indicates they are ready OR if you have a basic Title, Description, and Genre. Don't wait for perfection. We need a KICKSTART, not a novel.",
+            )
+            appendLine()
+            appendLine(
+                "- **callback.data**: The updated SagaDraft. ALWAYS return the full object with any new inferred details (like Genre changes).",
+            )
+            appendLine()
+            appendLine("CRITICAL RULES:")
+            appendLine("- Never repeat the same question or suggestion twice.")
+            appendLine("- If the user changes the topic, follow them immediately.")
+            appendLine("- Your tone should be encouraging, creative, and fun.")
+            appendLine("- STOP asking questions if the user seems ready. Set 'CONTENT_READY'.")
+            appendLine()
         }
-
-    fun identifyNextFieldPrompt(updatedSagaDraft: SagaDraft): String =
-        buildString {
-            appendLine(
-                "You're helping identify what information is still needed to make this saga complete.",
-            )
-            appendLine("Current Saga Data:")
-            appendLine(updatedSagaDraft.toAINormalize())
-            appendLine()
-            appendLine(SagaFormFields.fieldPriority())
-            appendLine()
-            appendLine(
-                "Based on what the user has provided so far, determine the FIRST piece of information that's missing or needs more detail.",
-            )
-            appendLine(
-                "Return ONE of these tokens: ${SagaFormFields.entries.joinToString(", ") { it.name }}",
-            )
-            appendLine(
-                "If everything is sufficiently filled and the saga has enough substance, return: ${SagaFormFields.ALL_FIELDS_COMPLETE.name}",
-            )
-            appendLine()
-            appendLine("YOUR SOLE OUTPUT MUST BE ONE TOKEN AS A SINGLE STRING (no quotes, no explanations).")
-        }
-
-    fun generateCreativeQuestionPrompt(
-        fieldToAsk: SagaFormFields,
-        currentSagaForm: SagaForm,
-    ): String {
-        val fieldNameForPrompt = fieldToAsk.name
-        val fieldGuidance = fieldToAsk.description
-
-        return buildString {
-            appendLine("The user needs to provide information for the field: $fieldNameForPrompt.")
-            appendLine("(Guidance for this field: \"$fieldGuidance\")")
-            appendLine()
-            appendLine("Current Saga Data (for context):")
-            appendLine(currentSagaForm.toJsonFormat())
-            appendLine()
-            appendLine(
-                "Your task is to craft a natural, conversational question about '$fieldNameForPrompt' that sounds like a friend asking over coffee, not a form asking for data.",
-            )
-            appendLine(
-                "**Be a chill storytelling buddy, not a professional assistant.** Use existing saga data to make it personal. Be slightly humorous, sarcastic, or ironic when appropriate—like 'So what's this thing actually about?' or 'Cool title! Now what kind of chaos are we creating here?'",
-            )
-            appendLine()
-            appendLine(
-                "Keep it SHORT and natural (under 120 characters). Write like you text, not like you're writing an essay. Be direct, casual, and genuinely curious about their world.",
-            )
-            appendLine()
-            appendLine("For suggestions:")
-            when (fieldToAsk) {
-                SagaFormFields.TITLE -> {
-                    appendLine(
-                        "- Generate 3 intriguing title ideas that hint at mystery, adventure, or conflict. Each should be 2-5 words and feel cinematic.",
-                    )
-                    appendLine("- Example: \"The Last Starkeeper\", \"Echoes of the Forgotten\", \"When the World Breathed\"")
-                }
-
-                SagaFormFields.DESCRIPTION -> {
-                    appendLine(
-                        "- Generate 3 world-building hooks or story starting points (10-15 words each) that spark imagination.",
-                    )
-                    appendLine(
-                        "- Focus on unique settings, intriguing conflicts, or mysterious elements that make the user think 'I want to explore this!'",
-                    )
-                    appendLine(
-                        "- Example: \"A library where books rewrite themselves at midnight\", \"The day gravity started working backwards in one small town\"",
-                    )
-                }
-
-                SagaFormFields.GENRE -> {
-                    appendLine("- Suggest 3 genre combinations or twists that are interesting and unconventional.")
-                    appendLine(
-                        "- Example: \"Mystery meets mythology\", \"Sci-fi romance with time loops\", \"Dark fantasy comedy\"",
-                    )
-                }
-
-                else -> {
-                    appendLine(
-                        "- Generate 3 diverse, creative suggestions for '$fieldNameForPrompt'. Make them distinct in tone and setting.",
-                    )
-                }
-            }
-            appendLine()
-            appendLine(
-                "Suggestions must avoid generic tropes and must not include raw genre enum names (${
-                    Genre.entries.joinToString {
-                        it.name
-                }}).",
-            )
-            appendLine(
-                "Include a concise hint (under 50 characters) that reads like an inner thought or incomplete idea—use phrases like \"What if...\", \"Maybe something about...\", \"What about...\" that trail off naturally.",
-            )
-            appendLine(
-                "Overall tone: Like texting a friend who's good at storytelling. Natural, casual, genuinely interested. Add humor or light sarcasm when it fits—don't force it, but don't be stiff either. Think less 'helpful assistant' and more 'friend who's seen too many movies and has opinions'.",
-            )
-
-            // Add CONTENT_READY callback logic
-            if (fieldToAsk == SagaFormFields.ALL_FIELDS_COMPLETE) {
-                appendLine()
-                appendLine("IMPORTANT: Since all fields are complete, the callback action must be 'CONTENT_READY'.")
-                appendLine(
-                    "The message should be casual and genuinely excited—like a friend hyping up what you just made together. Add some light humor or playful sarcasm.",
-                )
-                appendLine(
-                    "Examples: 'Okay, this is actually pretty cool. Ready to make your character or you wanna tweak something?', 'Not bad! Wanna flesh out your protagonist now, or keep polishing this?'",
-                )
-                appendLine(
-                    "Keep it simple, natural, and conversational—like you're texting, not presenting.",
-                )
-            }
-
-            appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:")
-            appendLine(toJsonMap(SagaCreationGen::class.java))
-        }
-    }
 
     fun generateProcessPrompt(
         process: SagaProcess,
@@ -251,58 +174,67 @@ object NewSagaPrompts {
 
     fun introPrompt() =
         buildString {
-            appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT.")
-            appendLine("DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.")
             appendLine()
             appendLine("Your task is to generate a fun, humorous, and engaging welcome message to start creating an epic saga together!")
             appendLine()
             appendLine(
-                "- message: A casual, friendly greeting like you're texting a friend who just said they want to write a story. Be naturally enthusiastic but keep it simple and real—no corporate speak. Add a touch of humor, sarcasm, or playful irony. Think: 'Alright, let's make something cool' vibes, not 'Welcome to our platform!' vibes. (max 2 sentences, conversational tone)",
+                "- message: A casual, friendly greeting like you're texting a friend who just said they want to write a story. Be naturally enthusiastic but keep it simple and real—no corporate speak. Add a touch of humor, sarcasm, or playful irony. Mention that you have a few suggestions to start. Think: 'Alright, let's make something cool' vibes, not 'Welcome to our platform!' vibes. (max 2 sentences, conversational tone)",
             )
-            appendLine(
-                "  Examples of the vibe we're going for:",
-            )
-            appendLine("  * \"Alright, let's cook up something epic. What kind of chaos are we making?\"")
-            appendLine("  * \"Cool, story time! So what's this gonna be about?\"")
-            appendLine("  * \"Okay I'm ready. Hit me with your best idea—what are we building?\"")
+
             appendLine(
                 "  Keep it SHORT, NATURAL, and like you're genuinely hyped to help. No formal greetings, no 'I'm here to assist you' stuff.",
             )
             appendLine(
-                "- inputHint: An inner-thought style prompt that feels like a creative spark, written as if the user is thinking out loud. Use \"What if...\" or incomplete thoughts that subtly push imagination without being directive. Keep it under 50 characters.",
+                "- **inputHint**: A very short \"starter\" text (max 4 words). It should be a subtle nudge to spark imagination. E.g., \"Once upon a time...\", \"In a galaxy far away...\", \"What if...\"",
             )
             appendLine(
-                "  Examples: \"What if a depressive cyberpunk mercenary...\", \"Maybe a world where colors have...\", \"What about someone who can't...\"",
+                "- suggestions: Generate 3 unique MINI-STORY CONCEPTS that spark imagination. Each suggestion should be an object containing:",
             )
-            appendLine("  The hint should trail off naturally, inviting the user to complete the thought.")
-            appendLine()
+            appendLine("  * text: The mini-story concept (15-25 words)")
             appendLine(
-                "- suggestions: Generate 3 unique MINI-STORY CONCEPTS that spark imagination. Each suggestion should be a complete micro-pitch (15-25 words) that includes:",
+                "  * genre: The Genre enum that best fits this story (FANTASY, CYBERPUNK, HORROR, HEROES, CRIME, SHINOBI, SPACE_OPERA, COWBOY, PUNK_ROCK)",
             )
-            appendLine("  * A fascinating world/setting")
-            appendLine("  * A compelling character type or role")
-            appendLine("  * An intriguing cliffhanger or mystery")
             appendLine()
             appendLine("Examples of good suggestions:")
             appendLine(
-                "  * \"In a city where dreams are currency, a broke insomniac discovers they can steal nightmares—but someone's hunting them.\"",
+                "  * {\"text\": \"In a city where dreams are currency, a broke insomniac discovers they can steal nightmares...\", \"genre\": \"CYBERPUNK\"}",
             )
             appendLine(
-                "  * \"A chef's food brings memories to life. When they cook their grandmother's recipe, they unlock a family secret that could destroy everything.\"",
-            )
-            appendLine(
-                "  * \"On a planet where music controls gravity, a deaf musician finds they can hear one song—and it's pulling the moons toward collision.\"",
+                "  * {\"text\": \"A chef's food brings memories to life. When they cook their grandmother's recipe, they unlock a family secret...\", \"genre\": \"FANTASY\"}",
             )
             appendLine()
             appendLine("Make suggestions diverse across these genres: ${Genre.entries.joinToString { it.name }}.")
             appendLine(
                 "Each suggestion should feel like a compelling movie pitch that makes the user think 'Ooh, what happens next?'",
             )
-            appendLine("The suggestions field must be a String Array with 3 complete mini-story concepts.")
+            appendLine("The suggestions field must be a List of objects with text and genre.")
             appendLine()
             appendLine("Important JSON rules:")
             appendLine("- Set `callback` to null.")
             appendLine("- Keep the message playful and encouraging, not corporate or robotic.")
             appendLine("- Make suggestions feel cinematic and immediately intriguing.")
+        }
+
+    fun genreAdaptationPrompt(currentDraft: SagaDraft) =
+        buildString {
+            appendLine("You are a creative narrative designer.")
+            appendLine("The user has switched the saga's genre to: ${currentDraft.genre.name}.")
+            appendLine("Current Draft:")
+            appendLine(currentDraft.toAINormalize())
+            appendLine()
+            appendLine(
+                "Task: Adapt the Title and Description to fit the ${currentDraft.genre.name} genre while preserving the original core concept.",
+            )
+            appendLine("Example: If moving from Fantasy to Cyberpunk, 'The Magic Sword' becomes 'The Neural Key'.")
+            appendLine("If the current title/description are empty, generate a compelling starter for this genre.")
+            appendLine()
+            appendLine("RESPONSE FORMAT (JSON ONLY):")
+            appendLine(
+                "- message: A brief, thematic confirmation of the adaptation (e.g., 'Realigning story matrix to Cyberpunk standards...', 'Summoning the spirits of Fantasy...').",
+            )
+            appendLine("- inputHint: A new creative starter question fitting the genre (max 4 words).")
+            appendLine("- suggestions: 3 new CreationSuggestion objects (text, genre) fitting the new theme.")
+            appendLine("- callback.action: 'UPDATE_DATA'")
+            appendLine("- callback.data: The updated SagaDraft (ensure genre is ${currentDraft.genre.name}).")
         }
 }

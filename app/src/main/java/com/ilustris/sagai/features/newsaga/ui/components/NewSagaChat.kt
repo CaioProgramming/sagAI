@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,7 +58,7 @@ fun NewSagaChat(
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-    val genre = state.draft.genre
+    val currentGenre = state.draft.genre
     val messages = state.messages
 
     LaunchedEffect(state.messages.size) {
@@ -67,9 +69,9 @@ fun NewSagaChat(
         }
     }
 
-    AnimatedContent(genre, transitionSpec = {
+    AnimatedContent(currentGenre, transitionSpec = {
         fadeIn() togetherWith fadeOut()
-    }, modifier = Modifier.fillMaxSize()) {
+    }, modifier = Modifier.fillMaxSize()) { genre ->
         LazyColumn(
             Modifier.fillMaxSize(),
             state = listState,
@@ -119,6 +121,10 @@ fun NewSagaChat(
                         )
                     }
                 }
+            }
+
+            item {
+                Spacer(Modifier.height(100.dp))
             }
         }
     }

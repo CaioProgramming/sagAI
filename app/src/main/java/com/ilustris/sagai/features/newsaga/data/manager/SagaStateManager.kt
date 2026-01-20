@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
+import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,8 @@ interface SagaStateManager {
     fun reset()
 
     suspend fun prepareSagaData(): RequestResult<Saga>
+
+    suspend fun adaptToGenre()
 }
 
 sealed interface FormState {
@@ -37,7 +40,7 @@ sealed interface FormState {
     val hint: String?
     val isLoading: Boolean
     val isReady: Boolean
-    val suggestions: List<String>
+    val suggestions: List<CreationSuggestion>
 
     data class NewSagaForm(
         val messages: List<ChatMessage> = emptyList(),
@@ -46,7 +49,7 @@ sealed interface FormState {
         override val hint: String? = null,
         override val isLoading: Boolean = false,
         override val isReady: Boolean = false,
-        override val suggestions: List<String> = emptyList(),
+        override val suggestions: List<CreationSuggestion> = emptyList(),
     ) : FormState
 
     data class CharacterForm(
@@ -55,6 +58,6 @@ sealed interface FormState {
         override val hint: String? = null,
         override val isLoading: Boolean = false,
         override val isReady: Boolean = false,
-        override val suggestions: List<String> = emptyList(),
+        override val suggestions: List<CreationSuggestion> = emptyList(),
     ) : FormState
 }

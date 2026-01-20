@@ -312,6 +312,9 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<String> =
             executeRequest {
+                if (character.events.isEmpty()) {
+                    return@executeRequest character.data.backstory
+                }
                 val prompt = CharacterPrompts.characterResume(character, saga)
                 gemmaClient.generate<String>(
                     prompt,

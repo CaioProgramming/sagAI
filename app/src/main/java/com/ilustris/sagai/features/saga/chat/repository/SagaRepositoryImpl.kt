@@ -67,16 +67,13 @@ class SagaRepositoryImpl
 
             val context =
                 buildString {
-                    appendLine("Saga Context:")
-                    appendLine(saga.toAINormalize(listOf("title", "description", "genre")))
-                    appendLine("Main Character Details:")
+                    appendLine("Character Details:")
                     appendLine(
                         character.toAINormalize(
                             listOf(
                                 "image",
                                 "sagaId",
                                 "joinedAt",
-                                "hexColor",
                                 "id",
                                 "emojified",
                                 "smartZoom",
@@ -93,8 +90,6 @@ class SagaRepositoryImpl
                         imageType = AnalyticsConstants.ImageType.ICON,
                     ).getSuccess()!!
 
-            val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)
-
             val file =
                 fileHelper.saveFile(
                     fileName = saga.title,
@@ -102,7 +97,6 @@ class SagaRepositoryImpl
                     path = "${saga.id}",
                 )
 
-            croppedIcon.recycle()
             updateChat(saga.copy(icon = file!!.absolutePath))
         }
 

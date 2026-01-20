@@ -5,11 +5,9 @@ import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.newsaga.data.model.CharacterFormFields
+import com.ilustris.sagai.features.newsaga.data.model.CharacterCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
-import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class NewCharacterUseCaseImpl
@@ -17,64 +15,47 @@ class NewCharacterUseCaseImpl
     constructor(
         private val gemmaClient: GemmaClient,
     ) : NewCharacterUseCase {
-        override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen> =
+        override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<CharacterCreationGen> =
             executeRequest {
                 gemmaClient.generate(CharacterPrompts.characterIntroPrompt(sagaContext))!!
             }
 
         override suspend fun replyCharacterForm(
             currentMessages: List<ChatMessage>,
-            latestMessage: String?,
             currentCharacterInfo: CharacterInfo,
             sagaContext: SagaDraft,
-        ): RequestResult<SagaCreationGen> =
+        ): RequestResult<CharacterCreationGen> =
             executeRequest {
-                val delayDefaultTime = 700L
+                // Limit conversation history to last 10 messages for context
+                val recentMessages = currentMessages.takeLast(10)
 
                 val userInput = currentMessages.last().text
 
-                val extractedDataPrompt =
-                    gemmaClient.generate<CharacterInfo>(
-                        CharacterPrompts.extractCharacterDataPrompt(
+                // Single AI call to extract, enhance, and provide helpful suggestions
+                val response =
+                    gemmaClient.generate<CharacterCreationGen>(
+                        CharacterPrompts.conversationalCharacterReply(
                             currentCharacterInfo = currentCharacterInfo,
                             userInput = userInput,
-                            lastMessage = latestMessage!!,
+                            conversationHistory = recentMessages,
                             sagaContext = sagaContext,
                         ),
+                        requireTranslation = true,
                     )!!
 
-                delay(delayDefaultTime)
+                response
+            }
 
-                val identifyNextFieldPrompt =
-                    gemmaClient
-                        .generate<String>(
-                            CharacterPrompts.identifyNextCharacterFieldPrompt(extractedDataPrompt),
-                            requireTranslation = false,
-                        )!!
-                        .replace("\n", "")
-
-                val field = CharacterFormFields.getByKey(identifyNextFieldPrompt)!!
-
-                delay(delayDefaultTime)
-
-                val nextQuestion =
-                    gemmaClient.generate<SagaCreationGen>(
-                        CharacterPrompts.generateCharacterQuestionPrompt(
-                            field,
-                            extractedDataPrompt,
-                            sagaContext,
-                        ),
-                    )!!
-
-                // Return with updated character data in callback
-                nextQuestion.copy(
-                    callback =
-                        nextQuestion.callback?.copy(
-                            data =
-                                nextQuestion.callback.data?.copy(
-                                    character = extractedDataPrompt,
-                                ),
-                        ),
-                )
+        override suspend fun adaptCharacterToGenre(
+            characterInfo: CharacterInfo,
+            newGenre: String,
+        ): RequestResult<CharacterCreationGen> =
+            executeRequest {
+                gemmaClient.generate(
+                    CharacterPrompts.characterAdaptationPrompt(
+                        characterInfo,
+                        newGenre,
+                    ),
+            )!!
             }
     }

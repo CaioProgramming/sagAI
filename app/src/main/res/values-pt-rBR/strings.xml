@@ -176,7 +176,7 @@
     <string name="home_new_chat_start_button">Começar</string>
     <string name="no_internet_connection_title">Sem conexão de internet</string>
     <string name="chat_card_unknown_character">Desconhecido</string>
-    <string name="continue_to_saga">Continuar saga</string>
+    <string name="continue_to_saga">Ver saga</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
     <string name="notification_title">Nova mensagem em %s</string>
@@ -402,6 +402,12 @@
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>
     <string name="continue_button">Continuar</string>
+    <string name="create_character">Ver personagem</string>
+
+    <string name="saga_intro_fallback">Bem-vindo! Vamos começar a criar sua saga épica. Que tipo de história você quer contar\?</string>
+    <string name="character_intro_fallback">Tudo pronto, vamos dar vida ao seu personagem! Quem vamos criar hoje\?</string>
+    <string name="saga_input_hint_fallback">Descreva sua história…</string>
+    <string name="character_input_hint_fallback">Descreva seu personagem…</string>
 </resources>
 
 

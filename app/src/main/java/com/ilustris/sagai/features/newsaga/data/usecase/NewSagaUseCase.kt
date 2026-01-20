@@ -51,4 +51,6 @@ interface NewSagaUseCase {
         sagaDescription: String,
         characterDescription: String,
     ): RequestResult<String>
+
+    suspend fun adaptSagaToGenre(sagaDraft: SagaDraft): RequestResult<SagaCreationGen>
 }

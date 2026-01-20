@@ -92,14 +92,15 @@ class NewSagaViewModel
 
         fun updateGenre(genre: Genre) {
             sagaStateManager.updateGenre(genre)
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaStateManager.adaptToGenre()
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                characterStateManager.adaptToGenre(genre.name)
+            }
         }
 
         fun saveSaga() {
-            if (!_isReadyToSave.value) {
-                Log.w(javaClass.simpleName, "saveSaga: Cannot save - saga or character not ready")
-                return
-            }
-
             _isSaving.value = true
             _savingError.value = null
 

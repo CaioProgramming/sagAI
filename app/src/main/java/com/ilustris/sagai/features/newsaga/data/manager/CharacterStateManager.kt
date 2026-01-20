@@ -29,4 +29,6 @@ interface CharacterStateManager {
     fun reset()
 
     suspend fun prepareCharacterData(saga: Saga): RequestResult<Character>
+
+    suspend fun adaptToGenre(newGenre: String)
 }

@@ -18,6 +18,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 @Composable
 fun StoryProgressIndicator(
@@ -25,7 +27,7 @@ fun StoryProgressIndicator(
     totalSteps: Int,
     currentStep: Int,
     isPaused: Boolean = false,
-    stepDuration: Int = 5000,
+    stepDuration: Int = 15.seconds.toInt(DurationUnit.MILLISECONDS),
     onStepComplete: () -> Unit,
 ) {
     Row(

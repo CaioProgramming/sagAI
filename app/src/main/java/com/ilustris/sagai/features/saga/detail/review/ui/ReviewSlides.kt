@@ -2,12 +2,7 @@ package com.ilustris.sagai.features.saga.detail.review.ui
 
 import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.EaseOutCubic
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,28 +32,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
+import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
 import kotlinx.coroutines.delay
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun SlideContainer(
@@ -72,6 +73,83 @@ fun SlideContainer(
                 .padding(16.dp),
     ) {
         content()
+    }
+}
+
+@Composable
+fun DynamicLinework(
+    modifier: Modifier = Modifier,
+    color: Color = Color.White.copy(alpha = 0.2f),
+    lineCount: Int = 4,
+) {
+    var size by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    val curves =
+        remember(size) {
+            if (size == androidx.compose.ui.unit.IntSize.Zero) {
+                emptyList()
+            } else {
+                val width = size.width.toFloat()
+                val height = size.height.toFloat()
+                List(lineCount) {
+                    val startSide = Random.nextInt(4) // 0: Top, 1: Right, 2: Bottom, 3: Left
+                    val endSide = (startSide + Random.nextInt(1, 3)) % 4
+
+                    fun getPointOnSide(side: Int): Offset =
+                        when (side) {
+                            0 -> Offset(Random.nextFloat() * width, 0f)
+                            1 -> Offset(width, Random.nextFloat() * height)
+                            2 -> Offset(Random.nextFloat() * width, height)
+                            else -> Offset(0f, Random.nextFloat() * height)
+                        }
+
+                    val start = getPointOnSide(startSide)
+                    val end = getPointOnSide(endSide)
+
+                    // Control points to make them sweep through the center area
+                    val cp1 = Offset(Random.nextFloat() * width, Random.nextFloat() * height)
+                    val cp2 = Offset(Random.nextFloat() * width, Random.nextFloat() * height)
+
+                    Path().apply {
+                        moveTo(start.x, start.y)
+                        cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y)
+                    }
+                }
+            }
+        }
+
+    val animProgress =
+        remember {
+            androidx.compose.animation.core
+                .Animatable(0f)
+        }
+    LaunchedEffect(curves) {
+        if (curves.isNotEmpty()) {
+            animProgress.snapTo(0f)
+            animProgress.animateTo(
+                1f,
+                animationSpec = tween(3000, easing = EaseOutCubic),
+            )
+        }
+    }
+
+    androidx.compose.foundation.Canvas(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .onSizeChanged { size = it },
+    ) {
+        curves.forEach { path ->
+            val pathMeasure = PathMeasure()
+            pathMeasure.setPath(path, false)
+            val segmentPath = Path()
+            pathMeasure.getSegment(0f, pathMeasure.length * animProgress.value, segmentPath)
+
+            drawPath(
+                path = segmentPath,
+                color = color,
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
+            )
+        }
     }
 }
 
@@ -98,7 +176,11 @@ fun EntryAnimation(
         label = "scale",
     )
 
-    content(Modifier.alpha(alpha).scale(scale))
+    content(
+        Modifier
+            .alpha(alpha)
+            .scale(scale),
+    )
 }
 
 @Composable
@@ -107,19 +189,11 @@ fun StoryIntroductionSlide(
     modifier: Modifier = Modifier,
 ) {
     val genre = saga.data.genre
-    Box(modifier = modifier.fillMaxSize()) {
-        AsyncImage(
-            model = saga.data.icon,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .effectForGenre(genre)
-                    .selectiveColorHighlight(genre.selectiveHighlight())
-                    .alpha(0.6f),
-        )
-
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize(),
+    ) {
         Column(
             modifier =
                 Modifier
@@ -127,25 +201,47 @@ fun StoryIntroductionSlide(
                     .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            EntryAnimation(200) { animModifier ->
-                SparkIcon(
-                    brush = genre.gradient(true),
-                    modifier = animModifier.size(100.dp),
-                )
-            }
-            Spacer(modifier = Modifier.height(32.dp))
             EntryAnimation(500) { animModifier ->
-                Text(
+                SimpleTypewriterText(
                     text = saga.data.review?.introduction ?: "",
                     style =
-                        MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = genre.headerFont(),
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontFamily = genre.bodyFont(),
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            lineHeight = 40.sp,
+                            textAlign = TextAlign.Center,
                         ),
-                    textAlign = TextAlign.Center,
                     modifier = animModifier,
+                    duration = 5.seconds,
+                )
+            }
+        }
+
+        // Bottom Saga Title (Stylized like the '2025' in the image)
+        EntryAnimation(800) { animModifier ->
+            Box(
+                modifier =
+                    animModifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 64.dp)
+                        .navigationBarsPadding(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = saga.data.title,
+                    style =
+                        MaterialTheme.typography.headlineMedium.copy(
+                            fontFamily = genre.headerFont(),
+                            fontWeight = FontWeight.Black,
+                            color = genre.color,
+                            textAlign = TextAlign.Center,
+                            shadow =
+                                androidx.compose.ui.graphics.Shadow(
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    offset = Offset(1f, 0f),
+                                    blurRadius = 0f,
+                                ),
+                        ),
                 )
             }
         }
@@ -248,37 +344,21 @@ fun StoryVibeSlide(
                 .filterCharacterMessages(saga.mainCharacter?.data)
                 .rankEmotionalTone()
                 .firstOrNull()
-                ?.first
+                ?.first ?: EmotionalTone.NEUTRAL
         }
 
-    val infiniteTransition = rememberInfiniteTransition()
-    val morphProgress by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                tween(5000, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "morph",
-    )
-
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                tween(10000, easing = LinearEasing),
-            ),
-        label = "rotation",
-    )
-
-    SlideContainer(modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Color.Black),
+    ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly,
         ) {
+            Spacer(modifier = Modifier.height(48.dp))
+
             EntryAnimation(200) { animModifier ->
                 Text(
                     text = "YOUR AURA",
@@ -291,33 +371,45 @@ fun StoryVibeSlide(
                 )
             }
 
+            Spacer(modifier = Modifier.weight(1f))
+
             EntryAnimation(400) { animModifier ->
-                Box(modifier = animModifier.size(280.dp), contentAlignment = Alignment.Center) {
-                    if (topTone != null) {
-                        AnimatedEmotionalShape(
-                            modifier = Modifier.fillMaxSize(),
-                            emotionalTone = topTone,
-                            morphProgress = morphProgress,
-                            rotationAngle = rotation,
-                            outlineBrush = genre.gradient(true),
-                            backgroundBrush = genre.gradient(false),
-                            glowColor = genre.color,
-                        )
-                    }
-                }
+                VibeShapeDrawing(
+                    modifier =
+                        animModifier
+                            .fillMaxWidth()
+                            .height(300.dp),
+                    emotionalTone = topTone,
+                    duration = 5000,
+                )
             }
 
+            Spacer(modifier = Modifier.weight(1f))
+
             EntryAnimation(600) { animModifier ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = animModifier.padding(bottom = 80.dp),
+                ) {
                     Text(
-                        text = topTone?.getTitle() ?: "The Unknown",
+                        text = topTone.getTitle().uppercase(),
                         style =
-                            MaterialTheme.typography.displaySmall.copy(
+                            MaterialTheme.typography.displayLarge.copy(
                                 fontFamily = genre.headerFont(),
-                                brush = genre.gradient(true),
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.Black,
+                                brush =
+                                    Brush.verticalGradient(
+                                        listOf(topTone.color, Color.White),
+                                    ),
+                                fontSize = 60.sp,
+                                textAlign = TextAlign.Center,
+                                shadow =
+                                    androidx.compose.ui.graphics.Shadow(
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                        offset = Offset(4f, 4f),
+                                        blurRadius = 0f,
+                                    ),
                             ),
-                        modifier = animModifier,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -325,8 +417,9 @@ fun StoryVibeSlide(
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 color = Color.White.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center,
                             ),
-                        modifier = animModifier,
+                        modifier = Modifier.padding(horizontal = 32.dp),
                     )
                 }
             }
@@ -363,7 +456,10 @@ fun StoryCharactersSlide(
             Spacer(modifier = Modifier.height(48.dp))
 
             Box(
-                modifier = Modifier.fillMaxWidth().height(150.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 topChars.forEachIndexed { index, character ->

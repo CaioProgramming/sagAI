@@ -35,7 +35,7 @@ After initial implementation, refined the approach based on feedback:
 
 ## ✨ What Changed
 
-### 1. **Guidelines.kt**
+### 1. **CharacterGuidelines.kt**
 
 #### Hair Section:
 
@@ -200,7 +200,7 @@ But NOT:
 
 ## 📝 Files Modified
 
-1. `/app/src/main/java/com/ilustris/sagai/core/ai/prompts/Guidelines.kt`
+1. `/app/src/main/java/com/ilustris/sagai/core/ai/prompts/CharacterGuidelines.kt`
     - Softened language from prohibition to encouragement
     - Made distinctive marks explicitly optional
     - Added context-preservation guidance

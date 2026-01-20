@@ -29,7 +29,7 @@ way.
 
 ## ✨ What Changed
 
-### 1. **Guidelines.kt - Character Data Structure Rules**
+### 1. **CharacterGuidelines.kt - Character Data Structure Rules**
 
 #### Added Comprehensive Diversity Mandates:
 
@@ -247,7 +247,7 @@ Each genre should receive similar fashion depth to ensure characters feel unique
 
 ### Files Modified:
 
-1. `/app/src/main/java/com/ilustris/sagai/core/ai/prompts/Guidelines.kt`
+1. `/app/src/main/java/com/ilustris/sagai/core/ai/prompts/CharacterGuidelines.kt`
     - Added comprehensive diversity rules
     - Added facial diversity requirements
     - Added fashion = personality mandate

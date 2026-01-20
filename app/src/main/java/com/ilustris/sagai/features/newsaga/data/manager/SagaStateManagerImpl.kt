@@ -1,14 +1,18 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
 import android.util.Log
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
+import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.Sender
@@ -23,6 +27,7 @@ class SagaStateManagerImpl
     constructor(
         private val newSagaUseCase: NewSagaUseCase,
         private val sagaRepository: SagaRepository,
+        private val stringResourceHelper: StringResourceHelper,
     ) : SagaStateManager {
         private val _formState = MutableStateFlow<FormState.NewSagaForm?>(null)
         override val formState = _formState.asStateFlow()
@@ -79,6 +84,7 @@ class SagaStateManagerImpl
             _formState.value =
                 _formState.value?.copy(
                     messages = messages.plus(chatMessage),
+                    message = if (chatMessage.sender == Sender.AI) chatMessage.text else _formState.value?.message,
                 )
         }
 
@@ -133,7 +139,26 @@ class SagaStateManagerImpl
                     _formState.value = _formState.value?.copy(isLoading = false, message = gen.message)
                     handleGeneratedContent(gen)
                 }.onFailure {
-                    updateLoading(false)
+                    val fallbackMessage =
+                        stringResourceHelper.getString(R.string.saga_intro_fallback)
+                    val fallbackHint =
+                        stringResourceHelper.getString(R.string.saga_input_hint_fallback)
+                    val fallbackGen =
+                        SagaCreationGen(
+                            message = fallbackMessage,
+                            inputHint = fallbackHint,
+                            suggestions = emptyList(),
+                            callback = null,
+                        )
+                    updateMessages(
+                        ChatMessage(
+                            text = fallbackMessage,
+                            sender = Sender.AI,
+                        ),
+                    )
+                    _formState.value =
+                        _formState.value?.copy(isLoading = false, message = fallbackMessage)
+                    handleGeneratedContent(fallbackGen)
                 }
         }
 
@@ -162,7 +187,7 @@ class SagaStateManagerImpl
 
         private fun updateGeneratedContent(
             hint: String,
-            suggestions: List<String>,
+            suggestions: List<CreationSuggestion>,
         ) {
             if (_formState.value == null) {
                 _formState.value = FormState.NewSagaForm()
@@ -178,7 +203,7 @@ class SagaStateManagerImpl
             _formState.value = _formState.value?.copy(draft = form)
         }
 
-        private fun handleGeneratedContent(response: com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen) {
+        private fun handleGeneratedContent(response: SagaCreationGen) {
             response.callback?.action?.let { handleCallback(it) }
             updateGeneratedContent(
                 hint = response.inputHint,
@@ -190,17 +215,34 @@ class SagaStateManagerImpl
                     javaClass.simpleName,
                     "handleGeneratedContent: Checking new generated content $callback",
                 )
-                val sagaForm: SagaForm? = callback.data
-                sagaForm?.let {
+                val sagaDraft: SagaDraft? = callback.data
+                sagaDraft?.let {
                     Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
-                    updateSaga(
-                        SagaDraft(
-                            title = it.saga.title,
-                            description = it.saga.description,
-                            genre = it.saga.genre,
-                        ),
-                    )
+                    updateSaga(it)
                 }
+            }
+            updateLoading(false)
+        }
+
+        override suspend fun adaptToGenre() {
+            val draft = getSagaForm()
+            if (draft.title.isBlank() && draft.description.isBlank()) return
+
+            updateLoading(true)
+            newSagaUseCase
+                .adaptSagaToGenre(draft)
+                .onSuccess {
+                    handleGeneratedContent(it)
+                    if (it.message.isNotEmpty()) {
+                        updateMessages(
+                            ChatMessage(
+                                text = it.message,
+                                sender = Sender.AI,
+                            ),
+                        )
+                    }
+                }.onFailure {
+                    Log.e(javaClass.simpleName, "adaptToGenre: Error adapting to genre", it)
             }
             updateLoading(false)
         }

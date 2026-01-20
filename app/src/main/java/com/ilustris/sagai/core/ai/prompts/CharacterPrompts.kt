@@ -5,214 +5,115 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.CharacterFormFields
-import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 @Suppress("ktlint:standard:max-line-length")
 object CharacterPrompts {
-    fun extractCharacterDataPrompt(
+    fun conversationalCharacterReply(
         currentCharacterInfo: CharacterInfo,
         userInput: String,
-        lastMessage: String,
+        conversationHistory: List<com.ilustris.sagai.features.newsaga.data.model.ChatMessage>,
         sagaContext: SagaDraft?,
     ): String =
         buildString {
-            appendLine("You are a friendly AI character-building assistant helping a user bring their protagonist to life.")
-            appendLine("Current Character Data:")
-            appendLine(currentCharacterInfo.toJsonFormat())
+            appendLine(
+                "You are a creative character design partner, helping a friend bring their protagonist to life. You're NOT a form-filling assistant—you're a collaborator who enhances ideas and makes characters feel REAL.",
+            )
+            appendLine()
+            appendLine("Current Character State:")
+            appendLine(currentCharacterInfo.toAINormalize())
             appendLine()
             sagaContext?.let {
-                appendLine("Saga context (use this to keep the character fitting in their world):")
+                appendLine("Saga Context (use this to keep the character fitting their world):")
                 appendLine(it.toAINormalize())
+                appendLine()
             }
+            appendLine("Recent Conversation (last few messages):")
+            conversationHistory.takeLast(10).forEach { msg ->
+                appendLine("${msg.sender.name}: ${msg.text}")
+            }
+            appendLine()
             appendLine("User's latest input: \"$userInput\"")
             appendLine()
-            appendLine("Your last message to them was:")
-            appendLine(lastMessage)
-            appendLine()
+            appendLine("YOUR MISSION:")
             appendLine(
-                "Your task: Extract character details from the user's input and update the CharacterInfo intelligently.",
+                "1. **Enhance & Inspire**: Take the user's input and make it more vivid. Suggest compelling details for their character's name, backstory, appearance, or personality.",
             )
-            appendLine("Guidelines:")
-            appendLine("- Capture personality, appearance, backstory, motivations—anything that makes this person REAL")
-            appendLine("- If they describe physical traits, mannerisms, or quirks, note them")
-            appendLine("- If they mention history, relationships, or conflicts, capture the essence")
-            appendLine("- Don't force info into fields if it doesn't fit naturally")
-            appendLine("- Keep what's already good unless they're clearly changing it")
-            appendLine("- Remember: we're building a living character, not filling a database")
+            appendLine(
+                "2. **Be a Creative Buddy**: Respond naturally, like you're excited to build this person together. Use enthusiasm, ask insightful questions, or offer constructive ideas.",
+            )
+            appendLine(
+                "3. **Smart Suggestions**: Your 'suggestions' MUST be short, predictive text options (2-6 words) that the user might select as their next input. These are 'Smart Replies'.",
+            )
+            appendLine(
+                "4. **Adapt to Saga**: Use the provided `sagaContext` to ensure suggestions fit the world's genre and tone. You CANNOT change the saga's genre here, only enhance the character's details within the existing context.",
+            )
+            appendLine(
+                "5. **DETECT READINESS (CRITICAL)**: If the user says \"Let's go\", \"Ready\", \"Looks good\", \"Create\", or indicates they are satisfied, IMMEDIATELY set `callback.action` to 'CONTENT_READY'. Do not ask more questions.",
+            )
+            appendLine()
 
-            // Genre-specific guidance
+            // Genre-specific rules
             sagaContext?.let {
                 if (it.genre.name == "CYBERPUNK") {
-                    appendLine()
                     appendLine("⚠️ CYBERPUNK GENRE RULE:")
-                    appendLine("- If the user hasn't mentioned cyberware, SUGGEST adding some - everyone in this world has chrome")
+                    appendLine("- Everyone in this world has cyberware - it's survival, not choice")
+                    appendLine("- If the user hasn't mentioned chrome, SUGGEST it naturally in your response")
                     appendLine(
                         "- Acceptable cyberware: prosthetic limbs, artificial eyes, neural ports, mechanical spine, integrated comms",
                     )
-                    appendLine("- These are REPLACEMENTS that fit human form (cyborgs pretending to be human)")
+                    appendLine("- These are REPLACEMENTS that fit human form (cyborgs pretending to be human, not robots)")
+                    appendLine()
                 }
             }
+
+            appendLine("RESPONSE GUIDELINES:")
+            appendLine(
+                "- **message**: React enthusiastically to the user's input. Ask a specific, creative question to deepen character development. Keep it casual and under 120 characters.",
+            )
+            appendLine("  Examples: ")
+            appendLine("    * \"Ooh, love that name! What kind of person do you think they are?\"")
+            appendLine("    * \"Awesome backstory! How does that history show in their appearance or their scars?\"")
+            appendLine("    * \"Nice vibe. What's one quirky habit they have that nobody knows about?\"")
+            appendLine()
+            appendLine(
+                "- **inputHint**: A very short \"starter\" text (max 4 words). It should be a subtle nudge. E.g., \"Describe their look...\", \"What is their goal?\", \"What motivates them?\"",
+            )
+            appendLine()
+            appendLine(
+                "- **suggestions**: EXACTLY 3 options. Each option is an object with:",
+            )
+            appendLine("  * text: The smart reply text (2-6 words)")
+            appendLine("  * genre: The Genre enum matching the Saga Context (e.g., \"CYBERPUNK\", \"FANTASY\").")
+            appendLine(
+                "  Example: [{\"text\": \"Very loyal\", \"genre\": \"FANTASY\"}, {\"text\": \"Secretly selfish\", \"genre\": \"FANTASY\"}]",
+            )
+            appendLine()
+            appendLine("- **callback.action**: ")
+            appendLine("  * 'UPDATE_DATA' if character is still incomplete (missing key details).")
+            appendLine("  * 'CONTENT_READY' if the character feels compelling and complete OR if the user says they are ready.")
+            appendLine()
+            appendLine(
+                "- **callback.data**: The updated CharacterInfo with enhanced/extracted information. Ensure all fields contribute to a vivid character.",
+            )
+            appendLine()
+            appendLine("IMPORTANT RULES:")
+            appendLine("- Be creative and avoid repeating questions or ideas.")
+            appendLine("- Focus on enriching details, not just confirming input.")
+            appendLine("- If the character isn't ready, guide the user with specific prompts.")
+            appendLine(
+                "  When all fields are solid and the character feels REAL, set action to 'CONTENT_READY' and celebrate what they built!",
+            )
+            appendLine("- ALWAYS respect the user's decision to finish.")
         }
-
-    fun identifyNextCharacterFieldPrompt(characterInfo: CharacterInfo): String =
-        buildString {
-            appendLine(
-                "You're helping identify what's still needed to make this character feel complete and alive.",
-            )
-            appendLine("Current Character Data:")
-            appendLine(characterInfo.toJsonFormat())
-            appendLine()
-            appendLine(CharacterFormFields.fieldPriority())
-            appendLine()
-            appendLine(
-                "Based on what we know so far, determine the FIRST piece that's missing or needs more depth to make this person feel REAL.",
-            )
-            appendLine("Think: Would a reader/player feel like they know this character?")
-            appendLine()
-            appendLine(
-                "Return ONE of these tokens: ${CharacterFormFields.entries.joinToString(", ") { it.name }}",
-            )
-            appendLine(
-                "If the character has enough depth and personality to feel like a real person, return: ${CharacterFormFields.ALL_FIELDS_COMPLETE.name}",
-            )
-            appendLine()
-            appendLine("YOUR SOLE OUTPUT MUST BE ONE TOKEN AS A SINGLE STRING (no quotes, no explanations).")
-        }
-
-    fun generateCharacterQuestionPrompt(
-        fieldToAsk: CharacterFormFields,
-        currentCharacterInfo: CharacterInfo,
-        sagaContext: SagaDraft?,
-    ): String {
-        val fieldNameForPrompt = fieldToAsk.name
-        val fieldGuidance = fieldToAsk.description
-
-        return buildString {
-            appendLine("The user is building a character and needs to provide: $fieldNameForPrompt")
-            appendLine("(Field guidance: \"$fieldGuidance\")")
-            appendLine()
-            appendLine("Current Character Data:")
-            appendLine(currentCharacterInfo.toJsonFormat())
-            appendLine()
-            if (sagaContext != null && sagaContext.title.isNotEmpty()) {
-                appendLine("Saga context (use this to make questions fit the world):")
-                appendLine("Title: ${sagaContext.title}")
-                appendLine("Description: ${sagaContext.description}")
-                appendLine("Genre: ${sagaContext.genre.name}")
-                appendLine()
-            }
-            appendLine(
-                "Your task: Craft a natural, conversational question about '$fieldNameForPrompt' that sounds like you're genuinely curious about this person—like asking a friend about their D&D character over pizza.",
-            )
-            appendLine(
-                "**Be a chill character-building buddy, not a form.** Use what you know about them to make it personal. Be slightly humorous, sarcastic, or ironic when it fits—like 'Cool, so what's their deal?' or 'Okay but what do they actually look like tho?'",
-            )
-            appendLine()
-            appendLine(
-                "Keep it SHORT and natural (under 120 characters). Write like you text. Be direct, casual, and genuinely interested in who this person is.",
-            )
-            appendLine()
-            appendLine("For suggestions:")
-            when (fieldToAsk) {
-                CharacterFormFields.NAME -> {
-                    appendLine(
-                        "- Generate 3 character names that feel authentic to the saga's genre and world. Each should have personality baked into it.",
-                    )
-                    appendLine(
-                        "- Consider: cultural fit, nickname potential, how it sounds when shouted in battle or whispered in intrigue",
-                    )
-                    if (sagaContext?.genre != null) {
-                        appendLine("- Make names fit the ${sagaContext.genre.name} aesthetic")
-                    }
-                }
-
-                CharacterFormFields.BACKSTORY -> {
-                    appendLine(
-                        "- Generate 3 backstory hooks (10-15 words each) that combine origin, motivation, and conflict.",
-                    )
-                    appendLine(
-                        "- Focus on: key formative events, relationships that shaped them, secrets they carry, goals they pursue",
-                    )
-                    appendLine(
-                        "- Examples: \"Raised by assassins but refuses to kill, seeking redemption through protecting others\"",
-                    )
-                    appendLine(
-                        "         \"Former noble stripped of title, now building a criminal empire to reclaim their inheritance\"",
-                    )
-                }
-
-                CharacterFormFields.APPEARANCE -> {
-                    appendLine(
-                        "- Generate 3 appearance descriptions (10-15 words) that reveal personality and history through physical details.",
-                    )
-                    appendLine(
-                        "- Focus on: distinctive features, what they say about the character, scars/marks with stories, style choices that reveal character",
-                    )
-                    if (sagaContext?.genre?.name == "CYBERPUNK") {
-                        appendLine(
-                            "- ⚠️ CYBERPUNK: MUST include visible cyberware (prosthetic limbs, artificial eyes, neural ports, mechanical spine). Everyone in this world has chrome - it's survival, not choice.",
-                        )
-                        appendLine(
-                            "- Examples: \"Chrome left arm with visible joints, artificial eyes with amber glow, neural port scars at temples\"",
-                        )
-                        appendLine(
-                            "         \"Mechanical spine visible at neck, prosthetic legs from the knees down, in-ear comm implants\"",
-                        )
-                    } else {
-                        appendLine(
-                            "- Examples: \"Weathered hands and kind eyes, always in practical clothes with hidden pockets\"",
-                        )
-                        appendLine(
-                            "         \"Sharp features framed by wild hair, moves like a dancer, dresses to intimidate\"",
-                        )
-                    }
-                }
-
-                else -> {
-                    appendLine(
-                        "- Generate 3 diverse, detailed suggestions for '$fieldNameForPrompt' that add depth and realism.",
-                    )
-                }
-            }
-            appendLine()
-            appendLine("Suggestions must avoid clichés and generic fantasy tropes.")
-            appendLine(
-                "Include a concise hint (under 50 characters) as an inner thought—use \"What if they...\", \"Maybe someone who...\", \"What about...\" that trails off naturally.",
-            )
-            appendLine(
-                "Overall tone: Like texting a friend who's good at making characters. Natural, casual, genuinely curious. Add humor or light sarcasm when it fits—be real, not robotic. Think less 'professional assistant' and more 'friend who's played too much D&D and has opinions about backstories'.",
-            )
-
-            // Add CONTENT_READY callback logic
-            if (fieldToAsk == CharacterFormFields.ALL_FIELDS_COMPLETE) {
-                appendLine()
-                appendLine("IMPORTANT: Since all fields are complete, the callback action must be 'CONTENT_READY'.")
-                appendLine(
-                    "The message should be casual and genuinely hyped—like a friend impressed with what you came up with. Add some light humor or playful commentary.",
-                )
-                appendLine(
-                    "Examples: 'Okay I'm kinda into this character. Ready to jump in or you wanna add more?', 'Not gonna lie, they sound pretty cool. Start the saga or keep tweaking?'",
-                )
-                appendLine(
-                    "Keep it simple, natural, conversational—like you're texting, not announcing.",
-                )
-            }
-
-            appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:")
-            appendLine(toJsonMap(SagaCreationGen::class.java))
-        }
-    }
 
     fun characterIntroPrompt(sagaContext: SagaDraft?) =
         buildString {
@@ -232,7 +133,7 @@ object CharacterPrompts {
                 appendLine()
             }
             appendLine(
-                "- message: A casual, friendly message like you're hyping up a friend who's about to create their RPG character. Keep it simple and natural—no corporate fluff. Add a touch of humor or playful sarcasm. Think: 'Alright, let's make someone interesting' vibes, not 'Welcome to character creation!' vibes. (max 2 sentences, conversational tone)",
+                "- message: A casual, friendly message like you're hyping up a friend who's about to create their RPG character. Keep it simple and natural—no corporate fluff. Add a touch of humor or playful sarcasm. Mention that you have some suggestions to help them start. Think: 'Alright, let's make someone interesting' vibes, not 'Welcome to character creation!' vibes. (max 2 sentences, conversational tone)",
             )
             appendLine(
                 "  Examples of the vibe we're going for:",
@@ -244,15 +145,16 @@ object CharacterPrompts {
                 "  Keep it SHORT, NATURAL, and like you're genuinely curious. No formal introductions, no 'I'm here to help you' stuff.",
             )
             appendLine(
-                "- inputHint: An inner-thought style prompt that sparks character imagination. Use incomplete phrases like \"What if they're someone who...\", \"Maybe a person who struggles with...\", \"What about a character that...\" Keep it under 50 characters and let it trail off naturally.",
-            )
-            appendLine(
-                "  Examples: \"What if they're haunted by...\", \"Maybe someone who never learned to...\", \"What about a person who can see...\"",
+                "- **inputHint**: A very short \"starter\" text (max 4 words). It should be a subtle nudge. E.g., \"Who are they?\", \"Describe their past...\", \"What is their name?\"",
             )
             appendLine()
             appendLine(
-                "- suggestions: Generate 3 unique CHARACTER PROFILES (15-25 words each) that feel like real people. Each should include:",
+                "- suggestions: Generate 3 unique CHARACTER PROFILES (15-25 words each) that feel like real people. Each suggestion is an object containing:",
             )
+            appendLine("  * text: The character profile description")
+            appendLine("  * genre: The Genre enum fitting the Saga Context")
+            appendLine()
+            appendLine("Each text should include:")
             appendLine("  * A personality trait or defining characteristic")
             appendLine("  * A hint of appearance or physical presence")
             appendLine("  * A compelling backstory hook or internal conflict")
@@ -266,51 +168,56 @@ object CharacterPrompts {
             appendLine()
             appendLine("Examples of good character suggestions:")
             appendLine(
-                "  * \"A silver-tongued diplomat with burn scars she refuses to hide, who uses charm to mask the guilt of a treaty that destroyed her homeland.\"",
+                "  * {\"text\": \"A silver-tongued diplomat with burn scars she refuses to hide...\", \"genre\": \"${sagaContext?.genre?.name ?: "FANTASY"}\"}",
             )
             appendLine(
-                "  * \"A towering blacksmith with gentle eyes, who forges weapons by day but secretly writes poetry at night to cope with loneliness.\"",
+                "  * {\"text\": \"A towering blacksmith with gentle eyes, who forges weapons by day...\", \"genre\": \"${sagaContext?.genre?.name ?: "FANTASY"}\"}",
             )
             appendLine(
-                "  * \"A scrappy street thief with a photographic memory and a limp, haunted by remembering every face they've ever stolen from.\"",
+                "  * {\"text\": \"A scrappy street thief with a photographic memory and a limp...\", \"genre\": \"${sagaContext?.genre?.name ?: "FANTASY"}\"}",
             )
             appendLine()
             if (sagaContext?.genre != null) {
                 appendLine("Make sure character suggestions fit the ${sagaContext.genre.name} genre and complement the saga world!")
-                if (sagaContext.genre.name == "CYBERPUNK") {
-                    appendLine()
-                    appendLine("⚠️ CYBERPUNK MANDATORY CYBERWARE + AURA RULE:")
-                    appendLine("In this world, EVERYONE has cyberware. It's not optional - it's survival.")
-                    appendLine("Every character suggestion MUST include:")
-                    appendLine("  1. VISIBLE CYBERWARE (2-3 augmentations):")
-                    appendLine("     • Prosthetic limbs (chrome arms/legs shaped like human limbs)")
-                    appendLine("     • Artificial eyes (electronic iris, scanner lines, unnatural glow)")
-                    appendLine("     • Neural ports (at temples, neck, or spine)")
-                    appendLine("     • Mechanical spine sections")
-                    appendLine("     • Integrated tech (in-ear comms, wrist interfaces)")
-                    appendLine("  2. OUTSTANDING FASHION (Y2K/retro/neo-Tokyo mix):")
-                    appendLine("     • NOT generic 'black leather jacket'")
-                    appendLine("     • 2-3 SPECIFIC outfit details that show personality and aura")
-                    appendLine("     • Mix of: metallic fabrics, asymmetrical cuts, tech accessories, bold colors")
-                    appendLine("     • Each character should make the user think 'WOW, that's a look'")
-                    appendLine("The cyberware should be REPLACEMENTS that fit human form - cyborgs pretending to be human.")
-                    appendLine("NOT circuit tattoos or subtle implants (too light), NOT giant chunky robot parts (too heavy).")
-                    appendLine()
-                    appendLine(
-                        "Example format: '[Personality] with [cyberware detail], wearing [specific outfit with 2+ details], [backstory hook]'",
-                    )
-                }
             }
             appendLine(
                 "Each suggestion should make the user think 'I want to know more about this person' and feel like a character they'd root for or against.",
             )
-            appendLine("The suggestions field must be a String Array with 3 complete character profiles.")
+            appendLine("The suggestions field must be a List of objects with text and genre.")
             appendLine()
             appendLine("Important JSON rules:")
             appendLine("- Set `callback` to null.")
             appendLine("- Keep the message enthusiastic and personal, not mechanical.")
             appendLine("- Make suggestions feel like real people with depth, not archetypes.")
+            appendLine()
         }
+
+    fun characterAdaptationPrompt(
+        currentCharacterInfo: CharacterInfo,
+        newGenre: String,
+    ) = buildString {
+        appendLine("You are a creative character designer.")
+        appendLine("The user has switched the saga's genre to: $newGenre.")
+        appendLine("Current Character Draft:")
+        appendLine(currentCharacterInfo.toAINormalize())
+        appendLine()
+        appendLine(
+            "Task: Adapt the Character's Name, Description, and any other relevant fields to fit the $newGenre genre while preserving the original core personality/role.",
+        )
+        appendLine(
+            "Example: If moving from Fantasy to Cyberpunk, 'Sir Alistair (Knight)' becomes 'Alistair 'Chrome' Vane (Corp Enforcer)'.",
+        )
+        appendLine("If the current character fields are empty, generate a compelling archetype for this genre.")
+        appendLine()
+        appendLine("RESPONSE FORMAT (JSON ONLY):")
+        appendLine(
+            "- message: A brief, thematic confirmation of the character's adaptation (e.g., 'Rebuilding character cybernetics...', 'Equipping magic staff...').",
+        )
+        appendLine("- inputHint: A new creative starter question fitting the genre for the character (max 4 words).")
+        appendLine("- suggestions: 3 new CreationSuggestion objects (text, genre) fitting the new theme for the character.")
+        appendLine("- callback.action: 'UPDATE_DATA'")
+        appendLine("- callback.data: The updated CharacterInfo.")
+    }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
@@ -417,29 +324,6 @@ object CharacterPrompts {
             "- **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
         )
         appendLine()
-
-        // Genre-specific mandatory elements
-        if (saga.data.genre.name == "CYBERPUNK") {
-            appendLine("## ⚠️ CYBERPUNK MANDATORY CYBERWARE ⚠️")
-            appendLine("In this world, EVERYONE has cyberware. This is NOT optional - it's survival.")
-            appendLine("Even if the discovery seed doesn't mention augmentations, you MUST add them to the character.")
-            appendLine("A fully organic character is a CRITICAL VIOLATION in cyberpunk.")
-            appendLine()
-            appendLine("**REQUIRED: Include 2-4 of these visible augmentations:**")
-            appendLine("  • Prosthetic limbs - chrome arms/legs shaped like human limbs with visible joints")
-            appendLine("  • Artificial eyes - electronic iris, scanner lines, unnatural glow (fits in socket)")
-            appendLine("  • Neural ports - at temples, neck, or spine base with visible seams")
-            appendLine("  • Mechanical spine - chrome vertebrae visible at back of neck")
-            appendLine("  • Integrated comms - in-ear implants, throat mics embedded in neck")
-            appendLine("  • Wrist interfaces - small screens embedded in forearm")
-            appendLine()
-            appendLine("**CYBERWARE PHILOSOPHY:** Cyborgs pretending to be human.")
-            appendLine("  • Replacements that fit human form (NOT giant chunky robot parts)")
-            appendLine("  • Clearly artificial but shaped like flesh (the uncanny valley)")
-            appendLine("  • Worn, used, signs of daily life (NOT pristine or brand new)")
-            appendLine("  • NOT subtle circuit tattoos or silver scars (too light)")
-            appendLine()
-        }
 
         appendLine("## ✨ RADICAL DIVERSITY & UNIQUE PERSONAS ✨")
         appendLine("Break away from common standards. Your characters should reflect a rich, global range of human and humanoid forms.")

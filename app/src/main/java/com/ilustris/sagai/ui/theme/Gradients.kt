@@ -2,7 +2,6 @@ package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -50,18 +49,18 @@ enum class GradientType {
             LINEAR -> {
                 Brush.linearGradient(
                     colors = colors,
-                    start = Offset.Zero,
-                    end = Offset(offsetAnimationValue * 2, offsetAnimationValue * 3),
-                    tileMode = TileMode.Clamp,
+                    start = Offset(offsetAnimationValue, offsetAnimationValue),
+                    end = Offset(offsetAnimationValue + 500f, offsetAnimationValue + 500f),
+                    tileMode = TileMode.Mirror,
                 )
             }
 
             VERTICAL -> {
                 Brush.verticalGradient(
                     colors = colors,
-                    startY = 0f,
-                    endY = offsetAnimationValue * 3,
-                    tileMode = TileMode.Clamp,
+                    startY = offsetAnimationValue,
+                    endY = offsetAnimationValue + 500f,
+                    tileMode = TileMode.Mirror,
                 )
             }
 
@@ -69,8 +68,8 @@ enum class GradientType {
                 Brush.radialGradient(
                     colors = colors,
                     center = Offset(offsetAnimationValue, offsetAnimationValue),
-                    radius = offsetAnimationValue * 2,
-                    tileMode = TileMode.Clamp,
+                    radius = offsetAnimationValue + 300f,
+                    tileMode = TileMode.Mirror,
                 )
             }
 
@@ -100,7 +99,7 @@ fun gradientAnimation(
                 infiniteRepeatable(
                     tween(
                         duration.toInt(DurationUnit.MILLISECONDS),
-                        easing = EaseIn,
+                        easing = LinearEasing,
                     ),
                     repeatMode = RepeatMode.Reverse,
                 ),

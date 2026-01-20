@@ -268,9 +268,12 @@ object SagaPrompts {
             val topInteractiveCharacters =
                 saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
             appendLine(
-                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a 'Saga Wrapped' experience—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, and brief.",
+                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a 'Saga Wrapped' experience—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
             )
             appendLine()
+            appendLine("---")
+            appendLine("CONTEXT:")
+            appendLine("Saga Context:")
             appendLine(mainContext(saga))
             appendLine("Player relationships:")
             appendLine(saga.mainCharacter?.summarizeRelationships())
@@ -294,32 +297,33 @@ object SagaPrompts {
             appendLine("**INSTRUCTIONS FOR GENERATING THE WRAPPED REVIEW:**")
             appendLine()
             appendLine(
-                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Keep text SHORT (max 1-2 sentences) and PUNCHY. Think Instagram Caption or Spotify Wrapped.",
+                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Keep text VERY SHORT (max 10-12 words). Be the friend who 'sees' everything—joking, smart, and observant.",
             )
             appendLine()
-            appendLine("1.  **Content for Each Field:**")
+            appendLine("1.  **Slide Content Requirements:**")
             appendLine(
-                "    *   **`introduction`**: A short, intriguing hook. Welcome them back to the memory of the saga. (e.g., \"The house is ready. Come on in, [Player Name].\")",
+                "    *   **`introduction`**: A clever hook. (e.g., \"Welcome back to the chaos, [Player Name].\", \"Thought we'd forget that tavern incident?\")",
             )
             appendLine(
-                "    *   **`playstyle`**: DEFINE THEIR VIBE. Use the 'Emotional Ranking'. Give them a cool specific title based on how they played. (e.g., \"Your Vibe? 'Chaos Gremlin with a Heart of Gold'.\")",
+                "    *   **`playstyle`**: A witty title based on 'Emotional Ranking'. (e.g., \"Vibe: 'Chaos Gremlin with a Heart of Gold'.\", \"Style: 'Aggressively Polite Pacifist'.\")",
             )
             appendLine(
-                "    *   **`topCharacters`**: Comment on their squad. Who were they obsessed with? (e.g., \"You and [Character Name]? Inseparable. Seriously, get a room.\")",
+                "    *   **`topCharacters`**: Banter about their squad. Mention their favorite character. (e.g., \"You and [Character Name]? One more drink and you'd be inseparable.\")",
             )
             appendLine(
-                "    *   **`actsInsight`**: Summarize the journey in ONE epic sentence. (e.g., \"From a lost wanderer to the King of Ashes. What a ride.\")",
+                "    *   **`actsInsight`**: The 'Watcher's Insight'. One sharp sentence referencing a SPECIFIC detail from the History. (e.g., \"From that awkward start to basically ruling the underworld.\", \"That choice at the bridge? Pure legendary madness.\")",
             )
             appendLine(
-                "    *   **`conclusion`**: A final mic-drop moment. A thank you or a lingering thought. (e.g., \"Same time next year? The legend awaits.\")",
+                "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., \"Same time next year? We'll leave the lights on.\")",
             )
             appendLine()
-            appendLine("2.  **Tone & Style:**")
-            appendLine("    *   Short. Punchy. Witty.")
-            appendLine("    *   No long paragraphs. Visual impact is key.")
-            appendLine("    *   Adhere to the 'Language Directive' for flavor, but keep the structure modern/wrapped.")
+            appendLine("2.  **Constraints:**")
+            appendLine("    *   TOKEN OPTIMIZED: Max personality, minimum character count.")
+            appendLine("    *   NO fluff. Use the HISTORY to prove you were paying attention.")
+            appendLine("    *   Tone: Conversational, clever, joking.")
             appendLine()
             appendLine("---")
+            appendLine("OUTPUT JSON OBJECT ONLY.")
         }.trim()
 
     fun generateStoryBriefing(saga: SagaContent) =

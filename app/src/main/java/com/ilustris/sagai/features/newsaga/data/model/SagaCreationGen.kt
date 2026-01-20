@@ -1,23 +1,25 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
+data class CreationSuggestion(
+    val text: String,
+    val genre: Genre,
+)
+
 data class SagaCreationGen(
     val message: String,
     val inputHint: String,
-    val suggestions: List<String>,
+    val suggestions: List<CreationSuggestion>,
     val callback: CallbackContent?,
 )
 
 data class CallbackContent(
     val action: CallBackAction,
-    val data: SagaForm?,
+    val data: SagaDraft?,
 )
 
 enum class CallBackAction {
     UPDATE_DATA,
     AWAITING_CONFIRMATION,
-    SAVE_SAGA,
-    CREATE_CHARACTER_REQUIRED,
-    CHARACTER_READY,
     CONTENT_READY,
 }
 

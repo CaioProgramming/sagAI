@@ -12,8 +12,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,10 +24,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -35,11 +33,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,7 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -86,13 +83,13 @@ import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.saga.detail.review.ui.DynamicLinework
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryActsSlide
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryCharactersSlide
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryConclusionSlide
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryIntroductionSlide
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryPlaystyleSlide
 import com.ilustris.sagai.features.saga.detail.review.ui.StoryVibeSlide
-import com.ilustris.sagai.features.saga.detail.review.ui.components.StoryProgressIndicator
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
@@ -100,9 +97,9 @@ import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
@@ -147,15 +144,15 @@ fun SagaReview(
     val totalSteps = pages.size
 
     val pagerState = rememberPagerState { totalSteps }
-    val coroutineScope = rememberCoroutineScope()
-
-    val onStepComplete = {
-        if (pagerState.currentPage < totalSteps - 1) {
-            coroutineScope.launch {
-                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+    val coroutineScope =
+        rememberCoroutineScope
+        {
+            if (pagerState.currentPage < totalSteps - 1) {
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                }
             }
         }
-    }
 
     // Sync currentStep with pager state for the indicator
     LaunchedEffect(pagerState.currentPage) {
@@ -165,7 +162,6 @@ fun SagaReview(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -194,106 +190,62 @@ fun SagaReview(
                 )
             },
     ) {
-        if (content.data.isEnded.not() || generatingReview) {
-            // Loading/Wait State
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SparkIcon(
-                    brush = genre.gradient(true),
-                    tint = genre.color.copy(alpha = .4f),
-                    modifier = Modifier.size(64.dp),
+        DynamicLinework(
+            color = genre.color.copy(alpha = 0.3f),
+            lineCount = 6,
+        )
+
+        content.data.review?.let { review ->
+            Column(Modifier.fillMaxSize()) {
+                Image(
+                    painter = painterResource(R.drawable.ic_spark),
+                    null,
+                    colorFilter = ColorFilter.tint(genre.color),
+                    modifier =
+                        Modifier
+                            .size(32.dp)
+                            .align(Alignment.CenterHorizontally),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    stringResource(R.string.review_page_surprise_awaits),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                )
-            }
-        } else {
-            // Story Content via VerticalPager
-            VerticalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-            ) { pageIndex ->
-                val page = pages.getOrNull(pageIndex) ?: ReviewPages.INTRO
-                // Ensure we re-trigger animations if needed when page becomes active?
-                // The slides themselves should handle enter animations if possible,
-                // or we can wrap them in a Box that keys on visibility.
-                // For now, simple rendering.
-                when (page) {
-                    ReviewPages.INTRO -> StoryIntroductionSlide(content)
-                    ReviewPages.VIBE -> StoryVibeSlide(content)
-                    ReviewPages.PLAYSTYLE -> StoryPlaystyleSlide(content)
-                    ReviewPages.CHARACTERS -> StoryCharactersSlide(content)
-                    ReviewPages.CHAPTERS -> StoryActsSlide(content)
-                    ReviewPages.CONCLUSION -> StoryConclusionSlide(content)
-                    else -> Box(Modifier.fillMaxSize())
+
+                VerticalPager(
+                    state = pagerState,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                ) { pageIndex ->
+                    val page = pages.getOrNull(pageIndex) ?: ReviewPages.INTRO
+                    when (page) {
+                        ReviewPages.INTRO -> StoryIntroductionSlide(content)
+                        ReviewPages.VIBE -> StoryVibeSlide(content)
+                        ReviewPages.PLAYSTYLE -> StoryPlaystyleSlide(content)
+                        ReviewPages.CHARACTERS -> StoryCharactersSlide(content)
+                        ReviewPages.CHAPTERS -> StoryActsSlide(content)
+                        ReviewPages.CONCLUSION -> StoryConclusionSlide(content)
+                        else -> Box(Modifier.fillMaxSize())
+                    }
                 }
-            }
 
-            // Progress Indicator (remains at top)
-            StoryProgressIndicator(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopCenter)
-                        .padding(top = 48.dp),
-                totalSteps = totalSteps,
-                currentStep = currentStep,
-                isPaused = isPaused,
-                onStepComplete = {
-                    // This callback is from the *timer* in the indicator.
-                    // We simply trigger the pager scroll.
-                    onStepComplete()
-                },
-            )
+                Button(
+                    onClick = { shareSaga = true },
+                    colors = ButtonDefaults.textButtonColors(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .gradientFill(genre.gradient(true)),
+                ) {
+                    Text(stringResource(R.string.share))
 
-            // Share Button (Bottom)
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 48.dp) // Bottom Margin
-                        .navigationBarsPadding() // Safe area
-                        .clickable { shareSaga = true }
-                        .background(
-                            genre.gradient(true),
-                            RoundedCornerShape(32.dp),
-                        ).padding(vertical = 12.dp, horizontal = 24.dp),
-            ) {
-                Text(
-                    "Share this Story",
-                    style =
-                        MaterialTheme.typography.labelLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        ),
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
-
-            // Close Button (Top Right)
-            IconButton(
-                onClick = { resetReview() },
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 40.dp, end = 16.dp)
-                        .statusBarsPadding(),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.round_close_24),
-                    contentDescription = "Close",
-                    tint = Color.White.copy(alpha = 0.6f),
-                )
+                    Image(
+                        painterResource(R.drawable.ic_send),
+                        null,
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 8.dp)
+                                .size(12.dp),
+                    )
+                }
             }
         }
     }

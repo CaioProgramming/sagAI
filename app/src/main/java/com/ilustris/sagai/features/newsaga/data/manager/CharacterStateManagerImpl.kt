@@ -1,8 +1,9 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
 import android.util.Log
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
@@ -10,8 +11,9 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
+import com.ilustris.sagai.features.newsaga.data.model.CharacterCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
-import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.usecase.NewCharacterUseCase
@@ -24,6 +26,7 @@ class CharacterStateManagerImpl
     constructor(
         private val newCharacterUseCase: NewCharacterUseCase,
         private val characterUseCase: CharacterUseCase,
+        private val stringResourceHelper: StringResourceHelper,
     ) : CharacterStateManager {
         override val chatMessages: MutableList<ChatMessage> = mutableListOf<ChatMessage>()
         private val _characterState = MutableStateFlow<FormState.CharacterForm?>(null)
@@ -54,10 +57,6 @@ class CharacterStateManagerImpl
                 -> {
                     Log.d(javaClass.simpleName, "handleCallback: Character not ready yet")
                 }
-
-                else -> {
-                    doNothing()
-                }
             }
         }
 
@@ -78,13 +77,10 @@ class CharacterStateManagerImpl
             val userMessage = ChatMessage(text = userInput, sender = Sender.USER)
             chatMessages.add(userMessage)
 
-            val latestAiMessage = chatMessages.findLast { it.sender == Sender.AI }?.text
-
             newCharacterUseCase
                 .replyCharacterForm(
                     currentMessages = chatMessages,
                     currentCharacterInfo = _characterState.value?.characterInfo ?: CharacterInfo(),
-                    latestMessage = latestAiMessage,
                     sagaContext = sagaForm,
                 ).onSuccess { response ->
                     chatMessages.add(
@@ -133,12 +129,26 @@ class CharacterStateManagerImpl
                         gen,
                     )
                 }.onFailure {
-                    Log.e(
-                        javaClass.simpleName,
-                        "startCharacterCreation: Error generating intro",
-                        it,
+                    val fallbackMessage =
+                        stringResourceHelper.getString(R.string.character_intro_fallback)
+                    val fallbackHint =
+                        stringResourceHelper.getString(R.string.character_input_hint_fallback)
+                    val fallbackGen =
+                        CharacterCreationGen(
+                            message = fallbackMessage,
+                            inputHint = fallbackHint,
+                            suggestions = emptyList(),
+                            callback = null,
+                        )
+                    chatMessages.add(
+                        ChatMessage(
+                            text = fallbackMessage,
+                            sender = Sender.AI,
+                        ),
                     )
+                    updateAiText(fallbackMessage)
                     updateLoading(false)
+                    handleGeneratedContent(fallbackGen)
                 }
         }
 
@@ -155,7 +165,7 @@ class CharacterStateManagerImpl
 
         private fun updateGeneratedContent(
             hint: String,
-            suggestions: List<String>,
+            suggestions: List<CreationSuggestion>,
         ) {
             if (_characterState.value == null) {
                 _characterState.value = FormState.CharacterForm()
@@ -167,20 +177,44 @@ class CharacterStateManagerImpl
                 )
         }
 
-        private fun handleGeneratedContent(response: SagaCreationGen) {
+        private fun handleGeneratedContent(response: CharacterCreationGen) {
             response.callback?.action?.let { handleCallback(it) }
             updateGeneratedContent(
                 hint = response.inputHint,
                 suggestions = response.suggestions,
             )
 
-            response.callback?.data?.character?.let { updatedCharacter ->
+            response.callback?.data?.let { updatedCharacter ->
                 Log.i(
                     javaClass.simpleName,
                     "handleGeneratedContent: Updating character to $updatedCharacter",
                 )
                 updateCharacter(updatedCharacter)
             }
+            updateLoading(false)
+        }
+
+        override suspend fun adaptToGenre(newGenre: String) {
+            val charInfo = getCharacterInfo()
+            if (charInfo.name.isBlank() && charInfo.description.isBlank()) return
+
+            updateLoading(true)
+            newCharacterUseCase
+                .adaptCharacterToGenre(charInfo, newGenre)
+                .onSuccess {
+                    handleGeneratedContent(it)
+                    if (it.message.isNotEmpty()) {
+                        chatMessages.add(
+                            ChatMessage(
+                                text = it.message,
+                                sender = Sender.AI,
+                            ),
+                        )
+                        updateAiText(it.message)
+                    }
+                }.onFailure {
+                    Log.e(javaClass.simpleName, "adaptToGenre: Error adapting character to genre", it)
+                }
             updateLoading(false)
         }
     }

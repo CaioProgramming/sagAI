@@ -433,4 +433,10 @@
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
     <string name="continue_button">Continue</string>
+    <string name="create_character">Continue to character</string>
+
+    <string name="saga_intro_fallback">Welcome! Let\'s start creating your epic saga. What kind of story do you want to tell\?</string>
+    <string name="character_intro_fallback">Alright, let\'s bring your character to life! Who are we creating today\?</string>
+    <string name="saga_input_hint_fallback">Describe your story…</string>
+    <string name="character_input_hint_fallback">Describe your character…</string>
 </resources>

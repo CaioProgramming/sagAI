@@ -109,9 +109,9 @@ object HeroColorTones {
     val URBAN_COMIC_VIBRANCY =
         ColorTonePalette(
             name = "Urban Comic Vibrancy",
-            highlightTint = Triple(0.5f, 0.6f, .7f), // Bright, very subtly cool white (hint of cyan)
-            shadowTint = Triple(0.05f, 0.1f, 0.15f), // Very deep, almost black cool blue/indigo
-            defaultTintStrength = 0.4f, // Moderate strength for punchy colors
+            highlightTint = Triple(1.0f, 0.92f, 0.85f), // Warm golden light (Alex Ross style)
+            shadowTint = Triple(0.02f, 0.05f, 0.15f), // Deep luminous indigo shadows
+            defaultTintStrength = 0.35f, // Moderate strength for punchy colors
         )
 
     // You can add more hero-themed palettes here in the future
