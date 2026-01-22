@@ -1,0 +1,35 @@
+package com.ilustris.sagai.features.saga.detail.review.ui
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.ilustris.sagai.features.home.data.model.SagaContent
+
+class ReviewConclusionPage(
+    private val content: SagaContent,
+) : ReviewPage {
+    @Composable
+    override fun Show(
+        modifier: Modifier,
+        onAction: (ReviewAction) -> Unit,
+    ) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            DynamicLinework(content.data.genre.color, 12)
+            ReviewTextDisplay(
+                title =
+                    content.data.review
+                        ?.conclusion
+                        ?.content
+                        ?.title,
+                subtitle =
+                    content.data.review
+                        ?.conclusion
+                        ?.content
+                        ?.subtitle,
+                genre = content.data.genre,
+            )
+        }
+    }
+}

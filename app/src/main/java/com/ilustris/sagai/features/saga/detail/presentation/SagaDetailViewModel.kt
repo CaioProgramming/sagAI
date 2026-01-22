@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -141,11 +142,25 @@ class SagaDetailViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
                     .createReview(currentSaga)
-                    .onSuccessAsync {
-                        showReview.emit(true)
+                    .collectLatest { state ->
+                        when (state) {
+                            is ReviewState.Loading -> {
+                                _loadingMessage.value = state.message
+                            }
+
+                            is ReviewState.Success -> {
+                                isGenerating.value = false
+                                _loadingMessage.value = null
+                                showReview.emit(true)
+                            }
+
+                            is ReviewState.Error -> {
+                                isGenerating.value = false
+                                _loadingMessage.value = null
+                                // TODO: Handle error
+                            }
+                        }
                     }
-                isGenerating.value = false
-                _loadingMessage.value = null
             }
         }
 
@@ -158,6 +173,7 @@ class SagaDetailViewModel
             isGenerating.value = true
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
+                resetReview()
                 sagaDetailUseCase.regenerateSagaIcon(
                     currentSaga,
                 )

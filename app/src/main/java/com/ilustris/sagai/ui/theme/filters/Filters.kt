@@ -131,19 +131,19 @@ fun Genre.shaderParams(
 
     Genre.HEROES -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .15f,
-            bloomThreshold = 0.65f,
-            bloomIntensity = 0.25f,
-            bloomRadius = 1.5f,
-            softFocusRadius = focusRadius ?: .3f,
-            saturation = 1.15f,
-            contrast = 1.45f,
-            brightness = -.02f,
+            grainIntensity = customGrain ?: .1f,
+            bloomThreshold = 0f,
+            bloomIntensity = 0f,
+            bloomRadius = 0f,
+            softFocusRadius = focusRadius ?: .2f,
+            saturation = .9f,
+            contrast = 1.3f,
+            brightness = .05f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .25f,
-            vignetteSoftness = .8f,
+            vignetteStrength = .1f,
+            vignetteSoftness = 1f,
             pixelationBlockSize = 0.0f,
             colorTemperature = .15f,
         )
@@ -303,8 +303,7 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

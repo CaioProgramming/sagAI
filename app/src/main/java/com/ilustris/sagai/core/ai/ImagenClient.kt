@@ -137,6 +137,7 @@ class ImagenClientImpl
                         visualDirection = visualDirection,
                         genre = genre,
                         finalPrompt = artisticPrompt,
+                        context = context,
                     ).getSuccess()
 
                 reviewedResult?.let {
@@ -203,6 +204,7 @@ class ImagenClientImpl
             visualDirection: String?,
             genre: Genre,
             finalPrompt: String,
+            context: String,
         ) = executeRequest {
             val artStyleValidationRules = GenrePrompts.validationRules(genre)
             val strictness = GenrePrompts.reviewerStrictness(genre)
@@ -214,6 +216,7 @@ class ImagenClientImpl
                     strictness,
                     finalPrompt,
                     genre,
+                    context,
                 )
 
             Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")

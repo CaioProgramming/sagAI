@@ -2302,27 +2302,39 @@ object GenrePrompts {
             }
 
             SHINOBI -> {
+                val palette = getHexPalette(genre)
                 """
-                **VALIDATION RULES FOR SHINOBI:**
-                
+                **CRITICAL VALIDATION RULES FOR SHINOBI:**
+
                 GLOBAL COLOR PALETTE (CRITICAL):
-                - Pure monochrome (black ink on white paper)
-                - Mandatory Accent: VIBRANT CRIMSON RED
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
+                
+                MONOCHROME ENFORCEMENT (STRICT):
+                - Base style is SUMI-E INK WASH (Black & White).
+                - NO skin tones, NO brown wood, NO green leaves, NO blue sky.
+                - The world is ink and paper.
+                - VIOLATION: Any use of color for skin, nature, or environment (unless it's the accent).
+                
+                ACCENT COLOR ENFORCEMENT (IMPACTFUL):
+                - Mandatory Accent: VIBRANT CRIMSON RED (#DC143C).
+                - ALLOWED USAGE: Eyes (sharingan-like glow), Blood, Clothing details (scarf, sash), Weapon effects (aura), Specific symbolic elements (red sun, red leaves).
+                - BANNED USAGE: Skin tint, general lighting wash, random background noise.
+                - The accent must be IMPACTFUL and OUTSTANDING against the black & white.
+                - Prompt MUST mention: 'crimson red accent', 'vibrant red details', 'red ink splatter'.
+                - If missing → MAJOR VIOLATION: Add crimson accent to a focal point.
                 
                 REQUIRED ELEMENTS:
-                - Art style: 'Sumi-e ink wash', 'bold imperfect brushstrokes'
-                - Rendering: 'black and white only', NO colors beyond red accent
-                - Background: 'suggested through minimal ink washes'
-                
-                ACCENT COLOR ENFORCEMENT (MAJOR):
-                - Mandatory Accent: VIBRANT CRIMSON RED
-                - ONLY ONE red element allowed (blood, sunset, banner, flower)
-                - Must be DRAMATIC contrast against monochrome
+                - Art style: 'Sumi-e ink wash', 'Calligraphy brush strokes', 'Negative space composition'.
+                - Texture: 'Rice paper grain', 'Rough ink texture'.
+                - Atmosphere: 'Feudal mystery', 'Mist/Fog', 'Lethal silence'.
+                - Background: Minimalist but present. Sugessted by strokes (bamboo, castle roof, moon), using negative space.
                 
                 AUTONOMOUS FIX PATTERNS:
-                - If contains: colors beyond black/white/red → REPLACE with: pure monochrome black ink
-                - If missing crimson accent → INTEGRATE: single dramatic red element
-                - If lacking energy → EMPHASIZE: bold imperfect brushstrokes, visible spontaneity
+                - If contains: realistic colors, skin tones, brown/green/blue → REPLACE with: High-contrast black and white ink wash.
+                - If contains: soft digital shading → REPLACE with: Bold, imperfect brush strokes and ink splatters.
+                - If contains: plain white background → REPLACE with: White rice paper texture with suggested environmental strokes (fog, bamboo).
+                - If missing accent → INTEGRATE: Crimson red in eyes, weapon, or clothing detail.
                 """.trimIndent()
             }
 

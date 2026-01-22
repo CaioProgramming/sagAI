@@ -283,6 +283,20 @@ object SagaPrompts {
             }
             appendLine("Emotional Summary: ")
             appendLine(saga.emotionalSummary())
+
+            val userMessages =
+                saga.flatMessages().filter { it.character?.id == saga.mainCharacter?.data?.id }
+            val actionCount = userMessages.count { it.message.text.contains("<action>") }
+            val thinkCount = userMessages.count { it.message.text.contains("<think>") }
+            val narratorCount = userMessages.count { it.message.text.contains("<narrator>") }
+            val totalExpressive = actionCount + thinkCount + narratorCount
+
+            appendLine("Player Expressiveness (Tag Usage):")
+            appendLine("- Actions (<action>): $actionCount")
+            appendLine("- Thoughts (<think>): $thinkCount")
+            appendLine("- Narrations (<narrator>): $narratorCount")
+            appendLine("- Total Expressive Interactions: $totalExpressive")
+
             appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
             appendLine("Characters ranking(name and message number): ")
             appendLine(
@@ -297,33 +311,43 @@ object SagaPrompts {
             appendLine("**INSTRUCTIONS FOR GENERATING THE WRAPPED REVIEW:**")
             appendLine()
             appendLine(
-                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Keep text VERY SHORT (max 10-12 words). Be the friend who 'sees' everything—joking, smart, and observant.",
+                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Each slide MUST have a 'hook' (to set expectation) and 'content' (the actual data).",
+            )
+            appendLine(
+                "CRITICAL: Both 'hook' and 'content' MUST follow the Spotify Wrapped aesthetic: a bold 'title' and a supporting 'subtitle'.",
             )
             appendLine()
-            appendLine("1.  **Slide Content Requirements:**")
+            appendLine("- **Title**: Max 5-7 words. The primary message, bold, punchy.")
+            appendLine("- **Subtitle**: Max 8-10 words. The supporting context, witty remark, or deeper insight.")
+            appendLine()
+            appendLine("1.  **Stage Content Requirements:**")
             appendLine(
-                "    *   **`introduction`**: A clever hook. (e.g., \"Welcome back to the chaos, [Player Name].\", \"Thought we'd forget that tavern incident?\")",
+                "    *   **`introduction`**: The opening roast/hook. (e.g., Hook: { \"title\": \"The house is ready.\", \"subtitle\": \"You can come in now.\" })",
             )
             appendLine(
-                "    *   **`playstyle`**: A witty title based on 'Emotional Ranking'. (e.g., \"Vibe: 'Chaos Gremlin with a Heart of Gold'.\", \"Style: 'Aggressively Polite Pacifist'.\")",
+                "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style (e.g. if they act a lot, think too much, or narrate like a pro). (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
             )
             appendLine(
-                "    *   **`topCharacters`**: Banter about their squad. Mention their favorite character. (e.g., \"You and [Character Name]? One more drink and you'd be inseparable.\")",
+                "    *   **`playstyle`**: The personality vibe. (e.g., Content: { \"title\": \"Chaos Gremlin.\", \"subtitle\": \"Aggressively polite, but still chaos.\" })",
             )
             appendLine(
-                "    *   **`actsInsight`**: The 'Watcher's Insight'. One sharp sentence referencing a SPECIFIC detail from the History. (e.g., \"From that awkward start to basically ruling the underworld.\", \"That choice at the bridge? Pure legendary madness.\")",
+                "    *   **`topCharacters`**: The social breakdown. (e.g., Hook: { \"title\": \"The squad's choice?\", \"subtitle\": \"It wasn't even close.\" })",
             )
             appendLine(
-                "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., \"Same time next year? We'll leave the lights on.\")",
+                "    *   **`actsInsight`**: The 'Watcher's Insight'. referencing a SPECIFIC history detail. (e.g., Content: { \"title\": \"The Bridge Incident.\", \"subtitle\": \"Pure legendary madness in the making.\" })",
+            )
+            appendLine(
+                "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., Content: { \"title\": \"And for now...\", \"subtitle\": \"Same time next year? We'll leave the lights on.\" })",
             )
             appendLine()
             appendLine("2.  **Constraints:**")
             appendLine("    *   TOKEN OPTIMIZED: Max personality, minimum character count.")
-            appendLine("    *   NO fluff. Use the HISTORY to prove you were paying attention.")
             appendLine("    *   Tone: Conversational, clever, joking.")
             appendLine()
             appendLine("---")
-            appendLine("OUTPUT JSON OBJECT ONLY.")
+            appendLine(
+                "OUTPUT JSON OBJECT ONLY with this structure: { \"introduction\": { \"hook\": { \"title\": \"...\", \"subtitle\": \"...\" }, \"content\": { \"title\": \"...\", \"subtitle\": \"...\" } }, ... }",
+            )
         }.trim()
 
     fun generateStoryBriefing(saga: SagaContent) =

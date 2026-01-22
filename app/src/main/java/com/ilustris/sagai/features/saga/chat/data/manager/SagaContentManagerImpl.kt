@@ -129,6 +129,7 @@ class SagaContentManagerImpl
         ) {
             val currentSaga = content.value ?: return
             if (currentSaga.data.id != sagaId) return
+            if (currentSaga.data.isEnded) return
 
             val updatedSaga =
                 currentSaga.data.copy(
@@ -431,13 +432,13 @@ class SagaContentManagerImpl
 
         private suspend fun endTimeline(currentChapter: ChapterContent?) =
             executeRequest {
-                setNarrativeProcessingStatus(true)
                 chapterUseCase
                     .updateChapter(
                         currentChapter!!.data.copy(
                             currentEventId = null,
                         ),
                     )
+                setProcessing(false)
             }
 
         private suspend fun updateTimeline(
@@ -717,7 +718,6 @@ class SagaContentManagerImpl
                 when (milestone) {
                     is SagaMilestone.NewEvent -> {
                         generateTimelineContent(milestone.timeline, saga)
-                        endTimeline(saga.currentActInfo?.currentChapterInfo)
                     }
 
                     is SagaMilestone.ChapterFinished -> {
@@ -899,8 +899,8 @@ class SagaContentManagerImpl
                             emitMilestone(SagaMilestone.CurrentObjective(it))
                         }
                 }
+            }
         }
-    }
 
         private suspend fun generateTimelineContent(
             timeline: Timeline,

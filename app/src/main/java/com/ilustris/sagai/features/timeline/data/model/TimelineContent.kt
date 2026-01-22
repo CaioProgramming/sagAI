@@ -81,7 +81,7 @@ data class TimelineContent(
     fun statsSummary() =
         buildList {
             if (newlyAppearedCharacters.isNotEmpty()) {
-                add(R.string.new_character_message to newlyAppearedCharacters.size)
+                add(R.string.new_characters_label to newlyAppearedCharacters.size)
             }
 
             if (updatedWikis.isNotEmpty()) {

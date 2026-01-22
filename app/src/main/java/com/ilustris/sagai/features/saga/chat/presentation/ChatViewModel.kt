@@ -768,7 +768,6 @@ class ChatViewModel
                 "Smart Suggestions status: ${uiState.value.smartSuggestionsEnabled}",
             )
 
-            stateManager.updateLoading(true)
             viewModelScope.launch(Dispatchers.IO) {
                 if (userConfirmed || uiState.value.smartSuggestionsEnabled.not()) {
                     startPendingSend(isAudio)
@@ -868,28 +867,24 @@ class ChatViewModel
                     val shouldDisplay = it.status != TypoStatus.OK
                     if (shouldDisplay) {
                         stateManager.updateState { s -> s.copy(typoFixMessage = typoCheck.getSuccess()) }
-                        when (it.status) {
-                            TypoStatus.OK -> {
-                                stateManager.updateInput(
-                                    uiState.value.inputValue.copy(
-                                        text = it.suggestedText ?: uiState.value.inputValue.text,
-                                    ),
-                                )
+                    }
+                    when (it.status) {
+                        TypoStatus.OK, TypoStatus.ENHANCEMENT -> {
+                            stateManager.updateInput(
+                                uiState.value.inputValue.copy(
+                                    text = it.suggestedText ?: uiState.value.inputValue.text,
+                                ),
+                            )
+                            sendInput(userConfirmed = true, isAudio = isAudio)
+                        }
+
+                        TypoStatus.FIX -> {
+                            stateManager.updateInput(
+                                TextFieldValue(it.suggestedText ?: uiState.value.inputValue.text),
+                            )
+                            delay(5.seconds)
+                            if (uiState.value.typoFixMessage != null) {
                                 sendInput(userConfirmed = true, isAudio = isAudio)
-                            }
-
-                            TypoStatus.FIX -> {
-                                stateManager.updateInput(
-                                    TextFieldValue(it.suggestedText ?: uiState.value.inputValue.text),
-                                )
-                                delay(5.seconds)
-                                if (uiState.value.typoFixMessage != null) {
-                                    sendInput(userConfirmed = true, isAudio = isAudio)
-                                }
-                            }
-
-                            TypoStatus.ENHANCEMENT -> {
-                                doNothing()
                             }
                         }
                     }
@@ -906,8 +901,6 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = uiState.value.sagaContent ?: return@launch
                 val characterReference = saga.findCharacter(message.speakerName)
-
-                stateManager.updateInput(TextFieldValue())
 
                 resetSuggestions()
                 val characterId =
@@ -944,18 +937,11 @@ class ChatViewModel
                         sceneSummaryData,
                     ).onSuccessAsync { savedMessage ->
                         resetSuggestions()
-
-                        // If it's from user, trigger AI reply immediately after saving
                         if (isFromUser) {
-                            updateLoading(true)
                             replyMessage(savedMessage, sceneSummaryData, isAudio)
-                        } else {
-                            updateLoading(false)
                         }
 
-                        // Generate reaction and tone asynchronously without blocking
                         withContext(Dispatchers.IO) {
-                            messageUseCase.analyzeMessageTone(saga, savedMessage, isFromUser)
                             messageUseCase.generateReaction(
                                 saga,
                                 message = savedMessage,
@@ -970,6 +956,7 @@ class ChatViewModel
                                 )
                             }
                         }
+                        stateManager.updateInput(TextFieldValue())
                     }.onFailureAsync {
                         updateSnackBar(
                             snackBar(
@@ -982,6 +969,7 @@ class ChatViewModel
                         )
                         stateManager.updateState { s -> s.copy(typoFixMessage = null) }
                         updateLoading(false)
+                        stateManager.updateInput(TextFieldValue())
                     }
             }
         }
@@ -1034,7 +1022,6 @@ class ChatViewModel
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = uiState.value.sagaContent ?: return@launch
-                updateLoading(true)
                 val timeline = saga.getCurrentTimeLine()
                 if (timeline == null) {
                     sagaContentManager.checkNarrativeProgression(saga)
@@ -1048,6 +1035,7 @@ class ChatViewModel
                         reactions = emptyList(),
                     )
 
+                updateLoading(true)
                 messageUseCase
                     .generateMessage(
                         saga = saga,
@@ -1112,7 +1100,6 @@ class ChatViewModel
                             isAudio = isAudio,
                         )
 
-                        sagaContentManager.setProcessing(false)
                         if (newMessage.message.status != MessageStatus.OK) {
                             messageUseCase.updateMessage(
                                 message.copy(
@@ -1127,12 +1114,14 @@ class ChatViewModel
                                 sagaContentManager.getCurrentObjective(sceneSummary)
                             }
                         }
+                        updateLoading(false)
                     }.onFailureAsync {
                         messageUseCase.updateMessage(
                             message.copy(
                                 status = MessageStatus.ERROR,
                             ),
                         )
+                        updateLoading(false)
                         sagaContentManager.setProcessing(false)
                         stateManager.updateLoading(false)
                         updateSnackBar(

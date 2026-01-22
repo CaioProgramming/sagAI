@@ -41,7 +41,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         RelationshipUpdateEvent::class,
         Reaction::class,
     ],
-    version = 1,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(IntListConverter::class)

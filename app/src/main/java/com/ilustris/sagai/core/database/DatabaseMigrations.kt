@@ -1,7 +1,69 @@
 package com.ilustris.sagai.core.database
 
 import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 object DatabaseMigrations {
-    fun getAllMigrations(): Array<Migration> = arrayOf()
+    val MIGRATION_1_2 =
+        object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Drop old columns
+                db.execSQL("ALTER TABLE sagas DROP COLUMN introduction")
+                db.execSQL("ALTER TABLE sagas DROP COLUMN playstyle")
+                db.execSQL("ALTER TABLE sagas DROP COLUMN topCharacters")
+                db.execSQL("ALTER TABLE sagas DROP COLUMN actsInsight")
+                db.execSQL("ALTER TABLE sagas DROP COLUMN conclusion")
+
+                // Add new columns for ReviewStage (introduction)
+                db.execSQL("ALTER TABLE sagas ADD COLUMN intro_hook TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN intro_content TEXT")
+
+                // Add new columns for ReviewStage (playstyle)
+                db.execSQL("ALTER TABLE sagas ADD COLUMN playstyle_hook TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN playstyle_content TEXT")
+
+                // Add new columns for ReviewStage (topCharacters)
+                db.execSQL("ALTER TABLE sagas ADD COLUMN character_hook TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN character_content TEXT")
+
+                // Add new columns for ReviewStage (actsInsight)
+                db.execSQL("ALTER TABLE sagas ADD COLUMN journey_hook TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN journey_content TEXT")
+
+                // Add new columns for ReviewStage (conclusion)
+                db.execSQL("ALTER TABLE sagas ADD COLUMN conclusion_hook TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN conclusion_content TEXT")
+            }
+        }
+
+    val MIGRATION_2_3 =
+        object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val stages = listOf("intro", "playstyle", "character", "journey", "conclusion")
+                stages.forEach { stage ->
+                    // Drop version 2 columns
+                    db.execSQL("ALTER TABLE sagas DROP COLUMN ${stage}_hook")
+                    db.execSQL("ALTER TABLE sagas DROP COLUMN ${stage}_content")
+
+                    // Add version 3 columns
+                    db.execSQL("ALTER TABLE sagas ADD COLUMN ${stage}_hook_title TEXT")
+                    db.execSQL("ALTER TABLE sagas ADD COLUMN ${stage}_hook_subtitle TEXT")
+                    db.execSQL("ALTER TABLE sagas ADD COLUMN ${stage}_content_title TEXT")
+                    db.execSQL("ALTER TABLE sagas ADD COLUMN ${stage}_content_subtitle TEXT")
+                }
+            }
+        }
+
+    val MIGRATION_3_4 =
+        object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Activity/Expressiveness slide columns
+                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_hook_title TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_hook_subtitle TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_content_title TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_content_subtitle TEXT")
+        }
+    }
+
+    fun getAllMigrations(): Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

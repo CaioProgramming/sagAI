@@ -207,82 +207,81 @@ fun Genre.colorPalette() =
         Genre.FANTASY -> {
             listOf(
                 color,
-                Color(0xFFD4AF37), // Pantone 871 C - Mystical Gold
-                Color(0xFF8B0000), // Pantone 18-1664 TPX - Dark Red
-                Color(0xFFFF6B35), // Pantone 17-1462 TPX - Flame Orange
+                Color(0xFFA52A2A), // Brown
+                Color(0xFF800000), // Maroon
+                Color(0xFFCD5C5C), // IndianRed
             )
         }
 
         Genre.CYBERPUNK -> {
             listOf(
                 color,
-                Color(0xFF00FFFF), // Pantone Cyan - Bright Electric Blue
-                Color(0xFFFF10F0), // Pantone 806 C - Vivid Magenta
-                Color(0xFFFFFF00), // Pantone Yellow C - Pure Yellow
-                Color(0xFFFF006E), // Pantone 812 C - Hot Pink
+                Color(0xFF9400D3), // Dark Violet
+                Color(0xFFBA55D3), // Medium Orchid
+                Color(0xFF4B0082), // Indigo
             )
         }
 
         Genre.HORROR -> {
             listOf(
                 color,
-                Color(0xFF2F2F2F), // Pantone Black 7 C
-                Color(0xFF708090), // Pantone Cool Gray 9 C
-                Color(0xFF4B0082), // Pantone 268 C - Deep Violet
+                Color(0xFF0B132B), // Rich Black
+                Color(0xFF3A506B), // Imperial Blue
+                Color(0xFF1B263B), // Oxford Blue
             )
         }
 
         Genre.HEROES -> {
             listOf(
                 color,
-                Color(0xFFDC143C), // Pantone 18-1664 TPX - Hero Red
-                Color(0xFFFFD700), // Pantone 116 C - Hero Gold
-                Color(0xFF00BFFF), // Pantone Process Blue C
+                Color(0xFF00509D), // Lighter Blue
+                Color(0xFF00296B), // Darker Blue
+                Color(0xFF4A90E2), // Cornflower Blue
             )
         }
 
         Genre.CRIME -> {
             listOf(
                 color,
-                Color(0xFF00CED1), // Pantone 319 C - Miami Turquoise
-                Color(0xFFFF69B4), // Pantone 812 C - Vice Pink
-                Color(0xFFFFA500), // Pantone 144 C - Sunset Orange
+                Color(0xFFC2185B), // Darker Pink
+                Color(0xFFF48FB1), // Lighter Pink
+                Color(0xFF880E4F), // Very Dark Pink
             )
         }
 
         Genre.SHINOBI -> {
             listOf(
                 color,
-                Color(0xFF8B0000), // Pantone 18-1664 TPX - Blood Red
-                Color(0xFF2F4F4F), // Pantone 5467 C - Shadow Gray
-                Color(0xFFB8860B), // Pantone 7562 C - Ancient Gold
+                Color(0xFF4A1F41), // Darker Plum
+                Color(0xFF8E447E), // Lighter Plum
+                Color(0xFF2D1328), // Very Dark Plum
             )
         }
 
         Genre.SPACE_OPERA -> {
             listOf(
                 color,
-                Color(0xFF4169E1), // Pantone 286 C - Royal Blue
-                Color(0xFF00FA9A), // Pantone 354 C - Cosmic Green
-                Color(0xFFFF4500), // Pantone 17-1463 TPX - Rocket Orange
+                Color(0xFF00AFB9), // Lighter Teal
+                Color(0xFF264653), // Dark Slate
+                Color(0xFF48CAE4), // Cyan
             )
         }
 
         Genre.COWBOY -> {
             listOf(
                 color,
-                Color(0xFFD2691E), // Pantone 4695 C - Desert Sand
-                Color(0xFFCD853F), // Pantone 4665 C - Prairie Tan
-                Color(0xFF800000), // Pantone 18-1142 TPX - Maroon
+                Color(0xFFA0522D), // Sienna
+                Color(0xFF654321), // Dark Brown
+                Color(0xFFD2691E), // Chocolate
             )
         }
 
         Genre.PUNK_ROCK -> {
             listOf(
                 color,
-                Color(0xFFFFD700), // Pantone 106 C - Vibrant Yellow
-                Color(0xFFFF6B35), // Pantone 16-1546 TPX - Hot Orange
-                Color(0xFF8B0000), // Pantone 18-1664 TPX - Deep Red
+                Color(0xFF008000), // Green
+                Color(0xFF32CD32), // Lime Green
+                Color(0xFF006400), // Dark Green
             )
         }
     }

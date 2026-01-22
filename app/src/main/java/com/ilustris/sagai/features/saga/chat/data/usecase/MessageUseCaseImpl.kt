@@ -93,39 +93,35 @@ class MessageUseCaseImpl
             isFromUser: Boolean,
             sceneSummary: SceneSummary?,
         ) = executeRequest {
-            messageRepository.saveMessage(message)
+            val tone = analyzeMessageTone(saga, message, isFromUser).getSuccess()
+            messageRepository.saveMessage(
+                message.copy(
+                    emotionalTone = tone,
+                    status = MessageStatus.OK,
+                ),
+            )
         }
 
         override suspend fun analyzeMessageTone(
             saga: SagaContent,
             message: Message,
             isFromUser: Boolean,
-        ): RequestResult<Unit> =
-            executeRequest {
-                val tone =
-                    if (isFromUser) {
-                        val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
-                        val raw =
-                            gemmaClient
-                                .generate<String>(
-                                    prompt,
-                                    requireTranslation = false,
-                                    requirement = GemmaClient.ModelRequirement.LOW,
-                                )?.trim()
-                                ?.uppercase()
-                        EmotionalTone.getTone(raw)
-                    } else {
-                        message.emotionalTone
-                    }
-                if (tone != message.emotionalTone) {
-                    messageRepository.updateMessage(
-                        message.copy(
-                            emotionalTone = tone,
-                            status = MessageStatus.OK,
-                        ),
-                    )
-                }
+        ) = executeRequest {
+            if (isFromUser) {
+                val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
+                val raw =
+                    gemmaClient
+                        .generate<String>(
+                            prompt,
+                            requireTranslation = false,
+                            requirement = GemmaClient.ModelRequirement.LOW,
+                        )?.trim()
+                        ?.uppercase()
+                EmotionalTone.getTone(raw)
+            } else {
+                message.emotionalTone
             }
+        }
 
         override suspend fun deleteMessage(messageId: Long) {
             messageRepository.deleteMessage(messageId)

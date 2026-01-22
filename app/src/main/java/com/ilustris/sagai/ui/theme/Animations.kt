@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
@@ -20,11 +21,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -126,6 +132,9 @@ fun SimpleTypewriterText(
     text: String,
     style: TextStyle = TextStyle.Default,
     modifier: Modifier = Modifier,
+    textAlign: TextAlign? = null,
+    strokeColor: Color? = null,
+    strokeWidth: Float = 8f,
     duration: Duration = 3.seconds,
     easing: Easing = EaseIn,
     isAnimated: Boolean = true,
@@ -141,6 +150,7 @@ fun SimpleTypewriterText(
                 easing = easing,
             ),
         finishedListener = { onAnimationFinished() },
+        label = "typewriterAnimation",
     )
 
     LaunchedEffect(Unit) {
@@ -157,11 +167,29 @@ fun SimpleTypewriterText(
         onTextUpdate(text.substring(0, charIndex))
     }
 
-    Text(
-        text = currentText,
-        style = style,
-        modifier = modifier,
-    )
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        if (strokeColor != null) {
+            Text(
+                text = currentText,
+                style =
+                    style.copy(
+                        color = strokeColor,
+                        drawStyle =
+                            Stroke(
+                                miter = 10f,
+                                width = strokeWidth,
+                                join = StrokeJoin.Round,
+                            ),
+                    ),
+                textAlign = textAlign,
+            )
+        }
+        Text(
+            text = currentText,
+            style = style,
+            textAlign = textAlign,
+        )
+    }
 }
 
 @Composable

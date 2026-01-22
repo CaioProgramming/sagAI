@@ -202,7 +202,7 @@ fun SagaContent.rankByHour() =
 fun SagaContent.emotionalSummary() =
     buildString {
         acts.forEach {
-            it.emotionalSummary(this@emotionalSummary)
+            appendLine(it.emotionalSummary(this@emotionalSummary))
             appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
         }
     }
@@ -276,3 +276,15 @@ fun SagaContent.generateActLevelEmotionalFlowText(): String {
 }
 
 fun SagaContent.hasMoreThanOneChapter() = flatChapters().size > 1
+
+fun SagaContent.rankMainCharacterEmotionalTones(): List<Pair<EmotionalTone, Int>> {
+    val mainCharId = mainCharacter?.data?.id ?: return emptyList()
+    return flatMessages()
+        .filter { it.message.characterId == mainCharId }
+        .mapNotNull { it.message.emotionalTone }
+        .groupingBy { it }
+        .eachCount()
+        .entries
+        .sortedByDescending { it.value }
+        .map { it.toPair() }
+}

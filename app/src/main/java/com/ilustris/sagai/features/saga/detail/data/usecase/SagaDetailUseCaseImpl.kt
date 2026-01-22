@@ -14,6 +14,12 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.saga.detail.review.generator.CharactersStep
+import com.ilustris.sagai.features.saga.detail.review.generator.ConclusionStep
+import com.ilustris.sagai.features.saga.detail.review.generator.ExpressivenessStep
+import com.ilustris.sagai.features.saga.detail.review.generator.IntroStep
+import com.ilustris.sagai.features.saga.detail.review.generator.JourneyStep
+import com.ilustris.sagai.features.saga.detail.review.generator.PlaystyleStep
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -21,6 +27,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -49,24 +56,28 @@ class SagaDetailUseCaseImpl
             sagaRepository.deleteChat(saga)
         }
 
-        override suspend fun createReview(content: SagaContent): RequestResult<Saga> =
-            executeRequest {
-                val prompt =
-                    SagaPrompts.reviewGeneration(
-                        saga = content,
+        override suspend fun createReview(content: SagaContent) =
+            flow {
+                val steps =
+                    listOf(
+                        IntroStep(),
+                        ExpressivenessStep(),
+                        PlaystyleStep(),
+                        CharactersStep(),
+                        JourneyStep(),
+                        ConclusionStep(),
                     )
 
-                val review =
-                    textGenClient.generate<Review>(
-                        prompt = prompt,
-                        requireTranslation = true,
-                    )!!
-                sagaRepository
-                    .updateChat(
-                        content.data.copy(
-                            review = review,
-                        ),
-                    )
+                var currentReview = Review()
+
+                steps.forEach { step ->
+                    emit(ReviewState.Loading(step.progressMessage))
+                    currentReview = step.generate(content, currentReview, textGenClient)
+                }
+
+                val finalSaga = content.data.copy(review = currentReview)
+                sagaRepository.updateChat(finalSaga)
+                emit(ReviewState.Success(finalSaga))
             }
 
         override suspend fun resetReview(content: SagaContent) {
