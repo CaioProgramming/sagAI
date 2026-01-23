@@ -51,6 +51,8 @@ class ReviewExpressivenessPage(
     private val stage: ReviewStage,
     override val content: SagaContent,
 ) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.EXPRESSIVENESS
+
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -93,7 +95,8 @@ class ReviewExpressivenessPage(
                 Modifier
                     .animateContentSize(
                         tween(1200, easing = LinearOutSlowInEasing),
-                    ).fillMaxWidth(),
+                    )
+                    .fillMaxWidth(),
         ) {
             VibeShapeDrawing(
                 emotionalTone = emotionalTone.first,
@@ -121,15 +124,17 @@ class ReviewExpressivenessPage(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            "Seu mood",
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center,
-                                ),
-                        )
+                        it.title?.let { title ->
+                            Text(
+                                title,
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
+                        }
 
                         AutoResizeText(
                             emotionalTone.first.getTitle(),
@@ -169,7 +174,7 @@ class ReviewExpressivenessPage(
                     },
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
-                            containerColor = MaterialTheme.colorScheme.background,
+                            containerColor = MaterialTheme.colorScheme.onBackground,
                             contentColor = genre.color,
                         ),
                 ) {

@@ -14,4 +14,6 @@ sealed class ReviewAction {
     data object Continue : ReviewAction()
 
     data object Finish : ReviewAction()
+
+    data object Restart : ReviewAction()
 }

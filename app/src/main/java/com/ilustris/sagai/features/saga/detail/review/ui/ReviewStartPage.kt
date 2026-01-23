@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -38,6 +37,8 @@ class ReviewStartPage(
     override val content: SagaContent,
     private val text: ReviewText,
 ) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.INTRO
+
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -45,10 +46,9 @@ class ReviewStartPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         var showText by remember {
-            mutableStateOf(false)
+            mutableStateOf(canAnimate.not())
         }
         val genre = content.data.genre
-        val lineCount = remember { Random.nextInt(3, 10) }
 
         LaunchedEffect(Unit) {
             delay(3.seconds)
@@ -56,29 +56,10 @@ class ReviewStartPage(
         }
 
         Box(modifier, contentAlignment = Alignment.Center) {
-            DepthLayout(
-                content.data.icon,
-                modifier = Modifier.fillMaxSize().effectForGenre(genre),
-            ) {
-                DynamicLinework(
-                    genre.iconColor,
-                    lineCount,
-                    4.dp,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .reactiveShimmer(
-                                true,
-                                genre.shimmerColors(),
-                                duration = 10.seconds,
-                                repeatMode = RepeatMode.Restart,
-                            ),
-                )
-            }
-
+            val alignment = if (content.data.icon.isBlank()) Alignment.Center else Alignment.BottomCenter
             AnimatedVisibility(
                 showText,
-                modifier = Modifier.padding(16.dp).align(Alignment.BottomCenter),
+                modifier = Modifier.padding(16.dp).align(alignment),
                 enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -91,7 +72,7 @@ class ReviewStartPage(
                                     textAlign = TextAlign.Center,
                                     fontWeight = FontWeight.ExtraBold,
                                 ),
-                            modifier = Modifier.levitate(),
+                            modifier = Modifier.levitate(canAnimate),
                         )
                     }
 
@@ -108,6 +89,32 @@ class ReviewStartPage(
                     }
                 }
             }
+        }
+    }
+
+    @Composable
+    override fun Background(modifier: Modifier) {
+        val genre = content.data.genre
+        val lineCount = remember { Random.nextInt(3, 10) }
+
+        DepthLayout(
+            content.data.icon,
+            modifier = Modifier.fillMaxSize().effectForGenre(genre),
+        ) {
+            DynamicLinework(
+                color = genre.color,
+                lineCount = lineCount,
+                strokeWidth = 4.dp,
+                enabled = true,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .reactiveShimmer(
+                            true,
+                            duration = 10.seconds,
+                            repeatMode = RepeatMode.Restart,
+                        ),
+            )
         }
     }
 }

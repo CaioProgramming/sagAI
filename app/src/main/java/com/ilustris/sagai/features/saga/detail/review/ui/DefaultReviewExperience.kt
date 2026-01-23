@@ -4,7 +4,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 
 class DefaultReviewExperience(
     private val content: SagaContent,
-    private val onNavigate: (Int) -> Unit,
+    private val onNavigate: (ReviewPageType) -> Unit,
 ) : ReviewExperience {
     override val pages: List<ReviewPage>
         get() {
@@ -40,13 +40,13 @@ class DefaultReviewExperience(
                 // Characters
                 review.topCharacters?.let {
                     it.hook?.let { hook -> add(ReviewHookPage(content, hook)) }
-                    add(ReviewCharactersPage(content))
+                    add(ReviewCharactersPage(content, it))
                 }
 
                 // Journey
                 review.actsInsight?.let {
                     it.hook?.let { hook -> add(ReviewHookPage(content, hook)) }
-                    add(ReviewJourneyPage(content))
+                    it.content?.let { add(ReviewJourneyPage(content, it)) }
                 }
 
                 // Conclusion

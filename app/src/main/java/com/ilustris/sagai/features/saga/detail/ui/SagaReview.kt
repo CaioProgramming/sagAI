@@ -2,8 +2,10 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import android.view.MotionEvent
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -24,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
@@ -31,6 +34,8 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewLoadingPage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
+import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -50,7 +55,14 @@ fun SagaReview(
 
     val experience =
         remember(content) {
-            ReviewExperienceFactory.createExperience(content)
+            ReviewExperienceFactory.createExperience(content) { pageType ->
+                val pageIndex = pages.indexOfFirst { it.pageType == pageType }
+                if (pageIndex != -1) {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(pageIndex)
+                    }
+                }
+            }
         }
 
     val pages = experience.pages
@@ -62,6 +74,10 @@ fun SagaReview(
 
     suspend fun handleAction(action: ReviewAction) {
         when (action) {
+            ReviewAction.Restart -> {
+                pagerState.animateScrollToPage(0)
+            }
+
             ReviewAction.Continue -> {
                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
             }
@@ -113,13 +129,23 @@ fun SagaReview(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    pages.getOrNull(pageIndex)?.Show(
-                        modifier = Modifier.fillMaxSize(),
-                        canAnimate = canAnimate,
-                    ) {
-                        coroutineScope.launch {
-                            handleAction(it)
+                    if (pagerState.currentPage == pageIndex) {
+                        pages.getOrNull(pageIndex)?.Show(
+                            modifier = Modifier.fillMaxSize(),
+                            canAnimate = canAnimate,
+                        ) {
+                            coroutineScope.launch {
+                                handleAction(it)
+                            }
                         }
+                    } else {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            Modifier
+                                .size(50.dp)
+                                .gradientFill(content.data.genre.gradient()),
+                        )
                     }
                 }
             }

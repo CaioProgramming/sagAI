@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
@@ -50,6 +51,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
+import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
@@ -61,7 +63,10 @@ import kotlin.time.Duration.Companion.seconds
 
 class ReviewCharactersPage(
     override val content: SagaContent,
+    private val stage: ReviewStage,
 ) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.CHARACTERS
+
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -98,13 +103,15 @@ class ReviewCharactersPage(
             SharedTransitionLayout {
                 AnimatedContent(showCharacters, transitionSpec = {
                     fadeIn(tween(1500)) togetherWith fadeOut(tween(600))
-                }) {
-                    if (!it) {
+                }) { showList ->
+                    if (!showList) {
                         topCharacters.firstOrNull()?.let {
-                            LaunchedEffect(Unit) {
-                                coroutineScope.launch {
-                                    delay(2.seconds)
-                                    showTopCharacterName = true
+                            if (canAnimate) {
+                                LaunchedEffect(Unit) {
+                                    coroutineScope.launch {
+                                        delay(2.seconds)
+                                        showTopCharacterName = true
+                                    }
                                 }
                             }
                             Box(Modifier.fillMaxSize()) {
@@ -168,6 +175,18 @@ class ReviewCharactersPage(
                                         )
 
                                         Text(stringResource(R.string.messages_label))
+
+                                        stage.content?.subtitle?.let { subtitle ->
+                                            Text(
+                                                subtitle,
+                                                style =
+                                                    MaterialTheme.typography.labelMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        textAlign = TextAlign.Center,
+                                                    ),
+                                                modifier = Modifier.padding(top = 16.dp),
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -179,7 +198,8 @@ class ReviewCharactersPage(
                                 .fillMaxWidth()
                                 .animateContentSize(
                                     tween(1000, easing = EaseIn),
-                                ).animateEnterExit(
+                                )
+                                .animateEnterExit(
                                     enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
                                     exit = slideOutVertically { it },
                                 ),
@@ -187,28 +207,32 @@ class ReviewCharactersPage(
                             verticalArrangement = Arrangement.Center,
                         ) {
                             item {
-                                Text(
-                                    "Top personagens",
-                                    style =
-                                        MaterialTheme.typography.titleLarge.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            fontWeight = FontWeight.Bold,
-                                            color = genre.iconColor,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .background(
-                                                genre.color,
-                                                shape = genre.shape(),
-                                            ).padding(8.dp),
-                                )
+                                stage.content?.title?.let { title ->
+                                    Text(
+                                        title,
+                                        style =
+                                            MaterialTheme.typography.titleLarge.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                fontWeight = FontWeight.Bold,
+                                                color = genre.iconColor,
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .background(
+                                                    genre.color,
+                                                    shape = genre.shape(),
+                                                ).padding(8.dp),
+                                    )
+                                }
                             }
 
                             items(topCharacters) { character ->
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(16.dp),
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
                                 ) {
                                     val position = topCharacters.indexOf(character) + 1
                                     Text(
@@ -287,7 +311,7 @@ class ReviewCharactersPage(
         }
 
         LaunchedEffect(showTopCharacterName) {
-            if (showTopCharacterName) {
+            if (showTopCharacterName && canAnimate) {
                 delay(10.seconds)
                 showCharacters = true
                 showTopCharacterName = false

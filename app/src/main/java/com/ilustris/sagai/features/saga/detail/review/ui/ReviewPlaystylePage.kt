@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -34,6 +35,8 @@ class ReviewPlaystylePage(
     override val content: SagaContent,
     val playstyle: ReviewText,
 ) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.PLAYSTYLE
+
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -54,7 +57,7 @@ class ReviewPlaystylePage(
             ) {
                 AnimatedPlaytimeCounter(
                     playtimeMs = content.data.playTimeMs,
-                    label = stringResource(R.string.playtime_title),
+                    label = playstyle.title ?: stringResource(R.string.playtime_title),
                     textStyle =
                         MaterialTheme.typography.displayMedium.copy(
                             fontFamily = genre.headerFont(),
@@ -76,14 +79,16 @@ class ReviewPlaystylePage(
                 )
 
                 if (showText) {
-                    playstyle.title?.let {
+                    playstyle.subtitle?.let {
                         Text(
                             it,
                             style =
                                 MaterialTheme.typography.bodySmall.copy(
                                     fontFamily = genre.bodyFont(),
                                     fontWeight = FontWeight.Black,
+                                    textAlign = TextAlign.Center,
                                 ),
+                            modifier = Modifier.padding(16.dp),
                         )
                     }
                 }

@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
@@ -49,7 +48,6 @@ import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.pulse
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shake
-import com.ilustris.sagai.ui.theme.shape
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -57,6 +55,8 @@ class ReviewIntroAnimationPage(
     private val hook: ReviewText,
     override val content: SagaContent,
 ) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.INTRO
+
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -202,7 +202,6 @@ class ReviewIntroAnimationPage(
                     modifier =
                         Modifier
                             .padding(16.dp)
-                            .clip(genre.shape())
                             .gradientFill(genre.gradient())
                             .clickable {
                                 onAction(ReviewAction.Continue)

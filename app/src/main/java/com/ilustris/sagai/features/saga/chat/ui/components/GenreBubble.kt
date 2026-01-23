@@ -24,12 +24,14 @@ fun Genre.bubble(
     isNarrator: Boolean = false,
 ): Shape {
     val cornerSize = cornerSize()
+    val tailW = if (isNarrator) 0.dp else tailWidth
+    val tailH = if (isNarrator) 0.dp else tailHeight
     return when (this) {
         Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
                 cornerRadius = cornerSize,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
                 tailAlignment = tailAlignment,
             )
         }
@@ -37,8 +39,8 @@ fun Genre.bubble(
         Genre.HEROES -> {
             HeroesChatBubbleShape(
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -46,8 +48,8 @@ fun Genre.bubble(
             ShinobiChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -62,8 +64,8 @@ fun Genre.bubble(
             FantasyChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -77,8 +79,8 @@ fun Genre.bubble(
             CowboysChatBubbleShape(
                 cornerNotch = cornerSize,
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
                 isNarrator = isNarrator,
             )
         }
@@ -86,8 +88,8 @@ fun Genre.bubble(
         Genre.PUNK_ROCK -> {
             PunkRockChatBubbleShape(
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -97,8 +99,8 @@ fun Genre.bubble(
             } else {
                 CurvedChatBubbleShape(
                     cornerRadius = cornerSize,
-                    tailWidth = tailWidth,
-                    tailHeight = tailHeight,
+                    tailWidth = tailW,
+                    tailHeight = tailH,
                     tailAlignment = tailAlignment,
                 )
             }

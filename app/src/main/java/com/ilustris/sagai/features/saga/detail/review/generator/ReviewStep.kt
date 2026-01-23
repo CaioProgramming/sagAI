@@ -21,7 +21,7 @@ interface ReviewStep {
 }
 
 class IntroStep : ReviewStep {
-    override val progressMessage = "Preparing your welcoming..."
+    override val progressMessage = "Pulling up the best bits..."
 
     override suspend fun generate(
         saga: SagaContent,
@@ -36,7 +36,7 @@ class IntroStep : ReviewStep {
 }
 
 class ExpressivenessStep : ReviewStep {
-    override val progressMessage = "Exploring your roleplay heart..."
+    override val progressMessage = "Checking out your mood swings..."
 
     override suspend fun generate(
         saga: SagaContent,
@@ -52,7 +52,7 @@ class ExpressivenessStep : ReviewStep {
 }
 
 class PlaystyleStep : ReviewStep {
-    override val progressMessage = "Analyzing your storytelling ritual..."
+    override val progressMessage = "Looking at when you skipped sleep..."
 
     override suspend fun generate(
         saga: SagaContent,
@@ -84,7 +84,7 @@ class PlaystyleStep : ReviewStep {
 }
 
 class CharactersStep : ReviewStep {
-    override val progressMessage = "Reviewing your closest bonds..."
+    override val progressMessage = "Seeing who you hung out with..."
 
     override suspend fun generate(
         saga: SagaContent,
@@ -94,7 +94,11 @@ class CharactersStep : ReviewStep {
         val topCharacters =
             saga
                 .flatMessages()
-                .rankTopCharacters(saga.characters.map { it.data })
+                .rankTopCharacters(
+                    saga.characters
+                        .filter { it != saga.mainCharacter }
+                        .map { it.data }
+                        )
                 .take(3)
                 .map { it.first.name to it.second }
 
@@ -106,7 +110,7 @@ class CharactersStep : ReviewStep {
 }
 
 class JourneyStep : ReviewStep {
-    override val progressMessage = "Tracing your epic path..."
+    override val progressMessage = "Recalling the chaos we made..."
 
     override suspend fun generate(
         saga: SagaContent,
@@ -121,7 +125,7 @@ class JourneyStep : ReviewStep {
 }
 
 class ConclusionStep : ReviewStep {
-    override val progressMessage = "Writing your final legend..."
+    override val progressMessage = "One last toast to our story..."
 
     override suspend fun generate(
         saga: SagaContent,

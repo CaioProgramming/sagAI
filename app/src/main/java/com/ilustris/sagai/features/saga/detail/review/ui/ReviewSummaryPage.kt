@@ -1,16 +1,17 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -18,18 +19,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 
 class ReviewSummaryPage(
     override val content: SagaContent,
-    private val onNavigate: (Int) -> Unit,
+    private val onNavigate: (ReviewPageType) -> Unit,
 ) : ReviewPage {
+    override val pageType: ReviewPageType = ReviewPageType.SUMMARY
+
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -37,111 +41,114 @@ class ReviewSummaryPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
-        val review = content.data.review ?: return
+        content.data.review ?: return
 
         Column(
             modifier =
                 modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 32.dp),
+                    .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "YOUR SAGA WRAPPED",
+                text = "Our Story, Retold",
                 style =
-                    MaterialTheme.typography.headlineMedium.copy(
-                        fontFamily = genre.headerFont(),
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.Black,
                     ),
                 textAlign = TextAlign.Center,
+                modifier = Modifier.padding(8.dp),
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            HeroSummaryCard(
-                content = content,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "REVISIT THE JOURNEY",
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = genre.bodyFont(),
-                        fontWeight = FontWeight.Bold,
-                        color = genre.color,
-                    ),
-                modifier =
-                    Modifier
-                        .padding(horizontal = 24.dp)
-                        .align(Alignment.Start),
-            )
-
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(),
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f),
             ) {
-                review.introduction?.let {
-                    item {
-                        ArchetypeMiniCard(
-                            title = "The Ritual",
-                            subtitle = it.content?.title ?: "Legend Builder",
-                            genre = genre,
-                        ) { onNavigate(0) }
-                    }
+                item(span = { GridItemSpan(2) }) {
+                    HeroSummaryCard(
+                        content = content,
+                        modifier =
+                            Modifier
+                                .aspectRatio(0.55f)
+                                .clickable {
+                                },
+                    )
                 }
-                review.expressiveness?.let {
-                    item {
-                        ArchetypeMiniCard(
-                            title = "The Voice",
-                            subtitle = it.content?.title ?: "Expressive",
-                            genre = genre,
-                        ) { onNavigate(2) } // Approximate index
-                    }
+
+                item {
+                    DynamicCard(
+                        title = "Vibe do Herói",
+                        subtitle = "Sua marca emocional",
+                        titleStyle =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.headerFont(),
+                                fontWeight = FontWeight.Black,
+                                textAlign = TextAlign.Center,
+                            ),
+                        subtitleStyle =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                            ),
+                        lineColor = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier
+                                .aspectRatio(1.1f)
+                                .clip(genre.bubble(isNarrator = true))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    genre.bubble(isNarrator = true),
+                                ),
+                    )
                 }
-                review.playstyle?.let {
-                    item {
-                        ArchetypeMiniCard(
-                            title = "The Vibe",
-                            subtitle = it.content?.title ?: "Archetype",
-                            genre = genre,
-                        ) { onNavigate(4) }
-                    }
-                }
-                review.topCharacters?.let {
-                    item {
-                        ArchetypeMiniCard(
-                            title = "The Squad",
-                            subtitle = it.content?.title ?: "Bonds",
-                            genre = genre,
-                        ) { onNavigate(6) }
-                    }
+
+                item {
+                    DynamicCard(
+                        title = "Tempo de Jogo",
+                        subtitle = "Sua dedicação",
+                        titleStyle =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.headerFont(),
+                                fontWeight = FontWeight.Black,
+                                textAlign = TextAlign.Center,
+                            ),
+                        subtitleStyle =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                            ),
+                        lineColor = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier
+                                .aspectRatio(1.1f)
+                                .clip(genre.bubble(isNarrator = true))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    genre.bubble(isNarrator = true),
+                                ),
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { onNavigate(0) },
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = genre.color,
-                        contentColor = Color.White,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp),
-            ) {
-                Text(
-                    "WATCH AGAIN",
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(8.dp),
-                )
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Button(
+                    onClick = {
+                        onAction(ReviewAction.Restart)
+                    },
+                    colors =
+                        ButtonDefaults.elevatedButtonColors().copy(
+                            containerColor = MaterialTheme.colorScheme.onBackground,
+                            contentColor = genre.color,
+                        ),
+                ) {
+                    Text("Recomeçar")
+                }
             }
         }
     }
