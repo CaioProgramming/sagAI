@@ -16,11 +16,12 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.SagaContent
 
 class ReviewIntroPage(
-    private val content: SagaContent,
+    override val content: SagaContent,
 ) : ReviewPage {
     @Composable
     override fun Show(
         modifier: Modifier,
+        canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
@@ -63,6 +64,7 @@ class ReviewIntroPage(
                         ?.content
                         ?.subtitle,
                 genre = genre,
+                canAnimate = canAnimate,
                 modifier = Modifier.align(Alignment.Center),
             )
         }

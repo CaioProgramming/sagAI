@@ -1177,8 +1177,16 @@ private fun SagaDetailInitialView(
                                 AnimatedPlaytimeCounter(
                                     playtimeMs = saga.data.playTimeMs,
                                     label = stringResource(R.string.playtime_title),
-                                    genre = saga.data.genre,
-                                    textStyle = MaterialTheme.typography.headlineSmall,
+                                    textStyle =
+                                        MaterialTheme.typography.headlineSmall.copy(
+                                            fontFamily = saga.data.genre.headerFont(),
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    labelStyle =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                            textAlign = TextAlign.Center,
+                                        ),
                                 )
                             }
 

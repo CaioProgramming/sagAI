@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import android.view.MotionEvent
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -13,8 +12,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,22 +46,17 @@ fun SagaReview(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val genre = content.data.genre
+    val animatedPages = remember { mutableStateOf(setOf<Int>()) }
 
-    // Create the experience using the factory
     val experience =
         remember(content) {
-            ReviewExperienceFactory.createExperience(content) { targetIndex ->
-                coroutineScope.launch {
-                    // Navigation logic
-                }
-            }
+            ReviewExperienceFactory.createExperience(content)
         }
 
     val pages = experience.pages
     val pagerState = rememberPagerState { pages.size }
 
     // Indicator logic
-    pagerState.currentPage
     var paused by remember { mutableStateOf(false) }
     var shareType by remember { mutableStateOf<ShareType?>(null) }
 
@@ -79,8 +73,6 @@ fun SagaReview(
             is ReviewAction.Share -> {
                 shareType = action.shareType
             }
-
-            else -> {}
         }
     }
 
@@ -88,7 +80,6 @@ fun SagaReview(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .pointerInteropFilter { event ->
                     when (event.action) {
                         MotionEvent.ACTION_DOWN -> paused = true
@@ -97,6 +88,8 @@ fun SagaReview(
                     false
                 },
     ) {
+        pages.getOrNull(pagerState.currentPage)?.Background(modifier = Modifier.fillMaxSize())
+
         if (generatingReview) {
             ReviewLoadingPage(
                 genre = genre,
@@ -108,9 +101,25 @@ fun SagaReview(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
             ) { pageIndex ->
-                pages.getOrNull(pageIndex)?.Show(modifier = Modifier.fillMaxSize()) {
-                    coroutineScope.launch {
-                        handleAction(it)
+                val canAnimate = pageIndex == 0 || !animatedPages.value.contains(pageIndex)
+
+                LaunchedEffect(pagerState.currentPage) {
+                    if (pagerState.currentPage == pageIndex && canAnimate) {
+                        animatedPages.value += pageIndex
+                    }
+                }
+
+                Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    pages.getOrNull(pageIndex)?.Show(
+                        modifier = Modifier.fillMaxSize(),
+                        canAnimate = canAnimate,
+                    ) {
+                        coroutineScope.launch {
+                            handleAction(it)
+                        }
                     }
                 }
             }

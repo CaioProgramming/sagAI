@@ -9,12 +9,12 @@ object ReviewPrompts {
     private fun baseObserverModule(genre: Genre) =
         buildString {
             appendLine("You are 'The Observer', a witty, insightful friend who has been watching the player's journey.")
-            appendLine("Your goal is to create a 'Saga Wrapped' experience—punchy, shareable moments.")
+            appendLine("Your goal is to create a personal storytelling retrospective—punchy, shareable moments.")
             appendLine("Tone: Conversational, clever, brief, and a bit cheeky.")
             appendLine("Language Directive: ${GenrePrompts.conversationDirective(genre)}")
             appendLine()
             appendLine(
-                "CRITICAL: Follow the Spotify Wrapped aesthetic: a bold 'title' (max 5-7 words) and a supporting 'subtitle' (max 8-10 words).",
+                "CRITICAL: Follow a bold visual hierarchy: a sharp 'title' (max 5-7 words) and a supporting 'subtitle' (max 8-10 words).",
             )
         }
 
@@ -22,13 +22,11 @@ object ReviewPrompts {
         buildString {
             baseObserverModule(saga.data.genre)
             appendLine()
-            appendLine(SagaPrompts.mainContext(saga))
-            appendLine()
             appendLine("TASK:")
             appendLine(
-                "Generate the 'Introduction' slide. This is a welcoming moment, like a host inviting a guest (Spotify Wrapped style).",
+                "Generate the 'Introduction' slide. This is a welcoming moment, like a host inviting a guest to look back on their journey.",
             )
-            appendLine("DO NOT show stats here. Be engaging, slightly mysterious, and tease the journey we are about to revisit.")
+            appendLine("DO NOT show stats here. Be engaging, slightly mysterious, and tease the tale we are about to revisit.")
             appendLine("Reflect the ${saga.data.genre} tone in your invitation.")
         }
 
@@ -40,7 +38,6 @@ object ReviewPrompts {
     ) = buildString {
         baseObserverModule(saga.data.genre)
         appendLine()
-        appendLine(SagaPrompts.mainContext(saga))
         appendLine("CONTEXT:")
         appendLine("Playtime: $playTime")
         appendLine("Peak Hour: ${mostActiveHour}h")
@@ -60,7 +57,6 @@ object ReviewPrompts {
     ) = buildString {
         baseObserverModule(saga.data.genre)
         appendLine()
-        appendLine(SagaPrompts.mainContext(saga))
         appendLine("CONTEXT:")
         appendLine("Main Character Emotional Tone Rank:")
         appendLine(emotionalRank.joinToString("\n") { "- ${it.first.name}: ${it.second} times" })
@@ -81,7 +77,6 @@ object ReviewPrompts {
     ) = buildString {
         baseObserverModule(saga.data.genre)
         appendLine()
-        appendLine(SagaPrompts.mainContext(saga))
         appendLine("CONTEXT:")
         appendLine("Closest Bonds:")
         appendLine(topCharacters.joinToString("\n") { "- ${it.first}: ${it.second} interactions" })
@@ -95,7 +90,6 @@ object ReviewPrompts {
         buildString {
             baseObserverModule(saga.data.genre)
             appendLine()
-            appendLine(SagaPrompts.mainContext(saga))
             appendLine("CONTEXT:")
             appendLine("Emotional Summary: ${saga.emotionalSummary()}")
             appendLine("World History: ${saga.acts.joinToString("\n") { it.data.title + ": " + it.data.emotionalReview }}")
@@ -109,9 +103,8 @@ object ReviewPrompts {
         buildString {
             baseObserverModule(saga.data.genre)
             appendLine()
-            appendLine(SagaPrompts.mainContext(saga))
             appendLine("CONTEXT:")
-            appendLine("Saga Ending: ${saga.data.endMessage}")
+            appendLine("Closing Message: ${saga.data.endMessage}")
             appendLine()
             appendLine("TASK:")
             appendLine("Generate 'The Conclusion' slide. The final mic drop.")

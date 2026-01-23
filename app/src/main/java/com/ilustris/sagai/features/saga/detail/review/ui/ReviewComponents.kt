@@ -85,6 +85,7 @@ fun DynamicLinework(
     color: Color,
     lineCount: Int,
     strokeWidth: Dp = 1.dp,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     var size by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
@@ -134,21 +135,23 @@ fun DynamicLinework(
 
     val animProgresses =
         remember(paths) {
-            paths.map { Animatable(0f) }
+            paths.map { Animatable(if (enabled) 0f else 1f) }
         }
 
-    LaunchedEffect(paths) {
-        animProgresses.forEachIndexed { index, anim ->
-            launch {
-                delay(index * 300L + Random.nextLong(0, 500))
-                anim.animateTo(
-                    1f,
-                    animationSpec =
-                        tween(
-                            durationMillis = 3000 + Random.nextInt(0, 2000),
-                            easing = EaseOutCubic,
-                        ),
-                )
+    LaunchedEffect(paths, enabled) {
+        if (enabled) {
+            animProgresses.forEachIndexed { index, anim ->
+                launch {
+                    delay(index * 300L + Random.nextLong(0, 500))
+                    anim.animateTo(
+                        1f,
+                        animationSpec =
+                            tween(
+                                durationMillis = 3000 + Random.nextInt(0, 2000),
+                                easing = EaseOutCubic,
+                            ),
+                    )
+                }
             }
         }
     }
@@ -219,6 +222,7 @@ fun ReviewTextDisplay(
     title: String?,
     subtitle: String?,
     genre: Genre,
+    canAnimate: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -239,7 +243,7 @@ fun ReviewTextDisplay(
                     ),
                 textAlign = TextAlign.Center,
                 strokeColor = MaterialTheme.colorScheme.background,
-                modifier = Modifier.reactiveShimmer(true),
+                modifier = Modifier.reactiveShimmer(canAnimate),
             )
         }
 
@@ -297,7 +301,8 @@ fun HeroSummaryCard(
                 .background(
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     RoundedCornerShape(genre.cornerSize()),
-                ).padding(24.dp),
+                )
+                .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {

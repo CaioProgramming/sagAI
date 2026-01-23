@@ -3,6 +3,7 @@ package com.ilustris.sagai.ui.theme
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateIntAsState
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
@@ -193,6 +195,238 @@ fun SimpleTypewriterText(
 }
 
 @Composable
+fun Modifier.levitate(
+    isPlaying: Boolean = true,
+    duration: Duration = 2.seconds,
+    easing: Easing = LinearEasing,
+    yOffset: Float = 20f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "levitate")
+    val translationY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -yOffset,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = easing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "levitateTranslationY",
+    )
+    return this.graphicsLayer(translationY = translationY)
+}
+
+@Composable
+fun Modifier.pulse(
+    isPlaying: Boolean = true,
+    duration: Duration = 1.seconds,
+    easing: Easing = LinearEasing,
+    pulseScale: Float = 1.2f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = pulseScale,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = easing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "pulseScale",
+    )
+    return this.graphicsLayer(scaleX = scale, scaleY = scale)
+}
+
+@Composable
+fun Modifier.shake(
+    isPlaying: Boolean = true,
+    duration: Duration = 0.5.seconds,
+    easing: Easing = LinearEasing,
+    xOffset: Float = 10f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "shake")
+    val translationX by infiniteTransition.animateFloat(
+        initialValue = -xOffset,
+        targetValue = xOffset,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = easing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "shakeTranslationX",
+    )
+    return this.graphicsLayer(translationX = translationX)
+}
+
+@Composable
+fun Modifier.rotate(
+    isPlaying: Boolean = true,
+    duration: Duration = 5.seconds,
+    easing: Easing = LinearEasing,
+    degrees: Float = 360f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "rotate")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = degrees,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = easing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "rotateRotationZ",
+    )
+    return this.graphicsLayer(rotationZ = rotation)
+}
+
+@Composable
+fun Modifier.blink(
+    isPlaying: Boolean = true,
+    duration: Duration = 1.seconds,
+    easing: Easing = LinearEasing,
+    minAlpha: Float = 0.3f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "blink")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = minAlpha,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = easing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "blinkAlpha",
+    )
+    return this.graphicsLayer(alpha = alpha)
+}
+
+@Composable
+fun Modifier.glow(
+    color: Color,
+    isPlaying: Boolean = true,
+    duration: Duration = 2.seconds,
+    maxAlpha: Float = 0.5f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "glow")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = maxAlpha,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "glowAlpha",
+    )
+
+    return this.drawBehind {
+        drawCircle(
+            color = color.copy(alpha = alpha),
+            radius = size.maxDimension / 1.5f,
+            center = center,
+        )
+    }
+}
+
+@Composable
+fun Modifier.jiggle(
+    isPlaying: Boolean = true,
+    duration: Duration = 0.4.seconds,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "jiggle")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "jiggleRotation",
+    )
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "jiggleScale",
+    )
+    return this.graphicsLayer(rotationZ = rotation, scaleX = scale, scaleY = scale)
+}
+
+@Composable
+fun Modifier.swing(
+    isPlaying: Boolean = true,
+    duration: Duration = 2.seconds,
+    degrees: Float = 10f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "swing")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -degrees,
+        targetValue = degrees,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "swingRotation",
+    )
+    return this.graphicsLayer(rotationZ = rotation, transformOrigin = TransformOrigin(0.5f, 0f))
+}
+
+@Composable
+fun Modifier.bounce(
+    isPlaying: Boolean = true,
+    duration: Duration = 0.8.seconds,
+    yOffset: Float = 30f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "bounce")
+    val translationY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -yOffset,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseInBounce),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "bounceTranslationY",
+    )
+    return this.graphicsLayer(translationY = translationY)
+}
+
+@Composable
+fun Modifier.tilt(
+    isPlaying: Boolean = true,
+    duration: Duration = 2.seconds,
+    degrees: Float = 5f,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "tilt")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = -degrees,
+        targetValue = degrees,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "tiltRotation",
+    )
+    return this.graphicsLayer(rotationZ = rotation)
+}
+
+@Composable
 fun Modifier.zoomAnimation(): Modifier {
     val infiniteTransition = rememberInfiniteTransition(label = "infinite zoom")
     val scale by infiniteTransition.animateFloat(
@@ -211,8 +445,7 @@ fun Modifier.zoomAnimation(): Modifier {
             scaleX = scale,
             scaleY = scale,
             transformOrigin = TransformOrigin.Center,
-        )
-        .clipToBounds()
+        ).clipToBounds()
 }
 
 @Preview(showBackground = true)

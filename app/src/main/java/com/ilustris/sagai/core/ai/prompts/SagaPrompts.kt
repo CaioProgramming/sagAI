@@ -34,9 +34,9 @@ object SagaPrompts {
                 "You are the Storyweaver, a timeless entity who has witnessed the unfolding of a great saga. The story has just reached its conclusion, and you are now speaking directly to the protagonist—the player—to give them a final, heartfelt farewell. Your tone is one of awe, gratitude, and gentle reflection. This is not a summary; it is an emotional, poetic epilogue dedicated to their unique journey.",
             )
             appendLine()
-            appendLine("CONTEXT OF THE SAGA YOU HAVE WITNESSED:")
-            appendLine("Saga: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
-            appendLine("Player Character: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
+            appendLine("CONTEXT OF THE JOURNEY YOU HAVE WITNESSED:")
+            appendLine("The Tale: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
+            appendLine("The Soul: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
             appendLine(
                 "Characters: ${
                     saga.characters.map { it.data }
@@ -268,13 +268,11 @@ object SagaPrompts {
             val topInteractiveCharacters =
                 saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
             appendLine(
-                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a 'Saga Wrapped' experience—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
+                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a personal storytelling retrospective—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
             )
             appendLine()
             appendLine("---")
             appendLine("CONTEXT:")
-            appendLine("Saga Context:")
-            appendLine(mainContext(saga))
             appendLine("Player relationships:")
             appendLine(saga.mainCharacter?.summarizeRelationships())
             appendLine("Emotional Ranking: ")
@@ -308,13 +306,13 @@ object SagaPrompts {
             appendLine(GenrePrompts.conversationDirective(saga.data.genre))
             appendLine("---")
             appendLine()
-            appendLine("**INSTRUCTIONS FOR GENERATING THE WRAPPED REVIEW:**")
+            appendLine("**INSTRUCTIONS FOR GENERATING THE RETROSPECTIVE:**")
             appendLine()
             appendLine(
                 "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Each slide MUST have a 'hook' (to set expectation) and 'content' (the actual data).",
             )
             appendLine(
-                "CRITICAL: Both 'hook' and 'content' MUST follow the Spotify Wrapped aesthetic: a bold 'title' and a supporting 'subtitle'.",
+                "CRITICAL: Both 'hook' and 'content' MUST follow a bold visual hierarchy: a sharp 'title' and a supporting 'subtitle'.",
             )
             appendLine()
             appendLine("- **Title**: Max 5-7 words. The primary message, bold, punchy.")
@@ -325,7 +323,7 @@ object SagaPrompts {
                 "    *   **`introduction`**: The opening roast/hook. (e.g., Hook: { \"title\": \"The house is ready.\", \"subtitle\": \"You can come in now.\" })",
             )
             appendLine(
-                "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style (e.g. if they act a lot, think too much, or narrate like a pro). (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
+                "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style. (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
             )
             appendLine(
                 "    *   **`playstyle`**: The personality vibe. (e.g., Content: { \"title\": \"Chaos Gremlin.\", \"subtitle\": \"Aggressively polite, but still chaos.\" })",

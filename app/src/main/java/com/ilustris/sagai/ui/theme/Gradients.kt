@@ -216,6 +216,15 @@ fun Genre.gradient(
 
 fun Color.solidGradient() = SolidColor(this)
 
+fun Color.shimmerize() =
+    listOf(
+        Color.Transparent,
+        this.copy(alpha = .2f),
+        this.copy(alpha = .5f),
+        this,
+        Color.Transparent,
+    )
+
 enum class FadeDirection {
     TOP_TO_BOTTOM,
     BOTTOM_TO_TOP,

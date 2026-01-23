@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.animations.glitch
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.headerFont
@@ -175,7 +176,7 @@ fun Genre.stylisedText(
             val palette = this.colorPalette()
             WordArtText(
                 text = text,
-                modifier = modifier,
+                modifier = modifier.glitch(),
                 fontSize = fontSize,
                 fontFamily = this.headerFont(),
                 topColor = color,

@@ -8,15 +8,16 @@ import androidx.compose.ui.Modifier
 import com.ilustris.sagai.features.home.data.model.SagaContent
 
 class ReviewJourneyPage(
-    private val content: SagaContent,
+    override val content: SagaContent,
 ) : ReviewPage {
     @Composable
     override fun Show(
         modifier: Modifier,
+        canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            DynamicLinework(content.data.genre.color, 20)
+            DynamicLinework(content.data.genre.color, 20, enabled = canAnimate)
             ReviewTextDisplay(
                 title =
                     content.data.review
@@ -28,6 +29,7 @@ class ReviewJourneyPage(
                         ?.actsInsight
                         ?.content
                         ?.subtitle,
+                canAnimate = canAnimate,
                 genre = content.data.genre,
             )
         }

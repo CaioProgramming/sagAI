@@ -34,7 +34,7 @@ fun VibeShapeDrawing(
     strokeWidth: Dp = 2.dp,
     showEntranceLine: Boolean = true,
     showExitLine: Boolean = true,
-    organicNoise: Float = 6f,
+    onFinishDraw: () -> Unit = {},
 ) {
     val targetShape = remember(emotionalTone) { emotionalTone.starShape() }
     val animProgress = remember { Animatable(0f) }
@@ -155,5 +155,11 @@ fun VibeShapeDrawing(
             color = color,
             style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round),
         )
+    }
+
+    LaunchedEffect(animProgress.value) {
+        if (animProgress.value == 1f) {
+            onFinishDraw()
+        }
     }
 }

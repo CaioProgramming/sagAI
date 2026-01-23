@@ -27,12 +27,13 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 
 class ReviewSummaryPage(
-    private val content: SagaContent,
+    override val content: SagaContent,
     private val onNavigate: (Int) -> Unit,
 ) : ReviewPage {
     @Composable
     override fun Show(
         modifier: Modifier,
+        canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
