@@ -36,6 +36,7 @@ import kotlin.time.Duration.Companion.seconds
 class ReviewHookPage(
     override val content: SagaContent,
     private val hook: ReviewText,
+    override val pageType: ReviewPageType = ReviewPageType.HOOK,
 ) : ReviewPage {
     @Composable
     override fun Show(
@@ -47,7 +48,7 @@ class ReviewHookPage(
         var showContent by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
-            delay(3.seconds)
+            delay(2.seconds)
             showContent = true
         }
 

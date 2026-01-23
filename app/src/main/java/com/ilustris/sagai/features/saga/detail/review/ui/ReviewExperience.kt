@@ -16,4 +16,8 @@ sealed class ReviewAction {
     data object Finish : ReviewAction()
 
     data object Restart : ReviewAction()
+
+    data class Navigate(
+        val pageType: ReviewPageType,
+    ) : ReviewAction()
 }

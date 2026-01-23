@@ -1,10 +1,21 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,12 +50,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,17 +75,20 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun StoryProgressIndicator(
@@ -342,7 +358,10 @@ fun HeroSummaryCard(
                 contentScale = ContentScale.Crop,
                 modifier =
                     Modifier
-                        .size(100.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .clip(shape)
+                        .border(2.dp, MaterialTheme.colorScheme.background, shape)
                         .effectForGenre(genre),
             )
         }
@@ -362,8 +381,7 @@ fun HeroSummaryCard(
 
         Row(
             Modifier
-                .fillMaxWidth()
-                .weight(1f),
+                .fillMaxWidth(),
         ) {
             Column(
                 Modifier
@@ -441,8 +459,7 @@ fun HeroSummaryCard(
 
         Row(
             Modifier
-                .fillMaxWidth()
-                .weight(1f),
+                .fillMaxWidth(),
         ) {
             Column(
                 modifier =
@@ -520,7 +537,7 @@ fun HeroSummaryCard(
                     .tint(genre.color),
             modifier =
                 Modifier
-                    .size(64.dp)
+                    .size(32.dp)
                     .reactiveShimmer(true),
         )
     }
@@ -546,15 +563,29 @@ fun DynamicCard(
                     .align(Alignment.Center)
                     .padding(8.dp),
         ) {
-            Text(
-                text = title,
-                style = titleStyle,
-            )
+            AnimatedContent(title, transitionSpec = {
+                fadeIn(animationSpec = tween(500)) +
+                    slideInVertically { it } togetherWith
+                    fadeOut(animationSpec = tween(500)) +
+                    slideOutVertically { -it }
+            }) {
+                Text(
+                    text = title,
+                    style = titleStyle,
+                )
+            }
 
-            Text(
-                text = subtitle,
-                style = subtitleStyle,
-            )
+            AnimatedContent(subtitle, transitionSpec = {
+                fadeIn(animationSpec = tween(500)) +
+                    slideInVertically { it } togetherWith
+                    fadeOut(animationSpec = tween(500)) +
+                    slideOutVertically { -it }
+            }) {
+                Text(
+                    text = subtitle,
+                    style = subtitleStyle,
+                )
+            }
         }
     }
 }
@@ -712,11 +743,11 @@ fun PopIn(
         visible = true
     }
 
-    androidx.compose.animation.AnimatedVisibility(
+    AnimatedVisibility(
         visible = visible,
         enter =
-            androidx.compose.animation.fadeIn(tween(500)) +
-                androidx.compose.animation.scaleIn(
+            fadeIn(tween(500)) +
+                scaleIn(
                     tween(500, easing = androidx.compose.animation.core.EaseOutBack),
                     initialScale = 0.5f,
                 ),
@@ -861,6 +892,130 @@ fun ArchetypeMiniCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+    }
+}
+
+@Composable
+fun ReviewTopCharacterContent(
+    character: Character,
+    messageCount: Int,
+    genre: Genre,
+    subtitle: String?,
+    imageModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
+    onAnimationFinished: () -> Unit = {},
+) {
+    var showContent by remember { mutableStateOf(false) }
+
+    val heightFill by animateFloatAsState(
+        targetValue = if (showContent) 0.5f else 1f,
+    )
+
+    val imagePadding by animateDpAsState(
+        targetValue = if (showContent) 32.dp else 0.dp,
+    )
+
+    LaunchedEffect(Unit) {
+        delay(3.seconds)
+        showContent = true
+    }
+
+    Column(
+        modifier
+            .fillMaxSize()
+            .animateContentSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        AsyncImage(
+            model = character.image,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier =
+                imageModifier
+                    .fillMaxWidth(1f)
+                    .fillMaxHeight(heightFill)
+                    .padding(imagePadding)
+                    .clip(genre.bubble(isNarrator = true))
+                    .border(2.dp, genre.color, genre.bubble(isNarrator = true))
+                    .effectForGenre(genre),
+        )
+
+        subtitle?.let {
+            AnimatedVisibility(
+                showContent,
+                enter =
+                    fadeIn(tween(500, delayMillis = 700)) +
+                        scaleIn(tween(1500, easing = EaseIn)),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+                Text(
+                    subtitle,
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            showContent,
+            enter =
+                fadeIn(tween(500)) +
+                    scaleIn(tween(1000, easing = EaseIn)),
+            exit = slideOutVertically { it } + fadeOut(),
+        ) {
+            Text(
+                character.name,
+                style =
+                    MaterialTheme.typography.displayMedium.copy(
+                        fontFamily = genre.headerFont(),
+                        shadow =
+                            Shadow(
+                                (
+                                    character.hexColor.hexToColor()
+                                        ?: genre.color
+                                ),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 10f,
+                            ),
+                    ),
+            )
+        }
+
+        AnimatedVisibility(
+            showContent,
+            enter =
+                fadeIn(tween(500, delayMillis = 1000)) +
+                    slideInVertically(tween(1500, easing = EaseIn)) { -it },
+            exit = slideOutVertically { it } + fadeOut(),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CounterText(
+                    messageCount,
+                    onAnimationFinished = {
+                        onAnimationFinished()
+                    },
+                    textStyle =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            fontWeight = FontWeight.Bold,
+                        ),
+                )
+
+                Text(
+                    stringResource(R.string.messages_label),
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            fontWeight = FontWeight.Medium,
+                        ),
+                )
+            }
         }
     }
 }

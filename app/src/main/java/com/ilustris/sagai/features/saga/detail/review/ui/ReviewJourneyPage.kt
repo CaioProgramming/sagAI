@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 class ReviewJourneyPage(
@@ -53,6 +55,7 @@ class ReviewJourneyPage(
         var showImages by remember {
             mutableStateOf(!canAnimate)
         }
+        val coroutineScope = rememberCoroutineScope()
 
         var showShareButton by remember {
             mutableStateOf(false)
@@ -88,9 +91,6 @@ class ReviewJourneyPage(
                             ),
                         duration = 2.seconds,
                         easing = FastOutSlowInEasing,
-                        onAnimationFinished = {
-                            showImages = true
-                        },
                     )
                 }
 
@@ -117,6 +117,12 @@ class ReviewJourneyPage(
                                 textAlign = TextAlign.Center,
                             ),
                         duration = 5.seconds,
+                        onAnimationFinished = {
+                            coroutineScope.launch {
+                                delay(2.seconds)
+                                showImages = true
+                            }
+                        },
                     )
                 }
 

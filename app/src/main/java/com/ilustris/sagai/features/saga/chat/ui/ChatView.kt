@@ -615,8 +615,7 @@ fun ChatContent(
                 Modifier
                     .padding(
                         top = padding.calculateTopPadding(),
-                    )
-                    .fillMaxSize(),
+                    ).fillMaxSize(),
             ) {
                 rememberCoroutineScope()
                 val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -691,8 +690,7 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }
-                            .padding(vertical = padding.calculateBottomPadding())
+                            }.padding(vertical = padding.calculateBottomPadding())
                             .animateContentSize(),
                     enter = slideInVertically(),
                     exit = slideOutVertically { it },
@@ -745,8 +743,7 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }
-                            .padding(
+                            }.padding(
                                 bottom = padding.calculateBottomPadding() + 16.dp,
                                 start = 16.dp,
                                 end = 16.dp,
@@ -865,8 +862,7 @@ fun ChatContent(
                                         .clip(CircleShape)
                                         .clickable {
                                             onAction(ChatUiAction.ShowObjective)
-                                        }
-                                        .gradientFill(
+                                        }.gradientFill(
                                             progressiveBrush(
                                                 content.data.genre.color,
                                                 progress,
@@ -1233,10 +1229,9 @@ fun ChatList(
                     saga,
                     Modifier
                         .padding(16.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(150.dp),
                     onClick = { onAction(ChatUiAction.OpenSagaDetails) },
-                    originalBitmap = originalBitmap,
-                    segmentedBitmap = segmentedBitmap,
                 )
             }
 
@@ -1547,8 +1542,7 @@ fun CharactersTopIcons(
                         )
                         .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

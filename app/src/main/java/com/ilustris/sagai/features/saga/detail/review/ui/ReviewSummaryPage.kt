@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,16 +26,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 
 class ReviewSummaryPage(
     override val content: SagaContent,
-    private val onNavigate: (ReviewPageType) -> Unit,
+    override val pageType: ReviewPageType = ReviewPageType.SUMMARY,
 ) : ReviewPage {
-    override val pageType: ReviewPageType = ReviewPageType.SUMMARY
-
     @Composable
     override fun Show(
         modifier: Modifier,
@@ -41,7 +42,18 @@ class ReviewSummaryPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
-        content.data.review ?: return
+        val review = content.data.review ?: return
+
+        val stageTypes =
+            remember(review) {
+                listOfNotNull(
+                    if (review.expressiveness != null) ReviewPageType.EXPRESSIVENESS else null,
+                    if (review.playstyle != null) ReviewPageType.PLAYSTYLE else null,
+                    if (review.topCharacters != null) ReviewPageType.CHARACTERS else null,
+                    if (review.actsInsight != null) ReviewPageType.JOURNEY else null,
+                    if (review.conclusion != null) ReviewPageType.CONCLUSION else null,
+                )
+            }
 
         Column(
             modifier =
@@ -59,7 +71,7 @@ class ReviewSummaryPage(
                         fontWeight = FontWeight.Black,
                     ),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(16.dp),
             )
 
             LazyHorizontalGrid(
@@ -75,63 +87,107 @@ class ReviewSummaryPage(
                             Modifier
                                 .aspectRatio(0.55f)
                                 .clickable {
+                                    onAction(ReviewAction.Navigate(ReviewPageType.INTRO))
                                 },
                     )
                 }
 
-                item {
-                    DynamicCard(
-                        title = "Vibe do Herói",
-                        subtitle = "Sua marca emocional",
-                        titleStyle =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.headerFont(),
-                                fontWeight = FontWeight.Black,
-                                textAlign = TextAlign.Center,
-                            ),
-                        subtitleStyle =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = genre.bodyFont(),
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                            ),
-                        lineColor = MaterialTheme.colorScheme.onBackground,
-                        modifier =
-                            Modifier
-                                .aspectRatio(1.1f)
-                                .clip(genre.bubble(isNarrator = true))
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    genre.bubble(isNarrator = true),
-                                ),
-                    )
-                }
+                items(stageTypes) { stage ->
+                    val (title, subtitle) =
+                        when (stage) {
+                            ReviewPageType.EXPRESSIVENESS -> {
+                                "Sua Vibe" to (
+                                    review.expressiveness?.content?.title
+                                        ?: "Sua marca emocional"
+                                )
+                            }
 
-                item {
+                            ReviewPageType.PLAYSTYLE -> {
+                                "Seu Estilo" to (
+                                    review.playstyle?.content?.title
+                                        ?: "Como você agiu"
+                                )
+                            }
+
+                            ReviewPageType.CHARACTERS -> {
+                                "O Elenco" to (
+                                    review.topCharacters?.content?.title
+                                        ?: "Seu Squad"
+                                )
+                            }
+
+                            ReviewPageType.JOURNEY -> {
+                                "A Jornada" to (
+                                    review.actsInsight?.content?.title
+                                        ?: "O caminho que fizemos"
+                                )
+                            }
+
+                            ReviewPageType.CONCLUSION -> {
+                                "O Legado" to (
+                                    review.conclusion?.content?.title
+                                        ?: "O que ficou"
+                                )
+                            }
+
+                            else -> {
+                                "" to ""
+                            }
+                        }
+
+                    val colorCombo =
+                        listOf(
+                            Triple(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                MaterialTheme.colorScheme.onSurface,
+                                MaterialTheme.colorScheme.onSurface,
+                            ),
+                            Triple(
+                                genre.color,
+                                genre.iconColor,
+                                MaterialTheme.colorScheme.background,
+                            ),
+                            Triple(
+                                MaterialTheme.colorScheme.onBackground,
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.background,
+                            ),
+                            Triple(
+                                genre.colorPalette().last(),
+                                genre.iconColor,
+                                MaterialTheme.colorScheme.onBackground,
+                            ),
+                        ).random()
+
                     DynamicCard(
-                        title = "Tempo de Jogo",
-                        subtitle = "Sua dedicação",
+                        title = title,
+                        subtitle = subtitle,
                         titleStyle =
                             MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = genre.headerFont(),
                                 fontWeight = FontWeight.Black,
                                 textAlign = TextAlign.Center,
+                                color = colorCombo.second,
                             ),
                         subtitleStyle =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = genre.bodyFont(),
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center,
+                                color = colorCombo.second,
                             ),
-                        lineColor = MaterialTheme.colorScheme.onBackground,
+                        lineColor = colorCombo.third,
                         modifier =
                             Modifier
                                 .aspectRatio(1.1f)
                                 .clip(genre.bubble(isNarrator = true))
                                 .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    colorCombo.first,
                                     genre.bubble(isNarrator = true),
-                                ),
+                                )
+                                .clickable {
+                                    onAction(ReviewAction.Navigate(stage))
+                                },
                     )
                 }
             }

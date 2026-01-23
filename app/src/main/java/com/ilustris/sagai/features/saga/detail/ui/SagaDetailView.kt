@@ -1165,9 +1165,8 @@ private fun SagaDetailInitialView(
                                         modifier =
                                             Modifier
                                                 .padding(16.dp)
-                                                .fillMaxWidth(),
-                                        originalBitmap = originalBitmap,
-                                        segmentedBitmap = segmentedBitmap,
+                                                .fillMaxWidth()
+                                                .height(150.dp),
                                         onClick = { openReview() },
                                     )
                                 }

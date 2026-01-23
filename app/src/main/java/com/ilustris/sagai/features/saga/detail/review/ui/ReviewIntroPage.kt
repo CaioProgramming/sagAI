@@ -17,6 +17,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 
 class ReviewIntroPage(
     override val content: SagaContent,
+    override val pageType: ReviewPageType = ReviewPageType.INTRO,
 ) : ReviewPage {
     @Composable
     override fun Show(

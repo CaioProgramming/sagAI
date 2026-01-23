@@ -4,7 +4,5 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 
 object ReviewExperienceFactory {
     fun createExperience(
-        content: SagaContent,
-        onNavigate: (Int) -> Unit = {},
-    ): ReviewExperience = DefaultReviewExperience(content, onNavigate)
+        content: SagaContent,): ReviewExperience = DefaultReviewExperience(content)
 }

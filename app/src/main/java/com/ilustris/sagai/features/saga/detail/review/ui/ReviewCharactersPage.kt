@@ -1,14 +1,12 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -36,27 +34,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -99,6 +89,13 @@ class ReviewCharactersPage(
 
         val coroutineScope = rememberCoroutineScope()
 
+        LaunchedEffect(Unit) {
+            coroutineScope.launch {
+                delay(2.seconds)
+                showTopCharacterName = true
+            }
+        }
+
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             SharedTransitionLayout {
                 AnimatedContent(showCharacters, transitionSpec = {
@@ -106,90 +103,24 @@ class ReviewCharactersPage(
                 }) { showList ->
                     if (!showList) {
                         topCharacters.firstOrNull()?.let {
-                            if (canAnimate) {
-                                LaunchedEffect(Unit) {
+                            ReviewTopCharacterContent(
+                                it.first,
+                                it.second,
+                                genre,
+                                stage.content?.subtitle,
+                                imageModifier =
+                                    Modifier
+                                        .sharedElement(
+                                            rememberSharedContentState("character-${it.first.id}"),
+                                            this@AnimatedContent,
+                                        ),
+                                onAnimationFinished = {
                                     coroutineScope.launch {
                                         delay(2.seconds)
-                                        showTopCharacterName = true
+                                        showCharacters = true
                                     }
-                                }
-                            }
-                            Box(Modifier.fillMaxSize()) {
-                                AsyncImage(
-                                    model = it.first.image,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .sharedElement(
-                                                rememberSharedContentState("character-${it.first.id}"),
-                                                this@AnimatedContent,
-                                            ),
-                                )
-
-                                AnimatedVisibility(
-                                    showTopCharacterName,
-                                    modifier =
-                                        Modifier.align(Alignment.BottomCenter),
-                                    enter =
-                                        fadeIn(tween(500)) +
-                                            scaleIn(tween(1500, easing = EaseIn)),
-                                    exit = slideOutVertically { it } + fadeOut(),
-                                ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.padding(16.dp),
-                                    ) {
-                                        Text(
-                                            it.first.name,
-                                            style =
-                                                MaterialTheme.typography.displayMedium.copy(
-                                                    fontFamily = genre.headerFont(),
-                                                    shadow =
-                                                        Shadow(
-                                                            (
-                                                                it.first.hexColor.hexToColor()
-                                                                    ?: genre.color
-                                                            ),
-                                                            offset = Offset(2f, 2f),
-                                                            blurRadius = 10f,
-                                                        ),
-                                                ),
-                                        )
-
-                                        CounterText(
-                                            it.second,
-                                            onAnimationFinished = {
-                                                coroutineScope.launch {
-                                                    delay(5.seconds)
-                                                    showCharacters = true
-                                                }
-                                            },
-                                            textStyle =
-                                                MaterialTheme.typography.headlineMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    fontWeight = FontWeight.Bold,
-                                                ),
-                                        )
-
-                                        Text(stringResource(R.string.messages_label))
-
-                                        stage.content?.subtitle?.let { subtitle ->
-                                            Text(
-                                                subtitle,
-                                                style =
-                                                    MaterialTheme.typography.labelMedium.copy(
-                                                        fontFamily = genre.bodyFont(),
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                                modifier = Modifier.padding(top = 16.dp),
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                                },
+                            )
                         }
                     } else {
                         LazyColumn(
@@ -198,11 +129,11 @@ class ReviewCharactersPage(
                                 .fillMaxWidth()
                                 .animateContentSize(
                                     tween(1000, easing = EaseIn),
-                                )
-                                .animateEnterExit(
+                                ).animateEnterExit(
                                     enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
                                     exit = slideOutVertically { it },
                                 ),
+                            userScrollEnabled = false,
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
                         ) {
@@ -218,9 +149,10 @@ class ReviewCharactersPage(
                                             ),
                                         modifier =
                                             Modifier
+                                                .padding(8.dp)
                                                 .background(
                                                     genre.color,
-                                                    shape = genre.shape(),
+                                                    shape = genre.bubble(isNarrator = true),
                                                 ).padding(8.dp),
                                     )
                                 }
@@ -230,9 +162,10 @@ class ReviewCharactersPage(
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
                                 ) {
                                     val position = topCharacters.indexOf(character) + 1
                                     Text(
@@ -250,7 +183,7 @@ class ReviewCharactersPage(
                                         borderSize = 2.dp,
                                         modifier =
                                             Modifier
-                                                .size(80.dp)
+                                                .size(64.dp)
                                                 .sharedElement(
                                                     rememberSharedContentState("character-${character.first.id}"),
                                                     this@AnimatedContent,

@@ -207,6 +207,8 @@ class ChapterUseCaseImpl
                                                 "firstSceneId",
                                                 "carriedItems",
                                                 "smartZoom",
+                                                "knowledge",
+                                                "nicknames",
                                             ),
                                         ),
                                     )
@@ -218,7 +220,7 @@ class ChapterUseCaseImpl
                                             appendLine(
                                                 saga.mainCharacter!!
                                                     .findRelationship(it!!.data.id)
-                                                    ?.summarizeRelation(),
+                                                    ?.summarizeRelation(1),
                                             )
                                         }
                                 },

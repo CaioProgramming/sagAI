@@ -14,7 +14,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,14 +54,7 @@ fun SagaReview(
 
     val experience =
         remember(content) {
-            ReviewExperienceFactory.createExperience(content) { pageType ->
-                val pageIndex = pages.indexOfFirst { it.pageType == pageType }
-                if (pageIndex != -1) {
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(pageIndex)
-                    }
-                }
-            }
+            ReviewExperienceFactory.createExperience(content)
         }
 
     val pages = experience.pages
@@ -74,16 +66,23 @@ fun SagaReview(
 
     suspend fun handleAction(action: ReviewAction) {
         when (action) {
-            ReviewAction.Restart -> {
-                pagerState.animateScrollToPage(0)
-            }
-
             ReviewAction.Continue -> {
                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
             }
 
             ReviewAction.Finish -> {
                 requestDismiss()
+            }
+
+            ReviewAction.Restart -> {
+                pagerState.animateScrollToPage(0)
+            }
+
+            is ReviewAction.Navigate -> {
+                val pageIndex = pages.indexOfFirst { it.pageType == action.pageType }
+                if (pageIndex != -1) {
+                    pagerState.animateScrollToPage(pageIndex)
+                }
             }
 
             is ReviewAction.Share -> {
@@ -118,12 +117,6 @@ fun SagaReview(
                 modifier = Modifier.fillMaxSize(),
             ) { pageIndex ->
                 val canAnimate = pageIndex == 0 || !animatedPages.value.contains(pageIndex)
-
-                LaunchedEffect(pagerState.currentPage) {
-                    if (pagerState.currentPage == pageIndex && canAnimate) {
-                        animatedPages.value += pageIndex
-                    }
-                }
 
                 Box(
                     Modifier.fillMaxSize(),

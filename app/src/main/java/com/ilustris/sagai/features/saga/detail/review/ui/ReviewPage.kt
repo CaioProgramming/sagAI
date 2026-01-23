@@ -9,6 +9,7 @@ import kotlin.random.Random
 
 interface ReviewPage {
     val content: SagaContent
+    val pageType: ReviewPageType
 
     @Composable
     fun Show(
