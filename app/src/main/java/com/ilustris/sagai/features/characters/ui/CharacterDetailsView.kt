@@ -422,11 +422,7 @@ private fun CharacterDetailsLoaded(
                                         character.nicknames?.let {
                                             if (it.isNotEmpty()) {
                                                 Text(
-                                                    text = "aka: ${
-                                                        it.joinToString(
-                                                            ", ",
-                                                        )
-                                                    }",
+                                                    text = stringResource(R.string.aka_label, it.joinToString(", ")),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = genre.bodyFont(),
@@ -515,11 +511,7 @@ private fun CharacterDetailsLoaded(
                                         character.nicknames?.let {
                                             if (it.isNotEmpty()) {
                                                 Text(
-                                                    text = "aka: ${
-                                                        it.joinToString(
-                                                            ", ",
-                                                        )
-                                                    }",
+                                                    text = stringResource(R.string.aka_label, it.joinToString(", ")),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = genre.bodyFont(),

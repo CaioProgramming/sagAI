@@ -31,8 +31,10 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
 import android.graphics.RenderEffect as FrameworkRenderEffect
@@ -122,7 +124,7 @@ fun BlurredGlowContainerPreview() {
                         .padding(20.dp),
             ) {
                 Text(
-                    "Container Preview",
+                    stringResource(R.string.container_preview_title),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 10.dp),
                 )
@@ -144,10 +146,13 @@ fun BlurredGlowContainerPreview() {
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("Animated Glow", style = MaterialTheme.typography.headlineSmall)
-                            Text("This card has a blurred glow that animates behind it.")
+                            Text(
+                                stringResource(R.string.animated_glow_title),
+                                style = MaterialTheme.typography.headlineSmall,
+                            )
+                            Text(stringResource(R.string.animated_glow_description))
                             Button(onClick = { /*TODO*/ }) {
-                                Text("Click Me")
+                                Text(stringResource(R.string.click_me_button))
                             }
                         }
                     }
@@ -164,11 +169,14 @@ fun BlurredGlowContainerPreview() {
                     shape = RoundedCornerShape(8.dp), // Pass shape to container
                 ) {
                     Text(
-                        "Static Radial Glow",
+                        stringResource(R.string.static_radial_glow_text),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier =
                             Modifier
-                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f), RoundedCornerShape(8.dp)) // Text background has its own shape
+                                .background(
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                    RoundedCornerShape(8.dp),
+                                ) // Text background has its own shape
                                 .padding(horizontal = 24.dp, vertical = 12.dp),
                     )
                 }
@@ -189,7 +197,7 @@ fun BlurredGlowContainerPreview() {
                         // Padding inside the circle
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("Circle", color = MaterialTheme.colorScheme.onPrimary)
+                        Text(stringResource(R.string.circle_text), color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }

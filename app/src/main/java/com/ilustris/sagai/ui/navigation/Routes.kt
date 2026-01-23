@@ -54,7 +54,7 @@ enum class Routes(
         SharedTransitionScope,
         SnackbarHostState,
     ) -> Unit = { nav, padding, transitionScope, snackState ->
-        Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
+        Text(stringResource(R.string.sample_view_for_route), modifier = Modifier.padding(16.dp))
     },
     val topBarContent: (@Composable (NavHostController) -> Unit)? = null,
     val showBottomNav: Boolean = true,

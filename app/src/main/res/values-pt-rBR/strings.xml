@@ -347,4 +347,21 @@
     <string name="notification_milestone_content">Você alcançou um novo marco!</string>
     <string name="playtime_title">Tempo de Jogo</string>
     <string name="your_playthrough_title">Sua jornada</string>
+
+    <!-- BlurredGlowContainer Preview -->
+    <string name="container_preview_title">Prévia do Container</string>
+    <string name="animated_glow_title">Brilho Animado</string>
+    <string name="animated_glow_description">Este cartão tem um brilho desfocado que anima atrás dele.</string>
+    <string name="click_me_button">Clique em mim</string>
+    <string name="static_radial_glow_text">Brilho Radial Estático</string>
+    <string name="circle_text">Círculo</string>
+
+    <!-- Routes -->
+    <string name="sample_view_for_route">Vista de exemplo para a rota </string>
+
+    <!-- SettingsView -->
+    <string name="import_saga_description">Você pode importar sagas exportadas e recuperar seu histórico.</string>
+
+    <!-- CharacterDetailsView -->
+    <string name="aka_label">vulgo: %s</string>
 </resources>

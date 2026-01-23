@@ -375,4 +375,21 @@
     <string name="notification_milestone_content">You reached a new milestone!</string>
     <string name="smart_notification_fallback">I was thinking about our story, let\'s continue when you have time.</string>
     <string name="notification_progress_subtext">%1$d%% • Act %2$s of %3$s</string>
+
+    <!-- BlurredGlowContainer Preview -->
+    <string name="container_preview_title">Container Preview</string>
+    <string name="animated_glow_title">Animated Glow</string>
+    <string name="animated_glow_description">This card has a blurred glow that animates behind it.</string>
+    <string name="click_me_button">Click Me</string>
+    <string name="static_radial_glow_text">Static Radial Glow</string>
+    <string name="circle_text">Circle</string>
+
+    <!-- Routes -->
+    <string name="sample_view_for_route">Sample View for Route </string>
+
+    <!-- SettingsView -->
+    <string name="import_saga_description">You can import exported sagas and recover your history.</string>
+
+    <!-- CharacterDetailsView -->
+    <string name="aka_label">aka: %s</string>
 </resources>
