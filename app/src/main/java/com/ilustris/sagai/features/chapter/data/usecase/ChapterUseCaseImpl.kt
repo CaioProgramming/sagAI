@@ -195,9 +195,11 @@ class ChapterUseCaseImpl
                             context =
                                 buildString {
                                     appendLine("### MANDATORY MULTI-CHARACTER SCENE")
-                                    appendLine(
-                                        "The following characters are ESSENTIAL to this scene. You MUST integrate ALL of them into the artwork.",
-                                    )
+                                    appendLine("The following characters are ESSENTIAL to this scene.")
+                                    append("[")
+                                    appendLine(characters.filterNotNull().joinToString { it.data.name })
+                                    append("]")
+                                    appendLine("You MUST integrate ALL of them into the artwork.")
                                     appendLine("Strictly respect their descriptions, physical traits, and relative positions.")
                                     appendLine()
                                     appendLine("#### SUBJECTS DETAILS:")
@@ -224,10 +226,11 @@ class ChapterUseCaseImpl
                                         .filter {
                                             it?.data?.id != saga.mainCharacter?.data?.id
                                         }.forEach {
+                                            val character = it ?: return@forEach
                                             appendLine(
-                                                "• ${saga.mainCharacter!!.data.name} & ${it!!.data.name}: ${
+                                                "• ${saga.mainCharacter?.data?.name} & ${character.data.name}: ${
                                                     saga.mainCharacter
-                                                        .findRelationship(it.data.id)
+                                                        ?.findRelationship(character.data.id)
                                                         ?.summarizeRelation(1)
                                                 }",
                                             )

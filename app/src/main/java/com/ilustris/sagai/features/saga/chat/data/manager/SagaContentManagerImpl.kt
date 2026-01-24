@@ -36,6 +36,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
+import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -695,6 +696,8 @@ class SagaContentManagerImpl
                     dismissMilestone()
                     return
                 }
+
+            // Capture saga state BEFORE any operations to avoid race conditions
             val saga =
                 content.value ?: run {
                     dismissMilestone()
@@ -713,9 +716,17 @@ class SagaContentManagerImpl
                 "User continued from milestone: ${milestone.javaClass.simpleName}",
             )
 
+            // Dismiss milestone FIRST to prevent race conditions and re-entry
+            dismissMilestone()
+
             startProcessing {
                 // Execute post-actions based on milestone type
                 when (milestone) {
+                    is SagaMilestone.Introduction -> {
+                        // Introduction complete, proceed with narrative progression
+                        checkNarrativeProgression(saga)
+                    }
+
                     is SagaMilestone.NewEvent -> {
                         generateTimelineContent(milestone.timeline, saga)
                     }
@@ -735,8 +746,6 @@ class SagaContentManagerImpl
                 }
 
                 delay(milestone.delay)
-
-                dismissMilestone()
             }
         }
 
@@ -782,12 +791,30 @@ class SagaContentManagerImpl
             when (step) {
                 is NarrativeStep.StartAct -> {
                     (result.value as? Act)?.let { data ->
+                        // Show loading milestone while generating act content
+                        emitMilestone(SagaMilestone.Loading)
 
                         startProcessing {
                             sagaHistoryUseCase.updateSaga(
                                 saga.data.copy(currentActId = data.id),
                             )
                             actUseCase.generateActIntroduction(saga, data)
+
+                            // Get the updated act with introduction
+                            val updatedSaga = content.value
+                            val updatedAct = updatedSaga?.acts?.find { it.data.id == data.id }?.data
+
+                            if (updatedAct?.introduction?.isNotBlank() == true) {
+                                // Emit cinematic Introduction milestone
+                                emitMilestone(
+                                    SagaMilestone.Introduction(
+                                        type = IntroductionType.ACT,
+                                        titleText = updatedAct.title,
+                                        introduction = updatedAct.introduction,
+                                        actNumber = updatedSaga?.acts?.size ?: 1,
+                                    ),
+                                )
+                            }
                         }
 
                         backupSaga()
@@ -796,18 +823,48 @@ class SagaContentManagerImpl
 
                 is NarrativeStep.StartChapter -> {
                     val currentAct = saga.currentActInfo!!
-                    (result.value as? Chapter)?.let {
+                    (result.value as? Chapter)?.let { chapter ->
+                        // Show loading milestone while generating chapter content
+                        emitMilestone(SagaMilestone.Loading)
+
                         startProcessing {
                             if (currentAct.currentChapterInfo != null) error("Chapter already set")
                             actUseCase.updateAct(
-                                currentAct.data.copy(currentChapterId = it.id),
+                                currentAct.data.copy(currentChapterId = chapter.id),
                             )
                             chapterUseCase
                                 .generateChapterIntroduction(
                                     saga = content.value!!,
-                                    chapterContent = it,
+                                    chapterContent = chapter,
                                     act = currentAct,
                                 )
+
+                            // Get the updated chapter with introduction
+                            val updatedSaga = content.value
+                            val updatedChapter =
+                                updatedSaga
+                                    ?.currentActInfo
+                                    ?.currentChapterInfo
+                                    ?.data
+
+                            if (updatedChapter?.introduction?.isNotBlank() == true) {
+                                // Emit cinematic Introduction milestone
+                                val chapterIndex =
+                                    updatedSaga
+                                        ?.currentActInfo
+                                        ?.chapters
+                                        ?.indexOfFirst { it.data.id == chapter.id }
+                                        ?.plus(1) ?: 1
+
+                                emitMilestone(
+                                    SagaMilestone.Introduction(
+                                        type = IntroductionType.CHAPTER,
+                                        titleText = updatedChapter.title,
+                                        introduction = updatedChapter.introduction,
+                                        chapterNumber = chapterIndex,
+                                    )
+                                )
+                            }
                         }
                     }
                 }

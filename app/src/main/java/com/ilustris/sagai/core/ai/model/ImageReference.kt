@@ -148,6 +148,17 @@ enum class ViolationType {
 
     /** Subject pose or vibe contradicts genre expectations (e.g., static pose in Hero genre) */
     GENRE_AURA_VIOLATION,
+
+    // ========== CHARACTER & NARRATIVE VIOLATIONS ==========
+
+    /** A mandatory character from the context is missing in the prompt */
+    CHARACTER_OMISSION,
+
+    /** A character's description (traits, appearance) is inconsistent with the context */
+    CHARACTER_INACCURACY,
+
+    /** Relationship dynamics between characters are not captured or are wrong */
+    RELATIONSHIP_MISMATCH,
 }
 
 /**

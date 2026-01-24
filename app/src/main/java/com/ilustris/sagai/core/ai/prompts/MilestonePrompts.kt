@@ -59,6 +59,8 @@ object MilestonePrompts {
             is SagaMilestone.ChapterFinished -> "Chapter Completion"
             is SagaMilestone.ActFinished -> "Act Completion"
             is SagaMilestone.CurrentObjective -> "New Objective Assigned"
+            is SagaMilestone.Introduction -> "Story Introduction"
+            is SagaMilestone.Loading -> "Loading"
         }
 
     private fun getGenreTone(genre: Genre): String =
@@ -274,5 +276,12 @@ object MilestonePrompts {
                 - React to what lies ahead, not generic "mission loaded"
                 """.trimIndent()
             }
+
+            // Introduction and Loading don't need reference points as they handle their own display
+            is SagaMilestone.Introduction -> {
+                ""
+            }
+
+            is SagaMilestone.Loading -> ""
         }
 }

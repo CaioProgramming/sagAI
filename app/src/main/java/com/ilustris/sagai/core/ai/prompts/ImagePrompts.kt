@@ -330,27 +330,21 @@ object ImagePrompts {
         visualDirection: String?,
     ) = buildString {
         appendLine(
-            "ROLE: The Soulful Artist AI. You are not just a translator; you are the visionary who captures the essence, meaning, and soul of the saga.")
+            "ROLE: The Soulful Artist AI. You are not just a translator; you are the visionary who captures the essence, meaning, and soul of the saga.",
+        )
         appendLine()
 
-        // Genre-critical rules at TOP for maximum visibility
         val criticalRules = genreCriticalRules(genre)
         if (criticalRules.isNotBlank()) {
             appendLine(criticalRules)
         }
 
-        appendLine("**THE GENRE SOUL (STRICT ADHERENCE):**")
-        appendLine(
-            "Embody the ${genre.name} aesthetic at its deepest level. You must use the EXACT technical terminology provided below to ensure stylistic consistency.",
-        )
+        appendLine("**STYLE CROSS-REFERENCE (ABSOLUTE):**")
         appendLine("- Technical Specification: ${GenrePrompts.artStyle(genre)}")
         appendLine("- Appearance Guidelines: ${GenrePrompts.appearanceGuidelines(genre)}")
         appendLine("- COLOR PALETTE (MANDATORY): ${getHexPalette(genre)}")
-        appendLine("  * You MUST use these colors to ground the image in the correct atmosphere.")
-        appendLine("  * CHECK 'Technical Specification' for the Mandatory ACCENT COLOR and apply it exactly as directed.")
-        appendLine(
-            "- RULE: Do NOT simplify these rules. If the genre specifies 'Bold Ink Lines' or 'Renaissance Chiaroscuro', those exact words (or their deeper visual meaning) must be in your prompt. Never say 'generic style'.",
-        )
+        appendLine("- CROSS-REFERENCE: Use the EXACT terminology from the Technical Specification (Rendering, Technique, Aura).")
+        appendLine("- If the genre requires '32-BIT PIXEL ART', do not let high-resolution concepts leak in.")
         appendLine()
 
         appendLine("**CONTEXTUAL ABSTRACTION (THE 'WHY'):**")
@@ -359,7 +353,8 @@ object ImagePrompts {
         appendLine("- How do the characters' surroundings reflect their internal state?")
         appendLine("- Why are we drawing this exact frame? Find the narrative weight.")
         appendLine(
-            "- STRICT CONTEXT ADHERENCE: Use character appearance descriptions ONLY from the provided context. Do NOT invent body types, clothes, or features not present. If context is minimal, stick to the genre style and extracted visual direction.")
+            "- STRICT CONTEXT ADHERENCE: Use character appearance descriptions ONLY from the provided context. Do NOT invent body types, clothes, or features not present. If context is minimal, stick to the genre style and extracted visual direction.",
+        )
         appendLine(
             "- MULTI-CHARACTER MANDATE: If the context identifies multiple characters, you MUST integrate ALL of them into the composition. Do not omit subjects to simplify the scene. Every subject mentioned is essential for the narrative weight of this frame.",
         )
@@ -373,12 +368,15 @@ object ImagePrompts {
             appendLine()
             appendLine("PAINTING THE VISION:")
             appendLine("- CHARACTER SOUL: Describe characters not as traits, but as living beings with history.")
+            appendLine(
+                "- NARRATIVE COMPOSITION: Do not just place subjects; weave them into the scene. Their bodies should react to the environment, the light, and each other.")
             appendLine("- MEANINGFUL ORIENTATION: Use the orientation to tell the story.")
             appendLine(
-                "- GESTURAL ABSTRACTION: Use 'BODY_LANGUAGE_INTENTION' as inspiration for the pose's energy. Do NOT copy-paste the text. Reinterpret the intention artistically.",
+                "- GESTURAL ABSTRACTION: Use 'BODY_LANGUAGE_INTENTION' to define narrative interaction. If characters are together, show their connection or tension through physical proximity and subtle cues.",
             )
             appendLine(
-                "- VISIBLE ATTIRE MANDATE: If the frame shows shoulders/chest/torso (based on 'VISIBLE_CONTENT'), you MUST describe the clothing from the context. Do NOT crop out the neckline or leave it vague/naked unless the context explicitly says so. 'Shoulders visible' = 'Shirt/Armor visible'.")
+                "- VISIBLE ATTIRE MANDATE: If the frame shows shoulders/chest/torso (based on 'VISIBLE_CONTENT'), you MUST describe the clothing from the context. Do NOT crop out the neckline or leave it vague/naked unless the context explicitly says so. 'Shoulders visible' = 'Shirt/Armor visible'.",
+            )
             appendLine("- ATMOSPHERIC WEIGHT: Translate technical lighting into emotional atmosphere.")
             appendLine("- STRICT INVISIBILITY: Follow the 'VISIBLE_CONTENT' and 'FORBIDDEN_CONTENT' lists religiously.")
             appendLine(
@@ -394,7 +392,8 @@ object ImagePrompts {
         )
         if (genre == Genre.SHINOBI) {
             appendLine(
-                "- SHINOBI MONOCHROME ENFORCEMENT: This genre requires a STRICT BLACK & WHITE palette with only CRIMSON RED accent. NO other colors (no blues, no greens, no warm skin tones). Think Sumi-e ink on rice paper.")
+                "- SHINOBI MONOCHROME ENFORCEMENT: This genre requires a STRICT BLACK & WHITE palette with only CRIMSON RED accent. NO other colors (no blues, no greens, no warm skin tones). Think Sumi-e ink on rice paper.",
+            )
         }
         appendLine()
 
@@ -422,7 +421,8 @@ object ImagePrompts {
             appendLine()
             appendLine("⚠️ CRITICAL PHILOSOPHY:")
             appendLine(
-                "Capture the SUBJECT'S relationship with the camera. Focus on orientation, what is visible, and the narrative energy.")
+                "Capture the SUBJECT'S relationship with the camera. Focus on orientation, what is visible, and the narrative energy.",
+            )
             appendLine("We use standard image generation terminology to ensure the Artist AI understands the intended composition.")
             appendLine()
             appendLine("RULES:")
@@ -444,7 +444,8 @@ object ImagePrompts {
             appendLine("   - Be extremely strict. If Portrait: 'Head, neck, collarbone, upper clothing/neckline'.")
             appendLine("   - If Wide: 'Full figure, complete outfit, surroundings, ground, sky'.")
             appendLine(
-                "   - EXPLICITLY LIST CLOTHING PARTS if visible (e.g., 'shirt', 'jacket', 'gloves'). Do NOT describe their style/brand/color - just what they are.")
+                "   - EXPLICITLY LIST CLOTHING PARTS if visible (e.g., 'shirt', 'jacket', 'gloves'). Do NOT describe their style/brand/color - just what they are.",
+            )
             appendLine("   - NO describing elements cut by the frame.")
             appendLine()
             appendLine("4. VIEWPOINT - Camera's vertical position relative to subject:")
@@ -454,10 +455,12 @@ object ImagePrompts {
             appendLine("5. COMPOSITION_PLACEMENT - Subject's position on screen:")
             appendLine("   [Centered / Far Left / Far Right / Foreground / Background]")
             appendLine()
-            appendLine("6. BODY_LANGUAGE_INTENTION - The physical expression of internal intent:")
-            appendLine("   - Describe the ENERGY of the pose, not just the action.")
-            appendLine("   - Examples: 'Rigid stance bracing for impact', 'Fluid motion suggesting escape', 'Collapsed posture of defeat'.")
-            appendLine("   - Avoid dry verbs like 'standing' or 'sitting'. Use expressive descriptors.")
+            appendLine("6. BODY_LANGUAGE_INTENTION - The narrative energy of the physical form:")
+            appendLine("   - Describe how the body reacts to the context. Is it a protective hunch? A confident stride?")
+            appendLine(
+                "   - Focus on INTERACTION: How the subject relates to the environment or other subjects (e.g., 'Leaning into the shadows', 'A hand reaching but hesitating', 'Weighted silence in their stance').",
+            )
+            appendLine("   - Avoid static verbs. Use 'narrative weight' to describe the pose.")
             appendLine()
             appendLine("7. EMOTIONAL_PROJECTION - The 'Soul' of the moment:")
             appendLine("   - What emotion is being projected to the viewer?")
@@ -502,7 +505,8 @@ object ImagePrompts {
         // Genre-critical validation at TOP
         appendLine(genreCriticalValidation(genre))
 
-        appendLine("TASK: Validate the prompt in two distinct scopes. Do not cross-contaminate feedback.")
+        appendLine(
+            "TASK: Validate the prompt for extreme technical alignment. Ensure the Artist has not deviated from the Genre's core DNA.")
         appendLine()
 
         appendLine("=== SCOPE 1: DIRECTORIAL COMPLIANCE (The 'How' & 'Where') ===")
@@ -518,13 +522,15 @@ object ImagePrompts {
         appendLine(
             "   - Verify that character details (hair, eyes, distinctive features) mentioned in context AND visible in the frame are present.",
         )
-        appendLine("   - If the Director says 'Face visible' and Context says 'Blue eyes', the prompt MUST mention Blue eyes.")
-        appendLine("   - VIOLATION: CONTEXT_OMISSION, CHARACTER_INACCURACY.")
-        appendLine("   - VIOLATION: ETHNICITY_ERASURE, TRAIT_MISMATCH.")
-        appendLine("6. MULTI-CHARACTER COMPLIANCE (CRITICAL): Are ALL characters from the context present?")
-        appendLine("   - Check if the prompt describes every character listed in the context.")
-        appendLine("   - If the context says 'Character A' and 'Character B', the prompt MUST describe both in the scene.")
-        appendLine("   - VIOLATION: CHARACTER_OMISSION.")
+        appendLine("6. MULTI-CHARACTER COMPLIANCE (STRICT SUBJECT CHECK):")
+        appendLine("   - Parse the ESSENTIAL characters list (usually between '[' and ']') at the start of the context.")
+        appendLine("   - For EACH and EVERY name in that list, confirm it is represented in the 'finalPrompt'.")
+        appendLine("   - DO NOT ACCEPT: Prompts that focus on only one character when multiple are listed.")
+        appendLine("   - DO NOT ACCEPT: Prompts that generalize subjects as 'a group' without individual descriptions for each.")
+        appendLine("   - If ANY name is missing from the description → CRITICAL VIOLATION: CHARACTER_OMISSION.")
+        appendLine(
+            "   - MANDATORY ACTION: Rewrite the prompt to ensure all subjects are present with their unique traits from '#### SUBJECTS DETAILS'.",
+        )
         appendLine("7. SAFE CONTENT & CLOTHING (MANDATORY): Ensure NO unintended nudity.")
         appendLine("   - If 'VISIBLE_CONTENT' includes shoulders/chest, the prompt MUST describe the character's clothing (from Context).")
         appendLine("   - Ensure clothing is not omitted or vaguely described to appear naked.")
@@ -536,11 +542,14 @@ object ImagePrompts {
         appendLine("1. GENRE ESSENCE: Does the prompt embody the ${genre.name} philosophy? (Check Art Style Rules).")
         if (genre == Genre.SHINOBI) {
             appendLine(
-                "   - SHINOBI CHECK: Is the palette strictly monochrome (black/white/ink) with ONLY crimson red accent? Any other color is a VIOLATION.")
+                "   - SHINOBI CHECK: Is the palette strictly monochrome (black/white/ink) with ONLY crimson red accent? Any other color is a VIOLATION.",
+            )
         }
         appendLine("2. NARRATIVE SOUL: Is the description evocative and meaningful, or just technical?")
-        appendLine("3. RENDERING STYLE: Are the required shading, line work, and texture from the genre present?")
-        appendLine("   - VIOLATION: GENRE_AURA_VIOLATION, RENDERING_MISSING, SOULLESS_DESCRIPTION.")
+        appendLine("3. POSING & INTERACTION: Do the characters feel integrated into the scene?")
+        appendLine("   - Check if body language matches the narrative weight. Are they just 'placed' or are they 'reacting'?")
+        appendLine("4. RENDERING STYLE: Are the required shading, line work, and texture from the genre present?")
+        appendLine("   - VIOLATION: GENRE_AURA_VIOLATION, RENDERING_MISSING, SOULLESS_DESCRIPTION, STATIC_COMPOSITION.")
         appendLine("   - FEEDBACK: Must go to 'artistImprovementSuggestions'.")
         appendLine("4. PALETTE & ACCENT COMPLIANCE (CRITICAL):")
         appendLine("   - Does the prompt explicitly mention the Mandatory Accent Color defined in 'GENRE MANDATES'?")

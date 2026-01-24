@@ -9,6 +9,8 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+enum class IntroductionType { ACT, CHAPTER }
+
 sealed class SagaMilestone(
     val title: Int,
     val subtitle: String,
@@ -52,4 +54,33 @@ sealed class SagaMilestone(
             delay = 0.seconds,
             isIntrusive = false,
     )
+
+    /**
+     * Cinematic introduction for Acts/Chapters.
+     * Full-screen overlay with typewriter animation, auto-dismisses after animation.
+     */
+    class Introduction(
+        val type: IntroductionType,
+        val titleText: String,
+        val introduction: String,
+        val actNumber: Int = 0,
+        val chapterNumber: Int = 0,
+    ) : SagaMilestone(
+            R.string.introduction_milestone,
+            titleText,
+            delay = 0.seconds,
+            isIntrusive = true,
+        )
+
+    /**
+     * Loading state shown before generative narrative steps.
+     * Displays shimmer animation to indicate something is happening.
+     */
+    data object Loading : SagaMilestone(
+        title = 0,
+        subtitle = "",
+        delay = 0.seconds,
+        isIntrusive = true,
+    )
 }
+

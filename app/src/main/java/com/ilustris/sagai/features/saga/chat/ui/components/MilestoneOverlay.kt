@@ -104,6 +104,27 @@ fun MilestoneOverlay(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
+    // Delegate to specialized overlays for new milestone types
+    when (milestone) {
+        is SagaMilestone.Loading -> {
+            LoadingMilestoneOverlay(genre = saga.data.genre)
+            return
+        }
+
+        is SagaMilestone.Introduction -> {
+            IntroductionOverlay(
+                introduction = milestone,
+                saga = saga,
+                onComplete = onDismiss,
+            )
+            return
+        }
+
+        else -> {
+            // Continue with existing implementation for other milestone types
+        }
+    }
+
     val viewModel: MilestoneViewModel = hiltViewModel()
 
     val genre = saga.data.genre
@@ -218,6 +239,9 @@ fun MilestoneOverlay(
             is SagaMilestone.CurrentObjective -> "timeline-objective"
             is SagaMilestone.NewCharacter -> "character-${milestone.character.id}"
             is SagaMilestone.NewEvent -> "timeline-${milestone.timeline.id}"
+            // These are handled by early returns above, but compiler requires exhaustiveness
+            is SagaMilestone.Introduction -> "introduction"
+            is SagaMilestone.Loading -> "loading"
         }
 
     Box(Modifier.fillMaxSize()) {

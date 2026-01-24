@@ -68,6 +68,10 @@ class SagaRepositoryImpl
             val context =
                 buildString {
                     appendLine("### MANDATORY MULTI-CHARACTER ICON")
+                    appendLine("The following characters are ESSENTIAL to this icon:")
+                    append("[")
+                    appendLine(characters.joinToString { it.name })
+                    appendLine("]")
                     appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
                     appendLine()
                     appendLine("#### SUBJECTS DETAILS:")

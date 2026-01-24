@@ -109,5 +109,12 @@ class MilestoneUseCaseImpl
                         Genre.PUNK_ROCK -> "Next gig's up!"
                     }
                 }
+
+                // Introduction and Loading milestones don't need congrats messages
+                is SagaMilestone.Introduction -> {
+                    ""
+                }
+
+                is SagaMilestone.Loading -> ""
             }
     }
