@@ -61,7 +61,7 @@ class NewSagaUseCaseImpl
             sagaRepository
                 .generateSagaIcon(
                     sagaForm,
-                    character,
+                    listOf(character),
                 ).getSuccess()!!
         }
 

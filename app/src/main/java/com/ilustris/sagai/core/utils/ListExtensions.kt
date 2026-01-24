@@ -31,6 +31,8 @@ fun sortCharactersContentByMessageCount(
         }
 }
 
+fun List<*>.toAINormalize(excludingFields: List<String> = emptyList()): String = normalizetoAIItems(excludingFields)
+
 fun List<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): String {
     if (isEmpty()) return ""
     val firstItem = first()

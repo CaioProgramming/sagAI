@@ -194,7 +194,13 @@ class ChapterUseCaseImpl
                             imageReference = coverBitmap,
                             context =
                                 buildString {
-                                    appendLine("Integrate the following characters in the artwork scene (MANDATORY): ")
+                                    appendLine("### MANDATORY MULTI-CHARACTER SCENE")
+                                    appendLine(
+                                        "The following characters are ESSENTIAL to this scene. You MUST integrate ALL of them into the artwork.",
+                                    )
+                                    appendLine("Strictly respect their descriptions, physical traits, and relative positions.")
+                                    appendLine()
+                                    appendLine("#### SUBJECTS DETAILS:")
                                     appendLine(
                                         characters.mapNotNull { it?.data }.toAINormalize(
                                             listOf(
@@ -212,17 +218,24 @@ class ChapterUseCaseImpl
                                             ),
                                         ),
                                     )
-                                    appendLine("## CHARACTER RELATIONSHIPS (CRITICAL FOR SCENE COMPOSITION):")
+                                    appendLine()
+                                    appendLine("#### CHARACTER RELATIONSHIPS (COMPOSITIONAL HINTS):")
                                     characters
                                         .filter {
                                             it?.data?.id != saga.mainCharacter?.data?.id
                                         }.forEach {
                                             appendLine(
-                                                saga.mainCharacter!!
-                                                    .findRelationship(it!!.data.id)
-                                                    ?.summarizeRelation(1),
+                                                "• ${saga.mainCharacter!!.data.name} & ${it!!.data.name}: ${
+                                                    saga.mainCharacter
+                                                        .findRelationship(it.data.id)
+                                                        ?.summarizeRelation(1)
+                                                }",
                                             )
                                         }
+                                    appendLine()
+                                    appendLine(
+                                        "FINAL MANDATE: Do not focus on just one character. Balance the composition to show the interaction and presence of EVERY subject listed.",
+                                    )
                                 },
                             imageType = AnalyticsConstants.ImageType.COVER,
                         ).getSuccess()!!

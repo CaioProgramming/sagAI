@@ -58,7 +58,7 @@ class SagaRepositoryImpl
 
         override suspend fun generateSagaIcon(
             saga: Saga,
-            character: Character,
+            characters: List<Character>,
         ) = executeRequest {
             val iconReferenceComposition =
                 genreReferenceHelper
@@ -67,9 +67,12 @@ class SagaRepositoryImpl
 
             val context =
                 buildString {
-                    appendLine("Character Details:")
+                    appendLine("### MANDATORY MULTI-CHARACTER ICON")
+                    appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
+                    appendLine()
+                    appendLine("#### SUBJECTS DETAILS:")
                     appendLine(
-                        character.toAINormalize(
+                        characters.toAINormalize(
                             listOf(
                                 "image",
                                 "sagaId",
@@ -80,6 +83,9 @@ class SagaRepositoryImpl
                             ),
                         ),
                     )
+                    appendLine()
+                    appendLine(
+                        "FINAL MANDATE: Create a balanced composition where all characters are clearly visible and integrated into the ${saga.genre.name} aesthetic.")
                 }
             val newIcon =
                 imagenClient

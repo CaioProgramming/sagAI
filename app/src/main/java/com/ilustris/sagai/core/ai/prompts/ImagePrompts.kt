@@ -360,6 +360,9 @@ object ImagePrompts {
         appendLine("- Why are we drawing this exact frame? Find the narrative weight.")
         appendLine(
             "- STRICT CONTEXT ADHERENCE: Use character appearance descriptions ONLY from the provided context. Do NOT invent body types, clothes, or features not present. If context is minimal, stick to the genre style and extracted visual direction.")
+        appendLine(
+            "- MULTI-CHARACTER MANDATE: If the context identifies multiple characters, you MUST integrate ALL of them into the composition. Do not omit subjects to simplify the scene. Every subject mentioned is essential for the narrative weight of this frame.",
+        )
         appendLine()
 
         appendLine(criticalGenerationRule())
@@ -517,11 +520,12 @@ object ImagePrompts {
         )
         appendLine("   - If the Director says 'Face visible' and Context says 'Blue eyes', the prompt MUST mention Blue eyes.")
         appendLine("   - VIOLATION: CONTEXT_OMISSION, CHARACTER_INACCURACY.")
-        appendLine("5. ETHNICITY & TRAIT ACCURACY (MANDATORY):")
-        appendLine("   - Does the prompt accurately reflect the character's ethnicity and physical traits as described in the context?")
-        appendLine("   - Ensure specific features (e.g., eye shape, hair texture) are consistent with the character's background.")
         appendLine("   - VIOLATION: ETHNICITY_ERASURE, TRAIT_MISMATCH.")
-        appendLine("6. SAFE CONTENT & CLOTHING (MANDATORY): Ensure NO unintended nudity.")
+        appendLine("6. MULTI-CHARACTER COMPLIANCE (CRITICAL): Are ALL characters from the context present?")
+        appendLine("   - Check if the prompt describes every character listed in the context.")
+        appendLine("   - If the context says 'Character A' and 'Character B', the prompt MUST describe both in the scene.")
+        appendLine("   - VIOLATION: CHARACTER_OMISSION.")
+        appendLine("7. SAFE CONTENT & CLOTHING (MANDATORY): Ensure NO unintended nudity.")
         appendLine("   - If 'VISIBLE_CONTENT' includes shoulders/chest, the prompt MUST describe the character's clothing (from Context).")
         appendLine("   - Ensure clothing is not omitted or vaguely described to appear naked.")
         appendLine("   - VIOLATION: NUDITY_RISK, CLOTHING_OMISSION.")

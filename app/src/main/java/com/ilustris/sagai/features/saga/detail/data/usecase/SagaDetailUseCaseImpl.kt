@@ -45,9 +45,10 @@ class SagaDetailUseCaseImpl
         private val sagaBackupService: SagaBackupService,
         private val backupService: com.ilustris.sagai.core.file.BackupService,
     ) : SagaDetailUseCase {
-        override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> =
-            sagaRepository
-                .generateSagaIcon(saga.data, saga.mainCharacter!!.data)
+        override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
+            val topCharacters = saga.characters.map { it.data }.take(3)
+            return sagaRepository.generateSagaIcon(saga.data, topCharacters)
+        }
 
         override suspend fun fetchSaga(sagaId: Int) = sagaRepository.getSagaById(sagaId)
 
