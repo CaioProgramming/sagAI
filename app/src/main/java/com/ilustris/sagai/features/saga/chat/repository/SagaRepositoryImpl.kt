@@ -67,8 +67,8 @@ class SagaRepositoryImpl
 
             val context =
                 buildString {
-                    appendLine("### MANDATORY MULTI-CHARACTER ICON")
-                    appendLine("The following characters are ESSENTIAL to this icon:")
+                    appendLine("### MANDATORY CHARACTER ICON")
+                    appendLine("The following character are ESSENTIAL to this icon:")
                     append("[")
                     appendLine(characters.joinToString { it.name })
                     appendLine("]")
@@ -89,7 +89,8 @@ class SagaRepositoryImpl
                     )
                     appendLine()
                     appendLine(
-                        "FINAL MANDATE: Create a balanced composition where all characters are clearly visible and integrated into the ${saga.genre.name} aesthetic.")
+                        "FINAL MANDATE: Create a balanced composition where all characters are clearly visible and integrated into the ${saga.genre.name} aesthetic.",
+                    )
                 }
             val newIcon =
                 imagenClient

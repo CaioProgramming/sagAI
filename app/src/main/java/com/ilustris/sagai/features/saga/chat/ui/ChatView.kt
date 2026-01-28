@@ -22,6 +22,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -364,18 +366,9 @@ fun ChatView(
                             milestoneState != null,
                             modifier = Modifier.fillMaxWidth(),
                             enter =
-                                fadeIn(tween(800)) +
-                                    slideInVertically(
-                                        tween(
-                                            400,
-                                            easing = EaseIn,
-                                        ),
-                                    ) { +it },
+                                fadeIn(tween(1000, easing = EaseIn)),
                             exit =
-                                fadeOut(tween(800)) +
-                                    slideOutVertically(
-                                        tween(400),
-                                    ) { it },
+                                fadeOut(tween(1500, easing = FastOutLinearInEasing)),
                         ) {
                             milestoneState?.let { milestone ->
                                 MilestoneOverlay(
@@ -386,12 +379,10 @@ fun ChatView(
                                         onAction(ChatUiAction.ContinueMilestone)
                                     },
                                     sharedTransitionScope = sharedTransitionScope,
-                                    animatedVisibilityScope = this,
                                 )
                             }
                         }
 
-                        // SnackBar overlay
                         SagaSnackBar(
                             snackBarMessage,
                             content.data.genre,
@@ -606,8 +597,7 @@ fun ChatContent(
                             shimmerColors = saga.genre.shimmerColors(),
                             duration = 10.seconds,
                             targetValue = 1000f,
-                        )
-                        .fillMaxSize(.5f)
+                        ).fillMaxSize(.5f)
                         .alpha(.3f),
             )
 
@@ -615,7 +605,8 @@ fun ChatContent(
                 Modifier
                     .padding(
                         top = padding.calculateTopPadding(),
-                    ).fillMaxSize(),
+                    )
+                    .fillMaxSize(),
             ) {
                 rememberCoroutineScope()
                 val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -690,7 +681,8 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }.padding(vertical = padding.calculateBottomPadding())
+                            }
+                            .padding(vertical = padding.calculateBottomPadding())
                             .animateContentSize(),
                     enter = slideInVertically(),
                     exit = slideOutVertically { it },
@@ -743,7 +735,8 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }.padding(
+                            }
+                            .padding(
                                 bottom = padding.calculateBottomPadding() + 16.dp,
                                 start = 16.dp,
                                 end = 16.dp,
@@ -847,6 +840,8 @@ fun ChatContent(
                     ) {
                         this@Column.AnimatedVisibility(
                             uiState.milestone == null,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut(),
                         ) {
                             Image(
                                 painterResource(R.drawable.ic_spark),
@@ -862,17 +857,16 @@ fun ChatContent(
                                         .clip(CircleShape)
                                         .clickable {
                                             onAction(ChatUiAction.ShowObjective)
-                                        }.gradientFill(
+                                        }
+                                        .gradientFill(
                                             progressiveBrush(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        )
-                                        .reactiveShimmer(
+                                        ).reactiveShimmer(
                                             uiState.isGenerating || uiState.isLoading,
                                             shimmerColors = saga.genre.shimmerColors(),
-                                        )
-                                        .sharedElement(
+                                        ).sharedElement(
                                             rememberSharedContentState(
                                                 key = "saga_${saga.id}_spark",
                                             ),
@@ -1542,7 +1536,8 @@ fun CharactersTopIcons(
                         )
                         .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).clip(CircleShape)
+                        )
+                        .clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

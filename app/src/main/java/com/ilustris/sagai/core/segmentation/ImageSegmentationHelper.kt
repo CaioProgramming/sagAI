@@ -103,13 +103,13 @@ class ImageSegmentationHelper(
             val subjectWidthRatio = subjectRect.width() / imageWidth
             val subjectHeightRatio = subjectRect.height() / imageHeight
 
-            val needsZoom = subjectWidthRatio < 0.5f || subjectHeightRatio < 0.5f
+            val needsZoom = subjectWidthRatio < 0.3f || subjectHeightRatio < 0.2f
 
             val requiredZoom =
                 if (needsZoom) {
                     val scale =
                         max(imageWidth / subjectRect.width(), imageHeight / subjectRect.height())
-                    val finalScale = scale.coerceAtMost(2.0f)
+                    val finalScale = scale.coerceAtMost(1.5f)
 
                     subjectRect.width() * finalScale
                     subjectRect.height() * finalScale

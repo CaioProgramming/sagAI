@@ -601,7 +601,11 @@ fun ChatInputView(
                 }
             }
 
-            Box(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+            Box(
+                Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically),
+            ) {
                 TooltipBox(
                     positionProvider = queryTooltipPositionProvider,
                     state = queryItemsTooltipState,
@@ -717,6 +721,7 @@ fun ChatInputView(
                                 val hintAlpha by animateFloatAsState(
                                     if (inputField.text.isEmpty()) 1f else 0f,
                                 )
+                                rememberScrollState()
 
                                 Column(
                                     Modifier
@@ -800,8 +805,7 @@ fun ChatInputView(
                                                             .background(
                                                                 backColor,
                                                                 inputShape,
-                                                            )
-                                                            .clickable(enabled = currentTagInside == null) {
+                                                            ).clickable(enabled = currentTagInside == null) {
                                                                 it.tag?.let { tag ->
                                                                     val newValue =
                                                                         insertExpressiveTag(

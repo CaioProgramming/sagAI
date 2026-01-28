@@ -318,7 +318,7 @@ class CharacterUseCaseImpl
                 val prompt = CharacterPrompts.characterResume(character, saga)
                 gemmaClient.generate<String>(
                     prompt,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 

@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -14,18 +15,19 @@ class MilestoneUseCaseImpl
     @Inject
     constructor(
         private val gemmaClient: GemmaClient,
+        private val stringResourceHelper: StringResourceHelper,
     ) : MilestoneUseCase {
         override suspend fun generateCongratsMessage(
             milestone: SagaMilestone,
             saga: SagaContent,
-        ): RequestResult<String> =
-            executeRequest {
+        ): RequestResult<String?> =
+            executeRequest(false) {
                 Log.d(
                     "MilestoneUseCase",
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
 
-                val prompt = MilestonePrompts.generateCongratsMessage(milestone, saga)
+                val prompt = MilestonePrompts.generateCongratsMessage(milestone, saga)!!
 
                 gemmaClient.generate<String>(
                     prompt,
@@ -115,6 +117,8 @@ class MilestoneUseCaseImpl
                     ""
                 }
 
-                is SagaMilestone.Loading -> ""
+                is SagaMilestone.Loading -> {
+                    ""
+                }
             }
     }

@@ -9,7 +9,16 @@ object MilestonePrompts {
     fun generateCongratsMessage(
         milestone: SagaMilestone,
         saga: SagaContent,
-    ): String {
+    ): String? {
+        if (milestone is SagaMilestone.Introduction) {
+            return rewriteIntroduction(milestone, saga)
+        }
+
+        if (milestone == SagaMilestone.Loading ||
+            milestone is SagaMilestone.CurrentObjective
+        ) {
+            return null
+        }
         val genre = saga.data.genre
         val genreTone = getGenreTone(genre)
         getMilestoneType(milestone)
@@ -282,6 +291,41 @@ object MilestonePrompts {
                 ""
             }
 
-            is SagaMilestone.Loading -> ""
+            is SagaMilestone.Loading -> {
+                ""
+            }
+        }
+
+    fun rewriteIntroduction(
+        milestone: SagaMilestone,
+        saga: SagaContent,
+    ): String =
+        buildString {
+            val genre = saga.data.genre
+            appendLine("You are a cinematic narrator and a witty storytelling companion.")
+            appendLine("The original introduction text is too long. Rewrite it to be SHORT, IMPACTFUL, and CINEMATIC.")
+            appendLine()
+            appendLine("YOUR PERSONA:")
+            appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
+            appendLine(buildPersonaForGenre(genre))
+            appendLine("STORY CONTEXT:")
+            append(SagaPrompts.mainContext(saga, ommitCharacter = true))
+            appendLine("ORIGINAL CONTENT:")
+            appendLine(milestone.toAINormalize())
+            appendLine()
+            appendLine("REQUIREMENTS:")
+            appendLine("- Maximum 25 words (be punchy)")
+            appendLine(
+                "- Maintain the tone and atmosphere of the ${genre.name.lowercase()} genre: ${
+                    getGenreTone(
+                        genre,
+                    )
+                }",
+            )
+            appendLine("- Use your persona's distinctive flavor (sarcasm, dark humor, or epic flair)")
+            appendLine("- Focus on the emotional core or the major shift in the narrative")
+            appendLine("- NO emojis, NO greeting, NO meta-commentary")
+            appendLine()
+            appendLine("Output ONLY the rewritten cinematic introduction:")
         }
 }

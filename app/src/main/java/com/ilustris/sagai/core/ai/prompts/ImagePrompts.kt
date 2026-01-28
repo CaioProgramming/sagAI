@@ -369,6 +369,9 @@ object ImagePrompts {
             appendLine("PAINTING THE VISION:")
             appendLine("- CHARACTER SOUL: Describe characters not as traits, but as living beings with history.")
             appendLine(
+                "- NARRATIVE PROXIMITY: Respect the extracted 'SUBJECT_PROXIMITY'. If focus is 'Intimate', describe the micro-textures of the skin and eyes. If 'Far', focus on the silhouette's relationship to the vast environment.",
+            )
+            appendLine(
                 "- NARRATIVE COMPOSITION: Do not just place subjects; weave them into the scene. Their bodies should react to the environment, the light, and each other.")
             appendLine("- MEANINGFUL ORIENTATION: Use the orientation to tell the story.")
             appendLine(
@@ -440,6 +443,11 @@ object ImagePrompts {
             appendLine("2. FRAMING_LEVEL - The 'window' around the subject:")
             appendLine("   [Extreme Close-Up / Face & Shoulders / Upper Body / Waist Up / Full Body / Distant Wide Shot]")
             appendLine()
+            appendLine("3. SUBJECT_PROXIMITY - Subject's distance and focus depth:")
+            appendLine("   - How close is the camera to the subject's 'soul'?")
+            appendLine("   - [Intimate (Extreme Detail) / Near (Conversational) / Medium (Environmental) / Far (Observational)]")
+            appendLine("   - Identify what the camera is 'locked' onto (e.g., 'Focus locked on eyes', 'Focus locked on hand interaction').")
+            appendLine()
             appendLine("3. VISIBLE_CONTENT - LIST EVERY PERMITTED ELEMENT:")
             appendLine("   - Be extremely strict. If Portrait: 'Head, neck, collarbone, upper clothing/neckline'.")
             appendLine("   - If Wide: 'Full figure, complete outfit, surroundings, ground, sky'.")
@@ -481,7 +489,7 @@ object ImagePrompts {
             appendLine("    - If Portrait/MCU: [Pants, Shoes, Ground, Legs, Full Outfit, Feet, Sitting/Standing Stance].")
             appendLine("    - This is a hard filter for the next phases.")
             appendLine()
-            appendLine("OUTPUT: 11 numbered parameters. No explanations. Start with '1. ORIENTATION:'")
+            appendLine("OUTPUT: 12 numbered parameters. No explanations. Start with '1. ORIENTATION:'")
         }
 
     /**
@@ -515,8 +523,9 @@ object ImagePrompts {
         appendLine("2. CONTENT HALLUCINATION (STRICT): Check against 'FORBIDDEN_CONTENT'.")
         appendLine("   - If an element is in the forbidden list, it MUST NOT appear in the prompt.")
         appendLine("   - Describing forbidden parts = HALLUCINATION_VIOLATION.")
-        appendLine("3. FRAMING STRICTNESS: Are only permitted elements described?")
-        appendLine("   - VIOLATION: ORIENTATION_MISMATCH, VISIBILITY_VIOLATION, HALLUCINATION_VIOLATION.")
+        appendLine("3. FRAMING & PROXIMITY STRICTNESS: Are only permitted elements described and is the focus depth correct?")
+        appendLine("   - Does the prompt respect the extracted 'SUBJECT_PROXIMITY' and its intended focus?")
+        appendLine("   - VIOLATION: ORIENTATION_MISMATCH, VISIBILITY_VIOLATION, HALLUCINATION_VIOLATION, PROXIMITY_VIOLATION.")
         appendLine("4. CONTEXT FIDELITY (CRITICAL): Does the artwork respect the provided context?")
         appendLine("   - Context: \"$context\"")
         appendLine(

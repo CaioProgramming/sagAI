@@ -27,7 +27,7 @@ fun Genre.headerFont(): FontFamily {
             Genre.FANTASY -> R.font.dragon_force
             Genre.CYBERPUNK -> R.font.ninja_cyber
             Genre.HORROR -> R.font.pixelwarden
-            Genre.HEROES -> R.font.super_energy
+            Genre.HEROES -> R.font.masked_hero
             Genre.CRIME -> R.font.broadway
             Genre.SPACE_OPERA -> R.font.space_runner
             Genre.SHINOBI -> R.font.genjiro

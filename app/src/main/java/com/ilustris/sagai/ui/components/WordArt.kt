@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -104,7 +105,8 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }.drawBehind {
+                }
+                .drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -265,7 +267,7 @@ fun Genre.stylisedText(
             WordArtText(
                 text = text,
                 modifier = modifier,
-                fontSize = fontSize,
+                fontSize = (fontSize.value * .75f).sp,
                 fontFamily = headerFont(),
                 topColor = color.lighter(.5f),
                 bottomColor = palette.first().darker(.5f),

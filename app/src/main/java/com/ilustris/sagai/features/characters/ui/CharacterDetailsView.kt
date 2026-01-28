@@ -311,7 +311,8 @@ private fun CharacterDetailsLoaded(
                                             translationX = animatedTranslationX,
                                             translationY = animatedTranslationY,
                                             transformOrigin = TransformOrigin.Center,
-                                        ).effectForGenre(
+                                        )
+                                        .effectForGenre(
                                             genre,
                                             useFallBack = character.emojified,
                                         ),
@@ -350,58 +351,59 @@ private fun CharacterDetailsLoaded(
                                                 ),
                                         ),
                                 )
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .background(fadeGradientBottom())
-                                            .align(Alignment.BottomCenter)
-                                            .padding(16.dp)
-                                            .fillMaxWidth(),
+                            }
+
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .background(fadeGradientBottom())
+                                        .align(Alignment.BottomCenter)
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                            ) {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Image(
-                                            painterResource(R.drawable.ic_spark),
-                                            stringResource(id = R.string.share_character_cd),
-                                            modifier =
-                                                Modifier
-                                                    .size(24.dp)
-                                                    .clip(CircleShape)
-                                                    .clickable {
-                                                        onShareCharacter()
-                                                    },
-                                            colorFilter = ColorFilter.tint(characterColor),
-                                        )
+                                    Image(
+                                        painterResource(R.drawable.ic_spark),
+                                        stringResource(id = R.string.share_character_cd),
+                                        modifier =
+                                            Modifier
+                                                .size(24.dp)
+                                                .clip(CircleShape)
+                                                .clickable {
+                                                    onShareCharacter()
+                                                },
+                                        colorFilter = ColorFilter.tint(characterColor),
+                                    )
 
-                                        Text(
-                                            character.profile.occupation,
-                                            style =
-                                                MaterialTheme.typography.titleSmall.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    color = characterColor,
-                                                    textAlign = TextAlign.Center,
-                                                ),
-                                        )
+                                    Text(
+                                        character.profile.occupation,
+                                        style =
+                                            MaterialTheme.typography.titleSmall.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color = characterColor,
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                    )
 
-                                        character.nicknames?.let {
-                                            if (it.isNotEmpty()) {
-                                                Text(
-                                                    text =
-                                                        stringResource(
-                                                            id = R.string.character_details_aka,
-                                                            it.joinToString(", "),
-                                                        ),
-                                                    style =
-                                                        MaterialTheme.typography.titleMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                            color = characterColor.copy(alpha = 0.8f),
-                                                            textAlign = TextAlign.Center,
-                                                        ),
-                                                )
-                                            }
+                                    character.nicknames?.let {
+                                        if (it.isNotEmpty()) {
+                                            Text(
+                                                text =
+                                                    stringResource(
+                                                        id = R.string.character_details_aka,
+                                                        it.joinToString(", "),
+                                                    ),
+                                                style =
+                                                    MaterialTheme.typography.titleMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        color = characterColor.copy(alpha = 0.8f),
+                                                        textAlign = TextAlign.Center,
+                                                    ),
+                                            )
                                         }
                                     }
                                 }
@@ -418,7 +420,8 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -516,7 +519,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

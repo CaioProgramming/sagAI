@@ -8,5 +8,5 @@ interface MilestoneUseCase {
     suspend fun generateCongratsMessage(
         milestone: SagaMilestone,
         saga: SagaContent,
-    ): RequestResult<String>
+    ): RequestResult<String?>
 }

@@ -197,7 +197,7 @@ class ChapterUseCaseImpl
                                     appendLine("### MANDATORY MULTI-CHARACTER SCENE")
                                     appendLine("The following characters are ESSENTIAL to this scene.")
                                     append("[")
-                                    appendLine(characters.filterNotNull().joinToString { it.data.name })
+                                    append(characters.filterNotNull().joinToString { it.data.name })
                                     append("]")
                                     appendLine("You MUST integrate ALL of them into the artwork.")
                                     appendLine("Strictly respect their descriptions, physical traits, and relative positions.")

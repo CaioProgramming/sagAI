@@ -1064,21 +1064,17 @@ class ChatViewModel
                                         .generateCharacter(
                                             contextDescription,
                                         )
-                                character
-                                    .onSuccessAsync {
-                                        updateLoading(false)
-                                    }.onFailureAsync {
-                                        updateLoading(false)
-                                        updateSnackBar(
-                                            snackBar(
-                                                message = "Ocorreu um erro ao criar o personagem",
-                                            ) {
-                                                action {
-                                                    retryCharacter(contextDescription)
-                                                }
-                                            },
-                                        )
-                                    }
+                                character.onFailureAsync {
+                                    updateSnackBar(
+                                        snackBar(
+                                            message = "Ocorreu um erro ao criar o personagem",
+                                        ) {
+                                            action {
+                                                retryCharacter(contextDescription)
+                                            }
+                                        },
+                                    )
+                                }
 
                                 character.getSuccess()
                             } else {

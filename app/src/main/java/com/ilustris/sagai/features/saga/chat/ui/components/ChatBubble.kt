@@ -71,7 +71,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -119,10 +118,8 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.toEasing
 import java.io.File
@@ -913,16 +910,7 @@ fun ChatBubble(
                                 message.emotionalTone,
                                 messageEffectsEnabled,
                             ).padding(16.dp)
-                            .fillMaxWidth()
-                            .shadow(
-                                elevation = 8.dp,
-                                shape = narratorShape,
-                                spotColor = genre.color,
-                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
-                            .background(
-                                MaterialTheme.colorScheme.background,
-                                shape = narratorShape,
-                            ).padding(16.dp),
+                            .fillMaxWidth(),
                 ) {
                     Column(
                         Modifier.padding(16.dp),
@@ -941,40 +929,23 @@ fun ChatBubble(
                             )
                         } else {
                             // Show Text
-                            val textAlpha by animateFloatAsState(
-                                if (message.status == MessageStatus.LOADING) {
-                                    .4f
-                                } else {
-                                    1f
-                                },
-                            )
-                            TypewriterText(
+                            ExpressiveText(
                                 text = message.text,
-                                isAnimated = isAnimated,
                                 genre = genre,
-                                mainCharacter = mainCharacter?.data,
-                                characters = characters.map { it.data },
-                                wiki = wiki,
-                                duration = duration,
-                                easing = EaseIn,
-                                onAnnotationClick = { data ->
-                                    tooltipData = data
-                                },
-                                modifier =
-                                    Modifier
-                                        .reactiveShimmer(
-                                            isLoading || message.status == MessageStatus.LOADING,
-                                        ),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Normal,
                                         fontFamily = genre.bodyFont(),
-                                        color =
-                                            genre.iconColor.copy(
-                                                textAlpha,
-                                            ),
-                                        textAlign = TextAlign.Start,
+                                        color = genre.iconColor,
                                     ),
+                                modifier = Modifier.fillMaxWidth(),
+                                mainCharacter = mainCharacter?.data,
+                                characters = characters.map { it.data },
+                                wiki = wiki,
+                                shouldAnimate = canAnimate && messageEffectsEnabled,
+                                onAnnotationClick = { data ->
+                                    tooltipData = data
+                                },
                             )
                         }
                     }
