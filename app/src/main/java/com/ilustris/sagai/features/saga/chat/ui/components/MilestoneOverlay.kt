@@ -16,7 +16,6 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -253,7 +252,7 @@ fun NewEventContent(
                 modifier = Modifier.size(64.dp),
             )
 
-            Row(
+            LazyRow(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
@@ -261,14 +260,14 @@ fun NewEventContent(
                         .animateContentSize()
                         .fillMaxWidth(),
             ) {
-                stats.forEach {
+                items(stats) {
                     MilestoneBadge(
                         it.second,
                         stringResource(it.first),
                         brush,
                         10f,
                         genre,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillParentMaxWidth(.25f),
                     )
                 }
             }
