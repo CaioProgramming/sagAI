@@ -35,20 +35,24 @@ object GenrePrompts {
 
             CYBERPUNK -> {
                 buildString {
-                    appendLine("Art Technique: VINTAGE ANALOG OVA (Late 80s aesthetic).")
                     appendLine(
-                        "Tracing: Bold, varying-weight hand-drawn ink outlines. Slight line-jitter and analog chromatic aberration at edges.",
+                        "Art Technique: VINTAGE 80s/90s CEL ANIMATION (Bubblegum Crisis/Akira style), Analog Aesthetic, Hand-Painted Backgrounds.")
+                    appendLine(
+                        "Tracing: HAND-DRAWN CEL INK, Organic Line Weight, Slight Bleed, Not Vector-Perfect, Traditional Animation Acetate.",
                     )
                     appendLine(
-                        "Shadowing: 2-step flat cel-shading. Hard-edged shadows with no gradients. Occasional stipple-hatching in deep blacks.",
+                        "Shadowing: HARD CEL SHADING, High Contrast, No Soft Gradients, Solid Black Shadows, Dramatic Noir-like Contrast.",
                     )
                     appendLine(
-                        "Lighting: Harsh neon backlight with significant halation (glow bleed). CRT scanlines and VHS-style color bleeding.",
+                        "Lighting: RETRO HALATION, Analog Bloom, Harsh Neon Backlight, 'Ghosting' effects, No Modern Digital Softness.",
                     )
                     appendLine(
-                        "Anatomy: 1980s anime proportions (sharp chins, large expressive eyes). Cyberware is low-tech: visible gaskets and hydraulic tubes.",
+                        "Anatomy: RETRO ANIME REALISM, Expressive Eyes (Not Moe), Sharp Chins, Detailed Mechanical Gaskets, 'Hard' Character Design.",
                     )
-                    appendLine("Palette: Desaturated slate and cold industrial steel with 'dirty' magenta and purple neon accents.")
+                    appendLine(
+                        "Palette: DARK INDUSTRIAL, Saturated Reds and Blues, Deep Blacks, Muted Background Tones vs Glowing Foregrounds.",
+                    )
+                    appendLine("Filters: HEAVY FILM GRAIN, VHS Noise, Chromatic Aberration, Scanlines, Analog Tape Saturation.")
                 }
             }
 
@@ -396,11 +400,13 @@ object GenrePrompts {
                 val palette = getHexPalette(genre)
                 """
                 **CYBERPUNK VALIDATION (Reviewer):**
-                - Palette: $palette (Dirty Steel, Muted Purple).
-                - Mandatory: VINTAGE 80s/90s OVA. 'Dirty' analog cel aesthetic, 2-step shading, film grain, and scanlines.
-                - Cyberware: Exposed low-tech machinery (tubes, wires, bolts) breaking the skin's silhouette.
-                - Banned: Clean digital lines, vibrant modern anime colors, smooth gradients, or 'webcomic' aesthetics.
-                - Fix: Inject 'analog grain', 'chromatic aberration', 'ink line weight variation', and 'exposed mechanical cyber-joints'.
+                - Palette: $palette (Midnight Blue, Electric Cyan).
+                - Mandatory Tokens: 'Vintage Cel Animation', 'Analog Film Grain', 'Hard Cel Shading', 'Retro Anime'.
+                - Critical Lighting: Must include 'Retro Halation' or 'Harsh Neon'. BANNED: 'Soft Digital Bloom', 'Ethereal Glow'.
+                - Critical Shading: Must be 'Hard Cel Shading'. BANNED: 'Soft Gradients', 'Digital Painting'.
+                - Anatomy: 'Retro Realistic'.
+                - Banned: 'Masterpiece', '4k', 'Digital Art', 'Smooth Lighting', 'Vector Lines', 'Modern Anime'.
+                - Fix: Inject 'Vintage Cel Animation', 'Heavy Film Grain', and 'Hard Cel Shading'.
                 """.trimIndent()
             }
 

@@ -126,6 +126,8 @@ class GemmaClient
                                     appendLine(prompt)
                                     if (requireTranslation) {
                                         appendLine(modelLanguage())
+                                    } else {
+                                        appendLine("Ensure the response is strictly in ENGLISH (EN-US).")
                                     }
                                     appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                                     if (T::class != String::class && describeOutput) {

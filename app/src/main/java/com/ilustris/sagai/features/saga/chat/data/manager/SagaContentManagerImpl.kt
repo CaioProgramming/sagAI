@@ -15,7 +15,6 @@ import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.Act
@@ -509,15 +508,15 @@ class SagaContentManagerImpl
             CoroutineScope(Dispatchers.IO).launch {
                 milestoneUpdate.collectLatest {
                     Log.d(javaClass.simpleName, "observeMilestone:\n$it")
-                    Log.d(javaClass.simpleName, it.toAINormalize())
+                    Log.d(javaClass.simpleName, it.toJsonFormat())
                     if (it == null) {
                         Log.i(javaClass.simpleName, "observeMilestone: No milestone checking story...")
                         checkNarrativeProgression(content.first())
                         return@collectLatest
                     }
+                }
             }
         }
-    }
 
         override fun checkNarrativeProgression(
             saga: SagaContent?,
@@ -750,7 +749,7 @@ class SagaContentManagerImpl
         private suspend fun emitMilestone(milestone: SagaMilestone?) {
             if (milestone != null && milestone != SagaMilestone.Loading) {
                 isMilestoneActive.value = true
-        }
+            }
             milestoneUpdate.emit(milestone)
         }
 

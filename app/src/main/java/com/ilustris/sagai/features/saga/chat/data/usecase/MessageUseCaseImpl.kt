@@ -107,20 +107,16 @@ class MessageUseCaseImpl
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
-            if (isFromUser) {
-                val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
-                val raw =
-                    gemmaClient
-                        .generate<String>(
-                            prompt,
-                            requireTranslation = false,
-                            requirement = GemmaClient.ModelRequirement.LOW,
-                        )?.trim()
-                        ?.uppercase()
-                EmotionalTone.getTone(raw)
-            } else {
-                message.emotionalTone
-            }
+            val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
+            val raw =
+                gemmaClient
+                    .generate<String>(
+                        prompt,
+                        requireTranslation = false,
+                        requirement = GemmaClient.ModelRequirement.LOW,
+                    )?.trim()
+                    ?.uppercase()
+            EmotionalTone.getTone(raw)
         }
 
         override suspend fun deleteMessage(messageId: Long) {

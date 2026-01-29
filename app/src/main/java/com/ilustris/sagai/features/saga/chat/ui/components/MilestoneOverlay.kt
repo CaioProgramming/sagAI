@@ -1,17 +1,22 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,6 +29,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,17 +53,20 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.playthrough.CounterText
+import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -146,62 +157,77 @@ fun MilestoneBadge(
     modifier: Modifier = Modifier,
 ) {
     val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
-    ConstraintLayout(
-        modifier =
-            modifier
-                .padding(8.dp)
-                .clip(shape)
-                .dropShadow(shape, {
-                    color = genre.color
-                    radius = glowBlurRadius
-                })
-                .background(brush, shape),
-    ) {
-        val (label, counter) = createRefs()
-        Text(
-            labelText,
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = genre.iconColor,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-            modifier =
-                Modifier
-                    .padding(horizontal = 8.dp, 4.dp)
-                    .constrainAs(label) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                    },
-        )
 
-        CounterText(
-            count,
-            textStyle =
-                MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = genre.headerFont(),
-                    brush = brush,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                ),
+    var showContent by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+        delay(700)
+        showContent = true
+    }
+    AnimatedVisibility(
+        showContent,
+        enter = scaleIn(tween(600, easing = EaseInBounce)),
+        exit = scaleOut(),
+    ) {
+        ConstraintLayout(
             modifier =
-                Modifier
-                    .padding(2.dp)
-                    .constrainAs(counter) {
-                        top.linkTo(label.bottom)
-                        start.linkTo(label.start)
-                        end.linkTo(label.end)
-                        width = Dimension.fillToConstraints
-                    }.background(
-                        MaterialTheme.colorScheme.background,
-                        shape,
-                    ).padding(4.dp)
-                    .reactiveShimmer(
-                        true,
-                        repeatMode = RepeatMode.Restart,
+                modifier
+                    .padding(8.dp)
+                    .clip(shape)
+                    .dropShadow(shape, {
+                        color = genre.color
+                        radius = glowBlurRadius
+                    })
+                    .background(brush, shape),
+        ) {
+            val (label, counter) = createRefs()
+            Text(
+                labelText,
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = genre.iconColor,
+                        fontWeight = FontWeight.SemiBold,
                     ),
-        )
+                modifier =
+                    Modifier
+                        .padding(horizontal = 8.dp, 4.dp)
+                        .constrainAs(label) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        },
+            )
+
+            CounterText(
+                count,
+                textStyle =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = brush,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(2.dp)
+                        .constrainAs(counter) {
+                            top.linkTo(label.bottom)
+                            start.linkTo(label.start)
+                            end.linkTo(label.end)
+                            width = Dimension.fillToConstraints
+                        }.background(
+                            MaterialTheme.colorScheme.background,
+                            shape,
+                        ).padding(4.dp)
+                        .reactiveShimmer(
+                            true,
+                            repeatMode = RepeatMode.Restart,
+                        ),
+            )
+        }
     }
 }
 
@@ -220,23 +246,31 @@ fun NewEventContent(
     val event = saga.findTimeline(timelineId)
     event?.let {
         val stats = event.statsSummary()
+        val topTone = event.messages.rankEmotionalTone().first()
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            VibeShapeDrawing(
+                topTone.first,
+                modifier = Modifier.size(64.dp),
+            )
 
-        LazyRow(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier
-                    .animateContentSize()
-                    .fillMaxWidth(),
-        ) {
-            items(stats) {
-                MilestoneBadge(
-                    it.second,
-                    stringResource(it.first),
-                    brush,
-                    5f,
-                    genre,
-                )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .animateContentSize()
+                        .fillMaxWidth(),
+            ) {
+                stats.forEach {
+                    MilestoneBadge(
+                        it.second,
+                        stringResource(it.first),
+                        brush,
+                        10f,
+                        genre,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }

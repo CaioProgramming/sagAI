@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
@@ -74,7 +75,9 @@ fun DefaultOverlay(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.background(MaterialTheme.colorScheme.background).fillMaxSize(),
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize(),
     ) {
         AnimatedVisibility(
             showIcon,
@@ -96,7 +99,7 @@ fun DefaultOverlay(
         ) {
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.labelMedium,
                 fontFamily = genre.bodyFont(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(16.dp),
@@ -110,9 +113,10 @@ fun DefaultOverlay(
         ) {
             Text(
                 subtitle,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 fontFamily = genre.bodyFont(),
+                fontWeight = FontWeight.Bold,
             )
         }
 
