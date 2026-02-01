@@ -409,6 +409,19 @@
     <string name="character_intro_fallback">Tudo pronto, vamos dar vida ao seu personagem! Quem vamos criar hoje\?</string>
     <string name="saga_input_hint_fallback">Descreva sua história…</string>
     <string name="character_input_hint_fallback">Descreva seu personagem…</string>
+
+    <!-- Chat Edit/Delete Actions -->
+    <string name="edit_message">Editar</string>
+    <string name="delete_message">Apagar</string>
+    <string name="copy_message">Copiar</string>
+    <string name="select_message">Selecionar</string>
+    <string name="delete_message_title">Apagar mensagem?</string>
+    <string name="delete_message_description">Esta ação não pode ser desfeita.</string>
+    <string name="delete">Apagar</string>
+    <string name="editing_message">Editando mensagem...</string>
+    <string name="message_deleted_regenerate">Mensagem apagada. Você pode regenerar a resposta da IA.</string>
+    <string name="regenerate">Regenerar</string>
+    <string name="save_changes">Salvar alterações</string>
 </resources>
 
 

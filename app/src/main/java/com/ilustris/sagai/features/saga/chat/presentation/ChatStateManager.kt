@@ -112,4 +112,12 @@ class ChatStateManager {
     fun updateMilestone(milestone: com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone?) {
         _uiState.update { it.copy(milestone = milestone) }
     }
+
+    fun showMessageOptions(message: com.ilustris.sagai.features.saga.chat.data.model.Message?) {
+        _uiState.update { it.copy(showMessageOptions = message) }
+    }
+
+    fun setEditingMessage(message: com.ilustris.sagai.features.saga.chat.data.model.Message?) {
+        _uiState.update { it.copy(editingMessage = message) }
+    }
 }

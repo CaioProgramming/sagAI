@@ -62,12 +62,11 @@ fun IntroductionOverlay(
             stringResource(R.string.chapter_title_template, introduction.number)
         }
 
-    // Sequential animation reveal
     LaunchedEffect(message) {
         if (message != null) {
-            delay(400)
+            delay(1.seconds)
             showContent = true
-            delay(800)
+            delay(1500)
             showTypewriter = true
         }
     }
@@ -132,8 +131,11 @@ fun IntroductionOverlay(
                         onAnimationFinished = {
                             animationComplete = true
                         },
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            )
                 }
             }
         }

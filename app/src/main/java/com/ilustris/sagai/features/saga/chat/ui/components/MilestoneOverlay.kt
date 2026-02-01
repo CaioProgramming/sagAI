@@ -117,10 +117,11 @@ fun MilestoneOverlay(
                     }
                 }
 
-                SagaMilestone.Loading -> {
+                is SagaMilestone.Loading -> {
                     LoadingMilestoneOverlay(
                         genre,
                         sparkModifier,
+                        message = congratsMessage,
                     )
                 }
 
@@ -217,10 +218,12 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }.background(
+                        }
+                        .background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        ).padding(4.dp)
+                        )
+                        .padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,
@@ -267,7 +270,7 @@ fun NewEventContent(
                         brush,
                         10f,
                         genre,
-                        modifier = Modifier.fillParentMaxWidth(.25f),
+                        modifier = Modifier.fillParentMaxWidth(.5f),
                     )
                 }
             }

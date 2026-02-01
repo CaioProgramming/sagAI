@@ -103,6 +103,26 @@ class ChatViewModel
                     updateSendType(action.type)
                 }
 
+                is ChatUiAction.OpenMessageOptions -> {
+                    openMessageOptions(action.message)
+                }
+
+                is ChatUiAction.DeleteMessage -> {
+                    deleteMessage(action.message)
+                }
+
+                is ChatUiAction.EditMessage -> {
+                    editMessage(action.message)
+                }
+
+                is ChatUiAction.SaveEdit -> {
+                    saveEdit()
+                }
+
+                is ChatUiAction.CancelEdit -> {
+                    cancelEdit()
+                }
+
                 is ChatUiAction.RetryAiResponse -> {
                     retryAiResponse(action.message)
                 }
@@ -405,6 +425,72 @@ class ChatViewModel
                 stateManager.updateCharacter(characterContent)
             }
         }
+
+        private fun openMessageOptions(message: Message?) {
+            if (message != null && (uiState.value.isLoading || uiState.value.isGenerating)) return
+            stateManager.showMessageOptions(message)
+        }
+
+        private fun editMessage(message: Message) {
+            stateManager.setEditingMessage(message)
+            stateManager.updateInput(
+                TextFieldValue(
+                    message.text,
+                    selection =
+                        androidx.compose.ui.text
+                            .TextRange(message.text.length),
+                ),
+            )
+            stateManager.showMessageOptions(null)
+        }
+
+        private fun deleteMessage(message: Message) {
+            if (uiState.value.isLoading) return
+            viewModelScope.launch(Dispatchers.IO) {
+                messageUseCase.deleteMessage(message.id.toLong())
+                stateManager.showMessageOptions(null)
+
+                val sagaContent = uiState.value.sagaContent ?: return@launch
+                val messages = sagaContent.flatMessages()
+                val index = messages.indexOfFirst { it.message.id == message.id }
+
+                if (index > 0) {
+                    val previousMessage = messages[index - 1]
+                    messageUseCase.updateMessage(previousMessage.message.copy(status = MessageStatus.ERROR))
+                }
+
+                updateSnackBar(
+                    snackBar(context.getString(R.string.message_deleted_regenerate)) {
+                        action {
+                            // No specific action needed for now, as the previous message is now in error state
+                        }
+                    },
+                )
+            }
+        }
+
+        private fun saveEdit() {
+            val editingMessage = uiState.value.editingMessage ?: return
+            val newText = uiState.value.inputValue.text
+            if (newText.isEmpty()) return
+
+            viewModelScope.launch(Dispatchers.IO) {
+                val updatedMessage = editingMessage.copy(text = newText)
+                messageUseCase.updateMessage(updatedMessage)
+
+                if (updatedMessage.senderType == SenderType.USER) {
+                    retryAiResponse(updatedMessage)
+                }
+
+                stateManager.setEditingMessage(null)
+                stateManager.updateInput(TextFieldValue(""))
+        }
+    }
+
+    private fun cancelEdit() {
+        stateManager.setEditingMessage(null)
+        stateManager.updateInput(TextFieldValue(""))
+    }
 
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -1103,6 +1189,7 @@ class ChatViewModel
                                 ),
                             )
                         }
+                        updateLoading(false)
                         sceneSummary?.let {
                             launch(Dispatchers.IO) {
                                 delay(5.seconds)
@@ -1110,7 +1197,6 @@ class ChatViewModel
                                 sagaContentManager.getCurrentObjective(sceneSummary)
                             }
                         }
-                        updateLoading(false)
                     }.onFailureAsync {
                         messageUseCase.updateMessage(
                             message.copy(

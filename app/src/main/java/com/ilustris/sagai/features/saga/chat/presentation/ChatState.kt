@@ -56,6 +56,8 @@ data class ChatUiState(
     val sendingProgress: Float = 0f,
     val isAudioInput: Boolean = false,
     val milestone: SagaMilestone? = null,
+    val editingMessage: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
+    val showMessageOptions: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
 )
 
 data class MessageSelectionState(

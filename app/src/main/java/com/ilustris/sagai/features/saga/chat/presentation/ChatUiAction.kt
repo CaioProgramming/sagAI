@@ -67,6 +67,22 @@ sealed class ChatUiAction {
         val show: Boolean,
     ) : ChatUiAction()
 
+    data class DeleteMessage(
+        val message: Message,
+    ) : ChatUiAction()
+
+    data class EditMessage(
+        val message: Message,
+    ) : ChatUiAction()
+
+    data class OpenMessageOptions(
+        val message: Message?,
+    ) : ChatUiAction()
+
+    data object SaveEdit : ChatUiAction()
+
+    data object CancelEdit : ChatUiAction()
+
     data object Back : ChatUiAction()
 
     data object OpenSagaDetails : ChatUiAction()

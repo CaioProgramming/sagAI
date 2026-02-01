@@ -109,7 +109,6 @@ import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioMessagePlayer
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -655,16 +654,6 @@ fun ChatBubble(
                                                 if (sender == SenderType.THOUGHT) 0f else 1f,
                                             )
                                         }
-                                        val alphaAnimation by animateFloatAsState(
-                                            targetValue = starAlpha,
-                                            animationSpec =
-                                                tween(
-                                                    1000,
-                                                    easing = FastOutSlowInEasing,
-                                                ),
-                                            label = "starAlpha",
-                                        )
-                                        message.speakerName == mainCharacter?.data?.name
                                         val textColor =
                                             when (sender) {
                                                 SenderType.ACTION -> MaterialColor.Amber400
@@ -753,26 +742,6 @@ fun ChatBubble(
                                             if (BuildConfig.DEBUG) {
                                                 ReasoningView(message.reasoning, genre)
                                             }
-                                        }
-
-                                        if (sender == SenderType.THOUGHT) {
-                                            StarryTextPlaceholder(
-                                                modifier =
-                                                    Modifier
-                                                        .matchParentSize()
-                                                        .alpha(alphaAnimation)
-                                                        .clip(bubbleShape)
-                                                        .clickable {
-                                                            starAlpha = 0f
-                                                            textAlpha = 1f
-                                                        }.background(
-                                                            MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                                alpha = .4f,
-                                                            ),
-                                                            bubbleShape,
-                                                        ).padding(16.dp),
-                                                starColor = genre.color,
-                                            )
                                         }
                                     }
                                 }
@@ -938,7 +907,10 @@ fun ChatBubble(
                                         fontFamily = genre.bodyFont(),
                                         color = genre.iconColor,
                                     ),
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .fillMaxWidth(),
                                 mainCharacter = mainCharacter?.data,
                                 characters = characters.map { it.data },
                                 wiki = wiki,

@@ -143,6 +143,8 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDialog
+import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.MilestoneOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
@@ -571,6 +573,10 @@ fun ChatContent(
     var showReactions by remember {
         mutableStateOf<MessageContent?>(null)
     }
+    var showDeleteConfirmDialog by remember {
+        mutableStateOf<com.ilustris.sagai.features.saga.chat.data.model.Message?>(null)
+    }
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     WindowInsets.isImeVisible
     val progress by animateFloatAsState(
         if (content.data.isEnded.not()) uiState.loreUpdateProgress else 1f,
@@ -597,7 +603,8 @@ fun ChatContent(
                             shimmerColors = saga.genre.shimmerColors(),
                             duration = 10.seconds,
                             targetValue = 1000f,
-                        ).fillMaxSize(.5f)
+                        )
+                        .fillMaxSize(.5f)
                         .alpha(.3f),
             )
 
@@ -656,8 +663,12 @@ fun ChatContent(
                             }
 
                             is MessageAction.LongPress -> {
-                                onAction(ChatUiAction.ToggleSelectionMode)
-                                onAction(ChatUiAction.ToggleMessageSelection(action.messageId))
+                                val message =
+                                    content
+                                        .flatMessages()
+                                        .find { it.message.id == action.messageId }
+                                        ?.message
+                                onAction(ChatUiAction.OpenMessageOptions(message))
                             }
                         }
                     },
@@ -701,12 +712,16 @@ fun ChatContent(
                         isSendingPending = uiState.isSendingPending,
                         sendingProgress = uiState.sendingProgress,
                         onSendMessage = { userConfirmed ->
-                            onAction(
-                                ChatUiAction.SendInput(
-                                    userConfirmed,
-                                    false,
-                                ),
-                            )
+                            if (uiState.editingMessage != null) {
+                                onAction(ChatUiAction.SaveEdit)
+                            } else {
+                                onAction(
+                                    ChatUiAction.SendInput(
+                                        userConfirmed,
+                                        false,
+                                    ),
+                                )
+                            }
                         },
                         onUpdateInput = { value -> onAction(ChatUiAction.UpdateInput(value)) },
                         onUpdateSender = { type -> onAction(ChatUiAction.UpdateSenderType(type)) },
@@ -723,6 +738,8 @@ fun ChatContent(
                                 ChatUiAction.RequestAudioTranscript(true),
                             )
                         },
+                        isEditing = uiState.editingMessage != null,
+                        onCancelEdit = { onAction(ChatUiAction.CancelEdit) },
                     )
                 }
 
@@ -863,10 +880,12 @@ fun ChatContent(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        ).reactiveShimmer(
+                                        )
+                                        .reactiveShimmer(
                                             uiState.isGenerating || uiState.isLoading,
                                             shimmerColors = saga.genre.shimmerColors(),
-                                        ).sharedElement(
+                                        )
+                                        .sharedElement(
                                             rememberSharedContentState(
                                                 key = "saga_${saga.id}_spark",
                                             ),
@@ -1038,6 +1057,55 @@ fun ChatContent(
         ReactionsBottomSheet(it, content) {
             showReactions = null
         }
+    }
+
+    uiState.showMessageOptions?.let { message ->
+        MessageOptionsSheet(
+            message = message,
+            genre = content.data.genre,
+            isLastMessage =
+                content
+                    .flatMessages()
+                    .lastOrNull()
+                    ?.message
+                    ?.id == message.id,
+            isSafeToEdit = !uiState.isLoading && !uiState.isGenerating && !content.data.isEnded,
+            onEdit = {
+                onAction(ChatUiAction.EditMessage(message))
+            },
+            onDelete = {
+                showDeleteConfirmDialog = message
+                onAction(ChatUiAction.OpenMessageOptions(null))
+            },
+            onCopy = {
+                clipboardManager.setText(
+                    androidx.compose.ui.text
+                        .AnnotatedString(message.text),
+                )
+                onAction(ChatUiAction.OpenMessageOptions(null))
+            },
+            onSelect = {
+                onAction(ChatUiAction.ToggleSelectionMode)
+                onAction(ChatUiAction.ToggleMessageSelection(message.id))
+                onAction(ChatUiAction.OpenMessageOptions(null))
+            },
+            onDismiss = {
+                onAction(ChatUiAction.OpenMessageOptions(null))
+            },
+        )
+    }
+
+    showDeleteConfirmDialog?.let { message ->
+        DeleteConfirmationDialog(
+            genre = content.data.genre,
+            onConfirm = {
+                onAction(ChatUiAction.DeleteMessage(message))
+                showDeleteConfirmDialog = null
+            },
+            onDismiss = {
+                showDeleteConfirmDialog = null
+            }
+        )
     }
 }
 

@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.presentation.model.LoadingType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import javax.inject.Inject
 
@@ -118,7 +119,49 @@ class MilestoneUseCaseImpl
                 }
 
                 is SagaMilestone.Loading -> {
-                    ""
+                    getLoadingDefaultMessage(genre, milestone.type)
                 }
             }
+    }
+
+private fun getLoadingDefaultMessage(
+    genre: Genre,
+    type: LoadingType,
+): String =
+    when (type) {
+        LoadingType.ACT -> {
+            when (genre) {
+                Genre.FANTASY -> "Rewearing the prophecies for a new era..."
+                Genre.CYBERPUNK -> "Redefining the neon horizon..."
+                Genre.HORROR -> "The nightmare is evolving..."
+                else -> "Preparing a massive shift in your story..."
+            }
+        }
+
+        LoadingType.CHAPTER -> {
+            when (genre) {
+                Genre.FANTASY -> "Inking the next chapter of your legend..."
+                Genre.CYBERPUNK -> "Loading the next sector of the sprawl..."
+                Genre.HORROR -> "Turning the page of your demise..."
+                else -> "Drafting the next chapter..."
+            }
+        }
+
+        LoadingType.EVENT -> {
+            when (genre) {
+                Genre.FANTASY -> "Consulting the ancient scrolls..."
+                Genre.CYBERPUNK -> "Compiling the next protocol..."
+                Genre.SPACE_OPERA -> "Calculating hyperjump coordinates..."
+                Genre.HORROR -> "The darkness is shifting..."
+                Genre.COWBOY -> "Saddling up for the next trail..."
+                Genre.SHINOBI -> "Preparing the next shadow mission..."
+                Genre.HEROES -> "Assembling the next challenge..."
+                Genre.CRIME -> "Connecting the next piece of evidence..."
+                Genre.PUNK_ROCK -> "Tuning the amps for the next set..."
+            }
+        }
+
+        LoadingType.ENDING -> {
+            "Crafting the grand finale of your saga..."
+        }
     }

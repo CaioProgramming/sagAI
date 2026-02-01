@@ -23,6 +23,8 @@
     <string name="back_button_description">Back</string>
     <string name="lets_create_saga">Let\'s create your saga</string>
     <string name="lets_create_saga_subtitle">AI will help you bring everything to life; don\'t be shy with the details of your journey.</string>
+    <string name="regenerate">Regenerate</string>
+    <string name="save_changes">Save changes</string>
     <string name="next">Continue</string>
     <string name="user_action_title">Speak</string>
     <string name="sender_type_narrator_title">Narrate</string>
@@ -440,4 +442,15 @@
     <string name="character_intro_fallback">Alright, let\'s bring your character to life! Who are we creating today\?</string>
     <string name="saga_input_hint_fallback">Describe your story…</string>
     <string name="character_input_hint_fallback">Describe your character…</string>
+
+    <!-- Chat Edit/Delete Actions -->
+    <string name="edit_message">Edit</string>
+    <string name="delete_message">Delete</string>
+    <string name="copy_message">Copy</string>
+    <string name="select_message">Select</string>
+    <string name="delete_message_title">Delete Message?</string>
+    <string name="delete_message_description">This action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="editing_message">Editing message...</string>
+    <string name="message_deleted_regenerate">Message deleted. You can regenerate the AI response.</string>
 </resources>

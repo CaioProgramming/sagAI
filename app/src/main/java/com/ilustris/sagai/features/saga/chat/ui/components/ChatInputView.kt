@@ -275,6 +275,8 @@ fun ChatInputView(
     onSendMessage: (Boolean) -> Unit,
     onSelectCharacter: (CharacterContent) -> Unit = {},
     onRequestAudio: () -> Unit = {},
+    isEditing: Boolean = false,
+    onCancelEdit: () -> Unit = {},
 ) {
     val action = sendType
     val inputBrush =
@@ -364,6 +366,26 @@ fun ChatInputView(
         modifier
             .fillMaxWidth(),
     ) {
+        if (isEditing) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.editing_message),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color =
+                                content.data.genre.color
+                                    .copy(alpha = .5f),
+                        ),
+                    fontFamily = content.data.genre.bodyFont(),
+                )
+            }
+        }
         val isImeVisible = WindowInsets.isImeVisible
         val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
         val coroutineScope = rememberCoroutineScope()
@@ -456,10 +478,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                sweepGradient(
-                                                    content.data.genre.colorPalette(),
-                                                ) as ShaderBrush
-                                            ).createShader(size)
+                                                    sweepGradient(
+                                                        content.data.genre.colorPalette(),
+                                                    ) as ShaderBrush
+                                                    ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -482,7 +504,8 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }.dropShadow(inputShape, {
+                    }
+                    .dropShadow(inputShape, {
                         brush = inputBrush
                         radius = glowRadius
                     })
@@ -530,11 +553,13 @@ fun ChatInputView(
                                         radius = 5.dp,
                                         genre.color,
                                     ),
-                                ).border(1.dp, genre.color.gradientFade(), shape)
+                                )
+                                .border(1.dp, genre.color.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
-                                ).clip(shape)
+                                )
+                                .clip(shape)
                                 .padding(8.dp),
                     ) {
                         item(span = { GridItemSpan(4) }) {
@@ -560,7 +585,8 @@ fun ChatInputView(
                                             coroutineScope.launch {
                                                 characterToolTipState.dismiss()
                                             }
-                                        }.size(36.dp),
+                                        }
+                                        .size(36.dp),
                                 textStyle =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -805,7 +831,8 @@ fun ChatInputView(
                                                             .background(
                                                                 backColor,
                                                                 inputShape,
-                                                            ).clickable(enabled = currentTagInside == null) {
+                                                            )
+                                                            .clickable(enabled = currentTagInside == null) {
                                                                 it.tag?.let { tag ->
                                                                     val newValue =
                                                                         insertExpressiveTag(
@@ -814,7 +841,8 @@ fun ChatInputView(
                                                                         )
                                                                     onUpdateInput(newValue)
                                                                 }
-                                                            }.padding(8.dp)
+                                                            }
+                                                            .padding(8.dp)
                                                             .animateContentSize()
                                                             .reactiveShimmer(
                                                                 it.tag == currentTagInside,
@@ -893,6 +921,25 @@ fun ChatInputView(
                     )
                 }
 
+                if (isEditing) {
+                    IconButton(
+                        onClick = onCancelEdit,
+                        modifier =
+                            Modifier
+                                .padding(end = 4.dp)
+                                .size(32.dp),
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error,
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.round_close_24),
+                            contentDescription = stringResource(R.string.cancel),
+                        )
+                    }
+                }
+
                 IconButton(
                     onClick = {
                         if (isSendingPending) {
@@ -900,7 +947,7 @@ fun ChatInputView(
                             return@IconButton
                         }
                         if (isGenerating) return@IconButton
-                        if (inputField.text.isEmpty()) {
+                        if (inputField.text.isEmpty() && !isEditing) {
                             onRequestAudio()
                             return@IconButton
                         }
@@ -914,7 +961,7 @@ fun ChatInputView(
                     modifier = Modifier.size(36.dp),
                 ) {
                     AnimatedContent(
-                        isGenerating || isSendingPending,
+                        isGenerating || isSendingPending || isEditing,
                         transitionSpec = {
                             scaleIn(
                                 tween(1000, easing = EaseInBounce),
@@ -928,10 +975,13 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .reactiveShimmer(
                                     isGenerating,
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     ) { loading ->
                         val icon =
-                            if (loading) {
+                            if (isEditing) {
+                                R.drawable.ic_check_circle
+                            } else if (loading) {
                                 if (isSendingPending) R.drawable.ic_stop else R.drawable.ic_spark
                             } else if (inputField.text.isEmpty()) {
                                 R.drawable.ic_mic
@@ -940,7 +990,7 @@ fun ChatInputView(
                             }
                         Icon(
                             painterResource(icon),
-                            contentDescription = "Send Message",
+                            contentDescription = if (isEditing) stringResource(R.string.save_changes) else "Send Message",
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -984,7 +1034,8 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     inputShape,
-                                ).padding(16.dp),
+                                )
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

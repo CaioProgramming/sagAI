@@ -2,7 +2,10 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.presentation.model.LoadingType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 
 object MilestonePrompts {
@@ -14,9 +17,7 @@ object MilestonePrompts {
             return rewriteIntroduction(milestone, saga)
         }
 
-        if (milestone == SagaMilestone.Loading ||
-            milestone is SagaMilestone.CurrentObjective
-        ) {
+        if (milestone is SagaMilestone.CurrentObjective) {
             return null
         }
         val genre = saga.data.genre
@@ -24,7 +25,9 @@ object MilestonePrompts {
         getMilestoneType(milestone)
 
         return buildString {
-            appendLine("You are a witty, clever storytelling companion. The user just achieved a milestone in their saga.")
+            val milestoneContext =
+                if (milestone is SagaMilestone.Loading) "is waiting for the story to progress" else "just achieved a milestone in their saga"
+            appendLine("You are a witty, clever storytelling companion. The user $milestoneContext.")
             appendLine("Generate ONE SHORT, MEMORABLE congratulatory message that REACTS DIRECTLY to their achievement.")
             appendLine()
             appendLine("STORY CONTEXT:")
@@ -286,32 +289,72 @@ object MilestonePrompts {
                 """.trimIndent()
             }
 
-            // Introduction and Loading don't need reference points as they handle their own display
+            // Introduction handles its own display
             is SagaMilestone.Introduction -> {
                 ""
             }
 
             is SagaMilestone.Loading -> {
-                ""
+                val nextChapter =
+                    saga
+                        .flatChapters()
+                        .lastOrNull()
+                        ?.data
+                        ?.title ?: "the next sequence"
+                val typeDesc =
+                    when (milestone.type) {
+                        LoadingType.ACT -> "a massive narrative shift (NEW ACT)"
+                        LoadingType.CHAPTER -> "a new chapter in this journey ($nextChapter)"
+                        LoadingType.EVENT -> "a specific event or milestone within the story"
+                        LoadingType.ENDING -> "the grand finale of this saga"
+                    }
+                """
+                - The user is waiting while you prepare $typeDesc.
+                - BE FRIENDLY AND PLAYFUL: Speak like a creative partner, not a machine.
+                - BE AWARE: Mention that you're "polishing the climax," "sharpening the twists," or "rewriting the stars."
+                - TONE: Slightly meta, joking, but very atmospheric for the ${saga.data.genre.name} genre.
+                - AVOID generic "loading" phrases. Instead, make it feel like you're actually crafting the destiny of their characters.
+                """.trimIndent()
             }
         }
 
     fun rewriteIntroduction(
-        milestone: SagaMilestone,
+        milestone: SagaMilestone.Introduction,
         saga: SagaContent,
     ): String =
         buildString {
             val genre = saga.data.genre
-            appendLine("You are a cinematic narrator and a witty storytelling companion.")
+            appendLine(
+                "You are a cinematic narrator and a witty storytelling companion. The user is beginning a new ${milestone.type.name.lowercase()} in their saga.",
+            )
             appendLine("The original introduction text is too long. Rewrite it to be SHORT, IMPACTFUL, and CINEMATIC.")
+            appendLine()
+            appendLine("ORIGINAL TEXT:")
+            appendLine(milestone.introduction)
+            appendLine()
+            appendLine("# STORY CONTEXT")
+            appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+
+            saga.currentActInfo?.let { act ->
+                appendLine("\n## Active Segment")
+                appendLine(act.actSummary(saga, true))
+            }
+
+            appendLine("\n## Historical Context")
+            saga.acts.filter { it.data.id != saga.data.currentActId }.forEach {
+                appendLine(it.actSummary(saga, false))
+            }
+
+            appendLine("\n## Recent Activity")
+            appendLine(ChatPrompts.conversationHistory(saga))
+
             appendLine()
             appendLine("YOUR PERSONA:")
             appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
             appendLine(buildPersonaForGenre(genre))
-            appendLine("STORY CONTEXT:")
-            append(SagaPrompts.mainContext(saga, ommitCharacter = true))
-            appendLine("ORIGINAL CONTENT:")
-            appendLine(milestone.toAINormalize())
+            appendLine()
+            appendLine("# STORYTELLING DIRECTIVES")
+            appendLine(ActPrompts.actDirective(saga.getDirective()))
             appendLine()
             appendLine("REQUIREMENTS:")
             appendLine("- Maximum 25 words (be punchy)")
@@ -324,6 +367,7 @@ object MilestonePrompts {
             )
             appendLine("- Use your persona's distinctive flavor (sarcasm, dark humor, or epic flair)")
             appendLine("- Focus on the emotional core or the major shift in the narrative")
+            appendLine("- Ensure it works perfectly with a typewriter animation reveal")
             appendLine("- NO emojis, NO greeting, NO meta-commentary")
             appendLine()
             appendLine("Output ONLY the rewritten cinematic introduction:")
