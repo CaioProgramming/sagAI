@@ -3,7 +3,8 @@ package com.ilustris.sagai.features.saga.chat.repository
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.analytics.AnalyticsConstants
+import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
@@ -69,9 +70,7 @@ class SagaRepositoryImpl
                 buildString {
                     appendLine("### MANDATORY CHARACTER ICON")
                     appendLine("The following character are ESSENTIAL to this icon:")
-                    append("[")
                     appendLine(characters.joinToString { it.name })
-                    appendLine("]")
                     appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
                     appendLine()
                     appendLine("#### SUBJECTS DETAILS:")
@@ -88,8 +87,10 @@ class SagaRepositoryImpl
                         ),
                     )
                     appendLine()
+                    appendLine("Story context: ")
+                    appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
                     appendLine(
-                        "FINAL MANDATE: Create a balanced composition where all characters are clearly visible and integrated into the ${saga.genre.name} aesthetic.",
+                        "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
                     )
                 }
             val newIcon =
@@ -98,7 +99,7 @@ class SagaRepositoryImpl
                         genre = saga.genre,
                         imageReference = iconReferenceComposition,
                         context = context,
-                        imageType = AnalyticsConstants.ImageType.ICON,
+                        imageType = ImageType.COVER,
                     ).getSuccess()!!
 
             val file =

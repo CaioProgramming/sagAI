@@ -93,17 +93,24 @@ data class GeminiError(
 // region Builder Extensions
 
 /**
- * Creates a GeminiRequest for audio generation with the specified text and voice.
+ * Creates a GeminiRequest for audio generation with the specified text, voice, and performance instruction.
  */
 fun createAudioGenerationRequest(
     text: String,
     voice: Voice,
-): GeminiRequest =
-    GeminiRequest(
+    instruction: String? = null,
+): GeminiRequest {
+    val fullPrompt =
+        if (instruction != null) {
+            "Instruction: $instruction\n\nScript: $text"
+        } else {
+            text
+        }
+    return GeminiRequest(
         contents =
             listOf(
                 GeminiContent(
-                    parts = listOf(GeminiPart(text = text)),
+                    parts = listOf(GeminiPart(text = fullPrompt)),
                 ),
             ),
         generationConfig =
@@ -121,5 +128,6 @@ fun createAudioGenerationRequest(
                     ),
             ),
     )
+}
 
 // endregion

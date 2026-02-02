@@ -46,8 +46,13 @@ class AudioGenClientImpl
 
             return billingService.runPremiumRequest {
                 val apiKey = apiKey()
+                val cleanPrompt = stripExpressiveTags(audioConfig.prompt)
                 val request =
-                    createAudioGenerationRequest(text = audioConfig.prompt, voice = audioConfig.voice)
+                    createAudioGenerationRequest(
+                        text = cleanPrompt,
+                        voice = audioConfig.voice,
+                        instruction = audioConfig.instruction,
+                    )
 
                 Log.d(
                     TAG,
@@ -104,4 +109,12 @@ class AudioGenClientImpl
                     .wrapPcmInWav(pcmData)
             }
         }
+
+        private fun stripExpressiveTags(text: String): String =
+            text
+                .replace(Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL), "")
+                .replace(Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL), "")
+                .replace(Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL), "")
+                .trim()
+                .replace("\\s+".toRegex(), " ")
     }

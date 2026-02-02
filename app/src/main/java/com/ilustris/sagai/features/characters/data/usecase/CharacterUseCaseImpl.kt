@@ -6,8 +6,8 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
-import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -88,17 +88,14 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val portraitReference =
-                    genreReferenceHelper.getRandomPortraitReference().getSuccess()
-
                 val image =
                     imagenClient
                         .generateIntegratedImage(
                             genre = saga.genre,
-                            imageReference = portraitReference,
+                            imageReference = null,
                             context =
                                 buildString {
-                                    appendLine("Character Context: ")
+                                    appendLine("Character Context:")
                                     appendLine(
                                         character.toAINormalize(
                                             listOf(
@@ -107,11 +104,12 @@ class CharacterUseCaseImpl
                                                 "sagaId",
                                                 "joinedAt",
                                                 "smartZoom",
+                                                "knowledge",
                                             ),
                                         ),
                                     )
                                 },
-                            imageType = AnalyticsConstants.ImageType.AVATAR,
+                            imageType = ImageType.CHARACTER,
                         ).getSuccess()!!
 
                 val file =

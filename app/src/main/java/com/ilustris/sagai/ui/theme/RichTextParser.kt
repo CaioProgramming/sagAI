@@ -142,4 +142,16 @@ object RichTextParser {
         THINK,
         NARRATOR,
     }
+
+    /**
+     * Removes all expressive tags and their content from the text.
+     * Useful for TTS or other systems that only need the plain dialogue.
+     */
+    fun stripTags(text: String): String =
+        text
+            .replace(ACTION_REGEX, "")
+            .replace(THINK_REGEX, "")
+            .replace(NARRATOR_REGEX, "")
+            .trim()
+            .replace("\\s+".toRegex(), " ")
 }

@@ -134,7 +134,7 @@ object AudioPrompts {
             "- **Write for the Ear, Not the Eye:** Adapt the text to sound like natural speech. Use contractions (e.g., 'don't', 'it's') where appropriate for the character. Avoid long, complex sentences that are hard to say in one breath.",
         )
         appendLine(
-            "- **Clean Text Only:** The prompt must contain ONLY the words to be spoken. No parenthetical notes or extra instructions.",
+            "- **Clean Text Only:** The prompt must contain ONLY the words to be spoken. No parenthetical notes, extra instructions, or narrative tags.",
         )
         appendLine(
             "- **Be Concise:** Keep the script under 30 seconds (~75-100 words). Summarize if necessary, but keep the core emotional intent and character voice.",
@@ -142,7 +142,17 @@ object AudioPrompts {
         appendLine(
             "- **Use Punctuation for Rhythm:** Use commas, ellipses, and em dashes strategically to create a natural, human-like cadence. This is your primary tool for controlling the rhythm of the clean script.",
         )
-        appendLine("- **Text Normalization:** Remove all markdown, asterisks, URLs, etc. Action descriptions must be removed.")
+        appendLine(
+            "- **Text Normalization:** Remove all markdown, asterisks, URLs, etc. Action descriptions (<action>...</action>) and narrator context (<narrator>...</narrator>) must be removed from the prompt.",
+        )
+        appendLine(
+            "- **Tag-Aware Tone:** Use the content within <action>, <think>, and <narrator> tags to inform the 'instruction' field, but NEVER include the tags or the bracketed text in the 'prompt' field.",
+        )
+        appendLine(
+            "- **Thinking Content:** Text inside <think>...</think> tags is INTERNAL. Do NOT include it in the spoken script, but use it to add subtext to the performance (e.g., 'sound hesitant and conflicted').",
+        )
+        appendLine()
+        appendLine(ChatRules.TAG_BASED_EXPRESSION_SYSTEM)
         appendLine()
 
         appendLine("## 3. OUTPUT FORMAT")

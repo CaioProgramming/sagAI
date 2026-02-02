@@ -14,155 +14,126 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 
 object GenrePrompts {
-    fun artStyle(genre: Genre) =
+    fun renderingInstructions(genre: Genre) =
         when (genre) {
             FANTASY -> {
                 buildString {
-                    appendLine("Art Technique: HIGH BAROQUE OIL (Tenebrism style).")
-                    appendLine(
-                        "Tracing: Soft, blended edges with no visible outlines. Form is defined purely by light and shadow transitions.",
-                    )
-                    appendLine(
-                        "Shadowing: Dramatic Chiaroscuro with deep, near-black voids (Tenebrism) contrasting with luminous focal points.",
-                    )
-                    appendLine(
-                        "Lighting: Grandiose, 'divine' volumetric light beams. Translucent glazing layers create a 'glow from within' on skin.",
-                    )
-                    appendLine("Anatomy: Grandiose and idealized proportions. Physical forms follow classical Greek sculpture aesthetics.")
-                    appendLine("Palette: CRIMSON RED dominance with RADIANT GOLD reflective highlights.")
+                    appendLine("MEDIUM: Classical Oil Painting (High Baroque Period).")
+                    appendLine("TECHNIQUE: Sfumato (soft, imperceptible transitions). No visible line art.")
+                    appendLine("LIGHTING: Tenebrism (Violent contrast between deep darks and divine light). Volumetric 'God Rays'.")
+                    appendLine("TEXTURE: Canvas grain, rich impasto brushwork, translucent glazing on skin.")
+                    appendLine("PALETTE_BEHAVIOR: Deep shadows swallow details; highlights burn with gold and crimson.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             CYBERPUNK -> {
                 buildString {
-                    appendLine(
-                        "Art Technique: VINTAGE 80s/90s CEL ANIMATION (Bubblegum Crisis/Akira style), Analog Aesthetic, Hand-Painted Backgrounds.")
-                    appendLine(
-                        "Tracing: HAND-DRAWN CEL INK, Organic Line Weight, Slight Bleed, Not Vector-Perfect, Traditional Animation Acetate.",
-                    )
-                    appendLine(
-                        "Shadowing: HARD CEL SHADING, High Contrast, No Soft Gradients, Solid Black Shadows, Dramatic Noir-like Contrast.",
-                    )
-                    appendLine(
-                        "Lighting: RETRO HALATION, Analog Bloom, Harsh Neon Backlight, 'Ghosting' effects, No Modern Digital Softness.",
-                    )
-                    appendLine(
-                        "Anatomy: RETRO ANIME REALISM, Expressive Eyes (Not Moe), Sharp Chins, Detailed Mechanical Gaskets, 'Hard' Character Design.",
-                    )
-                    appendLine(
-                        "Palette: DARK INDUSTRIAL, Saturated Reds and Blues, Deep Blacks, Muted Background Tones vs Glowing Foregrounds.",
-                    )
-                    appendLine("Filters: HEAVY FILM GRAIN, VHS Noise, Chromatic Aberration, Scanlines, Analog Tape Saturation.")
+                    appendLine("MEDIUM: Vintage 1980s Cel Animation (Acetate & Ink).")
+                    appendLine("TECHNIQUE: Hand-drawn ink outlines (organic line weight). Hard Cel Shading (blocks of color).")
+                    appendLine("LIGHTING: 'Retro Halation' (bloom) on highlights. Harsh neon backlight. Deep blacks.")
+                    appendLine("TEXTURE: Heavy Film Grain, chromatic aberration, VHS tape noise, scanlines.")
+                    appendLine("PALETTE_BEHAVIOR: High saturation neon vs. crushed blacks. Analog color bleed.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             HORROR -> {
                 buildString {
-                    appendLine("Art Technique: 32-BIT RETRO 3D (Fixed-Camera Horror style).")
-                    appendLine("Tracing: Low-polygon silhouettes with visible vertex-jitter. Edges are jagged and dithered.")
-                    appendLine(
-                        "Shadowing: Dithered gradient patterns (checkerboard pixel dots) to simulate shadows. Heavy use of 'Z-buffer' depth fog.",
-                    )
-                    appendLine("Lighting: Flashlight-driven 'cone' lighting. Low-ambient darkness with high-contrast 'hot spots'.")
-                    appendLine("Anatomy: Blocky, simplified forms with dithered skin textures. Faces have limited, 'drawn-on' expressions.")
-                    appendLine("Palette: Limited 256-color range. Dominated by dark cyans, dull grays, and pale cerulean.")
+                    appendLine("MEDIUM: 32-Bit Retro 3D Render (PS1 Era).")
+                    appendLine("TECHNIQUE: Low-polygon meshes. Vertex jitter (wobbly geometry).")
+                    appendLine("LIGHTING: Flashlight 'cone' lighting. Darkness implies the unknown.")
+                    appendLine("TEXTURE: Pixelated textures (Nearest-Neighbor filtering). Dithering patterns for gradients.")
+                    appendLine("PALETTE_BEHAVIOR: Limited 256-color look. Muted, desaturated, cold tones.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             HEROES -> {
                 buildString {
-                    appendLine("Art Technique: TEXTURED HAND-DRAWN NOIR (Ink & Charcoal on Rough Paper).")
+                    appendLine("MEDIUM: GRITTY VINTAGE NOIR COMIC (Heavy Brush & Raw Ink).")
                     appendLine(
-                        "Tracing: UNPREDICTABLE and organic. Visible paper grain, uneven ink bleed, and scratchy charcoal textures. Avoid perfect, smooth digital lines.",
-                    )
-                    appendLine(
-                        "Shadowing: Deep, velvety spot-blacks applied with a dry brush. Shadows must feel physical and tactile, not flat or gradient-based.",
+                        "TECHNIQUE: Massive 'Spot Blacks' (Mignola/Miller). Shadows are solid black shapes, not gradients. Line work is heavy, organic, and imperfect. BANNED: Thin digital vectors or smooth gradients.",
                     )
                     appendLine(
-                        "Lighting: Naturalistic Character Lighting using warm/neutral tones to reveal skin texture. Shadows are absolute noir blacks.",
-                    )
-                    appendLine("Anatomy: 100% GROUNDED REALISM. Humans look like humans (pores, wrinkles, weight). Avoid plastic/doll-like smoothness.",
+                        "LIGHTING: Hard-Edged Chiaroscuro. Light is a physical shape, not a diffuse glow. No 'soft' lighting.",
                     )
                     appendLine(
-                        "Environment: SHARP NARRATIVE URBANISM. Backgrounds must be in focus, textured, and detailed (neon signs, brickwork, fire escapes). NO blur/bokeh.",
-                    )
+                        "TEXTURE: VISIBLE PAPER GRAIN & INK BLEED. High-density Ben-Day dots for shading. The image should feel like physical paper.")
                     appendLine(
-                        "Palette: NATURAL REALISTIC COLORS for skin/clothes. ELECTRIC BLUE is strictly a TINY ACCENT (eye glint, device LED) and NEVER a scene filter.",
+                        "PALETTE_BEHAVIOR: FLAT COLOR CUTS. Colors must be solid fills, not digital paintings. Skin/Hair/Eyes must be natural. BANNED: Digital airbrushing, lens flares, or 'glow' effects.",
                     )
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             CRIME -> {
                 buildString {
-                    appendLine("Art Technique: RENAISSANCE-MODERN FUSION (Art Deco Noir).")
-                    appendLine(
-                        "Tracing: Polished, seamless transitions. Outlines are nearly invisible, with forms defined by subtle shifts in skin temperature and material sheen.",
-                    )
-                    appendLine(
-                        "Shadowing: Mastery of 'High-Society Chiaroscuro'. Shadows are deep navy, rich umber, or champagne-gray—never 'dirty' or gritty.",
-                    )
-                    appendLine(
-                        "Lighting: Saturated 'Golden Hour' luxury glow. Volumetric light reflecting off marble, silk, and turquoise water. High-gloss specular highlights on gold jewelry.",
-                    )
-                    appendLine(
-                        "Anatomy: 'Divine Perfection'. Statuesque proportions with a soft, marble-like skin luster. Posing is relaxed, candid, and untouchably elegant.",
-                    )
-                    appendLine(
-                        "Palette: Noble pigments (Navy, Champagne, Gold) with HOT PINK (#E91E63) strictly as sharp localized highlights (neon, drink, or silk detail).",
-                    )
+                    appendLine("MEDIUM: Polished Art Deco Oil Illustration.")
+                    appendLine("TECHNIQUE: Seamless gradients. 'Ligne Claire' influence but with painterly depth.")
+                    appendLine("LIGHTING: Golden Hour luxury. High-specular gloss on skin and gold.")
+                    appendLine("TEXTURE: Smooth marble, silk, polished metal. Zero grit.")
+                    appendLine("PALETTE_BEHAVIOR: Rich, expensive tones (Navy, Champagne). Hot Pink neon accents.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             SHINOBI -> {
                 buildString {
-                    appendLine("Art Technique: BRUTAL ZEN SUMI-E (Aggressive Ink Wash).")
-                    appendLine("Tracing: Jagged, impulsive, and sharp ink-brush strokes. Excessive use of 'flying white' (dry brush) and chaotic ink splatters.",
-                    )
-                    appendLine(
-                        "Shadowing: High-contrast heavy black ink pools. Shadows are brutal, jagged shapes that carve into the form. NO soft gradients.",
-                    )
-                    appendLine("Lighting: Harsh high-contrast negative space. Light feels like it's 'slashing' through the black ink.")
-                    appendLine(
-                        "Anatomy: Harsh, hard, and weathered. Sharp realistic features with an intense, menacing gaze. NO anime-eyes or soft features.",
-                    )
-                    appendLine(
-                        "Palette: Pure high-contrast Carbon Black on raw washi paper. SINGLE VIBRANT CRIMSON RED accent strictly for MINUTE DETAILS (eyes, a blade’s edge, or a single drop of blood) to ensure the scene remains 99% monochrome.",
-                    )
+                    appendLine("MEDIUM: Sumi-e Ink Wash on Washi Paper.")
+                    appendLine("TECHNIQUE: 'Flying White' (dry brush). Aggressive, spontaneous strokes. Ink splatters.")
+                    appendLine("LIGHTING: Negative Space is light. Black Ink is shadow. High Contrast.")
+                    appendLine("TEXTURE: Raw paper fibers. Wet ink bleeding into paper. Rough, organic.")
+                    appendLine("PALETTE_BEHAVIOR: Strictly Monochrome Black & White. Single Crimson Red drop.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             SPACE_OPERA -> {
                 buildString {
-                    appendLine("Art Technique: MID-CENTURY SCI-FI GOUACHE.")
-                    appendLine("Tracing: Fine, precise structural outlines for vessels. Soft, blended edges for cosmic phenomena.")
-                    appendLine("Shadowing: Smooth airbrushed gradients. Shadows are deep indigos with warm ambient light reflections.")
-                    appendLine("Lighting: Technicolor-saturated glow. Bright, blooming 'hot-spots' from engines and stars.")
-                    appendLine("Anatomy: Heroic, barrel-chested proportions. Skin has a smooth, painterly gouache finish (board painting).")
-                    appendLine("Palette: Cosmic indigos and purples with 'ROCKET ORANGE' combustion flares.")
+                    appendLine("MEDIUM: Mid-Century Gouache Illustration (Pulp Cover).")
+                    appendLine("TECHNIQUE: Board painting. Visible brush directions but blended.")
+                    appendLine("LIGHTING: Technicolor studio lighting. Soft, romantic glow.")
+                    appendLine("TEXTURE: Matte finish. Slightly chalky gouache texture.")
+                    appendLine("PALETTE_BEHAVIOR: Vibrant, saturated Cosmic Indigos and Rocket Oranges.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             COWBOY -> {
                 buildString {
-                    appendLine("Art Technique: ALLA PRIMA FRONTIER OIL.")
-                    appendLine("Tracing: No outlines. Form is defined by thick, confidence-driven brush loads (Impasto).")
-                    appendLine("Shadowing: Earth-tone shadows using raw umber. Deepest tones in the folds of leather and weathered skin.")
-                    appendLine("Lighting: Harsh, unidirectional 'Plein Air' desert sun. Volumetric dust motes caught in golden hour light.")
-                    appendLine("Anatomy: Rugged, lean, and weathered proportions. Focus on visible tendon texture and sun-damaged skin.")
-                    appendLine("Palette: Raw ochre and burnt sienna with 'SUNSET GOLD' Chiaroscuro.")
+                    appendLine("MEDIUM: Alla Prima Oil (Plein Air style).")
+                    appendLine("TECHNIQUE: Thick, confident brush strokes (Impasto). Painting 'wet-on-wet'.")
+                    appendLine("LIGHTING: Harsh, direct sunlight. Sharp cast shadows.")
+                    appendLine("TEXTURE: Weathered, cracked, dust-coated. Thick paint texture.")
+                    appendLine("PALETTE_BEHAVIOR: Earthy ochres, burnt siennas, baked by the sun.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
             PUNK_ROCK -> {
                 buildString {
-                    appendLine("Art Technique: UNDERGROUND 2D ZINE.")
-                    appendLine("Tracing: Sketchy, high-energy ink outlines. Intentional ink-blooms and 'messy' line overlaps.")
-                    appendLine("Shadowing: Mechanical halftone dot patterns and coarse cross-hatching. Flat color blocks with no gradients.")
-                    appendLine("Lighting: Flat, high-contrast values. Occasional 'vibrant radioactive' neon bloom effects.")
-                    appendLine("Anatomy: Lanky, exaggerated, and anti-establishment proportions. Stylized negative-space Void eyes.")
-                    appendLine("Palette: Urban slate and olive with TOXIC YELLOW chemical accents.")
+                    appendLine("MEDIUM: Underground 2D Zine / Xerox Art.")
+                    appendLine("TECHNIQUE: Bold, sketchy ink outlines. Messy, unrefined.")
+                    appendLine("LIGHTING: Flat, uniform lighting. No complex gradients.")
+                    appendLine("TEXTURE: Halftone dot patterns (Offset printing). Photocopy degradation.")
+                    appendLine("PALETTE_BEHAVIOR: Flat color blocks. Toxic Green vs. Urban Gays.")
+                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
+        }
+
+    fun artStyle(genre: Genre) =
+        when (genre) {
+            FANTASY -> "A world of divine grandeur and tragic beauty. It captures the spiritual weight of myths, where light fights purely against darkness."
+            CYBERPUNK -> "A 'High Tech, Low Life' analog dystopia. The beauty of decay, where humanity is slowly replaced by machinery under the hum of neon."
+            HORROR -> "Unknown psychological dread. The uncanny valley of early digital eras, where low-fidelity implies hidden terrors."
+            HEROES -> "A world of high stakes and sharp edges. Bold, confident ink-work and cinematic staging, capturing the dynamic tension of a modern noir graphic novel."
+            CRIME -> "Untouchable wealth and superficial perfection. A facade of serene luxury hiding moral decay. The humidity of a tropical criminal paradise."
+            SHINOBI -> "The discipline of silence. A brutal, minimalist world where life and death are decided in a single stroke. Nature and violence intertwined."
+            SPACE_OPERA -> "Optimistic exploration. The wonder of the atomic age, looking up at the stars with hope and colorful imagination."
+            COWBOY -> "The raw struggle of man against nature. A stoic, weathered existence defined by dust, sun, and silence."
+            PUNK_ROCK -> "Loud, defiant, and ugly-cute. A rejection of perfection. The visual noise of a garage band poster stapled to a wall."
         }
 
     fun appearanceGuidelines(genre: Genre): String =
@@ -383,116 +354,22 @@ object GenrePrompts {
         }
 
     fun validationRules(genre: Genre): String =
-        when (genre) {
-            FANTASY -> {
-                val palette = getHexPalette(genre)
-                """
-                **FANTASY VALIDATION (Reviewer):**
-                - Palette: $palette (Crimson Red dominance, Radiant Gold accents).
-                - Mandatory: HIGH BAROQUE & ROMANTICISM oil painting. Tenebrism, dramatic Chiaroscuro, and translucent glazing.
-                - Anatomy: Grandiose noble proportions with spiritually weighted poses.
-                - Banned: Modern digital art, sharp edges, neon colors, or clean game art aesthetics.
-                - Fix: Replace with 'dramatic Tenebrism', 'translucent glazing', and 'Baroque grandiose proportions'.
-                """.trimIndent()
-            }
-
-            CYBERPUNK -> {
-                val palette = getHexPalette(genre)
-                """
-                **CYBERPUNK VALIDATION (Reviewer):**
-                - Palette: $palette (Midnight Blue, Electric Cyan).
-                - Mandatory Tokens: 'Vintage Cel Animation', 'Analog Film Grain', 'Hard Cel Shading', 'Retro Anime'.
-                - Critical Lighting: Must include 'Retro Halation' or 'Harsh Neon'. BANNED: 'Soft Digital Bloom', 'Ethereal Glow'.
-                - Critical Shading: Must be 'Hard Cel Shading'. BANNED: 'Soft Gradients', 'Digital Painting'.
-                - Anatomy: 'Retro Realistic'.
-                - Banned: 'Masterpiece', '4k', 'Digital Art', 'Smooth Lighting', 'Vector Lines', 'Modern Anime'.
-                - Fix: Inject 'Vintage Cel Animation', 'Heavy Film Grain', and 'Hard Cel Shading'.
-                """.trimIndent()
-            }
-
-            HORROR -> {
-                val palette = getHexPalette(genre)
-                """
-                **HORROR VALIDATION (Reviewer):**
-                - Palette: $palette (Dark/Pale Blue, Ash Gray accents).
-                - Mandatory: 32-BIT RETRO SURVIVAL HORROR. Low-poly blocky shading, dithering, and vertex jitter artifacts.
-                - Atmosphere: Psychological unease and low-resolution mystery.
-                - Banned: Smooth gradients, high-res textures, vibrant colors, or modern 3D rendering.
-                - Fix: Inject 'dithered textures', 'vertex jitter', and 'low-poly blocky shading'.
-                """.trimIndent()
-            }
-
-            HEROES -> {
-                val palette = getHexPalette(genre)
-                """
-                **HEROES VALIDATION (Reviewer):**
-                - Palette: $palette (Natural Skin/Earth Tones + Deep Black). NO BLUE WASH.
-                - Mandatory: HAND-DRAWN TEXTURE & SHARP BACKGROUNDS. No blur. Detailed urban props (pharmacy signs, neon, pipes).
-                - Anatomy: NATURAL HUMANITY. Real skin texture, weight, and imperfections. No plastic dolls.
-                - Accent: Electric Blue is a MICRO-DETAIL only.
-                - Banned: Blurred backgrounds, bokeh, blue filters, cyan washing, digital smoothness.
-                - Fix: Inject 'sharp detailed cityscape', 'rough paper texture', and 'natural skin tones'.
-                """.trimIndent()
-            }
-
-            CRIME -> {
-                val palette = getHexPalette(genre)
-                """
-                **CRIME VALIDATION (Reviewer):**
-                - Palette: $palette (Noble Pigments, Hot Pink accents).
-                - Mandatory: ART DECO NOIR. Polished oil luster, seamless sfumato, and marble-like skin.
-                - Anatomy: DIVINE PERFECTION. Posing must be 'untouchably elegant' and candid (not facing camera).
-                - Setting: LUXURY RESORT. Tropical coastal elements (palms, turquoise pools, Art Deco architecture).
-                - Banned: Grit, dirt, visible thick brushwork, or modern casual street wear.
-                - Fix: Inject 'polished marble skin luster', 'seamless sfumato transitions', and 'Art Deco luxury detail'.
-                """.trimIndent()
-            }
-
-            SHINOBI -> {
-                val palette = getHexPalette(genre)
-                """
-                **SHINOBI VALIDATION (Reviewer):**
-                - Palette: $palette (Monochrome B&W, Crimson Red accents).
-                - Mandatory: BRUTAL ZEN SUMI-E. Jagged ink strokes, heavy high-contrast black, and chaotic ink splatters.
-                - Accent Rule: Crimson Red must be a MINUTE DETAIL (blade edge, eye, or blood drop). It must NOT shift the B&W feel.
-                - Anatomy: HARSH & WEATHERED. Sharp realistic features, intense gaze.
-                - Banned: Anime eyes, 'cute' aesthetics, soft rounded features, or standard B&W anime shading.
-                - Fix: Inject 'aggressive ink splatters', 'jagged black-ink shadows', and 'weathered realistic sharp features'.
-                """.trimIndent()
-            }
-
-            SPACE_OPERA -> {
-                val palette = getHexPalette(genre)
-                """
-                **SPACE_OPERA VALIDATION (Reviewer):**
-                - Palette: $palette (Cosmic Indigo, Rocket Orange accents).
-                - Mandatory: MID-CENTURY SCI-FI PULP. Gouache finish, subtle airbrushing, and Technicolor glow.
-                - Banned: Modern CGI sci-fi, realistic black space, or terrestrial grounding.
-                - Fix: Inject 'gouache board finish', 'Technicolor glow', and 'airbrush gradients'.
-                """.trimIndent()
-            }
-
-            COWBOY -> {
-                val palette = getHexPalette(genre)
-                """
-                **COWBOY VALIDATION (Reviewer):**
-                - Palette: $palette (Earthy Ochre, Sunset Gold accents).
-                - Mandatory: TRADITIONAL FRONTIER OIL. Thick impasto, Alla Prima brushwork, and 'plein air' lighting.
-                - Banned: Digital smoothness, photorealism, or modern Western aesthetics.
-                - Fix: Inject 'thick impasto texture', 'alla prima brushwork', and 'airborne dust motes'.
-                """.trimIndent()
-            }
-
-            PUNK_ROCK -> {
-                val palette = getHexPalette(genre)
-                """
-                **PUNK_ROCK VALIDATION (Reviewer):**
-                - Palette: $palette (Urban Grays, Acid Green accents).
-                - Mandatory: UNDERGROUND 2D ZINE ART. Sketchy ink lines, flat colors, offset printing halftone dots.
-                - Eyes: Negative-space Voids only.
-                - Banned: Any soft shading, realistic eyes, or 3D rendering elements.
-                - Fix: Inject 'halftone dot textures', 'bold sketchy ink lines', and 'offset printing artifacts'.
-                """.trimIndent()
-            }
+        buildString {
+            val palette = getHexPalette(genre)
+            appendLine("**${genre.name} GENRE SOUL (Reviewer Mandate):**")
+            appendLine("- Narrative Essence: ${artStyle(genre)}")
+            appendLine("- Mandatory Palette: $palette")
+            appendLine()
+            appendLine("**CRITICAL FOCUS AREAS:**")
+            appendLine(
+                "1. SCENE NATURALITY: Ensure lighting and atmosphere are organic to the narrative context. Ban hard-injected digital overlays or unnatural light bars on faces.",
+            )
+            appendLine("2. ENVIRONMENT INTEGRITY: The setting must be vivid and match the story context. No vague or empty backgrounds.")
+            appendLine("3. CHARACTER FIDELITY: Ensure all physical traits (skin, hair, eyes) match the '#### SUBJECTS DETAILS' perfectly.")
+            appendLine()
+            appendLine("**TECHNICAL RENDERING NOTICE:**")
+            appendLine("- The technical medium (ink, oil, pixels) is handled by the direct rendering pipeline.")
+            appendLine(
+                "- DO NOT FLAG missing technical keywords. Only flag if the Artist explicitly describes something that breaks the narrative soul.")
         }
 }

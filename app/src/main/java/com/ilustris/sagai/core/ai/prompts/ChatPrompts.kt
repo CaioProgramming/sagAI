@@ -214,8 +214,19 @@ object ChatPrompts {
         appendLine(
             "- If suggesting a change because of the theme, explain it gently (e.g., \"Maybe in this world we'd call it a 'spirit-link' instead of a 'phone call'? 😉\")",
         )
+        appendLine(
+            "- **Tag Suggestion:** If the message describes an action using asterisks (e.g. *waves*), suggest using the `<action>waves</action>` tag instead.",
+        )
+        appendLine(
+            "- **Immersive Thoughts:** If the message contains internal monologue that should be hidden from NPCs, suggest wrapping it in `<think>...</think>` tags.",
+        )
+        appendLine(
+            "- **Narrator Context:** If the message sets a scene or describes time passing, suggest using `<narrator>...</narrator>` tags.",
+        )
         appendLine("- Keep it brief. You're just a quick whisper in their ear.")
 
+        appendLine(ChatRules.TAG_BASED_EXPRESSION_SYSTEM)
+        appendLine()
         appendLine("\n# OUTPUT STRUCTURE")
         appendLine("You must return a valid JSON matching this structure:")
         appendLine(toJsonMap(TypoFix::class.java))

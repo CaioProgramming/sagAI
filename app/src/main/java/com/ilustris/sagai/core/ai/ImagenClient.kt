@@ -11,6 +11,7 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.ilustris.sagai.core.ai.model.ImagePromptReview
 import com.ilustris.sagai.core.ai.model.ImageReference
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.analytics.AnalyticsService
@@ -19,7 +20,6 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -31,7 +31,7 @@ interface ImagenClient {
         genre: Genre,
         imageReference: Pair<Bitmap, String>?,
         context: String,
-        imageType: String,
+        imageType: ImageType,
     ): RequestResult<Bitmap>
 }
 
@@ -109,18 +109,18 @@ class ImagenClientImpl
             genre: Genre,
             imageReference: Pair<Bitmap, String>?,
             context: String,
-            imageType: String,
+            imageType: ImageType,
         ): RequestResult<Bitmap> =
             executeRequest {
                 Log.d(
                     TAG,
-                    "🚀 Starting integrated image generation flow for: $imageType | Genre: ${genre.name}",
+                    "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name}",
                 )
 
                 // 1. VISUAL DIRECTOR ANALYSIS
-                Log.d(TAG, "Extracting visual from: ${imageReference?.second}")
-                val visualDirection = extractComposition(imageReference!!.first).getSuccess()
-                Log.d(TAG, "📸 Visual Direction extracted.")
+                val visualDirection =
+                    generateVisualDirection(context, genre, imageType).getSuccess()
+                Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
 
                 // 2. ARTISTIC DESCRIPTION
                 val artisticPrompt =
@@ -145,11 +145,14 @@ class ImagenClientImpl
                 } ?: run {
                     Log.e(TAG, "generateIntegratedImage: Failed to review")
                 }
-                val finalPrompt = reviewedResult?.correctedPrompt ?: artisticPrompt
+                val finalPrompt =
+
+                    "${GenrePrompts.renderingInstructions(genre)}\n" +
+                        (reviewedResult?.correctedPrompt ?: artisticPrompt)
 
                 val generatedImage = generateImage(finalPrompt, references = emptyList())
 
-                Log.d(TAG, "generateIntegratedImage: Used reference: ${imageReference.second}")
+                // Log.d(TAG, "generateIntegratedImage: Used reference: ${imageReference.second}")
 
                 if (generatedImage == null) {
                     Log.e(TAG, "Failed to generate image")
@@ -160,22 +163,19 @@ class ImagenClientImpl
                 generatedImage!!
             }
 
-        private suspend fun extractComposition(bitmap: Bitmap?) =
-            executeRequest {
-                gemmaClient.generate<String>(
-                    emptyString(),
-                    temperatureRandomness = 0f,
-                    references =
-                        listOf(
-                            ImageReference(
-                                bitmap!!,
-                                ImagePrompts.extractComposition(),
-                            ),
-                        ),
-                    requireTranslation = false,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                )!!
-            }
+        private suspend fun generateVisualDirection(
+            context: String,
+            genre: Genre,
+            imageType: ImageType,
+        ) = executeRequest {
+            gemmaClient.generate<String>(
+                ImagePrompts.generateDirectorialVision(genre, context, imageType),
+                temperatureRandomness = 0.8f,
+                references = emptyList(),
+                requireTranslation = false,
+                requirement = GemmaClient.ModelRequirement.HIGH,
+            )!!
+        }
 
         private suspend fun generateArtisticPrompt(
             genre: Genre,
@@ -184,10 +184,10 @@ class ImagenClientImpl
         ): RequestResult<String> =
             executeRequest {
                 val prompt =
-                    ImagePrompts.artComposition(
+                    ImagePrompts.generateArtistPrompt(
                         genre,
-                        context,
                         visualDirection,
+                        context,
                     )
 
                 gemmaClient.generate<String>(
@@ -200,7 +200,7 @@ class ImagenClientImpl
             }
 
         private suspend fun reviewAndCorrectPrompt(
-            imageType: String,
+            imageType: ImageType,
             visualDirection: String?,
             genre: Genre,
             finalPrompt: String,
@@ -245,7 +245,7 @@ class ImagenClientImpl
 
         private fun trackImageQuality(
             genre: String,
-            imageType: String,
+            imageType: ImageType,
             review: ImagePromptReview,
         ) {
             val violationTypes =
@@ -257,7 +257,7 @@ class ImagenClientImpl
             analyticsService.trackEvent(
                 ImageQualityEvent(
                     genre = genre,
-                    imageType = imageType,
+                    imageType = imageType.name,
                     quality = review.getQualityLevel(),
                     violations = review.violations.size,
                     violationTypes = violationTypes.ifEmpty { null },

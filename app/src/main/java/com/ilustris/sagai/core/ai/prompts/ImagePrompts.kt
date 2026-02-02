@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import androidx.compose.ui.graphics.toArgb
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -19,163 +20,117 @@ object ImagePrompts {
         buildString {
             when (genre) {
                 Genre.CYBERPUNK -> {
-                    appendLine("⚠️⚠️⚠️ CYBERPUNK MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ CYBERPUNK ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. MANDATORY CYBERWARE TOKENS - Inject these exact terms:")
-                    appendLine("   • 'Mechanical Prosthetics', 'Visible Hydraulic Joints', 'Analog Cyber-Interface'")
-                    appendLine("   • 'Wired Neural Ports', 'Heavy Chrome', 'Industrial Tech'")
-                    appendLine("   • STYLE: 'Retro-Tech', 'Functional', 'Gritty', 'Used Future'")
+                    appendLine("1. THE BEAUTY OF DECAY: This world is 'High Tech, Low Life'.")
+                    appendLine("   Everything is industrial, retro-futuristic, and slightly broken.")
+                    appendLine("   Describe exposed wires, hydraulic steam, and heavy chrome as extensions of the soul.")
                     appendLine()
-                    appendLine("2. VINTAGE AESTHETIC TOKENS - MUST be present in prompt:")
-                    appendLine("   • 'Vintage Cel Animation', '1980s Anime Style', 'Hand-Painted Background'")
-                    appendLine("   • 'Organic Ink Lines', 'Hard Cel Shading', 'High Contrast'")
-                    appendLine("   • 'Heavy Film Grain', 'VHS Artifacts', 'Chromatic Aberration', 'Scanlines'")
-                    appendLine()
-                    appendLine("3. ATMOSPHERE TOKENS - Sets the scene:")
-                    appendLine("   • 'Nocturnal', 'Rain-Slicked', 'Cyber-Noir', 'Harsh Neon', 'Dystopian'")
+                    appendLine("2. ANALOG ATMOSPHERE: Capture the vibe of 1980s cel-shading.")
+                    appendLine(
+                        "   VARIETY IS KEY: Do not default to 'rainy nights'. Describe smog-filled industrial sunsets, harsh white lab lighting, or cluttered high-tech apartments.",
+                    )
                     appendLine()
                 }
 
                 Genre.PUNK_ROCK -> {
-                    appendLine("⚠️⚠️⚠️ PUNK ROCK MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ PUNK ROCK ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. CARTOON STYLE - This is GORILLAZ/KND style cartoon, NOT realistic art.")
-                    appendLine("   Characters are 2D CARTOON CHARACTERS with exaggerated features.")
+                    appendLine("1. STYLIZED REBELLION: Characters are lanky, iconic, 2D cartoon figures.")
+                    appendLine("   Exaggerate their features and cool, detached expressions.")
                     appendLine()
-                    appendLine("2. EYES - ONLY these 3 options (NO realistic eye colors):")
-                    appendLine("   • Simplified stylized (almond shape, X-eyes, single line)")
-                    appendLine("   • Full white with no pupil")
-                    appendLine("   • Black void (classic Gorillaz)")
-                    appendLine("   BANNED: 'brown eyes', 'blue eyes', 'green eyes', any natural eye color.")
-                    appendLine()
-                    appendLine("3. MANDATORY BACKGROUND - Every image needs detailed environment.")
-                    appendLine("   Include: graffiti, amps, neon signs, posters, brick walls.")
-                    appendLine("   BANNED: plain/gradient/white/solid color backgrounds.")
-                    appendLine()
-                    appendLine("4. FLAT RENDERING - Hard cel-shading, flat colors, bold outlines.")
-                    appendLine("   BANNED: soft lighting, soft gradients, realistic rendering.")
+                    appendLine("2. CHAOTIC ENVIRONMENTS: Never use a simple background.")
+                    appendLine("   Litter the scene with urban energy: graffiti, amps, stickers, and street debris.")
                     appendLine()
                 }
 
                 Genre.HORROR -> {
-                    appendLine("⚠️⚠️⚠️ HORROR MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ HORROR ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. 32-BIT PIXEL ART - PS1/Sega Saturn retro game aesthetic.")
-                    appendLine("   Blocky shading, pixelated texture, limited color palette.")
+                    appendLine("1. UNCANNY VINTAGE DREAD: Focus on the isolation of low-fidelity memory.")
+                    appendLine("   Describe scenes with cold, desaturated colors and a sense of 'pixelated' memory.")
                     appendLine()
-                    appendLine("2. DARK BLUE PALETTE - Limited to dark blues, pale blues, ash grays.")
-                    appendLine("   BANNED: bright colors, vibrant tones, warm colors.")
-                    appendLine()
-                    appendLine("3. MANDATORY EERIE ENVIRONMENT - NO empty backgrounds.")
-                    appendLine("   Include 3+ elements: abandoned hospital, foggy street, dark forest, etc.")
-                    appendLine()
-                    appendLine("4. PSYCHOLOGICAL HORROR - Oppressive mood, creeping dread.")
-                    appendLine("   Focus on atmosphere over explicit gore.")
+                    appendLine("2. OPPRESSIVE ENVIRONMENT: The world feels small, eerie, and oppressive.")
+                    appendLine("   Focus on textures like fog, rust, and the oppressive weight of darkness.")
                     appendLine()
                 }
 
                 Genre.FANTASY -> {
-                    appendLine("⚠️⚠️⚠️ FANTASY MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ FANTASY ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. CLASSICAL OIL PAINTING - Romantic academic style (Waterhouse, Leighton).")
-                    appendLine("   Visible brushwork, luminous glazing, sfumato transitions.")
-                    appendLine("   BANNED: digital art, concept art, anime, modern illustration.")
+                    appendLine("1. ROMANTIC GRANDEUR: Think of classical oil paintings and tragic myths.")
+                    appendLine("   Describe skin as having a luminous luster and fabric as heavy and rich.")
                     appendLine()
-                    appendLine("2. CRIMSON RED DOMINANCE - Red must dominate the composition.")
-                    appendLine("   Crimson skies, red fabrics, rose gardens, sunset light.")
-                    appendLine("   Accent: Radiant gold for divine/mystical elements.")
-                    appendLine()
-                    appendLine("3. CLASSICAL ANATOMY - Renaissance proportions, graceful poses.")
-                    appendLine("   BANNED: exaggerated muscles, comic book proportions.")
-                    appendLine()
-                    appendLine("4. MANDATORY BACKGROUND - Classical environments with red integration.")
-                    appendLine("   BANNED: plain backgrounds, cool blues, greens.")
+                    appendLine("2. THE CRIMSON ANCHOR: Use red and gold to define the spiritual center of the scene.")
+                    appendLine("   The atmosphere should feel divine, eternal, and physically weighty.")
                     appendLine()
                 }
 
                 Genre.HEROES -> {
-                    appendLine("⚠️⚠️⚠️ HEROES MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ HEROES ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. MODERN COMIC BOOK STYLE - Bold ink lines, dynamic foreshortening.")
-                    appendLine("   Think: Into the Spider-Verse meets Arkham City concept art.")
+                    appendLine("1. CLASSIC NOIR CONTRAST: Use 'Spot Blacks' (Mignola/Miller style).")
+                    appendLine("   Massive areas of solid black ink to define volume. The contrast should be extreme and confident.")
                     appendLine()
-                    appendLine("2. URBAN VERTICALITY - Vast cityscapes, towering skyscrapers.")
-                    appendLine("   Dizzying perspectives, looking up/down at buildings.")
+                    appendLine("2. PROTECT CHARACTER FEATURES: FORBIDDEN overlays.")
+                    appendLine(
+                        "   Strictly FORBIDDEN: Neon light bars, blue streaks, or lens flares crossing the character's face or features.",
+                    )
+                    appendLine("   The character's skin, eyes, and hair MUST be clearly visible and naturally colored.")
+                    appendLine("   BANNED: Any lighting that makes the character look 'digitally painted' or 'over-processed'.")
                     appendLine()
-                    appendLine("3. ELECTRIC BLUE ACCENT - In sky, reflections, rim lighting.")
-                    appendLine("   Subtle unifying element, not dominant wash.")
+                    appendLine("3. NATURALISTIC CHARACTER INTEGRITY: MANDATORY.")
+                    appendLine(
+                        "   Skin, hair, and eye colors must look authentic to the description. Blue/Teal/Magenta lights are for the EDGES (rim-light) and background ONLY.",
+                    )
                     appendLine()
-                    appendLine("4. HEROIC POSING - Dynamic, vertical, larger-than-life.")
-                    appendLine("   Low angles looking up, or high vantage points.")
+                    appendLine("4. URBAN SCALE & VARIETY: The city is a living breathing entity.")
+                    appendLine(
+                        "   BEYOND THE STREET: Do not just describe 'rain-slicked asphalt'. Explore the verticality and weight of the city through high-tension rooftops, abandoned warehouses, corporate sky-scapers, and moody neon back-alleys.",
+                    )
                     appendLine()
                 }
 
                 Genre.CRIME -> {
-                    appendLine("⚠️⚠️⚠️ CRIME MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ CRIME ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. RENAISSANCE MASTERPIECE - High Renaissance + Art Deco glamour.")
-                    appendLine("   Perfect anatomy, polished academic oil texture, sfumato.")
+                    appendLine("1. DIVINE LUXURY: Everything is polished, elite, and untouchable.")
+                    appendLine("   Describe marble textures, silk fabrics, and the golden-hour glow of a coastal paradise.")
                     appendLine()
-                    appendLine("2. DIVINE PERFECTION - Subjects are 'Deities of Paradise'.")
-                    appendLine("   Untouchable elegance, relaxed dominance, serene superiority.")
-                    appendLine()
-                    appendLine("3. TROPICAL COASTAL PARADISE - Miami Vice golden hour.")
-                    appendLine("   Turquoise seas, palm trees, luxury pools, yachts.")
-                    appendLine()
-                    appendLine("4. HOT PINK ACCENT - Sparingly in fabrics, sunset hues, neon.")
-                    appendLine()
-                    appendLine("5. CANDID POSING - NOT facing camera. Lounging, looking away.")
+                    appendLine("2. SERENE DOMINANCE: Characters should feel superior and relaxed.")
+                    appendLine("   Focus on the humidity and glamour of the setting.")
                     appendLine()
                 }
 
                 Genre.SHINOBI -> {
-                    appendLine("⚠️⚠️⚠️ SHINOBI MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ SHINOBI ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. SUMI-E INK WASH - Japanese brush painting technique.")
-                    appendLine("   Bold imperfect strokes, economy of brushwork.")
+                    appendLine("1. THE ZEN OF VIOLENCE: Absolute minimalism and focused energy.")
+                    appendLine("   Describe the scene with an economy of detail—only what is essential for the soul.")
                     appendLine()
-                    appendLine("2. BLACK AND WHITE ONLY - Pure monochrome, no color tints.")
-                    appendLine("   Form through ink density and negative space.")
-                    appendLine()
-                    appendLine("3. SINGLE CRIMSON RED ACCENT - One vital color element only.")
-                    appendLine()
-                    appendLine("4. NEGATIVE SPACE - White paper is part of composition.")
-                    appendLine("   Environment suggested, not fully drawn.")
-                    appendLine()
-                    appendLine("5. RICE PAPER TEXTURE - Visible washi paper grain.")
+                    appendLine("2. MONOCHROME SPIRIT: Strictly use a Black, White, and Crimson Red palette.")
+                    appendLine("   Focus on the texture of rice paper and the fluidity of ink.")
                     appendLine()
                 }
 
                 Genre.SPACE_OPERA -> {
-                    appendLine("⚠️⚠️⚠️ SPACE OPERA MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ SPACE OPERA ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. 1950s ATOMIC AGE ILLUSTRATION - Gouache/oil, painterly finish.")
-                    appendLine("   Retro-futurism, raygun gothic, pulp cover art style.")
+                    appendLine("1. ATOMIC WONDER: Capture the optimism and vibrant color of mid-century science fiction.")
+                    appendLine("   Focus on the vastness of the cosmos and the adventurous spirit of exploration.")
                     appendLine()
-                    appendLine("2. VAST COSMIC ENVIRONMENTS - Nebulae, star fields, galaxies.")
-                    appendLine("   Overwhelming scale and beauty of space.")
-                    appendLine()
-                    appendLine("3. CHERRY RED/ROCKET ORANGE ACCENT - For engines, energy, stars.")
-                    appendLine()
-                    appendLine("4. OPTIMISTIC HEROIC TONE - Awe-inspired, adventurous.")
-                    appendLine("   BANNED: dark, brooding, cynical postures.")
+                    appendLine("2. PAINTERLY PULP: Describe scenes with the weight and texture of hand-painted cover art.")
                     appendLine()
                 }
 
                 Genre.COWBOY -> {
-                    appendLine("⚠️⚠️⚠️ COWBOY MANDATORY RULES (READ FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ COWBOY ARTISTIC SOUL (READ FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("1. WESTERN OIL PAINTING - Remington/Russell style.")
-                    appendLine("   Bold visible brushstrokes, thick impasto, canvas texture.")
-                    appendLine("   BANNED: photorealism, smooth digital blending.")
+                    appendLine("1. SUN-BAKED STOICISM: Focus on heat, dust, and raw, weathered textures.")
+                    appendLine("   Every element should feel aged by the desert sun.")
                     appendLine()
-                    appendLine("2. EXPRESSIVE BRUSHWORK - Loose gestural strokes.")
-                    appendLine("   'Painted with passion' not 'photographed and polished'.")
-                    appendLine()
-                    appendLine("3. WARM EARTHY PALETTE - Burnt sienna, raw ochre, desert sand.")
-                    appendLine("   Accent: Burnt orange/sunset gold for warmth.")
-                    appendLine()
-                    appendLine("4. GOLDEN HOUR LIGHTING - Dramatic chiaroscuro, long shadows.")
+                    appendLine("2. GESTURAL PASSION: Describe the scene as if it were a passionate, thick oil painting.")
+                    appendLine("   Focus on the play of light and shadow at golden hour.")
                     appendLine()
                 }
             }
@@ -189,128 +144,94 @@ object ImagePrompts {
         buildString {
             when (genre) {
                 Genre.CYBERPUNK -> {
-                    appendLine("⚠️⚠️⚠️ CYBERPUNK CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ CYBERPUNK SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: CYBERWARE COUNT - Minimum 2-3 visible augmentations required.")
-                    appendLine("□ Valid: prosthetic limbs, artificial eyes, neural ports, mechanical spine")
-                    appendLine("□ Invalid: circuit tattoos, silver scars, 'enhanced' without visible mod")
-                    appendLine("□ If <2 → INSUFFICIENT_CYBERWARE → ADD chrome arm/artificial eyes/neural port")
-                    appendLine()
-                    appendLine("CHECK 2: CYBERWARE STYLE - Must be 'industrial retro-tech'")
-                    appendLine("□ TOO MODERN/SLEEK → DOWNGRADE to exposed wires/hydraulics")
-                    appendLine("□ TOO INVISIBLE → MAKE VISIBLE and GRITTY")
-                    appendLine()
-                    appendLine("CHECK 3: MATURE ANIME TONE - No cute/kawaii/chibi/innocent.")
-                    appendLine()
-                    appendLine("CHECK 4: TOKEN COMPLIANCE - Must include these EXACT terms:")
-                    appendLine("□ 'Vintage Cel Animation' OR '1980s Anime Style'")
-                    appendLine("□ 'Hard Cel Shading' OR 'High Contrast'")
-                    appendLine("□ 'Film Grain' OR 'VHS Artifacts'")
-                    appendLine("□ VIOLATION if: 'Masterpiece', '4k', 'Digital Art', 'Smooth Lighting'.")
+                    appendLine("1. ANATOMY & TECH CONTRADICTION: Does the artist describe subjects as 'purely organic' or 'normal humans'?")
+                    appendLine("   - VIOLATION if: Subjects lack mechanical/chrome details described in context.")
+                    appendLine("2. ATMOSPHERE CONTRADICTION: Does the artist describe 'bright sunny days' or 'natural forests'?")
+                    appendLine("   - VIOLATION if: Atmosphere isn't nocturnal, urban, or artificial.")
+                    appendLine("3. ERA CONTRADICTION: Does the artist describe 'modern sleek smartphones' or 'clean white labs'?")
+                    appendLine("   - VIOLATION if: Tech feels 'Apple-slick' instead of industrial, wired, and used.")
                     appendLine()
                 }
 
                 Genre.PUNK_ROCK -> {
-                    appendLine("⚠️⚠️⚠️ PUNK ROCK CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ PUNK ROCK SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: CARTOON STYLE - Must be Gorillaz/KND 2D cartoon, NOT realistic.")
-                    appendLine()
-                    appendLine("CHECK 2: EYES - Only 3 valid options:")
-                    appendLine("□ Simplified stylized | Full white no pupil | Black void")
-                    appendLine("□ VIOLATION if: 'brown eyes', 'blue eyes', any realistic eye color")
-                    appendLine()
-                    appendLine("CHECK 3: BACKGROUND - Must have detailed environment (graffiti, amps, etc.)")
-                    appendLine("□ VIOLATION if: plain/gradient/white/empty background")
-                    appendLine()
-                    appendLine("CHECK 4: FLAT RENDERING - Hard cel-shading, flat colors.")
-                    appendLine("□ VIOLATION if: soft lighting, soft gradients, realistic shading")
+                    appendLine("1. ANATOMY CONTRADICTION: Does the artist describe 'realistic sparkling eyes' or 'natural human features'?")
+                    appendLine("   - VIOLATION: Characters MUST be described as lanky, exaggerated 2D cartoon figures.")
+                    appendLine("2. BACKGROUND COMPLIANCE: Does the artist describe a 'simple background' or 'void'?")
+                    appendLine("   - VIOLATION: Must describe a chaotic, detailed urban environment (graffiti, posters, etc.).")
                     appendLine()
                 }
 
                 Genre.HORROR -> {
-                    appendLine("⚠️⚠️⚠️ HORROR CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ HORROR SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: PIXEL ART STYLE - 32-bit PS1/Saturn aesthetic required.")
-                    appendLine()
-                    appendLine("CHECK 2: COLOR PALETTE - Dark blues, pale blues, ash grays only.")
-                    appendLine("□ VIOLATION if: bright/vibrant/warm colors")
-                    appendLine()
-                    appendLine("CHECK 3: ENVIRONMENT - Eerie setting with 3+ details required.")
-                    appendLine("□ VIOLATION if: empty/plain background")
+                    appendLine("1. PALETTE CONTRADICTION: Does the artist describe 'vibrant colors', 'warm sunlight', or 'lush greens'?")
+                    appendLine("   - VIOLATION: World must be cold, desaturated, dominated by blues and ashen tones.")
+                    appendLine("2. MOOD CONTRADICTION: Is the description 'heroic', 'bright', or 'safe'?")
+                    appendLine("   - VIOLATION: Description must focus on dread, isolation, and the unsettling unknown.")
                     appendLine()
                 }
 
                 Genre.FANTASY -> {
-                    appendLine("⚠️⚠️⚠️ FANTASY CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ FANTASY SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: CLASSICAL OIL PAINTING - Must feel like Renaissance art.")
-                    appendLine("□ VIOLATION if: digital art, anime, concept art, modern illustration")
-                    appendLine()
-                    appendLine("CHECK 2: CRIMSON RED DOMINANCE - Red must be present in composition.")
-                    appendLine()
-                    appendLine("CHECK 3: CLASSICAL ENVIRONMENT - Renaissance setting required.")
-                    appendLine("□ VIOLATION if: plain background, cool blues/greens dominating")
+                    appendLine("1. ERA CONTRADICTION: Does the artist describe 'zippers', 'modern straps', or 'realistic combat gear'?")
+                    appendLine("   - VIOLATION: Everything must feel Renaissance, classical, or ethereal.")
+                    appendLine("2. COLOR CONTRADICTION: Is red missing from the description?")
+                    appendLine("   - VIOLATION: Crimson/Red is the spiritual anchor of this genre's soul.")
                     appendLine()
                 }
 
                 Genre.HEROES -> {
-                    appendLine("⚠️⚠️⚠️ HEROES CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ HEROES SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: COMIC BOOK STYLE - Bold ink lines, dynamic foreshortening.")
-                    appendLine()
-                    appendLine("CHECK 2: URBAN ENVIRONMENT - Cityscape with verticality required.")
-                    appendLine()
-                    appendLine("CHECK 3: ELECTRIC BLUE ACCENT - Present in sky/reflections/rim light.")
+                    appendLine("1. STYLIZATION CONTRADICTION: Does the artist describe 'sketchy', 'blurry', or 'unfocused' elements?")
+                    appendLine("   - VIOLATION: Scenes must be sharp, high-contrast, and defined by bold shapes.")
+                    appendLine("2. COMPOSITION CONTRADICTION: Is the scene 'flat' or 'mundane'?")
+                    appendLine("   - VIOLATION: Must use verticality and dramatic noir-cinematic light.")
                     appendLine()
                 }
 
                 Genre.CRIME -> {
-                    appendLine("⚠️⚠️⚠️ CRIME CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ CRIME SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: RENAISSANCE QUALITY - Perfect anatomy, academic oil texture.")
-                    appendLine()
-                    appendLine("CHECK 2: TROPICAL PARADISE SETTING - Coastal, golden hour, luxury.")
-                    appendLine()
-                    appendLine("CHECK 3: HOT PINK ACCENT - Present somewhere in composition.")
-                    appendLine()
-                    appendLine("CHECK 4: CANDID POSING - NOT stiff facing camera.")
+                    appendLine("1. AESTHETIC CONTRADICTION: Does the artist describe 'grit', 'dirt', or 'poverty'?")
+                    appendLine("   - VIOLATION: This is a world of elite luxury, marble textures, and divine perfection.")
+                    appendLine("2. POSING CONTRADICTION: Are characters 'posing for the camera' or 'stiff'?")
+                    appendLine("   - VIOLATION: Posing must be candid, relaxed, and superior.")
                     appendLine()
                 }
 
                 Genre.SHINOBI -> {
-                    appendLine("⚠️⚠️⚠️ SHINOBI CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ SHINOBI SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: SUMI-E INK STYLE - Brush strokes, ink wash technique.")
-                    appendLine()
-                    appendLine("CHECK 2: MONOCHROME - Black and white only, no color tints.")
-                    appendLine("□ Only exception: single crimson red accent")
-                    appendLine()
-                    appendLine("CHECK 3: NEGATIVE SPACE - White paper as compositional element.")
+                    appendLine("1. COLOR VIOLATION: Does the artist mention ANY color other than Black, White, or Crimson Red?")
+                    appendLine("   - CRITICAL VIOLATION: Mentioning 'green trees', 'blue sky', or 'tan skin' is FORBIDDEN.")
+                    appendLine("2. COMPOSITION CONTRADICTION: Is the background 'cluttered' or 'fully detailed'?")
+                    appendLine("   - VIOLATION: Must emphasize negative space and atmospheric suggestion over literal detail.")
                     appendLine()
                 }
 
                 Genre.SPACE_OPERA -> {
-                    appendLine("⚠️⚠️⚠️ SPACE OPERA CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ SPACE OPERA SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: 1950s ILLUSTRATION STYLE - Gouache/oil, retro-futurism.")
-                    appendLine()
-                    appendLine("CHECK 2: COSMIC ENVIRONMENT - Nebulae, stars, vast space required.")
-                    appendLine()
-                    appendLine("CHECK 3: CHERRY RED/ORANGE ACCENT - For energy, engines, stars.")
-                    appendLine()
-                    appendLine("CHECK 4: OPTIMISTIC TONE - Heroic, adventurous, awe-inspired.")
+                    appendLine("1. MOOD CONTRADICTION: Is the description 'gritty', 'grounded', or 'cynical'?")
+                    appendLine("   - VIOLATION: Must focus on the awe, wonder, and optimistic adventure of the atomic age.")
+                    appendLine("2. SCALE CONTRADICTION: Does the scene feel 'small' or 'contained'?")
+                    appendLine("   - VIOLATION: Environment must feel vast and cosmic.")
                     appendLine()
                 }
 
                 Genre.COWBOY -> {
-                    appendLine("⚠️⚠️⚠️ COWBOY CRITICAL CHECKS (DO FIRST) ⚠️⚠️⚠️")
+                    appendLine("⚠️⚠️⚠️ COWBOY SOUL CHECK (DO FIRST) ⚠️⚠️⚠️")
                     appendLine()
-                    appendLine("CHECK 1: OIL PAINTING STYLE - Visible brushstrokes, impasto texture.")
-                    appendLine("□ VIOLATION if: photorealism, smooth digital blending")
-                    appendLine()
-                    appendLine("CHECK 2: WARM EARTHY PALETTE - Burnt sienna, ochre, desert tones.")
-                    appendLine()
-                    appendLine("CHECK 3: GOLDEN HOUR LIGHTING - Sunset warmth, long shadows.")
+                    appendLine("1. ATMOSPHERE CONTRADICTION: Does the description feel 'cold', 'sterile', or 'modern'?")
+                    appendLine("   - VIOLATION: Must focus on sun-baked heat, dust, and raw organic textures (leather, wood).")
+                    appendLine("2. EMOTION CONTRADICTION: Is it 'expressive' or 'chatty'?")
+                    appendLine("   - VIOLATION: Aura must be stoic, weathered, and laconic.")
                     appendLine()
                 }
             }
@@ -378,7 +299,8 @@ object ImagePrompts {
                 "- NARRATIVE PROXIMITY: Respect the extracted 'SUBJECT_PROXIMITY'. If focus is 'Intimate', describe the micro-textures of the skin and eyes. If 'Far', focus on the silhouette's relationship to the vast environment.",
             )
             appendLine(
-                "- NARRATIVE COMPOSITION: Do not just place subjects; weave them into the scene. Their bodies should react to the environment, the light, and each other.")
+                "- NARRATIVE COMPOSITION: Do not just place subjects; weave them into the scene. Their bodies should react to the environment, the light, and each other.",
+            )
             appendLine("- MEANINGFUL ORIENTATION: Use the orientation to tell the story.")
             appendLine(
                 "- GESTURAL ABSTRACTION: Use 'BODY_LANGUAGE_INTENTION' to define narrative interaction. If characters are together, show their connection or tension through physical proximity and subtle cues.",
@@ -423,79 +345,130 @@ object ImagePrompts {
      * Extracts PHOTOGRAPHY DNA (10 params) + NARRATIVE DNA (3 params).
      * Genre-dependent elements (environment, mood, atmosphere, texture, color) come from GenrePrompts.
      */
+    /**
+     * THE VISUAL DIRECTOR AGENT.
+     *
+     * Responsibility: Converts a textual Story Context into a concrete Visual Plan.
+     * - Defines the Camera (Angle, Framing).
+     * - Defines the Subject (Posing, Action).
+     * - Defines the Atmosphere (Lighting, Mood).
+     *
+     * LOGIC:
+     * - IF ImageType == ICON/PORTRAIT: Forces strict "Headshot/Bust" framing to ensure UI consistency.
+     * - IF ImageType == COVER/SCENE: Grants "Cinematic Freedom" to choose the best angle for the narrative (Wide, Dutch, Close-up, etc.).
+     */
     @Suppress("ktlint:standard:max-line-length")
-    fun extractComposition() =
+    fun generateDirectorialVision(
+        genre: Genre,
+        context: String,
+        imageType: ImageType,
+    ) = buildString {
+        val imageTypeLabel = imageType.name.replace("_", " ")
+
+        appendLine("ROLE: The Visionary Film Director. You are scouting the perfect shot for a $imageTypeLabel.")
+        appendLine("GENRE: ${genre.name} (The visual laws of this world).")
+        appendLine()
+
+        appendLine("INPUT CONTEXT (The Story/Subject):")
+        appendLine("\"$context\"")
+        appendLine()
+
+        appendLine("TASK: Create a 12-point VISUAL BRIEF for the Artist.")
+        appendLine("Your goal is to translate the emotional/narrative context into concrete visual instructions (Camera, Light, Pose).")
+        appendLine()
+
+        appendLine("--- IMAGE TYPE RULES ($imageTypeLabel) ---")
+        appendLine(imageType.description)
+        appendLine("1. NO GRAPHICAL ELEMENTS: Strictly FORBIDDEN to mention text, HUDs, logos, borders, or UI frames in your visual plan.")
+        appendLine("2. FULL-BLEED: The plan must imply an edge-to-edge cinematic frame.")
+        if (imageType == ImageType.ICON) {
+            appendLine("3. ICON STRICTNESS: This is an avatar. Framing MUST be 'Close-Up' / 'Chest-Up'. Focus on the character's face.")
+        }
+        appendLine("------------------------------------------")
+        appendLine()
+
+        appendLine("GENRE ATMOSPHERE CHECKS (${genre.name}):")
+        appendLine(GenrePrompts.conversationDirective(genre)) // Use the tone to guide the director
+        appendLine("- Ensure the Lighting and Mood match this genre's soul.")
+        appendLine()
+
+        appendLine("OUTPUT FORMAT (12 Parameters - Numbered List):")
+        appendLine("1. ORIENTATION: TO_CAMERA (Front/3-4) or SCENE_RELATIVE (Profile/Back).")
+        appendLine("2. FRAMING_LEVEL: [Answer based on Mode constraints above].")
+        appendLine("3. SUBJECT_PROXIMITY: How close is the viewer's soul to the subject?")
+        appendLine("4. VISIBLE_CONTENT: Precise list of what is in frame (e.g. 'Head, Collar, Rain').")
+        appendLine("5. VIEWPOINT: [Eye-Level / Low-Angle (Heroic) / High-Angle (Vulnerable)].")
+        appendLine("6. COMPOSITION_PLACEMENT: [Center / Rule of Thirds / Negative Space].")
+        appendLine("7. BODY_LANGUAGE_INTENTION: The verb of the body (e.g. 'Recoiling', 'Dominating').")
+        appendLine("8. EMOTIONAL_PROJECTION: The feeling the viewer receives.")
+        appendLine("9. LIGHTING_ATMOSPHERE: The dramatic lighting setup (e.g. 'Rembrandt', 'Harsh Neon', 'Silhouette').")
+        appendLine("10. NARRATIVE_DNA: One sentence summary of the shot's story.")
+        appendLine("11. ENVIRONMENTAL_CUES: Secondary visual cues that add depth (e.g. 'faint hum of servers', 'distant urban haze').")
+        appendLine("12. FORBIDDEN_CONTENT: What must NOT be seen (based on framing). STRICTLY enforce Portrait rules if applicable.")
+        appendLine()
+        appendLine("OUTPUT: The 12 numbered points only.")
+    }
+
+    fun generateArtistPrompt(
+        genre: Genre,
+        visualDirection: String?,
+        context: String,
+    ): String =
         buildString {
-            appendLine("TASK: Act as a Visual Director. Extract SUBJECT POSITIONING and NARRATIVE DNA from the reference image.")
-            appendLine()
-            appendLine("⚠️ CRITICAL PHILOSOPHY:")
+            appendLine("ROLE: The Visionary Concept Artist (The Soul).")
             appendLine(
-                "Capture the SUBJECT'S relationship with the camera. Focus on orientation, what is visible, and the narrative energy.",
+                "GOAL: To breathe life, emotion, and atmosphere into the scene. You do NOT worry about the camera or the canvas—only the VISION.",
             )
-            appendLine("We use standard image generation terminology to ensure the Artist AI understands the intended composition.")
             appendLine()
-            appendLine("RULES:")
-            appendLine("- NO technical lens jargon (mm). Use descriptive framing levels.")
-            appendLine("- BE HONEST: Identify what is actually visible. If it's a close-up, the legs do not exist.")
-            appendLine("- ORIENTATION IS KEY: Explicitly identify if the subject is seen from front, side, or back.")
+            appendLine("THEME & SOUL: ${GenrePrompts.artStyle(genre)}")
             appendLine()
-            appendLine("10 PARAMETERS (Output numbered list, no preamble):")
+            appendLine("NARRATIVE CONTEXT: \"$context\"")
+            appendLine("DIRECTOR'S VISION: \"$visualDirection\"")
             appendLine()
-            appendLine("1. ORIENTATION - The subject's rotation relative to the camera:")
-            appendLine("   • BODY: [Frontal / 3/4 View / Profile / Back-facing]")
-            appendLine("   • HEAD: [Facing Camera / 3/4 Turn / Profile / Looking Over Shoulder]")
-            appendLine("   • GAZE: [Direct / Away / Upward / Downward / Eyes Closed]")
-            appendLine()
-            appendLine("2. FRAMING_LEVEL - The 'window' around the subject:")
-            appendLine("   [Extreme Close-Up / Face & Shoulders / Upper Body / Waist Up / Full Body / Distant Wide Shot]")
-            appendLine()
-            appendLine("3. SUBJECT_PROXIMITY - Subject's distance and focus depth:")
-            appendLine("   - How close is the camera to the subject's 'soul'?")
-            appendLine("   - [Intimate (Extreme Detail) / Near (Conversational) / Medium (Environmental) / Far (Observational)]")
-            appendLine("   - Identify what the camera is 'locked' onto (e.g., 'Focus locked on eyes', 'Focus locked on hand interaction').")
-            appendLine()
-            appendLine("3. VISIBLE_CONTENT - LIST EVERY PERMITTED ELEMENT:")
-            appendLine("   - Be extremely strict. If Portrait: 'Head, neck, collarbone, upper clothing/neckline'.")
-            appendLine("   - If Wide: 'Full figure, complete outfit, surroundings, ground, sky'.")
             appendLine(
-                "   - EXPLICITLY LIST CLOTHING PARTS if visible (e.g., 'shirt', 'jacket', 'gloves'). Do NOT describe their style/brand/color - just what they are.",
+                "1. NO INTRODUCTIONS (STRICT): Do NOT start your response with preambles like 'This artwork depicts...', 'In this scene...', or atmospheric tropes like 'The air hangs thick...'. Open IMMEDIATELY with a concrete visual detail from the character's description or the immediate environment.",
             )
-            appendLine("   - NO describing elements cut by the frame.")
-            appendLine()
-            appendLine("4. VIEWPOINT - Camera's vertical position relative to subject:")
-            appendLine("   - [Eye-Level / Seen from Above / Seen from Below]")
-            appendLine("   - Use the face tilt to decide: Face tilted up = Seen from Above. Face tilted down = Seen from Below.")
-            appendLine()
-            appendLine("5. COMPOSITION_PLACEMENT - Subject's position on screen:")
-            appendLine("   [Centered / Far Left / Far Right / Foreground / Background]")
-            appendLine()
-            appendLine("6. BODY_LANGUAGE_INTENTION - The narrative energy of the physical form:")
-            appendLine("   - Describe how the body reacts to the context. Is it a protective hunch? A confident stride?")
             appendLine(
-                "   - Focus on INTERACTION: How the subject relates to the environment or other subjects (e.g., 'Leaning into the shadows', 'A hand reaching but hesitating', 'Weighted silence in their stance').",
+                "2. LIGHTING AS NARRATIVE: Focus on the IMPACT of the lighting, not just its existence. How does the shadow reveal the character's emotional state? How does a highlight draw attention to a critical artifact or a facial scar? Use light to reveal truth, not just for 'mood'.",
             )
-            appendLine("   - Avoid static verbs. Use 'narrative weight' to describe the pose.")
+            appendLine(
+                "3. CONCRETE OVER CLICHÉ: Prioritize physical facts from the Character's DNA and Story Context. If the context mentions a specific item of clothing or a character's history (e.g. 'a weathered traveler'), describe the wear and tear, the specific fabric, or the weight they carry. Avoid generic 'cinematic' words if a concrete noun is available.",
+            )
+            appendLine(
+                "4. ABSTRACTION OVER TECHNICALITY: Do not describe 'pixels', 'brush strokes', or 'camera settings'. Those are handled by the Rendering Engine.",
+            )
+            val isComicGenre =
+                genre == Genre.HEROES || genre == Genre.CYBERPUNK || genre == Genre.PUNK_ROCK
+            if (isComicGenre) {
+                appendLine(
+                    "   - STYLISTIC PURITY: Do NOT use photography terms like 'depth of field', 'bokeh', 'blurred background', or 'soft focus'. Comics use HARD SHADOWS and INK to define depth, not lens blur.",
+                )
+            }
+            appendLine(
+                "5. FULL-BLEED ARTISTRY: Strictly describe the artwork as filling the entire frame. Avoid describing borders, comic panels, or multi-scene layouts.",
+            )
+            appendLine(
+                "6. ABSOLUTE CHARACTER FIDELITY: You MUST explicitly describe the physical traits of ALL characters mentioned in the context (hair color, eye color, skin tone, attire). These are the non-negotiable DNA of the image.",
+            )
+            appendLine(
+                "7. ENVIRONMENTAL SYNERGY & DEPTH: Do NOT let the character exist in a vacuum. Even in a close-up, the background must have 'soul'.",
+            )
+            appendLine(
+                "   - Use the 'ENVIRONMENTAL_CUES' from the Director. If it mentions 'hum of servers', describe the soft cyan glow of status lights behind the character.",
+            )
+            appendLine(
+                "   - If the context mentions a city, don't just say 'city'. Describe the 'distant silhouette of a spire' or the 'haze of a million streetlights'.",
+            )
+            appendLine(
+                "   - ANTI-REPETITION: Never start with generic tropes. Every environment should be a extension of the character's narrative.",
+            )
+            appendLine(
+                "8. STRICT NO-META RULE: Do NOT use philosophical flourishes about what the image 'represents'. BANNED: 'This isn't a portrait, it's a reckoning'. Only describe what is VISIBLE in the frame.",
+            )
             appendLine()
-            appendLine("7. EMOTIONAL_PROJECTION - The 'Soul' of the moment:")
-            appendLine("   - What emotion is being projected to the viewer?")
-            appendLine("   - [Aggressive / Melancholic / Fearful / Triumphant / Calm / Mysterious]")
-            appendLine()
-            appendLine("8. LIGHTING_ATMOSPHERE - Light direction and feel:")
-            appendLine("   - [Side-lit / Back-lit (Silhouette) / Frontal Light / Soft Ambient / Harsh Contrast]")
-            appendLine()
-            appendLine("9. FOCUS_DEPTH - How much of the background is visible:")
-            appendLine("   - [Isolated Subject (Blurry BG) / Sharp Environment / Deep Narrative Depth]")
-            appendLine()
-            appendLine("10. NARRATIVE_DNA - The story being told in one sentence:")
-            appendLine("    - Combine Action + Emotion + Tension.")
-            appendLine("    - Example: 'A defiant warrior standing their ground despite overwhelming odds'.")
-            appendLine()
-            appendLine("11. FORBIDDEN_CONTENT - LIST EVERY OFF-FRAME ELEMENT:")
-            appendLine("    - Based on 'FRAMING_LEVEL', explicitly list what CANNOT be seen.")
-            appendLine("    - If Portrait/MCU: [Pants, Shoes, Ground, Legs, Full Outfit, Feet, Sitting/Standing Stance].")
-            appendLine("    - This is a hard filter for the next phases.")
-            appendLine()
-            appendLine("OUTPUT: 12 numbered parameters. No explanations. Start with '1. ORIENTATION:'")
+            appendLine(
+                "OUTPUT FORMAT: A single, rich, cohesive paragraph describing the image. Start with a direct, impactful visual detail.",
+            )
         }
 
     /**
@@ -520,7 +493,8 @@ object ImagePrompts {
         appendLine(genreCriticalValidation(genre))
 
         appendLine(
-            "TASK: Validate the prompt for extreme technical alignment. Ensure the Artist has not deviated from the Genre's core DNA.")
+            "TASK: Validate the prompt for extreme technical alignment. Ensure the Artist has not deviated from the Genre's core DNA.",
+        )
         appendLine()
 
         appendLine("=== SCOPE 1: DIRECTORIAL COMPLIANCE (The 'How' & 'Where') ===")
@@ -529,13 +503,23 @@ object ImagePrompts {
         appendLine("2. CONTENT HALLUCINATION (STRICT): Check against 'FORBIDDEN_CONTENT'.")
         appendLine("   - If an element is in the forbidden list, it MUST NOT appear in the prompt.")
         appendLine("   - Describing forbidden parts = HALLUCINATION_VIOLATION.")
-        appendLine("3. FRAMING & PROXIMITY STRICTNESS: Are only permitted elements described and is the focus depth correct?")
-        appendLine("   - Does the prompt respect the extracted 'SUBJECT_PROXIMITY' and its intended focus?")
-        appendLine("   - VIOLATION: ORIENTATION_MISMATCH, VISIBILITY_VIOLATION, HALLUCINATION_VIOLATION, PROXIMITY_VIOLATION.")
-        appendLine("4. CONTEXT FIDELITY (CRITICAL): Does the artwork respect the provided context?")
+        appendLine(
+            "3. FRAMING & PROXIMITY STRICTNESS: Are only permitted elements described? (e.g. If 'Portrait', legs must NOT be described).",
+        )
+        appendLine("   - VIOLATION: VISIBILITY_VIOLATION, HALLUCINATION_VIOLATION.")
+        appendLine("4. CONTEXT FIDELITY (STRICT PHYSICAL CHECK): Does the artwork respect the provided context?")
         appendLine("   - Context: \"$context\"")
         appendLine(
-            "   - Verify that character details (hair, eyes, distinctive features) mentioned in context AND visible in the frame are present.",
+            "   - MANDATORY: Cross-reference the description with the '#### SUBJECTS DETAILS' in the context.",
+        )
+        appendLine(
+            "   - CHECK: Is hair color correct? Are eye colors mentioned? Are specific outfits/accessories present?",
+        )
+        appendLine(
+            "   - VIOLATION: If a character has 'blue eyes' in the context but the prompt says 'dark eyes' or omits it → CHARACTER_TRAIT_MISMATCH.",
+        )
+        appendLine(
+            "   - ACTION: You MUST inject the exact missing traits (hair color, eye color, scars, tattoos, specific clothes) into the 'correctedPrompt'.",
         )
         appendLine("6. MULTI-CHARACTER COMPLIANCE (STRICT SUBJECT CHECK):")
         appendLine("   - Parse the ESSENTIAL characters list (usually between '[' and ']') at the start of the context.")
@@ -552,33 +536,45 @@ object ImagePrompts {
         appendLine("   - VIOLATION: NUDITY_RISK, CLOTHING_OMISSION.")
         appendLine()
 
-        appendLine("=== SCOPE 2: ARTISTIC INTEGRITY & SOUL (The 'Why' & 'Feel') ===")
-        appendLine("Validation for the SOULFUL ARTIST logic:")
-        appendLine("1. GENRE ESSENCE: Does the prompt embody the ${genre.name} philosophy? (Check Art Style Rules).")
-        if (genre == Genre.SHINOBI) {
-            appendLine(
-                "   - SHINOBI CHECK: Is the palette strictly monochrome (black/white/ink) with ONLY crimson red accent? Any other color is a VIOLATION.",
-            )
-        }
-        appendLine("2. NARRATIVE SOUL: Is the description evocative and meaningful, or just technical?")
-        appendLine("3. POSING & INTERACTION: Do the characters feel integrated into the scene?")
-        appendLine("   - Check if body language matches the narrative weight. Are they just 'placed' or are they 'reacting'?")
-        appendLine("4. RENDERING STYLE: Are the required shading, line work, and texture from the genre present?")
-        appendLine("   - VIOLATION: GENRE_AURA_VIOLATION, RENDERING_MISSING, SOULLESS_DESCRIPTION, STATIC_COMPOSITION.")
-        appendLine("   - FEEDBACK: Must go to 'artistImprovementSuggestions'.")
-        appendLine("4. PALETTE & ACCENT COMPLIANCE (CRITICAL):")
-        appendLine("   - Does the prompt explicitly mention the Mandatory Accent Color defined in 'GENRE MANDATES'?")
-        appendLine("   - Are the colors consistent with the required palette (${getHexPalette(genre)})?")
-        appendLine("   - VIOLATION: PALETTE_VIOLATION, ACCENT_MISSING.")
+        appendLine("=== SCOPE 2: SCENE NATURALITY & COHERENCE (The 'Why' & 'Feel') ===")
+        appendLine("This is NOT a technical keyword checklist. Validate the ORGANIC feel of the scene.")
         appendLine()
+        appendLine("1. ORGANIC LIGHTING (CRITICAL):")
+        appendLine("   - Does the lighting feel like a natural part of the scene, or is it 'hard-injected' like a digital effect?")
+        appendLine("   - FORBIDDEN: Prompts that describe light bars, neon streaks, or lens flares crossing the character's face.")
+        appendLine("   - If lighting feels like 'digital overlays on a photo', it is a violation.")
+        appendLine("   - GOOD: 'Warm streetlight glow' or 'rim-lit by the city neon'. BAD: 'A blue light stripe crossing the eyes'.")
+        appendLine("   - VIOLATION: ARTIFICIAL_LIGHTING_INJECTION.")
+        appendLine()
+        appendLine("2. CHARACTER-SCENE FUSION:")
+        appendLine("   - Does the character feel like they BELONG in the environment, or are they 'pasted' into it?")
+        appendLine("   - The character's body language and positioning should react to the world around them.")
+        appendLine("   - VIOLATION: SUBJECT_SCENE_DISCONNECT.")
+        appendLine()
+        appendLine("3. ENVIRONMENT COHERENCE & CREATIVITY (CRITICAL):")
+        appendLine("   - Is the environment described, or is it vague/missing?")
+        appendLine(
+            "   - Does the environment match the narrative context? (e.g., A chase scene should describe the alleyway, not just 'a dark background').",
+        )
+        appendLine(
+            "   - ANTI-TROPE CHECK: Does the prompt start with a generic cliché like 'The air hangs thick...' or 'rain-slicked asphalt' when the story context doesn't mention weather?",
+        )
+        appendLine("   - VIOLATION: ENVIRONMENT_VAGUE, CONTEXT_MISMATCH, REPETITIVE_TROPE.")
+        appendLine("   - ACTION: If a trope is used, replace it with a unique detail derived from the story context.")
+        appendLine()
+        appendLine("4. META-CONTENT & BOT-SPEAK (CRITICAL):")
+        appendLine("   - Does the prompt include philosophical meta-commentary like 'This isn't a portrait, it's a reckoning'?")
+        appendLine("   - Does it attempt to 'explain' the meaning of the image to the viewer?")
+        appendLine("   - VIOLATION: META_COMMENTARY_VIOLATION, AI_BOT_SPEAK.")
+        appendLine("   - ACTION: Strip out all non-visual narrative flourishes. Keep ONLY the sensory and descriptive details.")
+        appendLine()
+        appendLine("5. GENRE SOUL (CONTRADICTION CHECK ONLY):")
 
         appendLine("=== SCOPE 3: PRESENTATION & FINAL POLISH (The 'Canvas') ===")
-        appendLine("Check for any graphical contamination:")
-        appendLine("1. BORDERS & FRAMES: Strictly ban any mention of panels, frames, gutters, or borders.")
-        appendLine("2. TEXT & LOGOS: No text or UI.")
-        appendLine("   - CRITICAL: Even if it's 'Comic Style', DO NOT USE panel borders. It must be full-bleed.")
+        appendLine("1. FULL-BLEED ARTWORK: Strictly ban any mention of borders, frames, gutters, comic panels, or multi-panel layouts.")
+        appendLine("2. NO TEXT/UI: No text, logos, or digital overlays.")
         appendLine("   - VIOLATION: GRAPHICAL_CONTAMINATION, BORDER_VIOLATION, PANEL_VIOLATION.")
-        appendLine("   - AUTO-FIX: KILL any mention of borders/panels. Replace with 'Full-bleed edge-to-edge artwork'.")
+        appendLine("   - AUTO-FIX: KILL any mention of borders/panels. Ensure the description implies a single edge-to-edge frame.")
         appendLine()
 
         visualDirection?.let {

@@ -4,8 +4,8 @@ import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
-import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
@@ -184,14 +184,12 @@ class ChapterUseCaseImpl
             executeRequest {
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
-                val coverBitmap =
-                    genreReferenceHelper.getRandomCompositionReference(saga.data.genre).getSuccess()
 
                 val genCover =
                     imagenClient
                         .generateIntegratedImage(
                             genre = saga.data.genre,
-                            imageReference = coverBitmap,
+                            imageReference = null,
                             context =
                                 buildString {
                                     appendLine("### MANDATORY MULTI-CHARACTER SCENE")
@@ -240,7 +238,7 @@ class ChapterUseCaseImpl
                                         "FINAL MANDATE: Do not focus on just one character. Balance the composition to show the interaction and presence of EVERY subject listed.",
                                     )
                                 },
-                            imageType = AnalyticsConstants.ImageType.COVER,
+                            imageType = ImageType.COVER,
                         ).getSuccess()!!
 
                 val coverFile =
