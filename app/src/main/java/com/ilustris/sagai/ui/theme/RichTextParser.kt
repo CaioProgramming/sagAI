@@ -70,22 +70,31 @@ object RichTextParser {
         }
 
         // Find all tag matches with their positions
-        val matches = mutableListOf<TagMatch>()
+        val allMatches = mutableListOf<TagMatch>()
 
         ACTION_REGEX.findAll(text).forEach { match ->
-            matches.add(TagMatch(match.range, TagType.ACTION, match.groupValues[1]))
+            allMatches.add(TagMatch(match.range, TagType.ACTION, match.groupValues[1]))
         }
 
         THINK_REGEX.findAll(text).forEach { match ->
-            matches.add(TagMatch(match.range, TagType.THINK, match.groupValues[1]))
+            allMatches.add(TagMatch(match.range, TagType.THINK, match.groupValues[1]))
         }
 
         NARRATOR_REGEX.findAll(text).forEach { match ->
-            matches.add(TagMatch(match.range, TagType.NARRATOR, match.groupValues[1]))
+            allMatches.add(TagMatch(match.range, TagType.NARRATOR, match.groupValues[1]))
         }
 
-        // Sort matches by start position
-        matches.sortBy { it.range.first }
+        // Sort matches by start position and handle nesting (prefer outermost tags)
+        val sortedMatches = allMatches.sortedBy { it.range.first }
+        val matches = mutableListOf<TagMatch>()
+        var lastEnd = -1
+
+        for (match in sortedMatches) {
+            if (match.range.first > lastEnd) {
+                matches.add(match)
+                lastEnd = match.range.last
+            }
+        }
 
         // Build segments list
         val segments = mutableListOf<TextSegment>()

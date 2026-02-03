@@ -86,6 +86,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewAnnotatedString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -401,7 +402,8 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -454,7 +456,8 @@ private fun SharedTransitionScope.ChatList(
                             true,
                             shimmerColors = shimmerColors,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
                         }
@@ -680,7 +683,10 @@ fun ChatCard(
                                 ?.joinMessage()
                                 ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
                                 ?.let { buildMessagePreviewAnnotatedString(it) }
-                                ?: AnnotatedString("")
+                                ?: AnnotatedString(
+                                    lastMessage?.joinMessage(false)?.formatToString()
+                                        ?: emptyString(),
+                                )
                         }
                     }
                 Text(

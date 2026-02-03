@@ -68,12 +68,21 @@ class ExpressiveTagVisualTransformation : VisualTransformation {
                 )
             }
 
-            // Sort by start position
-            matches.sortBy { it.range.first }
+            // Sort matches by start position and handle nesting (prefer outermost tags)
+            val sortedMatches = matches.sortedBy { it.range.first }
+            val filteredMatches = mutableListOf<TagMatch>()
+            var lastEnd = -1
+
+            for (match in sortedMatches) {
+                if (match.range.first > lastEnd) {
+                    filteredMatches.add(match)
+                    lastEnd = match.range.last
+                }
+            }
 
             var currentIndex = 0
 
-            for (match in matches) {
+            for (match in filteredMatches) {
                 // Add plain text before this match
                 if (currentIndex < match.range.first) {
                     append(text.substring(currentIndex, match.range.first))
@@ -85,40 +94,46 @@ class ExpressiveTagVisualTransformation : VisualTransformation {
                 val contentEndPos = length
 
                 // Apply styling to the content only
-                when (match.type) {
-                    TagType.ACTION -> {
-                        // Yellow/amber, bold, like a subtitle
-                        addStyle(
-                            SpanStyle(
-                                color = MaterialColor.Amber400,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            contentStartPos,
-                            contentEndPos,
-                        )
-                    }
+                if (contentStartPos < contentEndPos && contentEndPos <= length) {
+                    try {
+                        when (match.type) {
+                            TagType.ACTION -> {
+                                // Yellow/amber, bold, like a subtitle
+                                addStyle(
+                                    SpanStyle(
+                                        color = MaterialColor.Amber400,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    contentStartPos,
+                                    contentEndPos,
+                                )
+                            }
 
-                    TagType.THINK -> {
-                        // Faded text - use semi-transparent white/black depending on theme
-                        // In the input field we don't have access to the text color, so use a neutral gray
-                        addStyle(
-                            SpanStyle(
-                                color = Color.Gray,
-                            ),
-                            contentStartPos,
-                            contentEndPos,
-                        )
-                    }
+                            TagType.THINK -> {
+                                // Faded text - use semi-transparent white/black depending on theme
+                                // In the input field we don't have access to the text color, so use a neutral gray
+                                addStyle(
+                                    SpanStyle(
+                                        color = Color.Gray,
+                                    ),
+                                    contentStartPos,
+                                    contentEndPos,
+                                )
+                            }
 
-                    TagType.NARRATOR -> {
-                        // Italic text
-                        addStyle(
-                            SpanStyle(
-                                fontStyle = FontStyle.Italic,
-                            ),
-                            contentStartPos,
-                            contentEndPos,
-                        )
+                            TagType.NARRATOR -> {
+                                // Italic text
+                                addStyle(
+                                    SpanStyle(
+                                        fontStyle = FontStyle.Italic,
+                                    ),
+                                    contentStartPos,
+                                    contentEndPos,
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
 
@@ -163,9 +178,15 @@ private class ExpressiveTagOffsetMapping(
         allMatches.addAll(thinkRegex.findAll(originalText))
         allMatches.addAll(narratorRegex.findAll(originalText))
 
-        allMatches.sortedBy { it.range.first }.forEach { match ->
-            val contentLength = match.groupValues[1].length
-            tagRanges.add(match.range to contentLength)
+        val sortedMatches = allMatches.sortedBy { it.range.first }
+        var lastEnd = -1
+
+        sortedMatches.forEach { match ->
+            if (match.range.first > lastEnd) {
+                val contentLength = match.groupValues[1].length
+                tagRanges.add(match.range to contentLength)
+                lastEnd = match.range.last
+            }
         }
     }
 
