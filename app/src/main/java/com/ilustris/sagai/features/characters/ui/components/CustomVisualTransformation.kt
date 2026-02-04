@@ -128,160 +128,136 @@ private fun transformExpressiveTags(
     }
 
     // Sort matches by start position and handle nesting (prefer outermost tags)
-    val sortedMatches = matches.sortedBy { it.range.first }
-    val filteredMatches = mutableListOf<TagMatch>()
-    var lastEnd = -1
-
-    for (match in sortedMatches) {
-        if (match.range.first > lastEnd) {
-            filteredMatches.add(match)
-            lastEnd = match.range.last
+    val filteredMatches =
+        matches.sortedBy { it.range.first }.let { sorted ->
+            val filtered = mutableListOf<TagMatch>()
+            var lastEnd = -1
+            for (match in sorted) {
+                if (match.range.first > lastEnd) {
+                    filtered.add(match)
+                    lastEnd = match.range.last
+                }
+            }
+            filtered
         }
-    }
 
-    // Build transformed text and offset mapping
+    // Build transformed text, offset mapping and annotated string in a single pass
+    val originalToTransformed = mutableListOf<Int>()
     val transformedBuilder = StringBuilder()
-    val originalToTransformed =
-        mutableListOf<Int>() // originalToTransformed[originalIndex] = transformedIndex
     var currentOriginalIndex = 0
 
-    for (match in filteredMatches) {
-        // Add plain text before this match
-        if (currentOriginalIndex < match.range.first) {
-            val plainText = text.substring(currentOriginalIndex, match.range.first)
-            for (char in plainText) {
-                originalToTransformed.add(transformedBuilder.length)
+    val annotatedString =
+        buildAnnotatedString {
+            for (match in filteredMatches) {
+                // Add plain text before this match
+                if (currentOriginalIndex < match.range.first) {
+                    val plainText = text.substring(currentOriginalIndex, match.range.first)
+                    append(plainText)
+                    for (char in plainText) {
+                        originalToTransformed.add(transformedBuilder.length)
+                        transformedBuilder.append(char)
+                    }
+                    currentOriginalIndex = match.range.first
+                }
+
+                // Map opening tag to the start of the content
+                val contentStartInTransformed = transformedBuilder.length
+                repeat(match.openTagLength) {
+                    originalToTransformed.add(contentStartInTransformed)
+                }
+
+                // Append and style content
+                val startStyle = length
+                append(match.content)
+                val endStyle = length
+
+                if (startStyle < endStyle) {
+                    try {
+                        when (match.type) {
+                            "action" -> {
+                                addStyle(
+                                    SpanStyle(
+                                        color = MaterialColor.Amber400,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    startStyle,
+                                    endStyle,
+                                )
+                            }
+
+                            "think" -> {
+                                val thinkColor =
+                                    if (textColor != Color.Unspecified) {
+                                        textColor.copy(alpha = 0.5f)
+                                    } else {
+                                        Color.Gray.copy(alpha = 0.5f)
+                                    }
+                                addStyle(SpanStyle(color = thinkColor), startStyle, endStyle)
+                            }
+
+                            "narrator" -> {
+                                addStyle(SpanStyle(fontStyle = FontStyle.Italic), startStyle, endStyle)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+
+                // Update mapping and builder for content
+                for (char in match.content) {
+                    originalToTransformed.add(transformedBuilder.length)
+                    transformedBuilder.append(char)
+                }
+
+                // Map closing tag to the end of the content
+                val contentEndInTransformed = transformedBuilder.length
+                repeat(match.closeTagLength) {
+                    originalToTransformed.add(contentEndInTransformed)
+                }
+
+                currentOriginalIndex = match.range.last + 1
+            }
+
+            // Add remaining text
+            if (currentOriginalIndex < text.length) {
+                val remainingText = text.substring(currentOriginalIndex)
+                append(remainingText)
+                for (char in remainingText) {
+                    originalToTransformed.add(transformedBuilder.length)
                 transformedBuilder.append(char)
             }
-            currentOriginalIndex = match.range.first
-        }
+            }
 
-        // Skip the opening tag characters (map them to the start of content in transformed)
-        val contentStartInTransformed = transformedBuilder.length
-        repeat(match.openTagLength) {
-            originalToTransformed.add(contentStartInTransformed)
-        }
-
-        // Add the content
-        for (char in match.content) {
+            // Final position mapping
             originalToTransformed.add(transformedBuilder.length)
-            transformedBuilder.append(char)
-        }
-
-        // Skip the closing tag characters (map them to the end of content in transformed)
-        val contentEndInTransformed = transformedBuilder.length
-        repeat(match.closeTagLength) {
-            originalToTransformed.add(contentEndInTransformed)
-        }
-
-        currentOriginalIndex = match.range.last + 1
     }
 
-    // Add remaining text
-    if (currentOriginalIndex < text.length) {
-        val remainingText = text.substring(currentOriginalIndex)
-        for (char in remainingText) {
-            originalToTransformed.add(transformedBuilder.length)
-            transformedBuilder.append(char)
-        }
-    }
-
-    // Add final position
-    originalToTransformed.add(transformedBuilder.length)
-
-    val transformedText = transformedBuilder.toString()
-
-    // Build reverse mapping (transformed to original)
-    val transformedToOriginal = IntArray(transformedText.length + 1)
+    val finalTransformedText = transformedBuilder.toString()
+    val transformedToOriginal = IntArray(finalTransformedText.length + 1)
     for (originalIdx in originalToTransformed.indices) {
         val transformedIdx = originalToTransformed[originalIdx]
-        if (transformedIdx <= transformedText.length) {
+        if (transformedIdx < transformedToOriginal.size) {
             transformedToOriginal[transformedIdx] = originalIdx
         }
     }
 
-    // Build annotated string with styles
-    val annotatedString =
-        buildAnnotatedString {
-            append(transformedText)
-
-            // Re-calculate styled ranges in transformed text
-            var transformedIndex = 0
-            var originalIndex = 0
-
-            for (match in filteredMatches) {
-                // Skip plain text before match
-                val plainLength = match.range.first - originalIndex
-                transformedIndex += plainLength
-                originalIndex = match.range.first
-
-                // Style the content in transformed text
-                val contentStart = transformedIndex
-                val contentEnd = transformedIndex + match.content.length
-
-                if (contentStart >= 0 && contentEnd <= transformedText.length && contentStart < contentEnd) {
-                    when (match.type) {
-                        "action" -> {
-                            addStyle(
-                                SpanStyle(
-                                    color = MaterialColor.Amber400,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                contentStart,
-                                contentEnd,
-                            )
-                        }
-
-                        "think" -> {
-                            // Use textColor if specified, otherwise use a default gray
-                            val thinkColor =
-                                if (textColor != Color.Unspecified) {
-                                    textColor.copy(alpha = 0.5f)
-                                } else {
-                                    Color.Gray.copy(alpha = 0.5f)
-                                }
-                            addStyle(
-                                SpanStyle(
-                                    color = thinkColor,
-                                ),
-                                contentStart,
-                                contentEnd,
-                            )
-                        }
-
-                        "narrator" -> {
-                            addStyle(
-                                SpanStyle(
-                                    fontStyle = FontStyle.Italic,
-                                ),
-                                contentStart,
-                                contentEnd,
-                            )
-                        }
-                    }
-                }
-
-                transformedIndex += match.content.length
-                originalIndex = match.range.last + 1
-            }
-        }
-
     val offsetMapping =
         object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int =
-                if (offset < originalToTransformed.size) {
-                    originalToTransformed[offset]
-                } else {
-                    transformedText.length
-                }
+                if (offset >= 0 && offset < originalToTransformed.size) {
+                originalToTransformed[offset]
+            } else {
+                finalTransformedText.length
+            }
 
-            override fun transformedToOriginal(offset: Int): Int =
-                if (offset < transformedToOriginal.size) {
-                    transformedToOriginal[offset]
-                } else {
-                    text.length
-                }
-        }
+        override fun transformedToOriginal(offset: Int): Int =
+            if (offset >= 0 && offset < transformedToOriginal.size) {
+                transformedToOriginal[offset]
+            } else {
+                text.length
+            }
+    }
 
     return Pair(annotatedString, offsetMapping)
 }
@@ -342,18 +318,25 @@ private fun buildWikiAndCharactersAnnotationOnTransformed(
                 regex.findAll(text).forEach { matchResult ->
                     val startIndex = matchResult.range.first
                     val endIndex = matchResult.range.last + 1
-                    addStyle(
-                        style = rule.spanStyle,
-                        start = startIndex,
-                        end = endIndex,
-                    )
 
-                    addStringAnnotation(
-                        tag = group.tag,
-                        annotation = rule.annotationValue,
-                        start = startIndex,
-                        end = endIndex,
-                    )
+                    if (startIndex >= 0 && endIndex <= length && startIndex < endIndex) {
+                        try {
+                            addStyle(
+                                style = rule.spanStyle,
+                                start = startIndex,
+                                end = endIndex,
+                            )
+
+                            addStringAnnotation(
+                                tag = group.tag,
+                                annotation = rule.annotationValue,
+                                start = startIndex,
+                                end = endIndex,
+                            )
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
                 }
             }
         }
@@ -652,7 +635,13 @@ fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
     return buildAnnotatedString {
         append(cleanText)
         styledSections.forEach { section ->
-            addStyle(section.style, section.start, section.end)
+            if (section.start >= 0 && section.end <= length && section.start < section.end) {
+                try {
+                    addStyle(section.style, section.start, section.end)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 }
@@ -750,7 +739,13 @@ fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString? =
         buildAnnotatedString {
             append(cleanText)
             styledSections.forEach { section ->
-                addStyle(section.style, section.start, section.end)
+                if (section.start >= 0 && section.end <= length && section.start < section.end) {
+                    try {
+                        addStyle(section.style, section.start, section.end)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
         }
     } catch (e: Exception) {
@@ -770,18 +765,25 @@ fun buildStyleAnnotation(
             regex.findAll(text).forEach { matchResult ->
                 val startIndex = matchResult.range.first
                 val endIndex = matchResult.range.last + 1
-                addStyle(
-                    style = rule.spanStyle,
-                    start = startIndex,
-                    end = endIndex,
-                )
 
-                addStringAnnotation(
-                    tag = group.tag,
-                    annotation = rule.annotationValue,
-                    start = startIndex,
-                    end = endIndex,
-                )
+                if (startIndex >= 0 && endIndex <= length && startIndex < endIndex) {
+                    try {
+                        addStyle(
+                            style = rule.spanStyle,
+                            start = startIndex,
+                            end = endIndex,
+                        )
+
+                        addStringAnnotation(
+                            tag = group.tag,
+                            annotation = rule.annotationValue,
+                            start = startIndex,
+                            end = endIndex,
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
         }
     }

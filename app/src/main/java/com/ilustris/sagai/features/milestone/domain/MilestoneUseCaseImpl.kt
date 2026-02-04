@@ -128,40 +128,14 @@ private fun getLoadingDefaultMessage(
     genre: Genre,
     type: LoadingType,
 ): String =
-    when (type) {
-        LoadingType.ACT -> {
-            when (genre) {
-                Genre.FANTASY -> "Rewearing the prophecies for a new era..."
-                Genre.CYBERPUNK -> "Redefining the neon horizon..."
-                Genre.HORROR -> "The nightmare is evolving..."
-                else -> "Preparing a massive shift in your story..."
-            }
-        }
-
-        LoadingType.CHAPTER -> {
-            when (genre) {
-                Genre.FANTASY -> "Inking the next chapter of your legend..."
-                Genre.CYBERPUNK -> "Loading the next sector of the sprawl..."
-                Genre.HORROR -> "Turning the page of your demise..."
-                else -> "Drafting the next chapter..."
-            }
-        }
-
-        LoadingType.EVENT -> {
-            when (genre) {
-                Genre.FANTASY -> "Consulting the ancient scrolls..."
-                Genre.CYBERPUNK -> "Compiling the next protocol..."
-                Genre.SPACE_OPERA -> "Calculating hyperjump coordinates..."
-                Genre.HORROR -> "The darkness is shifting..."
-                Genre.COWBOY -> "Saddling up for the next trail..."
-                Genre.SHINOBI -> "Preparing the next shadow mission..."
-                Genre.HEROES -> "Assembling the next challenge..."
-                Genre.CRIME -> "Connecting the next piece of evidence..."
-                Genre.PUNK_ROCK -> "Tuning the amps for the next set..."
-            }
-        }
-
-        LoadingType.ENDING -> {
-            "Crafting the grand finale of your saga..."
-        }
+    when (genre) {
+        Genre.FANTASY -> "Consulting the ancient scrolls and sharpening the prophecies..."
+        Genre.CYBERPUNK -> "Calibrating the neural link and debugging the sprawl..."
+        Genre.SPACE_OPERA -> "Calculating hyperjump coordinates through the void..."
+        Genre.HORROR -> "The darkness is shifting. Something is lurking..."
+        Genre.COWBOY -> "Saddling up and checking the horizon..."
+        Genre.SHINOBI -> "Preparing the next shadow mission in silence..."
+        Genre.HEROES -> "Assembling the challenge and polishing the cape..."
+        Genre.CRIME -> "Connecting the evidence and walking the noir streets..."
+        Genre.PUNK_ROCK -> "Tuning the amps and checking the setlist..."
     }

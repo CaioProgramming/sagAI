@@ -191,17 +191,15 @@ class MessageUseCaseImpl
                 error("generateReaction: No characters found in scene to react.")
             }
 
-            val relationships =
-                saga.mainCharacter!!.relationships.filter {
-                    it.characterOne.id in charactersInScene.map { character -> character.data.id } ||
-                        it.characterTwo.id in charactersInScene.map { character -> character.data.id }
-                }
+            saga.mainCharacter!!.relationships.filter {
+                it.characterOne.id in charactersInScene.map { character -> character.data.id } ||
+                    it.characterTwo.id in charactersInScene.map { character -> character.data.id }
+            }
 
             val prompt =
                 ChatPrompts.generateReactionPrompt(
                     saga = saga,
                     summary = sceneSummary,
-                    relationships = relationships,
                     messageToReact = message,
                 )
 

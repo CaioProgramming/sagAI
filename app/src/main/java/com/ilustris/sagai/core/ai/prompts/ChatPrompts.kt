@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -236,7 +235,6 @@ object ChatPrompts {
         summary: SceneSummary,
         saga: SagaContent,
         messageToReact: Message,
-        relationships: List<RelationshipContent>,
     ) = buildString {
         val mainCharacter = saga.mainCharacter!!
         val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }

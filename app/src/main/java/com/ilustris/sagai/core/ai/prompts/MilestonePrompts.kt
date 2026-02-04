@@ -2,10 +2,8 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.presentation.model.LoadingType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 
 object MilestonePrompts {
@@ -17,6 +15,10 @@ object MilestonePrompts {
             return rewriteIntroduction(milestone, saga)
         }
 
+        if (milestone is SagaMilestone.Loading) {
+            return generateLoadingMessage(saga)
+        }
+
         if (milestone is SagaMilestone.CurrentObjective) {
             return null
         }
@@ -25,13 +27,30 @@ object MilestonePrompts {
         getMilestoneType(milestone)
 
         return buildString {
-            val milestoneContext =
-                if (milestone is SagaMilestone.Loading) "is waiting for the story to progress" else "just achieved a milestone in their saga"
-            appendLine("You are a witty, clever storytelling companion. The user $milestoneContext.")
+            appendLine("You are a witty, clever storytelling companion. The user just achieved a milestone in their saga.")
             appendLine("Generate ONE SHORT, MEMORABLE congratulatory message that REACTS DIRECTLY to their achievement.")
             appendLine()
             appendLine("STORY CONTEXT:")
-            append(SagaPrompts.mainContext(saga, ommitCharacter = true))
+            appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+
+            saga.currentActInfo?.let { act ->
+                appendLine("\n## Active Segment")
+                appendLine(act.actSummary(saga, true))
+            }
+
+            appendLine("\n## Historical Context")
+            saga.acts.filter { it.data.id != saga.data.currentActId }.forEach {
+                appendLine(it.actSummary(saga, false))
+            }
+
+            appendLine("\n## Recent Activity")
+            appendLine(ChatPrompts.conversationHistory(saga))
+
+            appendLine()
+            appendLine("# STORYTELLING DIRECTIVES")
+            appendLine(ActPrompts.actDirective(saga.getDirective()))
+            appendLine()
+
             appendLine(
                 milestone.toAINormalize(
                     fieldsToExclude =
@@ -63,6 +82,38 @@ object MilestonePrompts {
             appendLine("Output ONLY the single-line provocative message, nothing else:")
         }
     }
+
+    fun generateLoadingMessage(saga: SagaContent): String =
+        buildString {
+            val genre = saga.data.genre
+            appendLine("You are a witty, clever storytelling companion and creative partner.")
+            appendLine(
+                "The user is experiencing a brief pause while the narrative gears turn. Generate a humorous, meta \"story break\" message.",
+            )
+            appendLine()
+            appendLine("GENRE: ${genre.name}")
+            appendLine()
+            appendLine("YOUR PERSONA:")
+            appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
+            appendLine(buildPersonaForGenre(genre))
+            appendLine()
+            appendLine("CREATIVE GUIDELINES:")
+            appendLine("- BE AGNOSTIC: Do NOT mention any specific story details, chapters, or upcoming events. Keep the surprises secret!")
+            appendLine("- TONE: Playful, witty, and slightly fourth-wall-breaking.")
+            appendLine(
+                "- META-TALK: Roleplay as a director or creator who's \"checking the script,\" \"rehearsing the NPCs,\" or \"adjusting the lighting.\"",
+            )
+            appendLine(
+                "- GENRE FLAVOR: Use themes from ${genre.name} (e.g., for Fantasy: \"checking the mana levels\"; for Cyberpunk: \"calibrating the neural link\").",
+            )
+            appendLine("- Maximum 15 words.")
+            appendLine("- NO emojis, NO generic \"loading\" text.")
+            appendLine()
+            appendLine("TONE EXAMPLES:")
+            appendLine(getGenreConversationalTone(genre))
+            appendLine()
+            appendLine("Output ONLY the single-line humorous break message, nothing else:")
+        }
 
     private fun getMilestoneType(milestone: SagaMilestone): String =
         when (milestone) {
@@ -295,26 +346,7 @@ object MilestonePrompts {
             }
 
             is SagaMilestone.Loading -> {
-                val nextChapter =
-                    saga
-                        .flatChapters()
-                        .lastOrNull()
-                        ?.data
-                        ?.title ?: "the next sequence"
-                val typeDesc =
-                    when (milestone.type) {
-                        LoadingType.ACT -> "a massive narrative shift (NEW ACT)"
-                        LoadingType.CHAPTER -> "a new chapter in this journey ($nextChapter)"
-                        LoadingType.EVENT -> "a specific event or milestone within the story"
-                        LoadingType.ENDING -> "the grand finale of this saga"
-                    }
-                """
-                - The user is waiting while you prepare $typeDesc.
-                - BE FRIENDLY AND PLAYFUL: Speak like a creative partner, not a machine.
-                - BE AWARE: Mention that you're "polishing the climax," "sharpening the twists," or "rewriting the stars."
-                - TONE: Slightly meta, joking, but very atmospheric for the ${saga.data.genre.name} genre.
-                - AVOID generic "loading" phrases. Instead, make it feel like you're actually crafting the destiny of their characters.
-                """.trimIndent()
+                ""
             }
         }
 
