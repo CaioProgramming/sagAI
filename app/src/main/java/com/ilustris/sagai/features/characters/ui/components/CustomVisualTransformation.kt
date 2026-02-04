@@ -39,7 +39,6 @@ fun transformTextWithContent(
     tagBackgroundColor: Color = MaterialColor.Gray500,
     textColor: Color = Color.Unspecified,
 ): TransformedText {
-    // First, transform the text to hide tags and get the mapping
     val (transformedText, offsetMapping) =
         transformExpressiveTags(
             text,
@@ -50,14 +49,19 @@ fun transformTextWithContent(
 
     // Then apply character/wiki annotations on the transformed text
     val annotatedString =
-        buildWikiAndCharactersAnnotationOnTransformed(
-            transformedText,
-            genre,
-            mainCharacter,
-            characters,
-            wiki,
-            tagBackgroundColor,
-        )
+        try {
+            buildWikiAndCharactersAnnotationOnTransformed(
+                transformedText,
+                genre,
+                mainCharacter,
+                characters,
+                wiki,
+                tagBackgroundColor,
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            transformedText
+        }
 
     return TransformedText(annotatedString, offsetMapping)
 }

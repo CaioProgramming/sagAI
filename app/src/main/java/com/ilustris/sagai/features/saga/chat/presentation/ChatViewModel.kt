@@ -211,7 +211,6 @@ class ChatViewModel
 
                 is ChatUiAction.DismissMilestone -> {
                     sagaContentManager.dismissMilestone()
-                    stateManager.updateMilestone(null)
                 }
 
                 is ChatUiAction.ContinueMilestone -> {
@@ -236,7 +235,6 @@ class ChatViewModel
 
         private fun observeMileStone() {
             viewModelScope.launch(Dispatchers.IO) {
-                // Observe milestone updates from content manager
                 sagaContentManager.milestoneUpdate.collect {
                     stateManager.updateMilestone(it)
                 }
@@ -484,13 +482,13 @@ class ChatViewModel
 
                 stateManager.setEditingMessage(null)
                 stateManager.updateInput(TextFieldValue(""))
+            }
         }
-    }
 
-    private fun cancelEdit() {
-        stateManager.setEditingMessage(null)
-        stateManager.updateInput(TextFieldValue(""))
-    }
+        private fun cancelEdit() {
+            stateManager.setEditingMessage(null)
+            stateManager.updateInput(TextFieldValue(""))
+        }
 
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -1192,7 +1190,6 @@ class ChatViewModel
                         updateLoading(false)
                         sceneSummary?.let {
                             launch(Dispatchers.IO) {
-                                delay(5.seconds)
                                 generateSuggestions(sceneSummary)
                                 sagaContentManager.getCurrentObjective(sceneSummary)
                             }

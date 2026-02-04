@@ -2,28 +2,24 @@ package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 
@@ -42,7 +38,9 @@ fun ObjectiveOverlay(
             Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .background(fadeGradientTop(genre.color))
-                .statusBarsPadding()
+                .clickable {
+                    onDismiss()
+                }.statusBarsPadding()
                 .fillMaxWidth()
                 .padding(16.dp),
     ) {
@@ -65,26 +63,11 @@ fun ObjectiveOverlay(
         Text(
             subtitle,
             style =
-                MaterialTheme.typography.titleSmall.copy(
+                MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = genre.bodyFont(),
                     color = genre.iconColor,
                     textAlign = TextAlign.Center,
                 ),
         )
-
-        Button(
-            onClick = {
-                onDismiss()
-            },
-            colors =
-                ButtonDefaults.textButtonColors(
-                    contentColor = genre.color,
-                    containerColor = Color.Transparent,
-                    disabledContentColor = genre.iconColor.copy(alpha = .5f),
-                ),
-            shape = genre.bubble(isNarrator = true),
-        ) {
-            Text(stringResource(R.string.continue_button))
-        }
     }
 }

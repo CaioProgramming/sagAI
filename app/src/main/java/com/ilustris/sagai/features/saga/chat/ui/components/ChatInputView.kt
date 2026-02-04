@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -747,7 +746,6 @@ fun ChatInputView(
 
                                 Column(
                                     Modifier
-                                        .heightIn(max = 250.dp)
                                         .alpha(textAlpha)
                                         .verticalScroll(rememberScrollState()),
                                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -827,8 +825,7 @@ fun ChatInputView(
                                                             .background(
                                                                 backColor,
                                                                 inputShape,
-                                                            )
-                                                            .clickable(enabled = currentTagInside == null) {
+                                                            ).clickable(enabled = currentTagInside == null) {
                                                                 it.tag?.let { tag ->
                                                                     val newValue =
                                                                         insertExpressiveTag(

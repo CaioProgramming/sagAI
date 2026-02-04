@@ -15,6 +15,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -57,7 +58,6 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
@@ -97,14 +97,7 @@ fun MilestoneOverlay(
                 )
             when (it) {
                 is SagaMilestone.CurrentObjective -> {
-                    ObjectiveOverlay(
-                        stringResource(it.title),
-                        it.subtitle,
-                        genre,
-                        sparkModifier,
-                    ) {
-                        onDismiss()
-                    }
+                    Box {}
                 }
 
                 is SagaMilestone.Introduction -> {
@@ -218,12 +211,10 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }
-                        .background(
+                        }.background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        )
-                        .padding(4.dp)
+                        ).padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,
