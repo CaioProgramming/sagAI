@@ -80,6 +80,19 @@ object ChatPrompts {
         sceneSummary?.let {
             appendLine("# SCENE STATE")
             appendLine(sceneSummary.toAINormalize())
+
+            // Inject possible outcomes as narrative guidance
+            sceneSummary.possibleOutcomes?.takeIf { it.isNotEmpty() }?.let { outcomes ->
+                appendLine("\n## NARRATIVE GUIDANCE")
+                appendLine("The following are plausible directions for this scene based on current context:")
+                outcomes.forEachIndexed { index, outcome ->
+                    appendLine("${index + 1}. $outcome")
+                }
+                appendLine(
+                    "These are suggestions to keep your response grounded. You may follow one, blend them, or take a different direction if the player's action demands it.",
+                )
+            }
+
             charactersInScene?.let {
                 appendLine("## Characters in Immediate Scene:")
                 appendLine(CharacterPrompts.charactersOverview(it.map { it.data }))
@@ -331,7 +344,7 @@ object ChatPrompts {
 
             appendLine("\n# TECHNICAL EXTRACTION PARAMETERS")
             appendLine(
-                "Extract the following 10 narrative parameters precisely. This summary is the DEFINITIVE TRUTH for the next story turn.",
+                "Extract the following 13 narrative parameters precisely. This summary is the DEFINITIVE TRUTH for the next story turn.",
             )
             appendLine(
                 "1. **currentLocation**: The exact, current physical setting. If the latest messages indicate movement (e.g., 'ran to the roof', 'entered the sewers'), this MUST reflect the new location immediately.",
@@ -355,6 +368,19 @@ object ChatPrompts {
             appendLine(
                 "12. **establishedFacts**: A list of key facts established throughout the *entire story history* that are relevant to the current context. This acts as a 'continuity anchor' to ensure the narrative moves forward. Include things the player/characters definitely know (e.g., 'The artifact is broken', 'The killer's identity is revealed'). If a fact is listed here, it must be treated as COMMON KNOWLEDGE and NEVER re-explained or treated as a new discovery.",
             )
+            appendLine(
+                "13. **possibleOutcomes**: Extract EXACTLY 2 plausible narrative directions based on the current scene state, immediate objective, and active conflict. Each outcome must be:",
+            )
+            appendLine("   - A brief, concrete scenario (15-30 words)")
+            appendLine("   - Grounded in established facts and world state")
+            appendLine("   - Respectful of character agency and current tension level")
+            appendLine("   - A logical next step, not a distant future event")
+            appendLine(
+                "   - Examples: 'The guard notices suspicious behavior and demands identification', 'The artifact's energy signature attracts unwanted attention from the shadows', 'The ally reveals crucial information but asks for something in return'",
+            )
+            appendLine(
+                "   - These outcomes guide the next AI response to stay context-grounded and reduce hallucinations. They also enable future timeline branching visualization.",
+            )
 
             appendLine("\n# SPATIAL CONTINUITY MANDATE")
             appendLine(
@@ -362,7 +388,7 @@ object ChatPrompts {
             )
 
             appendLine("\n# RULES")
-            appendLine("1. Extract 12 narrative parameters precisely.")
+            appendLine("1. Extract 13 narrative parameters precisely.")
             appendLine("2. Technical/clinical tone only. Use null for unknowns.")
             appendLine("3. Output valid JSON mapping.")
         }.trimIndent()

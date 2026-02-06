@@ -67,3 +67,5 @@ data class CharacterContent(
                 it.copy(relationshipEvents = it.sortedByEvents(timeLineEvents))
             }.filter { it.relationshipEvents.isNotEmpty() }
 }
+
+fun Character.fullName() = "$name ${lastName ?: ""}".trim()

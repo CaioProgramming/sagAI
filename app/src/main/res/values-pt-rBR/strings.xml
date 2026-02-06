@@ -420,6 +420,75 @@
     <string name="delete">Apagar</string>
     <string name="editing_message">Editando mensagem...</string>
     <string name="message_deleted_regenerate">Mensagem apagada. Você pode regenerar a resposta da IA.</string>
+
+    <!-- Milestone Fallback Messages -->
+    <string name="milestone_introduction_fallback_message">A história continua...</string>
+
+    <!-- Character Fallbacks -->
+    <string name="milestone_fallback_new_character_fantasy">Uma nova alma se junta à sua lenda!</string>
+    <string name="milestone_fallback_new_character_cyberpunk">Novo aliado na rede!</string>
+    <string name="milestone_fallback_new_character_space_opera">Uma nova estrela em sua tripulação!</string>
+    <string name="milestone_fallback_new_character_horror">Outro entra na escuridão...</string>
+    <string name="milestone_fallback_new_character_cowboy">Novo viajante na trilha!</string>
+    <string name="milestone_fallback_new_character_shinobi">Uma nova sombra caminha com você!</string>
+    <string name="milestone_fallback_new_character_heroes">Um novo herói surge!</string>
+    <string name="milestone_fallback_new_character_crime">Novo jogador no jogo!</string>
+    <string name="milestone_fallback_new_character_punk_rock">Sangue novo na equipe!</string>
+
+    <!-- Event Fallbacks -->
+    <string name="milestone_fallback_new_event_fantasy">Sua saga se torna mais rica!</string>
+    <string name="milestone_fallback_new_event_cyberpunk">Dados registrados. Continue!</string>
+    <string name="milestone_fallback_new_event_space_opera">Sua odisseia continua!</string>
+    <string name="milestone_fallback_new_event_horror">Você segue em frente!</string>
+    <string name="milestone_fallback_new_event_cowboy">A lenda vive!</string>
+    <string name="milestone_fallback_new_event_shinobi">Seu caminho se revela!</string>
+    <string name="milestone_fallback_new_event_heroes">A justiça prevalece!</string>
+    <string name="milestone_fallback_new_event_crime">O caso se aprofunda!</string>
+    <string name="milestone_fallback_new_event_punk_rock">Sua rebeldia ecoa!</string>
+
+    <!-- Chapter Fallbacks -->
+    <string name="milestone_fallback_chapter_finished_fantasy">Um capítulo se fecha em esplendor!</string>
+    <string name="milestone_fallback_chapter_finished_cyberpunk">Capítulo arquivado. Qual o próximo?</string>
+    <string name="milestone_fallback_chapter_finished_space_opera">Setor limpo!</string>
+    <string name="milestone_fallback_chapter_finished_horror">Você sobreviveu!</string>
+    <string name="milestone_fallback_chapter_finished_cowboy">Trilha conquistada!</string>
+    <string name="milestone_fallback_chapter_finished_shinobi">Este caminho se completa!</string>
+    <string name="milestone_fallback_chapter_finished_heroes">Capítulo completo, campeão!</string>
+    <string name="milestone_fallback_chapter_finished_crime">Caso encerrado!</string>
+    <string name="milestone_fallback_chapter_finished_punk_rock">A música acabou. Próxima faixa!</string>
+
+    <!-- Act Fallbacks -->
+    <string name="milestone_fallback_act_finished_fantasy">Uma era termina, um novo tempo começa!</string>
+    <string name="milestone_fallback_act_finished_cyberpunk">Ato encerrado. Subindo de nível!</string>
+    <string name="milestone_fallback_act_finished_space_opera">Setor conquistado!</string>
+    <string name="milestone_fallback_act_finished_horror">Você escapou do pesadelo!</string>
+    <string name="milestone_fallback_act_finished_cowboy">Território reivindicado!</string>
+    <string name="milestone_fallback_act_finished_shinobi">Treinamento concluído!</string>
+    <string name="milestone_fallback_act_finished_heroes">Arco completo!</string>
+    <string name="milestone_fallback_act_finished_crime">Operação encerrada!</string>
+    <string name="milestone_fallback_act_finished_punk_rock">O show acabou! Bis?</string>
+
+    <!-- Objective Fallbacks -->
+    <string name="milestone_fallback_current_objective_fantasy">Sua missão o aguarda!</string>
+    <string name="milestone_fallback_current_objective_cyberpunk">Briefing da missão carregado!</string>
+    <string name="milestone_fallback_current_objective_space_opera">Novas coordenadas travadas!</string>
+    <string name="milestone_fallback_current_objective_horror">Seu destino está selado...</string>
+    <string name="milestone_fallback_current_objective_cowboy">Nova trilha à frente!</string>
+    <string name="milestone_fallback_current_objective_shinobi">Sua missão começa!</string>
+    <string name="milestone_fallback_current_objective_heroes">O dever chama!</string>
+    <string name="milestone_fallback_current_objective_crime">Nova pista adquirida!</string>
+    <string name="milestone_fallback_current_objective_punk_rock">Próximo show agendado!</string>
+
+    <!-- Loading Fallbacks -->
+    <string name="milestone_fallback_loading_fantasy">Consultando os pergaminhos antigos e afiando as profecias...</string>
+    <string name="milestone_fallback_loading_cyberpunk">Calibrando o link neural e depurando a cidade...</string>
+    <string name="milestone_fallback_loading_space_opera">Calculando coordenadas de salto hiperespacial pelo vácuo...</string>
+    <string name="milestone_fallback_loading_horror">A escuridão está mudando. Algo está à espreita...</string>
+    <string name="milestone_fallback_loading_cowboy">Selando os cavalos e checando o horizonte...</string>
+    <string name="milestone_fallback_loading_shinobi">Preparando a próxima missão silenciosa...</string>
+    <string name="milestone_fallback_loading_heroes">Organizando o desafio e polindo a capa...</string>
+    <string name="milestone_fallback_loading_crime">Conectando as evidências e percorrendo as ruas noir...</string>
+    <string name="milestone_fallback_loading_punk_rock">Afinando os amplificadores e conferindo o setlist...</string>
     <string name="regenerate">Regenerar</string>
     <string name="save_changes">Salvar alterações</string>
 </resources>

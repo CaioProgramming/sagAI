@@ -23,7 +23,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: Tenebrism (Violent contrast between deep darks and divine light). Volumetric 'God Rays'.")
                     appendLine("TEXTURE: Canvas grain, rich impasto brushwork, translucent glazing on skin.")
                     appendLine("PALETTE_BEHAVIOR: Deep shadows swallow details; highlights burn with gold and crimson.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -34,7 +33,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: 'Retro Halation' (bloom) on highlights. Harsh neon backlight. Deep blacks.")
                     appendLine("TEXTURE: Heavy Film Grain, chromatic aberration, VHS tape noise, scanlines.")
                     appendLine("PALETTE_BEHAVIOR: High saturation neon vs. crushed blacks. Analog color bleed.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -45,7 +43,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: Flashlight 'cone' lighting. Darkness implies the unknown.")
                     appendLine("TEXTURE: Pixelated textures (Nearest-Neighbor filtering). Dithering patterns for gradients.")
                     appendLine("PALETTE_BEHAVIOR: Limited 256-color look. Muted, desaturated, cold tones.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -59,11 +56,11 @@ object GenrePrompts {
                         "LIGHTING: Hard-Edged Chiaroscuro. Light is a physical shape, not a diffuse glow. No 'soft' lighting.",
                     )
                     appendLine(
-                        "TEXTURE: VISIBLE PAPER GRAIN & INK BLEED. High-density Ben-Day dots for shading. The image should feel like physical paper.")
+                        "TEXTURE: VISIBLE PAPER GRAIN & INK BLEED. High-density Ben-Day dots for shading. The image should feel like physical paper.",
+                    )
                     appendLine(
                         "PALETTE_BEHAVIOR: FLAT COLOR CUTS. Colors must be solid fills, not digital paintings. Skin/Hair/Eyes must be natural. BANNED: Digital airbrushing, lens flares, or 'glow' effects.",
                     )
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -74,7 +71,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: Golden Hour luxury. High-specular gloss on skin and gold.")
                     appendLine("TEXTURE: Smooth marble, silk, polished metal. Zero grit.")
                     appendLine("PALETTE_BEHAVIOR: Rich, expensive tones (Navy, Champagne). Hot Pink neon accents.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -85,7 +81,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: Negative Space is light. Black Ink is shadow. High Contrast.")
                     appendLine("TEXTURE: Raw paper fibers. Wet ink bleeding into paper. Rough, organic.")
                     appendLine("PALETTE_BEHAVIOR: Strictly Monochrome Black & White. Single Crimson Red drop.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -96,7 +91,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: Technicolor studio lighting. Soft, romantic glow.")
                     appendLine("TEXTURE: Matte finish. Slightly chalky gouache texture.")
                     appendLine("PALETTE_BEHAVIOR: Vibrant, saturated Cosmic Indigos and Rocket Oranges.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -107,7 +101,6 @@ object GenrePrompts {
                     appendLine("LIGHTING: Harsh, direct sunlight. Sharp cast shadows.")
                     appendLine("TEXTURE: Weathered, cracked, dust-coated. Thick paint texture.")
                     appendLine("PALETTE_BEHAVIOR: Earthy ochres, burnt siennas, baked by the sun.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
 
@@ -118,17 +111,22 @@ object GenrePrompts {
                     appendLine("LIGHTING: Flat, uniform lighting. No complex gradients.")
                     appendLine("TEXTURE: Halftone dot patterns (Offset printing). Photocopy degradation.")
                     appendLine("PALETTE_BEHAVIOR: Flat color blocks. Toxic Green vs. Urban Gays.")
-                    appendLine("PRESENTATION: Full-bleed edge-to-edge artwork. Strictly no borders, frames, or gutters.")
                 }
             }
-        }
+        }.plus(
+            buildString {
+                appendLine("Full-bleed edge-to-edge artwork.")
+                appendLine("No white-borders.")
+                appendLine("No panels")
+            },
+        )
 
     fun artStyle(genre: Genre) =
         when (genre) {
             FANTASY -> "A world of divine grandeur and tragic beauty. It captures the spiritual weight of myths, where light fights purely against darkness."
             CYBERPUNK -> "A 'High Tech, Low Life' analog dystopia. The beauty of decay, where humanity is slowly replaced by machinery under the hum of neon."
             HORROR -> "Unknown psychological dread. The uncanny valley of early digital eras, where low-fidelity implies hidden terrors."
-            HEROES -> "A world of high stakes and sharp edges. Bold, confident ink-work and cinematic staging, capturing the dynamic tension of a modern noir graphic novel."
+            HEROES -> "A world where the super-human fights for hope in a decadent, brutal city. Bold, confident ink-work captures the dynamic tension of a 'Street Noir' graphic novel—blending iconic, creative super-suits with the relatable grit of open urban voids."
             CRIME -> "Untouchable wealth and superficial perfection. A facade of serene luxury hiding moral decay. The humidity of a tropical criminal paradise."
             SHINOBI -> "The discipline of silence. A brutal, minimalist world where life and death are decided in a single stroke. Nature and violence intertwined."
             SPACE_OPERA -> "Optimistic exploration. The wonder of the atomic age, looking up at the stars with hope and colorful imagination."
@@ -175,10 +173,20 @@ object GenrePrompts {
 
             HEROES -> {
                 buildString {
-                    appendLine("Attire: MODERN SUPERSUITS. Kinetic materials, sleek textures, and high-tech urban armor.")
-                    appendLine("Style: Bold ink lines and iconic emblems. Clean silhouettes that emphasize power and determined movement.")
+                    appendLine("--- SUPERHEROES ---")
                     appendLine(
-                        "Details: Practical accessories (utility belts, tech-gauntlets) that reflect their specific powers. No generic outfits.",
+                        "Attire: DEFINITIVE SUPER-COSTUMES. Professional, high-fidelity superhero costumes (e.g., reinforced carbon-fiber plating, sculpted cowls, aerodynamic spandex-mixtures, and kinetic mesh).",
+                    )
+                    appendLine(
+                        "Style: Bold ink lines and 'Legendary Iconography'. Silhouettes should be powerful and diverse—flowing capes, iconic masks, and vibrant color schemes.",
+                    )
+                    appendLine()
+                    appendLine("--- COMMON CITIZENS ---")
+                    appendLine(
+                        "Attire: AUTHENTIC URBAN FASHION. Layered street clothes, trench coats, worn denim, or professional attire. They should feel like living, breathing parts of the decadent city.",
+                    )
+                    appendLine(
+                        "Style: Maintain the Noir 'Spot Black' intensity. The common man should feel as visually important and detailed as the hero.",
                     )
                 }.trimIndent()
             }
@@ -360,6 +368,9 @@ object GenrePrompts {
             appendLine("- Narrative Essence: ${artStyle(genre)}")
             appendLine("- Mandatory Palette: $palette")
             appendLine()
+            appendLine("**RENDERING INSTRUCTIONS (The Technical Goal):**")
+            appendLine(renderingInstructions(genre))
+            appendLine()
             appendLine("**CRITICAL FOCUS AREAS:**")
             appendLine(
                 "1. SCENE NATURALITY: Ensure lighting and atmosphere are organic to the narrative context. Ban hard-injected digital overlays or unnatural light bars on faces.",
@@ -367,9 +378,9 @@ object GenrePrompts {
             appendLine("2. ENVIRONMENT INTEGRITY: The setting must be vivid and match the story context. No vague or empty backgrounds.")
             appendLine("3. CHARACTER FIDELITY: Ensure all physical traits (skin, hair, eyes) match the '#### SUBJECTS DETAILS' perfectly.")
             appendLine()
-            appendLine("**TECHNICAL RENDERING NOTICE:**")
-            appendLine("- The technical medium (ink, oil, pixels) is handled by the direct rendering pipeline.")
+            appendLine("**TECHNICAL ALIGNMENT:**")
             appendLine(
-                "- DO NOT FLAG missing technical keywords. Only flag if the Artist explicitly describes something that breaks the narrative soul.")
+                "- The Artist must describe visuals that COMPLEMENT the Rendering Instructions. If the medium is SUMI-E, the description should favor 'void' and 'strokes'. If it is COMIC, it should favor 'spot blacks' and 'sharp ink'.",
+            )
         }
 }

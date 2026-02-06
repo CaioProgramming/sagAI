@@ -84,9 +84,19 @@ object ImagePrompts {
                         "   Skin, hair, and eye colors must look authentic to the description. Blue/Teal/Magenta lights are for the EDGES (rim-light) and background ONLY.",
                     )
                     appendLine()
-                    appendLine("4. URBAN SCALE & VARIETY: The city is a living breathing entity.")
+                    appendLine("4. BRUTAL CITY, LEGENDARY HEROES: The world is decadent, but the heroes are iconic.")
                     appendLine(
-                        "   BEYOND THE STREET: Do not just describe 'rain-slicked asphalt'. Explore the verticality and weight of the city through high-tension rooftops, abandoned warehouses, corporate sky-scapers, and moody neon back-alleys.",
+                        "   OPEN URBAN VOIDS: Focus on open, desolate urban spaces (empty lots, decaying plazas, wide bridges, train yards). The environment is the 'stage' for the hero.",
+                    )
+                    appendLine()
+                    appendLine("5. THE HEROIC ICON: Professional Super-Identities.")
+                    appendLine(
+                        "   LEGENDARY COSTUMES: If the character is a 'Super Hero', encourage powerful, diverse, and vibrant costumes (Inspired by Batman, Spider-man, X-Men). Use bold colors and definitive silhouettes.",
+                    )
+                    appendLine()
+                    appendLine("6. HUMANITY & CONTEXT: Respect the Citizen.")
+                    appendLine(
+                        "   If the character is a 'common citizen', 'journalist', or 'regular human', do NOT force a super-suit. Portray them as living beings in the decadent city with authentic, everyday urban fashion. The 'Hero' is defined by their presence and role in the story context.",
                     )
                     appendLine()
                 }
@@ -375,6 +385,8 @@ object ImagePrompts {
 
         appendLine("TASK: Create a 12-point VISUAL BRIEF for the Artist.")
         appendLine("Your goal is to translate the emotional/narrative context into concrete visual instructions (Camera, Light, Pose).")
+        appendLine(
+            "CRITICAL character fidelity: You MUST reference the '#### SUBJECTS DETAILS' section in the context. Use unique character elements (accessories, weapons, traits) as compositional anchors.")
         appendLine()
 
         appendLine("--- IMAGE TYPE RULES ($imageTypeLabel) ---")
@@ -387,26 +399,37 @@ object ImagePrompts {
         appendLine("------------------------------------------")
         appendLine()
 
-        appendLine("GENRE ATMOSPHERE CHECKS (${genre.name}):")
+        appendLine("GENRE ATMOSPHERE & CREATIVITY (${genre.name}):")
         appendLine(GenrePrompts.conversationDirective(genre)) // Use the tone to guide the director
+        appendLine(
+            "- BEYOND CLICHÉS: Explore the full breadth of the genre. Do not default to 'rain-slicked' or common tropes unless essential. Think about unique environments (e.g. industrial hush, oppressive heat, morning fog, or high-tech sterilization).",
+        )
+        appendLine(
+            "- PALETTE GUIDANCE: Explicitly guide the colors to match the ${genre.name} aesthetic (e.g. 'high-contrast teals and oranges', 'monochrome with single crimson accent', or 'warm sepia grit').")
         appendLine("- Ensure the Lighting and Mood match this genre's soul.")
         appendLine()
 
-        appendLine("OUTPUT FORMAT (12 Parameters - Numbered List):")
+        appendLine("OUTPUT FORMAT (13 Parameters - Numbered List):")
         appendLine("1. ORIENTATION: TO_CAMERA (Front/3-4) or SCENE_RELATIVE (Profile/Back).")
-        appendLine("2. FRAMING_LEVEL: [Answer based on Mode constraints above].")
+        appendLine(
+            "2. FRAMING_LEVEL: [Answer based on Mode constraints above]. Be explicit about the exact crop (e.g. 'Close-up, focusing on the face and upper torso').")
         appendLine("3. SUBJECT_PROXIMITY: How close is the viewer's soul to the subject?")
-        appendLine("4. VISIBLE_CONTENT: Precise list of what is in frame (e.g. 'Head, Collar, Rain').")
+        appendLine("4. VISIBLE_CONTENT: Precise list of what is in frame (e.g. 'Head, Collar, Pendant').")
         appendLine("5. VIEWPOINT: [Eye-Level / Low-Angle (Heroic) / High-Angle (Vulnerable)].")
-        appendLine("6. COMPOSITION_PLACEMENT: [Center / Rule of Thirds / Negative Space].")
-        appendLine("7. BODY_LANGUAGE_INTENTION: The verb of the body (e.g. 'Recoiling', 'Dominating').")
+        appendLine(
+            "6. COMPOSITION_PLACEMENT: [Center / Rule of Thirds / Negative Space]. Specify if a subject detail (e.g. 'hilt' or 'pendant') anchors a specific corner.",
+        )
+        appendLine("7. BODY_LANGUAGE_INTENTION: The verb of the body (e.g. 'Recoiling', 'Dominating'). Emphasize READINESS FOR ACTION.")
         appendLine("8. EMOTIONAL_PROJECTION: The feeling the viewer receives.")
         appendLine("9. LIGHTING_ATMOSPHERE: The dramatic lighting setup (e.g. 'Rembrandt', 'Harsh Neon', 'Silhouette').")
-        appendLine("10. NARRATIVE_DNA: One sentence summary of the shot's story.")
-        appendLine("11. ENVIRONMENTAL_CUES: Secondary visual cues that add depth (e.g. 'faint hum of servers', 'distant urban haze').")
-        appendLine("12. FORBIDDEN_CONTENT: What must NOT be seen (based on framing). STRICTLY enforce Portrait rules if applicable.")
+        appendLine("10. COLOR_PALETTE_GUIDE: Specific hex codes or color names matching the genre's aesthetic.")
+        appendLine("11. NARRATIVE_DNA: One sentence summary of the shot's story.")
+        appendLine(
+            "12. ENVIRONMENTAL_CUES: Specific, concrete details that add depth (e.g. 'faint hum of servers', 'exposed cooling pipes', 'flickering interface glow').",
+        )
+        appendLine("13. FORBIDDEN_CONTENT: What must NOT be seen (based on framing). STRICTLY enforce Portrait rules if applicable.")
         appendLine()
-        appendLine("OUTPUT: The 12 numbered points only.")
+        appendLine("OUTPUT: The 13 numbered points only.")
     }
 
     fun generateArtistPrompt(
@@ -417,7 +440,7 @@ object ImagePrompts {
         buildString {
             appendLine("ROLE: The Visionary Concept Artist (The Soul).")
             appendLine(
-                "GOAL: To breathe life, emotion, and atmosphere into the scene. You do NOT worry about the camera or the canvas—only the VISION.",
+                "GOAL: To breathe life, emotion, and atmosphere into the scene. Focus on REINFORCING THE CORE GENRE ELEMENTS (Drama, Tension, Aesthetic Soul).",
             )
             appendLine()
             appendLine("THEME & SOUL: ${GenrePrompts.artStyle(genre)}")
@@ -426,16 +449,22 @@ object ImagePrompts {
             appendLine("DIRECTOR'S VISION: \"$visualDirection\"")
             appendLine()
             appendLine(
-                "1. NO INTRODUCTIONS (STRICT): Do NOT start your response with preambles like 'This artwork depicts...', 'In this scene...', or atmospheric tropes like 'The air hangs thick...'. Open IMMEDIATELY with a concrete visual detail from the character's description or the immediate environment.",
+                "1. NO INTRODUCTIONS (STRICT): Open IMMEDIATELY with a concrete visual detail. Avoid useless atmospheric entry text.",
             )
             appendLine(
-                "2. LIGHTING AS NARRATIVE: Focus on the IMPACT of the lighting, not just its existence. How does the shadow reveal the character's emotional state? How does a highlight draw attention to a critical artifact or a facial scar? Use light to reveal truth, not just for 'mood'.",
+                "2. NOIR & TENSION: Inject a sense of dynamic tension. Use the high-tech environment to build world-depth. If it's Cyberpunk/Heroes, describe the 'pulse of data cables', 'exposed circuitry', or 'cold metallic textures'.",
             )
             appendLine(
-                "3. CONCRETE OVER CLICHÉ: Prioritize physical facts from the Character's DNA and Story Context. If the context mentions a specific item of clothing or a character's history (e.g. 'a weathered traveler'), describe the wear and tear, the specific fabric, or the weight they carry. Avoid generic 'cinematic' words if a concrete noun is available.",
+                "3. SHOW, DON'T TELL (EMOTION): Do NOT say a character is 'anxious' or 'determined'. Describe the physical manifestation: the 'tightening of a jawline', 'unwavering narrow gaze', or the 'white-knuckled grip on a hilt'.",
             )
             appendLine(
-                "4. ABSTRACTION OVER TECHNICALITY: Do not describe 'pixels', 'brush strokes', or 'camera settings'. Those are handled by the Rendering Engine.",
+                "4. CONCRETE OVER POETIC: Avoid overly flowery language that doesn't define the visual. If you mention 'heat', describe the 'mirage-like vibration of the air' or 'visible steam rising from pipes'. Be a describer, not a poet.",
+            )
+            appendLine(
+                "5. ACTION READINESS: The subject should feel 'alive' and ready to move. Describe the 'coil of muscles' or the 'forward lean of a body about to launch'.",
+            )
+            appendLine(
+                "6. ABSTRACTION OVER TECHNICALITY: Do not describe 'pixels', 'brush strokes', or 'camera settings'. Those are handled by the Rendering Engine.",
             )
             val isComicGenre =
                 genre == Genre.HEROES || genre == Genre.CYBERPUNK || genre == Genre.PUNK_ROCK
@@ -445,29 +474,24 @@ object ImagePrompts {
                 )
             }
             appendLine(
-                "5. FULL-BLEED ARTISTRY: Strictly describe the artwork as filling the entire frame. Avoid describing borders, comic panels, or multi-scene layouts.",
+                "7. FULL-BLEED ARTISTRY: Strictly describe the artwork as filling the entire frame. No borders or multi-scene layouts.",
             )
             appendLine(
-                "6. ABSOLUTE CHARACTER FIDELITY: You MUST explicitly describe the physical traits of ALL characters mentioned in the context (hair color, eye color, skin tone, attire). These are the non-negotiable DNA of the image.",
+                "8. ABSOLUTE CHARACTER FIDELITY: You MUST explicitly describe the physical traits of ALL characters from the context (hair, eyes, skin, attire).",
             )
             appendLine(
-                "7. ENVIRONMENTAL SYNERGY & DEPTH: Do NOT let the character exist in a vacuum. Even in a close-up, the background must have 'soul'.",
+                "9. ENVIRONMENTAL SYNERGY: Use the Director's 'ENVIRONMENTAL_CUES' and 'COLOR_PALETTE_GUIDE' to bind the subject to the world.",
             )
             appendLine(
-                "   - Use the 'ENVIRONMENTAL_CUES' from the Director. If it mentions 'hum of servers', describe the soft cyan glow of status lights behind the character.",
-            )
-            appendLine(
-                "   - If the context mentions a city, don't just say 'city'. Describe the 'distant silhouette of a spire' or the 'haze of a million streetlights'.",
-            )
-            appendLine(
-                "   - ANTI-REPETITION: Never start with generic tropes. Every environment should be a extension of the character's narrative.",
-            )
-            appendLine(
-                "8. STRICT NO-META RULE: Do NOT use philosophical flourishes about what the image 'represents'. BANNED: 'This isn't a portrait, it's a reckoning'. Only describe what is VISIBLE in the frame.",
+                "10. CANDID SOUL: Capture them in a moment of incidental action or quiet, unobserved reality—never a photoshoot pose.",
             )
             appendLine()
             appendLine(
-                "OUTPUT FORMAT: A single, rich, cohesive paragraph describing the image. Start with a direct, impactful visual detail.",
+                "9. STRICT NO-META RULE: Do NOT use preachy or philosophical commentary about what the image 'represents'. BANNED: 'This isn't a portrait...'.",
+            )
+            appendLine()
+            appendLine(
+                "OUTPUT FORMAT: A single, rich, cohesive paragraph. NO preambles. Start with the most impactful visual detail.",
             )
         }
 
@@ -546,10 +570,14 @@ object ImagePrompts {
         appendLine("   - GOOD: 'Warm streetlight glow' or 'rim-lit by the city neon'. BAD: 'A blue light stripe crossing the eyes'.")
         appendLine("   - VIOLATION: ARTIFICIAL_LIGHTING_INJECTION.")
         appendLine()
-        appendLine("2. CHARACTER-SCENE FUSION:")
+        appendLine("2. CHARACTER-SCENE FUSION & CANDID SOUL:")
         appendLine("   - Does the character feel like they BELONG in the environment, or are they 'pasted' into it?")
         appendLine("   - The character's body language and positioning should react to the world around them.")
-        appendLine("   - VIOLATION: SUBJECT_SCENE_DISCONNECT.")
+        appendLine(
+            "   - ANTI-POSING (CRITICAL for ICONS/PORTRAITS): Does the character look like they are 'posing for a camera'? (e.g., staring directly at the viewer with a studio-neutral pose).",
+        )
+        appendLine("   - FAVOR: Incidental actions, mid-gesture moments, or unobserved quiet reality that reflects their personality.")
+        appendLine("   - VIOLATION: SUBJECT_SCENE_DISCONNECT, ARTIFICIAL_POSING.")
         appendLine()
         appendLine("3. ENVIRONMENT COHERENCE & CREATIVITY (CRITICAL):")
         appendLine("   - Is the environment described, or is it vague/missing?")
@@ -593,16 +621,23 @@ object ImagePrompts {
         appendLine()
 
         appendLine("⚠️ MANDATORY FEEDBACK (NEVER NULL):")
-        appendLine("- artistImprovementSuggestions: How the Artist can better capture the soul or adhere to genre rules.")
-        appendLine("- visualDirectorSuggestions: How the Director can be more precise in the extraction/framing mandates.")
+        appendLine(
+            "- artistImprovementSuggestions (THE ART MENTOR): Cross-reference the description with the 'RENDERING INSTRUCTIONS'. Suggest how the Artist can use better visual imagery that complements the medium (e.g. 'Instead of soft shadows, use the rendering's spot-black shapes to define depth').",
+        )
+        appendLine(
+            "- visualDirectorSuggestions (THE FILM MENTOR): How the Director can better command the scene, color palette, and environmental variety.",
+        )
+        appendLine(
+            "- renderingSuggestions (THE TECHNICAL MENTOR): Scrutinize the 'RENDERING INSTRUCTIONS' themselves. Suggest how we could improve the technical recipe (grit, texture, ink weight, palette) to better capture the intended aesthetic.")
         appendLine()
 
         appendLine("OUTPUT JSON (ImagePromptReview structure):")
         appendLine("- originalPrompt: input prompt")
         appendLine("- correctedPrompt: fixed masterful prompt")
         appendLine("- violations[]: {type, severity, description, example}")
-        appendLine("- artistImprovementSuggestions: Mentor the Artist AI")
-        appendLine("- visualDirectorSuggestions: Mentor the Director AI")
+        appendLine("- artistImprovementSuggestions: Mentorship to improve style and technical alignment.")
+        appendLine("- visualDirectorSuggestions: Mentorship to improve composition and environmental scouting.")
+        appendLine("- renderingSuggestions: Mentorship to improve the technical rendering recipe.")
         appendLine("- wasModified: boolean")
         appendLine()
         appendLine("PROMPT TO SCRUTINIZE:")

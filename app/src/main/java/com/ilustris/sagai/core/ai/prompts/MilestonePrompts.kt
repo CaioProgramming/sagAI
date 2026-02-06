@@ -19,9 +19,14 @@ object MilestonePrompts {
             return generateLoadingMessage(saga)
         }
 
+        if (milestone is SagaMilestone.NewCharacter) {
+            return generateNewCharacterMessage(milestone, saga)
+        }
+
         if (milestone is SagaMilestone.CurrentObjective) {
             return null
         }
+
         val genre = saga.data.genre
         val genreTone = getGenreTone(genre)
         getMilestoneType(milestone)
@@ -42,9 +47,6 @@ object MilestonePrompts {
             saga.acts.filter { it.data.id != saga.data.currentActId }.forEach {
                 appendLine(it.actSummary(saga, false))
             }
-
-            appendLine("\n## Recent Activity")
-            appendLine(ChatPrompts.conversationHistory(saga))
 
             appendLine()
             appendLine("# STORYTELLING DIRECTIVES")
@@ -113,6 +115,43 @@ object MilestonePrompts {
             appendLine(getGenreConversationalTone(genre))
             appendLine()
             appendLine("Output ONLY the single-line humorous break message, nothing else:")
+        }
+
+    fun generateNewCharacterMessage(
+        milestone: SagaMilestone.NewCharacter,
+        saga: SagaContent,
+    ): String =
+        buildString {
+            val genre = saga.data.genre
+            val genreTone = getGenreTone(genre)
+            appendLine("You are a witty, clever storytelling companion. A new character has just joined the saga.")
+            appendLine("Generate ONE SHORT, MEMORABLE congratulatory message that REACTS DIRECTLY to this newcomer.")
+            appendLine()
+            appendLine("STORY CONTEXT:")
+            appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+            appendLine()
+            appendLine("NEW CHARACTER INFO:")
+            appendLine(
+                milestone.character.toAINormalize(
+                    fieldsToExclude = ChatPrompts.characterExclusions,
+                ),
+            )
+            appendLine()
+            appendLine("YOUR PERSONA:")
+            appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
+            appendLine(buildPersonaForGenre(genre))
+            appendLine()
+            appendLine("CREATIVE GUIDELINES:")
+            appendLine("- Be ORIGINAL: React to specific traits, name, or role of the character.")
+            appendLine("- Tone: $genreTone with a twist of your persona's distinctive sass.")
+            appendLine("- Focus on the IMPACT or VIBE of this character in the world.")
+            appendLine("- Maximum 15 words.")
+            appendLine("- NO emojis, NO generic 'welcome to the team' phrases.")
+            appendLine()
+            appendLine("TONE EXAMPLES:")
+            appendLine(getGenreConversationalTone(genre))
+            appendLine()
+            appendLine("Output ONLY the single-line provocative character reaction:")
         }
 
     private fun getMilestoneType(milestone: SagaMilestone): String =
@@ -295,13 +334,7 @@ object MilestonePrompts {
     ): String =
         when (milestone) {
             is SagaMilestone.NewCharacter -> {
-                milestone.character.name
-                """
-                - Character's name, role, and how they fit into the story
-                - How this character changes the narrative or dynamics
-                - Any interesting backstory details visible in the milestone data
-                - React to their introduction with relevant sarcasm or dark humor
-                """.trimIndent()
+                ""
             }
 
             is SagaMilestone.NewEvent -> {

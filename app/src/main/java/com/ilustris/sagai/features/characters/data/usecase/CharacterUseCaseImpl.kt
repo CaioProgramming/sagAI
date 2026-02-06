@@ -24,6 +24,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
@@ -168,7 +169,8 @@ class CharacterUseCaseImpl
                     )!!
 
                 val character = sagaContent.findCharacter(newCharacter.name)
-                if (character != null) {
+
+                if (character?.data?.fullName() == newCharacter.fullName()) {
                     error("Character already exists")
                 }
                 val characterTransaction =

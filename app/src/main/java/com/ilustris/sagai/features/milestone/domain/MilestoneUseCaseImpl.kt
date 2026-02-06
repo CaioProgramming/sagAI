@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.milestone.domain
 
 import android.util.Log
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -8,7 +9,6 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.presentation.model.LoadingType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import javax.inject.Inject
 
@@ -28,7 +28,9 @@ class MilestoneUseCaseImpl
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
 
-                val prompt = MilestonePrompts.generateCongratsMessage(milestone, saga)!!
+                val prompt =
+                    MilestonePrompts.generateCongratsMessage(milestone, saga)
+                        ?: return@executeRequest getDefaultMessage(milestone, saga.data.genre)
 
                 gemmaClient.generate<String>(
                     prompt,
@@ -44,98 +46,107 @@ class MilestoneUseCaseImpl
         ): String =
             when (milestone) {
                 is SagaMilestone.NewCharacter -> {
-                    when (genre) {
-                        Genre.FANTASY -> "A new soul joins your legend!"
-                        Genre.CYBERPUNK -> "New ally in the network!"
-                        Genre.SPACE_OPERA -> "A new star in your crew!"
-                        Genre.HORROR -> "Another enters the darkness..."
-                        Genre.COWBOY -> "New rider on the trail!"
-                        Genre.SHINOBI -> "A new shadow walks with you!"
-                        Genre.HEROES -> "A new hero rises!"
-                        Genre.CRIME -> "New player in the game!"
-                        Genre.PUNK_ROCK -> "Fresh blood in the crew!"
-                    }
+                    stringResourceHelper.getString(
+                        when (genre) {
+                            Genre.FANTASY -> R.string.milestone_fallback_new_character_fantasy
+                            Genre.CYBERPUNK -> R.string.milestone_fallback_new_character_cyberpunk
+                            Genre.SPACE_OPERA -> R.string.milestone_fallback_new_character_space_opera
+                            Genre.HORROR -> R.string.milestone_fallback_new_character_horror
+                            Genre.COWBOY -> R.string.milestone_fallback_new_character_cowboy
+                            Genre.SHINOBI -> R.string.milestone_fallback_new_character_shinobi
+                            Genre.HEROES -> R.string.milestone_fallback_new_character_heroes
+                            Genre.CRIME -> R.string.milestone_fallback_new_character_crime
+                            Genre.PUNK_ROCK -> R.string.milestone_fallback_new_character_punk_rock
+                        },
+                    )
                 }
 
                 is SagaMilestone.NewEvent -> {
-                    when (genre) {
-                        Genre.FANTASY -> "Your saga grows richer!"
-                        Genre.CYBERPUNK -> "Data logged. Keep going!"
-                        Genre.SPACE_OPERA -> "Your odyssey continues!"
-                        Genre.HORROR -> "You push forward!"
-                        Genre.COWBOY -> "The legend lives on!"
-                        Genre.SHINOBI -> "Your path unfolds!"
-                        Genre.HEROES -> "Justice prevails!"
-                        Genre.CRIME -> "The case deepens!"
-                        Genre.PUNK_ROCK -> "Your rebellion echoes!"
-                    }
+                    stringResourceHelper.getString(
+                        when (genre) {
+                            Genre.FANTASY -> R.string.milestone_fallback_new_event_fantasy
+                            Genre.CYBERPUNK -> R.string.milestone_fallback_new_event_cyberpunk
+                            Genre.SPACE_OPERA -> R.string.milestone_fallback_new_event_space_opera
+                            Genre.HORROR -> R.string.milestone_fallback_new_event_horror
+                            Genre.COWBOY -> R.string.milestone_fallback_new_event_cowboy
+                            Genre.SHINOBI -> R.string.milestone_fallback_new_event_shinobi
+                            Genre.HEROES -> R.string.milestone_fallback_new_event_heroes
+                            Genre.CRIME -> R.string.milestone_fallback_new_event_crime
+                            Genre.PUNK_ROCK -> R.string.milestone_fallback_new_event_punk_rock
+                        },
+                    )
                 }
 
                 is SagaMilestone.ChapterFinished -> {
-                    when (genre) {
-                        Genre.FANTASY -> "A chapter closes in splendor!"
-                        Genre.CYBERPUNK -> "Chapter archived. What's next?"
-                        Genre.SPACE_OPERA -> "Sector cleared!"
-                        Genre.HORROR -> "You survived!"
-                        Genre.COWBOY -> "Trail conquered!"
-                        Genre.SHINOBI -> "This path completes!"
-                        Genre.HEROES -> "Chapter complete, champion!"
-                        Genre.CRIME -> "Case closed!"
-                        Genre.PUNK_ROCK -> "Song's over. Next track!"
-                    }
+                    stringResourceHelper.getString(
+                        when (genre) {
+                            Genre.FANTASY -> R.string.milestone_fallback_chapter_finished_fantasy
+                            Genre.CYBERPUNK -> R.string.milestone_fallback_chapter_finished_cyberpunk
+                            Genre.SPACE_OPERA -> R.string.milestone_fallback_chapter_finished_space_opera
+                            Genre.HORROR -> R.string.milestone_fallback_chapter_finished_horror
+                            Genre.COWBOY -> R.string.milestone_fallback_chapter_finished_cowboy
+                            Genre.SHINOBI -> R.string.milestone_fallback_chapter_finished_shinobi
+                            Genre.HEROES -> R.string.milestone_fallback_chapter_finished_heroes
+                            Genre.CRIME -> R.string.milestone_fallback_chapter_finished_crime
+                            Genre.PUNK_ROCK -> R.string.milestone_fallback_chapter_finished_punk_rock
+                        },
+                    )
                 }
 
                 is SagaMilestone.ActFinished -> {
-                    when (genre) {
-                        Genre.FANTASY -> "An age ends, a new era dawns!"
-                        Genre.CYBERPUNK -> "Act terminated. Level up!"
-                        Genre.SPACE_OPERA -> "Sector conquered!"
-                        Genre.HORROR -> "You escaped the nightmare!"
-                        Genre.COWBOY -> "Territory claimed!"
-                        Genre.SHINOBI -> "Training complete!"
-                        Genre.HEROES -> "Arc complete!"
-                        Genre.CRIME -> "Operation closed!"
-                        Genre.PUNK_ROCK -> "Set's done! Encore?"
-                    }
+                    stringResourceHelper.getString(
+                        when (genre) {
+                            Genre.FANTASY -> R.string.milestone_fallback_act_finished_fantasy
+                            Genre.CYBERPUNK -> R.string.milestone_fallback_act_finished_cyberpunk
+                            Genre.SPACE_OPERA -> R.string.milestone_fallback_act_finished_space_opera
+                            Genre.HORROR -> R.string.milestone_fallback_act_finished_horror
+                            Genre.COWBOY -> R.string.milestone_fallback_act_finished_cowboy
+                            Genre.SHINOBI -> R.string.milestone_fallback_act_finished_shinobi
+                            Genre.HEROES -> R.string.milestone_fallback_act_finished_heroes
+                            Genre.CRIME -> R.string.milestone_fallback_act_finished_crime
+                            Genre.PUNK_ROCK -> R.string.milestone_fallback_act_finished_punk_rock
+                        },
+                    )
                 }
 
                 is SagaMilestone.CurrentObjective -> {
-                    when (genre) {
-                        Genre.FANTASY -> "Your quest awaits!"
-                        Genre.CYBERPUNK -> "Mission briefing loaded!"
-                        Genre.SPACE_OPERA -> "New coordinates locked!"
-                        Genre.HORROR -> "Your fate is sealed..."
-                        Genre.COWBOY -> "New trail ahead!"
-                        Genre.SHINOBI -> "Your mission begins!"
-                        Genre.HEROES -> "Duty calls!"
-                        Genre.CRIME -> "New lead acquired!"
-                        Genre.PUNK_ROCK -> "Next gig's up!"
-                    }
+                    stringResourceHelper.getString(
+                        when (genre) {
+                            Genre.FANTASY -> R.string.milestone_fallback_current_objective_fantasy
+                            Genre.CYBERPUNK -> R.string.milestone_fallback_current_objective_cyberpunk
+                            Genre.SPACE_OPERA -> R.string.milestone_fallback_current_objective_space_opera
+                            Genre.HORROR -> R.string.milestone_fallback_current_objective_horror
+                            Genre.COWBOY -> R.string.milestone_fallback_current_objective_cowboy
+                            Genre.SHINOBI -> R.string.milestone_fallback_current_objective_shinobi
+                            Genre.HEROES -> R.string.milestone_fallback_current_objective_heroes
+                            Genre.CRIME -> R.string.milestone_fallback_current_objective_crime
+                            Genre.PUNK_ROCK -> R.string.milestone_fallback_current_objective_punk_rock
+                        },
+                    )
                 }
 
                 // Introduction and Loading milestones don't need congrats messages
                 is SagaMilestone.Introduction -> {
-                    ""
+                    stringResourceHelper.getString(R.string.milestone_introduction_fallback_message)
                 }
 
                 is SagaMilestone.Loading -> {
-                    getLoadingDefaultMessage(genre, milestone.type)
+                    getLoadingDefaultMessage(genre)
                 }
             }
-    }
 
-private fun getLoadingDefaultMessage(
-    genre: Genre,
-    type: LoadingType,
-): String =
-    when (genre) {
-        Genre.FANTASY -> "Consulting the ancient scrolls and sharpening the prophecies..."
-        Genre.CYBERPUNK -> "Calibrating the neural link and debugging the sprawl..."
-        Genre.SPACE_OPERA -> "Calculating hyperjump coordinates through the void..."
-        Genre.HORROR -> "The darkness is shifting. Something is lurking..."
-        Genre.COWBOY -> "Saddling up and checking the horizon..."
-        Genre.SHINOBI -> "Preparing the next shadow mission in silence..."
-        Genre.HEROES -> "Assembling the challenge and polishing the cape..."
-        Genre.CRIME -> "Connecting the evidence and walking the noir streets..."
-        Genre.PUNK_ROCK -> "Tuning the amps and checking the setlist..."
+        private fun getLoadingDefaultMessage(genre: Genre): String =
+            stringResourceHelper.getString(
+                when (genre) {
+                    Genre.FANTASY -> R.string.milestone_fallback_loading_fantasy
+                    Genre.CYBERPUNK -> R.string.milestone_fallback_loading_cyberpunk
+                    Genre.SPACE_OPERA -> R.string.milestone_fallback_loading_space_opera
+                    Genre.HORROR -> R.string.milestone_fallback_loading_horror
+                    Genre.COWBOY -> R.string.milestone_fallback_loading_cowboy
+                    Genre.SHINOBI -> R.string.milestone_fallback_loading_shinobi
+                    Genre.HEROES -> R.string.milestone_fallback_loading_heroes
+                    Genre.CRIME -> R.string.milestone_fallback_loading_crime
+                    Genre.PUNK_ROCK -> R.string.milestone_fallback_loading_punk_rock
+                },
+            )
     }

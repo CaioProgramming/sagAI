@@ -228,12 +228,16 @@ class ImagenClientImpl
                     useCore = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
-            Log.i(TAG, "✏️ Prompt was modified by reviewer: ")
+            Log.i(TAG, "✏️Prompt was modified by reviewer: ")
             Log.i(TAG, review.toAINormalize())
-            Log.d(TAG, "Suggestions: ")
             Log.d(
                 TAG,
-                "Artist Suggestion: ${review.artistImprovementSuggestions}\nVisual Suggestion: ${review.visualDirectorSuggestions}",
+                buildString {
+                    appendLine("Suggestions: ")
+                    appendLine("Artist Suggestion: ${review.artistImprovementSuggestions}")
+                    appendLine("Visual Suggestion: ${review.visualDirectorSuggestions}")
+                    appendLine("Rendering Suggestion: ${review.renderingSuggestions}")
+                },
             )
             trackImageQuality(
                 genre = genre.name,
