@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "categories": [
     {
       "title": "Welcome to Sagas",
@@ -57,6 +57,10 @@
         {
           "question": "What's the 'Punk Rock' theme?",
           "answer": "It's our newest genre! Think 'Gorillaz meets Scott Pilgrim'. It features a sketch-like, hand-drawn aesthetic with vibrant green accents and a rebellious attitude. Perfect for stories about underground bands and urban adventures."
+        },
+        {
+          "question": "How can I get varied poses in my images?",
+          "answer": "Be specific about where your character is looking! The AI understands 'Body back-facing', 'Head over-shoulder', and 'Side profile'. Describing the body axis helps create dynamic, cinematic angles instead of just front-facing portraits."
         }
       ]
     },

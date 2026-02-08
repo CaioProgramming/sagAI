@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "categories": [
     {
       "title": "Boas-vindas ao Sagas",
@@ -57,6 +57,10 @@
         {
           "question": "O que é o tema 'Punk Rock'?",
           "answer": "É o nosso gênero mais novo! Pense em 'Gorillaz encontrando Scott Pilgrim'. Ele apresenta uma estética de rascunho feito à mão com detalhes em verde vibrante e uma atitude rebelde. Perfeito para histórias sobre bandas underground e aventuras urbanas."
+        },
+        {
+          "question": "Como posso variar as poses nas imagens?",
+          "answer": "Seja específico sobre para onde seu personagem está olhando! A IA entende comandos como 'Corpo de costas', 'Cabeça por cima do ombro' e 'Perfil lateral'. Descrever o eixo do corpo ajuda a criar ângulos dinâmicos e cinematográficos em vez de apenas retratos frontais."
         }
       ]
     },
