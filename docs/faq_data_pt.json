@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "categories": [
     {
       "title": "Boas-vindas ao Sagas",
@@ -7,10 +7,6 @@
         {
           "question": "O que exatamente é o Sagas?",
           "answer": "O Sagas é seu coautor e Diretor de Arte pessoal. Você não apenas 'joga'; você vive uma história em evolução em diferentes gêneros, onde suas escolhas moldam literalmente o mundo, os personagens e até a arte que você vê."
-        },
-        {
-          "question": "Ué, o nome não era 'SagAI'?",
-          "answer": "Bem observado! Nós evoluímos. 'Sagas' é o nome final e épico da nossa plataforma. É a mesma narrativa por IA que você adora, mas com um nome que combina muito mais com os contos lendários que você está criando."
         },
         {
           "question": "Por que preciso de internet para jogar?",
@@ -36,6 +32,19 @@
       ]
     },
     {
+      "title": "Criando Seu Personagem",
+      "items": [
+        {
+          "question": "Posso mudar as roupas do meu personagem?",
+          "answer": "Com certeza! Nosso sistema de moda permite um nível de detalhe incrível. Não diga apenas 'uma jaqueta' — tente 'uma jaqueta bomber neon com patches holográficos'. A IA adora variedade, então sinta-se livre para experimentar estilos diferentes para cada gênero!"
+        },
+        {
+          "question": "Por que a IA sugere descrições tão detalhadas?",
+          "answer": "Acreditamos que todo personagem deve ter 'AURA'. Ao adicionar detalhes sobre textura do cabelo, formato dos olhos e acessórios específicos, a IA pode gerar uma imagem muito mais única e memorável para o seu herói."
+        }
+      ]
+    },
+    {
       "title": "A Experiência Visual",
       "items": [
         {
@@ -43,24 +52,16 @@
           "answer": "Nossa IA imita um estúdio real. Um 'Diretor' define o ângulo e a iluminação, um 'Artista' pinta a cena no estilo do gênero e um 'Revisor' verifica a qualidade. Esse trabalho em equipe garante imagens cinematográficas e únicas."
         },
         {
+          "question": "Por que as imagens parecem diferentes em cada gênero?",
+          "answer": "Cada gênero tem uma 'Essência de Renderização' única. Fantasia parece uma pintura a óleo renascentista com bordas suaves e luz quente. Cyberpunk é nítido como um anime dos anos 80 com linhas fortes. Terror usa um estilo pixel art retrô. Isso mantém cada história distinta."
+        },
+        {
+          "question": "Por que meus personagens Cyberpunk parecem robóticos?",
+          "answer": "Isso é proposital! No nosso mundo Cyberpunk, 'Augmentação Pesada' é a norma. Encorajamos personagens que pareçam 'mais máquina que humano', com olhos de scanner, membros cromados e portas neurais visíveis para combinar com a vibe tecnológica e sombria."
+        },
+        {
           "question": "Por que o topo das imagens costuma ser vazio?",
           "answer": "Isso é proposital! Queremos que suas capas de saga e cartões de personagem fiquem incríveis como papéis de parede. O 'Mestre da Saga' mantém o assunto principal nos 2/3 inferiores para que o relógio e as notificações não cubram a arte."
-        },
-        {
-          "question": "Por que meu personagem de Fantasia parece uma pintura antiga?",
-          "answer": "Esse é o nosso estilo 'Obra-prima Renascentista'! Para Fantasia, emulamos especificamente pinturas a óleo italianas do século XV — bordas suaves, vermelhos quentes e luz dourada — para dar à sua história um tom épico e atemporal."
-        },
-        {
-          "question": "Como consigo o melhor visual Cyberpunk?",
-          "answer": "Abuse do cromado! Nosso estilo Cyberpunk (Anime Cel-Shaded dos anos 80) adora implantes visíveis. Descreva olhos de scanner, membros robóticos e fiação exposta. Mire em um personagem que pareça 'mais máquina que humano'."
-        },
-        {
-          "question": "O que é o tema 'Punk Rock'?",
-          "answer": "É o nosso gênero mais novo! Pense em 'Gorillaz encontrando Scott Pilgrim'. Ele apresenta uma estética de rascunho feito à mão com detalhes em verde vibrante e uma atitude rebelde. Perfeito para histórias sobre bandas underground e aventuras urbanas."
-        },
-        {
-          "question": "Como posso variar as poses nas imagens?",
-          "answer": "Seja específico sobre para onde seu personagem está olhando! A IA entende comandos como 'Corpo de costas', 'Cabeça por cima do ombro' e 'Perfil lateral'. Descrever o eixo do corpo ajuda a criar ângulos dinâmicos e cinematográficos em vez de apenas retratos frontais."
         }
       ]
     },

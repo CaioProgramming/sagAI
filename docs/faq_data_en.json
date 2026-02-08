@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "categories": [
     {
       "title": "Welcome to Sagas",
@@ -7,10 +7,6 @@
         {
           "question": "What exactly is Sagas?",
           "answer": "Sagas is your personal AI co-author and Art Director. You don't just 'play' a game; you live an evolving story across different genres, where your choices literally shape the world, characters, and even the art you see."
-        },
-        {
-          "question": "Wait, I thought this was 'SagAI'?",
-          "answer": "Good eye! We've evolved. 'Sagas' is the final, epic name for our platform. It's the same AI-powered storytelling you love, just with a name that better fits the legendary tales you're creating."
         },
         {
           "question": "Why do I need an internet connection?",
@@ -36,6 +32,19 @@
       ]
     },
     {
+      "title": "Creating Your Character",
+      "items": [
+        {
+          "question": "Can I change my character's clothes?",
+          "answer": "Absolutely! Our new fashion system allows for incredible detail. Don't just say 'a jacket'—try 'a neon-lit bomber jacket with holographic patches'. The AI loves variety, so feel free to experiment with different styles for different genres!"
+        },
+        {
+          "question": "Why does the AI suggest such detailed descriptions?",
+          "answer": "We believe every character should have 'AURA'. By adding details about your hair texture, eye shape, and specific outfit accessories, the AI can generate a much more unique and memorable image for your hero."
+        }
+      ]
+    },
+    {
       "title": "The Visual Experience",
       "items": [
         {
@@ -43,24 +52,16 @@
           "answer": "Our AI mimics a real studio. A 'Director' sets the camera angle and lighting, an 'Artist' paints the scene in the genre's style, and a 'Reviewer' checks it for quality. This team effort ensures your images are cinematic and unique."
         },
         {
+          "question": "Why do images look different in different genres?",
+          "answer": "Each genre has a unique 'Rendering Essence'. Fantasy looks like a Renaissance oil painting with soft edges and warm light. Cyberpunk looks like a crisp 80s anime with bold lines. Horror uses a retro 32-bit pixel art style. This keeps every story feeling distinct."
+        },
+        {
+          "question": "Why do my Cyberpunk characters look so robotic?",
+          "answer": "That's a feature, not a bug! In our Cyberpunk world, 'Heavy Augmentation' is the norm. We encourage characters to look 'more machine than human' with visible scanner eyes, chrome limbs, and neural ports to fit the gritty, high-tech vibe."
+        },
+        {
           "question": "Why is the top of the images usually empty?",
           "answer": "That's by design! We want your saga covers and character cards to look amazing as wallpapers. The 'Saga Master' keeps the main subject in the lower 2/3 of the frame so your phone's clock and notifications don't block the art."
-        },
-        {
-          "question": "Why does my Fantasy character look like an old painting?",
-          "answer": "That's our 'Renaissance Masterpiece' style! For Fantasy, we specifically emulate 15th-century Italian oil paintings—soft edges, warm reds, and golden light—to give your story a timeless, epic feel."
-        },
-        {
-          "question": "How do I get the best Cyberpunk look?",
-          "answer": "Go heavy on the chrome! Our Cyberpunk style (80s Anime Cel-Shaded) loves visible augmentations. Describe scanner eyes, robotic limbs, and exposed wiring. Aim for a character that looks 'more machine than human'."
-        },
-        {
-          "question": "What's the 'Punk Rock' theme?",
-          "answer": "It's our newest genre! Think 'Gorillaz meets Scott Pilgrim'. It features a sketch-like, hand-drawn aesthetic with vibrant green accents and a rebellious attitude. Perfect for stories about underground bands and urban adventures."
-        },
-        {
-          "question": "How can I get varied poses in my images?",
-          "answer": "Be specific about where your character is looking! The AI understands 'Body back-facing', 'Head over-shoulder', and 'Side profile'. Describing the body axis helps create dynamic, cinematic angles instead of just front-facing portraits."
         }
       ]
     },
