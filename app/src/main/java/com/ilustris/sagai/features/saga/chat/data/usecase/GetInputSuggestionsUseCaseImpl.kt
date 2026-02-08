@@ -34,6 +34,12 @@ class GetInputSuggestionsUseCaseImpl
                     )
 
                 Log.d("GetInputSuggestions", "Sending prompt to GemmaClient for suggestions.")
-                gemmaClient.generate<SuggestionGen>(prompt)!!.suggestions
+                gemmaClient
+                    .generate<SuggestionGen>(
+                        prompt,
+                        temperatureRandomness = 1f,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    )!!
+                    .suggestions
             }
     }

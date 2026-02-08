@@ -15,12 +15,17 @@ object SagaPrompts {
     fun mainContext(
         saga: SagaContent,
         character: CharacterContent? = null,
+        ommitCharacter: Boolean = false,
     ) = buildString {
         val selectedCharacter = character ?: saga.mainCharacter
         appendLine("Saga Context:")
         appendLine(saga.data.toAINormalize(ChatPrompts.sagaExclusions))
-        appendLine("Character context:")
-        appendLine(selectedCharacter?.data.toAINormalize(ChatPrompts.characterExclusions))
+        if (ommitCharacter.not()) {
+            selectedCharacter?.let {
+                appendLine("Character context:")
+                appendLine(it.data.toAINormalize(ChatPrompts.characterExclusions))
+            }
+        }
     }
 
     fun endCredits(saga: SagaContent): String =
@@ -29,9 +34,9 @@ object SagaPrompts {
                 "You are the Storyweaver, a timeless entity who has witnessed the unfolding of a great saga. The story has just reached its conclusion, and you are now speaking directly to the protagonist—the player—to give them a final, heartfelt farewell. Your tone is one of awe, gratitude, and gentle reflection. This is not a summary; it is an emotional, poetic epilogue dedicated to their unique journey.",
             )
             appendLine()
-            appendLine("CONTEXT OF THE SAGA YOU HAVE WITNESSED:")
-            appendLine("Saga: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
-            appendLine("Player Character: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
+            appendLine("CONTEXT OF THE JOURNEY YOU HAVE WITNESSED:")
+            appendLine("The Tale: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
+            appendLine("The Soul: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
             appendLine(
                 "Characters: ${
                     saga.characters.map { it.data }
@@ -39,7 +44,7 @@ object SagaPrompts {
                 }",
             )
             appendLine("Relationships: ${saga.mainCharacter?.summarizeRelationships() ?: "No significant relationships were forged."}")
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga) }}")
+            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
             appendLine("LANGUAGE STYLE:")
             appendLine(GenrePrompts.conversationDirective(saga.data.genre))
             appendLine()
@@ -102,116 +107,172 @@ object SagaPrompts {
         characterHexColor: String? = null,
     ) = buildString {
         appendLine(
-            "You are a World-Class Art Director and Concept Artist. Your task is to craft a unique, artistic, and visually stunning image description for an AI generation model.",
+            "You are the **Art Director AI**, a master visual artist with an encyclopedic knowledge of cinematography, composition, and art history. Your mission is to translate a narrative context and a technical visual direction into a flawless, concrete, and unambiguous prompt for an image generation model. You follow rules with absolute precision and leave no room for creative interpretation by the image model. Your output is a technical specification, not creative writing.",
         )
         appendLine()
         appendLine(
-            "GOAL: Create a piece of digital art that feels like a hand-crafted masterpiece, not a generic AI generation. It should capture the *soul* of the character and the *atmosphere* of the genre.",
+            "**PROMPT STRUCTURE:** [Art Style] → [Subjects Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
         )
         appendLine()
-        appendLine("---")
-        appendLine("**THE CREATIVE BRIEF (The Subject - STRICT ADHERENCE REQUIRED):**")
-        appendLine(
-            "This context defines WHO and WHAT you are drawing. It contains the essential physical attributes and identity of the subject.",
-        )
-        appendLine(
-            "  • **CRITICAL:** You MUST respect the physical descriptions provided here (e.g., skin tone, hair texture, body type, age, gender, ethnicity). These features are non-negotiable.",
-        )
-        appendLine(
-            "  • If the brief says 'Black man', the output MUST describe a Black man. If it says 'Short Latina girl', the output MUST describe a short Latina girl.",
-        )
-        appendLine("  • Do not 're-imagine' the subject's fundamental identity. Enhance it artistically, but do not change it.")
-        appendLine(context)
-
-        appendLine("**VISUAL REFERENCE USAGE (The 'Cast'):**")
-        appendLine(
-            "You have access to visual references for the key characters involved in this brief. Treat this as your 'Cast List' or 'Costume Department'.",
-        )
-        appendLine("  • IDENTIFY: Look for character names in the Creative Brief above. Match them to the provided visual references.")
-        appendLine("  • USAGE: Use the visual references to ensure the characters look correct (features, style, vibe).")
-        appendLine(
-            "  • IGNORE: The background/lighting of the references. You are placing these actors into the NEW scene defined by the Creative Brief and Visual Direction.",
-        )
+        appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
+        appendLine()
+        appendLine(ImagePrompts.criticalGenerationRule())
         appendLine()
 
-        // Add character color highlight instruction
-        characterHexColor?.let { hexColor ->
-            appendLine("**SIGNATURE COLOR PALETTE:**")
-            appendLine("  • Signature Color: $hexColor")
-            appendLine(
-                "  • Instruction: Integrate this color primarily as a visual accent or thematic element. It should feel intentional and artistic—perhaps in the lighting, a piece of clothing, or a stylistic blooming effect—without overwhelming the natural palette of the scene.",
-            )
-            appendLine()
-        }
+        appendLine("**GOOGLE BEST PRACTICES - APPLY STRICTLY:**")
+        appendLine("1. CLARITY OVER ABSTRACTION: Concrete descriptions, NOT poetic language or metaphors")
+        appendLine("2. EXPLICIT ATTRIBUTES: Specify what IS present, not what to avoid")
+        appendLine("3. FRAMING + VISIBILITY: Detail what's visible at this framing level")
+        appendLine("4. FEATURE HIERARCHY: Lead with critical character details, follow with environment")
+        appendLine("5. ELIMINATE AMBIGUITY: Every descriptor must be specific and actionable")
+        appendLine("6. COMPOSITION STRUCTURE: Subject position → Environment context → Technical parameters")
+        appendLine()
 
         visualDirection?.let {
-            appendLine("**ARTISTIC DIRECTION (The Brief):**")
+            appendLine("**VISUAL DIRECTION (NON-NEGOTIABLE MANDATE):** $it")
             appendLine(
-                "The following is your mood board and artistic brief. Do not treat it as a checklist, but as a source of INSPIRATION for the mood, lighting, and composition:",
+                "This is your primary source of truth. You MUST parse these cinematographic parameters and translate them into a concrete visual description with ZERO deviation.",
             )
-            appendLine("'''")
-            appendLine(it)
-            appendLine("'''")
-            appendLine()
-            appendLine("**HOW TO INTERPRET THIS:**")
-            appendLine("  • As the Artist, synthesize these elements into a cohesive vision.")
-            appendLine("  • If the direction says 'moody and dark', use shadows and contrast expressively.")
-            appendLine("  • If it mentions 'dynamic angles', compose the shot to feel alive and moving.")
-            appendLine("  • BLEND the mood of this direction with the specific Art Style of the genre.")
+            appendLine("Your task is to convert the technical data below into descriptive language for the final prompt:")
+            appendLine(
+                "- **Framing & Visibility:** The 'framing' parameter dictates exactly what is visible. Be METICULOUS: clearly define what is visible and what is intentionally obscured. Your description MUST NOT mention any body part, clothing, or object that is outside this frame. This is a hard rule.",
+            )
+            appendLine(
+                "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Always explicitly state the camera angle (avoiding generic terms like 'close-up') and ensure it aligns with the desired mood and subject orientation. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
+            )
+            appendLine(
+                "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment').",
+            )
+            appendLine(
+                "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
+            )
+            appendLine(
+                "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right').",
+            )
             appendLine()
         }
 
-        appendLine("**COMPOSITION & EMOTIONAL NARRATIVE (The Soul of the Image):**")
+        appendLine("**Scene CONTEXT &  PRESERVATION (MANDATORY):**")
+        appendLine(context)
+        appendLine()
+        appendLine("TRAIT PRESERVATION RULES (NO NORMALIZATION ALLOWED):")
         appendLine(
-            "  • **NO GENERIC STARES:** Avoid the default 'character looking at viewer with quiet intensity'. This is boring. Capture them **living** their story, not posing for a photo.",
+            "- CRITICAL (ALWAYS VISIBLE): Specific Race/Ethnicity (do NOT normalize to generic standards), Exact Skin Tone (deeply pigmentated, vitiligo, freckled, etc.), Hair Texture/Style (coils, braids, mohawks, unique colors), Facial Structure",
         )
         appendLine(
-            "  • **RAW, SPECIFIC EMOTION:** Move beyond 'cool' or 'stoic'. Show us *tangible* feelings: The teeth-gritting rage of a betrayal, the hollow thousand-yard stare of grief, the manic laughter of a victory, or the trembling fear of the unknown.",
+            "- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type (stout, lanky, curvy, weathered), Age indicators, Primary clothing/outfit",
         )
         appendLine(
-            "  • **NARRATIVE BODY LANGUAGE:** The pose must scream the character's intent. A slumped shoulder weighs a heavy burden; a coiled stance signals immediate violence; a loose, sprawling sit projects arrogance. Make the body talk.",
+            "- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks, physical build details",
+        )
+        appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
+        appendLine()
+        appendLine("CONCRETE EXAMPLES:")
+        appendLine(
+            "- SINGLE SUBJECT: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in close-up with a warm, shrewd smile'",
         )
         appendLine(
-            "  • **THE UNGUARDED MOMENT:** Capture the character *in media res* (in the middle of action/thought). They shouldn't look like they know the camera is there. They should look like they are busy surviving, loving, or fighting in their world.",
+            "- MULTIPLE SUBJECTS: 'A tall warrior in obsidian plate armor standing protectively over a small, wide-eyed child in tattered rags; the warrior looks ahead with grim resolve while the child clings to their cape.'",
         )
-
-        appendLine("**ART STYLE (The Medium):**")
-        appendLine(GenrePrompts.artStyle(genre))
+        appendLine("- BAD: 'A woman with a merchant look' or 'A dark character with styled hair'")
+        appendLine()
+        appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION (STRICTLY ENFORCED):**")
+        appendLine(
+            "1. **ABSOLUTE ART STYLE COMPLIANCE:** Adhere to the techniques, color palettes, and forbidden elements from the **ART STYLE** section. Cross-reference every descriptor against these rules. No exceptions.",
+        )
+        appendLine("2. **VISIBILITY DICTATED BY FRAMING:** Your description must be a direct reflection of the **VISUAL DIRECTION**.")
+        appendLine("   - ONLY describe what is visible within the specified framing.")
+        appendLine(
+            "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'Close-up,' do NOT mention the character's boots).",
+        )
+        appendLine(
+            "   - **EXCEPTION:** Hands and gestures are ALLOWED and ENCOURAGED if they enter the frame to support the expression (e.g., touching face, adjusting glasses, hand over mouth), even in portraits.",
+        )
+        appendLine("   - ALL 'CRITICAL' and 'IMPORTANT' character traits that *are* visible within the frame MUST be described in detail.")
+        appendLine("   - Examples:")
+        appendLine("     - ECU (extreme close-up): Face dominates. Eyes, nose, mouth, skin texture, and facial marks are the entire focus.")
+        appendLine(
+            "     - CU (close-up): Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible.",
+        )
+        appendLine("     - MS (medium shot): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible.")
+        appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
+        appendLine(
+            "3. **ALIVE & SOULFUL EXPRESSION:** Focus on crafting a dynamic pose and a nuanced facial expression that tell a story. Translate character context into specific, visible emotional and postural cues. The character must feel alive, not static.",
+        )
+        appendLine(
+            "   - **FACIAL EXPRESSION:** specific, nuanced emotion (e.g., 'a subtle, cynical smirk playing on his lips').",
+        )
+        appendLine(
+            "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing.",
+        )
+        appendLine(
+            "     - Examples: Leaning against walls, crouching in stealth, flying mid-air, running with urgency, sitting regally, kneeling in defeat, dynamic weight distribution.",
+        )
+        appendLine(
+            "   - **HANDS & GESTURES:** Always describe hand placement if visible. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out). Hands are valid in portraits if they add to the emotion.",
+        )
+        appendLine(
+            "4. **SPECIFIC ENVIRONMENT:** Name at least 3 tangible objects or elements in the environment that are consistent with the context and genre. Avoid vague terms like 'a detailed background.'",
+        )
+        appendLine(
+            "5. **LIGHTING AS A TOOL:** Describe lighting with direction, quality (hard/soft), and color. Use it to enhance mood and form (e.g., 'lit by a single, harsh overhead light, casting deep shadows').",
+        )
+        appendLine(
+            "6. **COMPOSITION:** Explicitly state the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
+        )
+        appendLine(
+            "7. **MULTI-SUBJECT COHERENCE:** If the context mentions multiple characters (e.g., 'A scientist and his robot assistant'), you MUST include both. Describe their relative positions, physical interactions, and emotional connection in the scene. Never omit secondary subjects that are key to the narrative moment.",
+        )
+        appendLine(
+            "8. **RELATIONSHIP DYNAMICS:** You MUST translate the provided relationship data (e.g., 'Enemies', 'Allies') into visible body language and composition. Enemies should have physical distance or aggressive tension; allies should have proximity or mutual support. Never contradict the emotional status of the subjects.",
+        )
+        characterHexColor?.let {
+            appendLine(
+                "9. **ACCENT COLOR ($it) INTEGRATION:** Consistently reinforce the art style's requirements, especially this accent color. Weave it into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
+            )
+        }
         appendLine()
 
-        appendLine("**FINAL OUTPUT INSTRUCTION:**")
-        appendLine("Analyze the Creative Brief, the Visual Direction, and the Art Style.")
+        appendLine("**FINAL PROMPT FORMAT (ASSEMBLE IN THIS ORDER):**")
+        appendLine("[1] OPENING - Art style + critical rendering rules")
+        appendLine("[2] SUBJECTS - Specific, concrete description of ALL characters/subjects WITH ALL VISIBLE TRAITS")
         appendLine(
-            "  1. **VALIDATE IDENTITY:** Ensure your description STRICTLY matches the physical attributes (race, gender, age, features) in the Brief.",
+            "[3] FRAMING - Explicit camera framing and what's visible (e.g., 'full shot showing the interaction between characters from the waist up')",
         )
-        appendLine(
-            "  2. **MANDATORY LAYOUT PHRASE:** The final output MUST explicitly describe the layout: 'Vertical Medium-Long Shot anchored at the bottom, leaving the top third open and empty.'",
-        )
-        appendLine("  3. **CRAFT THE ART:** Write a single, rich, and evocative text description.")
-        appendLine("  • Focus on the *visual impact* and *emotional resonance* of the image.")
-        appendLine("  • Describe the lighting, texture, and atmosphere like a painter describing their canvas.")
-        appendLine("  • Ensure the subject(s) look like a cohesive part of this artistic world.")
-        appendLine("  • **Crucial:** Maintain the technical composition rules provided below.")
+        appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
+        appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
+        appendLine("[6] LIGHTING - Specific direction, quality, color temperature, visible effects")
+        appendLine("[7] COMPOSITION - Technical: placement, subject orientation, depth, lock-screen vertical bias")
+        appendLine("[8] DETAIL - Signature element, texture quality, final emphasis on genre compliance")
         appendLine()
-        appendLine(ImagePrompts.descriptionRules(genre))
+
+        appendLine("**PROMPT QUALITY CHECKLIST:**")
+        appendLine("✓ No vague words ('nice', 'beautiful', 'realistic', 'soft', 'subtle')")
+        appendLine("✓ All traits visible at this framing level are explicitly described")
+        appendLine("✓ Genre-specific terminology used (NOT generic descriptors)")
+        appendLine("✓ 3+ specific environment objects named")
+        appendLine("✓ Lighting described with direction + quality + color")
+        appendLine("✓ Composition structure followed (subjects → environment → technical)")
+        appendLine("✓ No forbidden elements mentioned")
+        appendLine("✓ All required elements mentioned")
+        appendLine("✓ Framing impact on visibility explicitly stated")
+        appendLine("✓ Feature hierarchy observed (critical details first)")
+        appendLine()
+        appendLine("OUTPUT RESULT:")
+        appendLine("A single flowing paragraph that reads like a concrete visual specification (not creative writing).")
+        appendLine("Suitable for direct input to image generation AI with minimal corrections needed.")
     }
 
     fun reviewGeneration(saga: SagaContent) =
         buildString {
             val topInteractiveCharacters =
-                saga
-                    .flatMessages()
-                    .rankTopCharacters(
-                        saga.characters.map { it.data },
-                    ).take(3)
+                saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
             appendLine(
-                "You are the **Chronicler of Legends**, an AI with a soul of a poet and the mind of an analyst. Your purpose is to transform a player's journey into a legendary tale, a personal 'Saga Wrapped' that celebrates their unique path. Your writing style must follow the 'Language Directive' provided below.",
+                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a personal storytelling retrospective—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
             )
             appendLine()
             appendLine("---")
             appendLine("CONTEXT:")
-            appendLine("Saga Context:")
-            appendLine(mainContext(saga))
             appendLine("Player relationships:")
             appendLine(saga.mainCharacter?.summarizeRelationships())
             appendLine("Emotional Ranking: ")
@@ -220,7 +281,21 @@ object SagaPrompts {
             }
             appendLine("Emotional Summary: ")
             appendLine(saga.emotionalSummary())
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga) }}")
+
+            val userMessages =
+                saga.flatMessages().filter { it.character?.id == saga.mainCharacter?.data?.id }
+            val actionCount = userMessages.count { it.message.text.contains("<action>") }
+            val thinkCount = userMessages.count { it.message.text.contains("<think>") }
+            val narratorCount = userMessages.count { it.message.text.contains("<narrator>") }
+            val totalExpressive = actionCount + thinkCount + narratorCount
+
+            appendLine("Player Expressiveness (Tag Usage):")
+            appendLine("- Actions (<action>): $actionCount")
+            appendLine("- Thoughts (<think>): $thinkCount")
+            appendLine("- Narrations (<narrator>): $narratorCount")
+            appendLine("- Total Expressive Interactions: $totalExpressive")
+
+            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
             appendLine("Characters ranking(name and message number): ")
             appendLine(
                 topInteractiveCharacters.joinToString(";\n") {
@@ -231,44 +306,45 @@ object SagaPrompts {
             appendLine(GenrePrompts.conversationDirective(saga.data.genre))
             appendLine("---")
             appendLine()
-            appendLine("**INSTRUCTIONS FOR GENERATING THE REVIEW:**")
+            appendLine("**INSTRUCTIONS FOR GENERATING THE RETROSPECTIVE:**")
             appendLine()
             appendLine(
-                "Your output MUST be a single JSON object with the fields described below. For each field, craft a compelling narrative that is both personal and insightful, using the context provided above. Do NOT invent any fields.",
+                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Each slide MUST have a 'hook' (to set expectation) and 'content' (the actual data).",
+            )
+            appendLine(
+                "CRITICAL: Both 'hook' and 'content' MUST follow a bold visual hierarchy: a sharp 'title' and a supporting 'subtitle'.",
             )
             appendLine()
-            appendLine("1.  **Content for Each Field (matching the Review data class):**")
+            appendLine("- **Title**: Max 5-7 words. The primary message, bold, punchy.")
+            appendLine("- **Subtitle**: Max 8-10 words. The supporting context, witty remark, or deeper insight.")
+            appendLine()
+            appendLine("1.  **Stage Content Requirements:**")
             appendLine(
-                "    *   **`introduction`**: Begin with a powerful, personal opening. Address the player by their character name from 'Player Character' and welcome them to the reflection of their own legend from the 'Saga Context'. Make it feel like the opening chapter of their personal myth. (e.g., \"Welcome, [Player Name], to the story only you could write. The saga of '${saga.data.title}' is complete, and now, we look back at the legend you forged.\")",
+                "    *   **`introduction`**: The opening roast/hook. (e.g., Hook: { \"title\": \"The house is ready.\", \"subtitle\": \"You can come in now.\" })",
             )
             appendLine(
-                "    *   **`playstyle`**: This is the heart of their character. Based on the 'Emotional Ranking' and 'Emotional Summary', describe their core identity. Were they a 'Pragmatic Protector,' a 'Hopeful Idealist,' a 'Cautious Strategist'? Go beyond just listing emotions; tell them *how* their emotional style defined their actions and shaped their destiny in the saga.",
+                "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style. (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
             )
             appendLine(
-                "    *   **`topCharacters`**: Relationships are the soul of a story. Using the 'Characters ranking' and 'Player relationships', paint a vivid picture of their most important bonds. Don't just name allies; describe the *emotional texture* of the relationships. Was it a mentorship that provided wisdom? A rivalry that spurred growth? A camaraderie that offered comfort in the darkness?",
+                "    *   **`playstyle`**: The personality vibe. (e.g., Content: { \"title\": \"Chaos Gremlin.\", \"subtitle\": \"Aggressively polite, but still chaos.\" })",
             )
             appendLine(
-                "    *   **`actsInsight`**: Based on the 'History', these are not just milestones, but **'Defining Moments.'** Recount 1-2 pivotal events from the saga and frame them as the moments that tested their character and solidified their legend. Focus on the *impact* of their actions in these moments. Also, briefly touch upon the richness of the world they experienced, referencing the number of souls they met (from 'Characters ranking').",
+                "    *   **`topCharacters`**: The social breakdown. (e.g., Hook: { \"title\": \"The squad's choice?\", \"subtitle\": \"It wasn't even close.\" })",
             )
             appendLine(
-                "    *   **`conclusion`**: This is the final, powerful chord. Synthesize their entire journey, drawing from their 'Emotional Summary' and 'History'. Offer a profound, final thought on the person they became and the unique legacy they leave behind in the world of '${saga.data.title}'. This should be a compelling and emotional send-off.",
+                "    *   **`actsInsight`**: The 'Watcher's Insight'. referencing a SPECIFIC history detail. (e.g., Content: { \"title\": \"The Bridge Incident.\", \"subtitle\": \"Pure legendary madness in the making.\" })",
+            )
+            appendLine(
+                "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., Content: { \"title\": \"And for now...\", \"subtitle\": \"Same time next year? We'll leave the lights on.\" })",
             )
             appendLine()
-            appendLine("2.  **Tone & Style:**")
-            appendLine("    *   Celebratory, epic, personal, and deeply insightful.")
-            appendLine("    *   Address the player directly as the hero of their own story.")
-            appendLine("    *   The writing style MUST follow the 'Language Directive'.")
+            appendLine("2.  **Constraints:**")
+            appendLine("    *   TOKEN OPTIMIZED: Max personality, minimum character count.")
+            appendLine("    *   Tone: Conversational, clever, joking.")
             appendLine()
             appendLine("---")
-            appendLine()
-            appendLine("**Example for `playstyle`:**")
             appendLine(
-                "\"Your journey was defined by a rare blend of fierce pragmatism and unexpected empathy. You were the 'Pragmatic Protector,' making the tough calls others couldn't, yet always finding a moment to extend a hand to those in need. This duality is what made your path so compelling.\"",
-            )
-            appendLine()
-            appendLine("**Example for `conclusion`:**")
-            appendLine(
-                "\"From the hopeful first steps of your adventure to the determined final stand, your journey was a testament to the power of resilience. You faced down despair and chose to fight, you saw betrayal and chose to trust again. The saga of '${saga.data.title}' is over, but the echo of your choices—the choices of a hero—will resonate forever.\"",
+                "OUTPUT JSON OBJECT ONLY with this structure: { \"introduction\": { \"hook\": { \"title\": \"...\", \"subtitle\": \"...\" }, \"content\": { \"title\": \"...\", \"subtitle\": \"...\" } }, ... }",
             )
         }.trim()
 
@@ -332,5 +408,41 @@ object SagaPrompts {
             appendLine("- Do NOT reveal major spoilers. Tease, don't tell.")
             appendLine()
             appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
+        }.trimIndent()
+
+    fun sagaResume(saga: SagaContent) =
+        buildString {
+            appendLine("You are a legendary chronicler of epic tales.")
+            appendLine(
+                "Your task is to write a concise, gripping, and deeply atmospheric summary of the story so far for a saga titled '${saga.data.title}'.",
+            )
+            appendLine(
+                "This summary should provide a clear overview of the central conflict, major milestones, and the current state of the world.",
+            )
+            appendLine(mainContext(saga))
+
+            appendLine("## THE STORY PROGRESSION")
+            if (saga.acts.isEmpty()) {
+                appendLine("The story is in its very early stages, just beginning to unfold.")
+            } else {
+                saga.acts.forEach {
+                    appendLine(it.actSummary(saga))
+                }
+            }
+            appendLine()
+            appendLine("## INSTRUCTIONS")
+            appendLine("1. Write a single, cinematic, and powerful paragraph (max 200 words).")
+            appendLine("2. Focus strictly on the narrative progression and the evolving stakes.")
+            appendLine("3. Capture the unique atmosphere of the genre (${saga.data.genre.name}).")
+            appendLine(
+                "## Apply this tone style: ${
+                    GenrePrompts.conversationDirective(
+                        saga.data.genre,
+                    )
+                }",
+            )
+            appendLine("4. Highlight the main character's growth and the weight of their decisions.")
+            appendLine("5. Transform the act summaries into a flowing, epic chronicle.")
+            appendLine("6. Respond ONLY with the resume text. No intro, no outro.")
         }.trimIndent()
 }

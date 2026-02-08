@@ -40,8 +40,8 @@ object ActPrompts {
 
         return buildString {
             appendLine("TASK:")
-            appendLine("You are an AI assistant tasked with writing a compelling summary for a completed Act in a saga.")
-            appendLine("This summary consists of a 'title' for the Act and a 'content' (description) of the Act.")
+            appendLine("You are an AI storyteller tasked with writing a compelling, book-like narrative conclusion for a constructed Act.")
+            appendLine("This consists of a 'title' for the Act and a 'content' (narrative retelling) of the Act.")
             appendLine(SagaPrompts.mainContext(sagaContent))
             appendLine("Current act purpose:")
             appendLine(purpose)
@@ -66,25 +66,35 @@ object ActPrompts {
                 )
             }
             appendLine(
-                "Based primarily on the summaries of its constituent chapters (provided in `CHAPTERS_IN_CURRENT_ACT`), and considering the `PREVIOUS_ACT_DATA` for continuity, generate these two pieces of information.",
+                "Based primarily on the stories of its constituent chapters (provided in `CHAPTERS_IN_CURRENT_ACT`), and considering the `PREVIOUS_ACT_DATA` for continuity, generate these two pieces of information.",
             )
             appendLine(
                 "1.  Generate a fitting 'title' for this Act. The title should be evocative and encapsulate the Act's main theme or pivotal outcome (ideally 3-7 words).",
             )
             appendLine(
-                "2.  Generate a concise 'content' for this Act (typically 2-3 paragraphs, around 150-250 words). This description should:",
+                "2.  Generate a 'content' for this Act (typically 2-3 paragraphs, around 150-250 words).",
             )
             appendLine(
-                "a.  Summarize the main plot developments, character arcs, and key resolutions that occurred across all chapters in `CHAPTERS_IN_CURRENT_ACT`.",
+                "   - **NARRATIVE STYLE:** Write this EXACTLY like a book or a story being told. It must be immersive and literary.",
             )
-            appendLine("b.  Reflect the overall tone and significance of this Act within the saga context.")
+            appendLine(
+                "   - **NO META-COMMENTARY:** STRICTLY FORBIDDEN to use phrases like 'In Act X', 'This act covers', 'The story begins with', 'In this summary', or 'The chapters detail'.",
+            )
+            appendLine(
+                "   - **NO DATA MENTIONS:** Do NOT mention 'chapters', 'events', 'data', or 'summaries' directly.",
+            )
+            appendLine(
+                "   - Focus entirely on the narrative flow, the characters' actions, the plot developments, and the emotional weight of the story.",
+            )
+            appendLine("   - Weave the events together into a cohesive tale.")
+
             if (sagaContent.actNumber(currentActContent.data) < 3) {
                 appendLine(
-                    "c. Conclude with a sentence or two that creates a natural hook or sets the stage for the subsequent Act, hinting at unresolved threads or future directions.",
+                    "   - Conclude with a sentence or two that creates a natural hook or sets the stage for the subsequent Act, hinting at unresolved threads or future directions.",
                 )
             } else {
                 appendLine(
-                    "c. Since this is the final Act, conclude with a sentence or two that provides a sense of closure, reflecting on the overall saga and the main character's transformative journey.",
+                    "   - Since this is the final Act, conclude with a sentence or two that provides a sense of closure, reflecting on the overall saga and the main character's transformative journey.",
                 )
             }
         }.trimIndent()

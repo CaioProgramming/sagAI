@@ -9,6 +9,7 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/docs
 /captures
 .externalNativeBuild
 .cxx
@@ -24,4 +25,3 @@ gha-creds-*.json
 .junie/
 .kotlin/sessions/
 keystore.properties
-docs/

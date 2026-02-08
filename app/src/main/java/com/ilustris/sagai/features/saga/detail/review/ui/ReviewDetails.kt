@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
@@ -129,7 +130,7 @@ fun ReviewDetails(saga: SagaContent) {
                 genre,
                 isLoading = true,
                 modifier =
-                    Modifier.Companion
+                    Modifier
                         .background(MaterialTheme.colorScheme.background)
                         .fillMaxWidth()
                         .padding(top = 25.dp),
@@ -140,9 +141,9 @@ fun ReviewDetails(saga: SagaContent) {
             AsyncImage(
                 model = saga.data.icon,
                 contentDescription = null,
-                contentScale = ContentScale.Companion.Crop,
+                contentScale = ContentScale.Crop,
                 modifier =
-                    Modifier.Companion
+                    Modifier
                         .fillMaxWidth()
                         .fillParentMaxHeight(.4f)
                         .effectForGenre(genre)
@@ -158,28 +159,28 @@ fun ReviewDetails(saga: SagaContent) {
                         fontFamily = genre.bodyFont(),
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
-                modifier = Modifier.Companion.padding(16.dp),
+                modifier = Modifier.padding(16.dp),
             )
         }
 
         saga.data.review?.let {
             item {
                 Text(
-                    it.introduction,
+                    it.introduction?.content?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
-                    modifier = Modifier.Companion.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
             item {
                 Column(
-                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
                 ) {
@@ -189,7 +190,7 @@ fun ReviewDetails(saga: SagaContent) {
                             MaterialTheme.typography.displaySmall.copy(
                                 fontFamily = headerFont,
                                 brush = brush,
-                                textAlign = TextAlign.Companion.Center,
+                                textAlign = TextAlign.Center,
                             ),
                     )
                     Text(
@@ -197,22 +198,22 @@ fun ReviewDetails(saga: SagaContent) {
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = bodyFont,
-                                textAlign = TextAlign.Companion.Center,
+                                textAlign = TextAlign.Center,
                             ),
-                        modifier = Modifier.Companion.alpha(.4f),
+                        modifier = Modifier.alpha(.4f),
                     )
                 }
             }
 
             item {
                 Text(
-                    it.playstyle,
+                    it.playstyle?.content?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
-                    modifier = Modifier.Companion.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -221,7 +222,7 @@ fun ReviewDetails(saga: SagaContent) {
                     saga,
                     messageTypeRanking,
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
                             .fillParentMaxHeight(.5f),
@@ -232,7 +233,7 @@ fun ReviewDetails(saga: SagaContent) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(vertical = 8.dp)
                             .fillMaxWidth(),
                     thickness = 1.dp,
@@ -241,9 +242,9 @@ fun ReviewDetails(saga: SagaContent) {
 
             item {
                 Column(
-                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
                 ) {
@@ -253,7 +254,7 @@ fun ReviewDetails(saga: SagaContent) {
                             MaterialTheme.typography.displaySmall.copy(
                                 fontFamily = headerFont,
                                 brush = brush,
-                                textAlign = TextAlign.Companion.Center,
+                                textAlign = TextAlign.Center,
                             ),
                     )
                     Text(
@@ -261,9 +262,9 @@ fun ReviewDetails(saga: SagaContent) {
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = bodyFont,
-                                textAlign = TextAlign.Companion.Center,
+                                textAlign = TextAlign.Center,
                             ),
-                        modifier = Modifier.Companion.alpha(.4f),
+                        modifier = Modifier.alpha(.4f),
                     )
                 }
             }
@@ -271,20 +272,20 @@ fun ReviewDetails(saga: SagaContent) {
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Companion.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     items(charactersRanking) {
                         Column(
-                            Modifier.Companion
+                            Modifier
                                 .padding(8.dp),
-                            horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             CharacterAvatar(
                                 it.first,
                                 borderSize = 2.dp,
                                 genre = genre,
                                 modifier =
-                                    Modifier.Companion
+                                    Modifier
                                         .padding(8.dp)
                                         .clip(CircleShape)
                                         .size(120.dp)
@@ -295,8 +296,8 @@ fun ReviewDetails(saga: SagaContent) {
                                 it.first.name,
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Companion.Light,
-                                        textAlign = TextAlign.Companion.Center,
+                                        fontWeight = FontWeight.Light,
+                                        textAlign = TextAlign.Center,
                                         fontFamily = genre.bodyFont(),
                                     ),
                             )
@@ -311,7 +312,7 @@ fun ReviewDetails(saga: SagaContent) {
                     mentionsRanking,
                     genre,
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
                             .fillParentMaxHeight(.5f),
@@ -326,7 +327,7 @@ fun ReviewDetails(saga: SagaContent) {
                             fontFamily = genre.headerFont(),
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
-                    modifier = Modifier.Companion.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -337,7 +338,7 @@ fun ReviewDetails(saga: SagaContent) {
                             content = relation,
                             saga = saga,
                             modifier =
-                                Modifier.Companion
+                                Modifier
                                     .padding(16.dp)
                                     .requiredWidthIn(max = 300.dp),
                         )
@@ -349,7 +350,7 @@ fun ReviewDetails(saga: SagaContent) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(vertical = 8.dp)
                             .fillMaxWidth(),
                     thickness = 1.dp,
@@ -364,7 +365,7 @@ fun ReviewDetails(saga: SagaContent) {
                             fontFamily = genre.headerFont(),
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
-                    modifier = Modifier.Companion.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -373,7 +374,7 @@ fun ReviewDetails(saga: SagaContent) {
                     hourRanking,
                     genre,
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
                             .fillParentMaxHeight(.5f),
@@ -384,7 +385,7 @@ fun ReviewDetails(saga: SagaContent) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(vertical = 12.dp)
                             .fillMaxWidth(),
                     thickness = 1.dp,
@@ -393,13 +394,13 @@ fun ReviewDetails(saga: SagaContent) {
 
             item {
                 Text(
-                    it.actsInsight,
+                    it.actsInsight?.content?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = bodyFont,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
-                    modifier = Modifier.Companion.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -407,7 +408,7 @@ fun ReviewDetails(saga: SagaContent) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
                     modifier =
-                        Modifier.Companion
+                        Modifier
                             .padding(vertical = 8.dp)
                             .fillMaxWidth(),
                     thickness = 1.dp,
@@ -416,13 +417,13 @@ fun ReviewDetails(saga: SagaContent) {
 
             item {
                 Text(
-                    it.conclusion,
+                    it.conclusion?.content?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = bodyFont,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
-                    modifier = Modifier.Companion.padding(16.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -435,7 +436,7 @@ fun ReviewDetails(saga: SagaContent) {
                                 fontFamily = genre.headerFont(),
                                 color = MaterialTheme.colorScheme.onBackground,
                             ),
-                        modifier = Modifier.Companion.padding(16.dp),
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
 
@@ -447,13 +448,13 @@ fun ReviewDetails(saga: SagaContent) {
                                 fontFamily = bodyFont,
                                 color = MaterialTheme.colorScheme.onBackground,
                             ),
-                        modifier = Modifier.Companion.padding(16.dp),
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
             }
 
             item {
-                Spacer(Modifier.Companion.height(50.dp))
+                Spacer(Modifier.height(50.dp))
             }
         }
     }
@@ -461,7 +462,7 @@ fun ReviewDetails(saga: SagaContent) {
 
 @Composable
 private fun CharactersChart(
-    charactersRanking: List<Pair<com.ilustris.sagai.features.characters.data.model.Character, Int>>,
+    charactersRanking: List<Pair<Character, Int>>,
     mentionsRanking: List<Pair<Character, Int>>,
     genre: Genre,
     modifier: Modifier,
@@ -487,7 +488,7 @@ private fun CharactersChart(
                                     val displayValue =
                                         if (index == 0) it.second else mentionsForCharacter
 
-                                    val suffix = if (index % 2 == 0) "messages" else "mentions"
+                                    if (index % 2 == 0) "messages" else "mentions"
 
                                     Bars.Data(
                                         label = "${it.first.name}",

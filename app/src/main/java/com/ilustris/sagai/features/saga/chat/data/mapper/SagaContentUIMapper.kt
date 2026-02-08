@@ -5,20 +5,25 @@ import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
 
 object SagaContentUIMapper {
+    /**
+     * Maps domain acts to UI display data with pre-reversed lists.
+     * This avoids calling .reversed() in the UI layer during LazyColumn rendering,
+     * which would create new list copies on every recomposition.
+     */
     fun mapToActDisplayData(domainActs: List<ActContent>): List<ActDisplayData> =
-        domainActs.map { actContentDomain ->
+        domainActs.asReversed().map { actContentDomain ->
             ActDisplayData(
                 content = actContentDomain,
                 isComplete = actContentDomain.isComplete(),
                 chapters =
-                    actContentDomain.chapters.map { chapterContentDomain ->
+                    actContentDomain.chapters.asReversed().map { chapterContentDomain ->
                         ChapterDisplayData(
                             chapter = chapterContentDomain,
                             isComplete = chapterContentDomain.isComplete(),
                             timelineSummaries =
-                                chapterContentDomain.events.map {
+                                chapterContentDomain.events.asReversed().map {
                                     it.copy(
-                                        messages = it.messages.sortedBy { m -> m.message.timestamp },
+                                        messages = it.messages.sortedByDescending { m -> m.message.timestamp },
                                     )
                                 },
                         )

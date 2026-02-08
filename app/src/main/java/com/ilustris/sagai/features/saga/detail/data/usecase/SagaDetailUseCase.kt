@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
-import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -9,6 +8,19 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.Flow
 
+sealed class ReviewState {
+    data class Loading(
+        val message: String,
+    ) : ReviewState()
+
+    data class Success(
+        val saga: Saga,
+    ) : ReviewState()
+
+    data class Error(
+        val message: String) : ReviewState()
+}
+
 interface SagaDetailUseCase {
     suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga>
 
@@ -16,7 +28,7 @@ interface SagaDetailUseCase {
 
     suspend fun deleteSaga(saga: Saga)
 
-    suspend fun createReview(content: SagaContent): RequestResult<Saga>
+    suspend fun createReview(content: SagaContent): Flow<ReviewState>
 
     suspend fun resetReview(content: SagaContent)
 
@@ -32,12 +44,9 @@ interface SagaDetailUseCase {
         wikis: List<Wiki>,
     )
 
-    suspend fun exportSaga(
-        sagaId: Int,
-        destinationUri: Uri,
-    ): RequestResult<Unit>
-
     fun getBackupEnabled(): Flow<Boolean>
 
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
+
+    suspend fun generateSagaResume(saga: SagaContent): RequestResult<String>
 }

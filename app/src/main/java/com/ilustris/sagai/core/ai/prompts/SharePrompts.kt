@@ -126,7 +126,7 @@ object SharePrompts {
             appendLine("5. TONE: Must match the provided Saga Genre.")
             append(SagaPrompts.mainContext(saga))
             appendLine("History context: ")
-            appendLine(saga.acts.joinToString(".\n") { it.actSummary(saga) })
+            appendLine(saga.acts.joinToString(".\n") { it.actSummary(saga, false) })
             appendLine("Generate the title, text, and caption for the story teaser now.")
         }
 

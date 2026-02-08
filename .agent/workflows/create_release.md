@@ -12,7 +12,17 @@ the APK.
     - Ensure we are on the develop branch: `git checkout develop`
     - Pull the latest changes: `git pull origin develop`
 
-3. **Check for Open PRs**:
+3. **Check for version changes on SagaDatabase**:
+    - Run
+      `git diff origin/main...develop -- app/src/main/java/com/example/app/data/saga/SagaDatabase.kt`
+    - If there are changes:
+    - **Add Docs to Gitignore**:
+        - Check if `docs/` is in `.gitignore`.
+        - If not, ask the user if they want to add it (or specific subdirectories like `docs/archive`).
+        - *Recommendation*: Generally, keep documentation in version control, but ignore large assets or temporary files.
+
+
+4. **Check for Open PRs**:
     - Run `gh pr list --base develop --state open` to see any pending PRs targeting develop.
     - If there are open PRs:
         - List them to the user (Number and Title).
@@ -22,7 +32,7 @@ the APK.
             - Pull changes again: `git pull origin develop`.
             - Repeat the check until user says "No" or no PRs remain.
 
-4. **Analyze & Determine Version**:
+5. **Analyze & Determine Version**:
     - **Fetch History**: Run `git log -n 20 --oneline develop` and
       `git log --merges -n 3 --oneline develop`.
     - **Analyze Impact**:
@@ -35,22 +45,22 @@ the APK.
         - *Rule*: If MAJOR increments, reset MINOR and PATCH to 0. If MINOR increments, reset PATCH
           to 0.
 
-5. **Update Version**:
+6. **Update Version**:
     - Update `version.properties` with the new values.
     - *Note*: `app/build.gradle.kts` automatically reads from this file, so no manual Gradle edit is
       needed.
 
-6. **Create Release Branch**:
+7. **Create Release Branch**:
     - Create and checkout a new branch: `git checkout -b release/[new_version]`
     - Example: `git checkout -b release/1.5.0`
     - Commit the version changes: `git add version.properties && git commit -m "chore: bump version to [new_version]"`
 
-7. **Draft Release Notes**:
+8. **Draft Release Notes**:
     - Follow the style guide from `.agent/workflows/create_release_notes.md`.
     - Create `docs/release_notes/release_[new_version].md`.
     - Include the "What's New" and "Bug Fixes" sections based on the git log analysis.
 
-8. **Create Pull Request**:
+9. **Create Pull Request**:
     - **Identify Core Features**: Use the git log analysis from Step 4 to identify 1-2 core features
       or major improvements.
     - **Construct Title**: `✦ Release [Version] - [Core Feature 1] & [Core Feature 2]`
@@ -72,20 +82,34 @@ the APK.
     - **Open PR**: Run `gh pr view --web` to open the PR in the browser.
     - **Notify**: Confirm the PR has been created and provide the link.
 
-9. **Build Debug & Release**:
+10. **Build Debug & Release**:
     - **Debug Build**: Run `./gradlew assembleDebug` for Firebase distribution.
     - **Release Build**: Run `./gradlew assembleRelease` for Google Play Console.
     - *Note*: This might take a few minutes.
 
-10. **Distribute to Firebase**:
+11. **Distribute to Firebase**:
     - **Prepare Release Notes**: Read the content from `docs/release_notes/release_[new_version].md`.
     - **Distribute**: Run `firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk --app [FIREBASE_APP_ID] --groups "alpha-testers" --release-notes-file docs/release_notes/release_[new_version].md`
     - *Note*: This distributes the debug build to alpha-testers. The release build will be uploaded to Google Play Console manually.
     - **Confirm**: Notify the user that the debug build has been distributed to alpha-testers.
 
-11. **Finalize**:
+12. **Update FAQ**:
+    - **Analyze**: Using the features and changes identified in Step 5 and 8, determine what new
+      questions users might have.
+    - **Generate**: Create a draft list of new/updated FAQ items (Question & Answer) relevant to
+      this release.
+    - **Consult**: Ask the user to provide the path to the current FAQ JSON file (default:
+      `docs/faq_data_en.json`).
+    - **Compare**: Read the specified file. Compare the generated draft with existing entries.
+    - **Refine**: Present the user with a list of suggested additions, updates, or removals.
+    - **Update PT-BR FAQ**:
+        - Repeat the process for the Portuguese FAQ file (default: `docs/faq_data_pt.json`).
+        - Ensure translations capture the same tone and accuracy.
+    - **Apply**: Ask the user if they want to update the FAQ files with these changes. If yes, write
+      the updated JSON to the files.
+
+13. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
     - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
     - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
     - Ask the user to review the generated release notes.
-

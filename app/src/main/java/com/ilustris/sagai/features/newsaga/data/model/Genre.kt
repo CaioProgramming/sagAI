@@ -23,7 +23,7 @@ Genre(
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
-        color = Color(0xFF2E294E), // Pantone 5255 C - Dark Purple
+        color = Color(0xFF8B00FF), // Pantone 2665 C - Vibrant Electric Purple
         iconColor = Color.White,
         background = R.drawable.scifi,
     ),
@@ -68,6 +68,13 @@ Genre(
         iconColor = Color.White,
         background = R.drawable.cowboys,
     ),
+
+    PUNK_ROCK(
+        title = R.string.genre_punk_rock,
+        color = Color(0xFF00B050), // Pantone 375 C - Vibrant Green
+        iconColor = Color.White,
+        background = R.drawable.punk_rock,
+    ),
     ;
 
     val ambientMusicConfigKey: String = "${this.name}_ambient_music_url".lowercase()
@@ -110,11 +117,11 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.HEROES -> {
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .3f,
-                saturationThreshold = .45f,
-                lightnessThreshold = .25f,
-                highlightSaturationBoost = 1.4f,
-                desaturationFactorNonTarget = .5f,
+                hueTolerance = .1f,
+                saturationThreshold = .1f,
+                lightnessThreshold = .3f,
+                highlightSaturationBoost = 2f,
+                desaturationFactorNonTarget = .0f,
             )
         }
 
@@ -162,6 +169,17 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 desaturationFactorNonTarget = .5f,
             )
         }
+
+        Genre.PUNK_ROCK -> {
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = .15f,
+                saturationThreshold = .4f,
+                lightnessThreshold = .3f,
+                highlightSaturationBoost = 2.0f,
+                desaturationFactorNonTarget = .5f,
+            )
+        }
     }
 
 fun Genre.defaultHeaderImage() =
@@ -174,12 +192,13 @@ fun Genre.defaultHeaderImage() =
         Genre.SHINOBI -> R.drawable.shinobi_card
         Genre.SPACE_OPERA -> R.drawable.space_opera_card
         Genre.COWBOY -> R.drawable.cowboys_card
+        Genre.PUNK_ROCK -> R.drawable.punk_rock_card
     }
 
 fun Genre.shimmerColors() =
     listOf(
         Color.Transparent,
-        color.copy(alpha = .5f),
+        color.copy(alpha = .2f),
     ).plus(colorPalette())
         .plus(Color.Transparent)
 
@@ -188,72 +207,94 @@ fun Genre.colorPalette() =
         Genre.FANTASY -> {
             listOf(
                 color,
-                Color(0xFFD4AF37), // Pantone 871 C - Mystical Gold
-                Color(0xFF8B0000), // Pantone 18-1664 TPX - Dark Red
-                Color(0xFFFF6B35), // Pantone 17-1462 TPX - Flame Orange
+                Color(0xFFA52A2A), // Brown
+                Color(0xFF800000), // Maroon
+                Color(0xFFCD5C5C), // IndianRed
             )
         }
 
         Genre.CYBERPUNK -> {
             listOf(
                 color,
-                Color(0xFF00F5FF), // Pantone Neon Blue
-                Color(0xFFFF1493), // Pantone Neon Pink
-                Color(0xFF39FF14), // Pantone Neon Green
+                Color(0xFF9400D3), // Dark Violet
+                Color(0xFFBA55D3), // Medium Orchid
+                Color(0xFF4B0082), // Indigo
             )
         }
 
         Genre.HORROR -> {
             listOf(
                 color,
-                Color(0xFF2F2F2F), // Pantone Black 7 C
-                Color(0xFF708090), // Pantone Cool Gray 9 C
-                Color(0xFF4B0082), // Pantone 268 C - Deep Violet
+                Color(0xFF0B132B), // Rich Black
+                Color(0xFF3A506B), // Imperial Blue
+                Color(0xFF1B263B), // Oxford Blue
             )
         }
 
         Genre.HEROES -> {
             listOf(
                 color,
-                Color(0xFFDC143C), // Pantone 18-1664 TPX - Hero Red
-                Color(0xFFFFD700), // Pantone 116 C - Hero Gold
-                Color(0xFF00BFFF), // Pantone Process Blue C
+                Color(0xFF00509D), // Lighter Blue
+                Color(0xFF00296B), // Darker Blue
+                Color(0xFF4A90E2), // Cornflower Blue
             )
         }
 
         Genre.CRIME -> {
             listOf(
                 color,
-                Color(0xFF00CED1), // Pantone 319 C - Miami Turquoise
-                Color(0xFFFF69B4), // Pantone 812 C - Vice Pink
-                Color(0xFFFFA500), // Pantone 144 C - Sunset Orange
+                Color(0xFFC2185B), // Darker Pink
+                Color(0xFFF48FB1), // Lighter Pink
+                Color(0xFF880E4F), // Very Dark Pink
             )
         }
 
         Genre.SHINOBI -> {
             listOf(
                 color,
-                Color(0xFF8B0000), // Pantone 18-1664 TPX - Blood Red
-                Color(0xFF2F4F4F), // Pantone 5467 C - Shadow Gray
-                Color(0xFFB8860B), // Pantone 7562 C - Ancient Gold
+                Color(0xFF4A1F41), // Darker Plum
+                Color(0xFF8E447E), // Lighter Plum
+                Color(0xFF2D1328), // Very Dark Plum
             )
         }
 
         Genre.SPACE_OPERA -> {
             listOf(
                 color,
-                Color(0xFF4169E1), // Pantone 286 C - Royal Blue
-                Color(0xFF00FA9A), // Pantone 354 C - Cosmic Green
-                Color(0xFFFF4500), // Pantone 17-1463 TPX - Rocket Orange
+                Color(0xFF00AFB9), // Lighter Teal
+                Color(0xFF264653), // Dark Slate
+                Color(0xFF48CAE4), // Cyan
             )
         }
 
         Genre.COWBOY -> {
             listOf(
                 color,
-                Color(0xFFD2691E), // Pantone 4695 C - Desert Sand
-                Color(0xFFCD853F), // Pantone 4665 C - Prairie Tan
-                Color(0xFF800000), // Pantone 18-1142 TPX - Maroon
+                Color(0xFFA0522D), // Sienna
+                Color(0xFF654321), // Dark Brown
+                Color(0xFFD2691E), // Chocolate
             )
         }
+
+        Genre.PUNK_ROCK -> {
+            listOf(
+                color,
+                Color(0xFF008000), // Green
+                Color(0xFF32CD32), // Lime Green
+                Color(0xFF006400), // Dark Green
+            )
+        }
+    }
+
+fun Genre.vibrationPattern(): LongArray =
+    when (this) {
+        Genre.FANTASY -> longArrayOf(0, 100, 50, 100)
+        Genre.CYBERPUNK -> longArrayOf(0, 50, 30, 50, 30, 50)
+        Genre.HORROR -> longArrayOf(0, 500)
+        Genre.HEROES -> longArrayOf(0, 300)
+        Genre.CRIME -> longArrayOf(0, 80, 80, 80)
+        Genre.SHINOBI -> longArrayOf(0, 150)
+        Genre.SPACE_OPERA -> longArrayOf(0, 200, 100, 200)
+        Genre.COWBOY -> longArrayOf(0, 250)
+        Genre.PUNK_ROCK -> longArrayOf(0, 50, 50, 100, 50, 50)
     }

@@ -10,9 +10,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 class HeroesChatBubbleShape(
-    private val tailWidth: Dp = 32.dp, // Increased width for better connection
-    private val tailHeight: Dp = 20.dp,
-    private val skew: Dp = 0.dp,
+    private val tailWidth: Dp = 16.dp,
+    private val tailHeight: Dp = 16.dp,
+    private val skew: Dp = 12.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
 ) : Shape {
     override fun createOutline(
@@ -30,72 +30,115 @@ class HeroesChatBubbleShape(
 
         when (tailAlignment) {
             BubbleTailAlignment.BottomRight -> {
-                // User Bubble (Right aligned)
+                // User Bubble (Right)
+                // Skew: \  (Leaning Left towards center)
+                // Top-Left: (0, 0)
+                // Top-Right: (bodyWidth - skewPx, 0)
+                // Bottom-Right: (bodyWidth, bodyHeight)
+                // Bottom-Left: (skewPx, bodyHeight)
 
-                // --- BODY ---
                 path.moveTo(0f, 0f)
-                path.lineTo(bodyWidth, 0f)
+                // Top Edge
+                path.lineTo(bodyWidth - skewPx, 0f)
+
+                // Right Edge (Vertical-ish but skewed? No, logic above is:
+                // (bodyWidth - skewPx, 0) -> (bodyWidth, bodyHeight)
+                // This is a slant /  wait.
+                // x goes from (W-skew) to W. Increases.
+                // y goes from 0 to H. Increases.
+                // This is \ slant? No, \ is TopLeft to BottomRight.
+                // This slants Right. /
+                // Wait.
+                // Top: x = W - skew. Bottom: x = W.
+                // Bottom is further Right than Top. So it leans Right. /
+
+                // Let's re-verify simple shapes.
+                // | |  Normal
+                // / /  Leans Right (Top is Left of Bottom)
+                // \ \  Leans Left (Top is Right of Bottom)
+
+                // My coordinates:
+                // TopRight x: W - skew
+                // BottomRight x: W
+                // TopRight < BottomRight. Top is Left of Bottom.
+                // So this is / slant.
+
+                // Left Edge:
+                // TopLeft x: 0
+                // BottomLeft x: skew
+                // Top < Bottom. Top is Left of Bottom.
+                // This is / slant.
+
+                // So this is / /  (Forward slant).
+                // This implies motion to the Right.
+                // If User is on Right, sending message? Maybe fine.
+
                 path.lineTo(bodyWidth, bodyHeight)
 
-                // --- TAIL (Vertical Lightning Bolt) ---
+                // TAIL - Lightning Bolt style connected to Bottom Right
 
-                // Start on bottom edge, left of corner
-                // We move left to the start of the tail
-                val tailStartX = bodyWidth - tailWidthPx * 0.5f
-                path.lineTo(tailStartX, bodyHeight)
+                // 1. First jag down-right
+                path.lineTo(bodyWidth + (tailWidthPx * 0.3f), bodyHeight + (tailHeightPx * 0.4f))
 
-                // 1. Bolt 1 (Right & Down)
-                path.lineTo(bodyWidth + tailWidthPx * 0.2f, bodyHeight + tailHeightPx * 0.4f)
+                // 2. Zag back left
+                path.lineTo(bodyWidth - (tailWidthPx * 0.1f), bodyHeight + (tailHeightPx * 0.6f))
 
-                // 2. Notch (Left & Down) - Deep cut
-                path.lineTo(bodyWidth - tailWidthPx * 0.3f, bodyHeight + tailHeightPx * 0.5f)
+                // 3. Tip (Long jagged point)
+                path.lineTo(bodyWidth + (tailWidthPx * 0.2f), size.height)
 
-                // 3. Bolt 2 / Tip (Right & Down)
-                path.lineTo(bodyWidth + tailWidthPx * 0.1f, size.height)
+                // 4. Return back up to body
+                // Connect back along the bottom edge, inwards
+                path.lineTo(bodyWidth - tailWidthPx, bodyHeight)
 
-                // 4. Return (Left & Up) - Back to body
-                // We connect further left to give the tail a wide, sturdy base
-                path.lineTo(bodyWidth - tailWidthPx * 1.2f, bodyHeight)
-
-                // Continue Body Bottom Edge
+                // Bottom Edge to Bottom Left
                 path.lineTo(skewPx, bodyHeight)
 
+                // Left Edge back to Top Left
                 path.close()
             }
 
             BubbleTailAlignment.BottomLeft -> {
-                // NPC Bubble (Left aligned)
+                // Character Bubble (Left)
+                // Skew: \ \ (Backward slant?)
+                // Let's try to make them symmetric.
+                // If User was / /, Character should be \ \.
+                // \ \ means Top is Right of Bottom.
 
-                // --- BODY ---
-                path.moveTo(0f, 0f)
+                // Top-Left: (skewPx, 0)
+                // Bottom-Left: (0, bodyHeight)
+                // Top is Right of Bottom. \ slant.
+
+                // Top-Right: (bodyWidth, 0)
+                // Bottom-Right: (bodyWidth - skewPx, bodyHeight)
+                // Top is Right of Bottom. \ slant.
+
+                path.moveTo(skewPx, 0f)
+
+                // Top Edge
                 path.lineTo(bodyWidth, 0f)
+
+                // Right Edge
                 path.lineTo(bodyWidth - skewPx, bodyHeight)
 
-                // Bottom Edge to Tail Return point
-                // Tail is on the left.
-                // We connect at 1.2 * tailWidth
-                path.lineTo(tailWidthPx * 1.2f, bodyHeight)
+                // Bottom Edge to Tail Start
+                // We connect near the Left corner (0, bodyHeight)
+                path.lineTo(tailWidthPx, bodyHeight)
 
-                // --- TAIL (Mirrored Lightning Bolt) ---
+                // TAIL - Lightning Bolt style connected to Bottom Left
 
-                // 1. Tip (Left & Down)
-                path.lineTo(-tailWidthPx * 0.1f, size.height)
+                // 1. First jag down-left
+                path.lineTo(tailWidthPx * 0.1f, bodyHeight + (tailHeightPx * 0.4f)) // Slightly out
 
-                // 2. Notch (Right & Up)
-                path.lineTo(tailWidthPx * 0.3f, bodyHeight + tailHeightPx * 0.5f)
+                // 2. Zag back right
+                path.lineTo(tailWidthPx * 0.4f, bodyHeight + (tailHeightPx * 0.6f))
 
-                // 3. Bolt 1 (Left & Up)
-                path.lineTo(-tailWidthPx * 0.2f, bodyHeight + tailHeightPx * 0.4f)
+                // 3. Tip
+                path.lineTo(-tailWidthPx * 0.2f, size.height)
 
-                // 4. Back to Body (Right & Up)
-                path.lineTo(tailWidthPx * 0.5f, bodyHeight)
-
-                // Finish Bottom Edge
+                // 4. Return back up to corner
                 path.lineTo(0f, bodyHeight)
 
-                // Left Edge
-                path.lineTo(0f, 0f)
-
+                // Left Edge back to Top Left
                 path.close()
             }
         }

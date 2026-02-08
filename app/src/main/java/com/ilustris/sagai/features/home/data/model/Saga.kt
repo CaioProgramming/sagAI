@@ -44,4 +44,6 @@ data class Saga(
     val emotionalReview: String? = null,
     @ColumnInfo(defaultValue = "0")
     val playTimeMs: Long = 0L,
+    @ColumnInfo(defaultValue = "")
+    val narratorVoice: String? = null,
 )

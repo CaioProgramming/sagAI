@@ -9,24 +9,30 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.model.ImagePromptReview
+import com.ilustris.sagai.core.ai.model.ImageReference
+import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.analytics.AnalyticsService
+import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
-    suspend fun generateImage(
-        prompt: String,
-        references: List<ImageReference> = emptyList(),
-        canByPass: Boolean = false,
-    ): Bitmap?
-
-    suspend fun extractComposition(references: List<ImageReference>): RequestResult<String>
+    suspend fun generateIntegratedImage(
+        genre: Genre,
+        imageReference: Pair<Bitmap, String>?,
+        context: String,
+        imageType: ImageType,
+    ): RequestResult<Bitmap>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -36,6 +42,7 @@ class ImagenClientImpl
         val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
         private val gemmaClient: GemmaClient,
+        private val analyticsService: AnalyticsService,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -46,16 +53,15 @@ class ImagenClientImpl
             remoteConfigService.getString(IMAGE_PREMIUM_MODEL_FLAG)
                 ?: error("Couldn't find model for Image generation")
 
-        override suspend fun generateImage(
+        private suspend fun generateImage(
             prompt: String,
             references: List<ImageReference>,
-            canByPass: Boolean,
         ): Bitmap? {
             val modelName = modelName()
             val logData =
                 buildString {
                     append("Generating image with ➡ $modelName\n")
-                    append("Prompt \uD83D\uDCC4:")
+                    appendLine("Prompt \uD83D\uDCC4:")
                     appendLine(prompt)
                     if (references.isNotEmpty()) {
                         appendLine("References \uD83C\uDFDE\uFE0F:\n")
@@ -63,7 +69,6 @@ class ImagenClientImpl
                             appendLine("Bitmap with Description: ${it.description}\n")
                         }
                     }
-                    appendLine("\n")
                 }
             Log.i(TAG, logData)
             return billingService.runPremiumRequest {
@@ -100,12 +105,167 @@ class ImagenClientImpl
             }
         }
 
-        override suspend fun extractComposition(references: List<ImageReference>) =
+        override suspend fun generateIntegratedImage(
+            genre: Genre,
+            imageReference: Pair<Bitmap, String>?,
+            context: String,
+            imageType: ImageType,
+        ): RequestResult<Bitmap> =
             executeRequest {
+                Log.d(
+                    TAG,
+                    "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name}",
+                )
+
+                // 1. VISUAL DIRECTOR ANALYSIS
+                val visualDirection =
+                    generateVisualDirection(context, genre, imageType).getSuccess()
+                Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
+
+                // 2. ARTISTIC DESCRIPTION
+                val artisticPrompt =
+                    generateArtisticPrompt(
+                        genre,
+                        visualDirection,
+                        context,
+                    ).getSuccess() ?: error("Failed to generate base artistic prompt")
+
+                // 3. REVIEWER CONCLUSION
+                val reviewedResult =
+                    reviewAndCorrectPrompt(
+                        imageType = imageType,
+                        visualDirection = visualDirection,
+                        genre = genre,
+                        finalPrompt = artisticPrompt,
+                        context = context,
+                    ).getSuccess()
+
+                reviewedResult?.let {
+                    Log.d(TAG, "⚖️ Final prompt reviewed.")
+                } ?: run {
+                    Log.e(TAG, "generateIntegratedImage: Failed to review")
+                }
+                val finalPrompt =
+
+                    "${GenrePrompts.renderingInstructions(genre)}\n" +
+                        (reviewedResult?.correctedPrompt ?: artisticPrompt)
+
+                val generatedImage = generateImage(finalPrompt, references = emptyList())
+
+                // Log.d(TAG, "generateIntegratedImage: Used reference: ${imageReference.second}")
+
+                if (generatedImage == null) {
+                    Log.e(TAG, "Failed to generate image")
+                } else {
+                    Log.i(TAG, "✅ Image successfully generated.")
+                }
+
+                generatedImage!!
+            }
+
+        private suspend fun generateVisualDirection(
+            context: String,
+            genre: Genre,
+            imageType: ImageType,
+        ) = executeRequest {
+            gemmaClient.generate<String>(
+                ImagePrompts.generateDirectorialVision(genre, context, imageType),
+                temperatureRandomness = 0.8f,
+                references = emptyList(),
+                requireTranslation = false,
+                requirement = GemmaClient.ModelRequirement.HIGH,
+            )!!
+        }
+
+        private suspend fun generateArtisticPrompt(
+            genre: Genre,
+            visualDirection: String?,
+            context: String,
+        ): RequestResult<String> =
+            executeRequest {
+                val prompt =
+                    ImagePrompts.generateArtistPrompt(
+                        genre,
+                        visualDirection,
+                        context,
+                    )
+
                 gemmaClient.generate<String>(
-                    ImagePrompts.extractComposition(),
-                    references = references,
+                    prompt,
+                    references = emptyList(),
                     requireTranslation = false,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+                    temperatureRandomness = 1f,
                 )!!
             }
+
+        private suspend fun reviewAndCorrectPrompt(
+            imageType: ImageType,
+            visualDirection: String?,
+            genre: Genre,
+            finalPrompt: String,
+            context: String,
+        ) = executeRequest {
+            val artStyleValidationRules = GenrePrompts.validationRules(genre)
+            val strictness = GenrePrompts.reviewerStrictness(genre)
+
+            val reviewerPrompt =
+                ImagePrompts.reviewImagePrompt(
+                    visualDirection,
+                    artStyleValidationRules,
+                    strictness,
+                    finalPrompt,
+                    genre,
+                    context,
+                )
+
+            Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
+            val review =
+                gemmaClient.generate<ImagePromptReview>(
+                    reviewerPrompt,
+                    references = emptyList(),
+                    requireTranslation = false,
+                    useCore = true,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+                )!!
+            Log.i(TAG, "✏️Prompt was modified by reviewer: ")
+            Log.i(TAG, review.toAINormalize())
+            Log.d(
+                TAG,
+                buildString {
+                    appendLine("Suggestions: ")
+                    appendLine("Artist Suggestion: ${review.artistImprovementSuggestions}")
+                    appendLine("Visual Suggestion: ${review.visualDirectorSuggestions}")
+                    appendLine("Rendering Suggestion: ${review.renderingSuggestions}")
+                },
+            )
+            trackImageQuality(
+                genre = genre.name,
+                imageType = imageType,
+                review = review,
+            )
+            review
+        }
+
+        private fun trackImageQuality(
+            genre: String,
+            imageType: ImageType,
+            review: ImagePromptReview,
+        ) {
+            val violationTypes =
+                review.violations
+                    .mapNotNull { it.type?.name }
+                    .distinct()
+                    .joinToString(", ")
+
+            analyticsService.trackEvent(
+                ImageQualityEvent(
+                    genre = genre,
+                    imageType = imageType.name,
+                    quality = review.getQualityLevel(),
+                    violations = review.violations.size,
+                    violationTypes = violationTypes.ifEmpty { null },
+                ),
+            )
+        }
     }

@@ -10,6 +10,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,7 +55,7 @@ import kotlinx.coroutines.delay
 fun CharacterRevealOverlay(
     character: CharacterContent?,
     sagaContent: SagaContent,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     if (character == null) return
 
@@ -74,118 +75,100 @@ fun CharacterRevealOverlay(
         onDismiss()
     }
 
-
-
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            decorFitsSystemWindows = false,
-            usePlatformDefaultWidth = false,
-        )
+        properties =
+            DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                decorFitsSystemWindows = false,
+                usePlatformDefaultWidth = false,
+            ),
     ) {
-
-
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .reactiveShimmer(true)
-                .clickable { onDismiss() },
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clickable { onDismiss() },
+            contentAlignment = Alignment.Center,
         ) {
             val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
             val rotation by infiniteTransition.animateFloat(
                 initialValue = 0f,
                 targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(3000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "rotation"
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(3000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "rotation",
             )
 
             val floatOffset by infiniteTransition.animateFloat(
                 initialValue = -10f,
                 targetValue = 10f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "floating"
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(2000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "floating",
             )
 
-            val shape = genre.bubble(
-                tailAlignment = BubbleTailAlignment.BottomLeft,
-                0.dp,
-                0.dp
-            )
+            val shape =
+                genre.bubble(
+                    tailAlignment = BubbleTailAlignment.BottomLeft,
+                    0.dp,
+                    0.dp,
+                )
 
             Box(
-                modifier = Modifier
-                    .padding(32.dp)
-                    .fillMaxWidth()
-                    .fillMaxHeight(.65f),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .padding(32.dp)
+                        .fillMaxWidth()
+                        .fillMaxHeight(.65f),
+                contentAlignment = Alignment.Center,
             ) {
                 Column(
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         "Um novo personagem juntou-se a história!",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center
-                        ),
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier = Modifier.padding(vertical = 8.dp),
                     )
-                    Box(Modifier
-                        .weight(1f)
-                        .offset(y = floatOffset.dp)) {
-                        Canvas(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .blur(15.dp)
-                        ) {
-                            drawRect(
-                                brush = object : ShaderBrush() {
-                                    override fun createShader(size: Size): Shader {
-                                        val shader =
-                                            (sweepGradient(brushColors) as ShaderBrush).createShader(
-                                                size
-                                            )
-                                        val matrix = Matrix()
-                                        matrix.setRotate(rotation, size.width / 2, size.height / 2)
-                                        shader.setLocalMatrix(matrix)
-                                        return shader
-                                    }
-                                },
-                                style = Stroke(width = 1.dp.toPx())
-                            )
-                        }
-
+                    Box(
+                        Modifier
+                            .reactiveShimmer(true)
+                            .weight(1f)
+                            .offset(y = floatOffset.dp),
+                    ) {
                         CharacterCard(
                             character = character,
                             sagaContent = sagaContent,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .dropShadow(
-                                    shape,
-                                    androidx.compose.ui.graphics.shadow.Shadow(
-                                        10.dp,
-                                        genre.gradient(),
-                                    ),
-                                )
-                                .clip(shape)
-                                .background(genre.color, shape),
-                            showWatermark = false
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .dropShadow(
+                                        shape,
+                                        androidx.compose.ui.graphics.shadow.Shadow(
+                                            10.dp,
+                                            genre.gradient(),
+                                        ),
+                                    ).clip(shape)
+                                    .border(1.dp, genre.gradient(), shape)
+                                    .background(genre.color, shape),
+                            showWatermark = false,
                         )
                     }
                 }
-
             }
         }
-
     }
 }

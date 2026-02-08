@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.playthrough
 
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
@@ -20,16 +22,18 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 @Composable
 fun AnimatedPlaytimeCounter(
     playtimeMs: Long,
     label: String,
-    genre: Genre? = null,
-    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
+    textStyle: TextStyle = MaterialTheme.typography.titleLarge,
+    labelStyle: TextStyle = MaterialTheme.typography.labelMedium,
+    animationDuration: Duration = 5.seconds,
+    onAnimationFinished: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val hours = (playtimeMs / 3600000).toInt()
@@ -40,8 +44,11 @@ fun AnimatedPlaytimeCounter(
 
     val animatedHours by animateIntAsState(
         targetValue = targetHours,
-        animationSpec = tween(durationMillis = 1000),
+        animationSpec = tween(durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS)),
         label = "hours_animation",
+        finishedListener = {
+            onAnimationFinished()
+        },
     )
 
     val animatedMinutes by animateIntAsState(
@@ -66,7 +73,6 @@ fun AnimatedPlaytimeCounter(
             text = "${animatedHours}h ${animatedMinutes}m",
             style =
                 textStyle.copy(
-                    fontFamily = genre?.headerFont(),
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                 ),
@@ -78,15 +84,53 @@ fun AnimatedPlaytimeCounter(
 
         Text(
             text = label,
-            style =
-                MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = genre?.bodyFont(),
-                    textAlign = TextAlign.Center,
-                ),
+            style = labelStyle,
             modifier =
                 Modifier
                     .padding(2.dp)
                     .alpha(0.7f),
         )
     }
+}
+
+@Composable
+fun CounterText(
+    count: Int,
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
+    animationDuration: Duration = 5.seconds,
+    animationEasing: Easing = EaseIn,
+    modifier: Modifier = Modifier,
+    onAnimationFinished: () -> Unit = {},
+) {
+    var counter by remember {
+        mutableIntStateOf(0)
+    }
+
+    val countAnimation by animateIntAsState(
+        targetValue = counter,
+        animationSpec =
+            tween(
+                durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS),
+                easing = animationEasing,
+            ),
+        finishedListener = {
+            onAnimationFinished()
+        },
+        label = "counter_animation",
+    )
+
+    Text(
+        text = countAnimation.toString(),
+        style = textStyle,
+        modifier = modifier,
+    )
+
+    LaunchedEffect(count) {
+        counter = count
+    }
+}
+
+enum class LabelOrientation {
+    VERTICAL,
+    HORIZONTAL,
 }

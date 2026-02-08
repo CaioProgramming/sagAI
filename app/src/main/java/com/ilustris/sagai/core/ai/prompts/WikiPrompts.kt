@@ -3,14 +3,11 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.MergeWiki
-import com.ilustris.sagai.features.wiki.data.model.MergeWikiGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
-import kotlin.collections.flatten
 
 object WikiPrompts {
     fun generateWiki(
@@ -107,7 +104,14 @@ object WikiPrompts {
             appendLine("- Ensure the merged item is clear, concise, and follows the Wiki structure: title, emoji, type, description, etc.")
             appendLine("- Do NOT merge items of different types or unrelated entities.")
             appendLine("- Do NOT include individual character entries in the output.")
-            appendLine("- Output only the consolidated list, with duplicates removed and merged items replacing them.")
+            appendLine("")
+            appendLine("CRITICAL OPTIMIZATION:")
+            appendLine("- ONLY include items in the output that actually need to be merged with another item.")
+            appendLine(
+                "- If a Wiki item is unique and has no duplicates or closely related items to merge with, DO NOT include it in the response.",
+            )
+            appendLine("- This keeps the response focused and efficient - only report items that require action.")
+            appendLine("- For items with no merge candidate, set 'secondItem' to an empty string (\"\") or null.")
             appendLine("")
             appendLine("EXISTING WIKI ITEMS TO ANALYZE")
             appendLine(
@@ -117,5 +121,7 @@ object WikiPrompts {
             )
             appendLine("REQUIRED OUTPUT:")
             appendLine("[ ${toJsonMap(MergeWiki::class.java, filteredFields = wikiExclusion)} ]")
+            appendLine("")
+            appendLine("REMINDER: Only output items that need merging. Empty list [] is valid if no merges are needed.")
         }
 }

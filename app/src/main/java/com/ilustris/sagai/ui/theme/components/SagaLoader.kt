@@ -100,19 +100,6 @@ fun SagaLoader(
     )
 }
 
-fun Modifier.glow(
-    color: Color,
-    radius: Float = Float.POSITIVE_INFINITY,
-) = this.background(
-    Brush.radialGradient(
-        listOf(
-            color,
-            Color.Transparent,
-        ),
-        radius = radius,
-    ),
-    CircleShape,
-)
 
 @Composable
 fun DistortingBubble(

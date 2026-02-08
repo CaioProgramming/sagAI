@@ -1,41 +1,20 @@
 package com.ilustris.sagai.features.wiki.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,12 +22,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.Typography
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientFade
 
 @Composable
@@ -58,17 +37,24 @@ fun WikiCard(
     modifier: Modifier,
     expanded: Boolean = false,
 ) {
+    val shape = genre.bubble(isNarrator = true, tailWidth = 0.dp, tailHeight = 0.dp)
     Column(
         modifier =
             modifier
-                ,
+                .border(
+                    width = 1.dp,
+                    brush = genre.color.gradientFade(),
+                    shape = shape,
+                ).clip(shape)
+                .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         val tag = wiki.emojiTag ?: emptyString()
 
         Text(
             text = "${tag.plus(" ")}${wiki.title}",
             style =
-                Typography.titleSmall.copy(
+                Typography.bodyLarge.copy(
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = genre.bodyFont(),
                 ),
@@ -78,11 +64,10 @@ fun WikiCard(
             Text(
                 text = wiki.content,
                 style =
-                    Typography.bodySmall.copy(
+                    Typography.labelMedium.copy(
                         fontFamily = genre.bodyFont(),
                     ),
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }

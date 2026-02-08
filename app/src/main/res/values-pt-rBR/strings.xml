@@ -43,6 +43,10 @@
     <string name="sender_type_character_hint">Pergunte algo a um personagem específico…</string>
     <string name="sender_type_default_hint">Digite sua mensagem…</string>
 
+    <!-- Expressive Tags -->
+    <string name="tag_inside_hint">Modo &lt;%1$s&gt;</string>
+    <string name="tag_exit_instruction">Pressione ↵ para sair</string>
+
     <!-- CharacterForm: Image Content Description -->
     <string name="character_form_image_content_description">Silhueta do personagem</string>
 
@@ -172,6 +176,7 @@
     <string name="home_new_chat_start_button">Começar</string>
     <string name="no_internet_connection_title">Sem conexão de internet</string>
     <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="continue_to_saga">Ver saga</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
     <string name="notification_title">Nova mensagem em %s</string>
@@ -271,8 +276,8 @@
     <string name="send_message_cd">Enviar mensagem</string>
     <string name="character_cd">Personagem</string>
     <string name="chapter_in_progress">Capítulo em andamento...</string>
-    <string name="events_count">%d de %d eventos</string>
-    <string name="messages_count">%d de %d mensagens</string>
+    <string name="events_count">%1$d de %2$d eventos</string>
+    <string name="messages_count">%1$d de %2$d mensagens</string>
     <string name="see_full_story">Veja sua história completa</string>
     <string name="inner_journey">Jornada Interior</string>
     <string name="inner_journey_description">Sua história não está apenas no que você fez, mas em como você sentiu.</string>
@@ -295,9 +300,12 @@
     <string name="chapter_title_template">Capítulo %s</string>
     <string name="act_title_template">Ato %s</string>
     <string name="restore_sagas">Restaurar histórias</string>
+    <string name="import_saga">Importar saga</string>
+    <string name="import_saga_description">Você pode importar sagas exportadas e recuperar seu histórico.</string>
     <string name="updates_count">%d Atualizações</string>
     <string name="last_update">Última atualização</string>
     <string name="chat_view_subtitle">Ato %1$s - Capítulo %2$s</string>
+    <string name="continue_to_play">Continue a explorar suas sagas para saber mais sobre seu estilo de jogo</string>
     <string name="backup_enabled_label">Backup Ativado</string>
     <string name="backup_disabled_label">Backup Desativado</string>
     <string name="backup_enabled_message">Sua saga está sendo salva automaticamente</string>
@@ -308,11 +316,14 @@
     <string name="recap_chapters_lived">%d capítulos vividos</string>
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
+    <string name="character_details_aka">vulgo: %s</string>
+    <string name="read_more">Ler mais...</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
     <string name="message_effects">Efeitos de Mensagem</string>
     <string name="message_effects_description">Dê vida à sua história com animações dinâmicas que refletem o clima de cada momento</string>
 
     <!-- BackupViewModel: Mensagens de Status e Erro -->
+    <string name="character_events">Eventos de personagens</string>
     <string name="backup_loading_recovering_content">Recuperando conteúdo...</string>
     <string name="backup_error_recovery_failed">Ocorreu um erro inesperado, não foi possível recuperar os conteúdos de backup :(</string>
     <string name="backup_message_all_good">Parece que está tudo em ordem!</string>
@@ -323,7 +334,7 @@
     <string name="backup_loading_restoring_saga">Restaurando %s...</string>
 
     <!-- Conversation Snippet Sharing -->
-    <string name="messages_selected">%d de %d mensagens selecionadas</string>
+    <string name="messages_selected">%1$d de %2$d mensagens selecionadas</string>
     <string name="share">Compartilhar</string>
     <string name="cancel">Cancelar</string>
 
@@ -338,7 +349,7 @@
     <string name="notification_new_chapter">Novo Capítulo</string>
     <string name="notification_new_chapter_content">Capítulo %s começou!</string>
     <string name="notification_new_act">Novo Ato</string>
-    <string name="notification_new_act_content">Ato %s: %s</string>
+    <string name="notification_new_act_content">Ato %1$s: %2$s</string>
     <string name="notification_new_character">Novo Personagem</string>
     <string name="notification_new_character_content">%s entrou para a história!</string>
     <string name="notification_timeline_event">Atualização da Linha do Tempo</string>
@@ -347,4 +358,156 @@
     <string name="notification_milestone_content">Você alcançou um novo marco!</string>
     <string name="playtime_title">Tempo de Jogo</string>
     <string name="your_playthrough_title">Sua jornada</string>
+
+    <!-- Audio Recording -->
+    <string name="mic_permission_description">Para melhorar sua experiência, precisamos da sua permissão de gravação para transcrever áudios</string>
+    <string name="tap_to_record">Toque no microfone para começar a gravar</string>
+    <string name="listening">Ouvindo...</string>
+    <string name="transcription_complete">Transcrição concluída</string>
+    <string name="transcription_error">Erro na transcrição</string>
+    <string name="unknown_error">Erro desconhecido ocorreu</string>
+
+    <!-- Audio Message Player -->
+    <string name="see_transcription">Ver transcrição</string>
+    <string name="hide_transcription">Ocultar transcrição</string>
+
+    <!-- Backup -->
+    <string name="recover_backup_sheet_title">Backups</string>
+    <string name="recover_backup_sheet_description">Encontramos algumas histórias perdidas, que tal recuperarmos?</string>
+    <string name="recover_backup_sheet_button_recover_all">Restaurar todas as histórias</string>
+    <string name="smart_notification_fallback">Eu estava pensando em nossa história, vamos continuar quando você tiver tempo.</string>
+    <string name="notification_progress_subtext">%1$d%% • Ato %2$s de %3$s</string>
+    <string name="mic_permission_title">Permissão de gravar áudio</string>
+    <string name="show_transcription">Ver transcrição</string>
+    <string name="your_playthrough_subtitle">Descubra seu estilo de joogo</string>
+    <string name="total_playtime_label">Tempo Total de Jogo</string>
+    <string name="playthrough_message_title">Análise de Estilo</string>
+    <string name="new_characters_label">Novos personagens</string>
+
+    <!-- FAQ -->
+    <string name="faq_loading_message">Buscando informações...</string>
+    <string name="faq_ai_loading_message">Consultando o Mestre da Saga...</string>
+    <string name="faq_ai_reply_button">Entendido!</string>
+    <string name="faq_title">FAQ</string>
+    <string name="faq_search_placeholder">Pesquisar dúvidas...</string>
+    <string name="faq_empty_state_title">Não encontramos o que você procura...</string>
+    <string name="faq_ask_ai_button">Perguntar ao Mestre da Saga</string>
+    <string name="faq_ask_ai_footer">Ainda em dúvida? Pergunte ao Mestre da Saga</string>
+
+    <!-- Settings Help Center -->
+    <string name="settings_help_center_title">Ajuda e feedback</string>
+    <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
+    <string name="new_event_milestone_title">Novo evento</string>
+
+    <!-- Milestone Overlay -->
+    <string name="milestone_encouragement">Parabéns! Continue assim!</string>
+    <string name="continue_button">Continuar</string>
+    <string name="introduction_milestone">Introdução</string>
+    <string name="create_character">Ver personagem</string>
+
+    <string name="saga_intro_fallback">Bem-vindo! Vamos começar a criar sua saga épica. Que tipo de história você quer contar\?</string>
+    <string name="character_intro_fallback">Tudo pronto, vamos dar vida ao seu personagem! Quem vamos criar hoje\?</string>
+    <string name="saga_input_hint_fallback">Descreva sua história…</string>
+    <string name="character_input_hint_fallback">Descreva seu personagem…</string>
+
+    <!-- Chat Edit/Delete Actions -->
+    <string name="edit_message">Editar</string>
+    <string name="delete_message">Apagar</string>
+    <string name="copy_message">Copiar</string>
+    <string name="select_message">Selecionar</string>
+    <string name="delete_message_title">Apagar mensagem?</string>
+    <string name="delete_message_description">Esta ação não pode ser desfeita.</string>
+    <string name="delete">Apagar</string>
+    <string name="editing_message">Editando mensagem...</string>
+    <string name="message_deleted_regenerate">Mensagem apagada. Você pode regenerar a resposta da IA.</string>
+
+    <!-- Milestone Fallback Messages -->
+    <string name="milestone_introduction_fallback_message">A história continua...</string>
+
+    <!-- Character Fallbacks -->
+    <string name="milestone_fallback_new_character_fantasy">Uma nova alma se junta à sua lenda!</string>
+    <string name="milestone_fallback_new_character_cyberpunk">Novo aliado na rede!</string>
+    <string name="milestone_fallback_new_character_space_opera">Uma nova estrela em sua tripulação!</string>
+    <string name="milestone_fallback_new_character_horror">Outro entra na escuridão...</string>
+    <string name="milestone_fallback_new_character_cowboy">Novo viajante na trilha!</string>
+    <string name="milestone_fallback_new_character_shinobi">Uma nova sombra caminha com você!</string>
+    <string name="milestone_fallback_new_character_heroes">Um novo herói surge!</string>
+    <string name="milestone_fallback_new_character_crime">Novo jogador no jogo!</string>
+    <string name="milestone_fallback_new_character_punk_rock">Sangue novo na equipe!</string>
+
+    <!-- Event Fallbacks -->
+    <string name="milestone_fallback_new_event_fantasy">Sua saga se torna mais rica!</string>
+    <string name="milestone_fallback_new_event_cyberpunk">Dados registrados. Continue!</string>
+    <string name="milestone_fallback_new_event_space_opera">Sua odisseia continua!</string>
+    <string name="milestone_fallback_new_event_horror">Você segue em frente!</string>
+    <string name="milestone_fallback_new_event_cowboy">A lenda vive!</string>
+    <string name="milestone_fallback_new_event_shinobi">Seu caminho se revela!</string>
+    <string name="milestone_fallback_new_event_heroes">A justiça prevalece!</string>
+    <string name="milestone_fallback_new_event_crime">O caso se aprofunda!</string>
+    <string name="milestone_fallback_new_event_punk_rock">Sua rebeldia ecoa!</string>
+
+    <!-- Chapter Fallbacks -->
+    <string name="milestone_fallback_chapter_finished_fantasy">Um capítulo se fecha em esplendor!</string>
+    <string name="milestone_fallback_chapter_finished_cyberpunk">Capítulo arquivado. Qual o próximo?</string>
+    <string name="milestone_fallback_chapter_finished_space_opera">Setor limpo!</string>
+    <string name="milestone_fallback_chapter_finished_horror">Você sobreviveu!</string>
+    <string name="milestone_fallback_chapter_finished_cowboy">Trilha conquistada!</string>
+    <string name="milestone_fallback_chapter_finished_shinobi">Este caminho se completa!</string>
+    <string name="milestone_fallback_chapter_finished_heroes">Capítulo completo, campeão!</string>
+    <string name="milestone_fallback_chapter_finished_crime">Caso encerrado!</string>
+    <string name="milestone_fallback_chapter_finished_punk_rock">A música acabou. Próxima faixa!</string>
+
+    <!-- Act Fallbacks -->
+    <string name="milestone_fallback_act_finished_fantasy">Uma era termina, um novo tempo começa!</string>
+    <string name="milestone_fallback_act_finished_cyberpunk">Ato encerrado. Subindo de nível!</string>
+    <string name="milestone_fallback_act_finished_space_opera">Setor conquistado!</string>
+    <string name="milestone_fallback_act_finished_horror">Você escapou do pesadelo!</string>
+    <string name="milestone_fallback_act_finished_cowboy">Território reivindicado!</string>
+    <string name="milestone_fallback_act_finished_shinobi">Treinamento concluído!</string>
+    <string name="milestone_fallback_act_finished_heroes">Arco completo!</string>
+    <string name="milestone_fallback_act_finished_crime">Operação encerrada!</string>
+    <string name="milestone_fallback_act_finished_punk_rock">O show acabou! Bis?</string>
+
+    <!-- Objective Fallbacks -->
+    <string name="milestone_fallback_current_objective_fantasy">Sua missão o aguarda!</string>
+    <string name="milestone_fallback_current_objective_cyberpunk">Briefing da missão carregado!</string>
+    <string name="milestone_fallback_current_objective_space_opera">Novas coordenadas travadas!</string>
+    <string name="milestone_fallback_current_objective_horror">Seu destino está selado...</string>
+    <string name="milestone_fallback_current_objective_cowboy">Nova trilha à frente!</string>
+    <string name="milestone_fallback_current_objective_shinobi">Sua missão começa!</string>
+    <string name="milestone_fallback_current_objective_heroes">O dever chama!</string>
+    <string name="milestone_fallback_current_objective_crime">Nova pista adquirida!</string>
+    <string name="milestone_fallback_current_objective_punk_rock">Próximo show agendado!</string>
+
+    <!-- Loading Fallbacks -->
+    <string name="milestone_fallback_loading_fantasy">Consultando os pergaminhos antigos e afiando as profecias...</string>
+    <string name="milestone_fallback_loading_cyberpunk">Calibrando o link neural e depurando a cidade...</string>
+    <string name="milestone_fallback_loading_space_opera">Calculando coordenadas de salto hiperespacial pelo vácuo...</string>
+    <string name="milestone_fallback_loading_horror">A escuridão está mudando. Algo está à espreita...</string>
+    <string name="milestone_fallback_loading_cowboy">Selando os cavalos e checando o horizonte...</string>
+    <string name="milestone_fallback_loading_shinobi">Preparando a próxima missão silenciosa...</string>
+    <string name="milestone_fallback_loading_heroes">Organizando o desafio e polindo a capa...</string>
+    <string name="milestone_fallback_loading_crime">Conectando as evidências e percorrendo as ruas noir...</string>
+    <string name="milestone_fallback_loading_punk_rock">Afinando os amplificadores e conferindo o setlist...</string>
+    <string name="regenerate">Regenerar</string>
+    <string name="save_changes">Salvar alterações</string>
+
+    <!-- Extracted Strings -->
+    <string name="milestone_overlay_important_characters_title">Personagens mais importantes</string>
+    <string name="review_restart_button">Recomeçar</string>
+
+    <!-- Review Summary Page -->
+    <string name="review_summary_title">Nossa História, Recontada</string>
+    <string name="review_stage_expressiveness_title">Sua Vibe</string>
+    <string name="review_stage_expressiveness_subtitle_default">Sua marca emocional</string>
+    <string name="review_stage_playstyle_title">Seu Estilo</string>
+    <string name="review_stage_playstyle_subtitle_default">Como você agiu</string>
+    <string name="review_stage_characters_title">O Elenco</string>
+    <string name="review_stage_characters_subtitle_default">Seu Squad</string>
+    <string name="review_stage_journey_title">A Jornada</string>
+    <string name="review_stage_journey_subtitle_default">O caminho que fizemos</string>
+    <string name="review_stage_conclusion_title">O Legado</string>
+    <string name="review_stage_conclusion_subtitle_default">O que ficou</string>
 </resources>
+
+

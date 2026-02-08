@@ -90,7 +90,7 @@ fun Class<*>.toSchema(
 fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String, Schema> =
     declaredFields
         .filter {
-            excludeFields.plus("\$stable").contains(it.name).not()
+            excludeFields.plus($$"$stable").contains(it.name).not()
         }.associate {
             val memberIsNullable =
                 this
@@ -121,6 +121,19 @@ fun toJsonMap(
     filteredFields: List<String> = emptyList(),
     fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
+    when {
+        clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
+        clazz == String::class.java -> return "\"string\""
+        clazz == Int::class.java || clazz == Integer::class.java -> return "0"
+        clazz == Boolean::class.java -> return "false | true"
+        clazz == Double::class.java -> return "0.0"
+        clazz == Float::class.java -> return "0.0"
+        clazz == Long::class.java -> return "0"
+        clazz == Byte::class.java -> return "0"
+        clazz == Short::class.java -> return "0"
+        clazz == Char::class.java -> return "\"string\""
+    }
+
     val deniedFields =
         filteredFields
             .plus("\$stable")
@@ -135,20 +148,58 @@ fun toJsonMap(
                 val fieldType = field.type
                 val fieldValue =
                     when {
-                        fieldType.isEnum -> "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
-                        fieldType == String::class.java -> "\"\""
-                        fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
-                        fieldType == Boolean::class.java -> "false"
-                        fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0"
-                        fieldType == Long::class.java -> "0"
+                        fieldType.isEnum -> {
+                            "${fieldType.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
+                        }
+
+                        fieldType == String::class.java -> {
+                            "\"string\""
+                        }
+
+                        fieldType == Int::class.java || fieldType == Integer::class.java -> {
+                            "0"
+                        }
+
+                        fieldType == Boolean::class.java -> {
+                            "false"
+                        }
+
+                        fieldType == Double::class.java -> {
+                            "0.0"
+                        }
+
+                        fieldType == Float::class.java -> {
+                            "0.0"
+                        }
+
+                        fieldType == Long::class.java -> {
+                            "0"
+                        }
+
                         List::class.java.isAssignableFrom(fieldType) ||
                             Array::class.java.isAssignableFrom(
                                 fieldType,
                             )
-                        -> "[]"
+                        -> {
+                            // Extract generic type parameter from List/Array
+                            val genericType = field.genericType as? ParameterizedType
+                            val itemType =
+                                genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
 
-                        else -> toJsonMap(fieldType)
+                            if (itemType != null) {
+                                // Recursively get the structure - works for both primitives and complex objects
+                                val itemJson =
+                                    toJsonMap(itemType, filteredFields, fieldCustomDescriptions)
+                                "[ $itemJson ]"
+                            } else {
+                                // Unknown type - just show empty array
+                                "[]"
+                            }
+                        }
+
+                        else -> {
+                            toJsonMap(fieldType, filteredFields, fieldCustomDescriptions)
+                        }
                     }
                 val customDescription =
                     fieldCustomDescriptions.find { it.first == field.name }
@@ -206,7 +257,8 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     return gson.toJson(this)
 }
 
-fun doNothing() = {}
+fun doNothing() {
+}
 
 enum class DateFormatOption(
     val pattern: String,
@@ -234,7 +286,7 @@ fun Long.formatHours(): String {
     return format.format(date)
 }
 
-fun String?.sanitizeAndExtractJsonString(): String {
+fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
     if (this.isNullOrBlank()) {
         Log.w(logTag, "Input string is null or blank, cannot sanitize.")
@@ -285,8 +337,14 @@ fun String?.sanitizeAndExtractJsonString(): String {
                 escaped = false
             } else {
                 when (c) {
-                    '\\' -> escaped = true
-                    '"' -> inString = !inString
+                    '\\' -> {
+                        escaped = true
+                    }
+
+                    '"' -> {
+                        inString = !inString
+                    }
+
                     else -> {
                         if (!inString) {
                             if (c == open) {
@@ -312,16 +370,32 @@ fun String?.sanitizeAndExtractJsonString(): String {
             if (endIndex != -1) {
                 cleanedJsonString = cleanedJsonString.substring(0, endIndex + 1)
             } else {
-                Log.e(
-                    logTag,
-                    "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
-                )
-                throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
+                // Fallback: Check if the string ends with the expected closing bracket
+                // This handles cases where internal malformation (like missing quotes) breaks the strict parser
+                val expectedClose = if (startChar == '{') '}' else ']'
+                if (cleanedJsonString.trim().lastOrNull() == expectedClose) {
+                    Log.w(
+                        logTag,
+                        "Strict JSON parsing failed (likely due to malformed content), but found closing bracket '$expectedClose'. Proceeding with full string.",
+                    )
+                } else {
+                    Log.e(
+                        logTag,
+                        "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
+                    )
+                    throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
+                }
             }
         }
     }
 
-    // 5. Remove trailing commas before closing braces/brackets (common issue)
+    // 5. Repair JSON structure (fix missing quotes) BEFORE processing commas
+    //    This ensures that the comma removal logic (which depends on string state) works correctly
+    if (expectedClass != null && cleanedJsonString.isNotBlank()) {
+        cleanedJsonString = repairJsonStructure(cleanedJsonString, expectedClass)
+    }
+
+    // 6. Remove trailing commas before closing braces/brackets (common issue)
     //    Example: { "a": 1, "b": 2, }  -> { "a": 1, "b": 2 }
     // Use a scanner to ensure commas inside strings are not removed.
     run {
@@ -367,8 +441,15 @@ fun String?.sanitizeAndExtractJsonString(): String {
         cleanedJsonString = sb.toString()
     }
 
-    // 6. Remove any remaining problematic backticks (final cleanup)
+    // 7. Remove any remaining problematic backticks (final cleanup)
     cleanedJsonString = cleanedJsonString.replace("`", "")
+
+    // 8. Remove duplicate quotes that may have been created during repair
+    //    But preserve empty string values (e.g., "field": "")
+    //    Only remove when we have 3+ consecutive quotes or malformed patterns
+    cleanedJsonString =
+        cleanedJsonString.replace("\"\"\"", "\"\"") // Convert triple quotes to double
+    // Note: We intentionally do NOT replace "" -> " because "" is a valid empty string in JSON
 
     Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
     if (cleanedJsonString.isBlank()) {
@@ -376,6 +457,281 @@ fun String?.sanitizeAndExtractJsonString(): String {
         throw IllegalArgumentException("Resulting JSON string is blank after sanitization.")
     }
     return cleanedJsonString
+}
+
+private fun repairJsonStructure(
+    json: String,
+    clazz: Class<*>,
+): String {
+    var currentJson = json
+    try {
+        val fields = getRecursiveFields(clazz)
+        fields.forEach { (name, type) ->
+            if (type == String::class.java) {
+                val pattern = Regex("\"$name\"\\s*:\\s*")
+                var startIndex = 0
+                while (true) {
+                    val match = pattern.find(currentJson, startIndex) ?: break
+                    val valueStartRaw = match.range.last + 1
+
+                    var charIndex = valueStartRaw
+                    while (charIndex < currentJson.length && currentJson[charIndex].isWhitespace()) {
+                        charIndex++
+                    }
+
+                    if (charIndex < currentJson.length) {
+                        val firstChar = currentJson[charIndex]
+
+                        // Check if this is a JSON literal (null, true, false) or number - don't quote these
+                        val remainingText = currentJson.substring(charIndex)
+                        val isJsonLiteral =
+                            remainingText.startsWith("null") ||
+                                remainingText.startsWith("true") ||
+                                remainingText.startsWith("false") ||
+                                firstChar.isDigit() ||
+                                firstChar == '-'
+
+                        if (isJsonLiteral) {
+                            // Skip this field - it's a valid JSON literal, not a string needing quotes
+                            // Find the end of the literal (comma, newline, or closing brace)
+                            var literalEnd = charIndex
+                            while (literalEnd < currentJson.length) {
+                                val c = currentJson[literalEnd]
+                                if (c == ',' || c == '}' || c == ']' || c == '\n' || c == '\r') {
+                                    break
+                                }
+                                literalEnd++
+                            }
+                            startIndex = literalEnd + 1
+                            continue // Continue to find next occurrence of this field
+                        }
+
+                        val needsOpeningQuote = firstChar != '"'
+
+                        if (needsOpeningQuote) {
+                            Log.w(
+                                "JsonRepair",
+                                "Repairing JSON: Found missing opening quote for field '$name' at index $charIndex",
+                            )
+                            currentJson =
+                                currentJson.substring(0, charIndex) + "\"" +
+                                currentJson.substring(charIndex)
+                            charIndex++ // Account for the inserted quote
+                        }
+
+                        if (!needsOpeningQuote) {
+                            // Original had opening quote - scan for proper closing quote
+                            var valueEndIndex = charIndex + 1
+                            var escaped = false
+                            while (valueEndIndex < currentJson.length) {
+                                val c = currentJson[valueEndIndex]
+
+                                if (escaped) {
+                                    escaped = false
+                                    valueEndIndex++
+                                    continue
+                                }
+
+                                when (c) {
+                                    '\\' -> {
+                                        escaped = true
+                                    }
+
+                                    '"' -> {
+                                        // Found closing quote
+                                        break
+                                    }
+                                }
+                                valueEndIndex++
+                            }
+                            // Advance past this field
+                            startIndex = valueEndIndex + 1
+                        } else {
+                            // We added opening quote - need to find where to put closing quote
+                            // For an unquoted string, we need to find the STRUCTURAL end:
+                            // - A newline followed by another field name pattern ("fieldName":)
+                            // - A closing brace } at the end of the object
+                            // - A closing bracket ] at the end of an array
+
+                            val endPosition = findUnquotedStringEnd(currentJson, charIndex + 1)
+
+                            if (endPosition > charIndex + 1) {
+                                // The endPosition might include trailing whitespace and possibly an existing quote
+                                // We need to find the actual last content character and check if there's a quote after it
+
+                                var lastContentPos = endPosition - 1
+                                var trailingQuotePos = -1
+
+                                // Scan backwards to find: last content char, and any trailing quote
+                                // Pattern we're looking for: <content><optional_whitespace><optional_quote><optional_whitespace>
+                                var scanPos = endPosition - 1
+                                var foundContent = false
+                                var foundQuoteAfterContent = false
+
+                                while (scanPos >= charIndex) {
+                                    val ch = currentJson[scanPos]
+
+                                    if (!foundContent) {
+                                        // Still looking for the last real content
+                                        if (ch == '"') {
+                                            // Found a quote before any content - this is likely the trailing quote
+                                            trailingQuotePos = scanPos
+                                            scanPos--
+                                            continue
+                                        } else if (ch.isWhitespace()) {
+                                            // Skip whitespace
+                                            scanPos--
+                                            continue
+                                        } else {
+                                            // Found actual content character
+                                            foundContent = true
+                                            lastContentPos =
+                                                scanPos + 1 // Position AFTER the last content char
+                                            if (trailingQuotePos != -1) {
+                                                foundQuoteAfterContent = true
+                                            }
+                                            break
+                                        }
+                                    }
+                                }
+
+                                if (foundQuoteAfterContent) {
+                                    // There's an existing trailing quote - remove everything from lastContentPos onwards
+                                    // and add our own quote
+                                    Log.d(
+                                        "JsonRepair",
+                                        "Field '$name' has existing closing quote at index $trailingQuotePos after content at $lastContentPos, cleaning up",
+                                    )
+                                    currentJson = currentJson.substring(0, lastContentPos) +
+                                        "\"" +
+                                        currentJson.substring(endPosition)
+                                    startIndex = lastContentPos + 2
+                                } else {
+                                    // No existing quote found, just add the closing quote at the right position
+                                    Log.w(
+                                        "JsonRepair",
+                                        "Repairing JSON: Adding missing closing quote for field '$name' at index $lastContentPos",
+                                    )
+                                    currentJson =
+                                        currentJson.substring(0, lastContentPos) + "\"" +
+                                        currentJson.substring(lastContentPos)
+                                    startIndex = lastContentPos + 2
+                                }
+                            } else {
+                                startIndex = endPosition + 1
+                            }
+                        }
+                    } else {
+                        break
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("JsonRepair", "Failed to repair JSON structure: ${e.message}")
+    }
+    return currentJson
+}
+
+/**
+ * Find the end position of an unquoted string value.
+ *
+ * This looks for structural JSON delimiters that indicate the end of the value:
+ * - A newline followed by "fieldName": pattern (next field)
+ * - A closing brace } (end of object)
+ * - End of string
+ *
+ * We can't rely on commas because the text content itself may contain commas.
+ */
+private fun findUnquotedStringEnd(
+    json: String,
+    startIndex: Int,
+): Int {
+    // Strategy: Look for patterns that indicate we've left the string value
+    // 1. Look for `\n  "fieldName":` pattern (next field in JSON)
+    // 2. Look for `\n}` pattern (end of object)
+    // 3. Look for the last non-whitespace character before `}` or end
+
+    var i = startIndex
+    var lastContentIndex = startIndex
+
+    while (i < json.length) {
+        val c = json[i]
+
+        // Track the last non-whitespace position
+        if (!c.isWhitespace()) {
+            lastContentIndex = i + 1
+        }
+
+        // Check if we hit a newline - potential field boundary
+        if (c == '\n' || c == '\r') {
+            // Look ahead for next field pattern or closing brace
+            var lookAhead = i + 1
+            while (lookAhead < json.length && json[lookAhead].isWhitespace() && json[lookAhead] != '\n') {
+                lookAhead++
+            }
+
+            if (lookAhead < json.length) {
+                // Check for closing brace (end of object)
+                if (json[lookAhead] == '}') {
+                    // Find the last non-whitespace before the newline
+                    var endPos = i
+                    while (endPos > startIndex && json[endPos - 1].isWhitespace()) {
+                        endPos--
+                    }
+                    return endPos
+                }
+
+                // Check for next field pattern: "fieldName":
+                if (json[lookAhead] == '"') {
+                    // This looks like the start of a new field
+                    val nextFieldPattern = Regex("\"([^\"]+)\"\\s*:")
+                    val potentialMatch = nextFieldPattern.find(json, lookAhead)
+                    if (potentialMatch != null && potentialMatch.range.first == lookAhead) {
+                        // Confirmed: this is a new field, so our string ends before the newline
+                        var endPos = i
+                        while (endPos > startIndex && json[endPos - 1].isWhitespace()) {
+                            endPos--
+                        }
+                        return endPos
+                    }
+                }
+            }
+        }
+
+        // Check for } that might be at same line (compact JSON)
+        if (c == '}' || c == ']') {
+            // This could be end of object - but we need to be careful
+            // Check if there's a comma before this (indicating we're at field boundary)
+            var checkBack = i - 1
+            while (checkBack > startIndex && json[checkBack].isWhitespace()) {
+                checkBack--
+            }
+            // Return position just before any trailing whitespace and the brace
+            return checkBack + 1
+        }
+
+        i++
+    }
+
+    // If we reach here, return the last content position
+    return lastContentIndex
+}
+
+private fun getRecursiveFields(
+    clazz: Class<*>,
+    visited: MutableSet<Class<*>> = mutableSetOf(),
+): Map<String, Class<*>> {
+    if (clazz in visited || clazz.isPrimitive || clazz == String::class.java || clazz.isEnum) return emptyMap()
+    visited.add(clazz)
+    val fields = mutableMapOf<String, Class<*>>()
+    clazz.declaredFields.forEach { field ->
+        fields[field.name] = field.type
+        if (!field.type.isPrimitive && field.type != String::class.java && !field.type.isEnum) {
+            fields.putAll(getRecursiveFields(field.type, visited))
+        }
+    }
+    return fields
 }
 
 fun Int.toRoman(): String {
@@ -422,7 +778,7 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
 
             val valueString =
                 when (value) {
-                    is List<*> ->
+                    is List<*> -> {
                         if (value.isEmpty()) {
                             ""
                         } else {
@@ -430,8 +786,9 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                                 fieldsToExclude,
                             )
                         }
+                    }
 
-                    is Array<*> ->
+                    is Array<*> -> {
                         if (value.isEmpty()) {
                             ""
                         } else {
@@ -439,9 +796,20 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                                 fieldsToExclude,
                             )
                         }
+                    }
 
-                    is String -> value
-                    is Enum<*> -> value.toString()
+                    is String -> {
+                        if (value.length > 500) {
+                            "${value.take(497)}..."
+                        } else {
+                            value
+                        }
+                    }
+
+                    is Enum<*> -> {
+                        value.toString()
+                    }
+
                     else -> {
                         if (value::class.isData) {
                             val normalized = value.toAINormalize(fieldsToExclude)
@@ -468,5 +836,4 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                 "${field.name}$itemsSize: $valueString"
             }
         }.joinToString("\n")
-
 }

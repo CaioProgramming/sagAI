@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.characters.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
@@ -45,9 +46,9 @@ data class CharacterContent(
                 it.characterTwo.id == characterId
         }
 
-    fun summarizeRelationships() =
+    fun summarizeRelationships(threshold: Int = UpdateRules.CHAPTER_UPDATE_LIMIT) =
         relationships.sortedBy { it.relationshipEvents.size }.joinToString(";\n") {
-            it.summarizeRelation()
+            it.summarizeRelation(threshold)
         }
 
     fun rankRelationships() = relationships.sortedByDescending { it.relationshipEvents.size }
@@ -66,3 +67,5 @@ data class CharacterContent(
                 it.copy(relationshipEvents = it.sortedByEvents(timeLineEvents))
             }.filter { it.relationshipEvents.isNotEmpty() }
 }
+
+fun Character.fullName() = "$name ${lastName ?: ""}".trim()

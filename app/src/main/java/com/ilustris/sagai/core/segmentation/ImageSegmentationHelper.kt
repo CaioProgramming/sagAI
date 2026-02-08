@@ -51,8 +51,11 @@ class ImageSegmentationHelper(
             bitmap to segmenter.process(image).await()?.foregroundBitmap!!
         }
 
-    suspend fun calculateSmartZoom(url: String): RequestResult<SmartZoom> =
+    suspend fun calculateSmartZoom(url: String): RequestResult<SmartZoom?> =
         executeRequest {
+            if (url.isBlank()) {
+                return@executeRequest null
+            }
             val imageLoader = ImageLoader(context)
             val request =
                 ImageRequest
@@ -100,21 +103,21 @@ class ImageSegmentationHelper(
             val subjectWidthRatio = subjectRect.width() / imageWidth
             val subjectHeightRatio = subjectRect.height() / imageHeight
 
-            val needsZoom = subjectWidthRatio < 0.65f || subjectHeightRatio < 0.65f
+            val needsZoom = subjectWidthRatio < 0.3f || subjectHeightRatio < 0.2f
 
             val requiredZoom =
                 if (needsZoom) {
                     val scale =
                         max(imageWidth / subjectRect.width(), imageHeight / subjectRect.height())
-                    val finalScale = scale.coerceAtMost(2.0f)
+                    val finalScale = scale.coerceAtMost(1.5f)
 
-                    val scaledSubjectWidth = subjectRect.width() * finalScale
-                    val scaledSubjectHeight = subjectRect.height() * finalScale
+                    subjectRect.width() * finalScale
+                    subjectRect.height() * finalScale
 
                     val subjectCenterX = subjectRect.centerX()
                     // Focus on the upper body/face area (approx top 25%) rather than the geometric center (waist/torso)
                     // This is optimized for vertical character portraits (9:16)
-                    val subjectFaceY = subjectRect.top + (subjectRect.height() * .05f)
+                    val subjectFaceY = subjectRect.top + (subjectRect.height() * .2f)
 
                     // Calculate the distance from image center to subject center/face
                     val dx = (imageWidth / 2) - subjectCenterX
@@ -142,7 +145,7 @@ class ImageSegmentationHelper(
                         needsZoom = true,
                     )
                 } else {
-                    SmartZoom(needsZoom = false)
+                    null
                 }
             Log.i(javaClass.simpleName, "calculateSmartZoom: Zoom result: ")
             Log.i(javaClass.simpleName, requiredZoom.toJsonFormat())

@@ -65,13 +65,19 @@ fun BackupSheet(
                         onDismiss()
                     },
                 )
-            is BackupUiState.ShowBackups ->
-                RecoverBackupSheet(it.backups.isNotEmpty() && displayBackups, it.backups, onRequestRecover = {
-                    viewModel.restoreSaga(it)
-                }, onRecoverAll = { viewModel.restoreAllBackups(it) }, onDismiss = {
-                    viewModel.dismiss()
-                    onDismiss()
+
+            is BackupUiState.ShowBackups -> {
+                DatabaseRestoreSheet(
+                    it.backups.isNotEmpty() && displayBackups,
+                    it.backups,
+                    onRequestRestore = {
+                        viewModel.restoreDatabase(it)
+                    },
+                    onDismiss = {
+                        viewModel.dismiss()
+                        onDismiss()
                 })
+            }
         }
     }
 

@@ -35,8 +35,8 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
-import jakarta.inject.Inject
 import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
 interface SagaBackupService {
     suspend fun restoreContent(sagaContent: RestorableSaga): RequestResult<SagaContent>
@@ -89,8 +89,10 @@ class SagaBackupServiceImpl
             sagaContent: SagaContent,
             imageResources: List<Pair<String, ByteArray>>,
         ) {
+            Log.d(javaClass.simpleName, "Recovering saga: ${sagaContent.data.title}")
             val newSaga = sagaContent.copy(data = recoverSaga(sagaContent.data).second)
 
+            Log.d(javaClass.simpleName, "Recovering images[${imageResources.size}]...")
             val savedImages = backupService.saveExtractedImages(newSaga.data.id, imageResources)
 
             sagaRepository.updateChat(
@@ -272,8 +274,9 @@ class SagaBackupServiceImpl
             saga to
                 sagaRepository.saveChat(
                     saga.copy(
-                        id = 0, // Force creation of new saga with fresh ID
-                        createdAt = System.currentTimeMillis(), // Set current timestamp
+                        id = 0,
+                        createdAt = System.currentTimeMillis(),
+                        mainCharacterId = null,
                     ),
                 )
 

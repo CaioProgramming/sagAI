@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,7 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,9 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
@@ -105,17 +104,16 @@ fun PlaythroughSheet(
                 }
 
                 val palette = currentGenre.colorPalette()
-                val animatedPalette =
-                    palette.map { color ->
-                        animateColorAsState(
-                            targetValue = color,
-                            animationSpec = tween(durationMillis = 1000),
-                        ).value
-                    }
+                palette.map { color ->
+                    animateColorAsState(
+                        targetValue = color,
+                        animationSpec = tween(durationMillis = 1000),
+                    ).value
+                }
 
                 ModalBottomSheet(
                     onDismissRequest = onDismiss,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 ) {
                     Column(
                         modifier =
@@ -128,14 +126,21 @@ fun PlaythroughSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
+                        val color by animateColorAsState(
+                            targetValue = currentGenre.color,
+                            animationSpec = tween(durationMillis = 1000),
+                        )
                         Icon(
                             painterResource(R.drawable.ic_spark),
+                            tint = color,
                             contentDescription = null,
                             modifier =
                                 Modifier
                                     .size(64.dp)
-                                    .reactiveShimmer(true)
-                                    .gradientFill(Brush.linearGradient(animatedPalette)),
+                                    .reactiveShimmer(
+                                        true,
+                                        repeatMode = RepeatMode.Restart,
+                                    ),
                         )
 
                         AnimatedContent(currentGenre, transitionSpec = {
@@ -144,17 +149,30 @@ fun PlaythroughSheet(
                                     tween(800, easing = EaseIn),
                                 )
                         }) {
+                            val color by animateColorAsState(
+                                targetValue = it.color,
+                                animationSpec = tween(durationMillis = 1000),
+                            )
                             Text(
                                 text = currentState.data.title,
                                 style =
-                                    MaterialTheme.typography.headlineMedium.copy(
+                                    MaterialTheme.typography.headlineSmall.copy(
                                         fontFamily = it.headerFont(),
+                                        shadow =
+                                            Shadow(
+                                                color,
+                                                blurRadius = 20f,
+                                            ),
                                     ),
                                 textAlign = TextAlign.Center,
                                 modifier =
                                     Modifier
                                         .padding(horizontal = 16.dp)
-                                        .reactiveShimmer(true, it.shimmerColors()),
+                                        .reactiveShimmer(
+                                            true,
+                                            targetValue = 400f,
+                                            repeatMode = RepeatMode.Restart,
+                                        ),
                             )
                         }
 

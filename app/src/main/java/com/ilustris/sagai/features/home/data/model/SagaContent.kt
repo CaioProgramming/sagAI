@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -89,17 +90,53 @@ fun SagaContent.isFirstTimeline() =
 
 fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id == timelineId }
 
+fun SagaContent.findChapter(chapterId: Int) = flatChapters().find { it.data.id == chapterId }
+
+fun SagaContent.findAct(actId: Int) = acts.find { it.data.id == actId }
+
 fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
 
 fun SagaContent.findCharacter(name: String?): CharacterContent? {
     if (name == null) return null
-    val normalizedInputNameTokens = name.lowercase().split(" ")
+    val normalizedInput = name.lowercase().trim()
+    val normalizedInputTokens = normalizedInput.split(" ").filter { it.isNotBlank() }
+
+    // Helper to get all name tokens (name + lastName + nicknames)
+    fun CharacterContent.getAllNameTokens(): List<String> {
+        val tokens = mutableListOf<String>()
+        tokens.addAll(data.name.lowercase().split(" "))
+        data.lastName
+            ?.lowercase()
+            ?.split(" ")
+            ?.let { tokens.addAll(it) }
+        data.nicknames?.forEach { nickname -> tokens.addAll(nickname.lowercase().split(" ")) }
+        return tokens.filter { it.isNotBlank() }
+    }
+
+    // Helper to get full name (name + lastName)
+    fun CharacterContent.getFullName(): String =
+        buildString {
+            append(data.name.lowercase().trim())
+            data.lastName?.takeIf { it.isNotBlank() }?.let {
+                append(" ")
+                append(it.lowercase().trim())
+            }
+        }
+
+    // 1. Try exact full name match first (name + lastName)
+    characters.find { it.getFullName() == normalizedInput }?.let { return it }
+
+    // 2. Try to find a character where all input tokens match (e.g., "John Wick" matches name="John" lastName="Wick")
+    characters
+        .find { characterContent ->
+            val allTokens = characterContent.getAllNameTokens()
+            normalizedInputTokens.all { inputToken -> allTokens.contains(inputToken) }
+        }?.let { return it }
+
+    // 3. Fall back to finding first character where any input token matches
     return characters.find { characterContent ->
-        val characterNameTokens =
-            characterContent.data.name
-                .lowercase()
-                .split(" ")
-        normalizedInputNameTokens.any { inputToken -> characterNameTokens.contains(inputToken) }
+        val allTokens = characterContent.getAllNameTokens()
+        normalizedInputTokens.any { inputToken -> allTokens.contains(inputToken) }
     }
 }
 
@@ -166,23 +203,38 @@ fun SagaContent.rankByHour() =
 fun SagaContent.emotionalSummary() =
     buildString {
         acts.forEach {
-            it.emotionalSummary(this@emotionalSummary)
+            appendLine(it.emotionalSummary(this@emotionalSummary))
             appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
         }
     }
 
 @Suppress("ktlint:standard:max-line-length")
-fun SagaContent.generateCharacterRelationsSummary(): String {
-    if (relationships.isEmpty()) return "No specific character relationships were formally established or tracked."
-    return relationships.joinToString("; ") { relationContent ->
-        val char1Name =
-            characters.find { it.data.id == relationContent.data.characterOneId }?.data?.name
-                ?: "Character ${relationContent.data.characterOneId}"
-        val char2Name =
-            characters.find { it.data.id == relationContent.data.characterTwoId }?.data?.name
-                ?: "Character ${relationContent.data.characterTwoId}"
-        val relationDesc = relationContent.data.title.takeIf { it.isNotBlank() } ?: "Unnamed relationship"
-        "$char1Name and $char2Name: $relationDesc"
+fun SagaContent.generateCharacterRelationsSummary(filterNames: List<String>? = null): String {
+    if (relationships.isEmpty()) return "No significant relationships tracked."
+    val filteredRelations =
+        if (filterNames == null) {
+            relationships
+        } else {
+            relationships.filter { relation ->
+                val char1 =
+                    characters
+                        .find { it.data.id == relation.data.characterOneId }
+                        ?.data
+                        ?.name
+                        ?.lowercase()
+                val char2 =
+                    characters
+                        .find { it.data.id == relation.data.characterTwoId }
+                        ?.data
+                        ?.name
+                        ?.lowercase()
+                val filterLower = filterNames.map { it.lowercase() }
+                filterLower.contains(char1) || filterLower.contains(char2)
+            }
+        }
+    if (filteredRelations.isEmpty()) return "No relevant relationships for this scene."
+    return filteredRelations.joinToString("\n---\n") { relationContent ->
+        relationContent.summarizeRelation()
     }
 }
 
@@ -225,3 +277,15 @@ fun SagaContent.generateActLevelEmotionalFlowText(): String {
 }
 
 fun SagaContent.hasMoreThanOneChapter() = flatChapters().size > 1
+
+fun SagaContent.rankMainCharacterEmotionalTones(): List<Pair<EmotionalTone, Int>> {
+    val mainCharId = mainCharacter?.data?.id ?: return emptyList()
+    return flatMessages()
+        .filter { it.message.characterId == mainCharId }
+        .mapNotNull { it.message.emotionalTone }
+        .groupingBy { it }
+        .eachCount()
+        .entries
+        .sortedByDescending { it.value }
+        .map { it.toPair() }
+}

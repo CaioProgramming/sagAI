@@ -37,7 +37,6 @@ class PermissionService
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {
                     super.onStart(owner)
-                    // When app starts/resumes, re-check all observed permissions
                     permissionStates.keys.forEach { permission ->
                         checkPermission(permission)
                     }
@@ -70,7 +69,7 @@ class PermissionService
             }
         }
 
-        private fun getPermissionStatus(permission: String): PermissionStatus =
+        fun getPermissionStatus(permission: String): PermissionStatus =
             if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
                 PermissionStatus.GRANTED
             } else {
@@ -104,6 +103,7 @@ class PermissionService
                     ActivityCompat.shouldShowRequestPermissionRationale(activity, permission) -> {
                         onShowRationale()
                     }
+
                     else -> {
                         permissionLauncher.launch(permission)
                     }

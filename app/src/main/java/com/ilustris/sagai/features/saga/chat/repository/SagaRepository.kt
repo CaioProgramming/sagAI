@@ -24,7 +24,7 @@ interface SagaRepository {
 
     suspend fun generateSagaIcon(
         saga: Saga,
-        character: Character,
+        characters: List<Character>,
     ): RequestResult<Saga>
 
     suspend fun backupSaga(sagaContent: SagaContent): RequestResult<Uri>

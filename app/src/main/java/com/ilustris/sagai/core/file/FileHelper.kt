@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.icu.util.Calendar
-import android.util.Base64
 import android.util.Log
 import com.ilustris.sagai.core.utils.removeBlankSpace
 import java.io.File
@@ -107,4 +106,81 @@ class FileHelper(
     }
 
     fun getDirectorySize(path: String): Long = getDirectorySize(File(path))
+
+    fun saveAudioFile(
+        audioByteArray: ByteArray,
+        sagaId: Int,
+        fileName: String,
+    ): File? {
+        val directory = context.filesDir.resolve("sagas/$sagaId/audio")
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val file = directory.resolve(fileName.plus(".mp3").removeBlankSpace())
+        return try {
+            file.writeBytes(audioByteArray)
+            file.takeIf { it.exists() }.also {
+                Log.d(
+                    javaClass.simpleName,
+                    "saveAudioFile: Audio file saved at ${file.absolutePath}",
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "saveAudioFile: Error saving audio file", e)
+            null
+        }
+    }
+
+    /**
+     * Decodes a Base64 string and saves it to a file.
+     * Follows the same pattern as image saving with configurable extension and path.
+     *
+     * @param base64Data The Base64 encoded data to decode and save
+     * @param sagaId The saga ID for directory organization
+     * @param messageId The message ID for file naming
+     * @param extension The file extension (e.g., "mp3", "m4a", "wav")
+     * @param subDirectory The subdirectory within the saga folder (e.g., "audio", "media")
+     * @return The saved File or null if failed
+     */
+    fun saveBinaryFile(
+        data: ByteArray,
+        path: String,
+        fileName: String,
+        extension: String,
+    ): File? {
+        val directory = context.filesDir.resolve(path)
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+
+        val timestamp = Calendar.getInstance().timeInMillis
+        val fullFileName = fileName.plus(timestamp).removeBlankSpace().plus(".$extension")
+        val file = directory.resolve(fullFileName)
+
+        return try {
+            file.writeBytes(data)
+            file.takeIf { it.exists() }.also {
+                Log.d(
+                    javaClass.simpleName,
+                    "saveBinaryFile: File saved at ${file.absolutePath}",
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "saveBinaryFile: Error saving file", e)
+            null
+        }
+    }
+
+    fun readAudioFile(audioPath: String): ByteArray? =
+        try {
+            val file = File(audioPath)
+            if (file.exists() && file.isFile) {
+                file.readBytes()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "readAudioFile: Error reading audio file", e)
+            null
+        }
 }

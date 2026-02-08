@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 import ReactionContent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -44,12 +43,12 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
+import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.chat.ThoughtBubbleShape
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.dashedBorder
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -59,142 +58,127 @@ fun ReactionsView(
     onReactionsClick: () -> Unit,
 ) {
     var peekedReactionId by remember { mutableStateOf<Int?>(null) }
-    SharedTransitionLayout {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy((-4).dp),
-            modifier = Modifier.padding(2.dp),
-        ) {
-            reactions.take(3).forEachIndexed { index, reaction ->
-                val isPeeking by remember(peekedReactionId) {
-                    mutableStateOf(peekedReactionId == reaction.data.id)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy((-4).dp),
+        modifier = Modifier.padding(2.dp),
+    ) {
+        reactions.take(3).forEachIndexed { index, reaction ->
+            val isPeeking by remember(peekedReactionId) {
+                mutableStateOf(peekedReactionId == reaction.data.id)
+            }
+
+            val reactionToolTipState =
+                androidx.compose.material3.rememberTooltipState(
+                    isPersistent = true,
+                )
+            val tooltipPositionProvider =
+                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
+                    spacingBetweenTooltipAndAnchor = 4.dp,
+                )
+
+            LaunchedEffect(isPeeking) {
+                if (isPeeking) {
+                    reactionToolTipState.show()
+                } else {
+                    reactionToolTipState.dismiss()
                 }
-
-                val reactionToolTipState =
-                    androidx.compose.material3.rememberTooltipState(
-                        isPersistent = true,
-                    )
-                val tooltipPositionProvider =
-                    androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
-                        spacingBetweenTooltipAndAnchor = 4.dp,
-                    )
-
-                LaunchedEffect(isPeeking) {
-                    if (isPeeking) {
-                        reactionToolTipState.show()
-                    } else {
-                        reactionToolTipState.dismiss()
-                    }
-                }
-                TooltipBox(
-                    positionProvider = tooltipPositionProvider,
-                    state = reactionToolTipState,
-                    onDismissRequest = {
-                        peekedReactionId = null
-                    },
-                    tooltip = {
-                        val thoughtBubbleShape =
-                            ThoughtBubbleShape(
-                                cornerRadius = genre.cornerSize(),
-                                tailAlignment = BubbleTailAlignment.BottomLeft,
-                                tailHeight = 0.dp,
-                                tailWidth = 0.dp,
-                            )
-
-                        Text(
-                            text = reaction.data.thought ?: "",
-                            style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .dashedBorder(
-                                        strokeWidth = 1.dp,
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        shape = thoughtBubbleShape,
-                                        dashLength = 10.dp,
-                                        gapLength = 5.dp,
-                                    )
-                                    .background(
-                                        Brush.verticalGradient(MaterialTheme.colorScheme.background.darkerPalette()),
-                                        thoughtBubbleShape,
-                                    )
-                                    .padding(8.dp),
+            }
+            TooltipBox(
+                positionProvider = tooltipPositionProvider,
+                state = reactionToolTipState,
+                onDismissRequest = {
+                    peekedReactionId = null
+                },
+                tooltip = {
+                    val thoughtBubbleShape =
+                        ThoughtBubbleShape(
+                            cornerRadius = genre.cornerSize(),
+                            tailAlignment = BubbleTailAlignment.BottomLeft,
+                            tailHeight = 0.dp,
+                            tailWidth = 0.dp,
                         )
-                    },
+
+                    Text(
+                        text = reaction.data.thought ?: "",
+                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .dashedBorder(
+                                    strokeWidth = 1.dp,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    shape = thoughtBubbleShape,
+                                    dashLength = 10.dp,
+                                    gapLength = 5.dp,
+                                ).background(
+                                    Brush.verticalGradient(MaterialTheme.colorScheme.background.darkerPalette()),
+                                    thoughtBubbleShape,
+                                ).padding(8.dp),
+                    )
+                },
+            ) {
+                val animatedSize by animateDpAsState(if (isPeeking) 48.dp else 32.dp)
+                Box(
+                    Modifier
+                        .size(animatedSize)
+                        .clip(CircleShape)
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = {
+                                    awaitRelease()
+                                    peekedReactionId = null
+                                },
+                                onTap = { onReactionsClick() },
+                                onLongPress = {
+                                    if (reaction.data.thought
+                                            .isNullOrEmpty()
+                                            .not()
+                                    ) {
+                                        peekedReactionId = reaction.data.id
+                                    }
+                                },
+                            )
+                        }.padding(2.dp),
                 ) {
-                    val animatedSize by animateDpAsState(if (isPeeking) 48.dp else 32.dp)
-                    Box(
-                        Modifier
-                            .size(animatedSize)
-                            .clip(CircleShape)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        awaitRelease()
-                                        peekedReactionId = null
-                                    },
-                                    onTap = { onReactionsClick() },
-                                    onLongPress = {
-                                        if (reaction.data.thought
-                                                .isNullOrEmpty()
-                                                .not()
-                                        ) {
-                                            peekedReactionId = reaction.data.id
-                                        }
-                                    },
+                    AnimatedContent(
+                        targetState = isPeeking,
+                        label = "reactionAnimation",
+                        transitionSpec = {
+                            fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut()
+                        },
+                    ) { peeking ->
+                        if (peeking) {
+                            CharacterAvatar(
+                                character = reaction.character,
+                                genre = genre,
+                                innerPadding = 0.dp,
+                                borderSize = 1.dp,
+                                softFocusRadius = 0f,
+                                grainRadius = 0f,
+                                modifier =
+                                    Modifier
+                                        .size(32.dp),
+                            )
+                        } else {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .zIndex(reactions.size - index.toFloat())
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.background,
+                                            CircleShape,
+                                        ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = reaction.data.emoji,
+                                    style =
+                                        MaterialTheme.typography.labelLarge.copy(
+                                            textAlign = TextAlign.Center,
+                                        ),
                                 )
-                            }
-                            .padding(2.dp),
-                    ) {
-                        AnimatedContent(
-                            targetState = isPeeking,
-                            label = "reactionAnimation",
-                            transitionSpec = {
-                                fadeIn() + scaleIn() togetherWith fadeOut() + scaleOut()
-                            },
-                        ) { peeking ->
-                            if (peeking) {
-                                CharacterAvatar(
-                                    character = reaction.character,
-                                    genre = genre,
-                                    innerPadding = 0.dp,
-                                    borderSize = 1.dp,
-                                    softFocusRadius = 0f,
-                                    grainRadius = 0f,
-                                    modifier =
-                                        Modifier
-                                            .size(32.dp)
-                                            .sharedElement(
-                                                rememberSharedContentState(key = "reaction_avatar_${reaction.data.id}"),
-                                                animatedVisibilityScope = this@AnimatedContent,
-                                            ),
-                                )
-                            } else {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .zIndex(reactions.size - index.toFloat())
-                                            .fillMaxSize()
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.background,
-                                                CircleShape,
-                                            ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        text = reaction.data.emoji,
-                                        style =
-                                            MaterialTheme.typography.labelLarge.copy(
-                                                textAlign = TextAlign.Center,
-                                            ),
-                                        modifier =
-                                            Modifier
-                                                .sharedElement(
-                                                    rememberSharedContentState(key = "reaction_avatar_${reaction.data.id}"),
-                                                    animatedVisibilityScope = this@AnimatedContent,
-                                                ),
-                                    )
-                                }
                             }
                         }
                     }

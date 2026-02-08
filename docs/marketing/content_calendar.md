@@ -12,7 +12,7 @@ Este calendário foi atualizado para focar em uma estratégia de **conteúdo com
 
 ---
 
-## 🗓️ Mês 1: Lançamento e Fundação
+## 🗓️ Mês 1: Lançamento e Fundação🎙️
 
 ### Semana 1: O Lançamento (Awareness)
 

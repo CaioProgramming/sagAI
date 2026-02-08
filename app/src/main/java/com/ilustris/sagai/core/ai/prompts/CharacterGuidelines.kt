@@ -1,0 +1,134 @@
+package com.ilustris.sagai.core.ai.prompts
+
+object CharacterGuidelines {
+    val creationGuideline =
+        buildString {
+            appendLine("**CHARACTER DETAILS REFERENCE (STRICT ADHERENCE REQUIRED):**")
+            appendLine("// The following message is the **ABSOLUTE AND UNALTERABLE SOURCE** for the character's core identity.")
+            appendLine("// From this reference message, you **MUST EXTRACT AND USE EXACTLY** the character's details.")
+            appendLine(
+                "// The generated character MUST be deeply contextualized within the saga's theme, genre, and existing narrative. Every detail should feel like it belongs in this specific world.",
+            )
+            appendLine("")
+            appendLine("**NAME**:")
+            appendLine("- If a name is explicitly mentioned (e.g., \"John\", \"Seraphina\"), you **MUST USE IT EXACTLY**.")
+            appendLine(
+                "- If NO name is mentioned (e.g., \"a mysterious stranger\"), you **MUST INVENT a new, unique, and fitting name**. The name must align with the saga's genre and context.",
+            )
+            appendLine("- **DO NOT USE generic placeholders** like \"Unknown\", \"Stranger\", etc.")
+            appendLine("")
+            appendLine("**GENDER**:")
+            appendLine("- Derive from explicit mentions or strong implications. If not specified, invent one that fits the context.")
+            appendLine("")
+            appendLine("**RACE & ETHNICITY**:")
+            appendLine("- Use ALL details provided in the source description.")
+            appendLine(
+                "- **RADICAL DIVERSITY MANDATE**: If race or ethnicity is not specified, **do NOT default to caucasian or athletic standards**.",
+            )
+            appendLine(
+                "- Intentionally and creatively choose from a vast spectrum of human diversity (e.g., Black, East Asian, South Asian, Indigenous, Latin/Hispanic, Pacific Islander, Middle Eastern, etc.).",
+            )
+            appendLine(
+                "- Aim for **uniqueness**: incorporate varieties in skin tones (from deep obsidian to pale with heavy freckles), eye shapes, and hair textures (coils, braids, wooly, silky, etc.).",
+            )
+            appendLine("- Ensure the character's heritage enriches their background and feels like a natural, vibrant part of the world.")
+            appendLine("")
+            appendLine("**PHYSICAL BUILD & CHARACTER**:")
+            appendLine("- **BEYOND ATHLETICISM**: Avoid \"standard\" athletic or thin builds unless it's essential to the role.")
+            appendLine(
+                "- Experiment with diverse body types: stout, lanky, curvy, muscular, weathered, aged, or petite. Physicality should reflect their lifestyle and history.",
+            )
+            appendLine("- **ANTI-REPETITION MANDATE**: Each character should have a UNIQUE physical profile.")
+            appendLine("  • Vary body composition: slim/athletic/curvy/stocky/broad-shouldered/pear-shaped/rectangular/heavyset")
+            appendLine("  • Vary height: petite/average/tall/towering")
+            appendLine("  • Vary posture: slouched/military-straight/relaxed/tense/graceful")
+            appendLine("")
+            appendLine("**FACIAL DIVERSITY (HEAD-TO-TOE UNIQUENESS):**")
+            appendLine("- **HAIR**: Avoid repetition. Cycle through:")
+            appendLine("  • Lengths: buzzed/pixie/bob/shoulder-length/long/waist-length")
+            appendLine("  • Textures: straight/wavy/curly/coily/kinky/afro-textured")
+            appendLine("  • Styles: loose/braided/dreadlocks/bun/ponytail/half-up/shaved sides/mohawk/faded/twisted")
+            appendLine(
+                "  • Colors: natural black/brown/blonde/red/gray AND creative (if genre-appropriate): blue/purple/green/pink/silver/split-dye",
+            )
+            appendLine("  • **BANNED**: 'Black hair in a bun' as default for female characters. DIVERSIFY.")
+            appendLine("- **EYES**: Not just color - describe SHAPE and expression:")
+            appendLine("  • Shapes: almond/round/hooded/upturned/downturned/monolid/deep-set")
+            appendLine("  • Colors: brown/amber/hazel/green/blue/gray AND unique variations (heterochromia, flecks, rings)")
+            appendLine("- **FACIAL FEATURES**: Make each face memorable:")
+            appendLine("  • Nose: button/aquiline/broad/narrow/upturned/crooked/pierced")
+            appendLine("  • Lips: thin/full/bow-shaped/asymmetrical/scarred")
+            appendLine("  • Jaw: square/rounded/sharp/soft/defined")
+            appendLine("  • Distinctive marks: freckles/moles/scars/tattoos/piercings/birthmarks - be SPECIFIC")
+            appendLine("")
+            appendLine("**PROFILE (`profile`)**:")
+            appendLine(
+                "- **`occupation`**: Define the character's role or job. It must be relevant to the saga's world (e.g., \"Starship Pilot\", \"Royal Guard\", \"Cyberneticist\").",
+            )
+            appendLine(
+                "- **`personality`**: Describe the character's key personality traits, derived from the source message and expanded to fit their role and backstory.",
+            )
+            appendLine("")
+            appendLine("**DETAILS (`details`)**:")
+            appendLine("// This section is CRITICAL for visual representation and must be detailed and consistent.")
+            appendLine("")
+            appendLine("**1. Physical Traits (`physicalTraits`)**:")
+            appendLine("   - **`facialDetails`**:")
+            appendLine(
+                "     - **Hair, Eyes, Mouth, Jawline, Distinctive Marks**: Provide specific, objective, and *creative* descriptions. Encourage unique and imaginative traits that stand out. Example: \"Short, spiky, electric blue hair that crackles with static\", \"Piercing, emerald-green eyes that glow faintly in the dark\", \"A distinct scar running from the left eyebrow to the jaw, resembling a lightning bolt\".",
+            )
+            appendLine("   - **`bodyFeatures`**:")
+            appendLine(
+                "     - **`buildAndPosture`**: e.g., \"Lithe and agile build, always stands tall and alert, with an almost ethereal grace.\"",
+            )
+            appendLine(
+                "     - **`skinAppearance`**: e.g., \"Weathered, sun-tanned skin from years in the desert, patterned with bioluminescent markings.\"",
+            )
+            appendLine(
+                "     - **`distinguishFeatures`**: e.g., \"A series of intricate tribal tattoos covering the left arm, shifting subtly with their emotions.\"",
+            )
+            appendLine("")
+            appendLine("**2. Clothing (`clothing`)**:")
+            appendLine(
+                "// Must be highly contextualized to the saga's theme, genre, and the character's occupation. Encourage *unique, visually striking, and creative* outfits that reflect personality and world-building.",
+            )
+            appendLine("// **FASHION = PERSONALITY**: Clothing should tell a story about WHO this character is.")
+            appendLine("- **DEPTH OVER SIMPLICITY**: Enrich basic descriptions with specific details.")
+            appendLine("  • If context mentions 'leather jacket' → ADD: cut, color, condition, unique features (patches/worn/customized)")
+            appendLine("  • If context mentions 'casual clothes' → ADD: specific garments, colors, fit, style that shows personality")
+            appendLine("  • Every outfit should have 3+ SPECIFIC details that paint a vivid picture")
+            appendLine("  • Consider: cut/silhouette, texture, color palette, condition (worn/pristine/patched), customization")
+            appendLine("  • Mix and match: layered/asymmetrical/oversized/fitted/statement pieces")
+            appendLine(
+                "- **CONTEXT FIRST**: If the discovery seed or user description provides outfit details, KEEP and EXPAND them - don't replace.",
+            )
+            appendLine(
+                "- **`outfitDescription`**: Describe the typical attire. What do they wear and why? Be imaginative. Example: \"A worn leather duster over a patched-up spacesuit, integrated with salvaged alien tech, showing years of rough travel and resourcefulness.\"",
+            )
+            appendLine(
+                "- **`accessories`**: Mention items that add personality and context. Think beyond the ordinary. Example: \"A silver locket always worn around the neck, humming faintly with stored energy,\" \"Goggles with multiple lenses for different environments, capable of X-ray vision.\"",
+            )
+            appendLine(
+                "- **`carriedItems`**: Include items the character usually has with them, such as **weapons**, tools, or personal belongings. Emphasize uniqueness and narrative relevance. Example: \"A holstered plasma pistol on the right hip, custom-built with glowing runes,\" \"A satchel filled with ancient maps, forbidden scrolls, and a strange, pulsating artifact.\"",
+            )
+            appendLine("")
+            appendLine("**3. Abilities (`abilities`)**:")
+            appendLine("// Must be relevant to the character's role and the challenges they might face in the saga.")
+            appendLine(
+                "- **`skillsAndProficiencies`**: List the character's trained skills. Example: \"Expert marksman with all forms of laser weaponry,\" \"Fluent in three galactic languages.\"",
+            )
+            appendLine(
+                "- **`uniqueOrSignatureTalents`**: Describe any special or unique talents. Example: \"The innate ability to sense electrical currents,\" \"A photographic memory for star charts.\"",
+            )
+            appendLine("")
+            appendLine("**BACKSTORY (`backstory`)**:")
+            appendLine(
+                "- Create a concise backstory that explains the character's origin, motivations, and how they fit into the saga's world. It should be consistent with all the details above.",
+            )
+            appendLine("")
+            appendLine("**HEX COLOR (`hexColor`)**:")
+            appendLine(
+                "- **USE ONLY SOLID, VIBRANT COLORS.** Avoid black, white, or dull shades. The color should dynamically reflect the character's core personality, mood, or thematic essence within the saga.",
+            )
+        }.trimIndent()
+}

@@ -109,9 +109,9 @@ object HeroColorTones {
     val URBAN_COMIC_VIBRANCY =
         ColorTonePalette(
             name = "Urban Comic Vibrancy",
-            highlightTint = Triple(0.5f, 0.6f, .7f), // Bright, very subtly cool white (hint of cyan)
-            shadowTint = Triple(0.05f, 0.1f, 0.15f), // Very deep, almost black cool blue/indigo
-            defaultTintStrength = 0.4f, // Moderate strength for punchy colors
+            highlightTint = Triple(1.0f, 0.92f, 0.85f), // Warm golden light (Alex Ross style)
+            shadowTint = Triple(0.02f, 0.05f, 0.15f), // Deep luminous indigo shadows
+            defaultTintStrength = 0.35f, // Moderate strength for punchy colors
         )
 
     // You can add more hero-themed palettes here in the future
@@ -122,15 +122,23 @@ object HeroColorTones {
 }
 
 object CrimeColorTones {
+    val DIVINE_ACADEMIC_PARADISE =
+        ColorTonePalette(
+            name = "Divine Academic Paradise",
+            highlightTint = Triple(1.0f, 0.98f, 0.92f), // Alabaster / Champagne Glow
+            shadowTint = Triple(0.12f, 0.1f, 0.15f), // Noble Charcoal / Deep Slate
+            defaultTintStrength = 0.12f, // Subtle, allowing the painting's realism to breathe
+        )
+
     val MIAMI_NEON_SUNSET =
         ColorTonePalette(
             name = "Miami Neon Sunset",
-            highlightTint = Triple(1.0f, 0.55f, 0.85f), // neon pink/magenta
-            shadowTint = Triple(0.1f, 0.05f, 0.15f), // Deep, dark purple to contrast the pink
-            defaultTintStrength = 0.35f,
+            highlightTint = Triple(1.0f, 0.85f, 0.95f), // Softened Pink (less neon, more sunset)
+            shadowTint = Triple(0.1f, 0.05f, 0.15f), // Deep, dark purple
+            defaultTintStrength = 0.25f,
         )
 
-    val allTones = listOf(MIAMI_NEON_SUNSET)
+    val allTones = listOf(DIVINE_ACADEMIC_PARADISE, MIAMI_NEON_SUNSET)
 }
 
 object SpaceOperaTones {

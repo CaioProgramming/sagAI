@@ -48,6 +48,14 @@ private fun getPermissionInfo(permission: String): PermissionInfo =
                     emoji = "🔔",
                 )
 
+            Manifest.permission.RECORD_AUDIO -> {
+                PermissionInfo(
+                    title = R.string.mic_permission_title,
+                    description = R.string.mic_permission_description,
+                    emoji = "🎙️",
+                )
+            }
+
             else ->
                 PermissionInfo(
                     title = R.string.permission_required_title,

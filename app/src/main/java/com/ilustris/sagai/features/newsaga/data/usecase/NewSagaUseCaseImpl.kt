@@ -1,28 +1,18 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
-import SagaGen
-import androidx.room.ColumnInfo
-import androidx.room.Embedded
-import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
-import com.ilustris.sagai.features.newsaga.data.model.CallbackContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import com.ilustris.sagai.features.saga.detail.data.model.Review
-import kotlinx.coroutines.delay
 import javax.inject.Inject
-import kotlin.Boolean
-import kotlin.Int
 
 class NewSagaUseCaseImpl
     @Inject
@@ -41,7 +31,7 @@ class NewSagaUseCaseImpl
             }
 
         override suspend fun generateSaga(
-            sagaForm: SagaForm,
+            sagaForm: SagaDraft,
             miniChatContent: List<ChatMessage>,
         ): RequestResult<Saga> =
             executeRequest {
@@ -71,55 +61,43 @@ class NewSagaUseCaseImpl
             sagaRepository
                 .generateSagaIcon(
                     sagaForm,
-                    character,
+                    listOf(character),
                 ).getSuccess()!!
         }
 
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
-            latestMessage: String,
+            latestMessage: String?,
             currentFormData: SagaForm,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
-                val delayDefaultTime = 700L
+                // Limit conversation history to last 10 messages for context
+                val recentMessages = currentMessages.takeLast(10)
 
-                val extractedDataPrompt =
-                    gemmaClient.generate<SagaForm>(
-                        NewSagaPrompts.extractDataFromUserInputPrompt(
-                            currentSagaForm = currentFormData,
-                            userInput = currentMessages.last().text,
-                            lastMessage = latestMessage,
+                val userInput = currentMessages.last().text
+
+                // Single AI call to extract, enhance, and provide helpful suggestions
+                val response =
+                    gemmaClient.generate<SagaCreationGen>(
+                        NewSagaPrompts.conversationalSagaReply(
+                            currentSagaDraft = currentFormData.saga,
+                            userInput = userInput,
+                            conversationHistory = recentMessages,
                         ),
                         requireTranslation = true,
                     )!!
 
-                delay(delayDefaultTime)
-
-                val identifyNextFieldPrompt =
-                    gemmaClient
-                        .generate<String>(
-                            NewSagaPrompts.identifyNextFieldPrompt(extractedDataPrompt),
-                            requireTranslation = false,
-                        )!!
-                        .replace("\n", "")
-
-                val field = SagaFormFields.getByKey(identifyNextFieldPrompt)!!
-
-                delay(delayDefaultTime)
-
-                val nextQuestion =
-                    gemmaClient.generate<SagaCreationGen>(
-                        NewSagaPrompts.generateCreativeQuestionPrompt(
-                            field,
-                            extractedDataPrompt,
-                        ),
-                    )!!
-                nextQuestion.copy(callback = nextQuestion.callback?.copy(data = extractedDataPrompt))
+                response
             }
 
         override suspend fun generateIntroduction(): RequestResult<SagaCreationGen> =
             executeRequest {
                 gemmaClient.generate(NewSagaPrompts.introPrompt())!!
+            }
+
+        override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen> =
+            executeRequest {
+                gemmaClient.generate(CharacterPrompts.characterIntroPrompt(sagaContext))!!
             }
 
         override suspend fun generateCharacterSavedMark(
@@ -142,6 +120,12 @@ class NewSagaUseCaseImpl
                         sagaDescription,
                         characterDescription,
                     ),
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
+            }
+
+        override suspend fun adaptSagaToGenre(sagaDraft: SagaDraft): RequestResult<SagaCreationGen> =
+            executeRequest {
+                gemmaClient.generate(NewSagaPrompts.genreAdaptationPrompt(sagaDraft))!!
             }
     }

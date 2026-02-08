@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,11 +33,12 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -52,30 +52,24 @@ fun CharacterCard(
     segmentedImage: Bitmap? = null,
     originalImage: Bitmap? = null,
     shareText: ShareText? = null,
-    showWatermark: Boolean = false
+    showWatermark: Boolean = false,
 ) {
     val genre = remember { sagaContent.data.genre }
     val characterColor = remember { character.data.hexColor.hexToColor() ?: genre.color }
 
-    Box(
-        modifier = modifier.background(
-            Brush.verticalGradient(
-                characterColor.darkerPalette(factor = .3f)
-            )
-        )
-    ) {
+    Box {
         if (originalImage != null && segmentedImage != null) {
             DepthLayout(
                 originalImage = originalImage,
                 segmentedImage = segmentedImage,
                 modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clipToBounds(),
+                    Modifier
+                        .fillMaxSize()
+                        .clipToBounds(),
                 backgroundImageModifier =
-                Modifier
-                    .blur(1.dp)
-                    .effectForGenre(genre),
+                    Modifier
+                        .blur(1.dp)
+                        .effectForGenre(genre),
                 foregroundImageModifier = Modifier.effectForGenre(genre),
             ) {
                 Text(
@@ -83,74 +77,61 @@ fun CharacterCard(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.TopCenter),
                     style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = genre.headerFont(),
-                        textAlign = TextAlign.Center,
-                        brush =
-                        Brush.verticalGradient(
-                            listOf(
-                                genre.color,
-                                characterColor,
-                                genre.iconColor,
-                            ),
+                        MaterialTheme.typography.displaySmall.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Center,
+                            brush =
+                                Brush.verticalGradient(
+                                    listOf(
+                                        genre.color,
+                                        characterColor,
+                                        genre.iconColor,
+                                    ),
+                                ),
+                            shadow = Shadow(genre.color, blurRadius = 15f),
                         ),
-                        shadow = Shadow(genre.color, blurRadius = 15f),
-                    ),
                 )
-
             }
             Text(
                 shareText?.title ?: emptyString(),
                 modifier = Modifier.align(Alignment.Center),
                 style =
-                MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = genre.iconColor,
-                    textAlign = TextAlign.Center,
-                    shadow =
-                    Shadow(
-                        genre.color,
-                        blurRadius = 10f,
-                        offset = Offset(2f, 0f),
-                    ),
-                ),
-            )
-
-        } else {
-            Text(
-                character.data.name.first().uppercase(),
-                style =
-                    MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = genre.headerFont(),
-                        brush =
-                            Brush.verticalGradient(
-                                characterColor.darkerPalette(factor = .2f),
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = genre.iconColor,
+                        textAlign = TextAlign.Center,
+                        shadow =
+                            Shadow(
+                                genre.color,
+                                blurRadius = 10f,
+                                offset = Offset(2f, 0f),
                             ),
                     ),
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.align(Alignment.Center),
             )
+
+            if (showWatermark) {
+                ShareBottomWaterMark(
+                    genre,
+                    shareText,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+        } else {
             AsyncImage(
                 character.data.image,
                 null,
                 modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clipToBounds()
-                    .effectForGenre(genre),
+                    Modifier
+                        .fillMaxSize()
+                        .clipToBounds()
+                        .effectForGenre(genre),
                 contentScale = ContentScale.Crop,
-            )
-
-            Box(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxSize()
-                    .background(fadeGradientBottom(genre.color)),
             )
 
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
+                    .background(fadeGradientBottom(genre.color))
                     .padding(16.dp)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -159,95 +140,98 @@ fun CharacterCard(
                 Text(
                     shareText?.title ?: emptyString(),
                     style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
-                        textAlign = TextAlign.Center,
-                        shadow =
-                        Shadow(
-                            genre.color,
-                            blurRadius = 10f,
-                            offset = Offset(2f, 0f),
+                        MaterialTheme.typography.labelLarge.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = genre.iconColor,
+                            textAlign = TextAlign.Center,
+                            shadow =
+                                Shadow(
+                                    genre.iconColor,
+                                    blurRadius = 10f,
+                                ),
                         ),
-                    ),
                 )
 
                 Text(
                     character.data.name,
                     modifier =
-                    Modifier
-                        .fillMaxWidth(),
+                        Modifier
+                            .fillMaxWidth(),
                     style =
-                    MaterialTheme.typography.displayMedium.copy(
-                        fontFamily = genre.headerFont(),
-                        textAlign = TextAlign.Center,
-                        brush =
-                        Brush.verticalGradient(
-                            listOf(
-                                genre.color,
-                                characterColor,
-                                genre.iconColor,
-                            ),
+                        MaterialTheme.typography.displayMedium.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Center,
+                            brush =
+                                Brush.verticalGradient(
+                                    listOf(
+                                        characterColor.darker(.4f),
+                                        characterColor,
+                                        genre.iconColor,
+                                    ),
+                                ),
+                            shadow = Shadow(genre.iconColor, blurRadius = 10f),
                         ),
-                        shadow = Shadow(genre.color, blurRadius = 15f),
-                    ),
                 )
 
                 Text(
                     shareText?.text ?: emptyString(),
                     style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
-                        textAlign = TextAlign.Center,
-                        fontStyle = FontStyle.Italic,
-                        letterSpacing = 3.sp,
-                        shadow =
-                        Shadow(
-                            genre.color,
-                            blurRadius = 5f,
-                            offset = Offset(5f, 0f),
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = genre.iconColor,
+                            textAlign = TextAlign.Center,
+                            fontStyle = FontStyle.Italic,
+                            letterSpacing = 3.sp,
+                            shadow =
+                                Shadow(
+                                    genre.color,
+                                    blurRadius = 5f,
+                                    offset = Offset(5f, 0f),
+                                ),
                         ),
-                    ),
                 )
+
+                if (showWatermark) {
+                    ShareBottomWaterMark(genre, shareText)
+                }
             }
         }
-        if (showWatermark) {
-            Box(
+    }
+}
+
+@Composable
+private fun ShareBottomWaterMark(
+    genre: Genre,
+    shareText: ShareText?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier) {
+        Image(
+            painter = painterResource(R.drawable.ic_spark),
+            null,
+            modifier =
                 Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxSize()
-                    .background(fadeGradientBottom(genre.color)),
-            )
-            Column(Modifier.align(Alignment.BottomCenter)) {
-                Image(
-                    painter = painterResource(R.drawable.ic_spark),
-                    null,
-                    modifier =
-                    Modifier
-                        .size(24.dp)
-                        .align(Alignment.CenterHorizontally),
-                    colorFilter = ColorFilter.tint(genre.iconColor),
-                )
+                    .size(24.dp)
+                    .align(Alignment.CenterHorizontally),
+            colorFilter = ColorFilter.tint(genre.iconColor),
+        )
 
-                Text(
-                    shareText?.caption ?: emptyString(),
-                    style =
-                    MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
-                    ),
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
+        Text(
+            shareText?.caption ?: emptyString(),
+            style =
+                MaterialTheme.typography.labelMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                    color = genre.iconColor,
+                ),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
 
-                SagaTitle(
-                    textStyle = MaterialTheme.typography.labelMedium,
-                    modifier =
-                    Modifier
-                        .padding(8.dp)
-                        .align(Alignment.CenterHorizontally),
-                )
-            }
-        }
+        SagaTitle(
+            textStyle = MaterialTheme.typography.labelMedium,
+            modifier =
+                Modifier
+                    .padding(8.dp)
+                    .align(Alignment.CenterHorizontally),
+        )
     }
 }

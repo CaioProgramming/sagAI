@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -11,22 +12,26 @@ import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.PunkRockChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
 
 fun Genre.bubble(
-    tailAlignment: BubbleTailAlignment,
-    tailWidth: Dp = 12.dp,
-    tailHeight: Dp = 12.dp,
+    tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
+    tailWidth: Dp = 8.dp,
+    tailHeight: Dp = 8.dp,
+    isNarrator: Boolean = false,
 ): Shape {
     val cornerSize = cornerSize()
+    val tailW = if (isNarrator) 0.dp else tailWidth
+    val tailH = if (isNarrator) 0.dp else tailHeight
     return when (this) {
         Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
                 cornerRadius = cornerSize,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
                 tailAlignment = tailAlignment,
             )
         }
@@ -34,8 +39,8 @@ fun Genre.bubble(
         Genre.HEROES -> {
             HeroesChatBubbleShape(
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -43,8 +48,8 @@ fun Genre.bubble(
             ShinobiChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -59,8 +64,8 @@ fun Genre.bubble(
             FantasyChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
@@ -74,18 +79,31 @@ fun Genre.bubble(
             CowboysChatBubbleShape(
                 cornerNotch = cornerSize,
                 tailAlignment = tailAlignment,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
+                tailWidth = tailW,
+                tailHeight = tailH,
+                isNarrator = isNarrator,
+            )
+        }
+
+        Genre.PUNK_ROCK -> {
+            PunkRockChatBubbleShape(
+                tailAlignment = tailAlignment,
+                tailWidth = tailW,
+                tailHeight = tailH,
             )
         }
 
         else -> {
-            CurvedChatBubbleShape(
-                cornerRadius = cornerSize,
-                tailWidth = tailWidth,
-                tailHeight = tailHeight,
-                tailAlignment = tailAlignment,
-            )
+            if (isNarrator) {
+                RoundedCornerShape(cornerSize)
+            } else {
+                CurvedChatBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailWidth = tailW,
+                    tailHeight = tailH,
+                    tailAlignment = tailAlignment,
+                )
+            }
         }
     }
 }

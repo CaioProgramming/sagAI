@@ -2,7 +2,6 @@ package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -21,13 +20,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -48,35 +46,39 @@ enum class GradientType {
         offsetAnimationValue: Float,
     ): Brush =
         when (this) {
-            LINEAR ->
+            LINEAR -> {
                 Brush.linearGradient(
                     colors = colors,
-                    start = Offset.Zero,
-                    end = Offset(offsetAnimationValue * 2, offsetAnimationValue * 3),
-                    tileMode = TileMode.Clamp,
+                    start = Offset(offsetAnimationValue, offsetAnimationValue),
+                    end = Offset(offsetAnimationValue + 500f, offsetAnimationValue + 500f),
+                    tileMode = TileMode.Mirror,
                 )
+            }
 
-            VERTICAL ->
+            VERTICAL -> {
                 Brush.verticalGradient(
                     colors = colors,
-                    startY = 0f,
-                    endY = offsetAnimationValue * 3,
-                    tileMode = TileMode.Clamp,
+                    startY = offsetAnimationValue,
+                    endY = offsetAnimationValue + 500f,
+                    tileMode = TileMode.Mirror,
                 )
+            }
 
-            RADIAL ->
+            RADIAL -> {
                 Brush.radialGradient(
                     colors = colors,
                     center = Offset(offsetAnimationValue, offsetAnimationValue),
-                    radius = offsetAnimationValue * 2,
-                    tileMode = TileMode.Clamp,
+                    radius = offsetAnimationValue + 300f,
+                    tileMode = TileMode.Mirror,
                 )
+            }
 
-            SWEEP ->
+            SWEEP -> {
                 Brush.sweepGradient(
                     colors = colors,
                     center = Offset(offsetAnimationValue, offsetAnimationValue),
                 )
+            }
         }
 }
 
@@ -97,7 +99,7 @@ fun gradientAnimation(
                 infiniteRepeatable(
                     tween(
                         duration.toInt(DurationUnit.MILLISECONDS),
-                        easing = EaseIn,
+                        easing = LinearEasing,
                     ),
                     repeatMode = RepeatMode.Reverse,
                 ),
@@ -175,7 +177,7 @@ fun Color.darkerPalette(
 
 val holographicGradient =
     listOf(
-        MaterialColor.Pink100,
+        MaterialColor.Purple800,
         MaterialColor.Orange400,
         MaterialColor.PinkA200,
         MaterialColor.Pink900,
@@ -183,6 +185,14 @@ val holographicGradient =
         MaterialColor.Blue900,
         MaterialColor.Purple200,
     )
+
+@Composable
+fun themeShimmer() =
+    buildList {
+        add(Color.Transparent)
+        addAll(holographicGradient)
+        add(Color.Transparent)
+    }
 
 @Composable
 fun genresGradient(): List<Color> =
@@ -204,7 +214,16 @@ fun Genre.gradient(
     gradientType.toBrush(colors = this.colorPalette(), offsetAnimationValue = targetValue)
 }
 
-fun Color.solidGradient() = Brush.verticalGradient(List(2) { this })
+fun Color.solidGradient() = SolidColor(this)
+
+fun Color.shimmerize() =
+    listOf(
+        Color.Transparent,
+        this.copy(alpha = .2f),
+        this.copy(alpha = .5f),
+        this,
+        Color.Transparent,
+    )
 
 enum class FadeDirection {
     TOP_TO_BOTTOM,

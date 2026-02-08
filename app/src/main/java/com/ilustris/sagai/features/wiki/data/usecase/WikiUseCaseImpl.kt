@@ -7,8 +7,9 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.MergeWiki
+import com.ilustris.sagai.features.wiki.data.model.MergeWikiGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.model.WikiGen
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import javax.inject.Inject
 
@@ -35,14 +36,15 @@ class WikiUseCaseImpl
             event: Timeline,
         ) = executeRequest {
             gemmaClient
-                .generate<List<Wiki>>(
+                .generate<WikiGen>(
                     prompt =
                         WikiPrompts.generateWiki(
                             saga = sagaContent,
                             event = event,
                         ),
-                    describeOutput = false,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
+                .wikis
         }
 
         override suspend fun mergeWikis(
@@ -56,10 +58,24 @@ class WikiUseCaseImpl
                     )
 
                 val mergedWikis =
-                    gemmaClient.generate<List<MergeWiki>>(prompt = prompt, describeOutput = false)!!
+                    gemmaClient
+                        .generate<MergeWikiGen>(
+                            prompt = prompt,
+                            requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        )!!
+                        .mergedItems
 
                 val validItems =
                     mergedWikis.filter { mergedItem ->
+                        // Skip items with no merge candidate (secondItem is null or empty)
+                        if (mergedItem.secondItem.isNullOrBlank()) {
+                            Log.d(
+                                javaClass.simpleName,
+                                "Skipping item with no merge candidate: ${mergedItem.firstItem}",
+                            )
+                            return@filter false
+                        }
+
                         val firstWiki =
                             saga.wikis.find { it.title.contentEquals(mergedItem.firstItem, true) }
                         val secondWiki =
