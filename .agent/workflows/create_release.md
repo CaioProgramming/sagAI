@@ -16,7 +16,11 @@ the APK.
     - Run
       `git diff origin/main...develop -- app/src/main/java/com/example/app/data/saga/SagaDatabase.kt`
     - If there are changes:
-        - discard the develop version and increment based on the main branch version.
+    - **Add Docs to Gitignore**:
+        - Check if `docs/` is in `.gitignore`.
+        - If not, ask the user if they want to add it (or specific subdirectories like `docs/archive`).
+        - *Recommendation*: Generally, keep documentation in version control, but ignore large assets or temporary files.
+
 
 4. **Check for Open PRs**:
     - Run `gh pr list --base develop --state open` to see any pending PRs targeting develop.
@@ -98,8 +102,11 @@ the APK.
       `docs/faq_data_en.json`).
     - **Compare**: Read the specified file. Compare the generated draft with existing entries.
     - **Refine**: Present the user with a list of suggested additions, updates, or removals.
-    - **Apply**: Ask the user if they want to update the FAQ file with these changes. If yes, write
-      the updated JSON to the file.
+    - **Update PT-BR FAQ**:
+        - Repeat the process for the Portuguese FAQ file (default: `docs/faq_data_pt.json`).
+        - Ensure translations capture the same tone and accuracy.
+    - **Apply**: Ask the user if they want to update the FAQ files with these changes. If yes, write
+      the updated JSON to the files.
 
 13. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.

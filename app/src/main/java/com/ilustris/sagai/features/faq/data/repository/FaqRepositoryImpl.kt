@@ -1,6 +1,6 @@
 package com.ilustris.sagai.features.faq.data.repository
 
-import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.FAQPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -13,7 +13,7 @@ class FaqRepositoryImpl
     @Inject
     constructor(
         private val remoteConfigService: RemoteConfigService,
-        private val textGenClient: TextGenClient,
+        private val gemmaClient: GemmaClient,
     ) : FaqRepository {
         override suspend fun getFaqs() =
             executeRequest {
@@ -25,7 +25,7 @@ class FaqRepositoryImpl
             context: FAQContent,
         ) = executeRequest {
             val prompt = FAQPrompts.getAskAiPrompt(query, context)
-            textGenClient.generate<String>(prompt, requireTranslation = false)
+            gemmaClient.generate<String>(prompt, requireTranslation = false)
                 ?: "Oops! My crystal ball is a bit foggy. Can you try again?"
-    }
+        }
     }

@@ -40,7 +40,11 @@
       "items": [
         {
           "question": "How is the art style decided?",
-          "answer": "It's built into the DNA of the genre! Fantasy uses Classical Oil Paintings, Cyberpunk is 80s Anime Cel-shaded, Horror is 32-bit Pixel Art, and Heroes has a Dynamic Comic Book look. Each style has its own palette and lighting rules."
+          "answer": "It's built into the DNA of the genre! Fantasy uses Classical Oil Paintings, Cyberpunk is 80s Anime Cel-shaded, Horror is 32-bit Pixel Art, aud Heroes has a Dynamic Comic Book look. Punk Rock features a sketch-like, hand-drawn aesthetic with vibrant green accents."
+        },
+        {
+          "question": "What's the 'Punk Rock' theme?",
+          "answer": "It's our newest genre! Think Gorillaz meets Scott Pilgrim. It features a sketch-like, hand-drawn aesthetic with vibrant green accents and a rebellious attitude. Perfect for stories about underground bands and urban adventures."
         },
         {
           "question": "How does image generation work?",
