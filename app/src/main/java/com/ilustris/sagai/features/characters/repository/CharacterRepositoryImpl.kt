@@ -1,11 +1,9 @@
 package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import kotlinx.coroutines.flow.Flow
-import java.util.Calendar
 import javax.inject.Inject
 
 class CharacterRepositoryImpl
@@ -39,4 +37,6 @@ class CharacterRepositoryImpl
             name: String,
             sagaId: Int,
         ): Character? = characterDao.getCharacterByName(name, sagaId)
+
+        override suspend fun getAllCharacterNames(): List<String> = characterDao.getAllCharacterNames()
     }

@@ -6,13 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,13 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -39,14 +34,14 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
 
 @Composable
@@ -54,15 +49,15 @@ fun ChapterCardView(
     saga: SagaContent,
     chapter: Chapter,
     modifier: Modifier,
-    showTitle: Boolean = true
+    showTitle: Boolean = true,
 ) {
     val genre = saga.data.genre
-    val shape = RoundedCornerShape(genre.cornerSize())
+    val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .clip(shape)
-                .border(1.dp, genre.color.gradientFade(), genre.shape())
+                .border(1.dp, genre.color.gradientFade(), shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .fillMaxWidth()
                 .weight(1f),
@@ -103,7 +98,7 @@ fun ChapterCardView(
             )
         }
 
-        if(showTitle){
+        if (showTitle) {
             Text(
                 text = chapter.title,
                 maxLines = 1,

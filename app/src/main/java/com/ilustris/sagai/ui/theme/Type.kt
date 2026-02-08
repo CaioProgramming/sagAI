@@ -27,11 +27,12 @@ fun Genre.headerFont(): FontFamily {
             Genre.FANTASY -> R.font.dragon_force
             Genre.CYBERPUNK -> R.font.ninja_cyber
             Genre.HORROR -> R.font.pixelwarden
-            Genre.HEROES -> R.font.super_energy
+            Genre.HEROES -> R.font.masked_hero
             Genre.CRIME -> R.font.broadway
             Genre.SPACE_OPERA -> R.font.space_runner
             Genre.SHINOBI -> R.font.genjiro
             Genre.COWBOY -> R.font.rye
+            Genre.PUNK_ROCK -> R.font.punkland
             else -> null
         }
     return if (fontResource != null) {
@@ -52,6 +53,7 @@ fun Genre.bodyFont(): FontFamily {
             Genre.SPACE_OPERA -> R.font.eightgon
             Genre.SHINOBI -> R.font.hina
             Genre.COWBOY -> R.font.special_elite
+            Genre.PUNK_ROCK -> R.font.grunge
             else -> null
         }
     return if (fontResource != null) {

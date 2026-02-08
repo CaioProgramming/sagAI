@@ -83,9 +83,9 @@ class HomeUseCaseImpl
                         saga
                             .flatMessages()
                             .lastOrNull()
-                        ?.message
-                        ?.timestamp ?: saga.data.createdAt
-                }
-            },
-        )
-}
+                            ?.message
+                            ?.timestamp ?: saga.data.createdAt
+                    }
+                },
+            )
+    }

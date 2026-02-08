@@ -12,18 +12,6 @@ enum class SagaFormFields(
     GENRE(
         "Saga Genre (GENRE) - missing if empty",
     ),
-    CHARACTER_NAME(
-        "Character Name (CHARACTER_NAME) - missing if empty",
-    ),
-    CHARACTER_BACKSTORY(
-        "Character Backstory (CHARACTER_BACKSTORY) - missing if empty or less than 15 words",
-    ),
-    CHARACTER_OCCUPATION(
-        "Character Occupation (CHARACTER_OCCUPATION) - missing if empty",
-    ),
-    CHARACTER_APPEARANCE(
-        "Character Appearance (CHARACTER_APPEARANCE) - missing if empty or less than 10 words",
-    ),
     ALL_FIELDS_COMPLETE(
         "ALL FIELDS ARE COMPLETE",
     ),

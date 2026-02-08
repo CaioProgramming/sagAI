@@ -7,8 +7,10 @@ import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -21,7 +23,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,8 +36,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -51,9 +50,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,13 +63,16 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,8 +81,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -85,8 +90,10 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -95,26 +102,26 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
+import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -128,8 +135,7 @@ import kotlin.time.Duration.Companion.seconds
 private fun detectQueryType(
     text: String,
     characters: List<CharacterContent>,
-    wikis: List<com.ilustris.sagai.features.wiki.data.model.Wiki>,
-    context: android.content.Context? = null,
+    wikis: List<Wiki>,
 ): ItemsType? {
     val lastAtIndex = text.lastIndexOf('@')
     val lastSlashIndex = text.lastIndexOf('/')
@@ -237,7 +243,7 @@ private fun handleCharacterSelection(
  * Replaces /query with the wiki title.
  */
 private fun handleWikiSelection(
-    wiki: com.ilustris.sagai.features.wiki.data.model.Wiki,
+    wiki: Wiki,
     currentInput: TextFieldValue,
     onUpdateInput: (TextFieldValue) -> Unit,
 ) {
@@ -261,11 +267,15 @@ fun ChatInputView(
     sendType: SenderType,
     typoFix: TypoFix?,
     selectedCharacter: CharacterContent? = null,
-    sharedTransitionScope: SharedTransitionScope,
+    isSendingPending: Boolean = false,
+    @Suppress("UNUSED_PARAMETER") sendingProgress: Float = 0f,
     onUpdateInput: (TextFieldValue) -> Unit,
     onUpdateSender: (SenderType) -> Unit,
     onSendMessage: (Boolean) -> Unit,
     onSelectCharacter: (CharacterContent) -> Unit = {},
+    onRequestAudio: () -> Unit = {},
+    isEditing: Boolean = false,
+    onCancelEdit: () -> Unit = {},
 ) {
     val action = sendType
     val inputBrush =
@@ -274,9 +284,36 @@ fun ChatInputView(
             duration = 2.seconds,
         )
 
-    // Detect query type and extract query string
     var queryItemsType by remember { mutableStateOf<ItemsType?>(null) }
-    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val characterToolTipState =
+        androidx.compose.material3.rememberTooltipState(
+            isPersistent = true,
+        )
+    val tooltipPositionProvider =
+        rememberTooltipPositionProvider(
+            TooltipAnchorPosition.Above,
+            spacingBetweenTooltipAndAnchor = 4.dp,
+        )
+
+    // Tooltip state for query items feature (both @ and /)
+    val queryItemsTooltipState =
+        androidx.compose.material3.rememberTooltipState(
+            isPersistent = true,
+        )
+    val queryTooltipPositionProvider =
+        rememberTooltipPositionProvider(
+            TooltipAnchorPosition.Above,
+            spacingBetweenTooltipAndAnchor = 4.dp,
+        )
+
+    LaunchedEffect(queryItemsType) {
+        if (queryItemsType != null) {
+            queryItemsTooltipState.show()
+        } else {
+            queryItemsTooltipState.dismiss()
+        }
+    }
 
     LaunchedEffect(inputField.text, content.characters, content.wikis) {
         queryItemsType =
@@ -284,17 +321,23 @@ fun ChatInputView(
                 text = inputField.text,
                 characters = content.characters,
                 wikis = content.wikis,
-                context = context,
             )
     }
 
     val glowRadius by animateFloatAsState(
-        if (isGenerating.not()) 10f else 30f,
+        if (isGenerating.not()) 10f else 25f,
     )
     val backgroundColor by animateColorAsState(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
     )
-    val inputShape = remember { content.data.genre.shape() }
+    val inputShape =
+        remember {
+            content.data.genre.bubble(
+                BubbleTailAlignment.BottomLeft,
+                tailWidth = 0.dp,
+                tailHeight = 0.dp,
+            )
+        }
 
     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
     val rotation by infiniteTransition.animateFloat(
@@ -320,18 +363,31 @@ fun ChatInputView(
 
     Column(
         modifier
-            .fillMaxWidth()
-            .imePadding(),
+            .fillMaxWidth(),
     ) {
-        val isImeVisible = WindowInsets.isImeVisible
-        val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
-        var characterSelectionExpanded by remember { mutableStateOf(false) }
-
-        LaunchedEffect(isImeVisible) {
-            if (!isImeVisible) {
-                characterSelectionExpanded = false
+        if (isEditing) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.editing_message),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color =
+                                content.data.genre.color
+                                    .copy(alpha = .5f),
+                        ),
+                    fontFamily = content.data.genre.bodyFont(),
+                )
             }
         }
+        val isImeVisible = WindowInsets.isImeVisible
+        val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
+        val coroutineScope = rememberCoroutineScope()
 
         AnimatedVisibility(suggestionsEnabled) {
             LazyRow(
@@ -344,7 +400,6 @@ fun ChatInputView(
                 items(suggestions) {
                     Button(
                         onClick = {
-                            characterSelectionExpanded = false
                             onUpdateInput(
                                 TextFieldValue(
                                     it.text,
@@ -380,8 +435,14 @@ fun ChatInputView(
                                     ),
                         )
 
+                        // Use styled annotated string for suggestions with tags
+                        val styledText =
+                            remember(it.text) {
+                                buildSuggestionAnnotatedString(it.text)
+                            }
+
                         Text(
-                            it.text,
+                            styledText,
                             style = MaterialTheme.typography.labelSmall,
                             modifier =
                                 Modifier.reactiveShimmer(
@@ -394,94 +455,177 @@ fun ChatInputView(
             }
         }
 
-        BlurredGlowContainer(
+        // Check if cursor is inside a tag - hoisted to outer Column level to be accessible by message options
+        val currentTagInside =
+            remember(inputField.text, inputField.selection) {
+                getCursorInsideTag(inputField.text, inputField.selection.start)
+            }
+
+        Row(
             modifier =
                 Modifier
+                    .padding(16.dp)
                     .fillMaxWidth()
-                    .padding(16.dp),
-            inputBrush,
-            glowRadius,
-            shape = inputShape,
-        ) {
-            val characterToolTipState =
-                androidx.compose.material3.rememberTooltipState(
-                    isPersistent = true,
-                )
-            val tooltipPositionProvider =
-                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
-                    spacingBetweenTooltipAndAnchor = 4.dp,
-                )
-
-            // Tooltip state for query items feature (both @ and /)
-            val queryItemsTooltipState =
-                androidx.compose.material3.rememberTooltipState(
-                    isPersistent = true,
-                )
-            val queryTooltipPositionProvider =
-                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
-                    spacingBetweenTooltipAndAnchor = 4.dp,
-                )
-
-            LaunchedEffect(queryItemsType) {
-                if (queryItemsType != null) {
-                    queryItemsTooltipState.show()
-                } else {
-                    queryItemsTooltipState.dismiss()
-                }
-            }
-
-            LaunchedEffect(characterSelectionExpanded) {
-                if (characterSelectionExpanded) {
-                    characterToolTipState.show()
-                } else {
-                    characterToolTipState.dismiss()
-                }
-            }
-
-            Column(
-                modifier =
-                    Modifier
-                        .padding(2.dp)
-                        .fillMaxWidth()
-                        .heightIn(max = 250.dp)
-                        .drawWithContent {
-                            drawContent()
-                            val outline = inputShape.createOutline(size, layoutDirection, this)
-                            if (isGenerating) {
-                                val brush =
-                                    object : ShaderBrush() {
-                                        override fun createShader(size: Size): Shader {
-                                            val shader =
-                                                (
-                                                    sweepGradient(
-                                                        content.data.genre.colorPalette(),
-                                                    ) as ShaderBrush
-                                                ).createShader(size)
-                                            val matrix = Matrix()
-                                            matrix.setRotate(
-                                                rotation,
-                                                size.width / 2,
-                                                size.height / 2,
-                                            )
-                                            shader.setLocalMatrix(matrix)
-                                            return shader
-                                        }
+                    .animateContentSize()
+                    .clip(inputShape)
+                    .drawWithContent {
+                        drawContent()
+                        val outline = inputShape.createOutline(size, layoutDirection, this)
+                        if (isGenerating) {
+                            val brush =
+                                object : ShaderBrush() {
+                                    override fun createShader(size: Size): Shader {
+                                        val shader =
+                                            (
+                                                sweepGradient(
+                                                    content.data.genre.colorPalette(),
+                                                ) as ShaderBrush
+                                            ).createShader(size)
+                                        val matrix = Matrix()
+                                        matrix.setRotate(
+                                            rotation,
+                                            size.width / 2,
+                                            size.height / 2,
+                                        )
+                                        shader.setLocalMatrix(matrix)
+                                        return shader
                                     }
-                                drawOutline(
-                                    outline = outline,
-                                    brush = brush,
-                                    style = Stroke(width = 1.dp.toPx()),
-                                )
-                            } else {
-                                drawOutline(
-                                    outline = outline,
-                                    brush = inputBrush,
-                                    style = Stroke(width = 1.dp.toPx()),
-                                )
-                            }
-                        }.background(backgroundColor, inputShape)
-                        .verticalScroll(rememberScrollState())
-                        .padding(8.dp),
+                                }
+                            drawOutline(
+                                outline = outline,
+                                brush = brush,
+                                style = Stroke(width = 1.dp.toPx()),
+                            )
+                        } else {
+                            drawOutline(
+                                outline = outline,
+                                brush = inputBrush,
+                                style = Stroke(width = 1.dp.toPx()),
+                            )
+                        }
+                    }.dropShadow(inputShape, {
+                        brush = inputBrush
+                        radius = glowRadius
+                    })
+                    .border(1.dp, inputBrush, inputShape)
+                    .background(backgroundColor, inputShape)
+                    .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            val textStyle =
+                MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontFamily = content.data.genre.bodyFont(),
+                )
+            val maxContentLength = 700
+            val tagBackgroundColor = MaterialTheme.colorScheme.background
+
+            TooltipBox(
+                positionProvider = tooltipPositionProvider,
+                state = characterToolTipState,
+                modifier =
+                    Modifier.size(36.dp),
+                onDismissRequest = {
+                    coroutineScope.launch {
+                        characterToolTipState.dismiss()
+                    }
+                },
+                tooltip = {
+                    val genre = content.data.genre
+                    val shape =
+                        genre.bubble(
+                            BubbleTailAlignment.BottomRight,
+                            0.dp,
+                            0.dp,
+                        )
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(4),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .dropShadow(
+                                    shape,
+                                    Shadow(
+                                        radius = 5.dp,
+                                        genre.color,
+                                    ),
+                                ).border(1.dp, genre.color.gradientFade(), shape)
+                                .background(
+                                    MaterialTheme.colorScheme.background,
+                                    shape,
+                                ).clip(shape)
+                                .padding(8.dp),
+                    ) {
+                        item(span = { GridItemSpan(4) }) {
+                            Text(
+                                "Selecionar personagem",
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        textAlign = TextAlign.Start,
+                                    ),
+                                modifier = Modifier.padding(8.dp),
+                            )
+                        }
+
+                        items(content.characters) {
+                            CharacterYearbookItem(
+                                it.data,
+                                content.data.genre,
+                                imageModifier =
+                                    Modifier
+                                        .clickable {
+                                            onSelectCharacter(it)
+                                            coroutineScope.launch {
+                                                characterToolTipState.dismiss()
+                                            }
+                                        }.size(36.dp),
+                                textStyle =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                    ),
+                            )
+                        }
+                    }
+                },
+            ) {
+                AnimatedContent(
+                    selectedCharacter,
+                    transitionSpec = {
+                        scaleIn() togetherWith scaleOut()
+                    },
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .clickable {
+                                coroutineScope.launch {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                    characterToolTipState.show()
+                                }
+                            },
+                ) {
+                    it?.let { character ->
+                        CharacterAvatar(
+                            character.data,
+                            genre = content.data.genre,
+                            grainRadius = 0f,
+                            pixelation = 0f,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(),
+                        )
+                    }
+                }
+            }
+
+            Box(
+                Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically),
             ) {
                 TooltipBox(
                     positionProvider = queryTooltipPositionProvider,
@@ -516,7 +660,7 @@ fun ChatInputView(
 
                                             is ItemsType.Wikis -> {
                                                 handleWikiSelection(
-                                                    item as com.ilustris.sagai.features.wiki.data.model.Wiki,
+                                                    item as Wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
@@ -528,286 +672,318 @@ fun ChatInputView(
                         }
                     },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Bottom,
-                    ) {
-                        val textStyle =
-                            MaterialTheme.typography.labelMedium.copy(
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontFamily = content.data.genre.bodyFont(),
-                            )
-                        val maxLength = 500
-                        val tagBackgroundColor = MaterialTheme.colorScheme.background
+                    BasicTextField(
+                        inputField,
+                        enabled = isGenerating.not(),
+                        maxLines = if (isImeVisible.not()) 1 else Int.MAX_VALUE,
+                        onValueChange = { newValue ->
+                            // Check if this is a backspace action (text got shorter by 1)
+                            val isBackspace =
+                                newValue.text.length == inputField.text.length - 1 &&
+                                    newValue.selection.start == inputField.selection.start - 1
 
-                        TooltipBox(
-                            positionProvider = tooltipPositionProvider,
-                            state = characterToolTipState,
-                            modifier =
-                                Modifier
-                                    .size(36.dp),
-                            onDismissRequest = {
-                                characterSelectionExpanded = false
-                            },
-                            tooltip = {
-                                val genre = content.data.genre
-                                val shape =
-                                    genre.bubble(
-                                        BubbleTailAlignment.BottomRight,
-                                        0.dp,
-                                        0.dp,
-                                    )
-
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(4),
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .dropShadow(
-                                                shape,
-                                                Shadow(
-                                                    radius = 5.dp,
-                                                    genre.color,
-                                                ),
-                                            ).border(1.dp, genre.color.gradientFade(), shape)
-                                            .background(
-                                                MaterialTheme.colorScheme.background,
-                                                shape,
-                                            ).clip(shape)
-                                            .padding(8.dp),
-                                ) {
-                                    item(span = { GridItemSpan(4) }) {
-                                        Text(
-                                            "Selecionar personagem",
-                                            style =
-                                                MaterialTheme.typography.bodyMedium.copy(
-                                                    fontFamily = content.data.genre.bodyFont(),
-                                                    textAlign = TextAlign.Start,
-                                                ),
-                                            modifier = Modifier.padding(8.dp),
-                                        )
-                                    }
-
-                                    items(content.characters) {
-                                        CharacterYearbookItem(
-                                            it.data,
-                                            content.data.genre,
-                                            imageModifier =
-                                                Modifier
-                                                    .clickable {
-                                                        onSelectCharacter(it)
-                                                        characterSelectionExpanded = false
-                                                    }.size(36.dp),
-                                            textStyle =
-                                                MaterialTheme.typography.labelSmall.copy(
-                                                    fontFamily = content.data.genre.bodyFont(),
-                                                ),
-                                        )
-                                    }
+                            if (isBackspace) {
+                                // Try smart backspace for tags
+                                val smartResult = handleSmartBackspace(inputField)
+                                if (smartResult != null) {
+                                    onUpdateInput(smartResult)
+                                    return@BasicTextField
                                 }
-                            },
-                        ) {
-                            AnimatedContent(
-                                selectedCharacter,
-                                transitionSpec = {
-                                    scaleIn() togetherWith scaleOut()
+                            }
+
+                            val cleanLength = getCleanTextLength(newValue.text)
+                            if (cleanLength <= maxContentLength) {
+                                onUpdateInput(newValue)
+                            }
+                        },
+                        textStyle = textStyle,
+                        modifier = Modifier.animateContentSize(),
+                        keyboardOptions =
+                            KeyboardOptions(
+                                imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default,
+                            ),
+                        keyboardActions =
+                            KeyboardActions(
+                                onNext = {
+                                    if (currentTagInside != null) {
+                                        val escaped = escapeCursorFromTagAndClean(inputField)
+                                        onUpdateInput(escaped)
+                                    }
                                 },
-                                modifier = Modifier.fillMaxSize(),
+                            ),
+                        visualTransformation = {
+                            transformTextWithContent(
+                                content.data.genre,
+                                content.mainCharacter?.data,
+                                content.getCharacters(),
+                                content.wikis,
+                                inputField.text,
+                                tagBackgroundColor,
+                                textStyle.color,
+                            )
+                        },
+                        cursorBrush =
+                            content.data.genre.color
+                                .solidGradient(),
+                        decorationBox = { innerTextField ->
+                            val boxPadding = 12.dp
+                            Box(
+                                contentAlignment = Alignment.CenterStart,
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = boxPadding)
+                                        .reactiveShimmer(
+                                            isGenerating,
+                                        ),
                             ) {
-                                it?.let { character ->
-                                    CharacterAvatar(
-                                        character.data,
-                                        genre = content.data.genre,
-                                        grainRadius = 0f,
-                                        pixelation = 0f,
-                                        modifier =
-                                            Modifier
-                                                .fillMaxSize()
-                                                .clip(CircleShape)
-                                                .clickable {
-                                                    characterSelectionExpanded = true
-                                                },
-                                    )
-                                }
-                            }
-                        }
-
-                        BasicTextField(
-                            inputField,
-                            enabled = isGenerating.not(),
-                            maxLines = if (isGenerating) 1 else Int.MAX_VALUE,
-                            onValueChange = {
-                                if (it.text.length <= maxLength) {
-                                    onUpdateInput(it)
-                                }
-                            },
-                            textStyle = textStyle,
-                            visualTransformation = {
-                                transformTextWithContent(
-                                    content.data.genre,
-                                    content.mainCharacter?.data,
-                                    content.getCharacters(),
-                                    content.wikis,
-                                    inputField.text,
-                                    tagBackgroundColor,
+                                val textAlpha by animateFloatAsState(
+                                    if (inputField.text.isEmpty()) .5f else 1f,
                                 )
-                            },
-                            cursorBrush =
-                                Brush.verticalGradient(
-                                    content.data.genre.color
-                                        .darkerPalette(),
-                                ),
-                            decorationBox = { innerTextField ->
-                                val boxPadding = 12.dp
-                                Box(
-                                    contentAlignment = Alignment.CenterStart,
-                                    modifier =
-                                        Modifier
-                                            .padding(boxPadding)
-                                            .fillMaxWidth()
-                                            .reactiveShimmer(
-                                                isGenerating,
-                                            ),
+                                val hintAlpha by animateFloatAsState(
+                                    if (inputField.text.isEmpty()) 1f else 0f,
+                                )
+                                rememberScrollState()
+
+                                Column(
+                                    Modifier
+                                        .alpha(textAlpha)
+                                        .verticalScroll(rememberScrollState()),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
-                                    val textAlpha by animateFloatAsState(
-                                        if (inputField.text.isEmpty()) 0f else 1f,
-                                    )
-                                    val hintAlpha by animateFloatAsState(
-                                        if (inputField.text.isEmpty()) 1f else 0f,
-                                    )
-                                    AnimatedContent(
-                                        action,
-                                        modifier = Modifier.alpha(hintAlpha),
-                                    ) {
-                                        Text(
-                                            it.hint(),
-                                            style = textStyle,
-                                            maxLines = 1,
-                                            modifier =
-                                                Modifier
-                                                    .alpha(.4f),
-                                        )
-                                    }
-
-                                    Box(
-                                        Modifier
-                                            .alpha(textAlpha)
-                                            .fillMaxWidth(),
-                                    ) {
+                                    Box {
                                         innerTextField()
+                                        AnimatedContent(
+                                            action,
+                                            modifier = Modifier.alpha(hintAlpha),
+                                        ) {
+                                            Text(
+                                                it.hint(),
+                                                style = textStyle,
+                                                maxLines = 1,
+                                                modifier =
+                                                    Modifier
+                                                        .alpha(.4f),
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
 
-                        IconButton(
-                            onClick = {
-                                if (isGenerating) return@IconButton
-                                sendMessage()
-                            },
-                            enabled = inputField.text.isNotBlank() && isGenerating.not(),
-                            colors =
-                                IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = content.data.genre.color,
-                                    contentColor = content.data.genre.iconColor,
-                                ),
-                            modifier =
-                                Modifier
-                                    .size(36.dp),
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                AnimatedContent(
-                                    isGenerating,
-                                    transitionSpec = {
-                                        slideInVertically { -it } togetherWith slideOutVertically { it }
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .reactiveShimmer(
-                                                isGenerating,
-                                                content.data.genre.shimmerColors(),
-                                            ).fillMaxSize(),
-                                ) { loading ->
-                                    val icon =
-                                        if (loading) R.drawable.ic_spark else R.drawable.ic_send
-                                    Icon(
-                                        painterResource(icon),
-                                        contentDescription = "Send Message",
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
+                                    AnimatedVisibility(isImeVisible) {
+                                        val suggestionsState = rememberLazyListState()
+
+                                        LaunchedEffect(action) {
+                                            suggestionsState.animateScrollToItem(0)
+                                        }
+
+                                        LazyRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            state = suggestionsState,
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Start,
+                                        ) {
+                                            val inputs =
+                                                currentTagInside?.let {
+                                                    listOfNotNull(SenderType.senderForTag(it))
+                                                } ?: run {
+                                                    SenderType
+                                                        .filterUserInputTypes()
+                                                        .sortedByDescending {
+                                                            it == action
+                                                        }
+                                                }
+
+                                            items(inputs) {
+                                                val genre = content.data.genre
+                                                val backColor by animateColorAsState(
+                                                    if (it.tag == currentTagInside) {
+                                                        genre.color.copy(alpha = .3f)
+                                                    } else {
+                                                        MaterialTheme.colorScheme.background.copy(
+                                                            alpha = .3f,
+                                                        )
+                                                    },
+                                                )
+                                                val contentColor by animateColorAsState(
+                                                    if (it.tag == currentTagInside) {
+                                                        genre.color
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onBackground.copy(
+                                                            alpha = .5f,
+                                                        )
+                                                    },
+                                                )
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement =
+                                                        Arrangement.spacedBy(
+                                                            4.dp,
+                                                        ),
+                                                    modifier =
+                                                        Modifier
+                                                            .padding(4.dp)
+                                                            .animateItem()
+                                                            .wrapContentSize()
+                                                            .background(
+                                                                backColor,
+                                                                inputShape,
+                                                            ).clickable(enabled = currentTagInside == null) {
+                                                                it.tag?.let { tag ->
+                                                                    val newValue =
+                                                                        insertExpressiveTag(
+                                                                            inputField,
+                                                                            tag,
+                                                                        )
+                                                                    onUpdateInput(newValue)
+                                                                }
+                                                            }.padding(8.dp)
+                                                            .animateContentSize()
+                                                            .reactiveShimmer(
+                                                                it.tag == currentTagInside,
+                                                                repeatMode = RepeatMode.Restart,
+                                                                duration = 2.seconds,
+                                                            ),
+                                                ) {
+                                                    val weight =
+                                                        if (it == action) FontWeight.Bold else FontWeight.Normal
+                                                    it.icon().let { icon ->
+                                                        Image(
+                                                            painterResource(icon),
+                                                            null,
+                                                            modifier = Modifier.size(12.dp),
+                                                            colorFilter =
+                                                                ColorFilter.tint(
+                                                                    contentColor,
+                                                                ),
+                                                        )
+
+                                                        Text(
+                                                            it.title(),
+                                                            style =
+                                                                MaterialTheme.typography.labelSmall.copy(
+                                                                    fontWeight = weight,
+                                                                    fontFamily = content.data.genre.bodyFont(),
+                                                                    color = contentColor,
+                                                                ),
+                                                        )
+                                                    }
+                                                }
+                                            }
+
+                                            if (inputs.size == 1) {
+                                                item {
+                                                    Text(
+                                                        stringResource(R.string.tag_exit_instruction),
+                                                        style =
+                                                            MaterialTheme.typography.labelSmall.copy(
+                                                                fontFamily = content.data.genre.bodyFont(),
+                                                                color =
+                                                                    MaterialTheme.colorScheme.onBackground.copy(
+                                                                        alpha = .5f,
+                                                                    ),
+                                                            ),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        }
+                        },
+                    )
+                }
+            }
+
+            val iconBackground by animateColorAsState(
+                if (isGenerating) Color.Transparent else content.data.genre.color,
+            )
+
+            val iconTint by animateColorAsState(
+                if (isGenerating) content.data.genre.color else content.data.genre.iconColor,
+            )
+
+            Box(contentAlignment = Alignment.Center) {
+                if (isSendingPending) {
+                    CircularProgressIndicator(
+                        color = content.data.genre.color,
+                        trackColor = Color.Transparent,
+                        strokeWidth = 2.dp,
+                        modifier =
+                            Modifier
+                                .size(32.dp)
+                                .gradientFill(content.data.genre.gradient(true)),
+                    )
+                }
+
+                if (isEditing) {
+                    IconButton(
+                        onClick = onCancelEdit,
+                        modifier =
+                            Modifier
+                                .padding(end = 4.dp)
+                                .size(32.dp),
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error,
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.round_close_24),
+                            contentDescription = stringResource(R.string.cancel),
+                        )
                     }
                 }
 
-                AnimatedVisibility(isImeVisible) {
-                    val suggestionsState = rememberLazyListState()
-
-                    LaunchedEffect(action) {
-                        suggestionsState.animateScrollToItem(0)
-                    }
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        state = suggestionsState,
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        val inputs =
-                            SenderType.filterUserInputTypes().sortedByDescending {
-                                it == action
-                            }
-                        items(inputs) {
-                            val alpha by animateFloatAsState(
-                                if (it == action) 1f else .5f,
-                                tween(300),
-                            )
-                            val brush =
-                                if (it ==
-                                    action
-                                ) {
-                                    content.data.genre.gradient()
-                                } else {
-                                    MaterialTheme.colorScheme.onBackground.solidGradient()
-                                }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier =
-                                    Modifier
-                                        .animateItem()
-                                        .reactiveShimmer(it == action)
-                                        .alpha(alpha)
-                                        .wrapContentSize()
-                                        .clip(content.data.genre.shape())
-                                        .gradientFill(brush)
-                                        .clickable {
-                                            onUpdateSender(it)
-                                        }.padding(16.dp),
-                            ) {
-                                val weight =
-                                    if (it == action) FontWeight.Bold else FontWeight.Normal
-                                it.icon().let { icon ->
-                                    Image(
-                                        painterResource(icon),
-                                        null,
-                                        modifier = Modifier.size(12.dp),
-                                    )
-
-                                    Text(
-                                        it.title(),
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = weight,
-                                                fontFamily = content.data.genre.bodyFont(),
-                                            ),
-                                    )
-                                }
-                            }
+                IconButton(
+                    onClick = {
+                        if (isSendingPending) {
+                            onSendMessage(true)
+                            return@IconButton
                         }
+                        if (isGenerating) return@IconButton
+                        if (inputField.text.isEmpty() && !isEditing) {
+                            onRequestAudio()
+                            return@IconButton
+                        }
+                        sendMessage()
+                    },
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = iconBackground,
+                            contentColor = iconTint,
+                        ),
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    AnimatedContent(
+                        isGenerating || isSendingPending || isEditing,
+                        transitionSpec = {
+                            scaleIn(
+                                tween(1000, easing = EaseInBounce),
+                            ) togetherWith
+                                scaleOut(
+                                    tween(500, easing = EaseIn),
+                                )
+                        },
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .reactiveShimmer(
+                                    isGenerating,
+                                ).fillMaxSize(),
+                    ) { loading ->
+                        val icon =
+                            if (isEditing) {
+                                R.drawable.ic_check_circle
+                            } else if (loading) {
+                                if (isSendingPending) R.drawable.ic_stop else R.drawable.ic_spark
+                            } else if (inputField.text.isEmpty()) {
+                                R.drawable.ic_mic
+                            } else {
+                                R.drawable.ic_send
+                            }
+                        Icon(
+                            painterResource(icon),
+                            contentDescription = if (isEditing) stringResource(R.string.save_changes) else "Send Message",
+                            modifier = Modifier.fillMaxSize(),
+                        )
                     }
                 }
             }
@@ -834,7 +1010,7 @@ fun ChatInputView(
                 },
                 sheetState = bottomSheetState,
                 dragHandle = { },
-                shape = content.data.genre.shape(),
+                shape = inputShape,
                 containerColor = Color.Transparent,
             ) {
                 val genre = content.data.genre
@@ -845,10 +1021,10 @@ fun ChatInputView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .border(1.dp, genre.color.gradientFade(), genre.shape())
+                                .border(1.dp, genre.color.gradientFade(), inputShape)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
-                                    genre.shape(),
+                                    inputShape,
                                 ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -875,16 +1051,16 @@ fun ChatInputView(
                         )
 
                         AnimatedVisibility(it.status != TypoStatus.FIX) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Button(
                                     enabled = isEnabled,
-                                    shape = genre.shape(),
+                                    shape = inputShape,
                                     onClick = {
-                                        it.suggestedText?.let { text ->
+                                        it.suggestedText?.let {
                                             onUpdateInput(
                                                 TextFieldValue(
-                                                    it.suggestedText,
-                                                    TextRange(it.suggestedText.length),
+                                                    it,
+                                                    TextRange(it.length),
                                                 ),
                                             )
                                         }
@@ -913,7 +1089,7 @@ fun ChatInputView(
                                         sendMessage(true)
                                         isEnabled = false
                                     },
-                                    shape = genre.shape(),
+                                    shape = inputShape,
                                     colors =
                                         ButtonDefaults.textButtonColors().copy(
                                             contentColor =

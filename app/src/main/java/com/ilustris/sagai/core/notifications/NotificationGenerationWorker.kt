@@ -15,7 +15,6 @@ import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
@@ -68,17 +67,17 @@ class NotificationGenerationWorker
                         return@withTimeout Result.failure()
                     }
 
+                    if (sagaContent.flatMessages().isEmpty()) {
+                        Log.e(TAG, "No messages found for saga: $sagaId")
+                        return@withTimeout Result.failure()
+                    }
+
                     // Gerar resumo da cena
                     val sceneSummary =
                         executeRequest {
                             gemmaClient.generate<SceneSummary>(
                                 ChatPrompts.sceneSummarizationPrompt(
                                     saga = sagaContent,
-                                    recentMessages =
-                                        sagaContent
-                                            .flatMessages()
-                                            .map { it.message }
-                                            .takeLast(UpdateRules.LORE_UPDATE_LIMIT),
                                 ),
                             )
                         }.getSuccess()

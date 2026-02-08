@@ -4,12 +4,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.database.backup.BackupMetadata
+import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.utils.StringResourceHelper
-import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
-import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,15 +22,13 @@ class BackupViewModel
     @Inject
     constructor(
         private val backupService: BackupService,
-        private val sagaBackupService: SagaBackupService,
-        private val sagaRepository: SagaRepository,
+        private val databaseBackupService: DatabaseBackupService,
         private val stringHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<BackupUiState>(BackupUiState.Dimissed)
         val uiState = _uiState.asStateFlow()
 
         val backupEnabled = backupService.backupEnabled()
-        val sagas = sagaRepository.getChats()
 
         fun observeBackupStatus() {
             viewModelScope.launch {
@@ -46,26 +43,16 @@ class BackupViewModel
                 _uiState.value =
                     BackupUiState.Loading(stringHelper.getString(R.string.backup_loading_recovering_content))
 
-                val backups =
-                    (backupService.getBackedUpSagas().getSuccess()) ?: run {
-                        _uiState.emit(
-                            BackupUiState.Empty(stringHelper.getString(R.string.backup_error_recovery_failed)),
-                        )
-                        delay(5.seconds)
-                        _uiState.emit(BackupUiState.Dimissed)
-                        return@launch
-                    }
+                val backups = databaseBackupService.getAllBackups()
 
-                val validSagas = sagaBackupService.filterValidSagas(backups).getSuccess() ?: emptyList()
-
-                if (validSagas.isEmpty()) {
+                if (backups.isEmpty()) {
                     _uiState.emit(BackupUiState.Empty(stringHelper.getString(R.string.backup_message_all_good)))
                     delay(3.seconds)
                     _uiState.emit(BackupUiState.Dimissed)
                 } else {
                     _uiState.emit(BackupUiState.Loading(stringHelper.getString(R.string.backup_loading_found_items)))
                     delay(3.seconds)
-                    _uiState.emit(BackupUiState.ShowBackups(validSagas))
+                    _uiState.emit(BackupUiState.ShowBackups(backups))
                 }
             }
         }
@@ -106,34 +93,25 @@ class BackupViewModel
             }
         }
 
-        fun restoreSaga(restorableSaga: RestorableSaga) {
+        fun restoreDatabase(backup: BackupMetadata) {
             viewModelScope.launch {
                 _uiState.value =
                     BackupUiState.Loading(
-                        stringHelper.getString(
-                            R.string.backup_loading_restoring_saga,
-                            restorableSaga.manifest.title
-                        )
+                        stringHelper.getString(R.string.backup_loading_restoring_database),
                     )
-                sagaBackupService.restoreContent(restorableSaga)
+                databaseBackupService.restoreBackup(backup)
                 delay(2.seconds)
+                _uiState.emit(BackupUiState.Dimissed)
             }
         }
 
-        fun restoreAllBackups(backups: List<RestorableSaga>) {
+        fun createBackup() {
             viewModelScope.launch {
-                backups.forEach {
-                    _uiState.emit(
-                        BackupUiState.Loading(
-                            stringHelper.getString(
-                                R.string.backup_loading_restoring_saga,
-                                it.manifest.title
-                            )
-                        )
-                    )
-                    sagaBackupService.restoreContent(it)
-                    delay(2.seconds)
-                }
+                _uiState.value =
+                    BackupUiState.Loading(stringHelper.getString(R.string.backup_loading_creating))
+                databaseBackupService.createBackup()
+                delay(2.seconds)
+                _uiState.emit(BackupUiState.Dimissed)
             }
         }
 
@@ -158,7 +136,7 @@ sealed class BackupUiState {
     object BackupEnabled : BackupUiState()
 
     data class ShowBackups(
-        val backups: List<RestorableSaga>,
+        val backups: List<BackupMetadata>,
     ) : BackupUiState()
 
     data class Empty(

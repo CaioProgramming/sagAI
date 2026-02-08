@@ -7,4 +7,13 @@ data class SceneSummary(
     val currentConflict: String?,
     val mood: String?,
     val currentTimeOfDay: String?,
+    val tensionLevel: Int? = 5,
+    val spatialContext: String? = null,
+    val narrativePacing: String? = "Steady",
+    val worldStateChanges: List<String>? = emptyList(),
+    val relevantPastContext: List<String>? = emptyList(),
+    val establishedFacts: List<String>? = emptyList(),
+    // Plausible narrative branches from this scene state (limit: 2)
+    // Future use: Timeline branching visualization (multiverse tree)
+    val possibleOutcomes: List<String>? = emptyList(),
 )

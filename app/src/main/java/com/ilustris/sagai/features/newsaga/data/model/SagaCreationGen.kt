@@ -1,21 +1,26 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
+data class CreationSuggestion(
+    val text: String,
+    val genre: Genre,
+)
+
 data class SagaCreationGen(
     val message: String,
     val inputHint: String,
-    val suggestions: List<String>,
+    val suggestions: List<CreationSuggestion>,
     val callback: CallbackContent?,
 )
 
 data class CallbackContent(
     val action: CallBackAction,
-    val data: SagaForm?,
+    val data: SagaDraft?,
 )
 
 enum class CallBackAction {
     UPDATE_DATA,
     AWAITING_CONFIRMATION,
-    SAVE_SAGA,
+    CONTENT_READY,
 }
 
 enum class Sender {
@@ -27,5 +32,6 @@ data class ChatMessage(
     val id: String = System.nanoTime().toString(),
     val text: String,
     val sender: Sender,
-    val callback: CallBackAction? = null
+    val callback: CallBackAction? = null,
+    val audioFile: java.io.File? = null,
 )

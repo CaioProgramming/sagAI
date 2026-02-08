@@ -111,8 +111,7 @@ fun CharacterShareView(
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }
-                    .shadow(10.dp, RectangleShape, spotColor = genre.color)
+                    }.shadow(10.dp, RectangleShape, spotColor = genre.color)
                     .clip(RectangleShape)
                     .background(genre.color, RectangleShape)
                     .clickable {
@@ -131,17 +130,13 @@ fun CharacterShareView(
                 CharacterCard(
                     character = character,
                     sagaContent = content,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(.5f),
-                    segmentedImage = segmentedBitmap,
-                    originalImage = originalBitmap,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(.5f),
                     shareText = shareText,
-                    showWatermark = true
+                    showWatermark = true,
                 )
-
-
-
             }
         }
 

@@ -5,22 +5,21 @@ import android.content.Context
 import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
-import com.ilustris.sagai.core.file.backup.RestorableSaga
-import com.ilustris.sagai.core.file.backup.SagaManifest
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionStatus
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.settings.ui.SagaStorageInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -56,7 +55,11 @@ interface SettingsUseCase {
 
     suspend fun enableBackup(uri: Uri?): RequestResult<Unit>
 
-    suspend fun restoreSaga(uri: Uri): RequestResult<SagaContent>
+    suspend fun hasSagasWithChapters(): Boolean
+
+    suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit>
+
+    suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit>
 }
 
 class SettingsUseCaseImpl
@@ -71,7 +74,8 @@ class SettingsUseCaseImpl
         private val permissionService: PermissionService,
         private val backupService: BackupService,
         private val fileManager: FileManager,
-        private val sagaBackupService: SagaBackupService,
+        private val databaseBackupService: DatabaseBackupService,
+        private val database: SagaDatabase,
     ) : SettingsUseCase {
         companion object {
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
@@ -85,16 +89,15 @@ class SettingsUseCaseImpl
 
         override fun getSmartSuggestionsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(SMART_SUGGESTIONS_ENABLED_KEY, true)
 
-    override fun getMessageEffectsEnabled(): Flow<Boolean> =
-        dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
+        override fun getMessageEffectsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
 
         override fun backupEnabled() = backupService.backupEnabled()
 
         override suspend fun setSmartSuggestionsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(SMART_SUGGESTIONS_ENABLED_KEY, enabled)
 
-    override suspend fun setMessageEffectsEnabled(enabled: Boolean) =
-        dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
+        override suspend fun setMessageEffectsEnabled(enabled: Boolean) =
+            dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
 
         override suspend fun getAppStorageUsage(): Long =
             fileHelper.getDirectorySize(context.cacheDir) +
@@ -126,27 +129,48 @@ class SettingsUseCaseImpl
 
         override suspend fun enableBackup(uri: Uri?) = backupService.enableBackup(uri)
 
-        override suspend fun restoreSaga(uri: Uri): RequestResult<SagaContent> =
-            executeRequest {
-                // 1. Parse Saga from Zip
-                val tempSaga =
-                    backupService.unzipAndParseSaga(uri) ?: error("Could not parse saga from zip")
+        override suspend fun hasSagasWithChapters(): Boolean =
+            withContext(Dispatchers.IO) {
+                val sagas = sagaRepository.getChats().firstOrNull() ?: return@withContext false
+                sagas.any { saga ->
+                    saga.acts.any { act -> act.chapters.isNotEmpty() }
+                }
+            }
 
-                // 2. Restore content using SagaBackupService
-                sagaBackupService
-                    .restoreContent(
-                        RestorableSaga(
-                            SagaManifest(
-                                sagaId = tempSaga.data.id,
-                                title = tempSaga.data.title,
-                                description = tempSaga.data.description,
-                                genre = tempSaga.data.genre,
-                                iconName = tempSaga.data.icon,
-                                lastBackup = System.currentTimeMillis(),
-                                zipFileName = uri.toString(),
-                            ),
-                            null,
-                        ),
-                    ).getSuccess()!!
+        override suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit> =
+            executeRequest {
+                database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
+
+                val dbFile = context.getDatabasePath("SagaDatabase")
+                if (!dbFile.exists()) error("Database file not found")
+
+                context.contentResolver.openOutputStream(destinationUri, "w")?.use { output ->
+                    dbFile.inputStream().use { input ->
+                        input.copyTo(output)
+                    }
+                } ?: error("Could not open output stream for destination URI")
+            }
+
+        override suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit> =
+            executeRequest {
+                val backupResult = databaseBackupService.createBackup()
+                if (backupResult.isFailure) {
+                    error("Failed to create backup before import: ${backupResult.exceptionOrNull()?.message}")
+                }
+
+                database.close()
+
+                val dbFile = context.getDatabasePath("SagaDatabase")
+                val walFile = java.io.File(dbFile.path + "-wal")
+                val shmFile = java.io.File(dbFile.path + "-shm")
+
+                walFile.delete()
+                shmFile.delete()
+
+                context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                    dbFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: error("Could not open input stream for source URI")
             }
     }

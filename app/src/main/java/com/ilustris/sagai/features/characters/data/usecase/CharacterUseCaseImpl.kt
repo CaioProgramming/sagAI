@@ -6,12 +6,8 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -21,11 +17,14 @@ import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
-import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
+import com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult
+import com.ilustris.sagai.features.characters.data.model.NickNameGen
+import com.ilustris.sagai.features.characters.data.model.SmartZoom
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
@@ -40,8 +39,10 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
@@ -61,7 +62,8 @@ class CharacterUseCaseImpl
         private val genreReferenceHelper: GenreReferenceHelper,
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
-        @ApplicationContext
+        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        @param:ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
@@ -72,6 +74,7 @@ class CharacterUseCaseImpl
                     id = 0,
                     joinedAt = Calendar.getInstance().timeInMillis,
                     image = emptyString(),
+                    voice = null,
                 ),
             )
 
@@ -86,65 +89,50 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val isPremium = billingService.isPremium()
-
-                val portraitReference =
-                    genreReferenceHelper.getPortraitReference().getSuccess()?.let {
-                        ImageReference(it, ImageGuidelines.compositionReferenceGuidance)
-                    }
-                val references =
-                    if (isPremium) {
-                        listOfNotNull(
-                            portraitReference,
-                        )
-                    } else {
-                        emptyList()
-                    }
-
-                val visualComposition =
-                    imagenClient
-                        .extractComposition(
-                            listOfNotNull(portraitReference),
-                        ).getSuccess()
-
-                val descriptionPrompt =
-                    SagaPrompts.iconDescription(
-                        saga.genre,
-                        mapOf(
-                            "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
-                            "character" to
-                                character.toJsonFormatExcludingFields(
-                                    listOf(
-                                        "id",
-                                        "image",
-                                        "sagaId",
-                                        "joinedAt",
-                                        "emojified",
-                                        "abilities",
-                                    ),
-                                ),
-                        ).toJsonFormat(),
-                        visualComposition,
-                        characterHexColor = character.hexColor,
-                    )
-
-                val translatedDescription =
-                    gemmaClient.generate<String>(
-                        descriptionPrompt,
-                        references = references,
-                        requireTranslation = false,
-                    )!!
-
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription.plus(ImagePrompts.criticalGenerationRule()), canByPass = false)!!
+                        .generateIntegratedImage(
+                            genre = saga.genre,
+                            imageReference = null,
+                            context =
+                                buildString {
+                                    appendLine("Character Context:")
+                                    appendLine(
+                                        character.toAINormalize(
+                                            listOf(
+                                                "id",
+                                                "image",
+                                                "sagaId",
+                                                "joinedAt",
+                                                "smartZoom",
+                                                "knowledge",
+                                            ),
+                                        ),
+                                    )
+                                },
+                            imageType = ImageType.CHARACTER,
+                        ).getSuccess()!!
 
                 val file =
-                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
-                val newCharacter = character.copy(image = file!!.path, emojified = isPremium.not())
+                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")!!
+                val newCharacter =
+                    character.copy(image = file.path)
                 repository.updateCharacter(newCharacter)
                 image.recycle()
-                newCharacter to translatedDescription
+
+                withContext(Dispatchers.IO) {
+                    createSmartZoom(newCharacter)
+                }
+                newCharacter to ""
+            }
+
+        override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
+            executeRequest {
+                Log.i(javaClass.simpleName, "createSmartZoom: creating zoom for ${character.name}")
+                val smartZoom = imageSegmentationHelper.calculateSmartZoom(character.image).getSuccess()
+                val newCharacter =
+                    character.copy(smartZoom = smartZoom ?: SmartZoom(needsZoom = false))
+                repository.updateCharacter(newCharacter)
             }
 
         override suspend fun generateCharacter(
@@ -152,12 +140,20 @@ class CharacterUseCaseImpl
             description: String,
         ): RequestResult<Character> =
             executeRequest {
+                val bannedNames = repository.getAllCharacterNames()
+                // Generate theme color first to pass to AI for appearance guidance
+                val themeColor = getRandomColorHex()
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         sagaContent,
                         description,
+                        bannedNames,
+                        themeColor,
                     )
-                Log.d(javaClass.simpleName, "generateCharacter: Starting character generation...")
+                Log.d(
+                    javaClass.simpleName,
+                    "generateCharacter: Starting character generation with theme color $themeColor...",
+                )
                 val newCharacter =
                     gemmaClient.generate<Character>(
                         prompt,
@@ -169,24 +165,27 @@ class CharacterUseCaseImpl
                                 "joinedAt",
                                 "sagaId",
                             ),
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
-                val character =
-                    sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
-                if (character != null) {
+                val character = sagaContent.findCharacter(newCharacter.name)
+
+                if (character?.data?.fullName() == newCharacter.fullName()) {
                     error("Character already exists")
                 }
                 val characterTransaction =
                     insertCharacter(
                         newCharacter.copy(
+                            id = 0,
                             sagaId = sagaContent.data.id,
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
-                            hexColor = getRandomColorHex(),
+                            hexColor = themeColor,
+                            smartZoom = null,
                         ),
                     )
-                withContext(Dispatchers.IO) {
+                CoroutineScope(Dispatchers.IO).launch {
                     generateCharacterImage(
                         characterTransaction,
                         sagaContent.data,
@@ -202,10 +201,15 @@ class CharacterUseCaseImpl
             executeRequest {
                 val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
                 val request =
-                    gemmaClient.generate<List<CharacterUpdate>>(prompt, describeOutput = false)!!
+                    gemmaClient.generate<CharacterUpdateGen>(
+                        prompt,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        temperatureRandomness = .3f,
+                    )!!
 
                 val updatedCharacters =
                     request
+                        .updates
                         .mapNotNull {
                             val character = saga.findCharacter(it.characterName)
                             val timelineContent = saga.findTimeline(timeline.id)
@@ -220,6 +224,13 @@ class CharacterUseCaseImpl
                                     "Character event already exists for this timeline(${timeline.id})",
                                 )
                                 return@mapNotNull null
+                            }
+
+                            if (character == null) {
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "generateCharactersUpdate: Couldn't find character ${it.characterName} on saga.",
+                                )
                             }
 
                             character?.let { character ->
@@ -257,9 +268,12 @@ class CharacterUseCaseImpl
                         )
 
                     val suggestions =
-                        gemmaClient.generate<List<NicknameSuggestion>>(
-                            prompt,
-                        )!!
+                        gemmaClient
+                            .generate<NickNameGen>(
+                                prompt,
+                                requirement = GemmaClient.ModelRequirement.MEDIUM,
+                            )!!
+                            .suggestions
 
                     if (suggestions.isEmpty()) {
                         Log.i(javaClass.simpleName, "No new nicknames found.")
@@ -293,40 +307,69 @@ class CharacterUseCaseImpl
                 }
             }
 
-        override suspend fun checkAndGenerateZoom(character: Character) {
-            if (character.smartZoom?.needsZoom == true) {
-                Log.d(
-                    javaClass.simpleName,
-                    "checkAndGenerateZoom: Character already has smart zoom data, skipping.",
-                )
-                return
-            }
-            if (character.image.isEmpty()) {
-                Log.d(
-                    javaClass.simpleName,
-                    "checkAndGenerateZoom: Character has no image, skipping zoom generation.",
-                )
-                return
+        override suspend fun generateCharacterResume(
+            character: CharacterContent,
+            saga: SagaContent,
+        ): RequestResult<String> =
+            executeRequest {
+                if (character.events.isEmpty()) {
+                    return@executeRequest character.data.backstory
+                }
+                val prompt = CharacterPrompts.characterResume(character, saga)
+                gemmaClient.generate<String>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                )!!
             }
 
-            Log.d(
-                javaClass.simpleName,
-                "checkAndGenerateZoom: Generating smart zoom for character ${character.name}...",
-            )
-            imageSegmentationHelper
-                .calculateSmartZoom(character.image)
-                .onSuccessAsync {
-                    val updatedCharacter = character.copy(smartZoom = it)
-                    repository.updateCharacter(updatedCharacter)
+        override suspend fun updateCharacterKnowledge(
+            timeline: Timeline,
+            saga: SagaContent,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val characters = saga.getCharacters()
+                if (characters.isEmpty()) return@executeRequest
+
+                val prompt = CharacterPrompts.knowledgeUpdatePrompt(timeline, characters)
+                val result =
+                    gemmaClient.generate<KnowledgeUpdateResult>(
+                        prompt,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    )
+
+                if (result?.updates?.isNotEmpty() == true) {
+                    Log.i(
+                        javaClass.simpleName,
+                        "Updating knowledge for ${result.updates.size} characters.",
+                    )
+                    result.updates.forEach { update ->
+                        saga.findCharacter(update.characterName)?.let { charContent ->
+                            val currentKnowledge =
+                                (charContent.data.knowledge ?: emptyList()).toMutableList()
+                            val newFacts =
+                                update.learnedFacts.filter { !currentKnowledge.contains(it) }
+
+                            if (newFacts.isNotEmpty()) {
+                                currentKnowledge.addAll(newFacts)
+                                if (currentKnowledge.size > 50) {
+                                    currentKnowledge.subList(0, currentKnowledge.size - 50).clear()
+                                }
+
+                                val updatedChar =
+                                    charContent.data.copy(knowledge = currentKnowledge)
+                                updateCharacter(updatedChar)
+                                Log.d(
+                                    javaClass.simpleName,
+                                    "Added ${newFacts.size} facts to ${update.characterName}",
+                                )
+                            }
+                        }
+                    }
+                } else {
                     Log.d(
                         javaClass.simpleName,
-                        "checkAndGenerateZoom: Successfully updated smart zoom for character ${character.name}.",
-                    )
-                }.onFailureAsync {
-                    Log.e(
-                        javaClass.simpleName,
-                        "checkAndGenerateZoom: Error generating smart zoom for character ${character.name}: ${it.message}",
+                        "No new knowledge extracted from this timeline event.",
                     )
                 }
-        }
+            }
     }

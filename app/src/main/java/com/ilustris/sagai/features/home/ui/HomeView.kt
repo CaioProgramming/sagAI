@@ -4,10 +4,14 @@ package com.ilustris.sagai.features.home.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -26,6 +30,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -63,9 +68,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,11 +82,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewAnnotatedString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -108,6 +117,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -129,6 +139,7 @@ fun HomeView(
     var showPremiumSheet by remember { mutableStateOf(false) }
     var showBackupSheet by remember { mutableStateOf(viewModel.showRecoverSheet.value) }
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isStarting by viewModel.isStarting.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -148,67 +159,103 @@ fun HomeView(
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Box(Modifier.fillMaxSize()) {
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        ModalDrawerSheet(
-                            drawerContainerColor = MaterialTheme.colorScheme.background,
-                        ) { SettingsView() }
-                    }
-                },
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    val isPremium = billingState is BillingService.BillingState.SignatureEnabled
-                    ChatList(
-                        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
-                        padding = padding,
-                        showDebugButton = showDebugButton,
-                        dynamicNewSagaTexts = dynamicNewSagaTexts,
-                        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-                        isPremium = isPremium,
-                        loadingStoryId = loadingStoryId,
-                        onCreateNewChat = {
-                            val freeSagasCount = sagas.count { it.data.isEnded.not() }
-                            if (freeSagasCount <= 3 || isPremium) {
-                                navController.navigateToRoute(Routes.NEW_SAGA)
-                            } else {
-                                showPremiumSheet = true
-                            }
-                        },
-                        onSelectSaga = { sagaData ->
-                            navController.navigateToRoute(
-                                Routes.CHAT,
-                                mapOf(
-                                    "sagaId" to sagaData.id.toString(),
-                                    "isDebug" to sagaData.isDebug.toString(),
+    SharedTransitionLayout {
+        AnimatedContent(isStarting, transitionSpec = {
+            fadeIn(tween(700)) togetherWith fadeOut(tween(400))
+        }) {
+            if (it) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                        modifier =
+                            Modifier
+                                .offset(y = 24.unaryMinus().dp)
+                                .size(150.dp)
+                                .sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    this@AnimatedContent,
+                                )
+                                .reactiveShimmer(
+                                    true,
+                                    themeShimmer(),
+                                    2.seconds,
                                 ),
-                            )
-                        },
-                        createFakeSaga = {
-                            viewModel.createFakeSaga()
-                        },
-                        openPremiumSheet = {
-                            showPremiumSheet = true
-                        },
-                        recoverSagas = {
-                            showBackupSheet = true
-                        },
-                        openSettings = {
-                            coroutineScope.launch {
-                                drawerState.open()
-                            }
-                        },
-                        onStoryClicked = {
-                            viewModel.getBriefing(it)
-                        },
                     )
+                }
+            } else {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.fillMaxSize()) {
+                        ModalNavigationDrawer(
+                            drawerState = drawerState,
+                            drawerContent = {
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    ModalDrawerSheet(
+                                        drawerContainerColor = MaterialTheme.colorScheme.background,
+                                    ) { SettingsView(navController) }
+                                }
+                            },
+                        ) {
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                val isPremium =
+                                    billingState is BillingService.BillingState.SignatureEnabled
+                                ChatList(
+                                    sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+                                    padding = padding,
+                                    showDebugButton = showDebugButton,
+                                    dynamicNewSagaTexts = dynamicNewSagaTexts,
+                                    isLoadingDynamicPrompts = isLoadingDynamicPrompts,
+                                    isPremium = isPremium,
+                                    loadingStoryId = loadingStoryId,
+                                    animatedContentScope = this@AnimatedContent,
+                                    onCreateNewChat = {
+                                        if (BuildConfig.DEBUG) {
+                                            navController.navigateToRoute(Routes.NEW_SAGA)
+                                            return@ChatList
+                                        }
+                                        val freeSagasCount = sagas.count { it.data.isEnded.not() }
+                                        if (freeSagasCount <= 3 || isPremium) {
+                                            navController.navigateToRoute(Routes.NEW_SAGA)
+                                        } else {
+                                            showPremiumSheet = true
+                                        }
+                                    },
+                                    onSelectSaga = { sagaData ->
+                                        navController.navigateToRoute(
+                                            Routes.CHAT,
+                                            mapOf(
+                                                "sagaId" to sagaData.id.toString(),
+                                                "isDebug" to sagaData.isDebug.toString(),
+                                            ),
+                                        )
+                                    },
+                                    createFakeSaga = {
+                                        viewModel.createFakeSaga()
+                                    },
+                                    openPremiumSheet = {
+                                        showPremiumSheet = true
+                                    },
+                                    recoverSagas = {
+                                        showBackupSheet = true
+                                    },
+                                    openSettings = {
+                                        coroutineScope.launch {
+                                            drawerState.open()
+                                        }
+                                    },
+                                    onStoryClicked = {
+                                        viewModel.getBriefing(it)
+                                    },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+
     LaunchedEffect(startFakeSaga) {
         startFakeSaga?.let {
             navController.navigateToRoute(
@@ -258,7 +305,7 @@ fun HomeView(
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun ChatList(
+private fun SharedTransitionScope.ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
@@ -267,6 +314,7 @@ private fun ChatList(
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
     loadingStoryId: Int? = null,
+    animatedContentScope: AnimatedContentScope,
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
@@ -313,12 +361,23 @@ private fun ChatList(
                                     }
                                     .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
+                            iconModifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    animatedContentScope,
+                                ),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
                             brush = Brush.linearGradient(holographicGradient),
                         )
                     } else {
-                        SagaTitle()
+                        SagaTitle(
+                            iconModifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    animatedContentScope,
+                                ),
+                        )
                     }
                 }
 
@@ -421,8 +480,8 @@ private fun ChatList(
                         (slideInVertically { height -> height } + fadeIn()).togetherWith(
                             slideOutVertically { height -> -height } + fadeOut(),
                         ) using
-                                SizeTransform(
-                                    clip = false,
+                            SizeTransform(
+                                clip = false,
                             )
                     },
                     label = "AnimatedDynamicTexts",
@@ -613,20 +672,25 @@ fun ChatCard(
                     }
                 }
 
-                val message =
+                val message: AnnotatedString =
                     if (sagaData.isEnded) {
-                        stringResource(R.string.chat_card_saga_ended)
+                        AnnotatedString(stringResource(R.string.chat_card_saga_ended))
                     } else {
                         if (saga.messagesSize() == 0) {
-                            stringResource(R.string.chat_card_saga_begins)
+                            AnnotatedString(stringResource(R.string.chat_card_saga_begins))
                         } else {
                             lastMessage
                                 ?.joinMessage()
                                 ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
+                                ?.let { buildMessagePreviewAnnotatedString(it) }
+                                ?: AnnotatedString(
+                                    lastMessage?.joinMessage(false)?.formatToString()
+                                        ?: emptyString(),
+                                )
                         }
                     }
                 Text(
-                    text = message ?: emptyString(),
+                    text = message,
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Normal,
@@ -691,34 +755,39 @@ fun HomeViewPreview() {
                 },
             )
         }) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
-                val previewChats =
-                    List(10) {
-                        SagaContent(
-                            Saga(
-                                title = "Chat ${it + 1}",
-                                description = "The journey of our lifes",
-                                genre = Genre.FANTASY,
-                                icon = "",
-                                isEnded = true,
-                                createdAt = Calendar.getInstance().timeInMillis,
-                                mainCharacterId = null,
-                            ),
-                            mainCharacter = null,
-                            acts = emptyList(),
+            AnimatedContent(padding) {
+                Box(modifier = Modifier.padding(it)) {
+                    val previewChats =
+                        List(10) {
+                            SagaContent(
+                                Saga(
+                                    title = "Chat ${it + 1}",
+                                    description = "The journey of our lifes",
+                                    genre = Genre.FANTASY,
+                                    icon = "",
+                                    isEnded = true,
+                                    createdAt = Calendar.getInstance().timeInMillis,
+                                    mainCharacterId = null,
+                                ),
+                                mainCharacter = null,
+                                acts = emptyList(),
+                            )
+                        }
+                    SharedTransitionLayout {
+                        ChatList(
+                            sagas = previewChats,
+                            animatedContentScope = this@AnimatedContent,
+                            showDebugButton = true,
+                            isPremium = true,
+                            dynamicNewSagaTexts =
+                                DynamicSagaPrompt(
+                                    "Dynamic Title Preview",
+                                    "Dynamic Subtitle Preview",
+                                ),
+                            isLoadingDynamicPrompts = false,
                         )
                     }
-                ChatList(
-                    sagas = previewChats,
-                    showDebugButton = true,
-                    isPremium = true,
-                    dynamicNewSagaTexts =
-                        DynamicSagaPrompt(
-                            "Dynamic Title Preview",
-                            "Dynamic Subtitle Preview",
-                        ),
-                    isLoadingDynamicPrompts = false,
-                )
+                }
             }
         }
     }

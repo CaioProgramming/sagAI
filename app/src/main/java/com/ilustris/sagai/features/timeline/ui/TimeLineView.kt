@@ -83,6 +83,7 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedElementItemKey
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
@@ -95,6 +96,7 @@ import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
@@ -257,8 +259,14 @@ fun TimeLineContent(
                             modifier =
                                 eventModifier
                                     .animateContentSize()
-                                    .clip(genre.shape())
-                                    .clickable(cardEnabled) {
+                                    .clip(
+                                        genre.bubble(
+                                            BubbleTailAlignment.BottomRight,
+                                            0.dp,
+                                            0.dp,
+                                            true,
+                                        ),
+                                    ).clickable(cardEnabled) {
                                         generateEmotionalReview(it)
                                     },
                         )
@@ -680,17 +688,28 @@ fun TimeLineSimpleCard(
         ),
     )
 
+    val shape =
+        genre.bubble(
+            tailAlignment = BubbleTailAlignment.BottomRight,
+            0.dp,
+            0.dp,
+            true,
+        )
     Column(
         modifier
-            .border(2.dp, genre.color.copy(alpha = .3f), genre.shape())
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f), genre.shape())
-            .padding(16.dp)
+            .border(1.dp, genre.gradient(), shape)
+            .padding(2.dp)
+            .background(
+                MaterialTheme.colorScheme.background,
+                shape,
+            ).padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             AvatarTimelineIcon(
                 saga.data.icon,
@@ -766,7 +785,7 @@ fun TimeLineSimpleCard(
                 modifier =
                     Modifier
                         .padding(8.dp)
-                        .clip(genre.shape())
+                        .clip(shape)
                         .clickable {
                             requestReview(eventContent)
                         }.gradientFill(genre.gradient())
@@ -943,7 +962,10 @@ fun TimeLineCard(
                             Modifier
                                 .width(2.dp)
                                 .weight(1f)
-                                .background(genre.color, genre.shape()),
+                                .background(
+                                    genre.color,
+                                    genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true),
+                                ),
                     )
                 }
             }
@@ -1186,7 +1208,7 @@ fun TimelineCharacterAttachment(
                         sagaContent,
                         true,
                         Modifier
-                            .clip(genre.shape())
+                            .clip(genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true))
                             .clickable {
                                 onSelectReference(it.data)
                             },

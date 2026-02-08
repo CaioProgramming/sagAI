@@ -1,0 +1,69 @@
+{
+  "version": 2,
+  "categories": [
+    {
+      "title": "The Basics",
+      "items": [
+        {
+          "question": "What exactly is SagAI?",
+          "answer": "Think of SagAI as your Dungeon Master, co-author, and illustrator rolled into one. It's an AI 'Saga Master' that helps you play through interactive stories. You pick the genre and the vibe, and it weaves the narrative, controls the NPCs, and generates the art."
+        },
+        {
+          "question": "Is this a game or a book?",
+          "answer": "Yes. (Okay, helpful, right?) It's an interactive novel where *you* are the main character. You can play it like an RPG—making choices, fighting bad guys, and romancing NPCs—or use it to brainstorm and outline a serious story."
+        }
+      ]
+    },
+    {
+      "title": "Storytelling Secrets",
+      "items": [
+        {
+          "question": "Why are the NPCs ignoring my thoughts?",
+          "answer": "Because they aren't mind readers! (Unless they actually *are* mind readers in your story). If you send a message as a 'Thought', only *you* and the Narrator know it. To get a reaction, you need to 'Say' something or 'Do' an action that they can see."
+        },
+        {
+          "question": "How do I make the story sound better?",
+          "answer": "Lean into the genre! Our AI changes its voice based on what you picked. In **Fantasy**, it loves poetic, Renaissance-style language ('Verily!'). In **Cyberpunk**, it speaks in gritty street slang. In **Horror**, it gets... well, creepy. Matching your own writing style to the genre helps the AI stay in character."
+        },
+        {
+          "question": "Can I introduce new characters?",
+          "answer": "Absolutely. Just mention them! If you say, 'I call my old friend, Captain Zephyr,' the AI will look for him. If he doesn't exist yet, it will create him on the fly based on your description. Radical diversity is encouraged—give them cool scars, neon hair, or a mysterious past!"
+        }
+      ]
+    },
+    {
+      "title": "Art & Visuals (The Secret Sauce)",
+      "items": [
+        {
+          "question": "Why does my Fantasy art look like an oil painting?",
+          "answer": "That's on purpose! For **Fantasy**, our artist AI is obsessed with the 'Renaissance Oil Painting' look. It hates modern digital art. To get the best results, describe things like 'brushstrokes', 'golden light', and 'flowing fabrics'."
+        },
+        {
+          "question": "Why is my Punk Rock character a cartoon?",
+          "answer": "Punk Rock plays by different rules! It uses a specific 'Gorillaz-esque' 2D cartoon style with bold outlines and flat colors. Realistic descriptions won't work well here—think 'music video animation' instead of 'photo'."
+        },
+        {
+          "question": "My Shinobi story is black and white!",
+          "answer": "Correct! The **Shinobi** genre uses a strictly monochrome 'Sumi-e Ink Wash' style with only a single accent color (usually Crimson Red). It's designed to look like ancient Japanese art."
+        },
+        {
+          "question": "Any tips for better character portraits?",
+          "answer": "Details matter! The AI looks for specific things like 'hairstyle', 'distinguishing marks' (scars, tattoos), and 'clothing'. Also, the framing matters—if you ask for a 'Close-up', don't expect to see their cool new boots!"
+        }
+      ]
+    },
+    {
+      "title": "Troubleshooting",
+      "items": [
+        {
+          "question": "The story got stuck or isn't moving forward.",
+          "answer": "Sometimes the AI is too polite and waits for you. Try a 'Narrative Leap'—type something like 'Turn the page', 'Skip to the next morning', or 'Suddenly, an explosion rocks the ship!' to force the plot forward."
+        },
+        {
+          "question": "The AI output cut off.",
+          "answer": "It happens to the best of us. Just type 'Continue' or 'Go on', and it should pick up right where it left off."
+        }
+      ]
+    }
+  ]
+}

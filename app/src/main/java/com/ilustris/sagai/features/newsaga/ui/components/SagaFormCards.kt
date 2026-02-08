@@ -1,46 +1,48 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 
 enum class CardFace(
     val angle: Float,
@@ -59,48 +61,34 @@ enum class CardFace(
 
 @Composable
 fun SagaFormCards(
+    cardFace: CardFace,
     sagaForm: SagaForm,
-    onDismiss: () -> Unit,
     modifier: Modifier,
+    toggleCard: () -> Unit = {},
 ) {
-    var cardFace by remember {
-        mutableStateOf(CardFace.Front)
-    }
-
-    LaunchedEffect(Unit) {
-        delay(5.seconds)
-        cardFace = cardFace.next
-        delay(5.seconds)
-        cardFace = cardFace.next
-    }
-
     FlipCard(
         cardFace,
         onClick = {
-            cardFace = it.next
+            toggleCard()
         },
         front = {
-            val genreTitle =
-                sagaForm.saga.genre?.title?.let {
-                    stringResource(it)
-                } ?: emptyString()
             ReviewCard(
                 sagaForm.saga.title,
-                genreTitle,
+                emptyString(),
                 sagaForm.saga.description,
                 sagaForm.saga.genre,
             )
         },
         back = {
             ReviewCard(
-                sagaForm.character.name,
-                sagaForm.character.gender,
-                sagaForm.character.description,
+                sagaForm.character?.name ?: emptyString(),
+                sagaForm.character?.gender ?: emptyString(),
+                sagaForm.character?.description ?: emptyString(),
                 sagaForm.saga.genre,
             )
         },
         modifier =
-            Modifier.fillMaxSize(),
+        modifier,
     )
 }
 
@@ -109,59 +97,92 @@ fun ReviewCard(
     title: String,
     subtitle: String,
     content: String,
-    genre: Genre?,
+    genre: Genre,
     modifier: Modifier = Modifier,
 ) {
-    val brush = genre?.gradient(true) ?: Brush.verticalGradient(holographicGradient)
+    val brush = genre.gradient(true)
 
-    val cornerSize by animateDpAsState(
-        targetValue = genre.cornerSize(),
-        label = "cornerSize",
-    )
+    val shape = genre.bubble(tailWidth = 0.dp, tailHeight = 0.dp, isNarrator = true)
+    val font = genre.bodyFont()
+    val headerFont = genre.headerFont()
 
-    val shape = RoundedCornerShape(cornerSize)
-    val font = genre?.bodyFont()
-    val headerFont = genre?.headerFont()
-
-    Column(
-        modifier
-            .fillMaxSize()
-            .clip(shape)
-            .border(2.dp, brush, shape)
-            .background(MaterialTheme.colorScheme.surfaceContainer, shape)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .reactiveShimmer(true),
+    Box(
+        contentAlignment = Center,
+        modifier =
+            Modifier
+                .dropShadow(
+                    shape,
+                    {
+                        this.brush = brush
+                        this.radius = 10f
+                        spread = 5f
+                    },
+                ).clip(shape)
+                .border(2.dp, brush, shape)
+                .background(MaterialTheme.colorScheme.background, shape),
     ) {
-        Text(
-            text = title,
-            style =
-                MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = headerFont,
-                    brush = brush,
-                ),
-            modifier = Modifier.padding(vertical = 8.dp),
+        Image(
+            painterResource(genre.background),
+            null,
+            Modifier
+                .align(Center)
+                .size(50.dp)
+                .gradientFill(genre.gradient(true, targetValue = 100f)),
+            colorFilter = ColorFilter.tint(genre.iconColor),
         )
 
-        Text(
-            text = subtitle,
-            style =
-                MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = font,
-                    brush = brush,
-                ),
-            modifier = Modifier.alpha(.6f),
-        )
+        Column(
+            modifier
+                .animateContentSize()
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+                .reactiveShimmer(true),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontFamily = headerFont,
+                        textAlign = TextAlign.Center,
+                        shadow =
+                            Shadow(
+                                genre.color,
+                                blurRadius = 10f,
+                            ),
+                    ),
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+            )
 
-        Text(
-            text = content,
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = font,
-                    brush = brush,
-                ),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+            Text(
+                text = subtitle,
+                style =
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = font,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+            )
+
+            Text(
+                text = content,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = font,
+                    ),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -195,6 +216,7 @@ fun FlipCard(
         if (rotation.value <= 90f) {
             Box(
                 Modifier.fillMaxSize(),
+                contentAlignment = Center,
             ) {
                 front()
             }
@@ -205,6 +227,7 @@ fun FlipCard(
                     .graphicsLayer {
                         rotationY = 180f
                     },
+                contentAlignment = Center,
             ) {
                 back()
             }

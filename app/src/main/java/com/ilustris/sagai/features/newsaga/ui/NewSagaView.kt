@@ -1,50 +1,195 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.ilustris.sagai.features.newsaga.ui
 
+import CardFace
+import SagaFormCards
+import android.graphics.Matrix
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.isCharacterBlank
+import com.ilustris.sagai.features.newsaga.data.model.isReady
+import com.ilustris.sagai.features.newsaga.data.model.isSagaBlank
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
-import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
+import com.ilustris.sagai.features.newsaga.ui.components.GenreAvatar
+import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
+import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.solidGradient
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
+private enum class FlowPages(
+    val icon: Int,
+) {
+    CREATE_SAGA(R.drawable.ic_spark),
+    CREATE_CHARACTER(R.drawable.ic_feather),
+    ;
+
+    fun isPageComplete(
+        sagaReady: Boolean,
+        characterReady: Boolean,
+    ) = when (this) {
+        CREATE_SAGA -> sagaReady
+        CREATE_CHARACTER -> characterReady
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun NewSagaView(
     navHostController: NavHostController,
-    createSagaViewModel: CreateSagaViewModel = hiltViewModel(),
+    viewModel: NewSagaViewModel = hiltViewModel(),
 ) {
-    val form by createSagaViewModel.form.collectAsStateWithLifecycle()
-    val state by createSagaViewModel.state.collectAsStateWithLifecycle()
-    val effect by createSagaViewModel.effect.collectAsStateWithLifecycle()
-    val aiFormState by createSagaViewModel.formState.collectAsStateWithLifecycle()
-    val isGenerating by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
-    val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
-    var showExitDialog by remember { mutableStateOf(false) }
-    val callbackAction by createSagaViewModel.callbackAction.collectAsStateWithLifecycle()
-    val isSaving by createSagaViewModel.isSaving.collectAsStateWithLifecycle()
-    val loadingMessage by createSagaViewModel.loadingMessage.collectAsStateWithLifecycle()
+    val sagaFormState by viewModel.sagaFormState.collectAsStateWithLifecycle()
+    val characterState by viewModel.characterState.collectAsStateWithLifecycle()
 
-    BackHandler(enabled = isGenerating) {
+    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
+    val savingError by viewModel.savingError.collectAsStateWithLifecycle()
+    val effect by viewModel.effect.collectAsStateWithLifecycle()
+    var recordingAudio by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    var inputField by remember { mutableStateOf("") }
+    var flow by remember {
+        mutableStateOf(FlowPages.CREATE_SAGA)
+    }
+    val coroutineScope = rememberCoroutineScope()
+    rememberBottomSheetScaffoldState()
+    100.dp
+
+    val startingUp =
+        when (flow) {
+            FlowPages.CREATE_SAGA -> sagaFormState?.messages?.isEmpty() == true
+            FlowPages.CREATE_CHARACTER -> characterState?.message == null
+        }
+
+    val side =
+        when (flow) {
+            FlowPages.CREATE_SAGA -> CardFace.Front
+            FlowPages.CREATE_CHARACTER -> CardFace.Back
+        }
+
+    val message =
+        when (flow) {
+            FlowPages.CREATE_SAGA -> sagaFormState?.message
+            FlowPages.CREATE_CHARACTER -> characterState?.message
+        }
+
+    BackHandler(enabled = isSaving) {
         showExitDialog = true
     }
 
@@ -83,38 +228,916 @@ fun NewSagaView(
                 )
             }
 
-            else -> doNothing()
+            else -> {
+                doNothing()
+            }
         }
     }
 
     LaunchedEffect(Unit) {
-        createSagaViewModel.startChat()
+        viewModel.startSagaChat()
     }
 
-    NewSagaChat(
-        messages = messages,
-        onSendMessage = { createSagaViewModel.sendChatMessage(it) },
-        isLoading = state.isLoading,
-        callback = callbackAction,
-        isGenerating = isGenerating,
-        onRetry = { createSagaViewModel.retry() },
-        saveSaga = { createSagaViewModel.saveSaga() },
-        currentForm = form,
-        userInputHint = aiFormState.hint,
-        inputSuggestions = aiFormState.suggestions,
-        updateGenre = { createSagaViewModel.updateGenre(it) },
-        resetSaga = { createSagaViewModel.resetSaga() },
+    LaunchedEffect(flow) {
+        if (flow == FlowPages.CREATE_CHARACTER) {
+            viewModel.startCharacterCreation()
+        }
+    }
+
+    fun togglePage() {
+        coroutineScope.launch {
+            flow =
+                when (flow) {
+                    FlowPages.CREATE_SAGA -> FlowPages.CREATE_CHARACTER
+                    FlowPages.CREATE_CHARACTER -> FlowPages.CREATE_SAGA
+                }
+        }
+    }
+
+    fun sendMessage() {
+        when (flow) {
+            FlowPages.CREATE_SAGA -> {
+                viewModel.sendSagaMessage(inputField)
+            }
+
+            FlowPages.CREATE_CHARACTER -> {
+                viewModel.sendCharacterMessage(inputField)
+            }
+        }
+        inputField = emptyString()
+    }
+
+    SharedTransitionLayout {
+        AnimatedContent(startingUp, transitionSpec = {
+            fadeIn(tween(700)) togetherWith fadeOut(tween(500))
+        }) {
+            if (it) {
+                Box(Modifier.fillMaxSize()) {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        null,
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        modifier =
+                            Modifier
+                                .align(
+                                    Alignment.Center,
+                                ).sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    this@AnimatedContent,
+                                ).size(64.dp)
+                                .reactiveShimmer(
+                                    true,
+                                    holographicGradient,
+                                    duration = 2.seconds,
+                                    repeatMode = RepeatMode.Restart,
+                                    targetValue = 200f,
+                                ),
+                    )
+                }
+            } else {
+                val draft = sagaFormState?.draft
+                if (draft == null) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .size(50.dp)
+                                    .reactiveShimmer(
+                                        true,
+                                        holographicGradient,
+                                    ),
+                        )
+                    }
+                } else {
+                    val genre = draft.genre
+                    val suggestions =
+                        (
+                            if (flow == FlowPages.CREATE_SAGA) {
+                                sagaFormState?.suggestions
+                            } else {
+                                characterState?.suggestions
+                            }
+                        ) ?: emptyList()
+
+                    val isLoading =
+                        isSaving ||
+                            characterState?.isLoading == true ||
+                            sagaFormState?.isLoading == true
+
+                    val hint =
+                        when (flow) {
+                            FlowPages.CREATE_SAGA -> sagaFormState?.hint ?: emptyString()
+                            FlowPages.CREATE_CHARACTER -> characterState?.hint ?: emptyString()
+                        }
+
+                    var containerColor by remember {
+                        mutableStateOf(genre.color)
+                    }
+                    LaunchedEffect(flow) {
+                        containerColor = genre.colorPalette().random()
+                    }
+
+                    LaunchedEffect(genre) {
+                        containerColor = genre.colorPalette().random()
+                    }
+
+                    val backgroundColor by animateColorAsState(
+                        targetValue = containerColor,
+                        animationSpec = tween(600),
+                        label = "backgroundColor",
+                    )
+
+                    Box(Modifier.fillMaxSize()) {
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                backgroundColor,
+                                                backgroundColor.copy(alpha = .5f),
+                                                MaterialTheme.colorScheme.background,
+                                                MaterialTheme.colorScheme.background,
+                                                MaterialTheme.colorScheme.background,
+                                            ),
+                                        ),
+                                    ).animateContentSize(),
+                        ) {
+                            TopBarContent(
+                                genre = genre,
+                                sagaReady = sagaFormState?.isReady == true,
+                                characterReady = characterState?.isReady == true,
+                                isLoading = isSaving,
+                                currentPage = flow,
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedContentScope = this@AnimatedContent,
+                                navigateBack = {
+                                    navHostController.popBackStack()
+                                },
+                                onSelectGenre = { viewModel.updateGenre(it) },
+                                onTogglePage = ::togglePage,
+                            )
+                            val form =
+                                sagaFormState?.let {
+                                    SagaForm(it.draft, characterState?.characterInfo)
+                                }
+
+                            AnimatedContent(message) { m ->
+                                m?.let {
+                                    Text(
+                                        it,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontFamily = genre.bodyFont(),
+                                        textAlign = TextAlign.Center,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                    )
+                                }
+                            }
+
+                            AnimatedContent(form, modifier = Modifier.weight(1f)) { frm ->
+
+                                frm?.let {
+                                    val showOnlySuggestions =
+                                        when (side) {
+                                            CardFace.Front -> it.isSagaBlank()
+                                            CardFace.Back -> it.isCharacterBlank()
+                                        }
+                                    if (!showOnlySuggestions) {
+                                        SagaFormCards(
+                                            side,
+                                            it,
+                                            modifier =
+                                                Modifier
+                                                    .padding(16.dp)
+                                                    .fillMaxSize()
+                                                    .reactiveShimmer(
+                                                        isLoading || isSaving,
+                                                        repeatMode = RepeatMode.Restart,
+                                                        targetValue = 1000f,
+                                                    ),
+                                        ) {
+                                            togglePage()
+                                        }
+                                    } else {
+                                        SuggestionsContent(
+                                            suggestions,
+                                            Modifier.padding(8.dp),
+                                        ) {
+                                            inputField = it
+                                        }
+                                    }
+                                }
+                            }
+
+                            val stateReady =
+                                when (side) {
+                                    CardFace.Front -> sagaFormState?.isReady
+                                    CardFace.Back -> characterState?.isReady
+                                }
+
+                            AnimatedContent(stateReady == true) {
+                                if (it) {
+                                    Button(
+                                        onClick = {},
+                                        colors = ButtonDefaults.textButtonColors(),
+                                        modifier =
+                                            Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth()
+                                                .animateContentSize(),
+                                    ) {
+                                        val text =
+                                            when (flow) {
+                                                FlowPages.CREATE_SAGA -> stringResource(R.string.create_character)
+                                                FlowPages.CREATE_CHARACTER -> stringResource(R.string.continue_to_saga)
+                                            }
+
+                                        Text(
+                                            text,
+                                            style =
+                                                MaterialTheme.typography.titleSmall.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                ),
+                                        )
+                                    }
+                                } else {
+                                    Text(
+                                        "Voce ainda pode refinar sua história deixando ela mais impactante.",
+                                        style =
+                                            MaterialTheme.typography.labelSmall.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                textAlign = TextAlign.Center,
+                                                fontWeight = FontWeight.Light,
+                                                color =
+                                                    MaterialTheme.colorScheme.onBackground.copy(
+                                                        alpha = .5f,
+                                                    ),
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                    )
+                                }
+                            }
+
+                            AnimatedVisibility(form?.isReady() == true) {
+                                val shape =
+                                    genre.bubble(
+                                        isNarrator = false,
+                                        tailWidth = 0.dp,
+                                        tailHeight = 0.dp,
+                                    )
+                                Button(
+                                    enabled = isLoading.not() && isSaving.not(),
+                                    onClick = {
+                                        viewModel.saveSaga()
+                                    },
+                                    colors =
+                                        ButtonDefaults.buttonColors().copy(
+                                            containerColor = genre.color,
+                                            contentColor = genre.iconColor,
+                                        ),
+                                    shape = shape,
+                                    border = BorderStroke(1.dp, genre.gradient(true)),
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.save_saga),
+                                        style = MaterialTheme.typography.titleSmall.copy(fontFamily = genre.bodyFont()),
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(100.dp))
+                        }
+
+                        BottomContent(
+                            genre = genre,
+                            inputField = inputField,
+                            isLoading = isLoading,
+                            hint = hint,
+                            suggestions = suggestions,
+                            onUpdateInput = { inputField = it },
+                            onSendMessage = { sendMessage() },
+                            onStartAudioRecording = { recordingAudio = true },
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .imePadding(),
+                        )
+                    }
+
+                    StarryLoader(
+                        isLoading = isSaving,
+                        loadingMessage = loadingMessage,
+                        brushColors = genre.shimmerColors(),
+                        textStyle =
+                            MaterialTheme.typography.labelMedium.copy(
+                                textAlign = TextAlign.Center,
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
+                    )
+
+                    // Error dialog
+                    if (savingError != null) {
+                        AlertDialog(
+                            onDismissRequest = { /* Don't dismiss on outside click */ },
+                            title = { Text(text = stringResource(R.string.unexpected_error)) },
+                            text = { Text(text = savingError ?: "Unknown error") },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = { viewModel.retry() },
+                                ) {
+                                    Text(stringResource(R.string.try_again))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        viewModel.reset()
+                                        navHostController.popBackStack()
+                                    },
+                                ) {
+                                    Text(stringResource(R.string.cancel))
+                                }
+                            },
+                        )
+                    }
+
+                    if (recordingAudio) {
+                        AudioRecordingSheet(
+                            brush = genre.colorPalette(),
+                            onDismiss = {
+                                recordingAudio = false
+                            },
+                        ) {
+                            inputField = it
+                            sendMessage()
+                            recordingAudio = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionsContent(
+    suggestions: List<CreationSuggestion>,
+    modifier: Modifier = Modifier,
+    onSelect: (String) -> Unit = {},
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier,
+    ) {
+        items(suggestions) {
+            val genre = it.genre
+            val shape = genre.bubble(tailHeight = 0.dp, tailWidth = 0.dp, isNarrator = true)
+            Column(
+                modifier =
+                    Modifier
+                        .fillParentMaxWidth(.6f)
+                        .padding(8.dp)
+                        .clip(shape)
+                        .border(
+                            1.dp,
+                            it.genre.gradient(true),
+                            shape,
+                        ).background(
+                            it.genre.color,
+                            shape,
+                        ).clickable {
+                            onSelect(it.text)
+                        }.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Image(
+                    painterResource(genre.background),
+                    null,
+                    colorFilter = ColorFilter.tint(genre.iconColor),
+                    modifier = Modifier.size(24.dp),
+                )
+                Text(
+                    it.text,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = genre.iconColor,
+                            textAlign = TextAlign.Start,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopBarContent(
+    genre: Genre,
+    sagaReady: Boolean,
+    characterReady: Boolean,
+    isLoading: Boolean,
+    currentPage: FlowPages,
+    modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
+    onSelectGenre: (Genre) -> Unit,
+    onTogglePage: () -> Unit,
+    navigateBack: () -> Unit = {},
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(16.dp)
+                .animateContentSize(),
+    ) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        var showThemes by remember { mutableStateOf(false) }
+        val tooltipState = rememberTooltipState(isPersistent = true)
+        val tooltipPositionProvider =
+            rememberTooltipPositionProvider(
+                positioning = TooltipAnchorPosition.Below,
+                spacingBetweenTooltipAndAnchor = 4.dp,
+            )
+        val coroutineScope = rememberCoroutineScope()
+        val shape =
+            genre.bubble(
+                BubbleTailAlignment.BottomRight,
+                0.dp,
+                0.dp,
+                true,
+            )
+
+        Icon(
+            painterResource(R.drawable.ic_back_left),
+            null,
+            tint = genre.iconColor,
+            modifier =
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .reactiveShimmer(isLoading, genre.shimmerColors())
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        navigateBack()
+                    },
+        )
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .animateContentSize(),
+        ) {
+            val size by animateDpAsState(if (isLoading) 50.dp else 40.dp)
+            with(sharedTransitionScope) {
+                IconButton(
+                    onClick = {
+                        onTogglePage()
+                    },
+                    modifier =
+                        Modifier
+                            .sharedElement(
+                                rememberSharedContentState("spark_icon"),
+                                animatedContentScope,
+                            ).reactiveShimmer(
+                                isLoading,
+                                shimmerColors = genre.shimmerColors(),
+                                repeatMode = RepeatMode.Restart,
+                            ).size(size)
+                            .clip(CircleShape)
+                            .padding(8.dp),
+                ) {
+                    AnimatedContent(currentPage, transitionSpec = {
+                        scaleIn() togetherWith scaleOut()
+                    }) {
+                        Icon(
+                            painter =
+                                painterResource(
+                                    it.icon,
+                                ),
+                            contentDescription = "Toggle page",
+                            tint = genre.iconColor,
+                        )
+                    }
+                }
+            }
+
+            val showBadge = currentPage.isPageComplete(sagaReady, characterReady)
+
+            if (showBadge) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(4.dp)
+                            .background(genre.iconColor, CircleShape),
+                )
+            }
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .animateContentSize(tween(400, easing = EaseIn)),
+        ) {
+            TooltipBox(
+                positionProvider = tooltipPositionProvider,
+                state = tooltipState,
+                tooltip = {
+                    Column(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .border(
+                                1.dp,
+                                genre.color.gradientFade(),
+                                shape,
+                            ).background(
+                                MaterialTheme.colorScheme.background,
+                                shape,
+                            ),
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(16.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Text(
+                                    stringResource(R.string.saga_genre),
+                                    style =
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                        ),
+                                    modifier = Modifier.weight(1f),
+                                )
+
+                                Text(
+                                    stringResource(R.string.see_more),
+                                    style =
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color = genre.color,
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .clickable {
+                                                coroutineScope.launch {
+                                                    tooltipState.dismiss()
+                                                }
+                                                showThemes = true
+                                            },
+                                )
+                            }
+
+                            LazyRow(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(Genre.entries) { g ->
+                                    GenreAvatar(
+                                        g,
+                                        true,
+                                        48.dp,
+                                        genre == g,
+                                        modifier = Modifier.padding(8.dp),
+                                    ) {
+                                        coroutineScope.launch {
+                                            tooltipState.dismiss()
+                                            onSelectGenre(g)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            ) {
+                Row(
+                    Modifier
+                        .border(
+                            1.dp,
+                            genre.gradient(true),
+                            RoundedCornerShape(25.dp),
+                        ).clip(RoundedCornerShape(25.dp))
+                        .clickable {
+                            coroutineScope.launch {
+                                tooltipState.show()
+                            }
+                        }.background(
+                            genre.color,
+                            RoundedCornerShape(25.dp),
+                        ).padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        stringResource(genre.title),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = genre.iconColor,
+                        fontFamily = genre.bodyFont(),
+                    )
+
+                    GenreAvatar(
+                        genre,
+                        false,
+                        24.dp,
+                        true,
+                        onClick = {
+                            coroutineScope.launch {
+                                tooltipState.show()
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
+        if (showThemes) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    coroutineScope.launch {
+                        showThemes = false
+                    }
+                },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.background,
+            ) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            stringResource(R.string.saga_genre),
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                        )
+                    }
+
+                    items(Genre.entries) { genr ->
+                        GenreCard(
+                            genre = genr,
+                            isSelected = genr == genre,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(4.dp)
+                                    .aspectRatio(.5f),
+                        ) {
+                            onSelectGenre(genr)
+                            showThemes = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomContent(
+    genre: Genre,
+    inputField: String,
+    isLoading: Boolean,
+    hint: String,
+    suggestions: List<CreationSuggestion>,
+    modifier: Modifier = Modifier,
+    onUpdateInput: (String) -> Unit,
+    onSendMessage: () -> Unit,
+    onStartAudioRecording: () -> Unit,
+) {
+    val shape =
+        genre.bubble(
+            BubbleTailAlignment.BottomRight,
+            0.dp,
+            0.dp,
+            true,
+        )
+
+    val glowRadius by animateDpAsState(
+        targetValue = if (isLoading) 10.dp else 5.dp,
+        label = "glowRadius",
+        animationSpec = tween(500),
+    )
+    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "rotation",
     )
 
-    StarryLoader(
-        isLoading = isSaving,
-        loadingMessage = loadingMessage,
-        brushColors = form.saga.genre?.shimmerColors() ?: holographicGradient,
-        textStyle =
-            MaterialTheme.typography.labelMedium.copy(
-                textAlign = TextAlign.Center,
-                fontFamily = form.saga.genre?.bodyFont(),
-                color = MaterialTheme.colorScheme.onBackground
-            ),
-    )
+    Row(
+        modifier =
+            modifier
+                .animateContentSize()
+                .padding(16.dp)
+                .dropShadow(
+                    shape = shape,
+                    shadow =
+                        Shadow(
+                            radius = glowRadius,
+                            spread = 2.dp,
+                            color = genre.color,
+                            offset = DpOffset.Zero,
+                        ),
+                ).clip(shape)
+                .drawWithContent {
+                    drawContent()
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    if (isLoading) {
+                        val brush =
+                            object : ShaderBrush() {
+                                override fun createShader(size: Size): Shader {
+                                    val shader =
+                                        (
+                                            sweepGradient(
+                                                genre.colorPalette(),
+                                            ) as ShaderBrush
+                                        ).createShader(size)
+                                    val matrix = Matrix()
+                                    matrix.setRotate(
+                                        rotation,
+                                        size.width / 2,
+                                        size.height / 2,
+                                    )
+                                    shader.setLocalMatrix(matrix)
+                                    return shader
+                                }
+                            }
+                        drawOutline(
+                            outline = outline,
+                            brush = brush,
+                            style = Stroke(width = 1.dp.toPx()),
+                        )
+                    } else {
+                        drawOutline(
+                            outline = outline,
+                            brush = genre.iconColor.copy(alpha = .1f).solidGradient(),
+                            style = Stroke(width = 1.dp.toPx()),
+                        )
+                    }
+                }.background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                .padding(8.dp)
+                .fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicTextField(
+            value = inputField,
+            onValueChange = {
+                onUpdateInput(it)
+            },
+            enabled = isLoading.not(),
+            cursorBrush = genre.color.solidGradient(),
+            maxLines = if (isLoading) 1 else Int.MAX_VALUE,
+            textStyle =
+                MaterialTheme.typography.labelMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                    color = MaterialTheme.colorScheme.onBackground,
+                ),
+            modifier =
+                Modifier
+                    .weight(1f),
+            decorationBox = { innerTextField ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (inputField.isEmpty()) {
+                        Text(
+                            text = hint,
+                            style = MaterialTheme.typography.labelLarge,
+                            color =
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.5f,
+                                ),
+                            fontFamily = genre.bodyFont(),
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+
+        val suggestionsTooltip = rememberTooltipState(isPersistent = true)
+        val coroutineScope = rememberCoroutineScope()
+        TooltipBox(
+            state = suggestionsTooltip,
+            positionProvider =
+                rememberTooltipPositionProvider(
+                    positioning = TooltipAnchorPosition.Above,
+                    spacingBetweenTooltipAndAnchor = 4.dp,
+                ),
+            tooltip = {
+                SuggestionsContent(
+                    suggestions,
+                    Modifier.padding(8.dp),
+                ) {
+                    onUpdateInput(it)
+                    coroutineScope.launch {
+                        suggestionsTooltip.dismiss()
+                    }
+                }
+            },
+        ) {
+            IconButton(
+                onClick = {
+                    coroutineScope.launch {
+                        if (suggestionsTooltip.isVisible) {
+                            suggestionsTooltip.dismiss()
+                        } else {
+                            suggestionsTooltip.show()
+                        }
+                    }
+                },
+                modifier =
+                    Modifier
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onBackground.copy(
+                                alpha = .1f,
+                            ),
+                            CircleShape,
+                        ).size(32.dp)
+                        .padding(8.dp),
+                colors = IconButtonDefaults.outlinedIconButtonColors(),
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_idea),
+                    null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
+        IconButton(
+            onClick = {
+                if (inputField.isEmpty()) {
+                    onStartAudioRecording()
+                } else {
+                    onSendMessage()
+                }
+            },
+            colors =
+                IconButtonDefaults.iconButtonColors(
+                    containerColor = genre.color,
+                    contentColor = genre.iconColor,
+                    disabledContentColor =
+                        MaterialTheme.colorScheme.onBackground.copy(
+                            alpha = .3f,
+                        ),
+                ),
+            modifier =
+                Modifier
+                    .padding(8.dp)
+                    .size(32.dp),
+        ) {
+            val icon =
+                if (inputField.isEmpty()) R.drawable.ic_mic else R.drawable.ic_send
+            AnimatedContent(icon) {
+                Icon(
+                    painter = painterResource(it),
+                    contentDescription = "Send message",
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+        }
+    }
 }

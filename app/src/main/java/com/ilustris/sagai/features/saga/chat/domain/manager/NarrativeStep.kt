@@ -48,9 +48,17 @@ object NarrativeCheck {
         return when {
             saga.isComplete() -> NarrativeStep.NoActionNeeded
             saga.isFull() -> NarrativeStep.GenerateSagaEnding(saga)
-            currentAct == null -> NarrativeStep.StartAct
+
+            currentAct == null || currentAct.isComplete() -> NarrativeStep.StartAct
+
             currentAct.isFull() -> NarrativeStep.GenerateAct(currentAct)
-            currentChapter == null -> NarrativeStep.StartChapter(currentAct)
+
+            currentChapter == null || currentChapter.isComplete() -> {
+                NarrativeStep.StartChapter(
+                    currentAct,
+                )
+            }
+
             currentChapter.isFull() -> NarrativeStep.GenerateChapter(currentChapter)
             currentTimeline == null -> NarrativeStep.StartTimeline(currentChapter)
             currentTimeline.isComplete() -> NarrativeStep.EndTimeLine(currentChapter)

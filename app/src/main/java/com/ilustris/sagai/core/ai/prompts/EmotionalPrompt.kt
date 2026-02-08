@@ -8,16 +8,9 @@ object EmotionalPrompt {
     fun emotionalToneExtraction(userText: String): String {
         val labels = EmotionalTone.entries.joinToString()
         return """
-            You classify the emotional tone of a single USER message into exactly one label from this set:
-            $labels
-            
-            Rules:
-            - Output ONLY the label, uppercase, with no punctuation or extra text.
-            - If uncertain, output NEUTRAL.
-            - Focus on the user's expressed feeling/stance, not plot.
-            
-            USER MESSAGE:
-            >>> $userText
+            Classify tone into exactly one label: $labels
+            Rules: Output ONLY the uppercase label. Neutral if unsure.
+            Message: $userText
             """.trimIndent()
     }
 

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "title": "General",
+      "items": [
+        {
+          "question": "What is SagAI?",
+          "answer": "SagAI is your AI-powered co-author. It helps you create, expand, and play through interactive sagas. You pick the genre and premise, and the AI helps write chapters, scenes, and world-building elements while you stay in control of the plot."
+        },
+        {
+          "question": "Is SagAI a game or a writing tool?",
+          "answer": "It's both! You can use it as a serious tool to outline and write novels, or play it like a text-based RPG where you react to the situations the AI generates."
+        }
+      ]
+    },
+    {
+      "title": "Creating Sagas",
+      "items": [
+        {
+          "question": "How do I write the best Sagas?",
+          "answer": "The AI thrives on context. When starting a saga, be specific about the **Tone** (e.g., 'Dark Gritty', 'Whimsical') and the **Setting**. Don't just say 'A space story'; say 'A space opera set on a decaying mining colony in the year 3042'."
+        },
+        {
+          "question": "How does the AI remember my characters?",
+          "answer": "SagAI maintains a context window of your story. However, for key details, it helps to mention character names and distinct traits periodically in your prompts to keep them fresh in the narrative flow."
+        },
+        {
+          "question": "Can I switch genres in the middle of a story?",
+          "answer": "Technically yes, but consistency yields better results. If you want to introduce elements from another genre, try describing them within the context of your current world rules to avoid confusing the AI."
+        }
+      ]
+    },
+    {
+      "title": "Troubleshooting",
+      "items": [
+        {
+          "question": "The AI output cut off mid-sentence.",
+          "answer": "This can happen if the response limit is reached. You can usually prompt the AI with 'Continue' or 'Go on' to finish the thought."
+        },
+        {
+          "question": "The story went in a direction I didn't like.",
+          "answer": "You are the director! You can edit the last response or simply reply with a correction like, 'Actually, let's say the door was locked instead,' and the AI will adapt."
+        }
+      ]
+    }
+  ]
+}

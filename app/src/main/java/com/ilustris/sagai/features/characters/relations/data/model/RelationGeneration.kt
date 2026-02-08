@@ -7,3 +7,7 @@ data class RelationGeneration(
     val description: String,
     val title: String,
 )
+
+data class RelationGenerationGen(
+    val relations: List<RelationGeneration>,
+)

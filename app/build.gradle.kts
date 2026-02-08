@@ -35,10 +35,10 @@ android {
         targetSdk = 36
         versionCode = computedVersionCode
         versionName = computedVersionName
+        resValue("string", "app_version", "v$computedVersionName")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties()
@@ -72,7 +72,6 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
-
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -126,7 +125,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.compose.charts)
-    implementation(libs.auto.background.remover)
 
     // Retrofit & OkHttp
     implementation(libs.retrofit.core)

@@ -38,13 +38,14 @@ fun ShareSheet(
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
             ) {
                 when (it) {
-                    ShareType.PLAYSTYLE ->
+                    ShareType.PLAYSTYLE -> {
                         PlayStyleShareView(
                             content,
                             viewModel,
                         )
+                    }
 
-                    ShareType.CHARACTER ->
+                    ShareType.CHARACTER -> {
                         character?.let { char ->
                             CharacterShareView(
                                 content,
@@ -52,15 +53,28 @@ fun ShareSheet(
                                 viewModel,
                             )
                         }
-                    ShareType.HISTORY -> HistoryShareView(content, viewModel)
-                    ShareType.EMOTIONS -> EmotionShareView(content, viewModel)
-                    ShareType.RELATIONS -> RelationsShareView(content, viewModel)
+                    }
+
+                    ShareType.HISTORY -> {
+                        HistoryShareView(content, viewModel)
+                    }
+
+                    ShareType.EMOTIONS -> {
+                        EmotionShareView(content, viewModel)
+                    }
+
+                    ShareType.RELATIONS -> {
+                        RelationsShareView(content, viewModel)
+                    }
+
                     ShareType.CONVERSATION -> {
                         ConversationShareView(
                             sagaContent = content,
                             messages = chatViewModel.getSelectedMessages(),
                         )
                     }
+
+                    else -> {}
                 }
             }
         }

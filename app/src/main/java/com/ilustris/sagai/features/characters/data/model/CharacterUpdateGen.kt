@@ -5,3 +5,7 @@ data class CharacterUpdate(
     val title: String,
     val description: String,
 )
+
+data class CharacterUpdateGen(
+    val updates: List<CharacterUpdate>,
+)

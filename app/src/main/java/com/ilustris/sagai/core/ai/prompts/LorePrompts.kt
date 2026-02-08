@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.findTimelineChapter
@@ -12,7 +11,6 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.isFirstAct
 import com.ilustris.sagai.features.home.data.model.isTimelineOnFirstChapter
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
-import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 object LorePrompts {
@@ -97,7 +95,7 @@ object LorePrompts {
         appendLine("Main Character Context:")
         appendLine(
             sagaContent.mainCharacter?.data?.toJsonFormatExcludingFields(
-                CHARACTER_EXCLUDED_FIELDS,
+                ChatPrompts.characterExclusions,
             ),
         )
 

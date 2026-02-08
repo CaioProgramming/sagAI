@@ -3,18 +3,15 @@ package com.ilustris.sagai.features.saga.chat.repository
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.ai.models.ImageReference
-import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.file.ImageCropHelper
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -62,68 +59,48 @@ class SagaRepositoryImpl
 
         override suspend fun generateSagaIcon(
             saga: Saga,
-            character: Character,
+            characters: List<Character>,
         ) = executeRequest {
             val iconReferenceComposition =
                 genreReferenceHelper
-                    .getIconReference(saga.genre)
+                    .getRandomCompositionReference(saga.genre)
                     .getSuccess()
-                    ?.let {
-                        ImageReference(
-                            it,
-                            ImageGuidelines.compositionReferenceGuidance,
-                        )
-                    }
-
-            val characterIcon =
-                character
-                    .image
-                    .let {
-                        genreReferenceHelper.getFileBitmap(it).getSuccess()?.let { icon ->
-                            ImageReference(
-                                icon,
-                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
-                            )
-                        }
-                    }
-
-            listOfNotNull(iconReferenceComposition, characterIcon)
-
-            val visualDirection =
-                imagenClient
-                    .extractComposition(
-                        references = listOfNotNull(iconReferenceComposition),
-                    ).getSuccess()
 
             val context =
                 buildString {
-                    appendLine("Saga Context:")
-                    appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
-                    appendLine("Main Character Details:")
-                    appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
-                }
-            val metaPrompt =
-                gemmaClient.generate<String>(
-                    prompt =
-                        SagaPrompts
-                            .iconDescription(
-                                saga.genre,
-                                context,
-                                visualDirection,
-                                characterHexColor = null
+                    appendLine("### MANDATORY CHARACTER ICON")
+                    appendLine("The following character are ESSENTIAL to this icon:")
+                    appendLine(characters.joinToString { it.name })
+                    appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
+                    appendLine()
+                    appendLine("#### SUBJECTS DETAILS:")
+                    appendLine(
+                        characters.toAINormalize(
+                            listOf(
+                                "image",
+                                "sagaId",
+                                "joinedAt",
+                                "id",
+                                "emojified",
+                                "smartZoom",
                             ),
-                    listOf(characterIcon),
-                    requireTranslation = false,
-                )!!
+                        ),
+                    )
+                    appendLine()
+                    appendLine("Story context: ")
+                    appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
+                    appendLine(
+                        "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
+                    )
+                }
             val newIcon =
-                imagenClient.generateImage(
-                    buildString {
-                        appendLine(metaPrompt.plus(ImagePrompts.criticalGenerationRule()))
-                    },
-                    listOfNotNull(characterIcon),
-                )!!
-
-            val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)
+                imagenClient
+                    .generateIntegratedImage(
+                        genre = saga.genre,
+                        imageReference = iconReferenceComposition,
+                        context = context,
+                        imageType = ImageType.COVER,
+                    ).getSuccess()!!
 
             val file =
                 fileHelper.saveFile(
@@ -132,7 +109,6 @@ class SagaRepositoryImpl
                     path = "${saga.id}",
                 )
 
-            croppedIcon.recycle()
             updateChat(saga.copy(icon = file!!.absolutePath))
         }
 

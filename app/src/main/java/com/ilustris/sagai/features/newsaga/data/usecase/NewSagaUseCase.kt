@@ -1,12 +1,11 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
-import SagaGen
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
 enum class SagaProcess {
@@ -14,6 +13,7 @@ enum class SagaProcess {
     CREATING_CHARACTER,
     FINALIZING,
     SUCCESS,
+    LISTENING,
 }
 
 interface NewSagaUseCase {
@@ -22,7 +22,7 @@ interface NewSagaUseCase {
     suspend fun updateSaga(saga: Saga): RequestResult<Saga>
 
     suspend fun generateSaga(
-        sagaForm: SagaForm,
+        sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
     ): RequestResult<Saga>
 
@@ -33,11 +33,13 @@ interface NewSagaUseCase {
 
     suspend fun replyAiForm(
         currentMessages: List<ChatMessage>,
-        latestMessage: String,
+        latestMessage: String?,
         currentFormData: SagaForm,
     ): RequestResult<SagaCreationGen>
 
     suspend fun generateIntroduction(): RequestResult<SagaCreationGen>
+
+    suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen>
 
     suspend fun generateCharacterSavedMark(
         character: Character,
@@ -49,4 +51,6 @@ interface NewSagaUseCase {
         sagaDescription: String,
         characterDescription: String,
     ): RequestResult<String>
+
+    suspend fun adaptSagaToGenre(sagaDraft: SagaDraft): RequestResult<SagaCreationGen>
 }

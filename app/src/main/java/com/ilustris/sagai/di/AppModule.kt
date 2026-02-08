@@ -9,12 +9,16 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.gson.Gson
+import com.ilustris.sagai.core.ai.AudioGenClient
+import com.ilustris.sagai.core.ai.AudioGenClientImpl
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
 import com.ilustris.sagai.core.file.BackupService
@@ -29,6 +33,7 @@ import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
+import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
 import com.ilustris.sagai.core.notifications.WorkManagerScheduler
@@ -56,6 +61,8 @@ import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRe
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
+import com.ilustris.sagai.features.faq.data.repository.FaqRepository
+import com.ilustris.sagai.features.faq.data.repository.FaqRepositoryImpl
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -63,13 +70,13 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
+import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCaseImpl
-import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
@@ -160,7 +167,7 @@ object AppModule {
     @Singleton
     fun providesReferenceHelper(
         @ApplicationContext context: Context,
-        firebaseRemoteConfig: FirebaseRemoteConfig,
+        firebaseRemoteConfig: RemoteConfigService,
         imageLoader: ImageLoader,
     ) = GenreReferenceHelper(
         context,
@@ -181,6 +188,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSagaDatabase(databaseBuilder: DatabaseBuilder): SagaDatabase = databaseBuilder.buildDataBase()
+
+    @Provides
+    @Singleton
+    fun provideDatabaseBackupService(
+        @ApplicationContext context: Context,
+        preferences: DataStorePreferences,
+        database: SagaDatabase,
+    ): DatabaseBackupService = DatabaseBackupService(context, preferences, database)
 
     @Provides
     @Singleton
@@ -220,11 +235,26 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAnalyticsService(
+        @ApplicationContext context: Context,
+    ): AnalyticsService = AnalyticsService(context)
+
+    @Provides
+    @Singleton
     fun provideImagenClient(
         remoteConfigService: RemoteConfigService,
         billingService: BillingService,
+        analyticsService: AnalyticsService,
         gemmaClient: GemmaClient,
-    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient)
+    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient, analyticsService)
+
+    @Provides
+    @Singleton
+    fun provideAudioGenClient(
+        billingService: BillingService,
+        remoteConfigService: RemoteConfigService,
+        geminiApiService: GeminiApiService,
+    ): AudioGenClient = AudioGenClientImpl(billingService, remoteConfigService, geminiApiService)
 
     @Provides
     @Singleton
@@ -342,6 +372,9 @@ abstract class UseCaseModule {
 @InstallIn(ViewModelComponent::class)
 @Module
 abstract class RepositoryModule {
+    @Binds
+    abstract fun bindsFaqRepository(faqRepositoryImpl: FaqRepositoryImpl): FaqRepository
+
     @Binds
     abstract fun bindsSagaRepository(sagaRepositoryImpl: SagaRepositoryImpl): SagaRepository
 

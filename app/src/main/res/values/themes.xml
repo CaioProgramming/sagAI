@@ -5,6 +5,7 @@
 
     <!-- Splash Screen Theme -->
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="colorPrimary">@color/splash_icon_blue</item>
         <!-- Set the splash screen background, animated icon, and animation duration. -->
         <item name="windowSplashScreenBackground">@color/white</item>
 

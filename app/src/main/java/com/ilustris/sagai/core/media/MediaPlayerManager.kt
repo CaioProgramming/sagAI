@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.media
 
-import android.content.Context
 import android.media.MediaPlayer
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
@@ -13,6 +12,7 @@ interface MediaPlayerManager {
      * Emits the current playback state (true if playing, false otherwise).
      */
     val isPlaying: StateFlow<Boolean>
+    val mediaPlayer: MediaPlayer?
 
     /**
      * Prepares the MediaPlayer with the given audio file.
@@ -25,7 +25,7 @@ interface MediaPlayerManager {
      * @param onCompletion Callback invoked when media playback completes (if not looping).
      */
     fun prepareDataSource(
-        file: File,
+        path: String,
         looping: Boolean = false,
         onPrepared: (() -> Unit)? = null,
         onError: ((Exception) -> Unit)? = null,

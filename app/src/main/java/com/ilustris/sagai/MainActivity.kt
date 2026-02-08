@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -105,16 +106,24 @@ class MainActivity : ComponentActivity() {
                 }
 
                 BlurProvider {
-                    Scaffold(modifier = Modifier.fillMaxSize(), snackbarHost = {
+                    Scaffold(
+                        modifier =
+                            Modifier
+                                .background(MaterialTheme.colorScheme.background)
+                                .fillMaxSize(),
+                        snackbarHost = {
                         SnackbarHost(hostState = snackbarHostState) {
                             Snackbar(
                                 it,
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 shape = RoundedCornerShape(15.dp),
                             )
-                        }
-                    }, topBar = {
-                        AnimatedContent(route) {
+                            }
+                        },
+                        topBar = {
+                            AnimatedContent(route, transitionSpec = {
+                                fadeIn() togetherWith fadeOut()
+                            }) {
                             if (it.topBarContent != null) {
                                 it.topBarContent(navController)
                             } else {

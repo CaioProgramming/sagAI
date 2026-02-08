@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,7 +27,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -41,7 +39,6 @@ import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
-import kotlinx.coroutines.launch
 
 @Composable
 fun CharacterAvatar(
@@ -52,13 +49,12 @@ fun CharacterAvatar(
     textStyle: TextStyle = MaterialTheme.typography.labelSmall,
     genre: Genre,
     isLoading: Boolean = false,
+    useFallback: Boolean = false,
     modifier: Modifier = Modifier,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
     pixelation: Float? = null,
-    requireZoom: Boolean = true,
 ) {
-    val viewModel: CharacterAvatarViewModel = hiltViewModel()
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
@@ -68,7 +64,7 @@ fun CharacterAvatar(
             ),
         )
 
-    val smartZoom = if (requireZoom) character.smartZoom else null
+    val smartZoom = character.smartZoom
 
     val animatedScale by animateFloatAsState(
         targetValue = smartZoom?.scale ?: 1f,
@@ -82,14 +78,6 @@ fun CharacterAvatar(
         targetValue = smartZoom?.translationY ?: 0f,
         label = "SmartZoomTranslationY",
     )
-
-    LaunchedEffect(character.image, character.smartZoom) {
-        if (character.image.isNotEmpty() && character.smartZoom == null && requireZoom) {
-            launch {
-                viewModel.checkAndGenerateZoom(character)
-            }
-        }
-    }
 
     Box(
         modifier
@@ -127,17 +115,19 @@ fun CharacterAvatar(
                     .fillMaxSize()
                     .effectForGenre(
                         genre,
-                        useFallBack = character.emojified,
+                        useFallBack = useFallback,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,
-                    ).graphicsLayer {
+                    )
+                    .graphicsLayer {
                         scaleX = animatedScale
                         scaleY = animatedScale
                         translationX = animatedTranslationX * size.width
                         translationY = animatedTranslationY * size.height
                         transformOrigin = TransformOrigin.Center
-                    }.clipToBounds(),
+                    }
+                    .clipToBounds(),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {
