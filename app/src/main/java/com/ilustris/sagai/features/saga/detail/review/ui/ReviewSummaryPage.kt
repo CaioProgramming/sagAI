@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
@@ -64,7 +66,7 @@ class ReviewSummaryPage(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Our Story, Retold",
+                text = stringResource(id = R.string.review_summary_title),
                 style =
                     MaterialTheme.typography.titleLarge.copy(
                         fontFamily = genre.bodyFont(),
@@ -96,37 +98,37 @@ class ReviewSummaryPage(
                     val (title, subtitle) =
                         when (stage) {
                             ReviewPageType.EXPRESSIVENESS -> {
-                                "Sua Vibe" to (
+                                stringResource(id = R.string.review_stage_expressiveness_title) to (
                                     review.expressiveness?.content?.title
-                                        ?: "Sua marca emocional"
+                                        ?: stringResource(id = R.string.review_stage_expressiveness_subtitle_default)
                                 )
                             }
 
                             ReviewPageType.PLAYSTYLE -> {
-                                "Seu Estilo" to (
+                                stringResource(id = R.string.review_stage_playstyle_title) to (
                                     review.playstyle?.content?.title
-                                        ?: "Como você agiu"
+                                        ?: stringResource(id = R.string.review_stage_playstyle_subtitle_default)
                                 )
                             }
 
                             ReviewPageType.CHARACTERS -> {
-                                "O Elenco" to (
+                                stringResource(id = R.string.review_stage_characters_title) to (
                                     review.topCharacters?.content?.title
-                                        ?: "Seu Squad"
+                                        ?: stringResource(id = R.string.review_stage_characters_subtitle_default)
                                 )
                             }
 
                             ReviewPageType.JOURNEY -> {
-                                "A Jornada" to (
+                                stringResource(id = R.string.review_stage_journey_title) to (
                                     review.actsInsight?.content?.title
-                                        ?: "O caminho que fizemos"
+                                        ?: stringResource(id = R.string.review_stage_journey_subtitle_default)
                                 )
                             }
 
                             ReviewPageType.CONCLUSION -> {
-                                "O Legado" to (
+                                stringResource(id = R.string.review_stage_conclusion_title) to (
                                     review.conclusion?.content?.title
-                                        ?: "O que ficou"
+                                        ?: stringResource(id = R.string.review_stage_conclusion_subtitle_default)
                                 )
                             }
 
@@ -203,7 +205,7 @@ class ReviewSummaryPage(
                             contentColor = genre.color,
                         ),
                 ) {
-                    Text("Recomeçar")
+                    Text(stringResource(id = R.string.review_restart_button))
                 }
             }
         }

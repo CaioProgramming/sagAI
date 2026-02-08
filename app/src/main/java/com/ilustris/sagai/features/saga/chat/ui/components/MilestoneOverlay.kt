@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
+import com.ilustris.sagai.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -280,7 +281,7 @@ fun NewChapterContent(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             val characters =
                 it.fetchCharacters(saga).filterNotNull()
-            Text("Personagens mais importantes")
+            Text(stringResource(R.string.milestone_overlay_important_characters_title))
 
             LazyRow(
                 horizontalArrangement =

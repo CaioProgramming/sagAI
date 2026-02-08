@@ -491,6 +491,23 @@
     <string name="milestone_fallback_loading_punk_rock">Afinando os amplificadores e conferindo o setlist...</string>
     <string name="regenerate">Regenerar</string>
     <string name="save_changes">Salvar alterações</string>
+
+    <!-- Extracted Strings -->
+    <string name="milestone_overlay_important_characters_title">Personagens mais importantes</string>
+    <string name="review_restart_button">Recomeçar</string>
+
+    <!-- Review Summary Page -->
+    <string name="review_summary_title">Nossa História, Recontada</string>
+    <string name="review_stage_expressiveness_title">Sua Vibe</string>
+    <string name="review_stage_expressiveness_subtitle_default">Sua marca emocional</string>
+    <string name="review_stage_playstyle_title">Seu Estilo</string>
+    <string name="review_stage_playstyle_subtitle_default">Como você agiu</string>
+    <string name="review_stage_characters_title">O Elenco</string>
+    <string name="review_stage_characters_subtitle_default">Seu Squad</string>
+    <string name="review_stage_journey_title">A Jornada</string>
+    <string name="review_stage_journey_subtitle_default">O caminho que fizemos</string>
+    <string name="review_stage_conclusion_title">O Legado</string>
+    <string name="review_stage_conclusion_subtitle_default">O que ficou</string>
 </resources>
 
 

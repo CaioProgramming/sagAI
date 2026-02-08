@@ -522,4 +522,21 @@
     <string name="milestone_fallback_loading_heroes">Assembling the challenge and polishing the cape...</string>
     <string name="milestone_fallback_loading_crime">Connecting the evidence and walking the noir streets...</string>
     <string name="milestone_fallback_loading_punk_rock">Tuning the amps and checking the setlist...</string>
+
+    <!-- Extracted Strings -->
+    <string name="milestone_overlay_important_characters_title">Most Important Characters</string>
+    <string name="review_restart_button">Restart</string>
+
+    <!-- Review Summary Page -->
+    <string name="review_summary_title">Our Story, Retold</string>
+    <string name="review_stage_expressiveness_title">Your Vibe</string>
+    <string name="review_stage_expressiveness_subtitle_default">Your emotional footprint</string>
+    <string name="review_stage_playstyle_title">Your Style</string>
+    <string name="review_stage_playstyle_subtitle_default">How you acted</string>
+    <string name="review_stage_characters_title">The Cast</string>
+    <string name="review_stage_characters_subtitle_default">Your Squad</string>
+    <string name="review_stage_journey_title">The Journey</string>
+    <string name="review_stage_journey_subtitle_default">The path we took</string>
+    <string name="review_stage_conclusion_title">The Legacy</string>
+    <string name="review_stage_conclusion_subtitle_default">What remains</string>
 </resources>
