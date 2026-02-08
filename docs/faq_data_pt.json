@@ -1,16 +1,16 @@
 {
-  "version": 4,
+  "version": 5,
   "categories": [
     {
       "title": "Boas-vindas ao Sagas",
       "items": [
         {
-          "question": "Ué, o nome não era 'SagAI'?",
-          "answer": "Bem observado! Nós evoluímos. 'Sagas' é o nome final e épico da nossa plataforma. É a mesma narrativa por IA que você adora, mas com um nome que combina muito mais com os contos lendários que você está criando."
-        },
-        {
           "question": "O que exatamente é o Sagas?",
           "answer": "O Sagas é seu coautor e Diretor de Arte pessoal. Você não apenas 'joga'; você vive uma história em evolução em diferentes gêneros, onde suas escolhas moldam literalmente o mundo, os personagens e até a arte que você vê."
+        },
+        {
+          "question": "Ué, o nome não era 'SagAI'?",
+          "answer": "Bem observado! Nós evoluímos. 'Sagas' é o nome final e épico da nossa plataforma. É a mesma narrativa por IA que você adora, mas com um nome que combina muito mais com os contos lendários que você está criando."
         },
         {
           "question": "Por que preciso de internet para jogar?",
@@ -39,20 +39,24 @@
       "title": "A Experiência Visual",
       "items": [
         {
-          "question": "Como o estilo de arte é decidido?",
-          "answer": "Está no DNA do gênero! Fantasia usa Pinturas a Óleo Clássicas, Cyberpunk segue o estilo Anime Cel-shaded dos anos 80, Terror é Pixel Art de 32 bits, e Heróis tem o visual dinâmico de Quadrinhos Modernos. Punk Rock traz uma estética de rascunho feito à mão com acentos vibrantes em verde."
-        },
-        {
-          "question": "O que é o tema 'Punk Rock'?",
-          "answer": "É o nosso mais novo gênero! Pense em Gorillaz encontrando Scott Pilgrim. Ele apresenta um visual de esboço feito à mão com detalhes vibrantes em verde e uma atitude rebelde. Perfeito para histórias sobre bandas underground e aventuras urbanas."
-        },
-        {
           "question": "Como funciona a geração de imagens?",
-          "answer": "Nosso 'Diretor de Arte por IA' traduz o contexto da sua história em comandos técnicos. Ele controla parâmetros como 'Ângulo', 'Lente' e 'Enquadramento'. As imagens são feitas para preencher toda a tela e são otimizadas para serem usadas como papel de parede."
+          "answer": "Nossa IA imita um estúdio real. Um 'Diretor' define o ângulo e a iluminação, um 'Artista' pinta a cena no estilo do gênero e um 'Revisor' verifica a qualidade. Esse trabalho em equipe garante imagens cinematográficas e únicas."
         },
         {
           "question": "Por que o topo das imagens costuma ser vazio?",
-          "answer": "Isso é proposital! Queremos que suas artes fiquem incríveis como fundo de tela. O sistema mantém o foco na parte inferior para que o relógio e as notificações do seu celular não cubram os detalhes principais do seu herói."
+          "answer": "Isso é proposital! Queremos que suas capas de saga e cartões de personagem fiquem incríveis como papéis de parede. O 'Mestre da Saga' mantém o assunto principal nos 2/3 inferiores para que o relógio e as notificações não cubram a arte."
+        },
+        {
+          "question": "Por que meu personagem de Fantasia parece uma pintura antiga?",
+          "answer": "Esse é o nosso estilo 'Obra-prima Renascentista'! Para Fantasia, emulamos especificamente pinturas a óleo italianas do século XV — bordas suaves, vermelhos quentes e luz dourada — para dar à sua história um tom épico e atemporal."
+        },
+        {
+          "question": "Como consigo o melhor visual Cyberpunk?",
+          "answer": "Abuse do cromado! Nosso estilo Cyberpunk (Anime Cel-Shaded dos anos 80) adora implantes visíveis. Descreva olhos de scanner, membros robóticos e fiação exposta. Mire em um personagem que pareça 'mais máquina que humano'."
+        },
+        {
+          "question": "O que é o tema 'Punk Rock'?",
+          "answer": "É o nosso gênero mais novo! Pense em 'Gorillaz encontrando Scott Pilgrim'. Ele apresenta uma estética de rascunho feito à mão com detalhes em verde vibrante e uma atitude rebelde. Perfeito para histórias sobre bandas underground e aventuras urbanas."
         }
       ]
     },
