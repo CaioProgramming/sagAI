@@ -1004,6 +1004,7 @@ fun ReviewTopCharacterContent(
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = genre.bodyFont(),
                             fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
                         ),
                 )
 
