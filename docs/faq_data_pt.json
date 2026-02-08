@@ -40,7 +40,11 @@
       "items": [
         {
           "question": "Como o estilo de arte é decidido?",
-          "answer": "Está no DNA do gênero! Fantasia usa Pinturas a Óleo Clássicas, Cyberpunk segue o estilo Anime Cel-shaded dos anos 80, Terror é Pixel Art de 32 bits, e Heróis tem o visual dinâmico de Quadrinhos Modernos."
+          "answer": "Está no DNA do gênero! Fantasia usa Pinturas a Óleo Clássicas, Cyberpunk segue o estilo Anime Cel-shaded dos anos 80, Terror é Pixel Art de 32 bits, e Heróis tem o visual dinâmico de Quadrinhos Modernos. Punk Rock traz uma estética de rascunho feito à mão com acentos vibrantes em verde."
+        },
+        {
+          "question": "O que é o tema 'Punk Rock'?",
+          "answer": "É o nosso mais novo gênero! Pense em Gorillaz encontrando Scott Pilgrim. Ele apresenta um visual de esboço feito à mão com detalhes vibrantes em verde e uma atitude rebelde. Perfeito para histórias sobre bandas underground e aventuras urbanas."
         },
         {
           "question": "Como funciona a geração de imagens?",
