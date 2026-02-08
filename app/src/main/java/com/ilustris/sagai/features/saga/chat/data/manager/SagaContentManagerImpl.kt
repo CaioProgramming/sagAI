@@ -156,10 +156,11 @@ class SagaContentManagerImpl
         override suspend fun loadSaga(sagaId: String) {
             Log.d(javaClass.simpleName, "Loading saga: $sagaId")
             try {
+                observeLoading()
                 observeMilestone()
                 sagaHistoryUseCase
                     .getSagaById(sagaId.toInt())
-                    .debounce(500)
+                    .debounce(200)
                     .collectLatest { saga ->
                         Log.d(
                             javaClass.simpleName,
@@ -176,7 +177,7 @@ class SagaContentManagerImpl
                         }
 
                         val previousSaga = content.value
-                        content.emit(saga)
+                        content.value = saga
 
                         if (previousSaga != null &&
                             previousSaga.data.id == saga.data.id &&
@@ -521,6 +522,16 @@ class SagaContentManagerImpl
             }
         }
 
+        private fun observeLoading() =
+            CoroutineScope(Dispatchers.IO).launch {
+                narrativeProcessingUiState.collectLatest {
+                    Log.d(javaClass.simpleName, "observeLoading: $it")
+                    if (it.not()) {
+                        checkNarrativeProgression(content.value)
+                    }
+                }
+        }
+
         override fun checkNarrativeProgression(
             saga: SagaContent?,
             isRetrying: Boolean,
@@ -755,7 +766,7 @@ class SagaContentManagerImpl
                     isMilestoneActive.value = true
                 }
                 milestoneUpdate.emit(milestone)
-        }
+            }
 
         private suspend fun startProcessing(block: suspend () -> Unit) {
             if (isProcessing.not()) {
@@ -1009,6 +1020,7 @@ class SagaContentManagerImpl
                 val endingMessage = sagaHistoryUseCase.generateEndMessage(saga).getSuccess()!!
                 val emotionalEnding =
                     emotionalUseCase.generateEmotionalConclusion(saga).getSuccess()
+                emitMilestone(null)
                 sagaHistoryUseCase
                     .updateSaga(
                         saga.data.copy(

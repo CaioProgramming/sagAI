@@ -55,6 +55,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -88,6 +89,7 @@ class ChatViewModel
         private var lastActId: Int = 0
         private var lastChapterId: Int = 0
         private var lastEventId: Int = 0
+        private var lastMessageCount: Int = 0
 
         fun handleAction(action: ChatUiAction) {
             when (action) {
@@ -493,7 +495,13 @@ class ChatViewModel
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.content
-                    .collectLatest { sagaContent ->
+                    .distinctUntilChanged { old, new ->
+                        // Only emit when meaningful content changes
+                        old?.data?.id == new?.data?.id &&
+                            old?.flatMessages()?.size == new?.flatMessages()?.size &&
+                            old?.acts?.size == new?.acts?.size &&
+                            old?.characters?.size == new?.characters?.size
+                    }.collectLatest { sagaContent ->
                         if (sagaContent == null) {
                             if (loadFinished) {
                                 updateLoading(false)
@@ -502,12 +510,23 @@ class ChatViewModel
                             return@collectLatest
                         }
 
+                        // Cache flatMessages to avoid multiple traversals
+                        val flatMessages = sagaContent.flatMessages()
+                        val currentMessageCount = flatMessages.size
+                        val messagesChanged = currentMessageCount != lastMessageCount
+
                         val messages = SagaContentUIMapper.mapToActDisplayData(sagaContent.acts)
+
+                        // Only re-sort characters when message count changes (expensive operation)
                         val characters =
-                            sortCharactersByMessageCount(
-                                sagaContent.getCharacters(),
-                                sagaContent.flatMessages(),
-                            )
+                            if (messagesChanged || uiState.value.characters.isEmpty()) {
+                                sortCharactersByMessageCount(
+                                    sagaContent.getCharacters(),
+                                    flatMessages,
+                                )
+                            } else {
+                                uiState.value.characters
+                            }
 
                         stateManager.updateState {
                             it.copy(
@@ -519,12 +538,19 @@ class ChatViewModel
                             )
                         }
 
+                        lastMessageCount = currentMessageCount
+
                         if (uiState.value.selectedCharacter == null) {
                             sagaContent.mainCharacter?.let { updateCharacter(it) }
                         }
 
                         checkIfUpdatesService(sagaContent)
-                        validateCharacterMessageUpdates(sagaContent)
+
+                        // Only validate character updates when messages changed
+                        if (messagesChanged) {
+                            validateCharacterMessageUpdates(sagaContent)
+                        }
+
                         updateProgress(sagaContent)
 
                         loadFinished = true
@@ -532,7 +558,11 @@ class ChatViewModel
                         if (uiState.value.showTitle) {
                             titleAnimation()
                         }
-                        validateMessageStatus(sagaContent)
+
+                        // Only validate message status when messages changed
+                        if (messagesChanged) {
+                            validateMessageStatus(sagaContent)
+                        }
                     }
             }
         }
@@ -548,24 +578,31 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 if (uiState.value.isGenerating) return@launch
                 if (uiState.value.isLoading) return@launch
+
                 val messages = sagaContent.flatMessages()
-                messages
-                    .filter { it.message.status != MessageStatus.OK }
-                    .forEach { messageContent ->
-                        if (messageContent == messages.last()) {
-                            messageUseCase.updateMessage(
-                                messageContent.message.copy(
-                                    status = MessageStatus.ERROR,
-                                ),
-                            )
+                if (messages.isEmpty()) return@launch
+
+                val lastMessage = messages.last()
+                val messagesToUpdate = messages.filter { it.message.status != MessageStatus.OK }
+
+                // Early return if no messages need status updates
+                if (messagesToUpdate.isEmpty()) return@launch
+
+                messagesToUpdate.forEach { messageContent ->
+                    val newStatus =
+                        if (messageContent == lastMessage) {
+                            MessageStatus.ERROR
                         } else {
-                            messageUseCase.updateMessage(
-                                messageContent.message.copy(
-                                    status = MessageStatus.OK,
-                                ),
-                            )
+                            MessageStatus.OK
                         }
+
+                    // Only update if the status actually needs to change
+                    if (messageContent.message.status != newStatus) {
+                        messageUseCase.updateMessage(
+                            messageContent.message.copy(status = newStatus),
+                        )
                     }
+                }
             }
         }
 

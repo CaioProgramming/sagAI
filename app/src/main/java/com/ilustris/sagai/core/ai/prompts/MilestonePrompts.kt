@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 
@@ -29,30 +28,15 @@ object MilestonePrompts {
 
         val genre = saga.data.genre
         val genreTone = getGenreTone(genre)
-        getMilestoneType(milestone)
 
         return buildString {
             appendLine("You are a witty, clever storytelling companion. The user just achieved a milestone in their saga.")
             appendLine("Generate ONE SHORT, MEMORABLE congratulatory message that REACTS DIRECTLY to their achievement.")
             appendLine()
-            appendLine("STORY CONTEXT:")
+            appendLine("# STORY IDENTITY")
             appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
-
-            saga.currentActInfo?.let { act ->
-                appendLine("\n## Active Segment")
-                appendLine(act.actSummary(saga, true))
-            }
-
-            appendLine("\n## Historical Context")
-            saga.acts.filter { it.data.id != saga.data.currentActId }.forEach {
-                appendLine(it.actSummary(saga, false))
-            }
-
             appendLine()
-            appendLine("# STORYTELLING DIRECTIVES")
-            appendLine(ActPrompts.actDirective(saga.getDirective()))
-            appendLine()
-
+            appendLine("# MILESTONE ACHIEVED")
             appendLine(
                 milestone.toAINormalize(
                     fieldsToExclude =
@@ -68,7 +52,7 @@ object MilestonePrompts {
             appendLine()
             appendLine("CREATIVE GUIDELINES:")
             appendLine("- Be ORIGINAL: Don't use generic congratulations")
-            appendLine("- React to SPECIFIC details from their milestone (character names, plot points, achievements)")
+            appendLine("- React to SPECIFIC details from the milestone above (character names, plot points, achievements)")
             appendLine("- Use tone that matches $genreTone but with personality and sass")
             appendLine("- Maximum 15 words (be punchy and impactful)")
             appendLine("- Include an emotional twist: sarcasm, dark humor, irony, or unexpected warmth")
@@ -76,7 +60,7 @@ object MilestonePrompts {
             appendLine("- NO emojis, NO generic phrases, NO 'congratulations' or 'well done'")
             appendLine()
             appendLine("WHAT TO REFERENCE:")
-            appendLine(getReferencePoints(milestone, saga))
+            appendLine(getReferencePoints(milestone))
             appendLine()
             appendLine("TONE EXAMPLES (be creative, not copy these):")
             appendLine(getGenreConversationalTone(genre))
@@ -88,33 +72,131 @@ object MilestonePrompts {
     fun generateLoadingMessage(saga: SagaContent): String =
         buildString {
             val genre = saga.data.genre
-            appendLine("You are a witty, clever storytelling companion and creative partner.")
-            appendLine(
-                "The user is experiencing a brief pause while the narrative gears turn. Generate a humorous, meta \"story break\" message.",
-            )
+            appendLine("You are a witty narrator creating a brief interlude while the story loads.")
+            appendLine("Generate a SHORT, ATMOSPHERIC transition phrase like comic books and serialized fiction use.")
             appendLine()
-            appendLine("GENRE: ${genre.name}")
+            appendLine("# STORY IDENTITY")
+            appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
             appendLine()
-            appendLine("YOUR PERSONA:")
-            appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
-            appendLine(buildPersonaForGenre(genre))
+            appendLine("# GENRE INTERLUDE STYLE (INSPIRATION ONLY - DO NOT COPY)")
+            appendLine(getGenreInterludeStyle(genre))
             appendLine()
-            appendLine("CREATIVE GUIDELINES:")
-            appendLine("- BE AGNOSTIC: Do NOT mention any specific story details, chapters, or upcoming events. Keep the surprises secret!")
-            appendLine("- TONE: Playful, witty, and slightly fourth-wall-breaking.")
-            appendLine(
-                "- META-TALK: Roleplay as a director or creator who's \"checking the script,\" \"rehearsing the NPCs,\" or \"adjusting the lighting.\"",
-            )
-            appendLine(
-                "- GENRE FLAVOR: Use themes from ${genre.name} (e.g., for Fantasy: \"checking the mana levels\"; for Cyberpunk: \"calibrating the neural link\").",
-            )
-            appendLine("- Maximum 15 words.")
-            appendLine("- NO emojis, NO generic \"loading\" text.")
+            appendLine("CREATIVITY RULES:")
+            appendLine("- NEVER copy the examples above - they're just inspiration for the VIBE")
+            appendLine("- Invent something fresh, witty, and unexpected every time")
+            appendLine("- Think like a comic book writer creating a unique panel caption")
+            appendLine("- Be clever and genre-authentic, not generic")
             appendLine()
-            appendLine("TONE EXAMPLES:")
-            appendLine(getGenreConversationalTone(genre))
+            appendLine("REQUIREMENTS:")
+            appendLine("- Maximum 8 words (shorter is better)")
+            appendLine("- Sound like a narrative caption, NOT loading screen text")
+            appendLine("- Be vague about specifics but evocative of the genre's atmosphere")
+            appendLine("- Create anticipation without spoiling anything")
+            appendLine("- NO emojis, NO ellipsis abuse, NO meta-commentary about 'loading'")
             appendLine()
-            appendLine("Output ONLY the single-line humorous break message, nothing else:")
+            appendLine("Output ONLY the interlude phrase:")
+        }
+
+    private fun getGenreInterludeStyle(genre: Genre): String =
+        when (genre) {
+            Genre.FANTASY -> {
+                """
+                Use immersive action-based moments from fantasy adventures:
+                - "Sharpening the blade..."
+                - "Consulting the ancient tome..."
+                - "Brewing a peculiar concoction..."
+                - "The runes begin to glow..."
+                - "Feeding the griffon..."
+                """.trimIndent()
+            }
+
+            Genre.CYBERPUNK -> {
+                """
+                Use terminal/hacker aesthetic actions:
+                - "> Decrypting signal..."
+                - "> Bypassing firewall..."
+                - "Jacking into the network..."
+                - "Rebooting neural interface..."
+                - "Patching the exploit..."
+                """.trimIndent()
+            }
+
+            Genre.SPACE_OPERA -> {
+                """
+                Use spaceship/exploration actions:
+                - "Recalibrating hyperdrive..."
+                - "Scanning for life signs..."
+                - "Charging the ion cannons..."
+                - "Plotting the jump coordinates..."
+                - "Sealing the airlock..."
+                """.trimIndent()
+            }
+
+            Genre.HORROR -> {
+                """
+                Use creeping dread and unsettling moments:
+                - "Something watches..."
+                - "The floorboards creak..."
+                - "Checking the locks again..."
+                - "The candle flickers..."
+                - "Listening to the silence..."
+                """.trimIndent()
+            }
+
+            Genre.COWBOY -> {
+                """
+                Use frontier survival and cowboy actions:
+                - "Loading the revolver..."
+                - "Tending the fire..."
+                - "Checking the horizon..."
+                - "Saddling up..."
+                - "Counting the bounty..."
+                """.trimIndent()
+            }
+
+            Genre.SHINOBI -> {
+                """
+                Use ninja training and stealth actions:
+                - "Sharpening the kunai..."
+                - "Mixing the poison..."
+                - "Meditating on the void..."
+                - "Reading the scroll..."
+                - "Blending into shadow..."
+                """.trimIndent()
+            }
+
+            Genre.HEROES -> {
+                """
+                Use superhero preparation moments:
+                - "Suiting up..."
+                - "Scanning police frequencies..."
+                - "Patching the suit..."
+                - "Reviewing the case files..."
+                - "The signal lights up..."
+                """.trimIndent()
+            }
+
+            Genre.CRIME -> {
+                """
+                Use noir investigation and underworld actions:
+                - "Lighting another cigarette..."
+                - "Reviewing the evidence..."
+                - "Following the money..."
+                - "Tailing the suspect..."
+                - "Loading the piece..."
+                """.trimIndent()
+            }
+
+            Genre.PUNK_ROCK -> {
+                """
+                Use rebellious underground actions:
+                - "Tuning the guitar..."
+                - "Spray painting the wall..."
+                - "Printing the zines..."
+                - "Cranking the amp..."
+                - "Patching the jacket..."
+                """.trimIndent()
+            }
         }
 
     fun generateNewCharacterMessage(
@@ -328,10 +410,7 @@ object MilestonePrompts {
             }
         }
 
-    private fun getReferencePoints(
-        milestone: SagaMilestone,
-        saga: SagaContent,
-    ): String =
+    private fun getReferencePoints(milestone: SagaMilestone): String =
         when (milestone) {
             is SagaMilestone.NewCharacter -> {
                 ""
@@ -389,52 +468,47 @@ object MilestonePrompts {
     ): String =
         buildString {
             val genre = saga.data.genre
-            appendLine(
-                "You are a cinematic narrator and a witty storytelling companion. The user is beginning a new ${milestone.type.name.lowercase()} in their saga.",
-            )
-            appendLine("The original introduction text is too long. Rewrite it to be SHORT, IMPACTFUL, and CINEMATIC.")
-            appendLine()
-            appendLine("ORIGINAL TEXT:")
-            appendLine(milestone.introduction)
-            appendLine()
-            appendLine("# STORY CONTEXT")
-            appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+            val hasOriginalText = milestone.introduction.isNotBlank()
 
-            saga.currentActInfo?.let { act ->
-                appendLine("\n## Active Segment")
-                appendLine(act.actSummary(saga, true))
+            if (hasOriginalText) {
+                // REWRITE MODE: Shorten existing introduction
+                appendLine(
+                    "You are a cinematic narrator. The user is beginning a new ${milestone.type.name.lowercase()} in their saga.",
+                )
+                appendLine("The original introduction text is too long. Rewrite it to be SHORT, IMPACTFUL, and CINEMATIC.")
+                appendLine()
+                appendLine("# STORY IDENTITY")
+                appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+                appendLine()
+                appendLine("# ORIGINAL TEXT TO REWRITE")
+                appendLine(milestone.introduction)
+            } else {
+                // GENERATE MODE: Create fresh introduction from context
+                appendLine(
+                    "You are a cinematic narrator. The user is beginning a new ${milestone.type.name.lowercase()} in their saga.",
+                )
+                appendLine("Generate a SHORT, IMPACTFUL, CINEMATIC introduction quote for this moment.")
+                appendLine()
+                appendLine("# STORY IDENTITY")
+                appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+                appendLine()
+                appendLine("# MILESTONE TYPE")
+                appendLine("- Type: ${milestone.type.name.lowercase()}")
+                appendLine("- This marks a significant transition in the story")
             }
-
-            appendLine("\n## Historical Context")
-            saga.acts.filter { it.data.id != saga.data.currentActId }.forEach {
-                appendLine(it.actSummary(saga, false))
-            }
-
-            appendLine("\n## Recent Activity")
-            appendLine(ChatPrompts.conversationHistory(saga))
 
             appendLine()
             appendLine("YOUR PERSONA:")
             appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
             appendLine(buildPersonaForGenre(genre))
             appendLine()
-            appendLine("# STORYTELLING DIRECTIVES")
-            appendLine(ActPrompts.actDirective(saga.getDirective()))
-            appendLine()
             appendLine("REQUIREMENTS:")
             appendLine("- Maximum 25 words (be punchy)")
-            appendLine(
-                "- Maintain the tone and atmosphere of the ${genre.name.lowercase()} genre: ${
-                    getGenreTone(
-                        genre,
-                    )
-                }",
-            )
-            appendLine("- Use your persona's distinctive flavor (sarcasm, dark humor, or epic flair)")
+            appendLine("- Maintain ${genre.name.lowercase()} tone: ${getGenreTone(genre)}")
             appendLine("- Focus on the emotional core or the major shift in the narrative")
-            appendLine("- Ensure it works perfectly with a typewriter animation reveal")
+            appendLine("- Works perfectly with a typewriter animation reveal")
             appendLine("- NO emojis, NO greeting, NO meta-commentary")
             appendLine()
-            appendLine("Output ONLY the rewritten cinematic introduction:")
+            appendLine("Output ONLY the cinematic introduction:")
         }
 }

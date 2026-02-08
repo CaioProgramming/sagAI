@@ -257,19 +257,28 @@ object ChapterPrompts {
         appendLine(combinedContextJson)
 
         appendLine("TASK:")
-        appendLine("You are an AI assistant tasked with concluding a chapter of a saga.")
+        appendLine("You are an AI storyteller tasked with concluding a chapter of a saga.")
         appendLine(
             "Based ENTIRELY on the `EVENTS_OF_THIS_CHAPTER` provided in the CONTEXT, you need to generate two pieces of information for the `CHAPTER_BEING_CONCLUDED`:",
         )
         appendLine(
-            " - If `PREVIOUS_CHAPTERS_IN_CURRENT_ACT` is provided and not empty, use their `title`s and `overview`s to understand the immediate preceding narrative progression within this act. Your generated `overview` for the current chapter should flow naturally from these, and its hook should set the stage for what might come next, considering this continuity.",
+            " - If `PREVIOUS_CHAPTERS_IN_CURRENT_ACT` is provided and not empty, use their `title`s and `overview`s to understand the narrative flow. Your generated `overview` should seamlessly continue this story.",
         )
         appendLine(
-            " - If `PREVIOUS_ACT_DATA` is provided, use its `title` and `description` (or `overview`) to understand the broader story arc of the saga leading up to the current act. Ensure the current chapter's conclusion aligns with this larger progression.",
+            " - If `PREVIOUS_ACT_DATA` is provided, use its `title` and `description` to understand the broader story arc.",
         )
 
         appendLine(
-            "1. A concise overview (around 100 words) that summarizes the key outcomes, significant developments, and the immediate aftermath of these events. This overview should also provide a natural hook or transition setting the stage for what might come next.",
+            "1. A narrative overview (around 100 words). This must be written as a story snippet or a book chapter summary told in a literary style.",
+        )
+        appendLine(
+            "   - **NARRATIVE ONLY:** Do NOT use phrases like 'In this chapter', 'This chapter summarizes', 'The events are', or 'The chapter ends with'.",
+        )
+        appendLine(
+            "   - **NO DATA MENTIONS:** Do NOT mention 'events', 'ids', 'data points', or 'chapters' directly.",
+        )
+        appendLine(
+            "   - Focus on the characters' actions, thoughts, and the unfolding plot as a cohesive narrative.",
         )
         appendLine(
             "2. Generate a fitting title for this chapter that accurately reflects its core content or theme as derived from the events. **The title should be short (ideally 2-5 words) and impactful, creating intrigue or summarizing the chapter's essence memorably.**",
