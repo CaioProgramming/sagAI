@@ -80,10 +80,15 @@ class ImageSegmentationHelper(
             var maxX = 0f
             var maxY = 0f
 
-            for (x in 0 until foregroundBitmap.width) {
-                for (y in 0 until foregroundBitmap.height) {
-                    val pixel = foregroundBitmap[x, y]
-                    if (android.graphics.Color.alpha(pixel) > 0) { // If pixel is not transparent
+            val width = foregroundBitmap.width
+            val height = foregroundBitmap.height
+            val pixels = IntArray(width)
+
+            for (y in 0 until height) {
+                foregroundBitmap.getPixels(pixels, 0, width, 0, y, width, 1)
+                for (x in 0 until width) {
+                    val pixel = pixels[x]
+                    if ((pixel ushr 24) > 0) { // If pixel is not transparent
                         minX = min(minX, x.toFloat())
                         minY = min(minY, y.toFloat())
                         maxX = max(maxX, x.toFloat())
