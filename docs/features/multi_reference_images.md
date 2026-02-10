@@ -59,15 +59,33 @@ In Firebase Console → Remote Config, create a new parameter:
 "https://storage.googleapis.com/your-bucket/references/default_portrait.jpg"
 ```
 
-## How It Works
+## Technical Implementation
+
+### Data Model
+
+**File:** `core/file/model/ReferenceCollection.kt`
+
+```kotlin
+@Serializable
+data class ReferenceCollection(
+    val references: List<String>,
+) {
+    fun getRandomReference(): String {
+        require(references.isNotEmpty()) { "Reference collection is empty" }
+        return references.random()
+    }
+
+    val size: Int get() = references.size
+}
+```
 
 ### Selection Logic
 
 1. **Try Multi-Reference First**
-    - Fetches `portrait_references` flag
-    - Parses the JSON array
-    - Randomly selects one URL using `Random.nextInt()`
-    - Downloads and uses that image
+    - Fetches `portrait_references` flag from Firebase Remote Config.
+    - Parses the JSON array into `ReferenceCollection`.
+    - Randomly selects one URL using `collection.getRandomReference()`.
+    - Downloads and uses that image.
 
 2. **Fallback to Single Reference**
     - If `portrait_references` doesn't exist → uses `portrait_reference`
@@ -144,19 +162,19 @@ Just create new Remote Config flags following the pattern:
 - `fantasy_icon_references` (multi)
 - `fantasy_icon_reference` (single, fallback)
 
-## Monitoring
+## Monitoring & Logs
 
 ### Logs to Watch
 
 ```
-D/GenreReferenceHelper: getRandomPortraitReference: attempting to fetch multi-reference flag portrait_references
-D/GenreReferenceHelper: getRandomPortraitReference: selected URL 2 of 4 -> https://...
-```
+✅ Success:
+D/GenreReferenceHelper: getRandomPortraitReference: selected 1 of 6 references -> https://i.pinimg.com/...
 
-Or on fallback:
+⚠️ Fallback:
+W/GenreReferenceHelper: failed to parse ReferenceCollection JSON, falling back to single reference
 
-```
-W/GenreReferenceHelper: getRandomPortraitReference: failed to parse multi-reference JSON, falling back to single reference
+❌ Error:
+E/GenreReferenceHelper: failed to load multi-reference, attempting single reference fallback
 ```
 
 ### Analytics
@@ -217,37 +235,6 @@ single-reference fallback
 {"references": []} ❌ Empty
 {"references": ["https://..."]} ✅ Valid
 ```
-
-## Migration from Single to Multi-Reference
-
-### Step 1: Test Locally
-
-Before updating Remote Config, test multiple references work correctly.
-
-### Step 2: Add to Remote Config
-
-Create `portrait_references` with your current best reference + 1-2 new ones:
-
-```json
-{
-  "references": [
-    "https://your-current-reference.jpg",
-    "https://new-reference-1.jpg"
-  ]
-}
-```
-
-### Step 3: Monitor
-
-Watch logs and user feedback for 24-48 hours.
-
-### Step 4: Expand
-
-Gradually add more references to the array as you find good ones.
-
-### Step 5: Maintain Fallback
-
-Always keep `portrait_reference` (singular) updated with your best reference for older app versions.
 
 ## Future Extensions
 
