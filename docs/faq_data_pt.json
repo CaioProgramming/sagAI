@@ -1,13 +1,9 @@
 {
-  "version": 4,
+  "version": 5,
   "categories": [
     {
       "title": "Boas-vindas ao Sagas",
       "items": [
-        {
-          "question": "Ué, o nome não era 'SagAI'?",
-          "answer": "Bem observado! Nós evoluímos. 'Sagas' é o nome final e épico da nossa plataforma. É a mesma narrativa por IA que você adora, mas com um nome que combina muito mais com os contos lendários que você está criando."
-        },
         {
           "question": "O que exatamente é o Sagas?",
           "answer": "O Sagas é seu coautor e Diretor de Arte pessoal. Você não apenas 'joga'; você vive uma história em evolução em diferentes gêneros, onde suas escolhas moldam literalmente o mundo, os personagens e até a arte que você vê."
@@ -26,12 +22,24 @@
           "answer": "As histórias são divididas em Atos e Capítulos. Conforme você interage, a IA resume os eventos anteriores em um 'Resumo da Saga' e gera novas introduções. Você também pode iniciar um 'Novo Capítulo' manualmente para consolidar os eventos atuais e avançar."
         },
         {
-          "question": "Qual a diferença entre 'Falar', 'Pensar' e 'Ação'?",
-          "answer": "'Falar' é o que seu personagem diz em voz alta. 'Pensar' é interno — apenas você (e o narrador) sabem desses segredos. 'Ação' descreve movimentos físicos. Os NPCs reagem de forma diferente dependendo do que você escolhe!"
+          "question": "Como expresso ações ou pensamentos?",
+          "answer": "Use as tags! Digite <action>pula</action> para ações, <think>segredos</think> para pensamentos, ou <narrator>enquanto isso</narrator> para detalhes do narrador. Ou use os botões acima do teclado!"
+        },
+        {
+          "question": "Posso editar minhas mensagens?",
+          "answer": "Sim, mas apenas a mais recente. Isso mantém a linha do tempo intacta e evita paradoxos de 'viagem no tempo' que confundiriam a resposta atual da IA."
+        },
+        {
+          "question": "Como apago uma mensagem?",
+          "answer": "Você pode apagar qualquer mensagem para limpar sua história. Basta tocar nas opções da mensagem. Se apagar a última, pode tentar de novo!"
         },
         {
           "question": "Posso adicionar mais personagens?",
           "answer": "Sim! Use a ação 'Novo Personagem' para introduzir aliados, rivais ou estranhos misteriosos. Você pode descrever a aparência e o passado deles, e a IA se lembrará de tudo durante a saga."
+        },
+        {
+          "question": "O que é o Saga Wrapped?",
+          "answer": "Quando sua história chega ao fim, geramos um 'Saga Wrapped' especial — uma retrospectiva estilosa e compartilhável da sua jornada, estatísticas do personagem e melhores momentos."
         }
       ]
     },
