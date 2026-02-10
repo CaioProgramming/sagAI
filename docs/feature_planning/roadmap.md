@@ -114,6 +114,48 @@ own dedicated folder containing detailed tasks and implementation plans.
   leaves the app. This creates an immersive experience where characters reach out with personalized
   messages based on the current story context.
 
+### 13. Audio Messages & Transcription 🎙️
+
+* **Status**: Completed ✅
+* **Documentation**: `../../features/audio_messages_transcription.md`
+* **Archive**: `../../archive/feature_planning/audio_messages/`
+* **Description**: Integrated audio recording and transcription, allowing users to send voice messages that are converted to text.
+
+### 14. Audio Generation (TTS) 🔊
+
+* **Status**: Completed ✅
+* **Documentation**: `../../features/audio_generation.md`
+* **Archive**: `../../archive/feature_planning/audio_generation/`
+* **Description**: AI-driven audio generation for characters and narrators, with persistent voice assignments and premium integration.
+
+### 15. Image Composition Reviewer Agent 🎨
+
+* **Status**: Completed ✅
+* **Documentation**: `../../features/image_composition_reviewer.md`
+* **Archive**: `../../archive/feature_planning/image_composition/`
+* **Description**: Automated reviewer agent that validates and corrects image prompts to ensure genre consistency and quality.
+
+### 16. Saga Review "Wrapped" Revamp 🎁
+
+* **Status**: Completed ✅
+* **Documentation**: `../../features/saga_review_revamp.md`
+* **Archive**: `../../archive/feature_planning/review_revamp_progress.md`
+* **Description**: A "Spotify Wrapped" style interactive story recap with vertical navigation, dynamic summaries, and premium visuals.
+
+### 17. Smart Zoom for Avatars 🔍
+
+* **Status**: Completed ✅
+* **Documentation**: `../../features/smart_zoom.md`
+* **Archive**: `../../archive/feature_planning/smart_zoom_instructions.md`
+* **Description**: Automatic subject-based zoom for character avatars to eliminate excessive negative space.
+
+### 18. Punk Rock Theme 🎸
+
+* **Status**: Completed ✅
+* **Documentation**: `../../features/punk_rock_theme.md`
+* **Archive**: `../../archive/feature_planning/punk_rock_theme_plan.md`
+* **Description**: Implementation of the "Punk Rock" genre with rebellious aesthetics, graffiti visuals, and specific AI rules.
+
 ---
 ## Usage
 
