@@ -14,6 +14,7 @@ object NewSagaPrompts {
         currentSagaDraft: SagaDraft,
         userInput: String,
         conversationHistory: List<ChatMessage>,
+        availableVariations: Map<String, com.ilustris.sagai.core.ai.model.GenreConfig.VariationConfig> = emptyMap(),
     ): String =
         buildString {
             appendLine(
@@ -51,6 +52,17 @@ object NewSagaPrompts {
             appendLine(
                 "- **message**: A short, engaging reply (max 2 sentences). Be conversational, like a friend. Ask a specific, inspiring question to drive the story forward.",
             )
+            if (availableVariations.isNotEmpty()) {
+                appendLine()
+                appendLine("AVAILABLE WORLD VARIATIONS (Sub-themes):")
+                availableVariations.forEach { (id, config) ->
+                    appendLine("- **$id**: ${config.name} - ${config.description}")
+                }
+                appendLine()
+                appendLine(
+                    "OBJECTIVE: Based on the user's input, if one of these variations fits the 'vibe' better than the base genre, pick it and set it in the `variationId` field of the returned SagaDraft.",
+                )
+            }
             appendLine(
                 "- **inputHint**: A very short \"starter\" text (max 4 words). It should be a subtle nudge, not a full sentence. E.g., \"Describe the world...\", \"Who is the hero?\", \"What happens next?\"",
             )
@@ -145,6 +157,7 @@ object NewSagaPrompts {
     fun createSagaPrompt(
         sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
+        availableVariations: Map<String, com.ilustris.sagai.core.ai.model.GenreConfig.VariationConfig> = emptyMap(),
     ) = buildString {
         appendLine("You are a master storyteller, and you are creating a new saga for the user.")
         appendLine("Your task is to generate a saga based on the user's input.")
@@ -159,6 +172,18 @@ object NewSagaPrompts {
         appendLine("3. DO NOT include spoilers or reveal major plot twists.")
         appendLine("4. DO NOT provide a large resume of the story history.")
         appendLine("5. Focus on the setting, the main conflict, and the hook.")
+        if (availableVariations.isNotEmpty()) {
+            appendLine()
+            appendLine("WORLD BUILDING - VARIATION SELECTION:")
+            appendLine(
+                "Based on the story context, select the best fitting `variationId` from the list below. If none fit perfectly, return null.",
+            )
+            availableVariations.forEach { (id, config) ->
+                appendLine("- **$id**: ${config.name} - ${config.description}")
+            }
+            appendLine()
+            appendLine("CRITICAL: Include the selected `variationId` in the resulting Saga JSON.")
+        }
     }
 
     fun characterSavedPrompt(

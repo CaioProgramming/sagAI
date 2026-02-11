@@ -19,6 +19,7 @@ class NewSagaUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : NewSagaUseCase {
         override suspend fun createSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
@@ -35,8 +36,9 @@ class NewSagaUseCaseImpl
             miniChatContent: List<ChatMessage>,
         ): RequestResult<Saga> =
             executeRequest {
+                val config = genreConfigService.getGenreConfig(sagaForm.genre)
                 gemmaClient.generate<Saga>(
-                    NewSagaPrompts.createSagaPrompt(sagaForm, miniChatContent),
+                    NewSagaPrompts.createSagaPrompt(sagaForm, miniChatContent, config.variations),
                     filterOutputFields =
                         listOf(
                             "id",
@@ -75,6 +77,7 @@ class NewSagaUseCaseImpl
                 val recentMessages = currentMessages.takeLast(10)
 
                 val userInput = currentMessages.last().text
+                val config = genreConfigService.getGenreConfig(currentFormData.saga.genre)
 
                 // Single AI call to extract, enhance, and provide helpful suggestions
                 val response =
@@ -83,6 +86,7 @@ class NewSagaUseCaseImpl
                             currentSagaDraft = currentFormData.saga,
                             userInput = userInput,
                             conversationHistory = recentMessages,
+                            availableVariations = config.variations,
                         ),
                         requireTranslation = true,
                     )!!

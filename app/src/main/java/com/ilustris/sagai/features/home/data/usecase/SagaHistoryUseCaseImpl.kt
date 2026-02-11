@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.home.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -18,6 +19,7 @@ class SagaHistoryUseCaseImpl
         private val sagaRepository: SagaRepository,
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
+        private val genreConfigService: GenreConfigService,
     ) : SagaHistoryUseCase {
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
@@ -38,9 +40,10 @@ class SagaHistoryUseCaseImpl
 
         override suspend fun generateEndMessage(saga: SagaContent): RequestResult<String> =
             executeRequest {
+                val config = genreConfigService.getGenreConfig(saga.data.genre)
                 gemmaClient
                     .generate<String>(
-                        SagaPrompts.endCredits(saga),
+                        SagaPrompts.endCredits(saga, config),
                     )!!
             }
 

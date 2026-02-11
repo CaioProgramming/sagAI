@@ -66,6 +66,7 @@ object ChatPrompts {
         message: Message,
         directive: String,
         sceneSummary: SceneSummary?,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ) = buildString {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -141,6 +142,8 @@ object ChatPrompts {
             "4. **TRUST THE LATEST MESSAGE:** The [LATEST MESSAGE] below is the ABSOLUTE TRUTH of what just happened. It supersedes older context.",
         )
         appendLine("5. **NO RETCONS:** Never ignore, contradict, or 'undo' events from recent messages. Build FORWARD from them.")
+        appendLine("\n# GENRE STYLING & TONE")
+        appendLine(config.conversationDirective)
 
         appendLine("\n# CURRENT PLAYER TURN")
         appendLine("### Character Resolution Hierarchy:")
@@ -186,6 +189,7 @@ object ChatPrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun checkForTypo(
         saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
         message: String,
         lastMessage: Message? = null,
     ) = buildString {
@@ -199,7 +203,7 @@ object ChatPrompts {
         appendLine("\n# STORY CONTEXT")
         appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
         appendLine("\n## Conversation Guidelines for ${saga.data.genre.name}:")
-        appendLine(GenrePrompts.conversationDirective(saga.data.genre))
+        appendLine(config.conversationDirective)
 
         if (lastMessage != null) {
             appendLine("\n# RECENT CONTEXT")
@@ -397,6 +401,7 @@ object ChatPrompts {
         saga: SagaContent,
         selectedCharacter: CharacterContent,
         sceneSummary: SceneSummary,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ) = buildString {
         append(SagaPrompts.mainContext(saga))
         appendLine("Current Story Context:")
@@ -446,7 +451,7 @@ object ChatPrompts {
         appendLine("- Follow your established personality and voice")
         appendLine("- Consider your relationship history and emotional connection with the player")
         appendLine("- Reference current story elements and shared experiences naturally")
-        append(GenrePrompts.conversationDirective(saga.data.genre))
+        append(config.conversationDirective)
         appendLine("Your message as ${selectedCharacter.data.name}:")
     }
 

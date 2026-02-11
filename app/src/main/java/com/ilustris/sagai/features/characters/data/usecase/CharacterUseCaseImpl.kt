@@ -63,6 +63,7 @@ class CharacterUseCaseImpl
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
         @param:ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
@@ -111,6 +112,7 @@ class CharacterUseCaseImpl
                                     )
                                 },
                             imageType = ImageType.CHARACTER,
+                            variationId = saga.variationId,
                         ).getSuccess()!!
 
                 val file =
@@ -143,9 +145,15 @@ class CharacterUseCaseImpl
                 val bannedNames = repository.getAllCharacterNames()
                 // Generate theme color first to pass to AI for appearance guidance
                 val themeColor = getRandomColorHex()
+                val config =
+                    genreConfigService.getGenreConfig(
+                        sagaContent.data.genre,
+                        sagaContent.data.variationId,
+                    )
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         sagaContent,
+                        config,
                         description,
                         bannedNames,
                         themeColor,
@@ -315,7 +323,9 @@ class CharacterUseCaseImpl
                 if (character.events.isEmpty()) {
                     return@executeRequest character.data.backstory
                 }
-                val prompt = CharacterPrompts.characterResume(character, saga)
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val prompt = CharacterPrompts.characterResume(character, saga, config)
                 gemmaClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,

@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.playthrough
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.playthrough.data.model.PlayThroughData
 import kotlinx.coroutines.flow.Flow
 
 interface PlaythroughUseCase {
@@ -9,8 +10,3 @@ interface PlaythroughUseCase {
 
     fun availableSagas(): Flow<List<SagaContent>>
 }
-
-data class PlayThroughData(
-    val title: String,
-    val review: String,
-)

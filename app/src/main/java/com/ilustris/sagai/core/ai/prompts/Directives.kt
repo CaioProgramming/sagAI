@@ -19,14 +19,16 @@ object CharacterDirective {
 }
 
 object SagaDirective {
-    fun namingDirective(genre: Genre) =
+    fun namingDirective(
+        genre: Genre,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig) =
         """
         // This directive guides you, as the Saga Master, when you determine a new character needs to be introduced.
         // Prioritize generating creative, unique, and memorable names that fit the saga's genre and specific cultural influences.
         // AVOID common or generic names. Ensure a wide variety of naming conventions throughout the saga.
         // - AVOID overly common or generic names (e.g., John, Mary, Smith). DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar.   
         **Saga's Primary Naming Inspiration:**
-        ${GenrePrompts.nameDirectives(genre)}
+        ${config.nameDirective}
 
         ${ContentGenerationDirective.preferredLanguage(genre)}
 

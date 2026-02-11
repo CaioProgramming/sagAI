@@ -47,6 +47,7 @@ class MessageUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val audioGenClient: AudioGenClient,
         private val fileHelper: FileHelper,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -62,9 +63,12 @@ class MessageUseCaseImpl
             message: String,
         ): RequestResult<TypoFix?> =
             executeRequest {
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
                 gemmaClient.generate<TypoFix>(
                     ChatPrompts.checkForTypo(
                         saga,
+                        config,
                         message,
                         saga.flatMessages().lastOrNull()?.message,
                     ),
@@ -150,6 +154,8 @@ class MessageUseCaseImpl
                     saga.findCharacter(characterName)
                 } ?: emptyList()
 
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
                 val genText =
                     gemmaClient.generate<AIReply>(
                         prompt =
@@ -158,6 +164,7 @@ class MessageUseCaseImpl
                                 message = message.message,
                                 directive = saga.getDirective(),
                                 sceneSummary = sceneSummary!!,
+                                config = config,
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                         filterOutputFields =

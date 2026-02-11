@@ -17,6 +17,7 @@ interface ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review
 }
 
@@ -27,8 +28,9 @@ class IntroStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review {
-        val prompt = ReviewPrompts.introductionPrompt(saga)
+        val prompt = ReviewPrompts.introductionPrompt(saga, config)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(introduction = stage)
@@ -42,9 +44,10 @@ class ExpressivenessStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review {
         val emotionalRank = saga.rankMainCharacterEmotionalTones()
-        val prompt = ReviewPrompts.expressivenessPrompt(saga, emotionalRank)
+        val prompt = ReviewPrompts.expressivenessPrompt(saga, config, emotionalRank)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(expressiveness = stage)
@@ -58,6 +61,7 @@ class PlaystyleStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review {
         val mainCharId = saga.data.mainCharacterId
         val playerMessages = saga.flatMessages().filter { it.message.characterId == mainCharId }
@@ -70,7 +74,8 @@ class PlaystyleStep : ReviewStep {
         val playTime = saga.data.playTimeMs.formatDuration()
         val mostActiveHour = saga.rankByHour().maxByOrNull { it.value.size }?.key ?: 0
 
-        val prompt = ReviewPrompts.playstylePrompt(saga, playTime, mostActiveHour, totalExpressive)
+        val prompt =
+            ReviewPrompts.playstylePrompt(saga, config, playTime, mostActiveHour, totalExpressive)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(playstyle = stage)
@@ -90,6 +95,7 @@ class CharactersStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review {
         val topCharacters =
             saga
@@ -97,12 +103,11 @@ class CharactersStep : ReviewStep {
                 .rankTopCharacters(
                     saga.characters
                         .filter { it != saga.mainCharacter }
-                        .map { it.data }
-                        )
-                .take(3)
+                        .map { it.data },
+                ).take(3)
                 .map { it.first.name to it.second }
 
-        val prompt = ReviewPrompts.connectionsPrompt(saga, topCharacters)
+        val prompt = ReviewPrompts.connectionsPrompt(saga, config, topCharacters)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(topCharacters = stage)
@@ -116,8 +121,9 @@ class JourneyStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review {
-        val prompt = ReviewPrompts.actsInsightPrompt(saga)
+        val prompt = ReviewPrompts.actsInsightPrompt(saga, config)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(actsInsight = stage)
@@ -131,8 +137,9 @@ class ConclusionStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ): Review {
-        val prompt = ReviewPrompts.conclusionPrompt(saga)
+        val prompt = ReviewPrompts.conclusionPrompt(saga, config)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(conclusion = stage)

@@ -44,6 +44,7 @@ class SagaDetailUseCaseImpl
         private val wikiUseCase: WikiUseCase,
         private val sagaBackupService: SagaBackupService,
         private val backupService: com.ilustris.sagai.core.file.BackupService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
             val topCharacters = listOf(saga.mainCharacter!!.data)
@@ -71,9 +72,11 @@ class SagaDetailUseCaseImpl
 
                 var currentReview = Review()
 
+                val config =
+                    genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
                 steps.forEach { step ->
                     emit(ReviewState.Loading(step.progressMessage))
-                    currentReview = step.generate(content, currentReview, textGenClient)
+                    currentReview = step.generate(content, currentReview, textGenClient, config)
                 }
 
                 val finalSaga = content.data.copy(review = currentReview)
@@ -142,7 +145,9 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             executeRequest {
-                val prompt = SagaPrompts.generateStoryBriefing(saga)
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val prompt = SagaPrompts.generateStoryBriefing(saga, config)
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
 
@@ -151,7 +156,9 @@ class SagaDetailUseCaseImpl
                 if (saga.chaptersSize() < 1) {
                     return@executeRequest saga.data.description
                 }
-                val prompt = SagaPrompts.sagaResume(saga)
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val prompt = SagaPrompts.sagaResume(saga, config)
                 textGenClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,

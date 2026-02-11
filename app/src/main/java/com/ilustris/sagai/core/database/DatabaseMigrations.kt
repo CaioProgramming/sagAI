@@ -54,16 +54,17 @@ object DatabaseMigrations {
             }
         }
 
-    val MIGRATION_3_4 =
-        object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                // Activity/Expressiveness slide columns
-                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_hook_title TEXT")
-                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_hook_subtitle TEXT")
-                db.execSQL("ALTER TABLE sagas ADD COLUMN activity_content_title TEXT")
                 db.execSQL("ALTER TABLE sagas ADD COLUMN activity_content_subtitle TEXT")
+}
+}
+
+val MIGRATION_4_5 =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE sagas ADD COLUMN variationId TEXT")
         }
     }
 
-    fun getAllMigrations(): Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+fun getAllMigrations(): Array<Migration> =
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
 }

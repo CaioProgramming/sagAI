@@ -100,6 +100,7 @@ class SagaRepositoryImpl
                         imageReference = iconReferenceComposition,
                         context = context,
                         imageType = ImageType.COVER,
+                        variationId = saga.variationId,
                     ).getSuccess()!!
 
             val file =

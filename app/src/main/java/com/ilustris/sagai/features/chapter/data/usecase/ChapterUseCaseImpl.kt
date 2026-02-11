@@ -239,6 +239,7 @@ class ChapterUseCaseImpl
                                     )
                                 },
                             imageType = ImageType.COVER,
+                            variationId = saga.data.variationId,
                         ).getSuccess()!!
 
                 val coverFile =

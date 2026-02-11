@@ -530,7 +530,7 @@ class SagaContentManagerImpl
                         checkNarrativeProgression(content.value)
                     }
                 }
-        }
+            }
 
         override fun checkNarrativeProgression(
             saga: SagaContent?,
@@ -943,12 +943,15 @@ class SagaContentManagerImpl
                         }
                         val currentEvent = it.currentEventInfo
 
-                        val currentEventIndex = it.events.indexOf(currentEvent)
-                        if (currentEventIndex > 0) {
-                            val previousEvent = it.events[currentEventIndex - 1]
-                            if (previousEvent.isComplete().not()) {
-                                timelineUseCase.deleteTimeline(previousEvent.data)
+                        val invalidEvents =
+                            it.events.filter {
+                                it.data.id != currentEvent?.data?.id && it.isComplete().not()
                             }
+
+                        Log.w(javaClass.simpleName, "Invalid events -> ${invalidEvents.size} ")
+
+                        invalidEvents.forEach {
+                            timelineUseCase.deleteTimeline(it.data)
                         }
                     }
                 }

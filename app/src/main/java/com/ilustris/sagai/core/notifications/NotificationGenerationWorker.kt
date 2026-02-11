@@ -12,6 +12,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -37,6 +38,7 @@ class NotificationGenerationWorker
         private val gemmaClient: GemmaClient,
         private val sagaRepository: SagaDatabase,
         private val dataStore: DataStorePreferences,
+        private val genreConfigService: GenreConfigService,
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
             return try {
@@ -93,11 +95,14 @@ class NotificationGenerationWorker
                                         }
                                     }.randomOrNull() ?: sagaContent.characters.first()
 
+                            val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
+
                             val prompt =
                                 ChatPrompts.scheduledNotificationPrompt(
                                     saga = sagaContent,
                                     selectedCharacter = selectedCharacter,
                                     sceneSummary = sceneSummary,
+                                    config = config,
                                 )
 
                             delay(3.seconds)

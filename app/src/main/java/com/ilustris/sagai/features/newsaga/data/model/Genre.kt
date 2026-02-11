@@ -78,6 +78,7 @@ Genre(
     ;
 
     val ambientMusicConfigKey: String = "${this.name}_ambient_music_url".lowercase()
+    val configKey: String = "${this.name.lowercase()}_config"
 }
 
 fun Genre.selectiveHighlight(): SelectiveColorParams =

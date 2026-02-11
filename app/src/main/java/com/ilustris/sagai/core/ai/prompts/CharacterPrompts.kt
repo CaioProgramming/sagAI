@@ -249,6 +249,7 @@ object CharacterPrompts {
 
     fun characterGeneration(
         saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
         description: String,
         bannedNames: List<String> = emptyList(),
         themeColor: String? = null,
@@ -351,7 +352,7 @@ object CharacterPrompts {
         appendLine("These fields exist to ensure NO character feels generic or AI-generated.")
         appendLine()
 
-        appendLine(GenrePrompts.appearanceGuidelines(saga.data.genre))
+        appendLine(config.appearanceGuidelines)
 
         appendLine("\n## 📖 LATEST CONVERSATION HISTORY (FOR BEHAVIORAL SEEDING) 📖")
         appendLine("// Use these messages to capture the character's 'voice' and recent narrative impact.")
@@ -570,6 +571,7 @@ object CharacterPrompts {
     fun characterResume(
         character: CharacterContent,
         saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
     ) = buildString {
         val characterData = character.data
         appendLine("You are a master storyteller and narrative biographer.")
@@ -614,11 +616,7 @@ object CharacterPrompts {
         appendLine("3. Focus on how the character has changed, matured, or stayed true to their essence through these events.")
         appendLine("4. Use an atmospheric tone that perfectly matches the saga's genre.")
         appendLine(
-            "## Apply this tone style to the output: ${
-                GenrePrompts.conversationDirective(
-                    saga.data.genre,
-                )
-            }",
+            "## Apply this tone style to the output: ${config.conversationDirective}",
         )
         appendLine("5. Mention at least one key relationship if it's pivotal to their development.")
         appendLine("6. Transform the raw list of events into a flowing narrative summary.")

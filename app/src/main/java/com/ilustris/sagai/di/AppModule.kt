@@ -15,6 +15,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -235,6 +236,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun providesGenreConfigService(remoteConfigService: RemoteConfigService): GenreConfigService = GenreConfigService(remoteConfigService)
+
+    @Provides
+    @Singleton
     fun provideAnalyticsService(
         @ApplicationContext context: Context,
     ): AnalyticsService = AnalyticsService(context)
@@ -243,10 +248,18 @@ object AppModule {
     @Singleton
     fun provideImagenClient(
         remoteConfigService: RemoteConfigService,
+        genreConfigService: GenreConfigService,
         billingService: BillingService,
         analyticsService: AnalyticsService,
         gemmaClient: GemmaClient,
-    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient, analyticsService)
+    ): ImagenClient =
+        ImagenClientImpl(
+            billingService,
+            remoteConfigService,
+            genreConfigService,
+            gemmaClient,
+            analyticsService,
+        )
 
     @Provides
     @Singleton

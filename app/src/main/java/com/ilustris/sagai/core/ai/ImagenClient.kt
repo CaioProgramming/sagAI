@@ -12,8 +12,9 @@ import com.google.firebase.ai.type.generationConfig
 import com.ilustris.sagai.core.ai.model.ImagePromptReview
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.ImageConfigService
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
@@ -32,6 +33,7 @@ interface ImagenClient {
         imageReference: Pair<Bitmap, String>?,
         context: String,
         imageType: ImageType,
+        variationId: String? = null,
     ): RequestResult<Bitmap>
 }
 
@@ -41,6 +43,8 @@ class ImagenClientImpl
     constructor(
         val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
+        private val genreConfigService: GenreConfigService,
+        private val imageConfigService: ImageConfigService,
         private val gemmaClient: GemmaClient,
         private val analyticsService: AnalyticsService,
     ) : ImagenClient {
@@ -110,22 +114,35 @@ class ImagenClientImpl
             imageReference: Pair<Bitmap, String>?,
             context: String,
             imageType: ImageType,
+            variationId: String? = null,
         ): RequestResult<Bitmap> =
             executeRequest {
                 Log.d(
                     TAG,
-                    "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name}",
+                    "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name} | Variation: $variationId",
                 )
+
+                // 0. FETCH CONFIGS
+                val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
+                val imageConfig = imageConfigService.getImageConfig()
 
                 // 1. VISUAL DIRECTOR ANALYSIS
                 val visualDirection =
-                    generateVisualDirection(context, genre, imageType).getSuccess()
+                    generateVisualDirection(
+                        context,
+                        genre,
+                        genreConfig,
+                        imageConfig,
+                        imageType,
+                    ).getSuccess()
                 Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
 
                 // 2. ARTISTIC DESCRIPTION
                 val artisticPrompt =
                     generateArtisticPrompt(
                         genre,
+                        genreConfig,
+                        imageConfig,
                         visualDirection,
                         context,
                     ).getSuccess() ?: error("Failed to generate base artistic prompt")
@@ -135,6 +152,8 @@ class ImagenClientImpl
                     reviewAndCorrectPrompt(
                         imageType = imageType,
                         visualDirection = visualDirection,
+                        genreConfig = genreConfig,
+                        imageConfig = imageConfig,
                         genre = genre,
                         finalPrompt = artisticPrompt,
                         context = context,
@@ -146,8 +165,7 @@ class ImagenClientImpl
                     Log.e(TAG, "generateIntegratedImage: Failed to review")
                 }
                 val finalPrompt =
-
-                    "${GenrePrompts.renderingInstructions(genre)}\n" +
+                    "${genreConfig.renderingInstructions}\n" +
                         (reviewedResult?.correctedPrompt ?: artisticPrompt)
 
                 val generatedImage = generateImage(finalPrompt, references = emptyList())
@@ -166,10 +184,18 @@ class ImagenClientImpl
         private suspend fun generateVisualDirection(
             context: String,
             genre: Genre,
+            genreConfig: com.ilustris.sagai.core.ai.model.GenreConfig,
+            imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
             imageType: ImageType,
         ) = executeRequest {
             gemmaClient.generate<String>(
-                ImagePrompts.generateDirectorialVision(genre, context, imageType),
+                ImagePrompts.generateDirectorialVision(
+                    genre,
+                    genreConfig,
+                    imageConfig,
+                    context,
+                    imageType,
+                ),
                 temperatureRandomness = 0.8f,
                 references = emptyList(),
                 requireTranslation = false,
@@ -179,6 +205,8 @@ class ImagenClientImpl
 
         private suspend fun generateArtisticPrompt(
             genre: Genre,
+            genreConfig: com.ilustris.sagai.core.ai.model.GenreConfig,
+            imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
             visualDirection: String?,
             context: String,
         ): RequestResult<String> =
@@ -186,6 +214,8 @@ class ImagenClientImpl
                 val prompt =
                     ImagePrompts.generateArtistPrompt(
                         genre,
+                        genreConfig,
+                        imageConfig,
                         visualDirection,
                         context,
                     )
@@ -202,24 +232,26 @@ class ImagenClientImpl
         private suspend fun reviewAndCorrectPrompt(
             imageType: ImageType,
             visualDirection: String?,
+            genreConfig: com.ilustris.sagai.core.ai.model.GenreConfig,
+            imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
             genre: Genre,
             finalPrompt: String,
             context: String,
         ) = executeRequest {
-            val artStyleValidationRules = GenrePrompts.validationRules(genre)
-            val strictness = GenrePrompts.reviewerStrictness(genre)
-
             val reviewerPrompt =
                 ImagePrompts.reviewImagePrompt(
                     visualDirection,
-                    artStyleValidationRules,
-                    strictness,
+                    genreConfig,
+                    imageConfig,
                     finalPrompt,
                     genre,
                     context,
                 )
 
-            Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
+            Log.d(
+                TAG,
+                "reviewAndCorrectPrompt: Starting review with ${genreConfig.reviewerStrictness.name} strictness",
+            )
             val review =
                 gemmaClient.generate<ImagePromptReview>(
                     reviewerPrompt,

@@ -28,7 +28,10 @@ object SagaPrompts {
         }
     }
 
-    fun endCredits(saga: SagaContent): String =
+    fun endCredits(
+        saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+    ): String =
         buildString {
             appendLine(
                 "You are the Storyweaver, a timeless entity who has witnessed the unfolding of a great saga. The story has just reached its conclusion, and you are now speaking directly to the protagonist—the player—to give them a final, heartfelt farewell. Your tone is one of awe, gratitude, and gentle reflection. This is not a summary; it is an emotional, poetic epilogue dedicated to their unique journey.",
@@ -46,7 +49,7 @@ object SagaPrompts {
             appendLine("Relationships: ${saga.mainCharacter?.summarizeRelationships() ?: "No significant relationships were forged."}")
             appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
             appendLine("LANGUAGE STYLE:")
-            appendLine(GenrePrompts.conversationDirective(saga.data.genre))
+            appendLine(config.conversationDirective)
             appendLine()
             appendLine("YOUR TASK:")
             appendLine(
@@ -102,6 +105,8 @@ object SagaPrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun iconDescription(
         genre: Genre,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
         context: String,
         visualDirection: String?,
         characterHexColor: String? = null,
@@ -114,9 +119,9 @@ object SagaPrompts {
             "**PROMPT STRUCTURE:** [Art Style] → [Subjects Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
         )
         appendLine()
-        appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
+        appendLine("**ART STYLE (MANDATORY):** ${config.artStyle}")
         appendLine()
-        appendLine(ImagePrompts.criticalGenerationRule())
+        appendLine(ImagePrompts.criticalGenerationRule(imageConfig))
         appendLine()
 
         appendLine("**GOOGLE BEST PRACTICES - APPLY STRICTLY:**")
@@ -263,186 +268,187 @@ object SagaPrompts {
         appendLine("Suitable for direct input to image generation AI with minimal corrections needed.")
     }
 
-    fun reviewGeneration(saga: SagaContent) =
-        buildString {
-            val topInteractiveCharacters =
-                saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
-            appendLine(
-                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a personal storytelling retrospective—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
-            )
-            appendLine()
-            appendLine("---")
-            appendLine("CONTEXT:")
-            appendLine("Player relationships:")
-            appendLine(saga.mainCharacter?.summarizeRelationships())
-            appendLine("Emotional Ranking: ")
-            saga.flatMessages().rankEmotionalTone().forEach {
-                appendLine("${it.first.name} - ${it.second.size} messages.")
+    fun reviewGeneration(
+        saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+    ) = buildString {
+        val topInteractiveCharacters =
+            saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
+        appendLine(
+            "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a personal storytelling retrospective—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
+        )
+        appendLine()
+        appendLine("---")
+        appendLine("CONTEXT:")
+        appendLine("Player relationships:")
+        appendLine(saga.mainCharacter?.summarizeRelationships())
+        appendLine("Emotional Ranking: ")
+        saga.flatMessages().rankEmotionalTone().forEach {
+            appendLine("${it.first.name} - ${it.second.size} messages.")
+        }
+        appendLine("Emotional Summary: ")
+        appendLine(saga.emotionalSummary())
+
+        val userMessages =
+            saga.flatMessages().filter { it.character?.id == saga.mainCharacter?.data?.id }
+        val actionCount = userMessages.count { it.message.text.contains("<action>") }
+        val thinkCount = userMessages.count { it.message.text.contains("<think>") }
+        val narratorCount = userMessages.count { it.message.text.contains("<narrator>") }
+        val totalExpressive = actionCount + thinkCount + narratorCount
+
+        appendLine("Player Expressiveness (Tag Usage):")
+        appendLine("- Actions (<action>): $actionCount")
+        appendLine("- Thoughts (<think>): $thinkCount")
+        appendLine("- Narrations (<narrator>): $narratorCount")
+        appendLine("- Total Expressive Interactions: $totalExpressive")
+
+        appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
+        appendLine("Characters ranking(name and message number): ")
+        appendLine(
+            topInteractiveCharacters.joinToString(";\n") {
+                "name: ${it.first.name}, messageCount: ${it.second}"
+            },
+        )
+        appendLine("Language Directive: ")
+        appendLine(config.conversationDirective)
+        appendLine("---")
+        appendLine()
+        appendLine("**INSTRUCTIONS FOR GENERATING THE RETROSPECTIVE:**")
+        appendLine()
+        appendLine(
+            "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Each slide MUST have a 'hook' (to set expectation) and 'content' (the actual data).",
+        )
+        appendLine(
+            "CRITICAL: Both 'hook' and 'content' MUST follow a bold visual hierarchy: a sharp 'title' and a supporting 'subtitle'.",
+        )
+        appendLine()
+        appendLine("- **Title**: Max 5-7 words. The primary message, bold, punchy.")
+        appendLine("- **Subtitle**: Max 8-10 words. The supporting context, witty remark, or deeper insight.")
+        appendLine()
+        appendLine("1.  **Stage Content Requirements:**")
+        appendLine(
+            "    *   **`introduction`**: The opening roast/hook. (e.g., Hook: { \"title\": \"The house is ready.\", \"subtitle\": \"You can come in now.\" })",
+        )
+        appendLine(
+            "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style. (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
+        )
+        appendLine(
+            "    *   **`playstyle`**: The personality vibe. (e.g., Content: { \"title\": \"Chaos Gremlin.\", \"subtitle\": \"Aggressively polite, but still chaos.\" })",
+        )
+        appendLine(
+            "    *   **`topCharacters`**: The social breakdown. (e.g., Hook: { \"title\": \"The squad's choice?\", \"subtitle\": \"It wasn't even close.\" })",
+        )
+        appendLine(
+            "    *   **`actsInsight`**: The 'Watcher's Insight'. referencing a SPECIFIC history detail. (e.g., Content: { \"title\": \"The Bridge Incident.\", \"subtitle\": \"Pure legendary madness in the making.\" })",
+        )
+        appendLine(
+            "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., Content: { \"title\": \"And for now...\", \"subtitle\": \"Same time next year? We'll leave the lights on.\" })",
+        )
+        appendLine()
+        appendLine("2.  **Constraints:**")
+        appendLine("    *   TOKEN OPTIMIZED: Max personality, minimum character count.")
+        appendLine("    *   Tone: Conversational, clever, joking.")
+        appendLine()
+        appendLine("---")
+        appendLine(
+            "OUTPUT JSON OBJECT ONLY with this structure: { \"introduction\": { \"hook\": { \"title\": \"...\", \"subtitle\": \"...\" }, \"content\": { \"title\": \"...\", \"subtitle\": \"...\" } }, ... }",
+        )
+    }.trim()
+
+    fun generateStoryBriefing(
+        saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+    ) = buildString {
+        appendLine(
+            "You are a master storyteller, a bard of a digital age, tasked with creating a captivating 'story briefing' to re-engage a player with their ongoing saga. Your goal is to generate a short, dramatic, and enticing summary that reminds them of their journey and makes them eager to continue. The output must be a JSON object.",
+        )
+        appendLine()
+        appendLine("---")
+        appendLine("SAGA CONTEXT:")
+        appendLine("Saga Title: ${saga.data.title}")
+        appendLine("Genre: ${saga.data.genre.name}")
+        appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
+        appendLine()
+        appendLine("HISTORY OVERVIEW:")
+        appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
+        appendLine("Conversation History")
+        appendLine("Use this history for context, but do NOT repeat it in your response.")
+        appendLine("The messages are ordered from newest to oldest")
+        appendLine("Consider the newest ones to move history forward")
+        appendLine("Pay attention to `speakerName` and `senderType`.")
+        appendLine(
+            saga
+                .flatMessages()
+                .takeLast(5)
+                .reversed()
+                .map { it.message }
+                .normalizetoAIItems(excludingFields = messageExclusions),
+        )
+        appendLine("---")
+        appendLine()
+        appendLine("YOUR TASK:")
+        appendLine("Generate a JSON object with two fields: `summary` and `hook`.")
+        appendLine()
+        appendLine("1.  `summary` (String):")
+        appendLine(
+            "    - A compelling 2-3 sentence recap of the saga so far, written in the style of a 'Previously on...' TV show segment.",
+        )
+        appendLine("    - Capture the emotional core of the recent events.")
+        appendLine("    - Remind the player of the central conflict or mystery.")
+        appendLine(
+            "    - **Example:** \"Having just escaped the clutches of the Shadow Syndicate, you've found a moment of respite in the neon-drenched streets of Neo-Kyoto. Yet, the ghost of your past, the enigmatic 'Zero,' continues to haunt your every move, leaving a trail of cryptic messages that hint at a deeper conspiracy.\"",
+        )
+        appendLine()
+        appendLine("2.  `hook` (String):")
+        appendLine(
+            "    - An intriguing 1-2 sentence teaser about what might happen next, designed to build anticipation.",
+        )
+        appendLine("    - Pose a question, hint at a new danger, or tease a revelation.")
+        appendLine("    - This is the cliffhanger that makes the player want to know more.")
+        appendLine(
+            "    - **Example:** \"But as a fragile peace settles, a new transmission arrives, bearing a sigil you thought long buried. Is it a message from a forgotten ally, or a trap sprung by a new, unseen foe?\"",
+        )
+        appendLine()
+        appendLine("LANGUAGE AND TONE:")
+        appendLine("- Dramatic, engaging, and mysterious, consistent with the saga's genre (${saga.data.genre.name}).")
+        appendLine("- Apply this tone style: ${config.conversationDirective}")
+        appendLine("- Speak directly to the player, using 'you' and 'your'.")
+        appendLine("- Do NOT reveal major spoilers. Tease, don't tell.")
+        appendLine()
+        appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
+    }.trimIndent()
+
+    fun sagaResume(
+        saga: SagaContent,
+        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+    ) = buildString {
+        appendLine("You are a legendary chronicler of epic tales.")
+        appendLine(
+            "Your task is to write a concise, gripping, and deeply atmospheric summary of the story so far for a saga titled '${saga.data.title}'.",
+        )
+        appendLine(
+            "This summary should provide a clear overview of the central conflict, major milestones, and the current state of the world.",
+        )
+        appendLine(mainContext(saga))
+
+        appendLine("## THE STORY PROGRESSION")
+        if (saga.acts.isEmpty()) {
+            appendLine("The story is in its very early stages, just beginning to unfold.")
+        } else {
+            saga.acts.forEach {
+                appendLine(it.actSummary(saga))
             }
-            appendLine("Emotional Summary: ")
-            appendLine(saga.emotionalSummary())
-
-            val userMessages =
-                saga.flatMessages().filter { it.character?.id == saga.mainCharacter?.data?.id }
-            val actionCount = userMessages.count { it.message.text.contains("<action>") }
-            val thinkCount = userMessages.count { it.message.text.contains("<think>") }
-            val narratorCount = userMessages.count { it.message.text.contains("<narrator>") }
-            val totalExpressive = actionCount + thinkCount + narratorCount
-
-            appendLine("Player Expressiveness (Tag Usage):")
-            appendLine("- Actions (<action>): $actionCount")
-            appendLine("- Thoughts (<think>): $thinkCount")
-            appendLine("- Narrations (<narrator>): $narratorCount")
-            appendLine("- Total Expressive Interactions: $totalExpressive")
-
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
-            appendLine("Characters ranking(name and message number): ")
-            appendLine(
-                topInteractiveCharacters.joinToString(";\n") {
-                    "name: ${it.first.name}, messageCount: ${it.second}"
-                },
-            )
-            appendLine("Language Directive: ")
-            appendLine(GenrePrompts.conversationDirective(saga.data.genre))
-            appendLine("---")
-            appendLine()
-            appendLine("**INSTRUCTIONS FOR GENERATING THE RETROSPECTIVE:**")
-            appendLine()
-            appendLine(
-                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Each slide MUST have a 'hook' (to set expectation) and 'content' (the actual data).",
-            )
-            appendLine(
-                "CRITICAL: Both 'hook' and 'content' MUST follow a bold visual hierarchy: a sharp 'title' and a supporting 'subtitle'.",
-            )
-            appendLine()
-            appendLine("- **Title**: Max 5-7 words. The primary message, bold, punchy.")
-            appendLine("- **Subtitle**: Max 8-10 words. The supporting context, witty remark, or deeper insight.")
-            appendLine()
-            appendLine("1.  **Stage Content Requirements:**")
-            appendLine(
-                "    *   **`introduction`**: The opening roast/hook. (e.g., Hook: { \"title\": \"The house is ready.\", \"subtitle\": \"You can come in now.\" })",
-            )
-            appendLine(
-                "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style. (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
-            )
-            appendLine(
-                "    *   **`playstyle`**: The personality vibe. (e.g., Content: { \"title\": \"Chaos Gremlin.\", \"subtitle\": \"Aggressively polite, but still chaos.\" })",
-            )
-            appendLine(
-                "    *   **`topCharacters`**: The social breakdown. (e.g., Hook: { \"title\": \"The squad's choice?\", \"subtitle\": \"It wasn't even close.\" })",
-            )
-            appendLine(
-                "    *   **`actsInsight`**: The 'Watcher's Insight'. referencing a SPECIFIC history detail. (e.g., Content: { \"title\": \"The Bridge Incident.\", \"subtitle\": \"Pure legendary madness in the making.\" })",
-            )
-            appendLine(
-                "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., Content: { \"title\": \"And for now...\", \"subtitle\": \"Same time next year? We'll leave the lights on.\" })",
-            )
-            appendLine()
-            appendLine("2.  **Constraints:**")
-            appendLine("    *   TOKEN OPTIMIZED: Max personality, minimum character count.")
-            appendLine("    *   Tone: Conversational, clever, joking.")
-            appendLine()
-            appendLine("---")
-            appendLine(
-                "OUTPUT JSON OBJECT ONLY with this structure: { \"introduction\": { \"hook\": { \"title\": \"...\", \"subtitle\": \"...\" }, \"content\": { \"title\": \"...\", \"subtitle\": \"...\" } }, ... }",
-            )
-        }.trim()
-
-    fun generateStoryBriefing(saga: SagaContent) =
-        buildString {
-            appendLine(
-                "You are a master storyteller, a bard of a digital age, tasked with creating a captivating 'story briefing' to re-engage a player with their ongoing saga. Your goal is to generate a short, dramatic, and enticing summary that reminds them of their journey and makes them eager to continue. The output must be a JSON object.",
-            )
-            appendLine()
-            appendLine("---")
-            appendLine("SAGA CONTEXT:")
-            appendLine("Saga Title: ${saga.data.title}")
-            appendLine("Genre: ${saga.data.genre.name}")
-            appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
-            appendLine()
-            appendLine("HISTORY OVERVIEW:")
-            appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
-            appendLine("Conversation History")
-            appendLine("Use this history for context, but do NOT repeat it in your response.")
-            appendLine("The messages are ordered from newest to oldest")
-            appendLine("Consider the newest ones to move history forward")
-            appendLine("Pay attention to `speakerName` and `senderType`.")
-            appendLine(
-                saga
-                    .flatMessages()
-                    .takeLast(5)
-                    .reversed()
-                    .map { it.message }
-                    .normalizetoAIItems(excludingFields = messageExclusions),
-            )
-            appendLine("---")
-            appendLine()
-            appendLine("YOUR TASK:")
-            appendLine("Generate a JSON object with two fields: `summary` and `hook`.")
-            appendLine()
-            appendLine("1.  `summary` (String):")
-            appendLine(
-                "    - A compelling 2-3 sentence recap of the saga so far, written in the style of a 'Previously on...' TV show segment.",
-            )
-            appendLine("    - Capture the emotional core of the recent events.")
-            appendLine("    - Remind the player of the central conflict or mystery.")
-            appendLine(
-                "    - **Example:** \"Having just escaped the clutches of the Shadow Syndicate, you've found a moment of respite in the neon-drenched streets of Neo-Kyoto. Yet, the ghost of your past, the enigmatic 'Zero,' continues to haunt your every move, leaving a trail of cryptic messages that hint at a deeper conspiracy.\"",
-            )
-            appendLine()
-            appendLine("2.  `hook` (String):")
-            appendLine(
-                "    - An intriguing 1-2 sentence teaser about what might happen next, designed to build anticipation.",
-            )
-            appendLine("    - Pose a question, hint at a new danger, or tease a revelation.")
-            appendLine("    - This is the cliffhanger that makes the player want to know more.")
-            appendLine(
-                "    - **Example:** \"But as a fragile peace settles, a new transmission arrives, bearing a sigil you thought long buried. Is it a message from a forgotten ally, or a trap sprung by a new, unseen foe?\"",
-            )
-            appendLine()
-            appendLine("LANGUAGE AND TONE:")
-            appendLine(
-                "- Dramatic, engaging, and mysterious, consistent with the saga's genre (${saga.data.genre.name}).",
-            )
-            appendLine("- Speak directly to the player, using 'you' and 'your'.")
-            appendLine("- Do NOT reveal major spoilers. Tease, don't tell.")
-            appendLine()
-            appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
-        }.trimIndent()
-
-    fun sagaResume(saga: SagaContent) =
-        buildString {
-            appendLine("You are a legendary chronicler of epic tales.")
-            appendLine(
-                "Your task is to write a concise, gripping, and deeply atmospheric summary of the story so far for a saga titled '${saga.data.title}'.",
-            )
-            appendLine(
-                "This summary should provide a clear overview of the central conflict, major milestones, and the current state of the world.",
-            )
-            appendLine(mainContext(saga))
-
-            appendLine("## THE STORY PROGRESSION")
-            if (saga.acts.isEmpty()) {
-                appendLine("The story is in its very early stages, just beginning to unfold.")
-            } else {
-                saga.acts.forEach {
-                    appendLine(it.actSummary(saga))
-                }
-            }
-            appendLine()
-            appendLine("## INSTRUCTIONS")
-            appendLine("1. Write a single, cinematic, and powerful paragraph (max 200 words).")
-            appendLine("2. Focus strictly on the narrative progression and the evolving stakes.")
-            appendLine("3. Capture the unique atmosphere of the genre (${saga.data.genre.name}).")
-            appendLine(
-                "## Apply this tone style: ${
-                    GenrePrompts.conversationDirective(
-                        saga.data.genre,
-                    )
-                }",
-            )
-            appendLine("4. Highlight the main character's growth and the weight of their decisions.")
-            appendLine("5. Transform the act summaries into a flowing, epic chronicle.")
-            appendLine("6. Respond ONLY with the resume text. No intro, no outro.")
-        }.trimIndent()
+        }
+        appendLine()
+        appendLine("## INSTRUCTIONS")
+        appendLine("1. Write a single, cinematic, and powerful paragraph (max 200 words).")
+        appendLine("2. Focus strictly on the narrative progression and the evolving stakes.")
+        appendLine("3. Capture the unique atmosphere of the genre (${saga.data.genre.name}).")
+        appendLine(
+            "## Apply this tone style: ${config.conversationDirective}",
+        )
+        appendLine("4. Highlight the main character's growth and the weight of their decisions.")
+        appendLine("5. Transform the act summaries into a flowing, epic chronicle.")
+        appendLine("6. Respond ONLY with the resume text. No intro, no outro.")
+    }.trimIndent()
 }
