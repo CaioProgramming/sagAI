@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Log
 import android.util.LruCache
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.TextFieldValue
@@ -50,6 +49,7 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.components.snackBar
+import timber.log.Timber
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -661,7 +661,7 @@ class ChatViewModel
                                 genre = sagaContent.data.genre,
                             )
                         controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
-                        Log.d("ChatViewModel", "New act ($newActCount). Updated SagaMediaService.")
+                        Timber.d("New act ($newActCount). Updated SagaMediaService.")
                     }
                 }
             }
@@ -675,7 +675,7 @@ class ChatViewModel
                 action != SagaMediaService.ACTION_PAUSE_MUSIC &&
                 action != SagaMediaService.ACTION_RESUME_MUSIC
             ) {
-                Log.w("ChatViewModel", "Invalid action for SagaMediaService: $action")
+                Timber.w("Invalid action for SagaMediaService: $action")
                 return
             }
             val serviceIntent =
@@ -687,12 +687,11 @@ class ChatViewModel
                 }
             try {
                 context.startService(serviceIntent)
-                Log.d(
-                    "ChatViewModel",
+                Timber.d(
                     "Sent $action to SagaMediaService. Metadata: ${metadata?.toJsonFormat()}",
                 )
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error controlling SagaMediaService with action $action", e)
+                Timber.e(e, "Error controlling SagaMediaService with action $action")
                 updateSnackBar(
                     snackBar(
                         "Não foi possível iniciar o serviço áudio. Verifique as permissões",
@@ -706,13 +705,11 @@ class ChatViewModel
                 if (uiState.value.sagaContent == null) return@launch
                 sagaContentManager.ambientMusicFile.collect { musicFile ->
 
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "observeAmbientMusicServiceControl: file updated -> $musicFile",
                     )
                     if (musicFile == null && uiState.value.isPlaying.not()) {
-                        Log.w(
-                            javaClass.simpleName,
+                        Timber.w(
                             "observeAmbientMusicServiceControl: Music not found skipping player",
                         )
                         return@collect
@@ -759,15 +756,13 @@ class ChatViewModel
                                 )
                             currentActCountForService = playbackMetadata.currentActNumber
                             controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
-                            Log.d(
-                                "ChatViewModel",
+                            Timber.d(
                                 "Ambient music file available. Instructing SagaMediaService to play.",
                             )
                         }
                     } else {
                         if (currentSagaIdForService != null && (musicFile == null || !musicFile.exists())) {
-                            Log.d(
-                                "ChatViewModel",
+                            Timber.d(
                                 "Ambient music file null/invalid for current saga. Instructing service to stop.",
                             )
                             controlMediaPlayerService(SagaMediaService.ACTION_STOP)
@@ -783,8 +778,7 @@ class ChatViewModel
             super.onResume(owner)
             startTime = System.currentTimeMillis()
             scheduledNotificationService.cancelScheduledNotifications()
-            Log.d(
-                "ChatViewModel",
+            Timber.d(
                 "Lifecycle: onResume. SagaMediaService manages its own state. Start time: $startTime",
             )
         }
@@ -801,7 +795,7 @@ class ChatViewModel
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
-            Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
+            Timber.d("Lifecycle: onPause called. Music continues via service if playing.")
             isForeground = false
             viewModelScope.launch(Dispatchers.IO) {
                 if (startTime != 0L) {
@@ -809,8 +803,7 @@ class ChatViewModel
                     val duration = endTime - startTime
                     val currentSaga = uiState.value.sagaContent
                     if (currentSaga != null && duration > 0) {
-                        Log.d(
-                            "ChatViewModel",
+                        Timber.d(
                             "Updating playtime for saga ${currentSaga.data.id}: +${duration}ms",
                         )
                         sagaContentManager.updatePlaytime(currentSaga.data.id, duration)
@@ -823,7 +816,7 @@ class ChatViewModel
 
         override fun onCleared() {
             super.onCleared()
-            Log.d("ChatViewModel", "onCleared called. Instructing SagaMediaService to stop.")
+            Timber.d("onCleared called. Instructing SagaMediaService to stop.")
             controlMediaPlayerService(SagaMediaService.ACTION_STOP)
             audioMediaPlayerManager.release()
         }
@@ -884,8 +877,7 @@ class ChatViewModel
                 return
             }
 
-            Log.d(
-                javaClass.simpleName,
+            Timber.d(
                 "Smart Suggestions status: ${uiState.value.smartSuggestionsEnabled}",
             )
 
@@ -1112,8 +1104,7 @@ class ChatViewModel
 
                 delay(5.seconds)
 
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "generateSuggestions: checking if is generating -> ${uiState.value.isGenerating}",
                 )
                 if (uiState.value.isGenerating || uiState.value.isLoading) {
@@ -1279,7 +1270,7 @@ class ChatViewModel
         private fun enableDebugMode(enabled: Boolean) {
             sagaContentManager.setDebugMode(enabled)
             messageUseCase.setDebugMode(enabled)
-            Log.i("ChatViewModel", "Debug mode set to: $enabled")
+            Timber.i("Debug mode set to: $enabled")
         }
 
         fun sendFakeUserMessages(count: Int) {
@@ -1304,7 +1295,7 @@ class ChatViewModel
                     sendMessage(fakeUserMessage, false, null, false)
                     delay(100)
                 }
-                Log.d("ChatViewModel", "Finished enqueuing $count fake messages.")
+                Timber.d("Finished enqueuing $count fake messages.")
             }
         }
 
@@ -1406,7 +1397,7 @@ class ChatViewModel
                     startProgressUpdates(messageId)
                 },
                 onError = { exception ->
-                    Log.e("ChatViewModel", "Audio playback error", exception)
+                    Timber.e(exception, "Audio playback error")
                     viewModelScope.launch(Dispatchers.Main) {
                         stateManager.updateState { it.copy(audioPlaybackState = null) }
                     }

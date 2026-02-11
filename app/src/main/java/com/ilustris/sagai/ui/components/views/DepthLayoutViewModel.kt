@@ -1,9 +1,9 @@
 package com.ilustris.sagai.ui.components.views
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import timber.log.Timber
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +39,7 @@ class DepthLayoutViewModel
                         _segmentedBitmap.emit(it.second)
                         _isProcessing.emit(false)
                     }.onFailureAsync {
-                        Log.e("DepthLayoutViewModel", "Error processing image: ${it.message}")
+                        Timber.e("Error processing image: ${it.message}")
                         _isProcessing.emit(false)
                     }
             }

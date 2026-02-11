@@ -3,13 +3,12 @@ package com.ilustris.sagai.core.media
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
-import android.util.Log
 import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import timber.log.Timber
 import java.io.File
-import java.net.URI
 import javax.inject.Inject
 
 class MediaPlayerManagerImpl
@@ -23,10 +22,6 @@ class MediaPlayerManagerImpl
         private val _isPlaying = MutableStateFlow(false)
         override val isPlaying: StateFlow<Boolean> = _isPlaying
 
-        companion object {
-            private const val TAG = "MediaPlayerManager"
-        }
-
         override fun prepareDataSource(
             path: String,
             looping: Boolean,
@@ -35,22 +30,22 @@ class MediaPlayerManagerImpl
             onCompletion: (() -> Unit)?,
         ) {
             val file = File(path)
-            Log.i(TAG, "prepareDataSource: Playing file ${file.absolutePath}")
+            Timber.i("prepareDataSource: Playing file ${file.absolutePath}")
             mediaPlayer?.let {
-                Log.i(TAG, "Releasing existing MediaPlayer before preparing new data source.")
+                Timber.i("Releasing existing MediaPlayer before preparing new data source.")
                 it.stop()
                 it.reset()
                 it.release()
             }
             if (file.exists().not()) {
-                Log.e(TAG, "Audio file does not exist at path: $path")
+                Timber.e("Audio file does not exist at path: $path")
                 onError?.invoke(Exception("Audio file does not exist at path: $path"))
                 return
             }
 
             try {
                 if (mediaPlayer == null) {
-                    Log.i(TAG, "Creating new MediaPlayer instance.")
+                    Timber.i("Creating new MediaPlayer instance.")
                     mediaPlayer = MediaPlayer()
                 }
 
@@ -59,11 +54,11 @@ class MediaPlayerManagerImpl
                         setDataSource(context, file.toUri())
                         isLooping = looping
                         setOnPreparedListener {
-                            Log.i(TAG, "MediaPlayer prepared for: ${file.name}")
+                            Timber.i("MediaPlayer prepared for: ${file.name}")
                             onPrepared?.invoke()
                         }
                         setOnErrorListener { _, what, extra ->
-                            Log.e(TAG, "MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}")
+                            Timber.e("MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}")
                             _isPlaying.value = false
                             onError?.invoke(Exception("MediaPlayer Error: what: $what, extra: $extra"))
                             // Release the player on error
@@ -72,7 +67,7 @@ class MediaPlayerManagerImpl
                         }
 
                         setOnCompletionListener {
-                            Log.i(TAG, "MediaPlayer playback completed for: ${file.name}")
+                            Timber.i("MediaPlayer playback completed for: ${file.name}")
                             if (!isLooping) {
                                 _isPlaying.value = false
                             }
@@ -84,7 +79,7 @@ class MediaPlayerManagerImpl
                         prepareAsync()
                     }
             } catch (e: Exception) {
-                Log.e(TAG, "Error preparing MediaPlayer for file: ${file.name}", e)
+                Timber.e(e, "Error preparing MediaPlayer for file: ${file.name}")
                 _isPlaying.value = false
                 onError?.invoke(e)
                 release()
@@ -99,9 +94,9 @@ class MediaPlayerManagerImpl
                         try {
                             it.start()
                             _isPlaying.value = true
-                            Log.i(TAG, "MediaPlayer playback started.")
+                            Timber.i("MediaPlayer playback started.")
                         } catch (e: IllegalStateException) {
-                            Log.e(TAG, "Error starting MediaPlayer: ${e.message}")
+                            Timber.e("Error starting MediaPlayer: ${e.message}")
                             _isPlaying.value = false
                             release()
                         }
@@ -121,9 +116,9 @@ class MediaPlayerManagerImpl
                     try {
                         it.pause()
                         _isPlaying.value = false
-                        Log.i(TAG, "MediaPlayer playback paused.")
+                        Timber.i("MediaPlayer playback paused.")
                     } catch (e: IllegalStateException) {
-                        Log.e(TAG, "Error pausing MediaPlayer: ${e.message}")
+                        Timber.e("Error pausing MediaPlayer: ${e.message}")
                         release()
                     }
                 }
@@ -142,13 +137,13 @@ class MediaPlayerManagerImpl
                     }
                     it.release()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error releasing MediaPlayer: ${e.message}")
+                    Timber.e("Error releasing MediaPlayer: ${e.message}")
                 } finally {
                     mediaPlayer = null
                     if (_isPlaying.value) {
                         _isPlaying.value = false
                     }
-                    Log.i(TAG, "MediaPlayer released.")
+                    Timber.i("MediaPlayer released.")
                 }
             }
         }

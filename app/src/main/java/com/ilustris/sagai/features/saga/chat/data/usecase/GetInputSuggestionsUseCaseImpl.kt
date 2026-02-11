@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
+import timber.log.Timber
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -33,7 +33,7 @@ class GetInputSuggestionsUseCaseImpl
                         contextSummary,
                     )
 
-                Log.d("GetInputSuggestions", "Sending prompt to GemmaClient for suggestions.")
+                Timber.d("Sending prompt to GemmaClient for suggestions.")
                 gemmaClient
                     .generate<SuggestionGen>(
                         prompt,

@@ -3,9 +3,9 @@ package com.ilustris.sagai.ui.theme.filters
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import timber.log.Timber
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,7 +70,7 @@ fun Modifier.selectiveColorHighlight(
     shaderAssetFileName: String = "selective_color_highlight.agsl",
 ): Modifier {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        Log.w("SelectiveColor", "Shader effects not supported on this API level.")
+        Timber.w("Shader effects not supported on this API level.")
         return this // Or a fallback using ColorMatrix if desired
     }
 

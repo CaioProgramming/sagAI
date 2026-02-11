@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
-import android.util.Log
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
+import timber.log.Timber
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
@@ -54,13 +54,13 @@ class SagaStateManagerImpl
 
             when (action) {
                 CallBackAction.CONTENT_READY -> {
-                    Log.d(javaClass.simpleName, "handleCallback: Saga is ready to save")
+                    Timber.d("handleCallback: Saga is ready to save")
                 }
 
                 CallBackAction.UPDATE_DATA,
                 CallBackAction.AWAITING_CONFIRMATION,
                 -> {
-                    Log.d(javaClass.simpleName, "handleCallback: Saga not ready yet")
+                    Timber.d("handleCallback: Saga not ready yet")
                 }
 
                 else -> {
@@ -115,9 +115,9 @@ class SagaStateManagerImpl
                     )
                     handleGeneratedContent(response)
                 }.onFailure { e ->
-                    Log.e(
-                        javaClass.simpleName,
-                        "sendMessage: Error getting generated content $e",
+                    Timber.e(
+                        e,
+                        "sendMessage: Error getting generated content",
                     )
                 }
             updateLoading(false)
@@ -211,13 +211,12 @@ class SagaStateManagerImpl
             )
 
             response.callback?.let { callback ->
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "handleGeneratedContent: Checking new generated content $callback",
                 )
                 val sagaDraft: SagaDraft? = callback.data
                 sagaDraft?.let {
-                    Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
+                    Timber.i("handleGeneratedContent: Updating form to $it")
                     updateSaga(it)
                 }
             }
@@ -242,7 +241,7 @@ class SagaStateManagerImpl
                         )
                     }
                 }.onFailure {
-                    Log.e(javaClass.simpleName, "adaptToGenre: Error adapting to genre", it)
+                    Timber.e(it, "adaptToGenre: Error adapting to genre")
             }
             updateLoading(false)
         }

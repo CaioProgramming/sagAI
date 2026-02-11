@@ -8,9 +8,9 @@ import android.os.IBinder
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.google.gson.Gson
+import timber.log.Timber
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
@@ -37,8 +37,6 @@ class SagaMediaService : Service() {
     private var currentPlaybackMetadata: PlaybackMetadata? = null
     private var isPausedByApp: Boolean = false
 
-    private val TAG = SagaMediaService::class.java.simpleName
-
     override fun onCreate() {
         super.onCreate()
         mediaSession = MediaSessionCompat(this, "MediaPlayerService")
@@ -46,18 +44,18 @@ class SagaMediaService : Service() {
             object : MediaSessionCompat.Callback() {
                 override fun onPlay() {
                     super.onPlay()
-                    Log.i(TAG, "MediaSession.Callback: onPlay called")
+                    Timber.i("MediaSession.Callback: onPlay called")
                     currentPlaybackMetadata?.let { metadata ->
                         startPlayback(metadata)
                     } ?: run {
-                        Log.w(TAG, "MediaSession.Callback: onPlay called but currentPlaybackMetadata is null. Cannot start playback.")
+                        Timber.w("MediaSession.Callback: onPlay called but currentPlaybackMetadata is null. Cannot start playback.")
                     }
                 }
 
                 @SuppressLint("MissingPermission")
                 override fun onPause() {
                     super.onPause()
-                    Log.i(TAG, "MediaSession.Callback: onPause called")
+                    Timber.i("MediaSession.Callback: onPause called")
                     mediaPlayerManager.pause()
                     isPausedByApp = false
                     currentPlaybackMetadata?.let { metadata ->
@@ -71,7 +69,7 @@ class SagaMediaService : Service() {
                             NotificationManagerCompat
                                 .from(this@SagaMediaService)
                                 .notify(MediaNotificationManagerImpl.MEDIA_NOTIFICATION_ID, updatedNotification)
-                            Log.d(TAG, "Notification updated for PAUSE from MediaSession callback.")
+                            Timber.d("Notification updated for PAUSE from MediaSession callback.")
                         }
                     }
                     val pausedState =
@@ -83,12 +81,12 @@ class SagaMediaService : Service() {
                             ).setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
                             .build()
                     mediaSession.setPlaybackState(pausedState)
-                    Log.d(TAG, "MediaSession state updated to PAUSED from MediaSession callback.")
+                    Timber.d("MediaSession state updated to PAUSED from MediaSession callback.")
                 }
 
                 override fun onStop() {
                     super.onStop()
-                    Log.i(TAG, "MediaSession.Callback: onStop called")
+                    Timber.i("MediaSession.Callback: onStop called")
                     mediaPlayerManager.stop()
                     val stoppedState =
                         PlaybackStateCompat
@@ -96,7 +94,7 @@ class SagaMediaService : Service() {
                             .setState(PlaybackStateCompat.STATE_STOPPED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
                             .build()
                     mediaSession.setPlaybackState(stoppedState)
-                    Log.d(TAG, "MediaSession state updated to STOPPED from MediaSession callback.")
+                    Timber.d("MediaSession state updated to STOPPED from MediaSession callback.")
                     stopForeground(STOP_FOREGROUND_REMOVE)
                 }
             },
@@ -115,12 +113,12 @@ class SagaMediaService : Service() {
     }
 
     private fun startPlayback(playbackMetadata: PlaybackMetadata) {
-        Log.d(TAG, "Attempting to play media file: ${playbackMetadata.mediaFilePath} with metadata: $playbackMetadata")
+        Timber.d("Attempting to play media file: ${playbackMetadata.mediaFilePath} with metadata: $playbackMetadata")
         this.currentPlaybackMetadata = playbackMetadata
 
         val mediaFile = File(playbackMetadata.mediaFilePath)
         if (!mediaFile.exists()) {
-            Log.e(TAG, "Media file does not exist: ${playbackMetadata.mediaFilePath}")
+            Timber.e("Media file does not exist: ${playbackMetadata.mediaFilePath}")
             val errorState =
                 PlaybackStateCompat
                     .Builder()
@@ -134,7 +132,7 @@ class SagaMediaService : Service() {
             playbackMetadata.mediaFilePath,
             looping = true,
             onPrepared = {
-                Log.i(TAG, "MediaPlayer prepared, starting playback for: ${playbackMetadata.mediaFilePath}")
+                Timber.i("MediaPlayer prepared, starting playback for: ${playbackMetadata.mediaFilePath}")
                 mediaPlayerManager.play()
 
                 val notification: Notification? =
@@ -146,9 +144,9 @@ class SagaMediaService : Service() {
 
                 if (notification != null) {
                     startForeground(MediaNotificationManagerImpl.MEDIA_NOTIFICATION_ID, notification)
-                    Log.d(TAG, "Service started in foreground.")
+                    Timber.d("Service started in foreground.")
                 } else {
-                    Log.e(TAG, "Failed to create notification for startForeground. Check permissions.")
+                    Timber.e("Failed to create notification for startForeground. Check permissions.")
                 }
 
                 val playingState =
@@ -160,7 +158,7 @@ class SagaMediaService : Service() {
                         ).setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
                         .build()
                 mediaSession.setPlaybackState(playingState)
-                Log.d(TAG, "MediaSession state updated to PLAYING.")
+                Timber.d("MediaSession state updated to PLAYING.")
 
                 val metadataBuilder =
                     MediaMetadataCompat
@@ -172,17 +170,17 @@ class SagaMediaService : Service() {
                         .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, playbackMetadata.sagaTitle)
                         .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, playbackMetadata.timelineObjective)
                 mediaSession.setMetadata(metadataBuilder.build())
-                Log.d(TAG, "MediaSession metadata updated for: ${playbackMetadata.sagaTitle}")
+                Timber.d("MediaSession metadata updated for: ${playbackMetadata.sagaTitle}")
             },
             onError = { exception ->
-                Log.e(TAG, "Error preparing MediaPlayer for: ${playbackMetadata.mediaFilePath}", exception)
+                Timber.e(exception, "Error preparing MediaPlayer for: ${playbackMetadata.mediaFilePath}")
                 val errorState =
                     PlaybackStateCompat
                         .Builder()
                         .setState(PlaybackStateCompat.STATE_ERROR, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
                         .build()
                 mediaSession.setPlaybackState(errorState)
-                Log.e(TAG, "MediaSession state updated to ERROR.")
+                Timber.e("MediaSession state updated to ERROR.")
             },
         )
     }
@@ -194,37 +192,37 @@ class SagaMediaService : Service() {
         startId: Int,
     ): Int {
         val action = intent?.action
-        Log.d(TAG, "onStartCommand received action: $action")
+        Timber.d("onStartCommand received action: $action")
 
         when (action) {
             ACTION_PLAY -> {
-                Log.i(TAG, "ACTION_PLAY received")
+                Timber.i("ACTION_PLAY received")
                 val sagaContentJson = intent.getStringExtra(EXTRA_SAGA_CONTENT_JSON)
                 if (sagaContentJson == null) {
-                    Log.e(TAG, "ACTION_PLAY: sagaContentJson is null. Cannot get PlaybackMetadata.")
+                    Timber.e("ACTION_PLAY: sagaContentJson is null. Cannot get PlaybackMetadata.")
                     return START_NOT_STICKY
                 }
                 var playbackMetadataLocal: PlaybackMetadata? = null
                 try {
                     playbackMetadataLocal = gson.fromJson(sagaContentJson, PlaybackMetadata::class.java)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error deserializing PlaybackMetadata from JSON", e)
+                    Timber.e(e, "Error deserializing PlaybackMetadata from JSON")
                 }
 
                 if (playbackMetadataLocal == null) {
-                    Log.e(TAG, "ACTION_PLAY: PlaybackMetadata is null. Cannot play.")
+                    Timber.e("ACTION_PLAY: PlaybackMetadata is null. Cannot play.")
                     return START_NOT_STICKY
                 }
                 startPlayback(playbackMetadataLocal)
             }
 
             ACTION_PAUSE -> {
-                Log.i(TAG, "ACTION_PAUSE (from Intent) received, delegating to MediaSession")
+                Timber.i("ACTION_PAUSE (from Intent) received, delegating to MediaSession")
                 mediaSession.controller.transportControls.pause()
             }
 
             ACTION_STOP -> {
-                Log.i(TAG, "ACTION_STOP (from Intent) received, delegating to MediaSession")
+                Timber.i("ACTION_STOP (from Intent) received, delegating to MediaSession")
                 mediaSession.controller.transportControls.stop()
             }
 
@@ -243,7 +241,7 @@ class SagaMediaService : Service() {
             }
 
             else -> {
-                Log.w(TAG, "Unknown or null action received: $action")
+                Timber.w("Unknown or null action received: $action")
             }
         }
         return START_NOT_STICKY
@@ -253,7 +251,7 @@ class SagaMediaService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "onDestroy called")
+        Timber.d("onDestroy called")
         val stoppedState =
             PlaybackStateCompat
                 .Builder()

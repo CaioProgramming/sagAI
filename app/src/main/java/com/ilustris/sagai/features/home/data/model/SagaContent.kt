@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.home.data.model
 
 import android.icu.util.Calendar
-import android.util.Log
 import androidx.room.Embedded
 import androidx.room.Relation
+import timber.log.Timber
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.features.act.data.model.Act
@@ -178,8 +178,7 @@ fun SagaContent.actNumber(act: Act?): Int =
 
 fun SagaContent.getDirective(): String {
     val actsCount = acts.size
-    Log.d(
-        javaClass.simpleName,
+    Timber.d(
         "Getting directive. Total acts count: $actsCount for saga(${this.data.id}) -> ${this.data.title}",
     )
     return when (actsCount) {

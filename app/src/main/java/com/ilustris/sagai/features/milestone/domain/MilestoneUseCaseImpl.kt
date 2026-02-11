@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.milestone.domain
 
-import android.util.Log
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
+import timber.log.Timber
 import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -23,8 +23,7 @@ class MilestoneUseCaseImpl
             saga: SagaContent,
         ): RequestResult<String?> =
             executeRequest(false) {
-                Log.d(
-                    "MilestoneUseCase",
+                Timber.tag("MilestoneUseCase").d(
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
 

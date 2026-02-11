@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import timber.log.Timber
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
@@ -105,10 +106,7 @@ class SagaDetailViewModel
                         isSummarizingSaga.value = false
                     }.onFailure {
                         isSummarizingSaga.value = false
-                        android.util.Log.e(
-                            "SagaDetailViewModel",
-                            "Error generating saga resume: ${it.message}",
-                        )
+                        Timber.e("Error generating saga resume: ${it.message}")
                     }
             }
         }

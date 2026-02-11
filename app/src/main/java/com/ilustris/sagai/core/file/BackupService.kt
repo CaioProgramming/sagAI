@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
@@ -20,6 +19,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
 import java.util.zip.ZipEntry
@@ -54,7 +54,7 @@ class BackupService(
                 preferences.getStringNow(BACKUP_PREFRENCE_KEY).ifEmpty {
                     error("Path not defined.")
                 }
-            Log.i(javaClass.simpleName, "backup Path: $path")
+            Timber.i("backup Path: $path")
             val pathUri = path.toUri()
 
             val parentFolder = DocumentFile.fromTreeUri(context, pathUri)
@@ -330,7 +330,7 @@ class BackupService(
                 val oldUri = oldUriString.toUri()
                 val releaseFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 context.contentResolver.releasePersistableUriPermission(oldUri, releaseFlags)
-                Log.i(javaClass.simpleName, "Successfully released permission for old URI: $oldUriString")
+                Timber.i("Successfully released permission for old URI: $oldUriString")
             }
         }
 

@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.home.data.usecase
 
-import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.BuildConfig
+import timber.log.Timber
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -40,7 +40,7 @@ class HomeUseCaseImpl
 
         override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
             executeRequest {
-                Log.d("HomeUseCaseImpl", "Fetching new dynamic saga texts...")
+                Timber.d("Fetching new dynamic saga texts...")
                 val prompt = HomePrompts.dynamicSagaCreationPrompt()
 
                 val result =

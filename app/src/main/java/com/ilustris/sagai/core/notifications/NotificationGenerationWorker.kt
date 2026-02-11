@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -26,6 +25,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
+import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
 @HiltWorker
@@ -41,34 +41,34 @@ class NotificationGenerationWorker
         override suspend fun doWork(): Result {
             return try {
                 withTimeout(20.seconds) {
-                    Log.d(javaClass.simpleName, "Generating notification...")
+                    Timber.d("Generating notification...")
                     val sagaId = inputData.getInt(KEY_SAGA_ID, -1)
                     if (sagaId == -1) {
-                        Log.e(TAG, "Invalid saga ID provided")
+                        Timber.e("Invalid saga ID provided")
                         return@withTimeout Result.failure()
                     }
 
-                    Log.d(TAG, "Starting notification generation for saga: $sagaId")
+                    Timber.d("Starting notification generation for saga: $sagaId")
 
                     val sagaContent = sagaRepository.sagaDao().getSagaContent(sagaId).first()
                     if (sagaContent == null) {
-                        Log.e(TAG, "Saga not found: $sagaId")
+                        Timber.e("Saga not found: $sagaId")
                         return@withTimeout Result.failure()
                     }
 
                     if (sagaContent.data.isEnded) {
-                        Log.w(TAG, "Saga has ended, skipping notification: $sagaId")
+                        Timber.w("Saga has ended, skipping notification: $sagaId")
                         return@withTimeout Result.success()
                     }
 
                     // Verificar se tem personagens
                     if (sagaContent.characters.isEmpty()) {
-                        Log.e(TAG, "No characters found for saga: $sagaId")
+                        Timber.e("No characters found for saga: $sagaId")
                         return@withTimeout Result.failure()
                     }
 
                     if (sagaContent.flatMessages().isEmpty()) {
-                        Log.e(TAG, "No messages found for saga: $sagaId")
+                        Timber.e("No messages found for saga: $sagaId")
                         return@withTimeout Result.failure()
                     }
 
@@ -158,20 +158,19 @@ class NotificationGenerationWorker
                         pendingIntent,
                     )
 
-                    Log.d(
-                        TAG,
+                    Timber.d(
                         "Notification scheduled at: ${
                             notification.scheduledTimestamp.formatDate(
                                 DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR,
                             )
                         }",
                     )
-                    Log.i(TAG, "Generated notification: $notification")
+                    Timber.i("Generated notification: $notification")
 
                     Result.success()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to generate notification", e)
+                Timber.e(e, "Failed to generate notification")
                 Result.retry()
             }
         }
@@ -183,7 +182,6 @@ class NotificationGenerationWorker
             }
 
         companion object {
-            const val TAG = "NotificationWorker"
             const val KEY_SAGA_ID = "saga_id"
             const val WORK_TAG_PREFIX = "notification_"
 

@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
-import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
+import timber.log.Timber
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
@@ -70,7 +70,7 @@ class ImagenClientImpl
                         }
                     }
                 }
-            Log.i(TAG, logData)
+            Timber.tag(TAG).i(logData)
             return billingService.runPremiumRequest {
                 val imageModel =
                     Firebase.ai().generativeModel(
@@ -91,9 +91,8 @@ class ImagenClientImpl
                     }
 
                 val content = imageModel.generateContent(promptBuilder)
-                Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
-                Log.d(
-                    TAG,
+                Timber.tag(TAG).d("generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+                Timber.tag(TAG).d(
                     "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}",
                 )
 
@@ -112,15 +111,14 @@ class ImagenClientImpl
             imageType: ImageType,
         ): RequestResult<Bitmap> =
             executeRequest {
-                Log.d(
-                    TAG,
+                Timber.tag(TAG).d(
                     "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name}",
                 )
 
                 // 1. VISUAL DIRECTOR ANALYSIS
                 val visualDirection =
                     generateVisualDirection(context, genre, imageType).getSuccess()
-                Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
+                Timber.tag(TAG).d("📸 Visual Direction extracted: $visualDirection")
 
                 // 2. ARTISTIC DESCRIPTION
                 val artisticPrompt =
@@ -141,9 +139,9 @@ class ImagenClientImpl
                     ).getSuccess()
 
                 reviewedResult?.let {
-                    Log.d(TAG, "⚖️ Final prompt reviewed.")
+                    Timber.tag(TAG).d("⚖️ Final prompt reviewed.")
                 } ?: run {
-                    Log.e(TAG, "generateIntegratedImage: Failed to review")
+                    Timber.tag(TAG).e("generateIntegratedImage: Failed to review")
                 }
                 val finalPrompt =
 
@@ -152,12 +150,10 @@ class ImagenClientImpl
 
                 val generatedImage = generateImage(finalPrompt, references = emptyList())
 
-                // Log.d(TAG, "generateIntegratedImage: Used reference: ${imageReference.second}")
-
                 if (generatedImage == null) {
-                    Log.e(TAG, "Failed to generate image")
+                    Timber.tag(TAG).e("Failed to generate image")
                 } else {
-                    Log.i(TAG, "✅ Image successfully generated.")
+                    Timber.tag(TAG).i("✅ Image successfully generated.")
                 }
 
                 generatedImage!!
@@ -219,7 +215,7 @@ class ImagenClientImpl
                     context,
                 )
 
-            Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
+            Timber.tag(TAG).d("reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
             val review =
                 gemmaClient.generate<ImagePromptReview>(
                     reviewerPrompt,
@@ -228,10 +224,9 @@ class ImagenClientImpl
                     useCore = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
-            Log.i(TAG, "✏️Prompt was modified by reviewer: ")
-            Log.i(TAG, review.toAINormalize())
-            Log.d(
-                TAG,
+            Timber.tag(TAG).i("✏️Prompt was modified by reviewer: ")
+            Timber.tag(TAG).i(review.toAINormalize())
+            Timber.tag(TAG).d(
                 buildString {
                     appendLine("Suggestions: ")
                     appendLine("Artist Suggestion: ${review.artistImprovementSuggestions}")

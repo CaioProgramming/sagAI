@@ -2,7 +2,6 @@
 
 package com.ilustris.sagai.ui.navigation
 
-import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -37,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.navigation.navArgument
+import timber.log.Timber
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
@@ -253,7 +253,7 @@ fun NavHostController.navigateToRoute(
     }
     val newLink = link.replace("{", "").replace("}", "")
 
-    Log.d(javaClass.simpleName, "navigateToRoute: Navigating to $newLink")
+    Timber.d("navigateToRoute: Navigating to $newLink")
     if (popUpToRoute != null) {
         navigate(newLink) {
             popUpTo(popUpToRoute.deepLink ?: popUpToRoute.name) {
@@ -267,11 +267,10 @@ fun NavHostController.navigateToRoute(
 
 fun String.findRoute(): Routes? =
     Routes.entries.find {
-        Log.i("Route find:", "looking for route $this...")
+        Timber.i("looking for route $this...")
         val mappedDeepLink = it.deepLink?.sanitizeDeepLink()
         val mappedRoute = this.sanitizeDeepLink()
-        Log.d(
-            "Route find:",
+        Timber.d(
             "findRoute: trying to match(${it.name}) $mappedDeepLink with $mappedRoute",
         )
         it.name.equals(this, true) || mappedDeepLink == mappedRoute

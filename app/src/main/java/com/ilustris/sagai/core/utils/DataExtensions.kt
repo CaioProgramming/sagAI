@@ -1,8 +1,8 @@
 package com.ilustris.sagai.core.utils
 
-import android.util.Log
 import com.google.firebase.ai.type.Schema
 import com.google.gson.ExclusionStrategy
+import timber.log.Timber
 import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
 import java.lang.reflect.ParameterizedType
@@ -98,7 +98,7 @@ fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String,
                     .find { member -> member.name == it.name }
                     ?.returnType
                     ?.isMarkedNullable
-            Log.d("SchemaMapper", "Mapping field ${it.name} nullable: $memberIsNullable type: ${it.type.name}")
+            Timber.tag("SchemaMapper").d("Mapping field ${it.name} nullable: $memberIsNullable type: ${it.type.name}")
             it.name to it.type.toSchema(memberIsNullable == true, excludeFields)
         }
 
@@ -289,12 +289,12 @@ fun Long.formatHours(): String {
 fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
     if (this.isNullOrBlank()) {
-        Log.w(logTag, "Input string is null or blank, cannot sanitize.")
+        Timber.tag(logTag).w("Input string is null or blank, cannot sanitize.")
         throw IllegalArgumentException("Input string is null or blank.")
     }
 
     var cleanedJsonString = this!!
-    Log.i(logTag, "Sanitizing raw string: $cleanedJsonString")
+    Timber.tag(logTag).i("Sanitizing raw string: $cleanedJsonString")
 
     // 1. Remove common markdown code block delimiters
     cleanedJsonString = cleanedJsonString.replace("```json", "").replace("```", "")
@@ -307,7 +307,7 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     if (firstJsonCharIndex > 0) {
         cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
     } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
-        Log.e(logTag, "No JSON start character '{' or '[' found in response: $cleanedJsonString")
+        Timber.tag(logTag).e("No JSON start character '{' or '[' found in response: $cleanedJsonString")
         throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
     }
 
@@ -374,13 +374,11 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
                 // This handles cases where internal malformation (like missing quotes) breaks the strict parser
                 val expectedClose = if (startChar == '{') '}' else ']'
                 if (cleanedJsonString.trim().lastOrNull() == expectedClose) {
-                    Log.w(
-                        logTag,
+                    Timber.tag(logTag).w(
                         "Strict JSON parsing failed (likely due to malformed content), but found closing bracket '$expectedClose'. Proceeding with full string.",
                     )
                 } else {
-                    Log.e(
-                        logTag,
+                    Timber.tag(logTag).e(
                         "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
                     )
                     throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
@@ -451,9 +449,9 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
         cleanedJsonString.replace("\"\"\"", "\"\"") // Convert triple quotes to double
     // Note: We intentionally do NOT replace "" -> " because "" is a valid empty string in JSON
 
-    Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
+    Timber.tag(logTag).i("Sanitization complete, cleaned JSON: $cleanedJsonString")
     if (cleanedJsonString.isBlank()) {
-        Log.e(logTag, "Cleaned JSON string is blank after sanitization.")
+        Timber.tag(logTag).e("Cleaned JSON string is blank after sanitization.")
         throw IllegalArgumentException("Resulting JSON string is blank after sanitization.")
     }
     return cleanedJsonString
@@ -509,8 +507,7 @@ private fun repairJsonStructure(
                         val needsOpeningQuote = firstChar != '"'
 
                         if (needsOpeningQuote) {
-                            Log.w(
-                                "JsonRepair",
+                            Timber.tag("JsonRepair").w(
                                 "Repairing JSON: Found missing opening quote for field '$name' at index $charIndex",
                             )
                             currentJson =
@@ -598,8 +595,7 @@ private fun repairJsonStructure(
                                 if (foundQuoteAfterContent) {
                                     // There's an existing trailing quote - remove everything from lastContentPos onwards
                                     // and add our own quote
-                                    Log.d(
-                                        "JsonRepair",
+                                    Timber.tag("JsonRepair").d(
                                         "Field '$name' has existing closing quote at index $trailingQuotePos after content at $lastContentPos, cleaning up",
                                     )
                                     currentJson = currentJson.substring(0, lastContentPos) +
@@ -608,8 +604,7 @@ private fun repairJsonStructure(
                                     startIndex = lastContentPos + 2
                                 } else {
                                     // No existing quote found, just add the closing quote at the right position
-                                    Log.w(
-                                        "JsonRepair",
+                                    Timber.tag("JsonRepair").w(
                                         "Repairing JSON: Adding missing closing quote for field '$name' at index $lastContentPos",
                                     )
                                     currentJson =
@@ -628,7 +623,7 @@ private fun repairJsonStructure(
             }
         }
     } catch (e: Exception) {
-        Log.e("JsonRepair", "Failed to repair JSON structure: ${e.message}")
+        Timber.tag("JsonRepair").e("Failed to repair JSON structure: ${e.message}")
     }
     return currentJson
 }

@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.timeline.domain
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import timber.log.Timber
 import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -142,8 +142,7 @@ class TimelineUseCaseImpl
                     )
                     delay(5.seconds)
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
+                    Timber.w(
                         "generateTimelineContent: Emotional Review Already created",
                     )
                 }
@@ -153,8 +152,7 @@ class TimelineUseCaseImpl
                     updateCharacters(timelineContent.data, saga)
                     delay(5.seconds)
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
+                    Timber.w(
                         "generateTimelineContent: Characters already updated on this event",
                     )
                 }
@@ -165,8 +163,7 @@ class TimelineUseCaseImpl
                         saga,
                     )
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
+                    Timber.w(
                         "generateTimelineContent: Wikis already updated on this event",
                     )
                 }
@@ -177,7 +174,7 @@ class TimelineUseCaseImpl
             saga: SagaContent,
         ) = executeRequest {
             val wikisToUpdateOrAdd = wikiUseCase.generateWiki(saga, timeline).getSuccess()!!
-            Log.d(javaClass.simpleName, "updateWikis: Updating wikis $wikisToUpdateOrAdd")
+            Timber.d("updateWikis: Updating wikis $wikisToUpdateOrAdd")
             wikisToUpdateOrAdd.forEach { generatedWiki ->
                 val existingWiki =
                     saga.wikis.find { wiki ->
@@ -190,8 +187,7 @@ class TimelineUseCaseImpl
                             )
                     }
                 if (existingWiki != null) {
-                    Log.d(
-                        javaClass.simpleName,
+                    Timber.d(
                         "Updating existing wiki: ${existingWiki.title} (ID: ${existingWiki.id}) for saga ${saga.data.id}",
                     )
                     wikiUseCase.updateWiki(
@@ -202,8 +198,7 @@ class TimelineUseCaseImpl
                         ),
                     )
                 } else {
-                    Log.d(
-                        javaClass.simpleName,
+                    Timber.d(
                         "Saving new wiki: ${generatedWiki.title} for saga ${saga.data.id}",
                     )
                     wikiUseCase.saveWiki(
@@ -215,8 +210,7 @@ class TimelineUseCaseImpl
                 }
             }
             if (wikisToUpdateOrAdd.isEmpty()) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "updateWikis: No wiki updates generated for recnt events in saga ${saga.data.id}.",
                 )
             }

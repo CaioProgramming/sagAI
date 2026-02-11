@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.database
 
 import android.content.Context
-import android.util.Log
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import timber.log.Timber
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.CoroutineScope
@@ -24,8 +24,7 @@ class DatabaseCallback(
         val currentVersion = db.version
 
         if (lastKnownVersion != -1 && lastKnownVersion != currentVersion) {
-            Log.i(
-                "DatabaseCallback",
+            Timber.tag("DatabaseCallback").i(
                 "Version change detected: $lastKnownVersion → $currentVersion",
             )
 
@@ -34,9 +33,9 @@ class DatabaseCallback(
                 val result = backupService.createBackup()
 
                 if (result.isSuccess) {
-                    Log.i("DatabaseCallback", "Auto-backup created successfully")
+                    Timber.tag("DatabaseCallback").i("Auto-backup created successfully")
                 } else {
-                    Log.e("DatabaseCallback", "Auto-backup failed", result.exceptionOrNull())
+                    Timber.tag("DatabaseCallback").e(result.exceptionOrNull(), "Auto-backup failed")
                 }
             }
         }

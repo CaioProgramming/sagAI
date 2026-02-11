@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
-import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
+import timber.log.Timber
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
@@ -167,13 +167,13 @@ class ChapterUseCaseImpl
         private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
             val emptyEvents = chapter.events.filter { it.isComplete().not() }.map { it.data }
             if (emptyEvents.isEmpty()) {
-                Log.w(javaClass.simpleName, "cleanUpEmptyTimeLines: No timelines to clean up")
+                Timber.w("cleanUpEmptyTimeLines: No timelines to clean up")
                 return
             }
             emptyEvents.forEach { timeline ->
                 timelineRepository.deleteTimeline(timeline)
             }
-            Log.w(javaClass.simpleName, "cleanUpEmptyTimeLines: Removed ${emptyEvents.size} timelines")
+            Timber.w("cleanUpEmptyTimeLines: Removed ${emptyEvents.size} timelines")
         }
 
         @OptIn(PublicPreviewAPI::class)

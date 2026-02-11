@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
-import android.util.Log
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
+import timber.log.Timber
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -49,13 +49,13 @@ class CharacterStateManagerImpl
                 )
             when (action) {
                 CallBackAction.CONTENT_READY -> {
-                    Log.d(javaClass.simpleName, "handleCallback: Character is ready")
+                    Timber.d("handleCallback: Character is ready")
                 }
 
                 CallBackAction.UPDATE_DATA,
                 CallBackAction.AWAITING_CONFIRMATION,
                 -> {
-                    Log.d(javaClass.simpleName, "handleCallback: Character not ready yet")
+                    Timber.d("handleCallback: Character not ready yet")
                 }
             }
         }
@@ -93,9 +93,9 @@ class CharacterStateManagerImpl
                     updateAiText(response.message)
                     handleGeneratedContent(response)
                 }.onFailure { e ->
-                    Log.e(
-                        javaClass.simpleName,
-                        "sendMessage: Error getting response $e",
+                    Timber.e(
+                        e,
+                        "sendMessage: Error getting response",
                     )
                     updateLoading(false)
                 }
@@ -185,8 +185,7 @@ class CharacterStateManagerImpl
             )
 
             response.callback?.data?.let { updatedCharacter ->
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "handleGeneratedContent: Updating character to $updatedCharacter",
                 )
                 updateCharacter(updatedCharacter)
@@ -213,7 +212,7 @@ class CharacterStateManagerImpl
                         updateAiText(it.message)
                     }
                 }.onFailure {
-                    Log.e(javaClass.simpleName, "adaptToGenre: Error adapting character to genre", it)
+                    Timber.e(it, "adaptToGenre: Error adapting character to genre")
                 }
             updateLoading(false)
         }

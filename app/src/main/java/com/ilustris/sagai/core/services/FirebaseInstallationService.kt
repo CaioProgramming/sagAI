@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.services
 
-import android.util.Log
 import com.google.firebase.installations.FirebaseInstallations
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,11 +30,11 @@ class FirebaseInstallationService
                     if (task.isSuccessful) {
                         val id = task.result
                         _installationId.value = id
-                        Log.d("FirebaseInstallations", "COPY THIS TOKEN (FID Token) ->")
-                        Log.d("FirebaseInstallations", "$id")
-                        Log.d("FirebaseInstallations", "<- END OF TOKEN")
+                        Timber.d("COPY THIS TOKEN (FID Token) ->")
+                        Timber.d("$id")
+                        Timber.d("<- END OF TOKEN")
                     } else {
-                        Log.e("FirebaseInstallations", "Failed to get Installation ID", task.exception)
+                        Timber.e(task.exception, "Failed to get Installation ID")
                         _installationId.value = null
                     }
                 }
