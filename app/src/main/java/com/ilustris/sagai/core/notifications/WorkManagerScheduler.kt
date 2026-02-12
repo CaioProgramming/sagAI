@@ -1,7 +1,6 @@
 package com.ilustris.sagai.core.notifications
 
 import android.content.Context
-import android.util.Log
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -11,6 +10,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.ilustris.sagai.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -64,18 +64,18 @@ class WorkManagerSchedulerImpl
                 workRequest,
             )
 
-            Log.d(TAG, "Scheduled notification work for saga: $sagaId with delay: ${delay}ms")
+            Timber.d("Scheduled notification work for saga: $sagaId with delay: ${delay}ms")
         }
 
         override fun cancelNotificationWork(sagaId: Int) {
             val workTag = "${NotificationGenerationWorker.WORK_TAG_PREFIX}$sagaId"
             workManager.cancelAllWorkByTag(workTag)
-            Log.d(TAG, "Cancelled notification work for saga: $sagaId")
+            Timber.d("Cancelled notification work for saga: $sagaId")
         }
 
         override fun cancelAllNotificationWork() {
             workManager.cancelAllWorkByTag(NotificationGenerationWorker.WORK_TAG_PREFIX)
-            Log.d(TAG, "Cancelled all notification work")
+            Timber.d("Cancelled all notification work")
         }
 
         private fun getNotificationDelay(): Long =
@@ -85,7 +85,6 @@ class WorkManagerSchedulerImpl
             }
 
         companion object {
-            private const val TAG = "WorkManagerScheduler"
             private const val NOTIFICATION_DELAY_PRODUCTION_HOURS = 2
             private const val NOTIFICATION_DELAY_DEBUG_MINUTES = 1
         }

@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.newsaga.ui.presentation
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import timber.log.Timber
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.manager.CharacterStateManager
@@ -55,8 +55,8 @@ class NewSagaViewModel
         init {
             viewModelScope.launch {
                 combine(sagaFormState, characterState) { saga, character ->
-                    Log.d(javaClass.simpleName, "sagaForm state: $saga ")
-                    Log.d(javaClass.simpleName, "character state: $character ")
+                    Timber.d("sagaForm state: $saga ")
+                    Timber.d("character state: $character ")
                     (saga?.isReady == true) && (character?.isReady == true)
                 }.collect { ready ->
                     _isReadyToSave.value = ready
@@ -139,7 +139,7 @@ class NewSagaViewModel
                     reset()
                     navigateToSaga(updatedSaga)
                 } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "saveSaga: Error saving saga", e)
+                    Timber.e(e, "saveSaga: Error saving saga")
                     _savingError.value = e.message ?: "Unknown error occurred while saving"
                     _isSaving.value = false
                     _loadingMessage.value = null

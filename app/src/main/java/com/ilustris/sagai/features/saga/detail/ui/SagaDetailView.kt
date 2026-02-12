@@ -4,9 +4,9 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import timber.log.Timber
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -888,7 +888,7 @@ fun SimpleSlider(
             onValueChange = {
                 sliderPosition = it
                 onValueChange(it)
-                Log.i(javaClass.simpleName, "Slider $title value changed to $it")
+                Timber.i("Slider $title value changed to $it")
             },
             colors =
                 SliderDefaults.colors(

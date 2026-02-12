@@ -2,9 +2,9 @@ package com.ilustris.sagai.core.file
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log // Added for logging
 import kotlinx.coroutines.Dispatchers // Added for IO Context
 import kotlinx.coroutines.withContext // Added for IO Context
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream // Added for InputStream
@@ -66,7 +66,7 @@ class FileCacheService(
                 null
             }
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to save file to cache: ${file.absolutePath}", e)
+            Timber.e(e, "Failed to save file to cache: ${file.absolutePath}")
             if (file.exists()) file.delete() // Clean up on exception
             null
         }
@@ -91,7 +91,7 @@ class FileCacheService(
                 null
             }
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to save bitmap to cache: ${file.absolutePath}", e)
+            Timber.e(e, "Failed to save bitmap to cache: ${file.absolutePath}")
             if (file.exists()) file.delete()
             null
         }
@@ -102,11 +102,11 @@ class FileCacheService(
         desiredExtension: String = "mp3",
     ): File? {
         getCachedFile(url, desiredExtension)?.let {
-            Log.d(javaClass.simpleName, "File found in cache: ${it.absolutePath}")
+            Timber.d("File found in cache: ${it.absolutePath}")
             return it
         }
 
-        Log.d(javaClass.simpleName, "File not in cache. Downloading from: $url")
+        Timber.d("File not in cache. Downloading from: $url")
         return try {
             // Ensure network operations are on a background thread
             val downloadedData: ByteArray? =
@@ -125,14 +125,13 @@ class FileCacheService(
                             inputStream = connection.inputStream
                             inputStream.readBytes()
                         } else {
-                            Log.e(
-                                javaClass.simpleName,
+                            Timber.e(
                                 "Download failed: Server responded with code ${connection.responseCode} for URL $url",
                             )
                             null
                         }
                     } catch (e: Exception) {
-                        Log.e(javaClass.simpleName, "Download failed for URL $url", e)
+                        Timber.e(e, "Download failed for URL $url")
                         null
                     } finally {
                         inputStream?.close()
@@ -141,15 +140,15 @@ class FileCacheService(
                 }
 
             if (downloadedData != null && downloadedData.isNotEmpty()) {
-                Log.d(javaClass.simpleName, "Download successful, ${downloadedData.size} bytes received.")
+                Timber.d("Download successful, ${downloadedData.size} bytes received.")
                 saveFileToCache(url, downloadedData, desiredExtension)
             } else {
-                Log.e(javaClass.simpleName, "Downloaded data is null or empty for URL $url.")
+                Timber.e("Downloaded data is null or empty for URL $url.")
                 null
             }
         } catch (e: Exception) {
             // Catch any unexpected errors during the process
-            Log.e(javaClass.simpleName, "Exception in getFile for URL $url", e)
+            Timber.e(e, "Exception in getFile for URL $url")
             null
         }
     }
@@ -158,7 +157,7 @@ class FileCacheService(
         val cacheDir = getFileCacheDir()
         if (cacheDir.exists()) {
             val deleted = cacheDir.deleteRecursively()
-            Log.d(javaClass.simpleName, "Cache cleared: $deleted")
+            Timber.d("Cache cleared: $deleted")
         }
     }
 }

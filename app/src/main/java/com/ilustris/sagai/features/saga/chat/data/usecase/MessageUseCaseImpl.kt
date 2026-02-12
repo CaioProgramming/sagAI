@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import MessageStatus
-import android.util.Log
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.AudioGenClient
+import timber.log.Timber
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.AudioConfig
@@ -52,7 +52,7 @@ class MessageUseCaseImpl
 
         override fun setDebugMode(enabled: Boolean) {
             isDebugModeEnabled = enabled
-            Log.i("MessageUseCaseImpl", "Debug mode set to: $enabled")
+            Timber.i("Debug mode set to: $enabled")
         }
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
@@ -132,8 +132,7 @@ class MessageUseCaseImpl
         ): RequestResult<Message> =
             executeRequest {
                 if (isDebugModeEnabled) {
-                    Log.d(
-                        "MessageUseCaseImpl",
+                    Timber.d(
                         "[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}",
                     )
                     val fakeReply =
@@ -164,8 +163,7 @@ class MessageUseCaseImpl
                             ChatPrompts.messageExclusions,
                     )
 
-                Log.i(
-                    "MessageUseCaseImpl",
+                Timber.i(
                     "AI Reasoning for message generation: ${genText?.reasoning}",
                 )
                 val reasoning = if (BuildConfig.DEBUG) genText?.reasoning else null
@@ -208,8 +206,7 @@ class MessageUseCaseImpl
                     prompt,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
-            Log.d(
-                javaClass.simpleName,
+            Timber.d(
                 "generateReaction: ${reaction.reactions.size} reactions generated.",
             )
             reaction.reactions.distinctBy { it.character }.forEach { reaction ->
@@ -224,19 +221,16 @@ class MessageUseCaseImpl
                                 thought = reaction.thought,
                             ),
                         )
-                        Log.d(
-                            javaClass.simpleName,
+                        Timber.d(
                             "Saving reaction from ${reactingCharacter.data.name} at message ${message.id}",
                         )
                     } else {
-                        Log.w(
-                            javaClass.simpleName,
+                        Timber.w(
                             "generateReaction: Character can't react to itself.",
                         )
                     }
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
+                    Timber.w(
                         "generateReaction: Character '${reaction.character}' not in scene, skipping reaction.",
                     )
                 }
@@ -251,7 +245,7 @@ class MessageUseCaseImpl
             executeRequest {
                 val isNarrator = savedMessage.senderType == SenderType.NARRATOR
                 val speaker = characterReference?.let { "Character: ${it.data.name}" } ?: "Narrator"
-                Log.i(javaClass.simpleName, "🎙️ Starting audio generation for $speaker")
+                Timber.i("🎙️ Starting audio generation for $speaker")
 
                 val voice =
                     Voice.findByName(
@@ -290,8 +284,7 @@ class MessageUseCaseImpl
                                 voice = finalConfig.voice.id,
                             ),
                         )
-                        Log.i(
-                            "MessageUseCaseImpl",
+                        Timber.i(
                             "✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}",
                         )
                     }

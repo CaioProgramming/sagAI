@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.database.backup
 
 import android.content.Context
-import android.util.Log
 import com.google.gson.Gson
 import com.ilustris.sagai.BuildConfig
+import timber.log.Timber
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.Dispatchers
@@ -73,7 +73,7 @@ class DatabaseBackupService(
 
                 Result.success(metadata)
             } catch (e: Exception) {
-                Log.e("DatabaseBackup", "Backup failed", e)
+                Timber.tag("DatabaseBackup").e(e, "Backup failed")
                 Result.failure(e)
             }
         }
@@ -106,7 +106,7 @@ class DatabaseBackupService(
 
                 Result.success(Unit)
             } catch (e: Exception) {
-                Log.e("DatabaseBackup", "Restore failed", e)
+                Timber.tag("DatabaseBackup").e(e, "Restore failed")
                 Result.failure(e)
             }
         }

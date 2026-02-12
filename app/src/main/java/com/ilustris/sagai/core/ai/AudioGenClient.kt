@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.ai
 
 import android.util.Base64
-import android.util.Log
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
+import timber.log.Timber
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -41,8 +41,8 @@ class AudioGenClientImpl
 
         override suspend fun generateAudio(audioConfig: AudioConfig): ByteArray? {
             val modelName = modelName()
-            Log.i(TAG, "Generating audio with ➡ $modelName")
-            Log.i(TAG, "Audio Config: ${audioConfig.toJsonFormat()}")
+            Timber.tag(TAG).i("Generating audio with ➡ $modelName")
+            Timber.tag(TAG).i("Audio Config: ${audioConfig.toJsonFormat()}")
 
             return billingService.runPremiumRequest {
                 val apiKey = apiKey()
@@ -54,8 +54,7 @@ class AudioGenClientImpl
                         instruction = audioConfig.instruction,
                     )
 
-                Log.d(
-                    TAG,
+                Timber.tag(TAG).d(
                     "Sending audio generation request to model: $modelName with voice: ${audioConfig.voice.id}",
                 )
 
@@ -68,7 +67,7 @@ class AudioGenClientImpl
 
                 // Check for API error
                 response.error?.let { error ->
-                    Log.e(TAG, "Gemini API error: ${error.code} - ${error.message}")
+                    Timber.tag(TAG).e("Gemini API error: ${error.code} - ${error.message}")
                     throw Exception("Gemini API error: ${error.message}")
                 }
 
@@ -82,16 +81,15 @@ class AudioGenClientImpl
                         ?.inlineData
 
                 if (inlineData?.data == null) {
-                    Log.e(TAG, "No audio data in response")
+                    Timber.tag(TAG).e("No audio data in response")
                     throw Exception("No audio data returned from Gemini API")
                 }
 
-                Log.d(TAG, "Received audio data with mimeType: ${inlineData.mimeType}")
+                Timber.tag(TAG).d("Received audio data with mimeType: ${inlineData.mimeType}")
 
                 // Log usage metadata
                 response.usageMetadata?.let { usage ->
-                    Log.d(
-                        TAG,
+                    Timber.tag(TAG).d(
                         "Token usage - Prompt: ${usage.promptTokenCount}, " +
                             "Candidates: ${usage.candidatesTokenCount}, " +
                             "Total: ${usage.totalTokenCount}",

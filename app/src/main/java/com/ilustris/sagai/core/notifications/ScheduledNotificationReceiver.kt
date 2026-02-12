@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.google.gson.Gson
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -14,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -47,7 +47,7 @@ class ScheduledNotificationReceiver : BroadcastReceiver() {
                             .ifEmpty { null }
 
                     if (json != null) {
-                        Log.d(javaClass.simpleName, "onReceive: Receiving notification $json")
+                        Timber.d("onReceive: Receiving notification $json")
                         val notification = Gson().fromJson(json, ScheduledNotification::class.java)
                         val saga =
                             sagaRepository.sagaDao().getSaga(notification.sagaId.toInt()).first()!!

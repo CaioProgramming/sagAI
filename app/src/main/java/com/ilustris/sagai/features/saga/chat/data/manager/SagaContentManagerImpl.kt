@@ -2,9 +2,9 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
+import timber.log.Timber
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -119,12 +119,12 @@ class SagaContentManagerImpl
 
         override fun setDebugMode(enabled: Boolean) {
             isDebugModeEnabled = enabled
-            Log.i(javaClass.simpleName, "Debug mode ${if (enabled) "enabled" else "disabled"}")
+            Timber.i("Debug mode ${if (enabled) "enabled" else "disabled"}")
         }
 
         override fun setProcessing(bool: Boolean) {
             setNarrativeProcessingStatus(bool)
-            Log.i(javaClass.simpleName, "Processing mode ${if (bool) "enabled" else "disabled"}")
+            Timber.i("Processing mode ${if (bool) "enabled" else "disabled"}")
         }
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
@@ -154,7 +154,7 @@ class SagaContentManagerImpl
         }
 
         override suspend fun loadSaga(sagaId: String) {
-            Log.d(javaClass.simpleName, "Loading saga: $sagaId")
+            Timber.d("Loading saga: $sagaId")
             try {
                 observeLoading()
                 observeMilestone()
@@ -162,14 +162,12 @@ class SagaContentManagerImpl
                     .getSagaById(sagaId.toInt())
                     .debounce(200)
                     .collectLatest { saga ->
-                        Log.d(
-                            javaClass.simpleName,
+                        Timber.d(
                             "Saga flow updated for saga -> $sagaId \n ${saga?.data.toJsonFormat()}",
                         )
 
                         if (saga == null) {
-                            Log.e(
-                                javaClass.simpleName,
+                            Timber.e(
                                 "loadSaga: Unexpected error loading saga($sagaId)",
                             )
                             content.emit(null)
@@ -185,8 +183,7 @@ class SagaContentManagerImpl
                             previousSaga.flatMessages().size == saga.flatMessages().size &&
                             previousSaga.acts.size == saga.acts.size
                         ) {
-                            Log.d(
-                                javaClass.simpleName,
+                            Timber.d(
                                 "Saga update was only playtime. Skipping narrative check.",
                             )
                             return@collectLatest
@@ -224,7 +221,7 @@ class SagaContentManagerImpl
                         }
                     }
             } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
+                Timber.e(e, "Error loading saga $sagaId")
                 content.value = null
                 setNarrativeProcessingStatus(false)
             }
@@ -273,7 +270,7 @@ class SagaContentManagerImpl
             val fileUrl = remoteConfig.getString(genre.ambientMusicConfigKey)
 
             if (fileUrl.isEmpty()) {
-                Log.e(javaClass.simpleName, "getAmbienceMusic: Invalid URL for ${genre.name}")
+                Timber.e("getAmbienceMusic: Invalid URL for ${genre.name}")
                 return
             }
 
@@ -299,7 +296,7 @@ class SagaContentManagerImpl
                     ),
                 )
             } else {
-                Log.d(javaClass.simpleName, "Debug message: $message")
+                Timber.d("Debug message: $message")
             }
         }
 
@@ -365,13 +362,12 @@ class SagaContentManagerImpl
                                     timelineContent.data,
                                     saga,
                                 )
-                                Log.i(
-                                    javaClass.simpleName,
+                                Timber.i(
                                     "Nickname analysis completed successfully.",
                                 )
                             } catch (e: Exception) {
-                                Log.e(
-                                    javaClass.simpleName,
+                                Timber.e(
+                                    e,
                                     "Error during nickname analysis: ${e.message}",
                                 )
                                 e.printStackTrace()
@@ -390,10 +386,10 @@ class SagaContentManagerImpl
 
         override suspend fun backupSaga() {
             val currentSaga = content.value ?: return
-            Log.d(javaClass.simpleName, "Backing up saga ${currentSaga.data.id}")
+            Timber.d("Backing up saga ${currentSaga.data.id}")
 
             val backup = sagaHistoryUseCase.backupSaga(currentSaga)
-            Log.d(javaClass.simpleName, "backupSaga: backup successfull? ${backup.isSuccess}")
+            Timber.d("backupSaga: backup successfull? ${backup.isSuccess}")
         }
 
         override suspend fun enableBackup(uri: Uri?) {
@@ -480,14 +476,12 @@ class SagaContentManagerImpl
             executeRequest {
                 val saga = content.value!!
                 emitMilestone(SagaMilestone.Loading(LoadingType.ACT))
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "updating act(${saga.currentActInfo?.data?.id})",
                 )
                 val newAct =
                     if (isDebugModeEnabled) {
-                        Log.i(
-                            javaClass.simpleName,
+                        Timber.i(
                             "[DEBUG MODE] Generating fake act update data for saga ${saga.data.id}",
                         )
                         Act(
@@ -511,10 +505,10 @@ class SagaContentManagerImpl
         private fun observeMilestone() {
             CoroutineScope(Dispatchers.IO).launch {
                 milestoneUpdate.collectLatest {
-                    Log.d(javaClass.simpleName, "observeMilestone:\n$it")
-                    Log.d(javaClass.simpleName, it.toJsonFormat())
+                    Timber.d("observeMilestone:\n$it")
+                    Timber.d(it.toJsonFormat())
                     if (it == null) {
-                        Log.i(javaClass.simpleName, "observeMilestone: No milestone checking story...")
+                        Timber.i("observeMilestone: No milestone checking story...")
                         checkNarrativeProgression(content.first())
                         return@collectLatest
                     }
@@ -525,7 +519,7 @@ class SagaContentManagerImpl
         private fun observeLoading() =
             CoroutineScope(Dispatchers.IO).launch {
                 narrativeProcessingUiState.collectLatest {
-                    Log.d(javaClass.simpleName, "observeLoading: $it")
+                    Timber.d("observeLoading: $it")
                     if (it.not()) {
                         checkNarrativeProgression(content.value)
                     }
@@ -537,28 +531,25 @@ class SagaContentManagerImpl
             isRetrying: Boolean,
         ) {
             CoroutineScope(Dispatchers.IO).launch {
-                Log.d(javaClass.simpleName, "Starting narrative progression check")
+                Timber.d("Starting narrative progression check")
                 progressionCounter++
 
                 if (saga == null) {
-                    Log.e(
-                        javaClass.simpleName,
+                    Timber.e(
                         "checkNarrativeProgression: No saga founded to check progression",
                     )
                     return@launch
                 }
 
                 if (isProcessingNarrative.get() || isProcessing) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "Narrative progression is already in progress,skipping.",
                     )
                     return@launch
                 }
 
                 if (!isProcessingNarrative.compareAndSet(false, true)) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "Lock acquisition failed (race condition or already processing), skipping.",
                     )
                     return@launch
@@ -571,14 +562,12 @@ class SagaContentManagerImpl
                     return@launch
                 }
                 val narrativeStep = NarrativeCheck.validateProgression(saga)
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "checkNarrativeProgression: Progression step ${narrativeStep.javaClass.simpleName}",
                 )
 
                 if (milestoneUpdate.value != null) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "checkNarrativeProgression: milestone active waiting for user interaction",
                     )
                     setProcessing(false)
@@ -696,7 +685,7 @@ class SagaContentManagerImpl
 
         private suspend fun skipNarrative() =
             executeRequest {
-                Log.i(javaClass.simpleName, "skipNarrative: No action needed skipping narrative")
+                Timber.i("skipNarrative: No action needed skipping narrative")
             }
 
         override val isMilestoneActive = MutableStateFlow(false)
@@ -722,13 +711,12 @@ class SagaContentManagerImpl
 
             // Prevent restarting if already processing
             if (isProcessing) {
-                Log.d(javaClass.simpleName, "Already processing milestone, ignoring continue request")
+                Timber.d("Already processing milestone, ignoring continue request")
                 dismissMilestone()
                 return
             }
 
-            Log.d(
-                javaClass.simpleName,
+            Timber.d(
                 "User continued from milestone: ${milestone.javaClass.simpleName}",
             )
 
@@ -783,9 +771,9 @@ class SagaContentManagerImpl
         ) = CoroutineScope(Dispatchers.IO).launch {
             try {
                 if (isMilestoneActive.value) {
-                    Log.d(javaClass.simpleName, "Waiting for milestone dismissal...")
+                    Timber.d("Waiting for milestone dismissal...")
                     isMilestoneActive.first { !it }
-                    Log.d(javaClass.simpleName, "Milestone dismissed, resuming narrative.")
+                    Timber.d("Milestone dismissed, resuming narrative.")
                     proceedWithPostAction(saga, step, result)
                 } else {
                     proceedWithPostAction(saga, step, result)
@@ -801,7 +789,7 @@ class SagaContentManagerImpl
             step: NarrativeStep,
             result: RequestResult.Success<Any>,
         ) {
-            Log.d(javaClass.simpleName, "validatePostAction: performing next step $step")
+            Timber.d("validatePostAction: performing next step $step")
             when (step) {
                 is NarrativeStep.StartAct -> {
                     (result.value as? Act)?.let { data ->
@@ -1039,8 +1027,7 @@ class SagaContentManagerImpl
                 val currentSaga = content.value!!
 
                 if (isDebugModeEnabled) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "[DEBUG MODE] Generating fake character for saga ${currentSaga.data.id}",
                     )
                     val fakeCharacter =
@@ -1081,8 +1068,7 @@ class SagaContentManagerImpl
             executeRequest {
                 val currentSaga = content.value!!
                 if (isDebugModeEnabled) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "[DEBUG MODE] Skipping image generation for character ${character.name}",
                     )
                     character
@@ -1100,8 +1086,7 @@ class SagaContentManagerImpl
         override fun getDirective(): String {
             val currentSaga = content.value
             val actsCount = currentSaga?.acts?.size ?: 0
-            Log.d(
-                javaClass.simpleName,
+            Timber.d(
                 "Getting directive. Total acts count: $actsCount for saga ${currentSaga?.data?.id}",
             )
             return when (actsCount) {

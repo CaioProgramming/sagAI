@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.characters.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.services.BillingService
+import timber.log.Timber
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -74,7 +74,7 @@ class CharacterDetailsViewModel
                     }.onFailure {
                         isSummarizing.value = false
                         characterResume.value = characterContent.data.backstory
-                        Log.e(javaClass.simpleName, "Error generating character resume: ${it.message}")
+                        Timber.e("Error generating character resume: ${it.message}")
                     }
             }
         }

@@ -4,8 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.icu.util.Calendar
-import android.util.Log
 import com.ilustris.sagai.core.utils.removeBlankSpace
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 
@@ -49,7 +49,7 @@ class FileHelper(
         fileOutputStream.flush()
         fileOutputStream.close()
         return file.takeIf {
-            Log.d(javaClass.simpleName, "saveFile: File saved at ${file.absolutePath}")
+            Timber.d("saveFile: File saved at ${file.absolutePath}")
             it.exists()
         }
     }
@@ -120,13 +120,12 @@ class FileHelper(
         return try {
             file.writeBytes(audioByteArray)
             file.takeIf { it.exists() }.also {
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "saveAudioFile: Audio file saved at ${file.absolutePath}",
                 )
             }
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "saveAudioFile: Error saving audio file", e)
+            Timber.e(e, "saveAudioFile: Error saving audio file")
             null
         }
     }
@@ -160,13 +159,12 @@ class FileHelper(
         return try {
             file.writeBytes(data)
             file.takeIf { it.exists() }.also {
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "saveBinaryFile: File saved at ${file.absolutePath}",
                 )
             }
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "saveBinaryFile: Error saving file", e)
+            Timber.e(e, "saveBinaryFile: Error saving file")
             null
         }
     }
@@ -180,7 +178,7 @@ class FileHelper(
                 null
             }
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "readAudioFile: Error reading audio file", e)
+            Timber.e(e, "readAudioFile: Error reading audio file")
             null
         }
 }

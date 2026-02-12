@@ -1,8 +1,8 @@
 package com.ilustris.sagai.ui.animations
 
-import android.util.Log
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
+import timber.log.Timber
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,9 +58,8 @@ fun AnimatedChapterGridBackground(
     }
 
     LaunchedEffect(scrollTarget) {
-        Log.d("AnimatedGrid", "Scrolling to -> $scrollTarget ")
-        Log.d(
-            "AnimatedGrid",
+        Timber.d("Scrolling to -> $scrollTarget ")
+        Timber.d(
             "current offset end -> ${lazyGridState.layoutInfo.visibleItemsInfo.lastOrNull()?.offset?.y?.toFloat()}",
         )
         lazyGridState.animateScrollBy(

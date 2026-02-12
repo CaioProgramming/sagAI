@@ -4,9 +4,9 @@ package com.ilustris.sagai
 
 import android.content.Intent // Added
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import timber.log.Timber
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
 
         val initialDeepLinkString = intent?.getStringExtra("deepLink")
         intent?.removeExtra("deepLink")
-        Log.i(javaClass.simpleName, "onCreate: deeplinkExtra: $initialDeepLinkString")
+        Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")
         setContent {
             SagAITheme {
                 val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
@@ -94,14 +94,14 @@ class MainActivity : ComponentActivity() {
                     if (initialDeepLinkString.isNullOrBlank()) {
                         return@LaunchedEffect
                     }
-                    Log.d("MainActivity", "Handling initial deep link: $initialDeepLinkString")
+                    Timber.d("Handling initial deep link: $initialDeepLinkString")
                     try {
                         val deepLinkRoute = initialDeepLinkString.findRoute()
                         if (route != deepLinkRoute) {
                             navController.navigate(initialDeepLinkString)
                         }
                     } catch (e: Exception) {
-                        Log.e("MainActivity", "Error navigating with initial deep link: $initialDeepLinkString", e)
+                        Timber.e(e, "Error navigating with initial deep link: $initialDeepLinkString")
                     }
                 }
 
@@ -201,10 +201,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Log.d("MainActivity", "onNewIntent called")
+        Timber.d("onNewIntent called")
         intent?.getStringExtra("deepLink")?.let { deepLink ->
             if (deepLink.isNotBlank()) {
-                Log.d("MainActivity", "Deep link found in onNewIntent: $deepLink")
+                Timber.d("Deep link found in onNewIntent: $deepLink")
                 lifecycleScope.launch {
                     deepLinkChannel.send(deepLink)
                 }
@@ -220,11 +220,11 @@ class MainActivity : ComponentActivity() {
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     val token = task.result
-                    Log.d("FirebaseInstallations", "COPY THIS TOKEN (FID Token) ->")
-                    Log.d("FirebaseInstallations", "$token")
-                    Log.d("FirebaseInstallations", "<- END OF TOKEN")
+                    Timber.tag("FirebaseInstallations").d("COPY THIS TOKEN (FID Token) ->")
+                    Timber.tag("FirebaseInstallations").d("$token")
+                    Timber.tag("FirebaseInstallations").d("<- END OF TOKEN")
                 } else {
-                    Log.e("FirebaseInstallations", "Failed to get Installation Auth Token", task.exception)
+                    Timber.tag("FirebaseInstallations").e(task.exception, "Failed to get Installation Auth Token")
                 }
             }
     }

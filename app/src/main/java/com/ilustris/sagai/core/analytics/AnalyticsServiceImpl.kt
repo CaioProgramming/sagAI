@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.analytics
 
 import android.content.Context
-import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import timber.log.Timber
 import com.ilustris.sagai.core.utils.toJsonFormat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -33,7 +33,7 @@ class AnalyticsService
                 val eventName =
                     event::class.simpleName?.toEventName() ?: run {
                         val error = AnalyticsEventException("Event class has no name")
-                        Log.e(TAG, error.message, error)
+                        Timber.tag(TAG).e(error, error.message)
                         FirebaseCrashlytics.getInstance().recordException(error)
                         return
                     }
@@ -41,7 +41,7 @@ class AnalyticsService
                 val bundle = event.toAnalyticsBundle()
 
                 // Log event for debugging
-                Log.d(TAG, "Tracking event: $eventName: ${event.toJsonFormat()}")
+                Timber.tag(TAG).d("Tracking event: $eventName: ${event.toJsonFormat()}")
 
                 firebaseAnalytics.logEvent(eventName, bundle)
             } catch (e: Exception) {
@@ -56,7 +56,7 @@ class AnalyticsService
                         AnalyticsEventException("Failed to track event: ${event::class.simpleName}", e)
                     }
 
-                Log.e(TAG, error.message, error)
+                Timber.tag(TAG).e(error, error.message)
                 FirebaseCrashlytics.getInstance().recordException(error)
             }
         }

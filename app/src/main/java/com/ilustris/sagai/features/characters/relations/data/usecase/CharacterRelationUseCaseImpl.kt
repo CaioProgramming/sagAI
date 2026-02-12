@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.characters.relations.data.usecase
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import timber.log.Timber
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -52,9 +52,9 @@ class CharacterRelationUseCaseImpl
                         )
                     }
 
-                Log.i(javaClass.simpleName, "Generated relations: ${updatedRelations.filter { it.isSuccess }}")
+                Timber.i("Generated relations: ${updatedRelations.filter { it.isSuccess }}")
 
-                Log.w(javaClass.simpleName, "Failed relations: ${updatedRelations.filter { it.isFailure }}")
+                Timber.w("Failed relations: ${updatedRelations.filter { it.isFailure }}")
             }
 
         private suspend fun processRelation(

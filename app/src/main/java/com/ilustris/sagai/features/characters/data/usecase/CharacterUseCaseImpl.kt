@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.characters.data.usecase
 
 import android.content.Context
-import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
+import timber.log.Timber
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -128,7 +128,7 @@ class CharacterUseCaseImpl
 
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
             executeRequest {
-                Log.i(javaClass.simpleName, "createSmartZoom: creating zoom for ${character.name}")
+                Timber.i("createSmartZoom: creating zoom for ${character.name}")
                 val smartZoom = imageSegmentationHelper.calculateSmartZoom(character.image).getSuccess()
                 val newCharacter =
                     character.copy(smartZoom = smartZoom ?: SmartZoom(needsZoom = false))
@@ -150,8 +150,7 @@ class CharacterUseCaseImpl
                         bannedNames,
                         themeColor,
                     )
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "generateCharacter: Starting character generation with theme color $themeColor...",
                 )
                 val newCharacter =
@@ -219,16 +218,14 @@ class CharacterUseCaseImpl
                                     ?.find { it.character.id == character?.data?.id }
 
                             if (characterEventOnThisTimeline != null) {
-                                Log.e(
-                                    javaClass.simpleName,
+                                Timber.e(
                                     "Character event already exists for this timeline(${timeline.id})",
                                 )
                                 return@mapNotNull null
                             }
 
                             if (character == null) {
-                                Log.e(
-                                    javaClass.simpleName,
+                                Timber.e(
                                     "generateCharactersUpdate: Couldn't find character ${it.characterName} on saga.",
                                 )
                             }
@@ -243,7 +240,7 @@ class CharacterUseCaseImpl
                                 )
                             }
                         }
-                Log.d(javaClass.simpleName, "Updating ${updatedCharacters.size} characters events.")
+                Timber.d("Updating ${updatedCharacters.size} characters events.")
                 eventsRepository.insertCharacterEvents(updatedCharacters).asSuccess()
             }
 
@@ -276,11 +273,11 @@ class CharacterUseCaseImpl
                             .suggestions
 
                     if (suggestions.isEmpty()) {
-                        Log.i(javaClass.simpleName, "No new nicknames found.")
+                        Timber.i("No new nicknames found.")
                         return@executeRequest
                     }
 
-                    Log.i(javaClass.simpleName, "Found ${suggestions.size} nickname suggestions.")
+                    Timber.i("Found ${suggestions.size} nickname suggestions.")
 
                     suggestions.forEach { suggestion ->
                         saga.findCharacter(suggestion.characterName)?.let { characterContent ->
@@ -294,15 +291,14 @@ class CharacterUseCaseImpl
                                         nicknames = (newNicknames).distinct(),
                                     )
                                 updateCharacter(updatedCharacter)
-                                Log.i(
-                                    javaClass.simpleName,
+                                Timber.i(
                                     "Updated character ${updatedCharacter.name} with new nicknames: $newNicknames",
                                 )
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "Error suggesting nicknames: ${e.message}")
+                    Timber.e(e, "Error suggesting nicknames: ${e.message}")
                     e.printStackTrace()
                 }
             }
@@ -338,8 +334,7 @@ class CharacterUseCaseImpl
                     )
 
                 if (result?.updates?.isNotEmpty() == true) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "Updating knowledge for ${result.updates.size} characters.",
                     )
                     result.updates.forEach { update ->
@@ -358,16 +353,14 @@ class CharacterUseCaseImpl
                                 val updatedChar =
                                     charContent.data.copy(knowledge = currentKnowledge)
                                 updateCharacter(updatedChar)
-                                Log.d(
-                                    javaClass.simpleName,
+                                Timber.d(
                                     "Added ${newFacts.size} facts to ${update.characterName}",
                                 )
                             }
                         }
                     }
                 } else {
-                    Log.d(
-                        javaClass.simpleName,
+                    Timber.d(
                         "No new knowledge extracted from this timeline event.",
                     )
                 }

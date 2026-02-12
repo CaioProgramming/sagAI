@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai
 
-import android.util.Log
 import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.ImagePart
 import com.google.ai.client.generativeai.type.TextPart
@@ -14,6 +13,7 @@ import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import kotlinx.coroutines.Dispatchers
+import timber.log.Timber
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -90,21 +90,20 @@ class GemmaClient
         ): T? =
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
-                    Log.w(javaClass.simpleName, "Applying reactive delay due to high token count in last request.")
+                    Timber.w("Applying reactive delay due to high token count in last request.")
                     retryDelay = 5
                     delay((retryDelay ?: 5).seconds)
                 }
                 val model = modelName(requirement)
                 if (useCore.not()) {
                     retryDelay?.let {
-                        Log.e(
-                            javaClass.simpleName,
+                        Timber.e(
                             "generate: Trying delay $retryDelay seconds to avoid rate limit.",
                         )
                         delay(it.seconds)
                     }
                 } else {
-                    Log.i(javaClass.simpleName, "generate: Core calls don't require delay.")
+                    Timber.i("generate: Core calls don't require delay.")
                 }
 
                 val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
@@ -150,8 +149,7 @@ class GemmaClient
                                     }
                                 }
 
-                            Log.i(
-                                this@GemmaClient::class.java.simpleName,
+                            Timber.i(
                                 "Requesting $model\nPrompt with ${
                                     fullPrompt.length +
                                         references.filterNotNull().sumOf {
@@ -177,8 +175,7 @@ class GemmaClient
                                     contentParts,
                                 )
 
-                            Log.d(
-                                javaClass.simpleName,
+                            Timber.d(
                                 "Input content has ${contentParts.size} parts: ${
                                     contentParts.map { it.javaClass.simpleName }
                                 }",
@@ -193,15 +190,13 @@ class GemmaClient
 
                             val response = content.text
 
-                            Log.d(
-                                javaClass.simpleName,
+                            Timber.d(
                                 "Input content: ${
                                     inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)
                                 }",
                             )
 
-                            Log.i(
-                                javaClass.simpleName,
+                            Timber.i(
                                 "Generated content: ${
                                     content.toJsonFormatExcludingFields(
                                         AI_EXCLUDED_FIELDS,
@@ -224,10 +219,10 @@ class GemmaClient
                                     appendLine(" }")
                                 }
 
-                            Log.d(javaClass.simpleName, promptDescription)
+                            Timber.d(promptDescription)
 
                             if (T::class == String::class) {
-                                Log.i(javaClass.simpleName, "Prompt request result:\n$response")
+                                Timber.i("Prompt request result:\n$response")
                                 return@withLock response as T
                             }
 
@@ -237,15 +232,13 @@ class GemmaClient
                             Gson().fromJson(cleanedJsonString, typeToken.type)
                         }
                     } catch (e: Exception) {
-                        Log.e(
-                            this@GemmaClient::class.java.simpleName,
-                            "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                        Timber.e(
                             e,
+                            "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
                         )
 
                         if (currentAttempt < maxAttempts) {
-                            Log.w(
-                                this@GemmaClient::class.java.simpleName,
+                            Timber.w(
                                 "Retrying HIGH priority request in $RETRY_DELAY seconds...",
                             )
                             delay(RETRY_DELAY.seconds)
@@ -255,12 +248,11 @@ class GemmaClient
                                 retryDelay?.let {
                                     if (it > 30) it / 2 else it + it
                                 } ?: 2
-                            Log.e(
-                                javaClass.simpleName,
+                            Timber.e(
                                 "Final failure after $maxAttempts attempts.",
                             )
-                            Log.e(javaClass.simpleName, "generate: Failed prompt")
-                            Log.w(javaClass.simpleName, prompt)
+                            Timber.e("generate: Failed prompt")
+                            Timber.w(prompt)
                             return@withContext null
                         }
                     }

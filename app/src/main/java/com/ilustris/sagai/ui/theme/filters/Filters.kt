@@ -1,9 +1,9 @@
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import timber.log.Timber
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -36,7 +36,7 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
     // produceState ensures this runs once and caches the result across recompositions
     // unless assetFileName changes.
     return produceState<String?>(initialValue = null, key1 = assetFileName) {
-        Log.d("ShaderLoad", "Attempting to load shader: $assetFileName")
+        Timber.d("Attempting to load shader: $assetFileName")
         value =
             try {
                 withContext(Dispatchers.IO) {
@@ -48,7 +48,7 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
                     }
                 }
             } catch (e: Exception) {
-                Log.e("ShaderLoad", "Error loading shader '$assetFileName': ${e.message}", e)
+                Timber.e(e, "Error loading shader '$assetFileName': ${e.message}")
                 null
             }
     }.value
@@ -260,7 +260,7 @@ fun Modifier.effectForGenre(
     // If the shader source is null (failed to load), return the modifier unmodified
     // or apply a fallback visual.
     if (agslShaderSource == null) {
-        Log.w("EffectForGenre", "AGSL Shader source is null. Applying no effect. Applying fallback")
+        Timber.w("AGSL Shader source is null. Applying no effect. Applying fallback")
         return this.fallbackEffect(genre)
     }
 

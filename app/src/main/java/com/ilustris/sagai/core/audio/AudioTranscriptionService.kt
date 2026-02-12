@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.audio
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,17 +36,17 @@ class AudioTranscriptionService
          */
         suspend fun transcribeAudio(audioFile: File?): String? {
             if (audioFile == null) {
-                Log.w("AudioTranscription", "Audio file is null, skipping transcription")
+                Timber.w("Audio file is null, skipping transcription")
                 return null
             }
 
             if (!audioFile.exists() || audioFile.length() == 0L) {
-                Log.w("AudioTranscription", "Audio file does not exist or is empty: ${audioFile.name}")
+                Timber.w("Audio file does not exist or is empty: ${audioFile.name}")
                 return null
             }
 
             return try {
-                Log.d("AudioTranscription", "Starting transcription for: ${audioFile.name}")
+                Timber.d("Starting transcription for: ${audioFile.name}")
 
                 val transcriptionPrompt =
                     buildString {
@@ -63,18 +63,18 @@ class AudioTranscriptionService
 
                 transcription?.let { text ->
                     if (text.isNotBlank()) {
-                        Log.d("AudioTranscription", "Transcription successful: ${text.take(100)}...")
+                        Timber.d("Transcription successful: ${text.take(100)}...")
                         text.trim()
                     } else {
-                        Log.w("AudioTranscription", "Transcription returned empty text")
+                        Timber.w("Transcription returned empty text")
                         null
                     }
                 } ?: run {
-                    Log.e("AudioTranscription", "Gemma returned null for transcription")
+                    Timber.e("Gemma returned null for transcription")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("AudioTranscription", "Error transcribing audio: ${e.message}", e)
+                Timber.e(e, "Error transcribing audio: ${e.message}")
                 null
             }
         }

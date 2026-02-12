@@ -6,9 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import timber.log.Timber
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -51,15 +51,13 @@ class ChatNotificationManagerImpl
             message: MessageContent,
         ) {
             if (appLifecycleManager.isAppInForeground.value) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "App is in foreground. Skipping notification for message: ${message.message.text}",
                 )
                 return
             }
 
-            Log.i(
-                javaClass.simpleName,
+            Timber.i(
                 "App is in background. Proceeding with notification for message: ${message.message.text}",
             )
 
@@ -91,15 +89,13 @@ class ChatNotificationManagerImpl
             largeIcon: Bitmap?,
         ) {
             if (appLifecycleManager.isAppInForeground.value) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "App is in foreground. Skipping notification for: $title",
                 )
                 return
             }
 
-            Log.i(
-                javaClass.simpleName,
+            Timber.i(
                 "App is in background. Proceeding with notification: $title",
             )
 
@@ -192,15 +188,13 @@ class ChatNotificationManagerImpl
             snackBarState: SnackBarState,
         ) {
             if (appLifecycleManager.isAppInForeground.value || snackBarState.showInUi) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "App is in foreground or notification is UI-only. Skipping notification.",
                 )
                 return
             }
 
-            Log.i(
-                javaClass.simpleName,
+            Timber.i(
                 "App is in background. Sending notification with style: ${snackBarState.notificationStyle}",
             )
 
