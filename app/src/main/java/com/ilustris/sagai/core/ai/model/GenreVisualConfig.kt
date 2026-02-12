@@ -26,7 +26,7 @@ data class GenreVisualConfig(
     val colorPalette: List<String> = emptyList(),
     // ── Shape ────────────────────────────────────────────────────────
     @SerializedName("cornerSizeDp")
-    val cornerSizeDp: Float = -1f,
+    val cornerSizeDp: Float = 0f,
     // ── Haptics ─────────────────────────────────────────────────────
     @SerializedName("vibrationPattern")
     val vibrationPattern: List<Long> = emptyList(),
@@ -52,54 +52,54 @@ data class GenreVisualConfig(
  */
 data class SelectiveHighlightConfig(
     @SerializedName("hueTolerance")
-    val hueTolerance: Float = -1f,
+    val hueTolerance: Float = 0.2f,
     @SerializedName("saturationThreshold")
-    val saturationThreshold: Float = -1f,
+    val saturationThreshold: Float = 0.02f,
     @SerializedName("lightnessThreshold")
-    val lightnessThreshold: Float = -1f,
+    val lightnessThreshold: Float = 0.05f,
     @SerializedName("highlightSaturationBoost")
-    val highlightSaturationBoost: Float = -1f,
+    val highlightSaturationBoost: Float = 1.0f,
     @SerializedName("highlightLightnessBoost")
-    val highlightLightnessBoost: Float = -1f,
+    val highlightLightnessBoost: Float = 0.0f,
     @SerializedName("desaturationFactorNonTarget")
-    val desaturationFactorNonTarget: Float = -1f,
+    val desaturationFactorNonTarget: Float = 0.0f,
 )
 
 /**
  * Remote representation of [ShaderParams].
- * Uses -1f as sentinel to distinguish "not set" from "set to 0".
+ * Uses sensible defaults for neutral state if fields are omitted in JSON.
  */
 data class ShaderParamsConfig(
     @SerializedName("grainIntensity")
-    val grainIntensity: Float = -1f,
+    val grainIntensity: Float = 0f,
     @SerializedName("bloomThreshold")
-    val bloomThreshold: Float = -1f,
+    val bloomThreshold: Float = 0.8f,
     @SerializedName("bloomIntensity")
-    val bloomIntensity: Float = -1f,
+    val bloomIntensity: Float = 0f,
     @SerializedName("bloomRadius")
-    val bloomRadius: Float = -1f,
+    val bloomRadius: Float = 3f,
     @SerializedName("softFocusRadius")
-    val softFocusRadius: Float = -1f,
+    val softFocusRadius: Float = 0f,
     @SerializedName("saturation")
-    val saturation: Float = -1f,
+    val saturation: Float = 1f,
     @SerializedName("contrast")
-    val contrast: Float = -1f,
+    val contrast: Float = 1f,
     @SerializedName("brightness")
-    val brightness: Float = -1f,
+    val brightness: Float = 0f,
     @SerializedName("highlightTint")
     val highlightTint: List<Float> = emptyList(),
     @SerializedName("shadowTint")
     val shadowTint: List<Float> = emptyList(),
     @SerializedName("tintStrength")
-    val tintStrength: Float = -1f,
+    val tintStrength: Float = 0f,
     @SerializedName("vignetteStrength")
-    val vignetteStrength: Float = -1f,
+    val vignetteStrength: Float = 0f,
     @SerializedName("vignetteSoftness")
-    val vignetteSoftness: Float = -1f,
+    val vignetteSoftness: Float = 0.5f,
     @SerializedName("pixelationBlockSize")
-    val pixelationBlockSize: Float = -1f,
+    val pixelationBlockSize: Float = 0f,
     @SerializedName("colorTemperature")
-    val colorTemperature: Float = -1f,
+    val colorTemperature: Float = 0f,
 )
 
 /**
@@ -113,5 +113,5 @@ data class ColorTonesConfig(
     @SerializedName("shadowTint")
     val shadowTint: List<Float> = emptyList(),
     @SerializedName("defaultTintStrength")
-    val defaultTintStrength: Float = -1f,
+    val defaultTintStrength: Float = 0.3f,
 )

@@ -5,6 +5,7 @@ import android.graphics.RuntimeShader
 import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,18 +69,19 @@ fun Modifier.selectiveColorHighlight(
     params: SelectiveColorParams?,
     shaderAssetFileName: String = "selective_color_highlight.agsl",
 ): Modifier {
+    LaunchedEffect(Unit) {
+        Log.d(
+            "SelectiveColor",
+            "selectiveColorHighlight modifier called with params present: ${params != null}",
+        )
+    }
     if (params == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Log.w("SelectiveColor", "Shader effects not supported on this API level.")
         return this // Or a fallback using ColorMatrix if desired
     }
 
-    val agslShaderSource = loadShaderFromAssetsOnce(shaderAssetFileName) // From your Filters.kt
-
-    if (agslShaderSource == null) {
-        // Log.w("SelectiveColor", "AGSL Shader source '$shaderAssetFileName' is null.")
-        return this
-    }
+    val agslShaderSource = loadShaderFromAssetsOnce(shaderAssetFileName) ?: return this
 
     val runtimeShader =
         remember(agslShaderSource) {
@@ -91,8 +93,7 @@ fun Modifier.selectiveColorHighlight(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

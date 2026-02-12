@@ -66,7 +66,7 @@ fun IntroductionOverlay(
         if (message != null) {
             delay(1.seconds)
             showContent = true
-            delay(1500)
+            delay(500)
             showTypewriter = true
         }
     }
@@ -75,7 +75,7 @@ fun IntroductionOverlay(
         if (animationComplete) {
             delay(5.seconds)
             showContent = false
-            delay(3.seconds)
+            delay(1.seconds)
             onComplete()
         }
     }
@@ -135,7 +135,7 @@ fun IntroductionOverlay(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
-                            )
+                    )
                 }
             }
         }

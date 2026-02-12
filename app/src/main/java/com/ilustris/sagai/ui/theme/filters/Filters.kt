@@ -54,6 +54,7 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
 @Composable
 fun Genre.colorTones(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current): ColorTonePalette? {
     val remote = visualConfig?.colorTones ?: return null
+    // We only return null if the crucial lists are not 3-elements long (RGB)
     if (remote.highlightTint.size != 3 || remote.shadowTint.size != 3) return null
     return ColorTonePalette(
         name = remote.name.ifBlank { "Remote" },
@@ -64,7 +65,7 @@ fun Genre.colorTones(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.c
                 remote.highlightTint[2],
             ),
         shadowTint = Triple(remote.shadowTint[0], remote.shadowTint[1], remote.shadowTint[2]),
-        defaultTintStrength = remote.defaultTintStrength.takeIf { it >= 0f } ?: 0.3f,
+        defaultTintStrength = remote.defaultTintStrength,
     )
 }
 
@@ -76,17 +77,16 @@ fun Genre.shaderParams(
     visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
 ): ShaderParams? {
     val remote = visualConfig?.shaderParams ?: return null
-    if (remote.saturation < 0f) return null
     val tones = colorTones(visualConfig)
     return ShaderParams(
-        grainIntensity = customGrain ?: remote.grainIntensity.takeIf { it >= 0f } ?: 0f,
-        bloomThreshold = remote.bloomThreshold.takeIf { it >= 0f } ?: 0.8f,
-        bloomIntensity = remote.bloomIntensity.takeIf { it >= 0f } ?: 0f,
-        bloomRadius = remote.bloomRadius.takeIf { it >= 0f } ?: 3f,
-        softFocusRadius = focusRadius ?: remote.softFocusRadius.takeIf { it >= 0f } ?: 0f,
+        grainIntensity = customGrain ?: remote.grainIntensity,
+        bloomThreshold = remote.bloomThreshold,
+        bloomIntensity = remote.bloomIntensity,
+        bloomRadius = remote.bloomRadius,
+        softFocusRadius = focusRadius ?: remote.softFocusRadius,
         saturation = remote.saturation,
-        contrast = remote.contrast.takeIf { it >= 0f } ?: 1f,
-        brightness = remote.brightness.takeIf { it >= 0f } ?: 0f,
+        contrast = remote.contrast,
+        brightness = remote.brightness,
         highlightTint =
             if (remote.highlightTint.size == 3) {
                 Triple(
@@ -107,11 +107,11 @@ fun Genre.shaderParams(
             } else {
                 tones?.shadowTint ?: Triple(0f, 0f, 0f)
             },
-        tintStrength = remote.tintStrength.takeIf { it >= 0f } ?: tones?.defaultTintStrength ?: 0f,
-        vignetteStrength = remote.vignetteStrength.takeIf { it >= 0f } ?: 0f,
-        vignetteSoftness = remote.vignetteSoftness.takeIf { it >= 0f } ?: 0.5f,
-        pixelationBlockSize = pixelSize ?: remote.pixelationBlockSize.takeIf { it >= 0f } ?: 0f,
-        colorTemperature = remote.colorTemperature.takeIf { it >= 0f } ?: 0f,
+        tintStrength = remote.tintStrength.takeIf { it != 0f } ?: tones?.defaultTintStrength ?: 0f,
+        vignetteStrength = remote.vignetteStrength,
+        vignetteSoftness = remote.vignetteSoftness,
+        pixelationBlockSize = pixelSize ?: remote.pixelationBlockSize,
+        colorTemperature = remote.colorTemperature,
     )
 }
 
@@ -129,8 +129,6 @@ fun Modifier.effectForGenre(
     }
 
     val agslShaderSource = loadShaderFromAssetsOnce("fantasy_shader.agsl")
-    // If the shader source is null (failed to load), return the modifier unmodified
-    // or apply a fallback visual.
     if (agslShaderSource == null) {
         Log.w("EffectForGenre", "AGSL Shader source is null. Applying no effect. Applying fallback")
         return this.fallbackEffect(genre)
@@ -143,18 +141,7 @@ fun Modifier.effectForGenre(
         }
 
     var composableSize by remember { mutableStateOf(IntSize.Zero) }
-    // For iTime, if you want animation. If not, you can pass a constant or omit setting it.
     var timeState by remember { mutableStateOf(0f) }
-    LaunchedEffect(Unit) {
-        // This will run only once or if the key changes
-        // This is a simple way to animate time. For more complex animations,
-        // you might use Animatable or other animation APIs.
-        // If your shader doesn't use iTime for visual changes, you can simplify this.
-        while (true) {
-            timeState = (System.currentTimeMillis() % 100000L) / 1000.0f
-            kotlinx.coroutines.delay(16) // Aim for ~60 FPS
-        }
-    }
 
     val uniformValues =
         genre.shaderParams(
@@ -164,14 +151,25 @@ fun Modifier.effectForGenre(
             visualConfig = visualConfig,
         )
 
-    // Remote-only: if no shader params were fetched, don't apply any effect
+    LaunchedEffect(uniformValues?.grainIntensity) {
+        val grainIntensity = uniformValues?.grainIntensity ?: 0f
+        if (grainIntensity > 0.001f) {
+            while (true) {
+                androidx.compose.runtime.withFrameMillis { frameTime ->
+                    timeState = (frameTime % 100000L) / 1000.0f
+                }
+            }
+        } else {
+            timeState = 0f
+        }
+    }
+
     if (uniformValues == null) return this
 
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",
@@ -179,6 +177,10 @@ fun Modifier.effectForGenre(
                     composableSize.height.toFloat(),
                 )
                 runtimeShader.setFloatUniform("iTime", timeState)
+                runtimeShader.setFloatUniform(
+                    "u_aspectRatio",
+                    composableSize.width.toFloat() / composableSize.height.toFloat(),
+                )
                 runtimeShader.setFloatUniform("u_grainIntensity", uniformValues.grainIntensity)
                 runtimeShader.setFloatUniform("u_bloomThreshold", uniformValues.bloomThreshold)
                 runtimeShader.setFloatUniform("u_bloomIntensity", uniformValues.bloomIntensity)
@@ -242,7 +244,7 @@ data class ShaderParams(
 @Composable
 fun Modifier.fallbackEffect(
     genre: Genre,
-    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current
+    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
 ): Modifier {
     val shaderParams = genre.shaderParams(visualConfig = visualConfig) ?: return this
     val saturation = shaderParams.saturation

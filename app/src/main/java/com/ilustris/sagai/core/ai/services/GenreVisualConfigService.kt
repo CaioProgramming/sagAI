@@ -20,9 +20,14 @@ class GenreVisualConfigService(
     private val cache = mutableMapOf<Genre, GenreVisualConfig?>()
 
     suspend fun getVisualConfig(genre: Genre): GenreVisualConfig? {
-        if (cache.containsKey(genre)) return cache[genre]
+        Log.d("GenreVisualConfigService", "Requesting config for $genre")
+        if (cache.containsKey(genre) && cache[genre] != null) {
+            Log.d("GenreVisualConfigService", "Returning cached config for $genre")
+            return cache[genre]
+        }
 
         val key = "${genre.name.lowercase()}_visual_config"
+        Log.d("GenreVisualConfigService", "Fetching from remote config with key: $key")
         val config =
             try {
                 remoteConfigService.getJson<GenreVisualConfig>(key)
@@ -33,7 +38,11 @@ class GenreVisualConfigService(
                 )
                 null
             }
-        cache[genre] = config
+        if (config != null) {
+            cache[genre] = config
+        } else {
+            Log.w("GenreVisualConfigService", "Config for $genre is null/empty in Remote Config")
+        }
         return config
     }
 

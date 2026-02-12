@@ -7,9 +7,9 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.ui.components.NewChapterContent
-import com.ilustris.sagai.features.saga.chat.ui.components.NewCharacterContent
-import com.ilustris.sagai.features.saga.chat.ui.components.NewEventContent
+import com.ilustris.sagai.features.milestone.ui.NewChapterContent
+import com.ilustris.sagai.features.milestone.ui.NewCharacterContent
+import com.ilustris.sagai.features.milestone.ui.NewEventContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -91,4 +91,5 @@ enum class LoadingType {
     CHAPTER,
     EVENT,
     ENDING,
+    CHARACTER,
 }

@@ -261,11 +261,36 @@ fun Modifier.reactiveShimmer(
         )
 
     val brush =
-        Brush.linearGradient(
-            shimmerColors.plus(Color.Transparent),
-            start = if (isPlaying) Offset(offsetAnimation.value, offsetAnimation.value) else Offset.Zero,
-            end = if (isPlaying) Offset(x = offsetAnimation.value * 5, y = offsetAnimation.value * 3) else Offset.Infinite,
-        )
+        remember(shimmerColors, isPlaying, offsetAnimation.value) {
+            val colors = shimmerColors.plus(Color.Transparent)
+            val finalColors =
+                if (colors.size < 2) {
+                    listOf(Color.Transparent, Color.Transparent)
+                } else {
+                    colors
+                }
+            Brush.linearGradient(
+                finalColors,
+                start =
+                    if (isPlaying) {
+                        Offset(
+                            offsetAnimation.value,
+                            offsetAnimation.value,
+                        )
+                    } else {
+                        Offset.Zero
+                    },
+                end =
+                    if (isPlaying) {
+                        Offset(
+                            x = offsetAnimation.value * 5,
+                            y = offsetAnimation.value * 3,
+                        )
+                    } else {
+                        Offset.Infinite
+                    },
+            )
+        }
     return this
         .graphicsLayer(alpha = 0.99f)
         .drawWithCache {

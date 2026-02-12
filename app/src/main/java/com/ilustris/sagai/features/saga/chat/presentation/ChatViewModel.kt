@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SagaMediaService
@@ -74,6 +75,7 @@ class ChatViewModel
         private val settingsUseCase: SettingsUseCase,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val scheduledNotificationService: ScheduledNotificationService,
+        private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -502,6 +504,10 @@ class ChatViewModel
                             old?.acts?.size == new?.acts?.size &&
                             old?.characters?.size == new?.characters?.size
                     }.collectLatest { sagaContent ->
+                        Log.d(
+                            "ChatViewModel",
+                            "observeSaga triggered for genre: ${sagaContent?.data?.genre}",
+                        )
                         if (sagaContent == null) {
                             if (loadFinished) {
                                 updateLoading(false)
@@ -509,6 +515,12 @@ class ChatViewModel
                             }
                             return@collectLatest
                         }
+
+                        // Fetch visual config for current genre
+                        val visualConfig =
+                            visualConfigService.getVisualConfig(sagaContent.data.genre)
+                        Log.d("ChatViewModel", "Fetched visual config: $visualConfig")
+                        stateManager.updateVisualConfig(visualConfig)
 
                         // Cache flatMessages to avoid multiple traversals
                         val flatMessages = sagaContent.flatMessages()
@@ -1255,14 +1267,10 @@ class ChatViewModel
 
         fun createCharacter(contextDescription: String) {
             viewModelScope.launch(Dispatchers.IO) {
-                updateLoading(true)
                 sagaContentManager
                     .generateCharacter(
                         contextDescription,
-                    ).onSuccessAsync {
-                        updateLoading(false)
-                    }.onFailureAsync {
-                        updateLoading(false)
+                    ).onFailureAsync {
                         updateSnackBar(
                             snackBar(
                                 message = "Ocorreu um erro ao criar o personagem",

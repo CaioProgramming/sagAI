@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
@@ -84,13 +85,14 @@ Genre(
     val configKey: String = "${this.name.lowercase()}_config"
 }
 
-// ── Remote-only visual extensions ────────────────────────────────────────
-// All visual properties come from GenreVisualConfig (Remote Config).
-// If the config is null or missing the relevant data, the effect is NOT applied.
-
 fun Genre.selectiveHighlight(visualConfig: GenreVisualConfig?): SelectiveColorParams? {
+    Log.d(
+        "Genre",
+        "selectiveHighlight called for $this with config present: ${visualConfig != null}",
+    )
     if (visualConfig == null) return null
     val remote = visualConfig.selectiveHighlight ?: return null
+    Log.d("Genre", "remote selectiveHighlight config present: $remote")
     val targetColor = resolveColor(visualConfig) ?: return null
     if (remote.hueTolerance < 0f) return null
     return SelectiveColorParams(
@@ -122,8 +124,7 @@ fun Genre.defaultHeaderImage() =
 
 fun Genre.shimmerColors(visualConfig: GenreVisualConfig?): List<Color> {
     val palette = colorPalette(visualConfig)
-    if (palette.isEmpty()) return emptyList()
-    val primary = resolveColor(visualConfig) ?: return emptyList()
+    val primary = resolveColor(visualConfig)
     return listOf(
         Color.Transparent,
         primary.copy(alpha = .2f),
@@ -135,8 +136,8 @@ fun Genre.shimmerColors(visualConfig: GenreVisualConfig?): List<Color> {
 fun Genre.shimmerColors(): List<Color> = shimmerColors(LocalGenreVisualConfig.current)
 
 fun Genre.colorPalette(visualConfig: GenreVisualConfig?): List<Color> {
-    if (visualConfig == null || visualConfig.colorPalette.isEmpty()) return emptyList()
-    return visualConfig.colorPalette.mapNotNull { it.parseColor() }
+    val remotePalette = visualConfig?.colorPalette?.mapNotNull { it.parseColor() } ?: emptyList()
+    return remotePalette.ifEmpty { compiledColorPalette() }
 }
 
 @Composable
@@ -147,19 +148,98 @@ fun Genre.vibrationPattern(visualConfig: GenreVisualConfig? = null): LongArray? 
     return visualConfig.vibrationPattern.toLongArray()
 }
 
+fun Genre.compiledColorPalette(): List<Color> =
+    when (this) {
+        Genre.FANTASY -> {
+            listOf(Color(0xFF8B2635), Color(0xFF5E1A24), Color(0xFFB33144))
+        }
+
+        Genre.CYBERPUNK -> {
+            listOf(
+                Color(0xFF8B00FF),
+                Color(0xFF00FFFF),
+                Color(0xFFFF00FF),
+                Color(0xFF2D0066),
+            )
+        }
+
+        Genre.HORROR -> {
+            listOf(
+                Color(0xFF1C2541),
+                Color(0xFF0B132B),
+                Color(0xFF3A506B),
+                Color(0xFF6FFFE9),
+            )
+        }
+
+        Genre.HEROES -> {
+            listOf(
+                Color(0xFF003F88),
+                Color(0xFF002952),
+                Color(0xFF00509D),
+                Color(0xFFFDC500),
+            )
+        }
+
+        Genre.CRIME -> {
+            listOf(
+                Color(0xFFE91E63),
+                Color(0xFFAD1457),
+                Color(0xFFFF4081),
+                Color(0xFF000000),
+            )
+        }
+
+        Genre.SHINOBI -> {
+            listOf(
+                Color(0xFF5C2751),
+                Color(0xFF431C3A),
+                Color(0xFF7A336B),
+                Color(0xFFF39237),
+            )
+        }
+
+        Genre.SPACE_OPERA -> {
+            listOf(
+                Color(0xFF0081A7),
+                Color(0xFF005F73),
+                Color(0xFF00AFB9),
+                Color(0xFFFED9B7),
+            )
+        }
+
+        Genre.COWBOY -> {
+            listOf(
+                Color(0xFF8B4513),
+                Color(0xFF5D2E0A),
+                Color(0xFFA0522D),
+                Color(0xFFDEB887),
+            )
+        }
+
+        Genre.PUNK_ROCK -> {
+            listOf(
+                Color(0xFF00B050),
+                Color(0xFF008037),
+                Color(0xFF00E676),
+                Color(0xFF000000),
+            )
+        }
+    }
+
 // ── Utility ──────────────────────────────────────────────────────────────
 
-/** Resolve primary color from remote config. Returns null if config is missing or color is invalid. */
-fun Genre.resolveColor(visualConfig: GenreVisualConfig?): Color? = visualConfig?.primaryColor?.parseColor()
+/** Resolve primary color from remote config. Falls back to enum property. */
+fun Genre.resolveColor(visualConfig: GenreVisualConfig?): Color = visualConfig?.primaryColor?.parseColor() ?: this.color
 
 @Composable
-fun Genre.resolveColor(): Color? = resolveColor(LocalGenreVisualConfig.current)
+fun Genre.resolveColor(): Color = resolveColor(LocalGenreVisualConfig.current)
 
-/** Resolve icon color from remote config. Returns null if config is missing or color is invalid. */
-fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color? = visualConfig?.iconColor?.parseColor()
+/** Resolve icon color from remote config. Falls back to enum property. */
+fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color = visualConfig?.iconColor?.parseColor() ?: this.iconColor
 
 @Composable
-fun Genre.resolveIconColor(): Color? = resolveIconColor(LocalGenreVisualConfig.current)
+fun Genre.resolveIconColor(): Color = resolveIconColor(LocalGenreVisualConfig.current)
 
 /** Parse a hex color string like "#8B2635" to a Compose [Color], or null if invalid/empty. */
 internal fun String.parseColor(): Color? =

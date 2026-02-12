@@ -58,6 +58,7 @@ data class ChatUiState(
     val milestone: SagaMilestone? = null,
     val editingMessage: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
     val showMessageOptions: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
+    val visualConfig: com.ilustris.sagai.core.ai.model.GenreVisualConfig? = null,
 )
 
 data class MessageSelectionState(
