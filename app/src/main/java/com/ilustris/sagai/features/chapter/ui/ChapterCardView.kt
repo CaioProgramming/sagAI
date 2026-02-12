@@ -38,11 +38,11 @@ import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
 
 @Composable
 fun ChapterCardView(

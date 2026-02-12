@@ -442,10 +442,8 @@ private fun SharedTransitionScope.ChatList(
             }
         }
         item {
-            val shimmerColors =
-                remember {
-                    Genre.entries.random().colorPalette()
-                }
+            val randomGenre = remember { Genre.entries.random() }
+            val shimmerColors = randomGenre.colorPalette()
             Row(
                 modifier =
                     Modifier

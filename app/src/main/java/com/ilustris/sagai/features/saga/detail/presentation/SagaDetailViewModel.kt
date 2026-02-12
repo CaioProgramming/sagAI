@@ -5,6 +5,8 @@ import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
@@ -34,6 +36,7 @@ class SagaDetailViewModel
         private val remoteConfig: FirebaseRemoteConfig,
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
+        private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
         private val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         private val _state = MutableStateFlow<State>(State.Loading)
@@ -54,6 +57,7 @@ class SagaDetailViewModel
 
         val sagaResume = MutableStateFlow<String?>(null)
         val isSummarizingSaga = MutableStateFlow(false)
+        val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -82,6 +86,12 @@ class SagaDetailViewModel
                                     createSagaEmotionalReview()
                                 }
                             }
+                        }
+
+                        // Fetch visual config for the genre
+                        viewModelScope.launch {
+                            visualConfig.value =
+                                visualConfigService.getVisualConfig(data.data.genre)
                         }
 
                         // Generate saga resume if not already generated

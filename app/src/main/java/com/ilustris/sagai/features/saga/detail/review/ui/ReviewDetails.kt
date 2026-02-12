@@ -59,12 +59,12 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.RowChart
@@ -501,6 +501,7 @@ private fun CharactersChart(
             )
         }
 
+    val cornerSize = genre.cornerSize()
     Box(modifier = modifier) {
         ColumnChart(
             modifier = Modifier.fillMaxSize(),
@@ -516,7 +517,7 @@ private fun CharactersChart(
             popupProperties =
                 PopupProperties(
                     containerColor = genre.color,
-                    cornerRadius = genre.cornerSize(),
+                    cornerRadius = cornerSize,
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = genre.bodyFont(),
@@ -552,8 +553,8 @@ private fun CharactersChart(
                 BarProperties(
                     cornerRadius =
                         Bars.Data.Radius.Rectangle(
-                            topRight = genre.cornerSize(),
-                            topLeft = genre.cornerSize(),
+                            topRight = cornerSize,
+                            topLeft = cornerSize,
                         ),
                     spacing = 8.dp,
                     thickness = 20.dp,
@@ -578,6 +579,7 @@ private fun MessagesRankChart(
         messagesRanking.map {
             it.first.title()
         }
+    val cornerSize = genre.cornerSize()
     RowChart(
         modifier = modifier,
         data =
@@ -628,7 +630,7 @@ private fun MessagesRankChart(
         popupProperties =
             PopupProperties(
                 containerColor = genre.color,
-                cornerRadius = genre.cornerSize(),
+                cornerRadius = cornerSize,
                 textStyle =
                     MaterialTheme.typography.labelSmall.copy(
                         fontFamily = genre.bodyFont(),
@@ -645,8 +647,8 @@ private fun MessagesRankChart(
                 thickness = 24.dp,
                 cornerRadius =
                     Bars.Data.Radius.Rectangle(
-                        topRight = genre.cornerSize(),
-                        bottomRight = genre.cornerSize(),
+                        topRight = cornerSize,
+                        bottomRight = cornerSize,
                     ),
             ),
     )
@@ -662,15 +664,17 @@ private fun HourRankChart(
         MaterialTheme.typography.labelMedium.copy(
             fontFamily = genre.bodyFont(),
         )
+    val palette = genre.colorPalette()
+    val cornerSize = genre.cornerSize()
     LineChart(
         modifier = modifier,
         data =
-            remember {
+            remember(palette, cornerSize) {
                 listOf(
                     Line(
                         label = "Hora mais jogada",
                         values = hourRanking.map { it.value.size.toDouble() },
-                        color = Brush.verticalGradient(genre.colorPalette()),
+                        color = Brush.verticalGradient(palette),
                         firstGradientFillColor = genre.color,
                         secondGradientFillColor = Color.Transparent,
                         strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
@@ -679,7 +683,7 @@ private fun HourRankChart(
                         popupProperties =
                             PopupProperties(
                                 containerColor = genre.color,
-                                cornerRadius = genre.cornerSize(),
+                                cornerRadius = cornerSize,
                                 textStyle =
                                     label.copy(
                                         color = genre.iconColor,

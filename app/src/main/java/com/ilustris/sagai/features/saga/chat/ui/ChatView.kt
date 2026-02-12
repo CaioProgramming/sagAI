@@ -168,6 +168,7 @@ import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
@@ -178,7 +179,6 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -604,8 +604,7 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                )
-                                .fillMaxSize(.5f)
+                                ).fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -613,8 +612,7 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -699,8 +697,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(vertical = padding.calculateBottomPadding())
+                                    }.padding(vertical = padding.calculateBottomPadding())
                                     .animateContentSize(),
                             enter = slideInVertically(),
                             exit = slideOutVertically { it },
@@ -765,8 +762,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(
+                                    }.padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -865,8 +861,7 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    )
-                                    .wrapContentSize(),
+                                    ).wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -902,18 +897,15 @@ fun ChatContent(
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }
-                                                    .gradientFill(
+                                                    }.gradientFill(
                                                         progressiveBrush(
                                                             content.data.genre.color,
                                                             progress,
                                                         ),
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
                                                         shimmerColors = saga.genre.shimmerColors(),
-                                                    )
-                                                    .sharedElement(
+                                                    ).sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga_${saga.id}_spark",
                                                         ),
@@ -954,8 +946,7 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }
-                                        .fillMaxWidth()
+                                        }.fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier = titleModifier,
                                 actionContent = {
@@ -1038,8 +1029,7 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            )
-                                            .fillMaxWidth(),
+                                            ).fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1053,8 +1043,7 @@ fun ChatContent(
                                                     .background(
                                                         content.data.genre.color,
                                                         CircleShape,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1229,8 +1218,7 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     )
                 }
 
@@ -1273,8 +1261,7 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }
-                    .animateContentSize(),
+                    }.animateContentSize(),
         )
     }
 }
@@ -1402,8 +1389,7 @@ fun ChatList(
                                 Modifier
                                     .clip(
                                         shape,
-                                    )
-                                    .animateContentSize()
+                                    ).animateContentSize()
                                     .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
@@ -1616,11 +1602,9 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        )
-                        .graphicsLayer(
+                        ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

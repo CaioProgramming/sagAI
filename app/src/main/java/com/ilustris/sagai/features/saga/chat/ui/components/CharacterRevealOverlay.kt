@@ -1,14 +1,11 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
-import android.graphics.Matrix
-import android.graphics.Shader
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,15 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,8 +59,15 @@ fun CharacterRevealOverlay(
         }
     }
 
-    val genre = remember { sagaContent.data.genre }
-    val brushColors = remember { genre.colorPalette() }
+    val genre = sagaContent.data.genre
+    genre.colorPalette()
+    val shape =
+        genre.bubble(
+            tailAlignment = BubbleTailAlignment.BottomLeft,
+            0.dp,
+            0.dp,
+        )
+    val revealGradient = genre.gradient()
 
     LaunchedEffect(character) {
         delay(7000)
@@ -93,16 +92,6 @@ fun CharacterRevealOverlay(
             contentAlignment = Alignment.Center,
         ) {
             val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
-            val rotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(3000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "rotation",
-            )
 
             val floatOffset by infiniteTransition.animateFloat(
                 initialValue = -10f,
@@ -114,13 +103,6 @@ fun CharacterRevealOverlay(
                     ),
                 label = "floating",
             )
-
-            val shape =
-                genre.bubble(
-                    tailAlignment = BubbleTailAlignment.BottomLeft,
-                    0.dp,
-                    0.dp,
-                )
 
             Box(
                 modifier =
@@ -159,10 +141,10 @@ fun CharacterRevealOverlay(
                                         shape,
                                         androidx.compose.ui.graphics.shadow.Shadow(
                                             10.dp,
-                                            genre.gradient(),
+                                            revealGradient,
                                         ),
                                     ).clip(shape)
-                                    .border(1.dp, genre.gradient(), shape)
+                                    .border(1.dp, revealGradient, shape)
                                     .background(genre.color, shape),
                             showWatermark = false,
                         )

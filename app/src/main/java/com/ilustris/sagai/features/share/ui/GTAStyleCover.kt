@@ -11,25 +11,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +34,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -52,10 +46,7 @@ import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import kotlin.random.Random
 
 private class RandomTrapezoidShape : Shape {
@@ -75,18 +66,21 @@ private class RandomTrapezoidShape : Shape {
                 path.lineTo(size.width, size.height)
                 path.lineTo(0f, size.height)
             }
+
             1 -> { // Bottom inset
                 path.moveTo(0f, 0f)
                 path.lineTo(size.width, 0f)
                 path.lineTo(size.width - inset, size.height)
                 path.lineTo(inset, size.height)
             }
+
             2 -> { // Left inset (vertical trapezoid)
                 path.moveTo(0f, size.height * factor)
                 path.lineTo(size.width, 0f)
                 path.lineTo(size.width, size.height)
                 path.lineTo(0f, size.height * (1 - factor))
             }
+
             else -> { // Right inset (vertical trapezoid)
                 path.moveTo(size.width * factor, 0f)
                 path.lineTo(size.width, size.height * factor)
@@ -145,10 +139,16 @@ fun GTAStyleCover(
             }
         }
 
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .5f)))
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = .5f)),
+        )
 
         Column(
-            Modifier.align(Alignment.Center).padding(16.dp),
+            Modifier
+                .align(Alignment.Center)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

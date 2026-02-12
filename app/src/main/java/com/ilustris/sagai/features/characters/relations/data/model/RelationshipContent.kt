@@ -44,7 +44,7 @@ data class RelationshipContent(
         val charactersColors =
             listOf(
                 firstCharacter.hexColor.hexToColor() ?: genre.color,
-                secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last(),
+                secondCharacter.hexColor.hexToColor() ?: genre.colorPalette(null).last(),
             )
         return Brush.linearGradient(
             charactersColors,

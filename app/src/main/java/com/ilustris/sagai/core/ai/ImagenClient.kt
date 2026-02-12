@@ -114,7 +114,7 @@ class ImagenClientImpl
             imageReference: Pair<Bitmap, String>?,
             context: String,
             imageType: ImageType,
-            variationId: String? = null,
+            variationId: String?,
         ): RequestResult<Bitmap> =
             executeRequest {
                 Log.d(

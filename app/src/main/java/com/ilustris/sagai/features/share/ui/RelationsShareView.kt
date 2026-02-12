@@ -54,11 +54,11 @@ import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds

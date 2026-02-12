@@ -150,7 +150,7 @@ fun ChatMessageBubble(
             }
         }
 
-    val bubbleShape = remember { genre.bubble(bubbleStyle.tailAlignment) }
+    val bubbleShape = genre.bubble(bubbleStyle.tailAlignment)
 
     Column(modifier.padding(16.dp)) {
         Row(

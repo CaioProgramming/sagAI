@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.act.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,24 +33,21 @@ import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 
 @Composable
 fun ActReader(saga: SagaContent) {
-    val pagerState = rememberPagerState { saga.acts.size + 1 }
+    rememberPagerState { saga.acts.size + 1 }
     val genre = saga.data.genre
 
     LazyColumn {
@@ -143,7 +139,10 @@ fun ActReader(saga: SagaContent) {
                     if (it != act.chapters.last()) {
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                            modifier = Modifier.padding(vertical = 8.dp).height(1.dp),
+                            modifier =
+                                Modifier
+                                    .padding(vertical = 8.dp)
+                                    .height(1.dp),
                         )
                     }
                 }
@@ -170,7 +169,10 @@ fun ActReader(saga: SagaContent) {
                                 fontWeight = FontWeight.Normal,
                                 fontStyle = FontStyle.Italic,
                             ),
-                        modifier = Modifier.padding(16.dp).alpha(.4f),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .alpha(.4f),
                     )
                 }
             }
@@ -178,7 +180,10 @@ fun ActReader(saga: SagaContent) {
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
             }
         }
@@ -205,7 +210,10 @@ fun ActReader(saga: SagaContent) {
                         fontFamily = genre.bodyFont(),
                         textAlign = TextAlign.Justify,
                     ),
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
             )
         }
 
@@ -213,7 +221,10 @@ fun ActReader(saga: SagaContent) {
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
             }
             item {
@@ -239,7 +250,10 @@ fun ActReader(saga: SagaContent) {
                             fontFamily = genre.bodyFont(),
                             textAlign = TextAlign.Justify,
                         ),
-                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
                 )
             }
         }
@@ -313,7 +327,10 @@ fun ActReadingContent(
             Column(Modifier.padding(horizontal = 16.dp)) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
 
                 Text(
@@ -331,7 +348,10 @@ fun ActReadingContent(
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
             }
 
@@ -358,7 +378,10 @@ fun ActReadingContent(
                             fontFamily = genre.bodyFont(),
                             textAlign = TextAlign.Justify,
                         ),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 )
             }
 
@@ -366,7 +389,10 @@ fun ActReadingContent(
                 item {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                        modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                        modifier =
+                            Modifier
+                                .padding(vertical = 12.dp)
+                                .height(1.dp),
                     )
                 }
                 item {
@@ -392,7 +418,10 @@ fun ActReadingContent(
                                 fontFamily = genre.bodyFont(),
                                 textAlign = TextAlign.Justify,
                             ),
-                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }
@@ -414,7 +443,7 @@ fun ActReadingContent(
 
 @Composable
 fun IntroductionPage(saga: SagaContent) {
-    val genre = saga.data.genre
+    saga.data.genre
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),

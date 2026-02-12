@@ -7,7 +7,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 
 object ImagePrompts {
     private fun getHexPalette(genre: Genre): String =
-        genre.colorPalette().joinToString(", ") {
+        genre.colorPalette(null).joinToString(", ") {
             "#%06X".format(0xFFFFFF and it.toArgb())
         }
 

@@ -26,12 +26,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.zoomAnimation
-import effectForGenre
 
 @Composable
 fun EmotionalSheet(
@@ -52,10 +49,11 @@ fun EmotionalSheet(
                 cardImage,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter.tint(
-                    genre.color,
-                    blendMode = BlendMode.Multiply
-                ),
+                colorFilter =
+                    ColorFilter.tint(
+                        genre.color,
+                        blendMode = BlendMode.Multiply,
+                    ),
                 modifier =
                     Modifier
                         .fillMaxSize()

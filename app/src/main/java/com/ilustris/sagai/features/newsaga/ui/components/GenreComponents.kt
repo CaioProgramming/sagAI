@@ -49,10 +49,10 @@ import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -156,15 +156,6 @@ fun GenreCard(
     showText: Boolean = true,
     onClick: (Genre) -> Unit,
 ) {
-    val saturation by animateFloatAsState(
-        if (isSelected) 1f else 0f,
-        tween(500, easing = EaseIn),
-    )
-    val scale by animateFloatAsState(
-        if (isSelected) 1f else .8f,
-        tween(700, easing = EaseIn),
-    )
-
     val borderColor = genre.gradient()
 
     val shape = RoundedCornerShape(genre.cornerSize())
@@ -196,7 +187,11 @@ fun GenreCard(
                     ).clipToBounds(),
         )
 
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = .3f)),
+        )
         if (showText) {
             Text(
                 stringResource(genre.title),
@@ -248,7 +243,14 @@ fun GenreCardPreview() {
     ) {
         items(Genre.entries.size) {
             val genre = Genre.entries[it]
-            GenreCard(genre, isSelected = true, modifier = Modifier.fillMaxWidth().size(300.dp)) {
+            GenreCard(
+                genre,
+                isSelected = true,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .size(300.dp),
+            ) {
                 selectedGenre.value = it
             }
         }

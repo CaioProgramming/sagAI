@@ -67,7 +67,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -334,15 +333,16 @@ fun NewSagaView(
                             FlowPages.CREATE_CHARACTER -> characterState?.hint ?: emptyString()
                         }
 
+                    val palette = genre.colorPalette()
                     var containerColor by remember {
                         mutableStateOf(genre.color)
                     }
                     LaunchedEffect(flow) {
-                        containerColor = genre.colorPalette().random()
+                        containerColor = palette.random()
                     }
 
                     LaunchedEffect(genre) {
-                        containerColor = genre.colorPalette().random()
+                        containerColor = palette.random()
                     }
 
                     val backgroundColor by animateColorAsState(
@@ -490,13 +490,14 @@ fun NewSagaView(
                                 }
                             }
 
+                            val shape =
+                                genre.bubble(
+                                    isNarrator = false,
+                                    tailWidth = 0.dp,
+                                    tailHeight = 0.dp,
+                                )
+                            val buttonGradient = genre.gradient(true)
                             AnimatedVisibility(form?.isReady() == true) {
-                                val shape =
-                                    genre.bubble(
-                                        isNarrator = false,
-                                        tailWidth = 0.dp,
-                                        tailHeight = 0.dp,
-                                    )
                                 Button(
                                     enabled = isLoading.not() && isSaving.not(),
                                     onClick = {
@@ -508,7 +509,7 @@ fun NewSagaView(
                                             contentColor = genre.iconColor,
                                         ),
                                     shape = shape,
-                                    border = BorderStroke(1.dp, genre.gradient(true)),
+                                    border = BorderStroke(1.dp, buttonGradient),
                                     modifier =
                                         Modifier
                                             .padding(16.dp)
@@ -609,6 +610,7 @@ private fun SuggestionsContent(
         items(suggestions) {
             val genre = it.genre
             val shape = genre.bubble(tailHeight = 0.dp, tailWidth = 0.dp, isNarrator = true)
+            val itemGradient = it.genre.gradient(true)
             Column(
                 modifier =
                     Modifier
@@ -617,7 +619,7 @@ private fun SuggestionsContent(
                         .clip(shape)
                         .border(
                             1.dp,
-                            it.genre.gradient(true),
+                            itemGradient,
                             shape,
                         ).background(
                             it.genre.color,
@@ -686,6 +688,7 @@ private fun TopBarContent(
                 0.dp,
                 true,
             )
+        val pillGradient = genre.gradient(true)
 
         Icon(
             painterResource(R.drawable.ic_back_left),
@@ -842,7 +845,7 @@ private fun TopBarContent(
                     Modifier
                         .border(
                             1.dp,
-                            genre.gradient(true),
+                            pillGradient,
                             RoundedCornerShape(25.dp),
                         ).clip(RoundedCornerShape(25.dp))
                         .clickable {
@@ -965,6 +968,7 @@ private fun BottomContent(
         label = "rotation",
     )
 
+    val palette = genre.colorPalette()
     Row(
         modifier =
             modifier
@@ -990,7 +994,7 @@ private fun BottomContent(
                                     val shader =
                                         (
                                             sweepGradient(
-                                                genre.colorPalette(),
+                                                palette,
                                             ) as ShaderBrush
                                         ).createShader(size)
                                     val matrix = Matrix()

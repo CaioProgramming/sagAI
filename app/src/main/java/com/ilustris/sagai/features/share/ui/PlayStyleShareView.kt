@@ -61,9 +61,9 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -118,14 +118,12 @@ fun PlayStyleShareView(
                                     viewModel.saveBitmap(bitmap, ShareType.PLAYSTYLE.name)
                                 }
                         }
-                    }
-                    .drawWithContent {
+                    }.drawWithContent {
                         graphicsLayer.record {
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }
-                    .padding(8.dp)
+                    }.padding(8.dp)
                     .background(genre.color),
             ) {
                 Box(
@@ -192,7 +190,6 @@ fun PlayStyleShareView(
                                             shadow = Shadow(genre.color, blurRadius = 10f),
                                         ),
                                 )
-
                             }
                         }
 
@@ -215,16 +212,15 @@ fun PlayStyleShareView(
                                         ),
                                 ),
                         )
-
                     } else {
                         AsyncImage(
                             saga.icon,
                             null,
                             modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .effectForGenre(genre)
-                                .selectiveColorHighlight(genre.selectiveHighlight()),
+                                Modifier
+                                    .fillMaxSize()
+                                    .effectForGenre(genre)
+                                    .selectiveColorHighlight(genre.selectiveHighlight()),
                             contentScale = ContentScale.Crop,
                         )
                         Column(
@@ -289,8 +285,6 @@ fun PlayStyleShareView(
                                             ),
                                     ),
                             )
-
-
                         }
                     }
 
@@ -330,10 +324,7 @@ fun PlayStyleShareView(
                                     .align(Alignment.CenterHorizontally),
                         )
                     }
-
                 }
-
-
             }
         }
 
@@ -364,7 +355,6 @@ fun PlayStyleShareView(
         }
     }
 }
-
 
 @Preview(
     showBackground = true,

@@ -81,10 +81,10 @@ import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random

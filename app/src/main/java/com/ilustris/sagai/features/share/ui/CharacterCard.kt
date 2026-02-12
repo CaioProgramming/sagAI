@@ -40,9 +40,9 @@ import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import effectForGenre
 
 @Composable
 fun CharacterCard(

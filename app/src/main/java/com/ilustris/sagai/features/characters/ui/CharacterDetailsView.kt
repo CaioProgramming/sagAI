@@ -80,6 +80,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -88,7 +89,6 @@ import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -311,8 +311,7 @@ private fun CharacterDetailsLoaded(
                                             translationX = animatedTranslationX,
                                             translationY = animatedTranslationY,
                                             transformOrigin = TransformOrigin.Center,
-                                        )
-                                        .effectForGenre(
+                                        ).effectForGenre(
                                             genre,
                                             useFallBack = character.emojified,
                                         ),
@@ -420,8 +419,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -519,8 +517,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }

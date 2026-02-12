@@ -34,11 +34,11 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
 
 @Composable
 fun CharacterAvatar(
@@ -86,8 +86,7 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 CircleShape,
-            )
-            .clip(CircleShape)
+            ).clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),
@@ -111,23 +110,20 @@ fun CharacterAvatar(
                     .background(
                         characterColor,
                         CircleShape,
-                    )
-                    .fillMaxSize()
+                    ).fillMaxSize()
                     .effectForGenre(
                         genre,
                         useFallBack = useFallback,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,
-                    )
-                    .graphicsLayer {
+                    ).graphicsLayer {
                         scaleX = animatedScale
                         scaleY = animatedScale
                         translationX = animatedTranslationX * size.width
                         translationY = animatedTranslationY * size.height
                         transformOrigin = TransformOrigin.Center
-                    }
-                    .clipToBounds(),
+                    }.clipToBounds(),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {

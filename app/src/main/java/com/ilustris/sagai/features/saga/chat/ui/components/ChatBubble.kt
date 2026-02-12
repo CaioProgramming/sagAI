@@ -146,7 +146,7 @@ fun ChatBubble(
     val wiki = content.wikis
     val genre = content.data.genre
     val isUser = messageContent.isUser(mainCharacter?.data)
-    val cornerSize = genre.cornerSize()
+    genre.cornerSize()
     val isAnimated = canAnimate && messageEffectsEnabled.not()
     val bubbleStyle =
         remember {
@@ -160,19 +160,14 @@ fun ChatBubble(
             }
         }
     val duration = bubbleStyle.animationDuration
-    val bubbleShape =
-        remember(genre, cornerSize, bubbleStyle.tailAlignment) {
-            genre.bubble(bubbleStyle.tailAlignment)
-        }
+    val bubbleShape = genre.bubble(bubbleStyle.tailAlignment)
     val narratorShape =
-        remember(genre, cornerSize) {
-            genre.bubble(
-                BubbleTailAlignment.BottomRight,
-                isNarrator = true,
-                tailHeight = 0.dp,
-                tailWidth = 0.dp,
-            )
-        }
+        genre.bubble(
+            BubbleTailAlignment.BottomRight,
+            isNarrator = true,
+            tailHeight = 0.dp,
+            tailWidth = 0.dp,
+        )
     var tooltipData by remember { mutableStateOf<Any?>(null) }
 
     val reactionToolTipState =
@@ -357,6 +352,7 @@ fun ChatBubble(
                                     .weight(1f)
                                     .padding(end = 50.dp),
                         ) {
+                            val palette = genre.colorPalette()
                             val bubbleModifier =
                                 if (message.status == MessageStatus.LOADING) {
                                     Modifier
@@ -379,7 +375,7 @@ fun ChatBubble(
                                                         val shader =
                                                             (
                                                                 sweepGradient(
-                                                                    genre.colorPalette(),
+                                                                    palette,
                                                                 ) as ShaderBrush
                                                             ).createShader(size)
                                                         val matrix = Matrix()
@@ -648,7 +644,6 @@ fun ChatBubble(
                                             .animateContentSize(),
                                 ) {
                                     Box {
-                                        var starAlpha by remember { mutableFloatStateOf(1f) }
                                         var textAlpha by remember {
                                             mutableStateOf(
                                                 if (sender == SenderType.THOUGHT) 0f else 1f,

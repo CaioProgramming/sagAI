@@ -26,9 +26,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -59,7 +59,10 @@ class ReviewStartPage(
             val alignment = if (content.data.icon.isBlank()) Alignment.Center else Alignment.BottomCenter
             AnimatedVisibility(
                 showText,
-                modifier = Modifier.padding(16.dp).align(alignment),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .align(alignment),
                 enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -99,7 +102,10 @@ class ReviewStartPage(
 
         DepthLayout(
             content.data.icon,
-            modifier = Modifier.fillMaxSize().effectForGenre(genre),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .effectForGenre(genre),
         ) {
             DynamicLinework(
                 color = genre.color,

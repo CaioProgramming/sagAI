@@ -33,9 +33,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 

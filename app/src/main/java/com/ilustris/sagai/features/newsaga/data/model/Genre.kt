@@ -2,8 +2,11 @@ package com.ilustris.sagai.features.newsaga.data.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 
 enum class
@@ -17,61 +20,61 @@ Genre(
 ) {
     FANTASY(
         title = R.string.genre_fantasy,
-        color = Color(0xFF8B2635), // Pantone 208 C - Deep Ruby Red
+        color = Color(0xFF8B2635),
         iconColor = Color.White,
         background = R.drawable.fantasy,
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
-        color = Color(0xFF8B00FF), // Pantone 2665 C - Vibrant Electric Purple
+        color = Color(0xFF8B00FF),
         iconColor = Color.White,
         background = R.drawable.scifi,
     ),
 
     HORROR(
         title = R.string.genre_horror,
-        color = Color(0xFF1C2541), // Pantone 533 C - Dark Navy
+        color = Color(0xFF1C2541),
         iconColor = Color.White,
         background = R.drawable.horror,
     ),
 
     HEROES(
         title = R.string.genre_heroes,
-        color = Color(0xFF003F88), // Pantone 286 C - Classic Hero Blue
+        color = Color(0xFF003F88),
         iconColor = Color.White,
         background = R.drawable.hero,
     ),
     CRIME(
         title = R.string.genre_crime,
-        color = Color(0xFFE91E63), // Pantone 213 C - Hot Pink
+        color = Color(0xFFE91E63),
         iconColor = Color.White,
         background = R.drawable.crime,
     ),
 
     SHINOBI(
         title = R.string.genre_shinobi,
-        color = Color(0xFF5C2751), // Pantone 518 C - Deep Plum
+        color = Color(0xFF5C2751),
         iconColor = Color.White,
         background = R.drawable.shinobi_background,
     ),
 
     SPACE_OPERA(
         title = R.string.genre_space_opera,
-        color = Color(0xFF0081A7), // Pantone 3145 C - Space Teal
+        color = Color(0xFF0081A7),
         iconColor = Color.White,
         background = R.drawable.space_opera,
     ),
 
     COWBOY(
         title = R.string.genre_cowboys,
-        color = Color(0xFF8B4513), // Pantone 4695 C - Saddle Brown
+        color = Color(0xFF8B4513),
         iconColor = Color.White,
         background = R.drawable.cowboys,
     ),
 
     PUNK_ROCK(
         title = R.string.genre_punk_rock,
-        color = Color(0xFF00B050), // Pantone 375 C - Vibrant Green
+        color = Color(0xFF00B050),
         iconColor = Color.White,
         background = R.drawable.punk_rock,
     ),
@@ -81,107 +84,28 @@ Genre(
     val configKey: String = "${this.name.lowercase()}_config"
 }
 
-fun Genre.selectiveHighlight(): SelectiveColorParams =
-    when (this) {
-        Genre.FANTASY -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .85f,
-                saturationThreshold = .6f,
-                lightnessThreshold = .25f,
-                highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .5f,
-            )
-        }
+// ── Remote-only visual extensions ────────────────────────────────────────
+// All visual properties come from GenreVisualConfig (Remote Config).
+// If the config is null or missing the relevant data, the effect is NOT applied.
 
-        Genre.CYBERPUNK -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .11f,
-                saturationThreshold = .15f,
-                lightnessThreshold = .47f,
-                highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .5f,
-            )
-        }
+fun Genre.selectiveHighlight(visualConfig: GenreVisualConfig?): SelectiveColorParams? {
+    if (visualConfig == null) return null
+    val remote = visualConfig.selectiveHighlight ?: return null
+    val targetColor = resolveColor(visualConfig) ?: return null
+    if (remote.hueTolerance < 0f) return null
+    return SelectiveColorParams(
+        targetColor = targetColor,
+        hueTolerance = remote.hueTolerance,
+        saturationThreshold = remote.saturationThreshold.takeIf { it >= 0f } ?: 0.02f,
+        lightnessThreshold = remote.lightnessThreshold.takeIf { it >= 0f } ?: 0.05f,
+        highlightSaturationBoost = remote.highlightSaturationBoost.takeIf { it >= 0f } ?: 1f,
+        highlightLightnessBoost = remote.highlightLightnessBoost.takeIf { it >= 0f } ?: 0.05f,
+        desaturationFactorNonTarget = remote.desaturationFactorNonTarget.takeIf { it >= 0f } ?: 0f,
+    )
+}
 
-        Genre.HORROR -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .3f,
-                saturationThreshold = .3f,
-                highlightSaturationBoost = 1.3f,
-                desaturationFactorNonTarget = .7f,
-            )
-        }
-
-        Genre.HEROES -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .1f,
-                saturationThreshold = .1f,
-                lightnessThreshold = .3f,
-                highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .0f,
-            )
-        }
-
-        Genre.CRIME -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .05f,
-                saturationThreshold = .13f,
-                lightnessThreshold = .10f,
-                highlightSaturationBoost = 1.4f,
-                desaturationFactorNonTarget = .4f,
-            )
-        }
-
-        Genre.SHINOBI -> {
-            SelectiveColorParams(
-                targetColor = color,
-                // tight hue tolerance to preserve that specific wine red accent
-                hueTolerance = .02f,
-                saturationThreshold = .18f,
-                lightnessThreshold = .12f,
-                highlightSaturationBoost = 1.8f,
-                desaturationFactorNonTarget = .45f,
-            )
-        }
-
-        Genre.SPACE_OPERA -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = 1f,
-                saturationThreshold = .5f,
-                lightnessThreshold = .5f,
-                highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .4f,
-            )
-        }
-
-        Genre.COWBOY -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .1f,
-                saturationThreshold = .2f,
-                lightnessThreshold = .2f,
-                highlightSaturationBoost = 1.5f,
-                desaturationFactorNonTarget = .5f,
-            )
-        }
-
-        Genre.PUNK_ROCK -> {
-            SelectiveColorParams(
-                targetColor = color,
-                hueTolerance = .15f,
-                saturationThreshold = .4f,
-                lightnessThreshold = .3f,
-                highlightSaturationBoost = 2.0f,
-                desaturationFactorNonTarget = .5f,
-            )
-        }
-    }
+@Composable
+fun Genre.selectiveHighlight(): SelectiveColorParams? = selectiveHighlight(LocalGenreVisualConfig.current)
 
 fun Genre.defaultHeaderImage() =
     when (this) {
@@ -196,106 +120,55 @@ fun Genre.defaultHeaderImage() =
         Genre.PUNK_ROCK -> R.drawable.punk_rock_card
     }
 
-fun Genre.shimmerColors() =
-    listOf(
+fun Genre.shimmerColors(visualConfig: GenreVisualConfig?): List<Color> {
+    val palette = colorPalette(visualConfig)
+    if (palette.isEmpty()) return emptyList()
+    val primary = resolveColor(visualConfig) ?: return emptyList()
+    return listOf(
         Color.Transparent,
-        color.copy(alpha = .2f),
-    ).plus(colorPalette())
+        primary.copy(alpha = .2f),
+    ).plus(palette)
         .plus(Color.Transparent)
+}
 
-fun Genre.colorPalette() =
-    when (this) {
-        Genre.FANTASY -> {
-            listOf(
-                color,
-                Color(0xFFA52A2A), // Brown
-                Color(0xFF800000), // Maroon
-                Color(0xFFCD5C5C), // IndianRed
-            )
+@Composable
+fun Genre.shimmerColors(): List<Color> = shimmerColors(LocalGenreVisualConfig.current)
+
+fun Genre.colorPalette(visualConfig: GenreVisualConfig?): List<Color> {
+    if (visualConfig == null || visualConfig.colorPalette.isEmpty()) return emptyList()
+    return visualConfig.colorPalette.mapNotNull { it.parseColor() }
+}
+
+@Composable
+fun Genre.colorPalette(): List<Color> = colorPalette(LocalGenreVisualConfig.current)
+
+fun Genre.vibrationPattern(visualConfig: GenreVisualConfig? = null): LongArray? {
+    if (visualConfig == null || visualConfig.vibrationPattern.isEmpty()) return null
+    return visualConfig.vibrationPattern.toLongArray()
+}
+
+// ── Utility ──────────────────────────────────────────────────────────────
+
+/** Resolve primary color from remote config. Returns null if config is missing or color is invalid. */
+fun Genre.resolveColor(visualConfig: GenreVisualConfig?): Color? = visualConfig?.primaryColor?.parseColor()
+
+@Composable
+fun Genre.resolveColor(): Color? = resolveColor(LocalGenreVisualConfig.current)
+
+/** Resolve icon color from remote config. Returns null if config is missing or color is invalid. */
+fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color? = visualConfig?.iconColor?.parseColor()
+
+@Composable
+fun Genre.resolveIconColor(): Color? = resolveIconColor(LocalGenreVisualConfig.current)
+
+/** Parse a hex color string like "#8B2635" to a Compose [Color], or null if invalid/empty. */
+internal fun String.parseColor(): Color? =
+    if (isNotBlank()) {
+        try {
+            Color(android.graphics.Color.parseColor(this))
+        } catch (_: Exception) {
+            null
         }
-
-        Genre.CYBERPUNK -> {
-            listOf(
-                color,
-                Color(0xFF9400D3), // Dark Violet
-                Color(0xFFBA55D3), // Medium Orchid
-                Color(0xFF4B0082), // Indigo
-            )
-        }
-
-        Genre.HORROR -> {
-            listOf(
-                color,
-                Color(0xFF0B132B), // Rich Black
-                Color(0xFF3A506B), // Imperial Blue
-                Color(0xFF1B263B), // Oxford Blue
-            )
-        }
-
-        Genre.HEROES -> {
-            listOf(
-                color,
-                Color(0xFF00509D), // Lighter Blue
-                Color(0xFF00296B), // Darker Blue
-                Color(0xFF4A90E2), // Cornflower Blue
-            )
-        }
-
-        Genre.CRIME -> {
-            listOf(
-                color,
-                Color(0xFFC2185B), // Darker Pink
-                Color(0xFFF48FB1), // Lighter Pink
-                Color(0xFF880E4F), // Very Dark Pink
-            )
-        }
-
-        Genre.SHINOBI -> {
-            listOf(
-                color,
-                Color(0xFF4A1F41), // Darker Plum
-                Color(0xFF8E447E), // Lighter Plum
-                Color(0xFF2D1328), // Very Dark Plum
-            )
-        }
-
-        Genre.SPACE_OPERA -> {
-            listOf(
-                color,
-                Color(0xFF00AFB9), // Lighter Teal
-                Color(0xFF264653), // Dark Slate
-                Color(0xFF48CAE4), // Cyan
-            )
-        }
-
-        Genre.COWBOY -> {
-            listOf(
-                color,
-                Color(0xFFA0522D), // Sienna
-                Color(0xFF654321), // Dark Brown
-                Color(0xFFD2691E), // Chocolate
-            )
-        }
-
-        Genre.PUNK_ROCK -> {
-            listOf(
-                color,
-                Color(0xFF008000), // Green
-                Color(0xFF32CD32), // Lime Green
-                Color(0xFF006400), // Dark Green
-            )
-        }
-    }
-
-fun Genre.vibrationPattern(): LongArray =
-    when (this) {
-        Genre.FANTASY -> longArrayOf(0, 100, 50, 100)
-        Genre.CYBERPUNK -> longArrayOf(0, 50, 30, 50, 30, 50)
-        Genre.HORROR -> longArrayOf(0, 500)
-        Genre.HEROES -> longArrayOf(0, 300)
-        Genre.CRIME -> longArrayOf(0, 80, 80, 80)
-        Genre.SHINOBI -> longArrayOf(0, 150)
-        Genre.SPACE_OPERA -> longArrayOf(0, 200, 100, 200)
-        Genre.COWBOY -> longArrayOf(0, 250)
-        Genre.PUNK_ROCK -> longArrayOf(0, 50, 50, 100, 50, 50)
+    } else {
+        null
     }

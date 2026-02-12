@@ -51,13 +51,13 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
 @Composable

@@ -99,6 +99,7 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -106,7 +107,6 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds

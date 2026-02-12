@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
-import loadShaderFromAssetsOnce
 
 private const val DEFAULT_TOLERANCE = 0.20f
 private const val DEFAULT_SATURATION_THRESHOLD = 0.02f
@@ -66,9 +65,10 @@ data class SelectiveColorParams(
 
 @Composable
 fun Modifier.selectiveColorHighlight(
-    params: SelectiveColorParams,
+    params: SelectiveColorParams?,
     shaderAssetFileName: String = "selective_color_highlight.agsl",
 ): Modifier {
+    if (params == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Log.w("SelectiveColor", "Shader effects not supported on this API level.")
         return this // Or a fallback using ColorMatrix if desired
@@ -91,7 +91,8 @@ fun Modifier.selectiveColorHighlight(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",
