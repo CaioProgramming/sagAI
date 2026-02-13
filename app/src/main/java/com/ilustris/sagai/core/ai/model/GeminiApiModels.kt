@@ -21,14 +21,20 @@ data class GeminiContent(
 )
 
 data class GeminiPart(
-    val text: String,
+    val text: String? = null,
+    @SerializedName("inline_data")
+    val inlineData: GeminiInlineData? = null,
 )
 
 data class GeminiGenerationConfig(
     @SerializedName("response_modalities")
-    val responseModalities: List<String>,
+    val responseModalities: List<String>? = null,
     @SerializedName("speech_config")
     val speechConfig: GeminiSpeechConfig? = null,
+    @SerializedName("temperature")
+    val temperature: Float? = null,
+    @SerializedName("response_mime_type")
+    val responseMimeType: String? = null,
 )
 
 data class GeminiSpeechConfig(

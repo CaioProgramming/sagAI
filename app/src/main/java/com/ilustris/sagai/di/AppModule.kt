@@ -206,7 +206,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesSummarizationClient(remoteConfigService: RemoteConfigService): GemmaClient = GemmaClient(remoteConfigService)
+    fun providesSummarizationClient(
+        remoteConfigService: RemoteConfigService,
+        geminiApiService: GeminiApiService,
+    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService)
 
     @Provides
     @Singleton

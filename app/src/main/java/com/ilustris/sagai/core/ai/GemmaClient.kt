@@ -1,15 +1,18 @@
 package com.ilustris.sagai.core.ai
 
+import android.graphics.Bitmap
+import android.util.Base64
 import android.util.Log
-import com.google.ai.client.generativeai.type.Content
-import com.google.ai.client.generativeai.type.ImagePart
-import com.google.ai.client.generativeai.type.TextPart
-import com.google.ai.client.generativeai.type.generationConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.model.GeminiContent
+import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
+import com.ilustris.sagai.core.ai.model.GeminiInlineData
+import com.ilustris.sagai.core.ai.model.GeminiPart
+import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.ImageReference
+import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -18,6 +21,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -27,6 +32,7 @@ class GemmaClient
     @Inject
     constructor(
         private val remoteConfigService: RemoteConfigService,
+        val geminiApiService: GeminiApiService,
     ) : AIClient() {
         @PublishedApi
         internal val requestMutex = Mutex()
@@ -112,15 +118,6 @@ class GemmaClient
                 for (currentAttempt in 1..maxAttempts) {
                     try {
                         return@withContext requestMutex.withLock {
-                            val client =
-                                com.google.ai.client.generativeai.GenerativeModel(
-                                    modelName = model,
-                                    apiKey = apiConfig(useCore),
-                                    generationConfig {
-                                        temperature = temperatureRandomness
-                                    },
-                                )
-
                             val fullPrompt =
                                 buildString {
                                     appendLine(prompt)
@@ -160,79 +157,82 @@ class GemmaClient
                                 } chars.",
                             )
 
-                            val contentParts =
-                                buildList {
-                                    if (prompt.isNotEmpty()) {
-                                        add(TextPart(fullPrompt))
-                                    }
-                                    references.filterNotNull().forEach { reference ->
-                                        add(ImagePart(reference.bitmap))
-                                        add(TextPart(reference.description))
-                                    }
-                                }
+                            val parts = mutableListOf<GeminiPart>()
+                            parts.add(GeminiPart(text = fullPrompt))
 
-                            val inputContent =
-                                Content(
-                                    role = "user",
-                                    contentParts,
+                            references.filterNotNull().forEach { reference ->
+                                parts.add(
+                                    GeminiPart(
+                                        inlineData =
+                                            GeminiInlineData(
+                                                mimeType = "image/jpeg",
+                                                data = reference.bitmap.toBase64(),
+                                            ),
+                                    ),
+                                )
+                                parts.add(GeminiPart(text = reference.description))
+                            }
+
+                            val geminiRequest =
+                                GeminiRequest(
+                                    contents = listOf(GeminiContent(parts = parts)),
+                                    generationConfig =
+                                        GeminiGenerationConfig(
+                                            temperature = temperatureRandomness,
+                                        ),
                                 )
 
-                            Log.d(
-                                javaClass.simpleName,
-                                "Input content has ${contentParts.size} parts: ${
-                                    contentParts.map { it.javaClass.simpleName }
-                                }",
-                            )
+                            val response =
+                                geminiApiService.generateContent(
+                                    model = model,
+                                    apiKey = apiConfig(useCore),
+                                    request = geminiRequest,
+                                )
 
-                            val content = client.generateContent(inputContent)
-                            lastTokenCount = content.usageMetadata?.promptTokenCount ?: 0
+                            // Check for API error
+                            response.error?.let { error ->
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "Gemini API error: ${error.code} - ${error.message}",
+                                )
+                                throw Exception("Gemini API error: ${error.message}")
+                            }
+
+                            lastTokenCount = response.usageMetadata?.promptTokenCount ?: 0
                             retryDelay = null
                             if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
                                 lastTokenCount = 0
                             }
 
-                            val response = content.text
+                            val responseText =
+                                response.candidates
+                                    ?.firstOrNull()
+                                    ?.content
+                                    ?.parts
+                                    ?.firstOrNull()
+                                    ?.text ?: ""
 
                             Log.d(
                                 javaClass.simpleName,
-                                "Input content: ${
-                                    inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)
-                                }",
-                            )
-
-                            Log.i(
-                                javaClass.simpleName,
-                                "Generated content: ${
-                                    content.toJsonFormatExcludingFields(
+                                "Input JSON: ${
+                                    geminiRequest.toJsonFormatExcludingFields(
                                         AI_EXCLUDED_FIELDS,
                                     )
                                 }",
                             )
 
-                            val promptDescription =
-                                buildString {
-                                    appendLine("Full Prompt { ")
-                                    if (fullPrompt.isNotEmpty()) {
-                                        appendLine("Main prompt { ")
-                                        appendLine(fullPrompt)
-                                        appendLine(" }")
-                                    }
-                                    if (references.isNotEmpty()) {
-                                        appendLine("References:")
-                                        appendLine(references.filterNotNull().formatToJsonArray())
-                                    }
-                                    appendLine(" }")
-                                }
-
-                            Log.d(javaClass.simpleName, promptDescription)
+                            Log.i(
+                                javaClass.simpleName,
+                                "Generated content: $responseText",
+                            )
 
                             if (T::class == String::class) {
-                                Log.i(javaClass.simpleName, "Prompt request result:\n$response")
-                                return@withLock response as T
+                                Log.i(javaClass.simpleName, "Prompt request result:\n$responseText")
+                                return@withLock responseText as T
                             }
 
                             val cleanedJsonString =
-                                response.sanitizeAndExtractJsonString(T::class.java)
+                                responseText.sanitizeAndExtractJsonString(T::class.java)
                             val typeToken = object : TypeToken<T>() {}
                             Gson().fromJson(cleanedJsonString, typeToken.type)
                         }
@@ -240,8 +240,14 @@ class GemmaClient
                         Log.e(
                             this@GemmaClient::class.java.simpleName,
                             "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
-                            e,
                         )
+                        if (e is HttpException) {
+                            val errorBody = e.response()?.errorBody()?.string()
+                            Log.e(
+                                this@GemmaClient::class.java.simpleName,
+                                "HTTP Error ($model): $errorBody",
+                            )
+                        }
 
                         if (currentAttempt < maxAttempts) {
                             Log.w(
@@ -288,6 +294,13 @@ class GemmaClient
                     else -> containsStringFields(fieldType, visited)
                 }
             }
+        }
+
+        fun Bitmap.toBase64(): String {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            this.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
+            val byteArray = byteArrayOutputStream.toByteArray()
+            return Base64.encodeToString(byteArray, Base64.NO_WRAP)
         }
     }
 
