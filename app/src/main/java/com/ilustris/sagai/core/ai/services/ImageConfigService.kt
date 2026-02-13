@@ -15,7 +15,7 @@ class ImageConfigService
         private val remoteConfigService: RemoteConfigService,
     ) {
         companion object {
-            private const val IMAGE_CONFIG_KEY = "imageConfig"
+            private const val IMAGE_CONFIG_KEY = "image_config"
         }
 
         suspend fun getImageConfig(): ImageConfig = remoteConfigService.getJson<ImageConfig>(IMAGE_CONFIG_KEY) ?: ImageConfig()

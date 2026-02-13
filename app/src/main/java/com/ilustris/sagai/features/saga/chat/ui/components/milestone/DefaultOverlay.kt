@@ -75,9 +75,10 @@ fun DefaultOverlay(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxSize(),
+        modifier =
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxSize(),
     ) {
         AnimatedVisibility(
             showIcon,
@@ -135,8 +136,10 @@ fun DefaultOverlay(
             }
         }
 
-        Box(Modifier.padding(16.dp)) {
-            extraContent()
+        AnimatedVisibility(showSubtitle) {
+            Box(Modifier.padding(16.dp)) {
+                extraContent()
+            }
         }
 
         AnimatedVisibility(showButton, enter = slideInVertically { -it }, exit = fadeOut()) {

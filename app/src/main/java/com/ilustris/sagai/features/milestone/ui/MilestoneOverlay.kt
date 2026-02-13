@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -213,12 +212,10 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }
-                        .background(
+                        }.background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        )
-                        .padding(4.dp)
+                        ).padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,
@@ -284,7 +281,6 @@ fun NewChapterContent(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             val characters =
                 it.fetchCharacters(saga).filterNotNull()
-            Text(stringResource(R.string.milestone_overlay_important_characters_title))
 
             LazyRow(
                 horizontalArrangement =

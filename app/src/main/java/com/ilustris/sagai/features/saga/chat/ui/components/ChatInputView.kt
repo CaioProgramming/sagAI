@@ -115,7 +115,6 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -423,14 +422,7 @@ fun ChatInputView(
                             modifier =
                                 Modifier
                                     .padding(4.dp)
-                                    .size(12.dp)
-                                    .reactiveShimmer(
-                                        true,
-                                        content.data.genre.color
-                                            .darkerPalette()
-                                            .plus(Color.Transparent),
-                                        duration = 5.seconds,
-                                    ),
+                                    .size(12.dp),
                         )
 
                         // Use styled annotated string for suggestions with tags
@@ -442,11 +434,6 @@ fun ChatInputView(
                         Text(
                             styledText,
                             style = MaterialTheme.typography.labelSmall,
-                            modifier =
-                                Modifier.reactiveShimmer(
-                                    true,
-                                    duration = 5.seconds,
-                                ),
                         )
                     }
                 }
@@ -502,8 +489,7 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }
-                    .dropShadow(inputShape, {
+                    }.dropShadow(inputShape, {
                         brush = inputBrush
                         radius = glowRadius
                     })
@@ -551,13 +537,11 @@ fun ChatInputView(
                                         radius = 5.dp,
                                         genre.color,
                                     ),
-                                )
-                                .border(1.dp, genre.color.gradientFade(), shape)
+                                ).border(1.dp, genre.color.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
-                                )
-                                .clip(shape)
+                                ).clip(shape)
                                 .padding(8.dp),
                     ) {
                         item(span = { GridItemSpan(4) }) {
@@ -583,8 +567,7 @@ fun ChatInputView(
                                             coroutineScope.launch {
                                                 characterToolTipState.dismiss()
                                             }
-                                        }
-                                        .size(36.dp),
+                                        }.size(36.dp),
                                 textStyle =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -816,10 +799,6 @@ fun ChatInputView(
                                                 )
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement =
-                                                        Arrangement.spacedBy(
-                                                            4.dp,
-                                                        ),
                                                     modifier =
                                                         Modifier
                                                             .padding(4.dp)
@@ -828,8 +807,7 @@ fun ChatInputView(
                                                             .background(
                                                                 backColor,
                                                                 inputShape,
-                                                            )
-                                                            .clickable(enabled = currentTagInside == null) {
+                                                            ).clickable(enabled = currentTagInside == null) {
                                                                 it.tag?.let { tag ->
                                                                     val newValue =
                                                                         insertExpressiveTag(
@@ -838,14 +816,8 @@ fun ChatInputView(
                                                                         )
                                                                     onUpdateInput(newValue)
                                                                 }
-                                                            }
-                                                            .padding(8.dp)
-                                                            .animateContentSize()
-                                                            .reactiveShimmer(
-                                                                it.tag == currentTagInside,
-                                                                repeatMode = RepeatMode.Restart,
-                                                                duration = 2.seconds,
-                                                            ),
+                                                            }.padding(8.dp)
+                                                            .animateContentSize(),
                                                 ) {
                                                     val weight =
                                                         if (it == action) FontWeight.Bold else FontWeight.Normal
@@ -972,8 +944,7 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .reactiveShimmer(
                                     isGenerating,
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     ) { loading ->
                         val icon =
                             if (isEditing) {
@@ -1031,8 +1002,7 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     inputShape,
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
