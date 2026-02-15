@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -47,13 +46,12 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun GenreSelectionCard(
@@ -193,20 +191,13 @@ fun GenreCard(
                 .background(Color.Black.copy(alpha = .3f)),
         )
         if (showText) {
-            Text(
+            genre.stylisedText(
                 stringResource(genre.title),
-                maxLines = 2,
-                style =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        textAlign = TextAlign.Center,
-                        fontFamily = genre.headerFont(),
-                        brush = genre.gradient(true, 2.seconds, 500f),
-                    ),
+                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(2.dp)
-                        .align(Alignment.Center),
+                        .align(Alignment.Center)
+                        .padding(16.dp),
             )
         }
     }

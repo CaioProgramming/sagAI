@@ -1,15 +1,27 @@
 package com.ilustris.sagai.ui.components
 
-import ai.atick.material.MaterialColor
 import android.content.res.Configuration
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -36,11 +48,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.animations.chromaticAberration
+import com.ilustris.sagai.ui.animations.cowboyBurn
+import com.ilustris.sagai.ui.animations.divineAura
+import com.ilustris.sagai.ui.animations.dreamySparkle
 import com.ilustris.sagai.ui.animations.glitch
+import com.ilustris.sagai.ui.animations.heroChrome
+import com.ilustris.sagai.ui.animations.katanaSlice
+import com.ilustris.sagai.ui.animations.psychosis
+import com.ilustris.sagai.ui.animations.spaceVoyage
+import com.ilustris.sagai.ui.animations.vhs
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
 
 @Composable
@@ -105,8 +128,7 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }
-                .drawBehind {
+                }.drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -148,6 +170,121 @@ fun WordArtText(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RansomNoteText(
+    text: String,
+    genre: Genre,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 48.sp,
+    fontFamily: FontFamily? = null,
+    primaryColor: Color = Color.White,
+    secondaryColor: Color = Color.Black,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "punkPulse")
+    val ticker by
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(1000000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "punkTicker",
+        )
+
+    // Derived states ensure we ONLY recompose when the integer actually changes
+    val colorFrame by remember { derivedStateOf { (ticker / 5f).toInt() } }
+    val jitterFrame by remember { derivedStateOf { (ticker / 0.5f).toInt() } }
+
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Center,
+        maxItemsInEachRow = 12,
+    ) {
+        text.forEachIndexed { index, char ->
+            if (char.isWhitespace()) {
+                Spacer(modifier = Modifier.width(fontSize.value.dp / 3))
+            } else {
+                RansomLetter(
+                    char = char,
+                    index = index,
+                    colorFrame = colorFrame,
+                    jitterFrame = jitterFrame,
+                    genre = genre,
+                    fontSize = fontSize,
+                    fontFamily = fontFamily,
+                    primaryColor = primaryColor,
+                    secondaryColor = secondaryColor,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RansomLetter(
+    char: Char,
+    index: Int,
+    colorFrame: Int,
+    jitterFrame: Int,
+    genre: Genre,
+    fontSize: TextUnit,
+    fontFamily: FontFamily?,
+    primaryColor: Color,
+    secondaryColor: Color,
+) {
+    // VISUAL IDENTITY: Only changes every 10 seconds (Slow Cycle)
+    val visualIdentity =
+        remember(index, colorFrame) {
+            val r = kotlin.random.Random(colorFrame + index * 123)
+            val isReversed = r.nextBoolean()
+            val isUpper = r.nextBoolean()
+            val sizeMult = 0.9f + r.nextFloat() * 0.2f
+            val scaleBase = 0.85f + r.nextFloat() * 0.25f
+
+            object {
+                val bg = if (isReversed) secondaryColor else primaryColor
+                val text = if (isReversed) primaryColor else secondaryColor
+                val upper = isUpper
+                val size = sizeMult
+                val scale = scaleBase
+            }
+        }
+
+    // JITTER: Fast cycle (2 FPS stop-motion)
+    // We use graphicsLayer lambda to avoid recomposing the Text/Surface content for simple jitters
+    Surface(
+        modifier =
+            Modifier
+                .padding(horizontal = 1.dp, vertical = 2.dp)
+                .graphicsLayer {
+                    val jRandom = kotlin.random.Random(jitterFrame + index * 456L)
+                    rotationZ = jRandom.nextFloat() * 18f - 9f
+                    translationX = (jRandom.nextFloat() - 0.5f) * 14f
+                    translationY = (jRandom.nextFloat() - 0.5f) * 8f
+                    scaleX = visualIdentity.scale
+                    scaleY = visualIdentity.scale
+                },
+        color = visualIdentity.bg,
+        shape = genre.bubble(isNarrator = true),
+    ) {
+        Text(
+            text = if (visualIdentity.upper) char.uppercase() else char.lowercase(),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
+            style =
+                TextStyle(
+                    color = visualIdentity.text,
+                    fontSize = fontSize * visualIdentity.size,
+                    fontFamily = fontFamily,
+                    fontWeight = FontWeight.Black,
+                ),
+        )
+    }
+}
+
 @Composable
 fun Genre.stylisedText(
     text: String,
@@ -156,39 +293,57 @@ fun Genre.stylisedText(
 ) {
     when (this) {
         Genre.FANTASY -> {
-            val palette = this.colorPalette()
-            WordArtText(
+            Text(
                 text = text,
-                modifier = modifier,
-                fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = palette.first(),
-                bottomColor = palette.last(),
-                numberOfExtrusionLayers = 1,
-                outlineWidthFactor = .1f,
-                outlineColor = color.darker(.5f),
-                extrusionColor = palette.last().darker(.3f),
-                glowAlpha = .6f,
-                glowColor = color,
-                glowRadiusFactor = 15f,
+                modifier =
+                    modifier
+                        .levitate()
+                        .divineAura(
+                            auraColor = Color(0xFFFFECB3),
+                        ).chromaticAberration(intensity = 1f, blurRadius = 10f),
+                style =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontSize = fontSize,
+                        brush =
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color(0xFFFFFAF0), // Floral White (Top)
+                                    Color(0xFFFFD700), // Gold (Middle)
+                                    this.color, // Genre Red (Bottom)
+                                ),
+                            ),
+                        fontFamily = this.headerFont(),
+                        fontWeight = FontWeight.Light, // Divine elegance
+                        shadow =
+                            Shadow(
+                                Color(0xFFFFD700).copy(alpha = 0.5f), // Golden shadow
+                                blurRadius = 15f,
+                                offset = Offset(0f, 2f),
+                            ),
+                    ),
+                textAlign = TextAlign.Center,
             )
         }
 
         Genre.CYBERPUNK -> {
             val palette = this.colorPalette()
-            WordArtText(
+            Text(
                 text = text,
                 modifier = modifier.glitch(),
                 fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = color,
-                bottomColor = palette[2],
-                numberOfExtrusionLayers = 2,
-                outlineColor = palette.first(),
-                extrusionColor = palette.last(),
-                glowRadiusFactor = 15f,
-                glowColor = iconColor,
-                glowAlpha = 1f,
+                fontFamily = headerFont(),
+                color = color,
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        brush = Brush.verticalGradient(listOf(color).plus(palette)),
+                        shadow =
+                            Shadow(
+                                color = iconColor,
+                                blurRadius = 20f,
+                            ),
+                    ),
             )
         }
 
@@ -196,7 +351,7 @@ fun Genre.stylisedText(
             val palette = this.colorPalette()
             WordArtText(
                 text = text,
-                modifier = modifier,
+                modifier = modifier.psychosis(),
                 fontSize = fontSize,
                 fontFamily = this.headerFont(),
                 topColor = color,
@@ -212,132 +367,125 @@ fun Genre.stylisedText(
 
         Genre.COWBOY -> {
             val palette = this.colorPalette()
-
-            WordArtText(
+            AutoResizeText(
                 text = text,
-                modifier = modifier,
-                fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = palette.first(),
-                bottomColor = palette[1],
-                numberOfExtrusionLayers = 5,
-                outlineColor = iconColor.copy(alpha = .2f),
-                extrusionColor = palette[3],
-                outlineWidthFactor = .03f,
-                glowRadiusFactor = 2f,
-                glowAlpha = .5f,
-                glowColor = iconColor,
-                rotationX = 25f,
-                extrusionDepthFactor = .03f,
+                modifier =
+                    modifier
+                        .cowboyBurn(true)
+                        .padding(2.dp),
+                style =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontFamily = this.headerFont(),
+                        brush = Brush.verticalGradient(listOf(color).plus(palette)),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        fontSize = fontSize,
+                        shadow =
+                            Shadow(
+                                iconColor.copy(alpha = 0.6f),
+                                blurRadius = 15f,
+                            ),
+                    ),
             )
         }
 
         Genre.CRIME -> {
             val genre = this
-            Box(modifier = modifier) {
-                WordArtText(
-                    text = text,
-                    fontSize = fontSize,
-                    fontFamily = genre.headerFont(),
-                    topColor = genre.color,
-                    bottomColor = genre.color.darker(.3f),
-                    extrusionColor = MaterialColor.DeepPurple800,
-                    extrusionDepthFactor = .03f,
-                    numberOfExtrusionLayers = 10,
-                    outlineColor = genre.colorPalette().last(),
-                    outlineWidthFactor = .05f,
-                    rotationX = 15f,
-                    glowColor = genre.color,
-                    glowRadiusFactor = 10f,
-                    glowAlpha = 1f,
-                )
-
-                StarryTextPlaceholder(
-                    modifier =
-                        Modifier
-                            .matchParentSize(),
-                    starColor = Color.White,
-                    starCount = 50,
-                )
-            }
+            Text(
+                text = text,
+                modifier =
+                    modifier
+                        .vhs()
+                        .dreamySparkle(color = Color.White),
+                fontSize = fontSize,
+                fontFamily = genre.headerFont(),
+                color = Color.White,
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        shadow =
+                            Shadow(
+                                color = Color(0xFFFF4081).copy(alpha = 0.8f),
+                                offset = Offset(0f, 0f),
+                                blurRadius = 30f,
+                            ),
+                    ),
+            )
         }
 
         Genre.HEROES -> {
             val palette = this.colorPalette()
             WordArtText(
                 text = text,
-                modifier = modifier,
+                modifier = modifier.heroChrome(color = Color.White),
                 fontSize = (fontSize.value * .75f).sp,
                 fontFamily = headerFont(),
-                topColor = color.lighter(.5f),
-                bottomColor = palette.first().darker(.5f),
-                extrusionColor = palette[1],
-                extrusionDepthFactor = 0.02f,
-                numberOfExtrusionLayers = 15,
-                outlineColor = iconColor,
-                outlineWidthFactor = .07f,
-                rotationX = 15f,
-                glowColor = color,
-                glowAlpha = .5f,
-                glowRadiusFactor = 10f,
+                topColor = color.lighter(.7f), // High-power chrome edge
+                bottomColor = palette.first().darker(.3f),
+                extrusionColor = palette[1].darker(.5f),
+                extrusionDepthFactor = 0.04f,
+                numberOfExtrusionLayers = 20,
+                outlineColor = Color.Black,
+                outlineWidthFactor = .08f,
+                rotationX = 35f, // X-Men Intro Tilted Perspective
+                glowColor = color.copy(alpha = 0.4f),
+                glowAlpha = .3f,
+                glowRadiusFactor = 15f,
             )
         }
 
         Genre.SPACE_OPERA -> {
-            val palette = this.colorPalette()
-            WordArtText(
+            Text(
                 text = text,
-                modifier = modifier,
-                fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = color,
-                bottomColor = palette.last(),
-                extrusionColor = palette.first().darker(.5f),
-                extrusionDepthFactor = 0.04f,
-                numberOfExtrusionLayers = 8,
-                outlineColor = iconColor,
-                outlineWidthFactor = 0.08f,
-                rotationX = 20f,
-                glowColor = color,
-                glowRadiusFactor = 8f,
-                glowAlpha = .7f,
+                modifier =
+                    modifier
+                        .spaceVoyage(true)
+                        .padding(8.dp),
+                style =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontFamily = this.headerFont(),
+                        brush = Brush.verticalGradient(listOf(color).plus(this.color.darkerPalette())),
+                        fontWeight = FontWeight.Normal,
+                        fontSize = fontSize,
+                        shadow =
+                            Shadow(
+                                this.color.lighter(.2f),
+                                blurRadius = 25f,
+                            ),
+                    ),
             )
         }
 
         Genre.SHINOBI -> {
-            val palette = this.colorPalette()
             WordArtText(
                 text = text,
-                modifier = modifier,
+                modifier =
+                    modifier
+                        .padding(12.dp)
+                        .katanaSlice(true, this.iconColor),
                 fontSize = fontSize,
                 fontFamily = this.headerFont(),
-                topColor = palette[1],
-                bottomColor = color,
-                extrusionColor = color.darker(),
-                extrusionDepthFactor = .02f,
-                numberOfExtrusionLayers = 5,
-                outlineColor = iconColor,
-                outlineWidthFactor = .02f,
-                rotationX = 35f,
-                glowColor = iconColor,
-                glowRadiusFactor = 5f,
-                glowAlpha = 1f,
+                topColor = color, // Main theme color
+                bottomColor = Color.White, // White hot core for the text
+                numberOfExtrusionLayers = 2,
+                outlineColor = this.iconColor,
+                outlineWidthFactor = 0.04f,
+                glowColor = this.color,
+                glowAlpha = 0.4f,
+                glowRadiusFactor = 6f,
             )
         }
 
         Genre.PUNK_ROCK -> {
-            val palette = this.colorPalette()
-            WordArtText(
+            RansomNoteText(
                 text = text,
-                modifier = modifier,
-                fontSize = fontSize,
+                genre = this,
+                modifier = modifier.padding(8.dp),
+                fontSize = (fontSize.value * 0.8f).sp,
                 fontFamily = this.headerFont(),
-                topColor = color,
-                bottomColor = palette.first(),
-                extrusionColor = palette[2],
-                glowColor = color,
-                glowRadiusFactor = .3f,
-                outlineColor = MaterialTheme.colorScheme.background,
+                primaryColor = this.color,
+                secondaryColor = this.iconColor,
             )
         }
 

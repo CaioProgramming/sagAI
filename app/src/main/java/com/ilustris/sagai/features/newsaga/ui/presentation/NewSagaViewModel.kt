@@ -3,6 +3,8 @@ package com.ilustris.sagai.features.newsaga.ui.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.manager.CharacterStateManager
@@ -34,6 +36,7 @@ class NewSagaViewModel
         private val sagaStateManager: SagaStateManager,
         private val characterStateManager: CharacterStateManager,
         private val newSagaUseCase: NewSagaUseCase,
+        private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
         val sagaFormState = sagaStateManager.formState
         val characterState = characterStateManager.characterState
@@ -52,8 +55,11 @@ class NewSagaViewModel
 
         val effect = MutableStateFlow<Effect?>(null)
 
+        private val _visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
+        val visualConfig = _visualConfig.asStateFlow()
+
         init {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 combine(sagaFormState, characterState) { saga, character ->
                     Log.d(javaClass.simpleName, "sagaForm state: $saga ")
                     Log.d(javaClass.simpleName, "character state: $character ")
@@ -62,6 +68,19 @@ class NewSagaViewModel
                     _isReadyToSave.value = ready
                 }
             }
+            preFetchVisualConfigs()
+        }
+
+        private fun preFetchVisualConfigs() {
+            viewModelScope.launch(Dispatchers.IO) {
+                Genre.entries.forEach {
+                    visualConfigService.getVisualConfig(it)
+                }
+                // Also set the initial one
+                sagaFormState.value?.draft?.genre?.let {
+                    _visualConfig.emit(visualConfigService.getVisualConfig(it))
+            }
+        }
         }
 
         fun startSagaChat() {
@@ -94,6 +113,7 @@ class NewSagaViewModel
             sagaStateManager.updateGenre(genre)
             viewModelScope.launch(Dispatchers.IO) {
                 sagaStateManager.adaptToGenre()
+                _visualConfig.emit(visualConfigService.getVisualConfig(genre))
             }
             viewModelScope.launch(Dispatchers.IO) {
                 characterStateManager.adaptToGenre(genre.name)

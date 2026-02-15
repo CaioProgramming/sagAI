@@ -1196,7 +1196,6 @@ fun SagaHeader(
                 saga.title,
                 modifier =
                     Modifier
-                        .reactiveShimmer(true)
                         .align(Alignment.CenterHorizontally)
                         .padding(8.dp),
             )

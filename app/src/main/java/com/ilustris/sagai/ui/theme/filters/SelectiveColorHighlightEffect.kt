@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 
 private const val DEFAULT_TOLERANCE = 0.20f
 private const val DEFAULT_SATURATION_THRESHOLD = 0.02f
@@ -93,7 +95,8 @@ fun Modifier.selectiveColorHighlight(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",
@@ -138,3 +141,6 @@ fun Modifier.selectiveColorHighlight(
             }
         }
 }
+
+@Composable
+fun Modifier.selectiveColorHighlight(genre: Genre): Modifier = selectiveColorHighlight(genre.selectiveHighlight())
