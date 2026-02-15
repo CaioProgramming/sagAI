@@ -56,6 +56,17 @@ class NewCharacterUseCaseImpl
                         characterInfo,
                         newGenre,
                     ),
-            )!!
+                )!!
             }
+
+        override suspend fun refineCharacterDraft(
+            rawInput: String,
+            sagaContext: SagaDraft?,
+        ): RequestResult<CharacterCreationGen> =
+            executeRequest {
+                gemmaClient.generate(
+                    CharacterPrompts.refineCharacterDraftPrompt(rawInput, sagaContext),
+                    requireTranslation = true,
+            )!!
+        }
     }

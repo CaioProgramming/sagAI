@@ -33,6 +33,10 @@ interface SagaStateManager {
     suspend fun prepareSagaData(): RequestResult<Saga>
 
     suspend fun adaptToGenre()
+
+    suspend fun generateGenreSuggestions()
+
+    suspend fun refineDraft(rawInput: String)
 }
 
 sealed interface FormState {

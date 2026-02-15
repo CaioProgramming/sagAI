@@ -143,4 +143,4 @@ fun Modifier.selectiveColorHighlight(
 }
 
 @Composable
-fun Modifier.selectiveColorHighlight(genre: Genre): Modifier = selectiveColorHighlight(genre.selectiveHighlight())
+fun Modifier.selectiveColorHighlight(genre: Genre?): Modifier = selectiveColorHighlight(genre?.selectiveHighlight())

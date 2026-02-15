@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
-import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
@@ -86,13 +85,8 @@ Genre(
 }
 
 fun Genre.selectiveHighlight(visualConfig: GenreVisualConfig?): SelectiveColorParams? {
-    Log.d(
-        "Genre",
-        "selectiveHighlight called for $this with config present: ${visualConfig != null}",
-    )
     if (visualConfig == null) return null
     val remote = visualConfig.selectiveHighlight ?: return null
-    Log.d("Genre", "remote selectiveHighlight config present: $remote")
     val targetColor = resolveColor(visualConfig) ?: return null
     if (remote.hueTolerance < 0f) return null
     return SelectiveColorParams(
@@ -139,6 +133,32 @@ fun Genre.colorPalette(visualConfig: GenreVisualConfig?): List<Color> {
     val remotePalette = visualConfig?.colorPalette?.mapNotNull { it.parseColor() } ?: emptyList()
     return remotePalette.ifEmpty { compiledColorPalette() }
 }
+
+fun Genre.subtitle(): String =
+    when (this) {
+        Genre.FANTASY -> "MAGIC & MYTH"
+        Genre.CYBERPUNK -> "NEON & TECH"
+        Genre.HORROR -> "SHADOWS & FEAR"
+        Genre.HEROES -> "ARTFACTS & POWERS"
+        Genre.CRIME -> "BLOOD & NOIR"
+        Genre.SHINOBI -> "BLADES & HONOR"
+        Genre.SPACE_OPERA -> "STARS & WAR"
+        Genre.COWBOY -> "GUNS & SAND"
+        Genre.PUNK_ROCK -> "ANARCHY & RIOTS"
+    }
+
+fun Genre.genreIcon(): Int =
+    when (this) {
+        Genre.FANTASY -> R.drawable.ic_dragon
+        Genre.CYBERPUNK -> R.drawable.scifi_icon
+        Genre.HORROR -> R.drawable.horror_icon
+        Genre.HEROES -> R.drawable.ic_eye_mask
+        Genre.CRIME -> R.drawable.crime
+        Genre.SHINOBI -> R.drawable.shinobi_background
+        Genre.SPACE_OPERA -> R.drawable.space_opera
+        Genre.COWBOY -> R.drawable.cowboys
+        Genre.PUNK_ROCK -> R.drawable.punk_rock
+    }
 
 @Composable
 fun Genre.colorPalette(): List<Color> = colorPalette(LocalGenreVisualConfig.current)

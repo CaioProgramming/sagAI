@@ -1,12 +1,15 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
+import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
@@ -14,7 +17,7 @@ object NewSagaPrompts {
         currentSagaDraft: SagaDraft,
         userInput: String,
         conversationHistory: List<ChatMessage>,
-        availableVariations: Map<String, com.ilustris.sagai.core.ai.model.GenreConfig.VariationConfig> = emptyMap(),
+        availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
     ): String =
         buildString {
             appendLine(
@@ -157,7 +160,7 @@ object NewSagaPrompts {
     fun createSagaPrompt(
         sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
-        availableVariations: Map<String, com.ilustris.sagai.core.ai.model.GenreConfig.VariationConfig> = emptyMap(),
+        availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
     ) = buildString {
         appendLine("You are a master storyteller, and you are creating a new saga for the user.")
         appendLine("Your task is to generate a saga based on the user's input.")
@@ -258,8 +261,162 @@ object NewSagaPrompts {
                 "- message: A brief, thematic confirmation of the adaptation (e.g., 'Realigning story matrix to Cyberpunk standards...', 'Summoning the spirits of Fantasy...').",
             )
             appendLine("- inputHint: A new creative starter question fitting the genre (max 4 words).")
-            appendLine("- suggestions: 3 new CreationSuggestion objects (text, genre) fitting the new theme.")
+            appendLine("- suggestions: 3 new CreationSuggestion objects with title, description, and genre fields fitting the new theme.")
             appendLine("- callback.action: 'UPDATE_DATA'")
             appendLine("- callback.data: The updated SagaDraft (ensure genre is ${currentDraft.genre.name}).")
         }
+
+    fun genreSuggestionsPrompt(genre: Genre) =
+        buildString {
+            appendLine("You are an expert story architect specializing in the ${genre.name} genre.")
+            appendLine()
+            appendLine("Generate 3 unique, compelling story seed concepts for the ${genre.name} genre.")
+            appendLine("Each seed should feel like a movie pitch that makes someone think 'I NEED to know what happens next!'")
+            appendLine()
+            appendLine("RESPONSE FORMAT (JSON):")
+            appendLine("- message: A short, genre-flavored welcome (1 sentence, thematic to ${genre.name}). Be creative and immersive.")
+            appendLine(
+                "- inputHint: A genre-themed placeholder for the text area (max 4 words, e.g., 'Describe your quest...', 'Enter the shadows...').",
+            )
+            appendLine("- suggestions: EXACTLY 3 objects, each with:")
+            appendLine("  * title: A punchy, evocative story title (2-5 words). Must feel like a real book/movie title.")
+            appendLine("  * description: A compelling story concept (15-25 words). Set up the hook, the conflict, and the mystery.")
+            appendLine("  * genre: \"${genre.name}\"")
+            appendLine()
+            appendLine("Examples of GREAT seeds:")
+            appendLine(
+                "  * {\"title\": \"The Hollow Crown\", \"description\": \"A king wakes with no memory in a kingdom that claims he died three years ago. Someone sits on his throne.\", \"genre\": \"FANTASY\"}",
+            )
+            appendLine(
+                "  * {\"title\": \"Neon Ghosts\", \"description\": \"A hacker discovers deleted people still exist inside the city's neural network, begging to be set free.\", \"genre\": \"CYBERPUNK\"}",
+            )
+            appendLine(
+                "  * {\"title\": \"The Last Badge\", \"description\": \"A retired sheriff returns to a ghost town where the dead don't stay buried and the gold is cursed.\", \"genre\": \"COWBOY\"}",
+            )
+            appendLine()
+            appendLine("CRITICAL RULES:")
+            appendLine("- Each seed MUST be deeply rooted in ${genre.name} tropes, aesthetics, and atmosphere.")
+            appendLine("- Make seeds diverse: different settings, conflicts, and protagonist types.")
+            appendLine("- Titles should be SHORT and MEMORABLE.")
+            appendLine("- Descriptions should HOOK, not summarize. Leave the reader curious.")
+            appendLine("- Set `callback` to null.")
+        }
+
+    fun refineDraftPrompt(
+        rawInput: String,
+        genre: Genre,
+    ) = buildString {
+        appendLine("You are a master storyteller specializing in the ${genre.name} genre.")
+        appendLine()
+        appendLine("The user has written a rough story idea:")
+        appendLine("\"$rawInput\"")
+        appendLine()
+        appendLine("Your task: Polish this raw input into a proper saga concept with a title and description.")
+        appendLine()
+        appendLine("RESPONSE FORMAT (JSON):")
+        appendLine("- message: A short, enthusiastic reaction to their idea (1 sentence). Be genuinely excited.")
+        appendLine("- inputHint: A follow-up nudge (max 4 words, e.g., 'Add more details...', 'Expand the world...').")
+        appendLine(
+            "- suggestions: 3 CreationSuggestion objects with title, description, and genre — alternative directions they could take the story.",
+        )
+        appendLine("- callback.action: 'UPDATE_DATA'")
+        appendLine("- callback.data: A SagaDraft with:")
+        appendLine("  * title: A compelling, genre-appropriate title derived from their input (2-5 words).")
+        appendLine(
+            "  * description: An enhanced, polished version of their idea (2-3 sentences max). Keep the user's core concept but elevate the language and add genre flavor.",
+        )
+        appendLine("  * genre: ${genre.name}")
+        appendLine()
+        appendLine("CRITICAL RULES:")
+        appendLine("- PRESERVE the user's core idea. Don't replace it with something completely different.")
+        appendLine("- The title should feel like it belongs on a book cover in the ${genre.name} section.")
+        appendLine("- The description should expand on their idea with genre-specific atmosphere and stakes.")
+        appendLine("- Keep it concise — this is a kickstart, not a novel synopsis.")
+    }
+
+    fun creationAssistPrompt(
+        flow: FlowPages,
+        sagaDraft: SagaDraft?,
+        characterInfo: CharacterInfo?,
+        genreConfig: GenreConfig?,
+    ) = buildString {
+        appendLine("You are a witty, slightly sarcastic but highly encouraging creative consultant.")
+        appendLine("Your job is to assist the user in the current step of creating their saga with flair and humor.")
+        appendLine("Current Step: ${flow.name}")
+        val genreName = sagaDraft?.genre?.name ?: "N/A"
+        appendLine("CHOSEN THEME/GENRE: $genreName")
+        appendLine()
+        appendLine("CRITICAL DIRECTIVE:")
+        appendLine("- ALL generated content (Title, Subtitle, Input Hint, and Suggestions) MUST strictly align with the $genreName genre.")
+        appendLine("- Do NOT suggest content from other genres (e.g., no spaceships in Fantasy, no magic in Crime).")
+        appendLine("- The atmosphere, vocabulary, and tropes MUST be 100% $genreName.")
+        genreConfig?.let {
+            appendLine("Follow this conversation style")
+            appendLine(it.conversationDirective)
+        }
+        appendLine()
+
+        when (flow) {
+            FlowPages.CREATE_SAGA -> {
+                appendLine("The user is defining their story's premise. Your goal is to invite them into the creation process.")
+                sagaDraft?.let {
+                    appendLine("Current Saga Project:")
+                    appendLine(it.toAINormalize())
+                }
+                appendLine()
+                appendLine("OBJECTIVES:")
+                appendLine("1. **Title**: An inviting action (e.g., 'DESCRIBE YOUR SAGA', 'WRITE YOUR STORY').")
+                appendLine("2. **Subtitle**: A witty or inspiring nudge about the multiverse (max 10 words).")
+                appendLine("3. **Input Hint**: A short, inspiring (or funny) prompt (max 5 words).")
+                appendLine(
+                    "4. **Suggestions**: 3 wild story seeds. Each MUST have a 'title' (2-4 words) and a 'description' (1 short sentence).",
+                )
+                appendLine("   * ALL suggestions MUST be pure $genreName story hooks.")
+            }
+
+            FlowPages.CREATE_CHARACTER -> {
+                appendLine("The user is crafting their main protagonist. Invite them to define who will save (or break) the world.")
+                sagaDraft?.let {
+                    appendLine("Saga World Context:")
+                    appendLine(it.toAINormalize())
+                }
+                characterInfo?.let {
+                    appendLine("Current Character Draft:")
+                    appendLine(it.toAINormalize())
+                }
+                appendLine()
+                appendLine("OBJECTIVES:")
+                appendLine("1. **Title**: An inviting action (e.g., 'CRAFT YOUR HERO', 'WHO IS THIS LEGEND?').")
+                appendLine("2. **Subtitle**: A dramatic nudge about the importance of names and secrets (max 12 words).")
+                appendLine("3. **Input Hint**: A targeted prompt for character details (max 5 words).")
+                appendLine(
+                    "4. **Suggestions**: 3 character archetypes or unique seeds. Each MUST have a 'title' (1-2 words) and a 'description' (1 short sentence).",
+                )
+                appendLine("   * ALL character archetypes MUST be quintessential to the $genreName genre.")
+            }
+
+            FlowPages.SELECT_THEME -> {
+                appendLine("The user is about to choose the soul of their story. Be their cosmic tour guide.")
+                appendLine()
+                appendLine("OBJECTIVES:")
+                appendLine("1. **Title**: Something welcoming and mysterious (e.g., 'WHICH SAGA AWAITS?', 'SELECT YOUR REALM').")
+                appendLine("2. **Subtitle**: A witty or inspiring nudge to go find adventure (max 12 words).")
+                appendLine("3. **Input Hint**: Leave empty.")
+                appendLine("4. **Suggestions**: Leave empty.")
+            }
+
+            else -> {
+                // Should not happen for assistance
+            }
+        }
+
+        appendLine()
+        appendLine("RESPONSE FORMAT (JSON ONLY):")
+        appendLine("{")
+        appendLine("  \"title\": \"...\",")
+        appendLine("  \"subtitle\": \"...\",")
+        appendLine("  \"suggestions\": [{\"title\": \"...\", \"description\": \"...\", \"genre\": \"...\"}],")
+        appendLine("  \"inputHint\": \"...\"")
+        appendLine("}")
+    }
 }

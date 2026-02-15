@@ -33,6 +33,7 @@ class SagaStateManagerImpl
         override val formState = _formState.asStateFlow()
 
         override fun updateGenre(genre: Genre) {
+            Log.d(javaClass.simpleName, "updateGenre: Updating genre to -> $genre")
             if (_formState.value == null) {
                 _formState.value = FormState.NewSagaForm()
             }
@@ -243,7 +244,36 @@ class SagaStateManagerImpl
                     }
                 }.onFailure {
                     Log.e(javaClass.simpleName, "adaptToGenre: Error adapting to genre", it)
-            }
+                }
             updateLoading(false)
         }
+
+        override suspend fun generateGenreSuggestions() {
+            val draft = getSagaForm()
+            // Only generate suggestions if the form is blank — otherwise adaptToGenre handles it
+            if (draft.title.isNotBlank() || draft.description.isNotBlank()) return
+
+            updateLoading(true)
+            newSagaUseCase
+                .generateGenreSuggestions(draft.genre)
+                .onSuccess { gen ->
+                    handleGeneratedContent(gen)
+                }.onFailure { e ->
+                    Log.e(javaClass.simpleName, "generateGenreSuggestions: Error", e)
+                }
+            updateLoading(false)
+        }
+
+        override suspend fun refineDraft(rawInput: String) {
+            val draft = getSagaForm()
+            updateLoading(true)
+            newSagaUseCase
+                .refineDraft(rawInput, draft.genre)
+                .onSuccess { gen ->
+                    handleGeneratedContent(gen)
+                }.onFailure { e ->
+                    Log.e(javaClass.simpleName, "refineDraft: Error", e)
+            }
+        updateLoading(false)
+    }
     }

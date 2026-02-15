@@ -62,6 +62,7 @@ fun Genre.bubble(
             HorrorChatBubbleShape(
                 pixelSize = cornerSize,
                 tailAlignment = tailAlignment,
+                drawTail = false,
             )
         }
 

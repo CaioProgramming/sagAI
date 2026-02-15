@@ -31,4 +31,9 @@ interface CharacterStateManager {
     suspend fun prepareCharacterData(saga: Saga): RequestResult<Character>
 
     suspend fun adaptToGenre(newGenre: String)
+
+    suspend fun refineDraft(
+        rawInput: String,
+        sagaForm: SagaDraft?,
+    )
 }

@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.manager.CharacterStateManager
 import com.ilustris.sagai.features.newsaga.data.manager.SagaStateManager
+import com.ilustris.sagai.features.newsaga.data.model.CreationAssist
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.isSagaBlank
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
 import com.ilustris.sagai.ui.navigation.Routes
@@ -28,6 +32,13 @@ import kotlin.time.Duration.Companion.seconds
 internal data class LoadingState(
     val message: String,
 )
+
+enum class FlowPages {
+    SELECT_THEME,
+    CREATE_SAGA,
+    CREATE_CHARACTER,
+    GENERATING,
+}
 
 @HiltViewModel
 class NewSagaViewModel
@@ -55,8 +66,20 @@ class NewSagaViewModel
 
         val effect = MutableStateFlow<Effect?>(null)
 
-        private val _visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
-        val visualConfig = _visualConfig.asStateFlow()
+        val genresVisuals = MutableStateFlow<List<Pair<Genre, GenreVisualConfig?>>?>(null)
+
+        val savedContent = MutableStateFlow<Pair<Saga?, Character?>?>(null)
+
+        private val _sagaAssist = MutableStateFlow(CreationAssist())
+        val sagaAssist = _sagaAssist.asStateFlow()
+
+        private val _characterAssist = MutableStateFlow(CreationAssist())
+        val characterAssist = _characterAssist.asStateFlow()
+
+        private val _themeAssist = MutableStateFlow(CreationAssist())
+        val themeAssist = _themeAssist.asStateFlow()
+
+        private var assistJob: kotlinx.coroutines.Job? = null
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
@@ -73,52 +96,99 @@ class NewSagaViewModel
 
         private fun preFetchVisualConfigs() {
             viewModelScope.launch(Dispatchers.IO) {
-                Genre.entries.forEach {
-                    visualConfigService.getVisualConfig(it)
+                genresVisuals.emit(
+                    Genre.entries.map {
+                        it to visualConfigService.getVisualConfig(it)
+                    },
+                )
+            }
+        }
+
+        fun assistCreation(flow: FlowPages) {
+            if (flow != FlowPages.CREATE_SAGA && flow != FlowPages.CREATE_CHARACTER && flow != FlowPages.SELECT_THEME) return
+
+            val currentAssist =
+                when (flow) {
+                    FlowPages.CREATE_SAGA -> _sagaAssist.value
+                    FlowPages.CREATE_CHARACTER -> _characterAssist.value
+                    FlowPages.SELECT_THEME -> _themeAssist.value
+                    else -> CreationAssist()
                 }
-                // Also set the initial one
-                sagaFormState.value?.draft?.genre?.let {
-                    _visualConfig.emit(visualConfigService.getVisualConfig(it))
-            }
-        }
-        }
+            if (currentAssist.title.isNotEmpty()) return // Rough "cache" check
 
-        fun startSagaChat() {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaStateManager.startChat()
-            }
-        }
+            assistJob?.cancel()
+            assistJob =
+                viewModelScope.launch(Dispatchers.IO) {
+                    val result =
+                        newSagaUseCase.assistCreation(
+                            flow = flow,
+                            sagaDraft = sagaStateManager.getSagaForm(),
+                            characterInfo = characterStateManager.getCharacterInfo(),
+                        )
 
-        fun startCharacterCreation() {
-            viewModelScope.launch(Dispatchers.IO) {
-                val sagaContext = sagaStateManager.getSagaForm()
-                characterStateManager.startCharacterCreation(sagaContext)
-            }
+                    result.onSuccessAsync { assist ->
+                        when (flow) {
+                            FlowPages.CREATE_SAGA -> _sagaAssist.emit(assist)
+                            FlowPages.CREATE_CHARACTER -> _characterAssist.emit(assist)
+                            FlowPages.SELECT_THEME -> _themeAssist.emit(assist)
+                        else -> doNothing()
+                    }
+                }
+                }
         }
 
         fun sendSagaMessage(userInput: String) {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaStateManager.sendMessage(userInput, characterStateManager.getCharacterInfo())
+                sagaStateManager.refineDraft(userInput)
             }
         }
 
         fun sendCharacterMessage(userInput: String) {
             viewModelScope.launch(Dispatchers.IO) {
                 val sagaForm = sagaStateManager.getSagaForm()
-                characterStateManager.sendMessage(userInput, sagaForm)
+                characterStateManager.refineDraft(userInput, sagaForm)
             }
         }
 
         fun updateGenre(genre: Genre) {
+            val previousGenre = sagaStateManager.getSagaForm().genre
             sagaStateManager.updateGenre(genre)
+
+            if (previousGenre != genre) {
+                viewModelScope.launch {
+                    _sagaAssist.emit(CreationAssist())
+                    _characterAssist.emit(CreationAssist())
+                }
+            }
+
             viewModelScope.launch(Dispatchers.IO) {
-                sagaStateManager.adaptToGenre()
-                _visualConfig.emit(visualConfigService.getVisualConfig(genre))
+                if (getSagaForm().isSagaBlank().not()) {
+                    sagaStateManager.adaptToGenre()
+                    sagaStateManager.generateGenreSuggestions()
+                }
             }
             viewModelScope.launch(Dispatchers.IO) {
                 characterStateManager.adaptToGenre(genre.name)
             }
         }
+
+        fun refineDraft(rawInput: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaStateManager.refineDraft(rawInput)
+            }
+        }
+
+        fun enhanceSagaDescription(
+            currentInput: String,
+            onEnhanced: (String) -> Unit,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+                // Implement AI enhancement call here
+                // For now we'll just refine it via the current state manager if needed,
+            // but the user wants to "Enhance" the description to update the input field.
+            // We'll need a specific prompt for "Enhancement"
+        }
+    }
 
         fun saveSaga() {
             _isSaving.value = true
@@ -131,12 +201,15 @@ class NewSagaViewModel
                     val sagaResult = sagaStateManager.prepareSagaData()
                     val saga = sagaResult.getSuccess() ?: throw Exception("Failed to create saga")
 
+                    savedContent.emit(saga to null)
                     // Step 2: Create character
                     generateProcessMessage(SagaProcess.CREATING_CHARACTER)
                     val characterResult = characterStateManager.prepareCharacterData(saga)
 
                     val character =
                         characterResult.getSuccess() ?: throw Exception("Failed to create character")
+
+                    savedContent.emit(saga to character)
 
                     // Step 3: Update saga with character ID
                     val updatedSaga = saga.copy(mainCharacterId = character.id)

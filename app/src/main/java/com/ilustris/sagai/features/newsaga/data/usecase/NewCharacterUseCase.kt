@@ -19,4 +19,9 @@ interface NewCharacterUseCase {
         characterInfo: CharacterInfo,
         newGenre: String,
     ): RequestResult<CharacterCreationGen>
+
+    suspend fun refineCharacterDraft(
+        rawInput: String,
+        sagaContext: SagaDraft?,
+    ): RequestResult<CharacterCreationGen>
 }

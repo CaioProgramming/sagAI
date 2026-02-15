@@ -648,4 +648,36 @@ object CharacterPrompts {
         appendLine("- Exclude characters who learned nothing significant")
         appendLine()
     }.trimIndent()
+
+    fun refineCharacterDraftPrompt(
+        rawInput: String,
+        sagaContext: SagaDraft?,
+    ) = buildString {
+        appendLine("You are a master character designer.")
+        appendLine()
+        appendLine("The user has described their protagonist:")
+        appendLine("\"$rawInput\"")
+        appendLine()
+        sagaContext?.let {
+            appendLine("Saga Context (World/Genre):")
+            appendLine(it.toAINormalize())
+            appendLine()
+        }
+        appendLine("Your task: Extract and polish this input into a proper CharacterInfo profile (Name, Gender/Role, Description).")
+        appendLine()
+        appendLine("RESPONSE FORMAT (JSON):")
+        appendLine("- message: A short, enthusiastic reaction to the character concept (1 sentence).")
+        appendLine("- inputHint: A follow-up nudge for more depth (max 4 words).")
+        appendLine("- suggestions: 3 CreationSuggestion objects — alternatives or sub-concepts for this character.")
+        appendLine("- callback.action: 'UPDATE_DATA'")
+        appendLine("- callback.data: A CharacterInfo object with:")
+        appendLine("  * name: A compelling, unique name or alias.")
+        appendLine("  * gender: A short role or gender description (e.g., 'Cyborg Outlaw', 'Disgraced Knight').")
+        appendLine("  * description: An enhanced, evocative version of the user's input (2-3 sentences max).")
+        appendLine()
+        appendLine("CRITICAL RULES:")
+        appendLine("- PRESERVE the user's core intent. Enhance, don't replace.")
+        appendLine("- Make the character feel like they belong in the provided Saga Context.")
+        appendLine("- Keep the description concise and atmospheric.")
+    }
 }

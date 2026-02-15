@@ -128,7 +128,8 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }.drawBehind {
+                }
+                .drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -293,51 +294,44 @@ fun Genre.stylisedText(
 ) {
     when (this) {
         Genre.FANTASY -> {
-            Text(
+            AutoResizeText(
                 text = text,
                 modifier =
                     modifier
                         .levitate()
                         .divineAura(
                             auraColor = Color(0xFFFFECB3),
-                        ).chromaticAberration(intensity = 1f, blurRadius = 10f),
+                        ).chromaticAberration(intensity = 1.5f, blurRadius = 10f),
                 style =
-                    MaterialTheme.typography.headlineLarge.copy(
+                    MaterialTheme.typography.displaySmall.copy(
+                        textAlign = TextAlign.Center,
                         fontSize = fontSize,
                         brush =
                             Brush.verticalGradient(
-                                listOf(
-                                    Color(0xFFFFFAF0), // Floral White (Top)
-                                    Color(0xFFFFD700), // Gold (Middle)
-                                    this.color, // Genre Red (Bottom)
-                                ),
+                                colorPalette(),
                             ),
-                        fontFamily = this.headerFont(),
-                        fontWeight = FontWeight.Light, // Divine elegance
+                        fontFamily = headerFont(),
+                        fontWeight = FontWeight.Normal, // Divine elegance
                         shadow =
                             Shadow(
-                                Color(0xFFFFD700).copy(alpha = 0.5f), // Golden shadow
+                                color.copy(alpha = 0.5f), // Golden shadow
                                 blurRadius = 15f,
                                 offset = Offset(0f, 2f),
                             ),
                     ),
-                textAlign = TextAlign.Center,
             )
         }
 
         Genre.CYBERPUNK -> {
             val palette = this.colorPalette()
-            Text(
+            AutoResizeText(
                 text = text,
                 modifier = modifier.glitch(),
-                fontSize = fontSize,
-                fontFamily = headerFont(),
-                color = color,
                 style =
-                    TextStyle(
-                        fontWeight = FontWeight.Bold,
+                    MaterialTheme.typography.displaySmall.copy(
                         textAlign = TextAlign.Center,
-                        brush = Brush.verticalGradient(listOf(color).plus(palette)),
+                        fontFamily = headerFont(),
+                        brush = Brush.verticalGradient(palette),
                         shadow =
                             Shadow(
                                 color = iconColor,
@@ -348,20 +342,23 @@ fun Genre.stylisedText(
         }
 
         Genre.HORROR -> {
-            val palette = this.colorPalette()
-            WordArtText(
+            AutoResizeText(
                 text = text,
-                modifier = modifier.psychosis(),
-                fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = color,
-                bottomColor = palette.last(),
-                numberOfExtrusionLayers = 2,
-                outlineColor = iconColor,
-                outlineWidthFactor = 0.03f,
-                glowColor = color,
-                glowAlpha = .5f,
-                glowRadiusFactor = 10f,
+                modifier =
+                    modifier
+                        .padding(2.dp)
+                        .psychosis(),
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = headerFont(),
+                        brush = Brush.verticalGradient(colorPalette()),
+                        shadow =
+                            Shadow(
+                                iconColor,
+                                blurRadius = 10f,
+                                offset = Offset(x = 0f, y = 2f),
+                            ),
+                            ),
             )
         }
 

@@ -3,14 +3,19 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
+import com.ilustris.sagai.features.newsaga.data.model.CreationAssist
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import javax.inject.Inject
 
@@ -19,7 +24,7 @@ class NewSagaUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val genreConfigService: GenreConfigService,
     ) : NewSagaUseCase {
         override suspend fun createSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
@@ -132,4 +137,33 @@ class NewSagaUseCaseImpl
             executeRequest {
                 gemmaClient.generate(NewSagaPrompts.genreAdaptationPrompt(sagaDraft))!!
             }
+
+        override suspend fun generateGenreSuggestions(genre: Genre): RequestResult<SagaCreationGen> =
+            executeRequest {
+                gemmaClient.generate(NewSagaPrompts.genreSuggestionsPrompt(genre))!!
+            }
+
+        override suspend fun refineDraft(
+            rawInput: String,
+            genre: Genre,
+        ): RequestResult<SagaCreationGen> =
+            executeRequest {
+                gemmaClient.generate(
+                    NewSagaPrompts.refineDraftPrompt(rawInput, genre),
+                    requireTranslation = true,
+                )!!
+            }
+
+        override suspend fun assistCreation(
+            flow: FlowPages,
+            sagaDraft: SagaDraft?,
+            characterInfo: CharacterInfo?,
+        ): RequestResult<CreationAssist> =
+            executeRequest {
+                val config = sagaDraft?.genre?.let { genreConfigService.getGenreConfig(it) }
+                gemmaClient.generate(
+                    NewSagaPrompts.creationAssistPrompt(flow, sagaDraft, characterInfo, config),
+                requireTranslation = true,
+            )!!
+        }
     }

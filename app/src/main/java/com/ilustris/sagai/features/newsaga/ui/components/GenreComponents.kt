@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -156,15 +156,21 @@ fun GenreCard(
 ) {
     val borderColor = genre.gradient()
 
-    val shape = RoundedCornerShape(genre.cornerSize())
+    val shape = genre.bubble(isNarrator = true)
 
     Box(
         modifier
+            .dropShadow(shape, {
+                if (isSelected) {
+                    color = genre.color
+                    radius = 10f
+                }
+            })
             .border(
                 2.dp,
                 borderColor,
                 shape,
-            ).clip(RoundedCornerShape(genre.cornerSize()))
+            ).clip(shape)
             .clipToBounds()
             .clickable {
                 onClick(genre)

@@ -1,9 +1,10 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 
+package com.ilustris.sagai.features.newsaga.ui.components
+
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -13,32 +14,43 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
@@ -93,6 +105,174 @@ fun SagaFormCards(
 }
 
 @Composable
+fun EditCard(
+    textValue: String,
+    onTextChange: (String) -> Unit,
+    genre: Genre,
+    hint: String?,
+    suggestions: List<CreationSuggestion>,
+    isLoading: Boolean,
+    onSeedClick: (CreationSuggestion) -> Unit,
+    onEnhanceClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = genre.bubble(tailWidth = 0.dp, tailHeight = 0.dp, isNarrator = true)
+    val brush = genre.gradient(true)
+    val bodyFont = genre.bodyFont()
+    val headerFont = genre.headerFont()
+
+    Box(
+        modifier =
+            modifier
+                .dropShadow(
+                    shape,
+                    {
+                        this.brush = brush
+                        this.radius = 10f
+                        spread = 5f
+                    },
+                ).clip(shape)
+                .border(2.dp, brush, shape)
+                .background(MaterialTheme.colorScheme.background, shape),
+    ) {
+        Image(
+            painterResource(genre.background),
+            null,
+            Modifier
+                .align(Center)
+                .size(50.dp)
+                .gradientFill(genre.gradient(true, targetValue = 100f)),
+            colorFilter = ColorFilter.tint(genre.iconColor.copy(alpha = .15f)),
+        )
+
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .reactiveShimmer(isLoading, genre.shimmerColors()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Header label and AI ASSISTED tag
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "DESCRIBE YOUR STORY",
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = headerFont,
+                            letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing * 1.5,
+                        ),
+                    color = genre.iconColor.copy(alpha = .6f),
+                )
+
+                Box(
+                    modifier =
+                        Modifier
+                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = "AI ASSISTED",
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 8.sp,
+                            ),
+                        color = Color.White.copy(alpha = 0.5f),
+                    )
+                }
+            }
+
+            // Text input area
+            BasicTextField(
+                value = textValue,
+                onValueChange = onTextChange,
+                textStyle =
+                    MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = bodyFont,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    ),
+                cursorBrush = SolidColor(genre.iconColor),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                decorationBox = { innerTextField ->
+                    Box(
+                        contentAlignment = Alignment.TopStart,
+                    ) {
+                        if (textValue.isEmpty()) {
+                            Text(
+                                text = hint ?: "Tell us your story idea...",
+                                style =
+                                    MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = bodyFont,
+                                    ),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
+            )
+
+            // Bottom bar with Magic Wand and counter
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onEnhanceClick,
+                        modifier =
+                            Modifier
+                                .background(genre.color.copy(alpha = 0.1f), CircleShape)
+                                .size(32.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_idea), // Using ic_idea as magic wand for now
+                            contentDescription = "Enhance",
+                            modifier = Modifier.size(16.dp),
+                            tint = genre.color,
+                        )
+                    }
+                }
+
+                Text(
+                    text = "${textValue.length} / 2000 characters",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.3f),
+                )
+            }
+
+            // Suggestions at the bottom
+            if (suggestions.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "💡 STORY SEEDS",
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = headerFont,
+                            ),
+                        color = genre.iconColor.copy(alpha = .4f),
+                    )
+                    StorySeedRow(
+                        suggestions = suggestions,
+                        genre = genre,
+                        onSeedClick = onSeedClick,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun ReviewCard(
     title: String,
     subtitle: String,
@@ -136,8 +316,7 @@ fun ReviewCard(
                 .animateContentSize()
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-                .reactiveShimmer(true),
+                .padding(16.dp),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(

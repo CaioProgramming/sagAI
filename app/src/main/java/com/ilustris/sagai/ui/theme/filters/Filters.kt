@@ -117,13 +117,14 @@ fun Genre.shaderParams(
 
 @Composable
 fun Modifier.effectForGenre(
-    genre: Genre,
+    genre: Genre?,
     visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
     focusRadius: Float? = null,
     customGrain: Float? = null,
     pixelSize: Float? = null,
     useFallBack: Boolean = false,
 ): Modifier {
+    if (genre == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || useFallBack) {
         return this.fallbackEffect(genre, visualConfig)
     }
@@ -169,7 +170,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",
