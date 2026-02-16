@@ -780,6 +780,7 @@ class SagaContentManagerImpl
             } catch (e: Exception) {
                 e.printStackTrace()
                 setNarrativeProcessingStatus(false)
+                milestoneUpdate.emit(null)
             }
         }
 
