@@ -63,7 +63,6 @@ import com.ilustris.sagai.ui.animations.spaceVoyage
 import com.ilustris.sagai.ui.animations.vhs
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
@@ -291,11 +290,17 @@ private fun RansomLetter(
 fun Genre.stylisedText(
     text: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = MaterialTheme.typography.headlineLarge.fontSize,
+    fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
 ) {
     val resolvedColor = resolveColor()
     val resolvedIconColor = resolveIconColor()
-    colorPalette()
+    val palette = colorPalette()
+    val style =
+        MaterialTheme.typography.displaySmall.copy(
+            textAlign = TextAlign.Center,
+            fontFamily = headerFont(),
+            fontWeight = FontWeight.Normal,
+        )
     when (this) {
         Genre.FANTASY -> {
             AutoResizeText(
@@ -304,18 +309,14 @@ fun Genre.stylisedText(
                     modifier
                         .levitate()
                         .divineAura(
-                            auraColor = Color(0xFFFFECB3),
-                        ).chromaticAberration(intensity = 1.5f, blurRadius = 10f),
+                            auraColor = colorPalette().lastOrNull() ?: color.lighter(.5f),
+                        ).chromaticAberration(intensity = 4f, blurRadius = 5f),
                 style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        textAlign = TextAlign.Center,
-                        fontSize = fontSize,
+                    style.copy(
                         brush =
                             Brush.verticalGradient(
                                 colorPalette(),
                             ),
-                        fontFamily = headerFont(),
-                        fontWeight = FontWeight.Normal, // Divine elegance
                         shadow =
                             Shadow(
                                 resolvedColor.copy(alpha = 0.5f), // Golden shadow
@@ -332,14 +333,12 @@ fun Genre.stylisedText(
                 text = text,
                 modifier = modifier.glitch(),
                 style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        textAlign = TextAlign.Center,
-                        fontFamily = headerFont(),
+                    style.copy(
                         brush = Brush.verticalGradient(palette),
                         shadow =
                             Shadow(
-                                color = resolvedIconColor,
-                                blurRadius = 20f,
+                                color = resolvedColor,
+                                blurRadius = 15f,
                             ),
                     ),
             )
@@ -353,12 +352,11 @@ fun Genre.stylisedText(
                         .padding(2.dp)
                         .psychosis(),
                 style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = headerFont(),
+                    style.copy(
                         brush = Brush.verticalGradient(colorPalette()),
                         shadow =
                             Shadow(
-                                resolvedIconColor,
+                                color,
                                 blurRadius = 10f,
                                 offset = Offset(x = 0f, y = 2f),
                             ),
@@ -375,15 +373,12 @@ fun Genre.stylisedText(
                         .cowboyBurn(true)
                         .padding(2.dp),
                 style =
-                    MaterialTheme.typography.headlineLarge.copy(
-                        fontFamily = this.headerFont(),
-                        brush = Brush.verticalGradient(listOf(resolvedColor).plus(palette)),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
+                    style.copy(
+                        brush = Brush.verticalGradient(palette),
                         fontSize = fontSize,
                         shadow =
                             Shadow(
-                                resolvedIconColor.copy(alpha = 0.6f),
+                                color.copy(alpha = 0.6f),
                                 blurRadius = 15f,
                             ),
                     ),
@@ -392,24 +387,20 @@ fun Genre.stylisedText(
 
         Genre.CRIME -> {
             val genre = this
-            Text(
+            AutoResizeText(
                 text = text,
                 modifier =
                     modifier
                         .vhs()
-                        .dreamySparkle(color = Color.White),
-                fontSize = fontSize,
-                fontFamily = genre.headerFont(),
-                color = Color.White,
+                        .dreamySparkle(color = resolvedColor.lighter(.6f)),
                 style =
-                    TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
+                    style.copy(
+                        brush = Brush.verticalGradient(genre.colorPalette()),
                         shadow =
                             Shadow(
-                                color = Color(0xFFFF4081).copy(alpha = 0.8f),
+                                color = resolvedColor.copy(alpha = 0.8f),
                                 offset = Offset(0f, 0f),
-                                blurRadius = 30f,
+                                blurRadius = 20f,
                             ),
                     ),
             )
@@ -419,7 +410,11 @@ fun Genre.stylisedText(
             val palette = this.colorPalette()
             WordArtText(
                 text = text,
-                modifier = modifier.heroChrome(color = Color.White),
+                modifier =
+                    modifier
+                        .heroChrome(color = Color.White)
+                        .chromaticAberration()
+                        .padding(4.dp),
                 fontSize = (fontSize.value * .75f).sp,
                 fontFamily = headerFont(),
                 topColor = resolvedColor.lighter(.7f), // High-power chrome edge
@@ -427,54 +422,49 @@ fun Genre.stylisedText(
                 extrusionColor = palette[1].darker(.5f),
                 extrusionDepthFactor = 0.04f,
                 numberOfExtrusionLayers = 20,
-                outlineColor = Color.Black,
+                outlineColor = resolvedIconColor,
                 outlineWidthFactor = .08f,
                 rotationX = 35f, // X-Men Intro Tilted Perspective
-                glowColor = resolvedColor.copy(alpha = 0.4f),
-                glowAlpha = .3f,
-                glowRadiusFactor = 15f,
+                glowColor = resolvedColor,
+                glowAlpha = 1f,
+                glowRadiusFactor = 10f,
             )
         }
 
         Genre.SPACE_OPERA -> {
-            Text(
+            AutoResizeText(
                 text = text,
                 modifier =
                     modifier
                         .spaceVoyage(true)
                         .padding(8.dp),
                 style =
-                    MaterialTheme.typography.headlineLarge.copy(
-                        fontFamily = this.headerFont(),
-                        brush = Brush.verticalGradient(listOf(resolvedColor).plus(resolvedColor.darkerPalette())),
-                        fontWeight = FontWeight.Normal,
-                        fontSize = fontSize,
+                    style.copy(
+                        brush =
+                            Brush.verticalGradient(
+                                palette,
+                            ),
                         shadow =
                             Shadow(
                                 resolvedColor.lighter(.2f),
-                                blurRadius = 25f,
+                                blurRadius = 20f,
                             ),
                     ),
             )
         }
 
         Genre.SHINOBI -> {
-            WordArtText(
+            AutoResizeText(
                 text = text,
                 modifier =
                     modifier
                         .padding(12.dp)
                         .katanaSlice(true, resolvedIconColor),
-                fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = resolvedColor, // Main theme color
-                bottomColor = Color.White, // White hot core for the text
-                numberOfExtrusionLayers = 2,
-                outlineColor = resolvedIconColor,
-                outlineWidthFactor = 0.04f,
-                glowColor = resolvedColor,
-                glowAlpha = 0.4f,
-                glowRadiusFactor = 6f,
+                style =
+                    style.copy(
+                        brush = Brush.verticalGradient(palette),
+                        shadow = Shadow(resolvedColor.darker(), blurRadius = 15f),
+                    ),
             )
         }
 

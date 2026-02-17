@@ -21,7 +21,7 @@ data class GenreConfig(
     @SerializedName("nameDirective")
     val nameDirective: String = "",
     @SerializedName("reviewerStrictness")
-    val reviewerStrictness: ReviewerStrictness = ReviewerStrictness.CONSERVATIVE,
+    val reviewerStrictness: ReviewerStrictness? = null,
     @SerializedName("criticalRules")
     val criticalRules: String = "",
     @SerializedName("criticalValidation")

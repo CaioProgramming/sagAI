@@ -4,6 +4,4 @@ enum class ImageType {
     ICON,
     CHARACTER,
     COVER,
-    SCENE,
 }
-

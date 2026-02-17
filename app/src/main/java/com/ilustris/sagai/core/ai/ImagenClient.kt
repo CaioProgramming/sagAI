@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImagePromptReview
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -125,7 +126,7 @@ class ImagenClientImpl
                 )
 
                 // 0. FETCH CONFIGS
-                val genreConfig = genreConfigService.getGenreConfig(genre, variationId)!!
+                val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
                 val imageConfig = imageConfigService.getImageConfig()
 
                 // 1. VISUAL DIRECTOR ANALYSIS
@@ -167,12 +168,27 @@ class ImagenClientImpl
                     Log.e(TAG, "generateIntegratedImage: Failed to review")
                 }
                 val finalPrompt =
-                    "${genreConfig.renderingInstructions}\n" +
-                        (reviewedResult?.correctedPrompt ?: artisticPrompt)
-
+                    buildString {
+                        appendLine(genreConfig.artStyle)
+                        appendLine(reviewedResult?.correctedPrompt ?: artisticPrompt)
+                        appendLine("Rendering Instructions: ")
+                        appendLine(genreConfig.renderingInstructions)
+                    }
+                Log.d(
+                    TAG,
+                    buildString {
+                        appendLine("Image generation pipeline execution: ")
+                        appendLine("context: $context")
+                        appendLine("genre: ${genre.name}")
+                        appendLine("genreConfig: ${genreConfig.toJsonFormat()}")
+                        appendLine("imageConfig: ${imageConfig.toJsonFormat()}")
+                        appendLine("visualDirection: $visualDirection")
+                        appendLine("artisticPrompt: $artisticPrompt")
+                        appendLine("finalPrompt: $finalPrompt")
+                        appendLine("Revisions: ${reviewedResult.toJsonFormat()}")
+                    },
+                )
                 val generatedImage = generateImage(finalPrompt, references = emptyList())
-
-                // Log.d(TAG, "generateIntegratedImage: Used reference: ${imageReference.second}")
 
                 if (generatedImage == null) {
                     Log.e(TAG, "Failed to generate image")
@@ -252,7 +268,7 @@ class ImagenClientImpl
 
             Log.d(
                 TAG,
-                "reviewAndCorrectPrompt: Starting review with ${genreConfig.reviewerStrictness.name} strictness",
+                "reviewAndCorrectPrompt: Starting review with ${(genreConfig.reviewerStrictness ?: ReviewerStrictness.STRICT).name} strictness",
             )
             val review =
                 gemmaClient.generate<ImagePromptReview>(

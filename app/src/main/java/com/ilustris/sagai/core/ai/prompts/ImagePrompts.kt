@@ -1,7 +1,10 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import androidx.compose.ui.graphics.toArgb
+import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 
@@ -17,7 +20,7 @@ object ImagePrompts {
      */
     private fun genreCriticalRules(
         genre: Genre,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
     ): String =
         buildString {
             if (config.criticalRules.isNotBlank()) {
@@ -34,7 +37,7 @@ object ImagePrompts {
      */
     private fun genreCriticalValidation(
         genre: Genre,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
     ): String =
         buildString {
             if (config.criticalValidation.isNotBlank()) {
@@ -45,7 +48,7 @@ object ImagePrompts {
             }
         }
 
-    fun criticalGenerationRule(imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig) =
+    fun criticalGenerationRule(imageConfig: ImageConfig) =
         buildString {
             if (imageConfig.criticalRules.isNotBlank()) {
                 appendLine(imageConfig.criticalRules)
@@ -65,7 +68,7 @@ object ImagePrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun artComposition(
         genre: Genre,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
         context: String,
         visualDirection: String?,
     ) = buildString {
@@ -103,8 +106,7 @@ object ImagePrompts {
         appendLine(
             criticalGenerationRule(
                 imageConfig =
-                    com.ilustris.sagai.core.ai.model
-                        .ImageConfig(),
+                    ImageConfig(),
             ),
         )
 
@@ -180,8 +182,8 @@ object ImagePrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun generateDirectorialVision(
         genre: Genre,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
-        imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
+        config: GenreConfig,
+        imageConfig: ImageConfig,
         context: String,
         imageType: ImageType,
     ) = buildString {
@@ -209,25 +211,6 @@ object ImagePrompts {
         }
         appendLine("1. NO GRAPHICAL ELEMENTS: Strictly FORBIDDEN to mention text, HUDs, logos, borders, or UI frames in your visual plan.")
         appendLine("2. FULL-BLEED: The plan must imply an edge-to-edge cinematic frame.")
-        if (imageType == ImageType.ICON || imageType == ImageType.CHARACTER) {
-            appendLine("3. ICON/PORTRAIT STRICTNESS: Framing MUST be 'Close-Up' / 'Chest-Up'. Focus on the character's face.")
-            appendLine()
-            appendLine("⚠️⚠️⚠️ CANDID MOMENT DIRECTIVE (READ CAREFULLY) ⚠️⚠️⚠️")
-            appendLine("This is the MOST IMPORTANT rule for this image type.")
-            appendLine("The BODY_LANGUAGE_INTENTION parameter MUST describe a SPECIFIC candid micro-action.")
-            appendLine("Think of the subject as being captured by a hidden photographer in their real life.")
-            appendLine(
-                "GOOD examples: 'glancing sideways mid-conversation', 'caught mid-laugh with eyes crinkling', 'looking down adjusting a glove', 'turning back over shoulder with wind in hair', 'leaning forward with curious eyes', 'exhaling with a half-smirk'.",
-            )
-            appendLine(
-                "FORBIDDEN: 'standing confidently', 'looking at viewer', 'neutral expression', 'arms crossed facing forward', or any pose that could work as a document photo or mugshot.",
-            )
-            appendLine(
-                "The ORIENTATION must NEVER be a flat, symmetrical front-facing pose. Favor 3/4 angles, over-the-shoulder, slight tilts, or profile views.",
-            )
-            appendLine("⚠️⚠️⚠️ END CANDID DIRECTIVE ⚠️⚠️⚠️")
-        }
-        appendLine("------------------------------------------")
         appendLine()
 
         appendLine("GENRE ATMOSPHERE & CREATIVITY (${genre.name}):")
@@ -272,8 +255,8 @@ object ImagePrompts {
 
     fun generateArtistPrompt(
         genre: Genre,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
-        imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
+        config: GenreConfig,
+        imageConfig: ImageConfig,
         visualDirection: String?,
         context: String,
     ): String =
@@ -355,13 +338,13 @@ object ImagePrompts {
      */
     fun reviewImagePrompt(
         visualDirection: String?,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
-        imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
+        config: GenreConfig,
+        imageConfig: ImageConfig,
         finalPrompt: String,
         genre: Genre = Genre.CYBERPUNK,
         context: String,
     ) = buildString {
-        appendLine(config.reviewerStrictness.description)
+        appendLine((config.reviewerStrictness ?: ReviewerStrictness.STRICT).description)
         appendLine()
         appendLine(
             "ROLE: The Master Critique & Supportive Mentor. Your goal is to refine the final prompt to perfection while identifying exactly where the pipeline can improve.",

@@ -61,11 +61,6 @@ class SagaRepositoryImpl
             saga: Saga,
             characters: List<Character>,
         ) = executeRequest {
-            val iconReferenceComposition =
-                genreReferenceHelper
-                    .getRandomCompositionReference(saga.genre)
-                    .getSuccess()
-
             val context =
                 buildString {
                     appendLine("### MANDATORY CHARACTER ICON")
@@ -97,7 +92,7 @@ class SagaRepositoryImpl
                 imagenClient
                     .generateIntegratedImage(
                         genre = saga.genre,
-                        imageReference = iconReferenceComposition,
+                        imageReference = null,
                         context = context,
                         imageType = ImageType.COVER,
                         variationId = saga.variationId,
