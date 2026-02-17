@@ -20,6 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 
@@ -37,10 +39,11 @@ fun ObjectiveOverlay(
         modifier =
             Modifier
                 .background(MaterialTheme.colorScheme.background)
-                .background(fadeGradientTop(genre.color))
+                .background(fadeGradientTop(genre.resolveColor()))
                 .clickable {
                     onDismiss()
-                }.statusBarsPadding()
+                }
+                .statusBarsPadding()
                 .fillMaxWidth()
                 .padding(16.dp),
     ) {
@@ -48,7 +51,7 @@ fun ObjectiveOverlay(
             painterResource(R.drawable.ic_spark),
             null,
             sparkModifier.size(32.dp),
-            colorFilter = ColorFilter.tint(genre.iconColor),
+            colorFilter = ColorFilter.tint(genre.resolveIconColor()),
         )
 
         Text(
@@ -56,7 +59,7 @@ fun ObjectiveOverlay(
             style =
                 MaterialTheme.typography.labelLarge.copy(
                     fontFamily = genre.bodyFont(),
-                    color = genre.iconColor.copy(alpha = .7f),
+                    color = genre.resolveIconColor().copy(alpha = .7f),
                 ),
         )
 
@@ -65,7 +68,7 @@ fun ObjectiveOverlay(
             style =
                 MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = genre.bodyFont(),
-                    color = genre.iconColor,
+                    color = genre.resolveIconColor(),
                     textAlign = TextAlign.Center,
                 ),
         )

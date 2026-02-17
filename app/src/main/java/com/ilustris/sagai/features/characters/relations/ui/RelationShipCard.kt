@@ -44,6 +44,7 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -60,7 +61,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -81,7 +82,8 @@ fun RelationShipCard(
     val genre = remember { saga.data.genre }
     val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
 
-    val brush = remember { content.getBrush(genre) }
+    val visualConfig = LocalGenreVisualConfig.current
+    val brush = remember { content.getBrush(genre, visualConfig) }
     Column(
         modifier =
             modifier
@@ -190,7 +192,8 @@ fun SingleRelationShipCard(
     val timelineEvents = remember { saga.flatEvents().map { it.data } }
 
     var showDetailSheet by remember { mutableStateOf(false) }
-    val brush = content.getBrush(genre)
+    val visualConfig = LocalGenreVisualConfig.current
+    val brush = content.getBrush(genre, visualConfig)
     val relationshipEvents =
         remember {
             content.sortedByEvents(timelineEvents)
@@ -334,6 +337,7 @@ fun RelationShipSheet(
                     saga.mainCharacter?.data,
                     listOf(firstCharacter, secondCharacter),
                     genre,
+                    genre.resolveColor(),
                 ),
                 style =
                     MaterialTheme.typography.titleLarge
@@ -596,8 +600,8 @@ fun RelationshipEventCard(
     val secondCharacter = content.characterTwo
     val charactersColors =
         listOf(
-            firstCharacter.hexColor.hexToColor() ?: genre.color,
-            secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last(),
+            firstCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
+            secondCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
         )
     ConstraintLayout {
         val (avatarsRow, relationshipCard, _, divider) = createRefs()
@@ -606,8 +610,8 @@ fun RelationshipEventCard(
         val brush =
             Brush.linearGradient(
                 listOf(
-                    firstCharacter.hexColor.hexToColor() ?: genre.color,
-                    secondCharacter.hexColor.hexToColor() ?: genre.color,
+                    firstCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
+                    secondCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
                 ),
             )
 

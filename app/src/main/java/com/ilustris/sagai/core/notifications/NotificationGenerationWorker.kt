@@ -102,7 +102,7 @@ class NotificationGenerationWorker
                                     saga = sagaContent,
                                     selectedCharacter = selectedCharacter,
                                     sceneSummary = sceneSummary,
-                                    config = config,
+                                    config = config!!,
                                 )
 
                             delay(3.seconds)

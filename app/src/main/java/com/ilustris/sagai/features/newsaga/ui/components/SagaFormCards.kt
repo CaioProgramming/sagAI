@@ -43,11 +43,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.rememberAsyncImagePainter
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -121,6 +125,9 @@ fun EditCard(
     val bodyFont = genre.bodyFont()
     val headerFont = genre.headerFont()
 
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+
     Box(
         modifier =
             modifier
@@ -136,13 +143,13 @@ fun EditCard(
                 .background(MaterialTheme.colorScheme.background, shape),
     ) {
         Image(
-            painterResource(genre.background),
+            painter = rememberAsyncImagePainter(model = genre.resolveBackground()),
             null,
             Modifier
                 .align(Center)
                 .size(50.dp)
                 .gradientFill(genre.gradient(true, targetValue = 100f)),
-            colorFilter = ColorFilter.tint(genre.iconColor.copy(alpha = .15f)),
+            colorFilter = ColorFilter.tint(resolvedIconColor.copy(alpha = .15f)),
         )
 
         Column(
@@ -166,7 +173,7 @@ fun EditCard(
                             fontFamily = headerFont,
                             letterSpacing = MaterialTheme.typography.labelSmall.letterSpacing * 1.5,
                         ),
-                    color = genre.iconColor.copy(alpha = .6f),
+                    color = resolvedIconColor.copy(alpha = .6f),
                 )
 
                 Box(
@@ -196,7 +203,7 @@ fun EditCard(
                         fontFamily = bodyFont,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
-                cursorBrush = SolidColor(genre.iconColor),
+                cursorBrush = SolidColor(resolvedIconColor),
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -231,14 +238,14 @@ fun EditCard(
                         onClick = onEnhanceClick,
                         modifier =
                             Modifier
-                                .background(genre.color.copy(alpha = 0.1f), CircleShape)
+                                .background(resolvedColor.copy(alpha = 0.1f), CircleShape)
                                 .size(32.dp),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_idea), // Using ic_idea as magic wand for now
                             contentDescription = "Enhance",
                             modifier = Modifier.size(16.dp),
-                            tint = genre.color,
+                            tint = resolvedColor,
                         )
                     }
                 }
@@ -259,7 +266,7 @@ fun EditCard(
                             MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = headerFont,
                             ),
-                        color = genre.iconColor.copy(alpha = .4f),
+                        color = resolvedIconColor.copy(alpha = .4f),
                     )
                     StorySeedRow(
                         suggestions = suggestions,
@@ -286,6 +293,9 @@ fun ReviewCard(
     val font = genre.bodyFont()
     val headerFont = genre.headerFont()
 
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+
     Box(
         contentAlignment = Center,
         modifier =
@@ -302,13 +312,13 @@ fun ReviewCard(
                 .background(MaterialTheme.colorScheme.background, shape),
     ) {
         Image(
-            painterResource(genre.background),
+            painter = rememberAsyncImagePainter(model = genre.resolveBackground()),
             null,
             Modifier
                 .align(Center)
                 .size(50.dp)
                 .gradientFill(genre.gradient(true, targetValue = 100f)),
-            colorFilter = ColorFilter.tint(genre.iconColor),
+            colorFilter = ColorFilter.tint(resolvedIconColor),
         )
 
         Column(
@@ -327,7 +337,7 @@ fun ReviewCard(
                         textAlign = TextAlign.Center,
                         shadow =
                             Shadow(
-                                genre.color,
+                                resolvedColor,
                                 blurRadius = 10f,
                             ),
                     ),

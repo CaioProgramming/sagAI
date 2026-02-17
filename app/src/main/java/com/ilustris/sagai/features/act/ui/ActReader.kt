@@ -34,6 +34,7 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -66,7 +67,7 @@ fun ActReader(saga: SagaContent) {
                         MaterialTheme.typography.headlineSmall.copy(
                             fontFamily = genre.headerFont(),
                             textAlign = TextAlign.Center,
-                            brush = Brush.verticalGradient(genre.color.darkerPalette()),
+                            brush = Brush.verticalGradient(genre.resolveColor().darkerPalette()),
                         ),
                     modifier =
                         Modifier

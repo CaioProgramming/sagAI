@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
@@ -43,7 +44,7 @@ fun WikiCard(
             modifier
                 .border(
                     width = 1.dp,
-                    brush = genre.color.gradientFade(),
+                    brush = genre.resolveColor().gradientFade(),
                     shape = shape,
                 ).clip(shape)
                 .padding(8.dp),

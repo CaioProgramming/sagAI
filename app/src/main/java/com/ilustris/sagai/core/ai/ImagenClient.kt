@@ -9,6 +9,8 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImagePromptReview
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -123,7 +125,7 @@ class ImagenClientImpl
                 )
 
                 // 0. FETCH CONFIGS
-                val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
+                val genreConfig = genreConfigService.getGenreConfig(genre, variationId)!!
                 val imageConfig = imageConfigService.getImageConfig()
 
                 // 1. VISUAL DIRECTOR ANALYSIS
@@ -184,14 +186,14 @@ class ImagenClientImpl
         private suspend fun generateVisualDirection(
             context: String,
             genre: Genre,
-            genreConfig: com.ilustris.sagai.core.ai.model.GenreConfig,
-            imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
+            genreConfig: GenreConfig?,
+            imageConfig: ImageConfig,
             imageType: ImageType,
         ) = executeRequest {
             gemmaClient.generate<String>(
                 ImagePrompts.generateDirectorialVision(
                     genre,
-                    genreConfig,
+                    genreConfig!!,
                     imageConfig,
                     context,
                     imageType,
@@ -205,8 +207,8 @@ class ImagenClientImpl
 
         private suspend fun generateArtisticPrompt(
             genre: Genre,
-            genreConfig: com.ilustris.sagai.core.ai.model.GenreConfig,
-            imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
+            genreConfig: GenreConfig?,
+            imageConfig: ImageConfig,
             visualDirection: String?,
             context: String,
         ): RequestResult<String> =
@@ -214,7 +216,7 @@ class ImagenClientImpl
                 val prompt =
                     ImagePrompts.generateArtistPrompt(
                         genre,
-                        genreConfig,
+                        genreConfig!!,
                         imageConfig,
                         visualDirection,
                         context,
@@ -232,8 +234,8 @@ class ImagenClientImpl
         private suspend fun reviewAndCorrectPrompt(
             imageType: ImageType,
             visualDirection: String?,
-            genreConfig: com.ilustris.sagai.core.ai.model.GenreConfig,
-            imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
+            genreConfig: GenreConfig?,
+            imageConfig: ImageConfig,
             genre: Genre,
             finalPrompt: String,
             context: String,
@@ -241,7 +243,7 @@ class ImagenClientImpl
             val reviewerPrompt =
                 ImagePrompts.reviewImagePrompt(
                     visualDirection,
-                    genreConfig,
+                    genreConfig!!,
                     imageConfig,
                     finalPrompt,
                     genre,

@@ -34,6 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -50,6 +52,8 @@ fun CharacterShareView(
 ) {
     val saga = remember { content.data }
     val genre = remember { saga.genre }
+    val resolvedColor = genre.resolveColor()
+    genre.resolveIconColor()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
@@ -58,7 +62,7 @@ fun CharacterShareView(
     val graphicsLayer = rememberGraphicsLayer()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    remember { character.data.hexColor.hexToColor() ?: genre.color }
+    remember { character.data.hexColor.hexToColor() ?: resolvedColor }
 
     DisposableEffect(lifecycleOwner, viewModel) {
         lifecycleOwner.lifecycle.addObserver(viewModel)
@@ -83,9 +87,9 @@ fun CharacterShareView(
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.shadow(10.dp, RectangleShape, spotColor = genre.color)
+                    }.shadow(10.dp, RectangleShape, spotColor = resolvedColor)
                     .clip(RectangleShape)
-                    .background(genre.color, RectangleShape)
+                    .background(resolvedColor, RectangleShape)
                     .clickable {
                         coroutineScope.launch {
                             delay(1.seconds)
@@ -112,7 +116,7 @@ fun CharacterShareView(
             }
         }
 
-        StarryLoader(isLoading, brushColors = content.data.genre.colorPalette())
+        StarryLoader(isLoading, brushColors = genre.colorPalette())
     }
 
     LaunchedEffect(Unit) {

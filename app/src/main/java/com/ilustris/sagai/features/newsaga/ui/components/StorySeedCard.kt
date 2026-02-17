@@ -21,6 +21,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
@@ -56,11 +58,11 @@ fun StorySeedCard(
                     fontFamily = headerFont,
                     shadow =
                         Shadow(
-                            genre.color.copy(alpha = .4f),
+                            genre.resolveColor().copy(alpha = .4f),
                             blurRadius = 6f,
                         ),
                 ),
-            color = genre.iconColor,
+            color = genre.resolveIconColor(),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )

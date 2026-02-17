@@ -36,6 +36,8 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
@@ -104,7 +106,7 @@ fun SagaSummaryCard(
         colors =
             CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = genre.color,
+                contentColor = genre.resolveColor(),
             ),
     ) {
         Column(
@@ -160,8 +162,8 @@ fun CharacterSummaryCard(
         modifier = modifier.fillMaxWidth(0.5f),
         colors =
             CardDefaults.cardColors(
-                containerColor = genre.color,
-                contentColor = genre.iconColor,
+                containerColor = genre.resolveColor(),
+                contentColor = genre.resolveIconColor(),
             ),
     ) {
         Column(

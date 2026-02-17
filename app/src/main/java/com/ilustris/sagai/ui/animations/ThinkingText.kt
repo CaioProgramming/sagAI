@@ -19,6 +19,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 
 /**
  * Text composable with interactive star reveal animation for thought tags
@@ -102,7 +103,7 @@ fun ThinkingText(
                                 textAlpha = 1f
                                 onRevealed()
                             },
-                    starColor = genre.iconColor.copy(alpha = .4f),
+                    starColor = genre.resolveIconColor().copy(alpha = .4f),
                     starCount = 50,
                 )
             }

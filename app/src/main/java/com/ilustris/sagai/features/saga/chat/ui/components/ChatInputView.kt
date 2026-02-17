@@ -107,6 +107,8 @@ import com.ilustris.sagai.features.characters.ui.components.transformTextWithCon
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
@@ -276,9 +278,11 @@ fun ChatInputView(
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
 ) {
-    val action = sendType
+    val genre = content.data.genre
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     val inputBrush =
-        content.data.genre.gradient(
+        genre.gradient(
             isGenerating,
             duration = 2.seconds,
         )
@@ -375,7 +379,7 @@ fun ChatInputView(
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             color =
-                                content.data.genre.color
+                                resolvedColor
                                     .copy(alpha = .5f),
                         ),
                     fontFamily = content.data.genre.bodyFont(),
@@ -412,7 +416,7 @@ fun ChatInputView(
                                 .fillParentMaxWidth(.7f),
                         colors =
                             ButtonDefaults.outlinedButtonColors().copy(
-                                contentColor = content.data.genre.color,
+                                contentColor = resolvedColor,
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                             ),
                     ) {
@@ -535,9 +539,9 @@ fun ChatInputView(
                                     shape,
                                     Shadow(
                                         radius = 5.dp,
-                                        genre.color,
+                                        resolvedColor,
                                     ),
-                                ).border(1.dp, genre.color.gradientFade(), shape)
+                                ).border(1.dp, resolvedColor.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
@@ -704,12 +708,13 @@ fun ChatInputView(
                                 content.getCharacters(),
                                 content.wikis,
                                 inputField.text,
+                                resolvedColor,
                                 tagBackgroundColor,
                                 textStyle.color,
                             )
                         },
                         cursorBrush =
-                            content.data.genre.color
+                            resolvedColor
                                 .solidGradient(),
                         decorationBox = { innerTextField ->
                             val boxPadding = 12.dp
@@ -739,7 +744,7 @@ fun ChatInputView(
                                     Box {
                                         innerTextField()
                                         AnimatedContent(
-                                            action,
+                                            sendType,
                                             modifier = Modifier.alpha(hintAlpha),
                                         ) {
                                             Text(
@@ -756,7 +761,7 @@ fun ChatInputView(
                                     AnimatedVisibility(isImeVisible) {
                                         val suggestionsState = rememberLazyListState()
 
-                                        LaunchedEffect(action) {
+                                        LaunchedEffect(sendType) {
                                             suggestionsState.animateScrollToItem(0)
                                         }
 
@@ -773,15 +778,15 @@ fun ChatInputView(
                                                     SenderType
                                                         .filterUserInputTypes()
                                                         .sortedByDescending {
-                                                            it == action
+                                                            it == sendType
                                                         }
                                                 }
 
                                             items(inputs) {
-                                                val genre = content.data.genre
+                                                content.data.genre
                                                 val backColor by animateColorAsState(
                                                     if (it.tag == currentTagInside) {
-                                                        genre.color.copy(alpha = .3f)
+                                                        resolvedColor.copy(alpha = .3f)
                                                     } else {
                                                         MaterialTheme.colorScheme.background.copy(
                                                             alpha = .3f,
@@ -790,7 +795,7 @@ fun ChatInputView(
                                                 )
                                                 val contentColor by animateColorAsState(
                                                     if (it.tag == currentTagInside) {
-                                                        genre.color
+                                                        resolvedColor
                                                     } else {
                                                         MaterialTheme.colorScheme.onBackground.copy(
                                                             alpha = .5f,
@@ -820,7 +825,7 @@ fun ChatInputView(
                                                             .animateContentSize(),
                                                 ) {
                                                     val weight =
-                                                        if (it == action) FontWeight.Bold else FontWeight.Normal
+                                                        if (it == SenderType.ACTION) FontWeight.Bold else FontWeight.Normal
                                                     it.icon().let { icon ->
                                                         Image(
                                                             painterResource(icon),
@@ -870,17 +875,17 @@ fun ChatInputView(
             }
 
             val iconBackground by animateColorAsState(
-                if (isGenerating) Color.Transparent else content.data.genre.color,
+                if (isGenerating) Color.Transparent else resolvedColor,
             )
 
             val iconTint by animateColorAsState(
-                if (isGenerating) content.data.genre.color else content.data.genre.iconColor,
+                if (isGenerating) resolvedColor else resolvedIconColor,
             )
 
             Box(contentAlignment = Alignment.Center) {
                 if (isSendingPending) {
                     CircularProgressIndicator(
-                        color = content.data.genre.color,
+                        color = resolvedColor,
                         trackColor = Color.Transparent,
                         strokeWidth = 2.dp,
                         modifier =
@@ -998,7 +1003,7 @@ fun ChatInputView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .border(1.dp, genre.color.gradientFade(), inputShape)
+                                .border(1.dp, resolvedColor.gradientFade(), inputShape)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     inputShape,
@@ -1046,8 +1051,8 @@ fun ChatInputView(
                                     },
                                     colors =
                                         ButtonDefaults.buttonColors().copy(
-                                            containerColor = genre.color,
-                                            contentColor = genre.iconColor,
+                                            containerColor = resolvedColor,
+                                            contentColor = resolvedIconColor,
                                         ),
                                 ) {
                                     Text(
@@ -1055,7 +1060,7 @@ fun ChatInputView(
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),
-                                                color = genre.iconColor,
+                                                color = resolvedIconColor,
                                             ),
                                     )
                                 }

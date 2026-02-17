@@ -34,6 +34,8 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SagaTitle
@@ -55,7 +57,10 @@ fun CharacterCard(
     showWatermark: Boolean = false,
 ) {
     val genre = remember { sagaContent.data.genre }
-    val characterColor = remember { character.data.hexColor.hexToColor() ?: genre.color }
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+    val characterColor =
+        remember(character, resolvedColor) { character.data.hexColor.hexToColor() ?: resolvedColor }
 
     Box {
         if (originalImage != null && segmentedImage != null) {
@@ -83,12 +88,12 @@ fun CharacterCard(
                             brush =
                                 Brush.verticalGradient(
                                     listOf(
-                                        genre.color,
+                                        resolvedColor,
                                         characterColor,
-                                        genre.iconColor,
+                                        resolvedIconColor,
                                     ),
                                 ),
-                            shadow = Shadow(genre.color, blurRadius = 15f),
+                            shadow = Shadow(resolvedColor, blurRadius = 15f),
                         ),
                 )
             }
@@ -98,11 +103,11 @@ fun CharacterCard(
                 style =
                     MaterialTheme.typography.labelMedium.copy(
                         fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
+                        color = resolvedIconColor,
                         textAlign = TextAlign.Center,
                         shadow =
                             Shadow(
-                                genre.color,
+                                resolvedColor,
                                 blurRadius = 10f,
                                 offset = Offset(2f, 0f),
                             ),
@@ -131,7 +136,7 @@ fun CharacterCard(
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .background(fadeGradientBottom(genre.color))
+                    .background(fadeGradientBottom(resolvedColor))
                     .padding(16.dp)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -142,11 +147,11 @@ fun CharacterCard(
                     style =
                         MaterialTheme.typography.labelLarge.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
+                            color = resolvedIconColor,
                             textAlign = TextAlign.Center,
                             shadow =
                                 Shadow(
-                                    genre.iconColor,
+                                    resolvedIconColor,
                                     blurRadius = 10f,
                                 ),
                         ),
@@ -166,10 +171,10 @@ fun CharacterCard(
                                     listOf(
                                         characterColor.darker(.4f),
                                         characterColor,
-                                        genre.iconColor,
+                                        resolvedIconColor,
                                     ),
                                 ),
-                            shadow = Shadow(genre.iconColor, blurRadius = 10f),
+                            shadow = Shadow(resolvedIconColor, blurRadius = 10f),
                         ),
                 )
 
@@ -178,13 +183,13 @@ fun CharacterCard(
                     style =
                         MaterialTheme.typography.bodySmall.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
+                            color = resolvedIconColor,
                             textAlign = TextAlign.Center,
                             fontStyle = FontStyle.Italic,
                             letterSpacing = 3.sp,
                             shadow =
                                 Shadow(
-                                    genre.color,
+                                    resolvedColor,
                                     blurRadius = 5f,
                                     offset = Offset(5f, 0f),
                                 ),
@@ -205,6 +210,7 @@ private fun ShareBottomWaterMark(
     shareText: ShareText?,
     modifier: Modifier = Modifier,
 ) {
+    val resolvedIconColor = genre.resolveIconColor()
     Column(modifier) {
         Image(
             painter = painterResource(R.drawable.ic_spark),
@@ -213,7 +219,7 @@ private fun ShareBottomWaterMark(
                 Modifier
                     .size(24.dp)
                     .align(Alignment.CenterHorizontally),
-            colorFilter = ColorFilter.tint(genre.iconColor),
+            colorFilter = ColorFilter.tint(resolvedIconColor),
         )
 
         Text(
@@ -221,7 +227,7 @@ private fun ShareBottomWaterMark(
             style =
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = genre.bodyFont(),
-                    color = genre.iconColor,
+                    color = resolvedIconColor,
                 ),
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )

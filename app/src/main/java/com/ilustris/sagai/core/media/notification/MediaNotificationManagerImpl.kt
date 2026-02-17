@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.permissions.NotificationUtils
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toRoman
+import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -76,7 +77,7 @@ class MediaNotificationManagerImpl
             val notificationBuilder =
                 NotificationCompat
                     .Builder(context, NotificationUtils.MEDIA_CHANNEL_ID)
-                    .setSmallIcon(playbackMetadata.genre.background)
+                    .setSmallIcon(playbackMetadata.genre.resolveBackground(null) as Int)
                     .setContentTitle(fullTitle)
                     .setContentText(playbackMetadata.timelineObjective)
                     .setSubText(
@@ -86,8 +87,7 @@ class MediaNotificationManagerImpl
                             completedActs.toRoman(),
                             totalActs.toRoman(),
                         ),
-                    )
-                    .setContentIntent(openAppPendingIntent)
+                    ).setContentIntent(openAppPendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                     .setOngoing(isPlaying)

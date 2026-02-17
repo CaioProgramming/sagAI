@@ -52,6 +52,8 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -165,13 +167,14 @@ fun MilestoneBadge(
         enter = scaleIn(tween(600, easing = EaseInBounce)),
         exit = scaleOut(),
     ) {
+        val resolvedColor = genre.resolveColor()
         ConstraintLayout(
             modifier =
                 modifier
                     .padding(8.dp)
                     .clip(shape)
                     .dropShadow(shape, {
-                        color = genre.color
+                        color = resolvedColor
                         radius = glowBlurRadius
                     })
                     .background(brush, shape),
@@ -182,7 +185,7 @@ fun MilestoneBadge(
                 style =
                     MaterialTheme.typography.labelSmall.copy(
                         fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
+                        color = genre.resolveIconColor(),
                         fontWeight = FontWeight.SemiBold,
                     ),
                 modifier =
@@ -212,10 +215,12 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }.background(
+                        }
+                        .background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        ).padding(4.dp)
+                        )
+                        .padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,
@@ -233,7 +238,7 @@ fun NewEventContent(
     val genre = saga.data.genre
     val brush =
         Brush.horizontalGradient(
-            genre.color.darkerPalette(
+            genre.resolveColor().darkerPalette(
                 factor = .25f,
             ),
         )

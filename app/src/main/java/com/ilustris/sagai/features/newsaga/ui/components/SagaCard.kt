@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -47,7 +48,7 @@ fun SagaCard(
     bitmap: ImageBitmap? = null,
     modifier: Modifier,
 ) {
-    val cornerSize = saga.genre.cornerSize()
+    saga.genre.cornerSize()
     var fraction by remember {
         mutableFloatStateOf(0.1f)
     }
@@ -58,7 +59,7 @@ fun SagaCard(
     )
 
     val backgroundColor by animateColorAsState(
-        saga.genre.color,
+        saga.genre.resolveColor(),
     )
 
     Box(

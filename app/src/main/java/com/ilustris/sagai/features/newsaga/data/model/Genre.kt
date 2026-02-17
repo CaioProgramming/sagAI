@@ -261,6 +261,20 @@ fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color = visualConf
 @Composable
 fun Genre.resolveIconColor(): Color = resolveIconColor(LocalGenreVisualConfig.current)
 
+/** Resolve the image for the genre. Falls back to default header image. */
+fun Genre.resolveImageUrl(visualConfig: GenreVisualConfig?): Any =
+    visualConfig?.imageUrl?.takeIf { it.isNotBlank() } ?: defaultHeaderImage()
+
+@Composable
+fun Genre.resolveImageUrl(): Any = resolveImageUrl(LocalGenreVisualConfig.current)
+
+/** Resolve the background image for the genre. Falls back to enum property. */
+fun Genre.resolveBackground(visualConfig: GenreVisualConfig?): Any =
+    visualConfig?.backgroundUrl?.takeIf { it.isNotBlank() } ?: this.background
+
+@Composable
+fun Genre.resolveBackground(): Any = resolveBackground(LocalGenreVisualConfig.current)
+
 /** Parse a hex color string like "#8B2635" to a Compose [Color], or null if invalid/empty. */
 internal fun String.parseColor(): Color? =
     if (isNotBlank()) {

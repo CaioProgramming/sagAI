@@ -34,6 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
@@ -89,7 +91,7 @@ fun DefaultOverlay(
                 painterResource(R.drawable.ic_spark),
                 null,
                 sparkModifier.size(50.dp),
-                colorFilter = ColorFilter.tint(genre.color),
+                colorFilter = ColorFilter.tint(genre.resolveColor()),
             )
         }
 
@@ -150,8 +152,8 @@ fun DefaultOverlay(
                 shape = genre.bubble(isNarrator = true),
                 colors =
                     ButtonDefaults.elevatedButtonColors().copy(
-                        containerColor = genre.color,
-                        contentColor = genre.iconColor,
+                        containerColor = genre.resolveColor(),
+                        contentColor = genre.resolveIconColor(),
                     ),
             ) {
                 Text(stringResource(R.string.continue_button))

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.generator
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.prompts.ReviewPrompts
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -17,7 +18,7 @@ interface ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review
 }
 
@@ -28,7 +29,7 @@ class IntroStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review {
         val prompt = ReviewPrompts.introductionPrompt(saga, config)
         val stage =
@@ -44,7 +45,7 @@ class ExpressivenessStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review {
         val emotionalRank = saga.rankMainCharacterEmotionalTones()
         val prompt = ReviewPrompts.expressivenessPrompt(saga, config, emotionalRank)
@@ -61,7 +62,7 @@ class PlaystyleStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review {
         val mainCharId = saga.data.mainCharacterId
         val playerMessages = saga.flatMessages().filter { it.message.characterId == mainCharId }
@@ -95,7 +96,7 @@ class CharactersStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review {
         val topCharacters =
             saga
@@ -121,7 +122,7 @@ class JourneyStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review {
         val prompt = ReviewPrompts.actsInsightPrompt(saga, config)
         val stage =
@@ -137,7 +138,7 @@ class ConclusionStep : ReviewStep {
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ): Review {
         val prompt = ReviewPrompts.conclusionPrompt(saga, config)
         val stage =

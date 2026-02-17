@@ -37,6 +37,8 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.ui.SagaBriefing
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.stylisedText
@@ -68,6 +70,8 @@ fun StorySheet(
     sagaBriefing?.let {
         val sagaContent = sagaBriefing.saga
         val genre = sagaContent.data.genre
+        val resolvedColor = genre.resolveColor()
+        val resolvedIconColor = genre.resolveIconColor()
 
         ModalBottomSheet(
             onDismissRequest = { onDismiss() },
@@ -130,7 +134,7 @@ fun StorySheet(
                         Modifier
                             .fillMaxSize()
                             .background(
-                                fadedGradientTopAndBottom(genre.color),
+                                fadedGradientTopAndBottom(resolvedColor),
                             ),
                 )
 
@@ -188,7 +192,7 @@ fun StorySheet(
                                 .padding(32.dp),
                         colors =
                             ButtonDefaults.textButtonColors(
-                                contentColor = genre.iconColor,
+                                contentColor = resolvedIconColor,
                             ),
                     ) {
                         Text(text = stringResource(R.string.story_sheet_button_continue_saga))
@@ -205,6 +209,7 @@ fun StoryPage(
     content: String,
     genre: Genre,
 ) {
+    val resolvedIconColor = genre.resolveIconColor()
     Column(
         modifier =
             Modifier
@@ -217,7 +222,7 @@ fun StoryPage(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
             fontFamily = genre.headerFont(),
-            color = genre.iconColor,
+            color = resolvedIconColor,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 16.dp),
         )
@@ -225,7 +230,7 @@ fun StoryPage(
             text = content,
             style = MaterialTheme.typography.bodyLarge,
             fontFamily = genre.bodyFont(),
-            color = genre.iconColor,
+            color = resolvedIconColor,
             textAlign = TextAlign.Start,
         )
     }

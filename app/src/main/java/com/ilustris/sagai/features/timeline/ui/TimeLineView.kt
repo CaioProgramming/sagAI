@@ -82,6 +82,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
@@ -123,6 +124,7 @@ fun TimeLineContent(
 ) {
     val lazyListState = rememberLazyListState()
     val genre = saga.data.genre
+    val resolvedColor = genre.resolveColor()
     with(animationScopes.first) {
         val titleAndSubtitle =
             DetailAction.TIMELINE.titleAndSubtitle(saga)
@@ -215,7 +217,7 @@ fun TimeLineContent(
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontFamily = genre.headerFont(),
-                                    color = saga.data.genre.color,
+                                    color = resolvedColor,
                                     textAlign = TextAlign.Center,
                                 ),
                             modifier =
@@ -317,6 +319,7 @@ fun TimeLineCard(
     openCharacters: () -> Unit = {},
 ) {
     val genre = saga.data.genre
+    val resolvedColor = genre.resolveColor()
     val event = eventContent.data
     val textColor by animateColorAsState(
         MaterialTheme.colorScheme.onBackground,
@@ -359,7 +362,7 @@ fun TimeLineCard(
                 modifier =
                     Modifier
                         .size(50.dp)
-                        .border(2.dp, genre.color, CircleShape),
+                        .border(2.dp, resolvedColor, CircleShape),
             )
 
             if (isLast.not()) {
@@ -369,7 +372,7 @@ fun TimeLineCard(
                             .padding(vertical = 8.dp)
                             .width(2.dp)
                             .weight(1f)
-                            .background(genre.color, genre.shape()),
+                            .background(resolvedColor, genre.shape()),
                 )
             }
         }
@@ -390,7 +393,7 @@ fun TimeLineCard(
                 style =
                     MaterialTheme.typography.titleSmall.copy(
                         fontFamily = genre.bodyFont(),
-                        color = genre.color,
+                        color = resolvedColor,
                         fontWeight = FontWeight.SemiBold,
                     ),
                 modifier = Modifier.fillMaxWidth(),
@@ -445,7 +448,7 @@ fun TimeLineCard(
                                 Image(
                                     painterResource(R.drawable.ic_note),
                                     null,
-                                    colorFilter = ColorFilter.tint(genre.color),
+                                    colorFilter = ColorFilter.tint(resolvedColor),
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.size(24.dp),
                                 )
@@ -475,7 +478,7 @@ fun TimeLineCard(
                                 Image(
                                     painterResource(R.drawable.ic_relationship),
                                     null,
-                                    colorFilter = ColorFilter.tint(genre.color),
+                                    colorFilter = ColorFilter.tint(resolvedColor),
                                     contentScale = ContentScale.Fit,
                                     modifier =
                                         Modifier
@@ -511,7 +514,7 @@ fun TimeLineCard(
                                 Image(
                                     painterResource(R.drawable.ic_eye_mask),
                                     null,
-                                    colorFilter = ColorFilter.tint(genre.color),
+                                    colorFilter = ColorFilter.tint(resolvedColor),
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.size(24.dp),
                                 )
@@ -653,7 +656,7 @@ fun TimeLineCard(
                                         .clip(genre.shape())
                                         .border(
                                             width = 1.dp,
-                                            brush = genre.color.gradientFade(),
+                                            brush = genre.resolveColor().gradientFade(),
                                             shape =
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
@@ -678,6 +681,7 @@ fun TimeLineSimpleCard(
     requestReview: (TimelineContent) -> Unit = {},
 ) {
     val genre = saga.data.genre
+    val resolvedColor = genre.resolveColor()
     val event = eventContent.data
     val textColor by animateColorAsState(
         MaterialTheme.colorScheme.onBackground,
@@ -721,7 +725,7 @@ fun TimeLineSimpleCard(
                 modifier =
                     Modifier
                         .size(32.dp)
-                        .border(1.dp, genre.color, CircleShape),
+                        .border(1.dp, resolvedColor, CircleShape),
             )
 
             Column(
@@ -735,7 +739,7 @@ fun TimeLineSimpleCard(
                     style =
                         MaterialTheme.typography.titleSmall.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.color,
+                            color = resolvedColor,
                             fontWeight = FontWeight.SemiBold,
                         ),
                     maxLines = 1,
@@ -796,7 +800,7 @@ fun TimeLineSimpleCard(
                 Icon(
                     painterResource(R.drawable.ic_review),
                     null,
-                    tint = genre.color,
+                    tint = resolvedColor,
                     modifier =
                         Modifier
                             .padding(4.dp)
@@ -826,10 +830,11 @@ fun AvatarTimelineIcon(
     borderWidth: Dp = 1.dp,
     modifier: Modifier = Modifier,
 ) {
+    val resolvedColor = genre.resolveColor()
     val border =
-        borderColor?.solidGradient() ?: genre.color.solidGradient()
+        borderColor?.solidGradient() ?: resolvedColor.solidGradient()
     val background =
-        backgroundColor?.gradientFade() ?: genre.color.gradientFade()
+        backgroundColor?.gradientFade() ?: resolvedColor.gradientFade()
     Box(
         modifier
             .border(borderWidth, border, CircleShape)
@@ -868,7 +873,7 @@ fun AvatarTimelineIcon(
                     fontFamily = genre.headerFont(),
                     brush =
                         Brush.verticalGradient(
-                            genre.color.darkerPalette(factor = .2f),
+                            resolvedColor.darkerPalette(factor = .2f),
                         ),
                 ),
             modifier =
@@ -883,7 +888,7 @@ fun AvatarTimelineIcon(
                 contentDescription = null,
                 colorFilter =
                     ColorFilter.tint(
-                        genre.color,
+                        resolvedColor,
                     ),
                 modifier =
                     Modifier
@@ -913,6 +918,7 @@ fun TimeLineCard(
     onSelectReference: (Timeline) -> Unit = {},
 ) {
     val event = eventDetails.event
+    val resolvedColor = genre.resolveColor()
 
     val textColor by animateColorAsState(
         MaterialTheme.colorScheme.onBackground,
@@ -963,7 +969,7 @@ fun TimeLineCard(
                                 .width(2.dp)
                                 .weight(1f)
                                 .background(
-                                    genre.color,
+                                    resolvedColor,
                                     genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true),
                                 ),
                     )
@@ -988,7 +994,7 @@ fun TimeLineCard(
                         style =
                             MaterialTheme.typography.titleSmall.copy(
                                 fontFamily = genre.bodyFont(),
-                                color = genre.color,
+                                color = resolvedColor,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Start,
                             ),
@@ -1025,7 +1031,7 @@ fun TimeLineCard(
                         Image(
                             painterResource(R.drawable.ic_spark),
                             null,
-                            colorFilter = ColorFilter.tint(genre.color),
+                            colorFilter = ColorFilter.tint(resolvedColor),
                             modifier = Modifier.size(12.dp),
                         )
 
@@ -1033,7 +1039,7 @@ fun TimeLineCard(
                             eventDetails.timeline?.title ?: emptyString(),
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
-                                    color = genre.color,
+                                    color = genre.resolveColor(),
                                     fontFamily = genre.bodyFont(),
                                     textAlign = TextAlign.Start,
                                 ),
@@ -1078,6 +1084,7 @@ fun TimelineCharacterAttachment(
     onSelectReference: (Timeline) -> Unit = {},
 ) {
     val genre = sagaContent.data.genre
+    val resolvedColor = genre.resolveColor()
     val event = eventDetails.event
 
     val textColor by animateColorAsState(
@@ -1118,7 +1125,7 @@ fun TimelineCharacterAttachment(
                     modifier =
                         Modifier
                             .size(32.dp)
-                            .border(2.dp, genre.color, CircleShape)
+                            .border(2.dp, resolvedColor, CircleShape)
                             .clickable {
                                 onSelectCharacter(eventDetails.character)
                             },
@@ -1130,7 +1137,7 @@ fun TimelineCharacterAttachment(
                             Modifier
                                 .width(2.dp)
                                 .weight(1f)
-                                .background(genre.color, genre.shape()),
+                                .background(resolvedColor, genre.shape()),
                     )
                 }
             }
@@ -1156,7 +1163,7 @@ fun TimelineCharacterAttachment(
                                 MaterialTheme.typography.titleSmall.copy(
                                     fontFamily = genre.bodyFont(),
                                     fontWeight = FontWeight.SemiBold,
-                                    color = genre.color,
+                                    color = resolvedColor,
                                 ),
                         )
 

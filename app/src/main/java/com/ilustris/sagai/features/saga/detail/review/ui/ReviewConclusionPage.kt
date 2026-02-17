@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -130,7 +131,7 @@ class ReviewConclusionPage(
                                     fontFamily = genre.bodyFont(),
                                     shadow =
                                         Shadow(
-                                            genre.color,
+                                            genre.resolveColor(),
                                             Offset(5f, 0f),
                                             10f,
                                         ),
@@ -156,7 +157,7 @@ class ReviewConclusionPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.color,
+                            contentColor = genre.resolveColor(),
                         ),
                 ) {
                     Text(stringResource(R.string.share))

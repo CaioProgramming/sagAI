@@ -14,7 +14,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -86,6 +85,9 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.ui.components.CardFace
 import com.ilustris.sagai.features.newsaga.ui.components.FlipCard
@@ -301,7 +303,7 @@ fun NewSagaView(
             if (flow !=
                 FlowPages.SELECT_THEME
             ) {
-                (genre?.iconColor ?: MaterialTheme.colorScheme.onBackground)
+                (genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground)
             } else {
                 MaterialTheme.colorScheme.onBackground
             }
@@ -318,7 +320,7 @@ fun NewSagaView(
                 ) {
                     MaterialTheme.colorScheme.background
                 } else {
-                    genre?.color?.darker()
+                    genre?.resolveColor()?.darker()
                         ?: MaterialTheme.colorScheme.background
                 },
             animationSpec = tween(600),
@@ -456,11 +458,12 @@ fun NewSagaView(
                             val borderBrush =
                                 genre?.gradient(true) ?: SolidColor(Color.Transparent)
                             val contentColor =
-                                genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
+                                genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground
                             val backgroundColor =
-                                genre?.color?.darker(.3f)
+                                genre?.resolveColor()?.darker(.3f)
                                     ?: MaterialTheme.colorScheme.surfaceContainer
-                            val primaryColor = genre?.color ?: MaterialTheme.colorScheme.primary
+                            val primaryColor =
+                                genre?.resolveColor() ?: MaterialTheme.colorScheme.primary
                             FlipCard(
                                 cardFace,
                                 onClick = {},
@@ -615,8 +618,8 @@ fun NewSagaView(
                     val shape =
                         it?.bubble(isNarrator = true) ?: RoundedCornerShape(15.dp)
                     val contentColor =
-                        genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
-                    val primaryColor = it?.color ?: MaterialTheme.colorScheme.primary
+                        genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground
+                    val primaryColor = it?.resolveColor() ?: MaterialTheme.colorScheme.primary
                     val buttonAlpha by animateFloatAsState(
                         if (FlowPages.entries[pagerState.currentPage] == FlowPages.GENERATING) 0f else 1f,
                     )
@@ -762,10 +765,10 @@ private fun SuggestionsContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Image(
-                        painterResource(genre.background),
-                        null,
-                        colorFilter = ColorFilter.tint(genre.iconColor),
+                    AsyncImage(
+                        model = genre.resolveBackground(),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(genre.resolveIconColor()),
                         modifier = Modifier.size(12.dp),
                     )
                     Text(
@@ -773,7 +776,7 @@ private fun SuggestionsContent(
                         style =
                             MaterialTheme.typography.labelLarge.copy(
                                 fontFamily = genre.bodyFont(),
-                                color = genre.iconColor,
+                                color = genre.resolveIconColor(),
                                 textAlign = TextAlign.Start,
                                 fontWeight = FontWeight.Bold,
                             ),
@@ -785,7 +788,7 @@ private fun SuggestionsContent(
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.iconColor.copy(alpha = 0.8f),
+                            color = genre.resolveIconColor().copy(alpha = 0.8f),
                             textAlign = TextAlign.Start,
                         ),
                 )
@@ -815,7 +818,7 @@ private fun TopBarContent(
             Icon(
                 painterResource(R.drawable.ic_back_left),
                 null,
-                tint = genre?.iconColor ?: MaterialTheme.colorScheme.onBackground,
+                tint = genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground,
                 modifier =
                     Modifier
                         .size(24.dp)
@@ -918,9 +921,10 @@ private fun FlipCardForm(
 ) {
     val shape = genre?.bubble(isNarrator = true) ?: RoundedCornerShape(24.dp)
     val borderBrush = genre?.gradient(true) ?: SolidColor(Color.Transparent)
-    val contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
-    val backgroundColor = genre?.color?.darker(.4f) ?: MaterialTheme.colorScheme.surfaceContainer
-    val primaryColor = genre?.color ?: MaterialTheme.colorScheme.primary
+    val contentColor = genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground
+    val backgroundColor =
+        genre?.resolveColor()?.darker(.4f) ?: MaterialTheme.colorScheme.surfaceContainer
+    val primaryColor = genre?.resolveColor() ?: MaterialTheme.colorScheme.primary
 
     FlipCard(
         modifier =
@@ -942,9 +946,9 @@ private fun FlipCardForm(
                         .fillMaxSize()
                         .reactiveShimmer(true),
                 ) {
-                    val icon = genre?.background ?: R.drawable.ic_spark
-                    Image(
-                        painterResource(icon),
+                    val icon = genre?.resolveBackground() ?: R.drawable.ic_spark
+                    AsyncImage(
+                        model = icon,
                         null,
                         modifier =
                             Modifier
@@ -1141,7 +1145,7 @@ private fun FlipCardForm(
                                         MaterialTheme.typography.labelMedium.copy(
                                             fontFamily = genre?.bodyFont(),
                                             color =
-                                                genre?.color
+                                                genre?.resolveColor()
                                                     ?: MaterialTheme.colorScheme.primary,
                                         ),
                                 )
@@ -1158,9 +1162,9 @@ private fun FlipCardForm(
                     }
                 } else {
                     Box(Modifier.fillMaxSize()) {
-                        val icon = genre?.background ?: R.drawable.ic_spark
-                        Image(
-                            painterResource(icon),
+                        val icon = genre?.resolveBackground() ?: R.drawable.ic_spark
+                        AsyncImage(
+                            model = icon,
                             null,
                             modifier =
                                 Modifier

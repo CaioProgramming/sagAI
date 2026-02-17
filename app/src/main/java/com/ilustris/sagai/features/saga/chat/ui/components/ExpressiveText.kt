@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.LevitatingText
 import com.ilustris.sagai.ui.animations.ThinkingText
@@ -150,6 +151,7 @@ private fun AnnotatedPlainText(
     onAnnotationClick: (Any?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val genreColor = genre.resolveColor()
     val annotatedText =
         remember(text, characters, wiki) {
             buildWikiAndCharactersAnnotation(
@@ -159,6 +161,7 @@ private fun AnnotatedPlainText(
                 characters = characters,
                 wiki = wiki,
                 shadowColor = annotationBackgroundColor,
+                genreColor = genreColor,
             )
         }
 

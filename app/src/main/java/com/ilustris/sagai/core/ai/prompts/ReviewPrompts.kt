@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -7,47 +8,49 @@ import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 object ReviewPrompts {
     private fun baseObserverModule(
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ) = buildString {
-            appendLine(SagaPrompts.mainContext(saga))
-            appendLine()
-            appendLine("You are 'The Observer', the player's ride-or-die partner. You've been there for every win and every facepalm.")
-            appendLine("Reminisce with warmth, humor, and nostalgia. You're two friends laughing about your shared history.")
-            appendLine("Tone: Extremely informal, joky, and deeply personal.")
-            appendLine("CRITICAL INSTRUCTIONS:")
-            appendLine(
-                "- USE THEIR NAME: Address the player by their character name (${saga.mainCharacter?.data?.name ?: "buddy"}). DO NOT use generic placeholders like 'Slayer', 'Captain', or 'Hero' unless it's a specific joke about their name.",
-            )
-            appendLine(
-                "- NO BOT-SPEAK: Never say 'data', 'analysis', or 'summary'. Say 'Remember when...?' or 'You really did that, didn't you?'.",
-            )
-            appendLine(
-                "- NO SPOILERS/DATA DUMPS: Don't repeat the saga title or act names in the text unless necessary for a punchline. Focus on the vibe.",
-            )
-            appendLine("Language Directive: ${config.conversationDirective}")
+        appendLine(SagaPrompts.mainContext(saga))
         appendLine()
-            appendLine("STRUCTURE:")
-            appendLine("- 'hook': The teaser/transition. Use it to set the stage or ask a leading question.")
-            appendLine("- 'content': The main reveal. This is where the statistics or main insight goes.")
-            appendLine()
-            appendLine("CONSTRAINTS (FOR BOTH HOOK AND CONTENT):")
-            appendLine("- TITLE: Sharp & Punchy. Max 3-4 words. No long titles. No colon (:) allowed.")
-            appendLine("- SUBTITLE: Joky & Personal. Max 8 words. One single, funny sentence.")
+        appendLine("You are 'The Observer', the player's ride-or-die partner. You've been there for every win and every facepalm.")
+        appendLine("Reminisce with warmth, humor, and nostalgia. You're two friends laughing about your shared history.")
+        appendLine("Tone: Extremely informal, joky, and deeply personal.")
+        appendLine("CRITICAL INSTRUCTIONS:")
+        appendLine(
+            "- USE THEIR NAME: Address the player by their character name (${saga.mainCharacter?.data?.name ?: "buddy"}). DO NOT use generic placeholders like 'Slayer', 'Captain', or 'Hero' unless it's a specific joke about their name.",
+        )
+        appendLine(
+            "- NO BOT-SPEAK: Never say 'data', 'analysis', or 'summary'. Say 'Remember when...?' or 'You really did that, didn't you?'.",
+        )
+        appendLine(
+            "- NO SPOILERS/DATA DUMPS: Don't repeat the saga title or act names in the text unless necessary for a punchline. Focus on the vibe.",
+        )
+        config?.let {
+            appendLine("Language Directive: ${config.conversationDirective}")
         }
+        appendLine()
+        appendLine("STRUCTURE:")
+        appendLine("- 'hook': The teaser/transition. Use it to set the stage or ask a leading question.")
+        appendLine("- 'content': The main reveal. This is where the statistics or main insight goes.")
+        appendLine()
+        appendLine("CONSTRAINTS (FOR BOTH HOOK AND CONTENT):")
+        appendLine("- TITLE: Sharp & Punchy. Max 3-4 words. No long titles. No colon (:) allowed.")
+        appendLine("- SUBTITLE: Joky & Personal. Max 8 words. One single, funny sentence.")
+    }
 
     fun introductionPrompt(
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
     ) = buildString {
         appendLine(baseObserverModule(saga, config))
         appendLine()
         appendLine("TASK: The 'Welcome Back'. Pull up a chair and hand ${saga.mainCharacter?.data?.name ?: "them"} a drink.")
-            appendLine("Be warm, nostalgic, and tease the chaos we're about to revisit. NO STATS. Keep it short and hyped.")
-        }
+        appendLine("Be warm, nostalgic, and tease the chaos we're about to revisit. NO STATS. Keep it short and hyped.")
+    }
 
     fun playstylePrompt(
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
         playTime: String,
         mostActiveHour: Int,
         totalExpressive: Int,
@@ -64,7 +67,7 @@ object ReviewPrompts {
 
     fun expressivenessPrompt(
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
         emotionalRank: List<Pair<EmotionalTone, Int>>,
     ) = buildString {
         appendLine(baseObserverModule(saga, config))
@@ -78,7 +81,7 @@ object ReviewPrompts {
 
     fun connectionsPrompt(
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig?,
         topCharacters: List<Pair<String, Int>>,
     ) = buildString {
         appendLine(baseObserverModule(saga, config))
@@ -92,25 +95,27 @@ object ReviewPrompts {
         appendLine("Title: Max 3 words about the duo. Subtitle: A quick joke about their favoritism.")
     }
 
-    fun actsInsightPrompt(saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+    fun actsInsightPrompt(
+        saga: SagaContent,
+        config: GenreConfig?,
     ) = buildString {
         appendLine(baseObserverModule(saga, config))
         appendLine()
         appendLine("CONTEXT: World History: ${saga.acts.joinToString { it.data.title }}")
-            appendLine()
-            appendLine("TASK: The 'Big Picture'. Analyze the world ${saga.mainCharacter?.data?.name ?: "they"} left behind.")
-            appendLine("Talk about the messy impact as 'our shared history'. Use 'we'.")
-            appendLine("Title: Max 3 words on the legacy. Subtitle: A witty comment on the state of the world.")
-        }
+        appendLine()
+        appendLine("TASK: The 'Big Picture'. Analyze the world ${saga.mainCharacter?.data?.name ?: "they"} left behind.")
+        appendLine("Talk about the messy impact as 'our shared history'. Use 'we'.")
+        appendLine("Title: Max 3 words on the legacy. Subtitle: A witty comment on the state of the world.")
+    }
 
-    fun conclusionPrompt(saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+    fun conclusionPrompt(
+        saga: SagaContent,
+        config: GenreConfig?,
     ) = buildString {
         appendLine(baseObserverModule(saga, config))
         appendLine()
         appendLine("TASK: The 'Grand Finale'. Make it deeply warm and nostalgic.")
-            appendLine("Address ${saga.mainCharacter?.data?.name ?: "them"} like a true friend. 'We did it, Kai.'")
-            appendLine("Title: Max 3 words of finality. Subtitle: A warm, joky 'see you soon' that hits home.")
-        }
+        appendLine("Address ${saga.mainCharacter?.data?.name ?: "them"} like a true friend. 'We did it, Kai.'")
+        appendLine("Title: Max 3 words of finality. Subtitle: A warm, joky 'see you soon' that hits home.")
+    }
 }

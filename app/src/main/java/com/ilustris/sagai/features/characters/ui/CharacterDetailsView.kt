@@ -69,6 +69,8 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
@@ -137,6 +139,8 @@ fun CharacterDetailsContent(
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
     val genre = sagaContent.data.genre
+    val resolvedColor = genre.resolveColor()
+    genre.resolveIconColor()
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     var shareCharacter by remember { mutableStateOf(false) }
@@ -173,7 +177,7 @@ fun CharacterDetailsContent(
         loadingMessage = loadingMessage,
         textStyle =
             MaterialTheme.typography.labelLarge.copy(
-                genre.color,
+                resolvedColor,
                 fontFamily = genre.bodyFont(),
             ),
         brushColors = genre.colorPalette(),
@@ -207,6 +211,8 @@ private fun CharacterDetailsLoaded(
     onShareCharacter: () -> Unit = {},
 ) {
     val genre = sagaContent.data.genre
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     val listState = rememberLazyListState()
     val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
@@ -273,7 +279,7 @@ private fun CharacterDetailsLoaded(
             fadeIn(tween(700)) togetherWith fadeOut(tween(200))
         },
     ) { character ->
-        val characterColor = character.hexColor.hexToColor() ?: genre.color
+        val characterColor = character.hexColor.hexToColor() ?: resolvedColor
         val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
 
         Box {
@@ -338,14 +344,14 @@ private fun CharacterDetailsLoaded(
                                             brush =
                                                 Brush.verticalGradient(
                                                     listOf(
-                                                        genre.color,
+                                                        resolvedColor,
                                                         characterColor,
-                                                        genre.iconColor,
+                                                        resolvedIconColor,
                                                     ),
                                                 ),
                                             shadow =
                                                 Shadow(
-                                                    genre.color,
+                                                    resolvedColor,
                                                     blurRadius = 15f,
                                                 ),
                                         ),
@@ -434,8 +440,8 @@ private fun CharacterDetailsLoaded(
                                             Brush.verticalGradient(
                                                 listOf(
                                                     characterColor,
-                                                    genre.iconColor,
-                                                    genre.color,
+                                                    resolvedIconColor,
+                                                    resolvedColor,
                                                 ),
                                             ),
                                     ),

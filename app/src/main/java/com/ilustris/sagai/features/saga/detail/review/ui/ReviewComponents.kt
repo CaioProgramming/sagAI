@@ -75,6 +75,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
@@ -347,7 +348,8 @@ fun HeroSummaryCard(
                 .background(
                     MaterialTheme.colorScheme.onBackground,
                     shape,
-                ).padding(12.dp),
+                )
+                .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -371,7 +373,7 @@ fun HeroSummaryCard(
             style =
                 MaterialTheme.typography.headlineSmall.copy(
                     fontFamily = genre.headerFont(),
-                    color = genre.color,
+                    color = genre.resolveColor(),
                     textAlign = TextAlign.Center,
                 ),
             strokeColor = MaterialTheme.colorScheme.background,
@@ -534,7 +536,7 @@ fun HeroSummaryCard(
             null,
             colorFilter =
                 androidx.compose.ui.graphics.ColorFilter
-                    .tint(genre.color),
+                    .tint(genre.resolveColor()),
             modifier =
                 Modifier
                     .size(32.dp)
@@ -866,7 +868,7 @@ fun ArchetypeMiniCard(
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         DynamicLinework(
-            color = genre.color.copy(alpha = 0.2f),
+            color = genre.resolveColor().copy(alpha = 0.2f),
             lineCount = 3,
             modifier = Modifier.fillMaxSize(.5f),
         )
@@ -938,7 +940,7 @@ fun ReviewTopCharacterContent(
                     .fillMaxHeight(heightFill)
                     .padding(imagePadding)
                     .clip(genre.bubble(isNarrator = true))
-                    .border(2.dp, genre.color, genre.bubble(isNarrator = true))
+                    .border(2.dp, genre.resolveColor(), genre.bubble(isNarrator = true))
                     .effectForGenre(genre),
         )
 
@@ -978,7 +980,7 @@ fun ReviewTopCharacterContent(
                             Shadow(
                                 (
                                     character.hexColor.hexToColor()
-                                        ?: genre.color
+                                        ?: genre.resolveColor()
                                 ),
                                 offset = Offset(2f, 2f),
                                 blurRadius = 10f,
@@ -1035,7 +1037,7 @@ fun ReviewLoadingPage(
         contentAlignment = Alignment.Center,
     ) {
         DynamicLinework(
-            color = genre.color.copy(alpha = 0.3f),
+            color = genre.resolveColor().copy(alpha = 0.3f),
             lineCount = 10,
         )
 
@@ -1062,7 +1064,7 @@ fun ReviewLoadingPage(
                     MaterialTheme.typography.headlineMedium.copy(
                         fontFamily = genre.headerFont(),
                         fontWeight = FontWeight.ExtraBold,
-                        color = genre.color,
+                        color = genre.resolveColor(),
                     ),
                 textAlign = TextAlign.Center,
             )
@@ -1072,7 +1074,7 @@ fun ReviewLoadingPage(
             StoryProgressIndicator(
                 progress = 0.5f,
                 modifier = Modifier.fillMaxWidth(0.6f),
-                color = genre.color,
+                color = genre.resolveColor(),
             )
         }
     }

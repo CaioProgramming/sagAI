@@ -61,7 +61,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -101,6 +100,8 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -145,17 +146,21 @@ fun ChatBubble(
     val characters = content.characters
     val wiki = content.wikis
     val genre = content.data.genre
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     val isUser = messageContent.isUser(mainCharacter?.data)
     genre.cornerSize()
     val isAnimated = canAnimate && messageEffectsEnabled.not()
     val bubbleStyle =
-        remember {
+        remember(isUser, genre, resolvedColor, resolvedIconColor) {
             if (isUser) {
-                BubbleStyle.userBubble(genre)
+                BubbleStyle.userBubble(genre, resolvedColor, resolvedIconColor)
             } else {
                 BubbleStyle.characterBubble(
                     genre,
                     isAnimated,
+                    resolvedColor.darker(.4f),
+                    resolvedIconColor,
                 )
             }
         }
@@ -316,7 +321,7 @@ fun ChatBubble(
                                                         Shadow(
                                                             color =
                                                                 character.hexColor.hexToColor()
-                                                                    ?: genre.color,
+                                                                    ?: resolvedColor,
                                                             offset = Offset(2f, 2f),
                                                             blurRadius = 0f,
                                                         ),
@@ -834,7 +839,7 @@ fun ChatBubble(
                         ) {
                             val color by animateColorAsState(
                                 if (isSelected) {
-                                    genre.color
+                                    resolvedColor
                                 } else {
                                     MaterialTheme.colorScheme.onBackground.copy(
                                         alpha = .3f,
@@ -886,7 +891,7 @@ fun ChatBubble(
                                 transcription = message.text,
                                 audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
                                 genre = genre,
-                                contentColor = genre.iconColor,
+                                contentColor = resolvedIconColor,
                                 onPlayPauseClick = {
                                     onAction(MessageAction.PlayAudio(messageContent))
                                 },
@@ -900,7 +905,7 @@ fun ChatBubble(
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Normal,
                                         fontFamily = genre.bodyFont(),
-                                        color = genre.iconColor,
+                                        color = resolvedIconColor,
                                     ),
                                 modifier =
                                     Modifier
@@ -1003,7 +1008,7 @@ private fun AudioGenButton(
                 painterResource(R.drawable.ic_mic),
                 null,
                 Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(genre.iconColor),
+                colorFilter = ColorFilter.tint(genre.resolveIconColor()),
             )
             Text(
                 "Regenerate audio...",
@@ -1011,7 +1016,7 @@ private fun AudioGenButton(
                     MaterialTheme.typography.labelMedium.copy(
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.Normal,
-                        color = genre.iconColor,
+                        color = genre.resolveIconColor(),
                     ),
             )
         }
@@ -1040,13 +1045,13 @@ private fun ReasoningView(
                     Modifier
                         .size(12.dp)
                         .alpha(0.5f),
-                tint = genre.iconColor,
+                tint = genre.resolveIconColor(),
             )
             Text(
                 if (isExpanded) it else "See reasoning",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        color = genre.iconColor.copy(alpha = .5f),
+                        color = genre.resolveIconColor().copy(alpha = .5f),
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.Light,
                     ),
@@ -1115,22 +1120,27 @@ data class BubbleStyle(
     val animationEnabled: Boolean,
 ) {
     companion object {
-        fun userBubble(genre: Genre) =
-            BubbleStyle(
-                backgroundColor = genre.color,
-                textColor = genre.iconColor,
-                tailAlignment = BubbleTailAlignment.BottomRight,
-                animationDuration = 2.seconds,
-                horizontalArrangement = Arrangement.End,
-                false,
-            )
+        fun userBubble(
+            genre: Genre,
+            backgroundColor: Color = genre.resolveColor(null),
+            textColor: Color = genre.resolveIconColor(null),
+        ) = BubbleStyle(
+            backgroundColor = backgroundColor,
+            textColor = textColor,
+            tailAlignment = BubbleTailAlignment.BottomRight,
+            animationDuration = 2.seconds,
+            horizontalArrangement = Arrangement.End,
+            false,
+        )
 
         fun characterBubble(
             genre: Genre,
             canAnimate: Boolean,
+            backgroundColor: Color = genre.resolveColor(null).darker(.4f),
+            textColor: Color = genre.resolveIconColor(null),
         ) = BubbleStyle(
-            backgroundColor = genre.color.darker(.4f),
-            textColor = genre.iconColor,
+            backgroundColor = backgroundColor,
+            textColor = textColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
             animationDuration = 3.seconds,
             horizontalArrangement = Arrangement.Start,

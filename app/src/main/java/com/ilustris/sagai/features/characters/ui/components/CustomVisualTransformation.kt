@@ -36,6 +36,7 @@ fun transformTextWithContent(
     characters: List<Character>,
     wiki: List<Wiki>,
     text: String,
+    genreColor: Color,
     tagBackgroundColor: Color = MaterialColor.Gray500,
     textColor: Color = Color.Unspecified,
 ): TransformedText {
@@ -56,6 +57,7 @@ fun transformTextWithContent(
                 mainCharacter,
                 characters,
                 wiki,
+                genreColor,
                 tagBackgroundColor,
             )
         } catch (e: Exception) {
@@ -225,13 +227,13 @@ private fun transformExpressiveTags(
                 append(remainingText)
                 for (char in remainingText) {
                     originalToTransformed.add(transformedBuilder.length)
-                transformedBuilder.append(char)
-            }
+                    transformedBuilder.append(char)
+                }
             }
 
             // Final position mapping
             originalToTransformed.add(transformedBuilder.length)
-    }
+        }
 
     val finalTransformedText = transformedBuilder.toString()
     val transformedToOriginal = IntArray(finalTransformedText.length + 1)
@@ -246,18 +248,18 @@ private fun transformExpressiveTags(
         object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int =
                 if (offset >= 0 && offset < originalToTransformed.size) {
-                originalToTransformed[offset]
-            } else {
-                finalTransformedText.length
-            }
+                    originalToTransformed[offset]
+                } else {
+                    finalTransformedText.length
+                }
 
-        override fun transformedToOriginal(offset: Int): Int =
-            if (offset >= 0 && offset < transformedToOriginal.size) {
-                transformedToOriginal[offset]
-            } else {
-                text.length
-            }
-    }
+            override fun transformedToOriginal(offset: Int): Int =
+                if (offset >= 0 && offset < transformedToOriginal.size) {
+                    transformedToOriginal[offset]
+                } else {
+                    text.length
+                }
+        }
 
     return Pair(annotatedString, offsetMapping)
 }
@@ -272,6 +274,7 @@ private fun buildWikiAndCharactersAnnotationOnTransformed(
     mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
+    genreColor: Color,
     shadowColor: Color,
 ): AnnotatedString {
     val text = transformedAnnotatedString.text
@@ -284,6 +287,7 @@ private fun buildWikiAndCharactersAnnotationOnTransformed(
                     mainCharacter,
                     characters,
                     genre,
+                    genreColor,
                     shadowColor,
                 ),
         )
@@ -348,12 +352,14 @@ fun buildCharactersAnnotatedString(
     mainCharacter: Character?,
     characters: List<Character>,
     genre: Genre,
+    genreColor: Color,
 ) = buildAnnotatedString {
     val annotationRules =
         charactersStyleRules(
             mainCharacter,
             characters,
             genre,
+            genreColor,
         )
     val annotationStyleGroup =
         AnnotationStyleGroup(
@@ -370,9 +376,10 @@ fun charactersStyleRules(
     mainCharacter: Character?,
     characters: List<Character>,
     genre: Genre,
+    genreColor: Color,
     shadowColor: Color = Color.Black,
 ) = characters.flatMap { character ->
-    val characterColor = character.hexColor.hexToColor() ?: genre.color.lighter(.3f)
+    val characterColor = character.hexColor.hexToColor() ?: genreColor.lighter(.3f)
     val shadow =
         Shadow(
             color = shadowColor,
@@ -380,7 +387,7 @@ fun charactersStyleRules(
             offset = Offset(.5f, .3f),
         )
 
-    val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor
+    val mainColor = if (character.id == mainCharacter?.id) genreColor else characterColor
     val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
     val span =
         SpanStyle(
@@ -420,6 +427,7 @@ fun buildWikiAndCharactersAnnotation(
     mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
+    genreColor: Color,
     shadowColor: Color = Color.Black,
 ): AnnotatedString {
     val characterStyleGroup =
@@ -430,6 +438,7 @@ fun buildWikiAndCharactersAnnotation(
                     mainCharacter,
                     characters,
                     genre,
+                    genreColor,
                     shadowColor,
                 ),
         )

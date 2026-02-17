@@ -42,6 +42,8 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
@@ -109,6 +111,8 @@ fun GTAStyleCover(
     val chapterIcons = chapters.map { it.coverImage }
     val allIcons = remember { (listOf(mainIcon) + chapterIcons) }
     val genre = saga.genre
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     Box(
         modifier =
             Modifier
@@ -160,10 +164,10 @@ fun GTAStyleCover(
                         fontFamily = saga.genre.bodyFont(),
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
-                        color = saga.genre.iconColor,
+                        color = resolvedIconColor,
                         shadow =
                             Shadow(
-                                saga.genre.color,
+                                resolvedColor,
                                 offset = Offset(5f, 0f),
                                 blurRadius = 10f,
                             ),
@@ -184,10 +188,10 @@ fun GTAStyleCover(
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
                         fontStyle = FontStyle.Italic,
-                        color = saga.genre.iconColor,
+                        color = resolvedIconColor,
                         shadow =
                             Shadow(
-                                saga.genre.color,
+                                resolvedColor,
                                 offset = Offset(5f, 0f),
                                 blurRadius = 5f,
                             ),

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -51,7 +52,7 @@ fun EmotionalSheet(
                 contentScale = ContentScale.Crop,
                 colorFilter =
                     ColorFilter.tint(
-                        genre.color,
+                        genre.resolveColor(),
                         blendMode = BlendMode.Multiply,
                     ),
                 modifier =

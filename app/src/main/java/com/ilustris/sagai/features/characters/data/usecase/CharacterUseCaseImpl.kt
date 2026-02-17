@@ -149,7 +149,7 @@ class CharacterUseCaseImpl
                     genreConfigService.getGenreConfig(
                         sagaContent.data.genre,
                         sagaContent.data.variationId,
-                    )
+                    )!!
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         sagaContent,

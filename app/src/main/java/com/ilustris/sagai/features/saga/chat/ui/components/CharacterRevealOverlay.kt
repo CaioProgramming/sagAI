@@ -35,6 +35,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.share.ui.CharacterCard
 import com.ilustris.sagai.ui.components.LocalBlurState
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -143,9 +144,10 @@ fun CharacterRevealOverlay(
                                             10.dp,
                                             revealGradient,
                                         ),
-                                    ).clip(shape)
+                                    )
+                                    .clip(shape)
                                     .border(1.dp, revealGradient, shape)
-                                    .background(genre.color, shape),
+                                    .background(genre.resolveColor(), shape),
                             showWatermark = false,
                         )
                     }

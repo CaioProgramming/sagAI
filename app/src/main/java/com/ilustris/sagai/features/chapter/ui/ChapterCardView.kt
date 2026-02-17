@@ -33,6 +33,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -57,7 +58,7 @@ fun ChapterCardView(
         Box(
             Modifier
                 .clip(shape)
-                .border(1.dp, genre.color.gradientFade(), shape)
+                .border(1.dp, genre.resolveColor().gradientFade(), shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .fillMaxWidth()
                 .weight(1f),

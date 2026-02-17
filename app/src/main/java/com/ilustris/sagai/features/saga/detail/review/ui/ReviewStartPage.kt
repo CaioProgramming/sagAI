@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -108,7 +109,7 @@ class ReviewStartPage(
                     .effectForGenre(genre),
         ) {
             DynamicLinework(
-                color = genre.color,
+                color = genre.resolveColor(),
                 lineCount = lineCount,
                 strokeWidth = 4.dp,
                 enabled = true,

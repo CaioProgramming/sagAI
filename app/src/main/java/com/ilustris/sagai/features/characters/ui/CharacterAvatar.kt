@@ -31,6 +31,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -55,12 +57,14 @@ fun CharacterAvatar(
     grainRadius: Float? = null,
     pixelation: Float? = null,
 ) {
-    val characterColor = character.hexColor.hexToColor() ?: genre.color
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+    val characterColor = character.hexColor.hexToColor() ?: resolvedColor
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
             listOf(
                 characterColor,
-                genre.iconColor,
+                resolvedIconColor,
             ),
         )
 

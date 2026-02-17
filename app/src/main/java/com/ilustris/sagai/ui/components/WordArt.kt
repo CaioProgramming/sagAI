@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.cowboyBurn
@@ -128,8 +130,7 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }
-                .drawBehind {
+                }.drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -292,6 +293,9 @@ fun Genre.stylisedText(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = MaterialTheme.typography.headlineLarge.fontSize,
 ) {
+    val resolvedColor = resolveColor()
+    val resolvedIconColor = resolveIconColor()
+    colorPalette()
     when (this) {
         Genre.FANTASY -> {
             AutoResizeText(
@@ -314,7 +318,7 @@ fun Genre.stylisedText(
                         fontWeight = FontWeight.Normal, // Divine elegance
                         shadow =
                             Shadow(
-                                color.copy(alpha = 0.5f), // Golden shadow
+                                resolvedColor.copy(alpha = 0.5f), // Golden shadow
                                 blurRadius = 15f,
                                 offset = Offset(0f, 2f),
                             ),
@@ -334,7 +338,7 @@ fun Genre.stylisedText(
                         brush = Brush.verticalGradient(palette),
                         shadow =
                             Shadow(
-                                color = iconColor,
+                                color = resolvedIconColor,
                                 blurRadius = 20f,
                             ),
                     ),
@@ -354,11 +358,11 @@ fun Genre.stylisedText(
                         brush = Brush.verticalGradient(colorPalette()),
                         shadow =
                             Shadow(
-                                iconColor,
+                                resolvedIconColor,
                                 blurRadius = 10f,
                                 offset = Offset(x = 0f, y = 2f),
                             ),
-                            ),
+                    ),
             )
         }
 
@@ -373,13 +377,13 @@ fun Genre.stylisedText(
                 style =
                     MaterialTheme.typography.headlineLarge.copy(
                         fontFamily = this.headerFont(),
-                        brush = Brush.verticalGradient(listOf(color).plus(palette)),
+                        brush = Brush.verticalGradient(listOf(resolvedColor).plus(palette)),
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         fontSize = fontSize,
                         shadow =
                             Shadow(
-                                iconColor.copy(alpha = 0.6f),
+                                resolvedIconColor.copy(alpha = 0.6f),
                                 blurRadius = 15f,
                             ),
                     ),
@@ -418,7 +422,7 @@ fun Genre.stylisedText(
                 modifier = modifier.heroChrome(color = Color.White),
                 fontSize = (fontSize.value * .75f).sp,
                 fontFamily = headerFont(),
-                topColor = color.lighter(.7f), // High-power chrome edge
+                topColor = resolvedColor.lighter(.7f), // High-power chrome edge
                 bottomColor = palette.first().darker(.3f),
                 extrusionColor = palette[1].darker(.5f),
                 extrusionDepthFactor = 0.04f,
@@ -426,7 +430,7 @@ fun Genre.stylisedText(
                 outlineColor = Color.Black,
                 outlineWidthFactor = .08f,
                 rotationX = 35f, // X-Men Intro Tilted Perspective
-                glowColor = color.copy(alpha = 0.4f),
+                glowColor = resolvedColor.copy(alpha = 0.4f),
                 glowAlpha = .3f,
                 glowRadiusFactor = 15f,
             )
@@ -442,12 +446,12 @@ fun Genre.stylisedText(
                 style =
                     MaterialTheme.typography.headlineLarge.copy(
                         fontFamily = this.headerFont(),
-                        brush = Brush.verticalGradient(listOf(color).plus(this.color.darkerPalette())),
+                        brush = Brush.verticalGradient(listOf(resolvedColor).plus(resolvedColor.darkerPalette())),
                         fontWeight = FontWeight.Normal,
                         fontSize = fontSize,
                         shadow =
                             Shadow(
-                                this.color.lighter(.2f),
+                                resolvedColor.lighter(.2f),
                                 blurRadius = 25f,
                             ),
                     ),
@@ -460,15 +464,15 @@ fun Genre.stylisedText(
                 modifier =
                     modifier
                         .padding(12.dp)
-                        .katanaSlice(true, this.iconColor),
+                        .katanaSlice(true, resolvedIconColor),
                 fontSize = fontSize,
                 fontFamily = this.headerFont(),
-                topColor = color, // Main theme color
+                topColor = resolvedColor, // Main theme color
                 bottomColor = Color.White, // White hot core for the text
                 numberOfExtrusionLayers = 2,
-                outlineColor = this.iconColor,
+                outlineColor = resolvedIconColor,
                 outlineWidthFactor = 0.04f,
-                glowColor = this.color,
+                glowColor = resolvedColor,
                 glowAlpha = 0.4f,
                 glowRadiusFactor = 6f,
             )
@@ -481,8 +485,8 @@ fun Genre.stylisedText(
                 modifier = modifier.padding(8.dp),
                 fontSize = (fontSize.value * 0.8f).sp,
                 fontFamily = this.headerFont(),
-                primaryColor = this.color,
-                secondaryColor = this.iconColor,
+                primaryColor = resolvedColor,
+                secondaryColor = resolvedIconColor,
             )
         }
 

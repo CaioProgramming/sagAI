@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
@@ -15,13 +16,15 @@ class GenreConfigService
         suspend fun getGenreConfig(
             genre: Genre,
             variationId: String? = null,
-        ): GenreConfig {
-            val baseConfig = remoteConfigService.getJson<GenreConfig>(genre.configKey) ?: GenreConfig()
-            if (variationId == null) return baseConfig
+        ) = executeRequest {
+            val baseConfig = remoteConfigService.getJson<GenreConfig>(genre.configKey)!!
+            if (variationId == null) {
+                return@executeRequest baseConfig
+            }
 
-            val variation = baseConfig.variations[variationId] ?: return baseConfig
+            val variation = baseConfig.variations[variationId] ?: return@executeRequest baseConfig
 
-            return baseConfig.copy(
+            baseConfig.copy(
                 artStyle = variation.artStyle ?: baseConfig.artStyle,
                 renderingInstructions =
                     variation.renderingInstructions
@@ -34,5 +37,5 @@ class GenreConfigService
                         ?: baseConfig.conversationDirective,
                 criticalRules = variation.criticalRules ?: baseConfig.criticalRules,
             )
-        }
+        }.getSuccess()!!
     }

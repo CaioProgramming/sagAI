@@ -28,6 +28,7 @@ data class GenreConfig(
     val criticalValidation: String = "",
     @SerializedName("variations")
     val variations: Map<String, VariationConfig> = emptyMap(),
+    val imageUrl: String,
 ) {
     data class VariationConfig(
         val name: String = "",

@@ -42,8 +42,8 @@ data class GenreVisualConfig(
     // ── Remote Images (Phase 2) ─────────────────────────────────────
     @SerializedName("backgroundUrl")
     val backgroundUrl: String = "",
-    @SerializedName("headerImageUrl")
-    val headerImageUrl: String = "",
+    @SerializedName("imageUrl")
+    val imageUrl: String = "",
 )
 
 /**

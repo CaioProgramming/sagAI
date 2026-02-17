@@ -1,9 +1,10 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,24 +28,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveImageUrl
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.components.stylisedText
@@ -86,8 +87,9 @@ fun GenreAvatar(
     modifier: Modifier = Modifier,
     onClick: (Genre) -> Unit,
 ) {
+    val resolvedColor = genre.resolveColor()
     val backgroundColor by animateColorAsState(
-        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer,
+        if (isSelected) resolvedColor else MaterialTheme.colorScheme.surfaceContainer,
     )
 
     val scale by animateFloatAsState(
@@ -103,9 +105,9 @@ fun GenreAvatar(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val backgroundBrush = Brush.verticalGradient(backgroundColor.darkerPalette())
-        Image(
-            painterResource(genre.defaultHeaderImage()),
-            stringResource(genre.title),
+        AsyncImage(
+            model = genre.resolveImageUrl(),
+            contentDescription = stringResource(genre.title),
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
@@ -154,48 +156,50 @@ fun GenreCard(
     showText: Boolean = true,
     onClick: (Genre) -> Unit,
 ) {
-    val borderColor = genre.gradient()
-
     val shape = genre.bubble(isNarrator = true)
+    var showDetails by remember {
+        mutableStateOf(false)
+    }
+
+    val borderSize by animateDpAsState(
+        if (showDetails) 1.dp else 0.dp,
+    )
+
+    val shadowRadius by animateFloatAsState(
+        if (showDetails) 15f else 0f,
+    )
+    val borderColor = genre.gradient(true)
+    genre.resolveColor()
+    val image = genre.resolveImageUrl()
 
     Box(
         modifier
-            .dropShadow(shape, {
-                if (isSelected) {
-                    color = genre.color
-                    radius = 10f
-                }
-            })
-            .border(
-                2.dp,
-                borderColor,
-                shape,
-            ).clip(shape)
-            .clipToBounds()
-            .clickable {
-                onClick(genre)
-            },
+            .dropShadow(shape) {
+                radius = shadowRadius
+                this.brush = borderColor
+                this.spread = shadowRadius
+            }.clip(shape)
+            .border(borderSize, borderColor, shape)
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        val imageUrl = genre.defaultHeaderImage()
-
-        Image(
-            painterResource(imageUrl),
-            genre.name,
+        AsyncImage(
+            image,
+            contentDescription = genre.name,
             contentScale = ContentScale.Crop,
+            onSuccess = {
+                showDetails = true
+            },
+            onError = {
+                showDetails = false
+                Log.i("GenreComponent", "GenreCard: Failed to load -> $image ")
+            },
             modifier =
                 Modifier
                     .fillMaxSize()
                     .effectForGenre(genre)
-                    .selectiveColorHighlight(
-                        genre.selectiveHighlight(),
-                    ).clipToBounds(),
+                    .selectiveColorHighlight(genre),
         )
 
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = .3f)),
-        )
         if (showText) {
             genre.stylisedText(
                 stringResource(genre.title),

@@ -35,6 +35,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaContentUIMapper
@@ -653,7 +654,8 @@ class ChatViewModel
                                 sagaTitle = sagaContent.data.title,
                                 sagaIcon = sagaContent.data.icon,
                                 color =
-                                    sagaContent.data.genre.color
+                                    sagaContent.data.genre
+                                        .resolveColor(null)
                                         .toArgb(),
                                 currentActNumber = newActCount.coerceAtLeast(1),
                                 currentChapter =
@@ -766,7 +768,7 @@ class ChatViewModel
                                             ?.data
                                             ?.currentObjective ?: "Unknown Objective",
                                     mediaFilePath = musicFile.absolutePath,
-                                    color = currentSagaData.genre.color.toArgb(),
+                                    color = currentSagaData.genre.resolveColor(null).toArgb(),
                                     genre = currentSagaData.genre,
                                 )
                             currentActCountForService = playbackMetadata.currentActNumber

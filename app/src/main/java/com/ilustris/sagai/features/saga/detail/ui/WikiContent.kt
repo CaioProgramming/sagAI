@@ -42,6 +42,7 @@ import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -134,9 +135,11 @@ fun WikiContent(
                                     onLongClick = {
                                         onHoldWiki(wiki)
                                     },
-                                ).animateContentSize(
+                                )
+                                .animateContentSize(
                                     tween(600, easing = LinearOutSlowInEasing),
-                                ).fillMaxWidth(),
+                                )
+                                .fillMaxWidth(),
                         expanded = isExpanded,
                     )
                 }
@@ -162,7 +165,7 @@ fun WikiContent(
                                 Icon(
                                     painterResource(R.drawable.ic_review),
                                     null,
-                                    tint = genre.color,
+                                    tint = genre.resolveColor(),
                                     modifier =
                                         Modifier
                                             .size(48.dp)
