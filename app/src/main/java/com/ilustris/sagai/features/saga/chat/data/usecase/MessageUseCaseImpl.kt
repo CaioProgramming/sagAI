@@ -117,7 +117,7 @@ class MessageUseCaseImpl
                     .generate<String>(
                         prompt,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )?.trim()
                     ?.uppercase()
             EmotionalTone.getTone(raw)

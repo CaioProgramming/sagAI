@@ -46,6 +46,8 @@ import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.usecase.PaletteUseCase
+import com.ilustris.sagai.core.usecase.PaletteUseCaseImpl
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -392,6 +394,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesSagaBackupService(sagaBackupServiceImpl: SagaBackupServiceImpl): SagaBackupService
+
+    @Binds
+    abstract fun providesPaletteUseCase(paletteUseCaseImpl: PaletteUseCaseImpl): PaletteUseCase
 }
 
 @InstallIn(ViewModelComponent::class)

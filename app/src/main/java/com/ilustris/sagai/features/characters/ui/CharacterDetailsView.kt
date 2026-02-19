@@ -46,9 +46,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -60,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
@@ -77,6 +76,7 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -142,7 +142,9 @@ fun CharacterDetailsContent(
     genre.resolveIconColor()
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
     var shareCharacter by remember { mutableStateOf(false) }
+
     var currentCharacter by remember { mutableStateOf<CharacterContent?>(null) }
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
 
@@ -167,6 +169,7 @@ fun CharacterDetailsContent(
                 openEvent = openEvent,
                 viewModel = viewModel,
                 onShareCharacter = { shareCharacter = true },
+                imagePalette = imagePalette,
             )
         }
     }
@@ -205,13 +208,24 @@ fun CharacterDetailsContent(
 private fun CharacterDetailsLoaded(
     sagaContent: SagaContent,
     characterContent: CharacterContent,
-    openEvent: (Timeline?) -> Unit = {},
     viewModel: CharacterDetailsViewModel,
     onShareCharacter: () -> Unit = {},
+    imagePalette: ImagePalette? = null,
+    openEvent: (Timeline?) -> Unit = {},
 ) {
     val genre = sagaContent.data.genre
     val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    genre.resolveIconColor()
+
+    val adaptiveColor by animateColorAsState(
+        targetValue = imagePalette?.dominant ?: MaterialTheme.colorScheme.background,
+        animationSpec = tween(1000),
+    )
+    val adaptiveTextColor by animateColorAsState(
+        targetValue = imagePalette?.onDominant ?: MaterialTheme.colorScheme.onBackground,
+        animationSpec = tween(1000),
+    )
+
     val listState = rememberLazyListState()
     val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
@@ -281,7 +295,12 @@ private fun CharacterDetailsLoaded(
         val characterColor = character.hexColor.hexToColor() ?: resolvedColor
         val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
 
-        Box {
+        Box(
+            modifier =
+                Modifier.background(
+                    adaptiveColor,
+                ),
+        ) {
             LazyColumn(
                 modifier =
                     Modifier.fillMaxSize(),
@@ -321,9 +340,8 @@ private fun CharacterDetailsLoaded(
                                             useFallBack = character.emojified,
                                         ),
                             ) {
-                                Text(
+                                genre.stylisedText(
                                     text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                                    textAlign = TextAlign.Center,
                                     modifier =
                                         Modifier
                                             .alpha(titleAnimation)
@@ -331,31 +349,13 @@ private fun CharacterDetailsLoaded(
                                             .reactiveShimmer(true)
                                             .offset(y = 4f.unaryMinus().dp)
                                             .align(Alignment.TopCenter),
-                                    style =
-                                        MaterialTheme.typography.displayMedium.copy(
-                                            fontFamily = genre.headerFont(),
-                                            textAlign = TextAlign.Center,
-                                            brush =
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        resolvedColor,
-                                                        characterColor,
-                                                        resolvedIconColor,
-                                                    ),
-                                                ),
-                                            shadow =
-                                                Shadow(
-                                                    resolvedColor,
-                                                    blurRadius = 15f,
-                                                ),
-                                        ),
                                 )
                             }
 
                             Box(
                                 modifier =
                                     Modifier
-                                        .background(fadeGradientBottom())
+                                        .background(fadeGradientBottom(adaptiveColor))
                                         .align(Alignment.BottomCenter)
                                         .padding(16.dp)
                                         .fillMaxWidth(),
@@ -424,27 +424,20 @@ private fun CharacterDetailsLoaded(
                                     .gradientFill(characterColor.gradientFade()),
                             )
 
-                            Text(
+                            genre.stylisedText(
                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                                textAlign = TextAlign.Center,
-                                style =
-                                    MaterialTheme.typography.displayMedium.copy(
-                                        fontFamily = genre.headerFont(),
-                                        brush =
-                                            Brush.verticalGradient(
-                                                listOf(
-                                                    characterColor,
-                                                    resolvedIconColor,
-                                                    resolvedColor,
-                                                ),
-                                            ),
-                                    ),
                             )
                         }
                     }
                 }
 
-                item { CharacterStats(character = character, genre = genre) }
+                item {
+                    CharacterStats(
+                        character = character,
+                        genre = genre,
+                        contentColor = adaptiveTextColor,
+                    )
+                }
 
                 item {
                     Column(
@@ -458,6 +451,7 @@ private fun CharacterDetailsLoaded(
                                     fontFamily = genre.bodyFont(),
                                     fontWeight = FontWeight.Normal,
                                     textAlign = TextAlign.Center,
+                                    color = adaptiveTextColor,
                                 ),
                             modifier =
                                 Modifier
@@ -472,6 +466,7 @@ private fun CharacterDetailsLoaded(
                                     fontFamily = genre.bodyFont(),
                                     fontWeight = FontWeight.Light,
                                     textAlign = TextAlign.Center,
+                                    color = adaptiveTextColor,
                                 ),
                         )
                     }
@@ -492,6 +487,7 @@ private fun CharacterDetailsLoaded(
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontFamily = genre.bodyFont(),
+                                    color = adaptiveTextColor,
                                 ),
                         )
 
@@ -502,7 +498,7 @@ private fun CharacterDetailsLoaded(
                             },
                         ) { text ->
                             val textColor by animateColorAsState(
-                                if (isSummarizing.not()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.background,
+                                if (isSummarizing.not()) adaptiveTextColor else adaptiveColor,
                             )
                             Text(
                                 text,
@@ -534,6 +530,7 @@ private fun CharacterDetailsLoaded(
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontFamily = genre.bodyFont(),
+                                    color = adaptiveTextColor,
                                 ),
                         )
 
@@ -542,6 +539,7 @@ private fun CharacterDetailsLoaded(
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = genre.bodyFont(),
+                                    color = adaptiveTextColor,
                                 ),
                         )
                     }
@@ -562,6 +560,7 @@ private fun CharacterDetailsLoaded(
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontFamily = genre.bodyFont(),
+                                    color = adaptiveTextColor,
                                 ),
                             modifier =
                                 Modifier
@@ -611,6 +610,7 @@ private fun CharacterDetailsLoaded(
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontFamily = genre.bodyFont(),
+                                    color = adaptiveTextColor,
                                 ),
                             modifier =
                                 Modifier
@@ -648,13 +648,13 @@ private fun CharacterDetailsLoaded(
                     MaterialTheme.typography.titleLarge.copy(
                         fontFamily = genre.headerFont(),
                         textAlign = TextAlign.Center,
-                        color = characterColor,
+                        color = adaptiveTextColor,
                     ),
                 modifier =
                     Modifier
                         .align(Alignment.TopCenter)
                         .alpha(alpha)
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(adaptiveColor)
                         .padding(16.dp)
                         .reactiveShimmer(true)
                         .fillMaxWidth(),

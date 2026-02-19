@@ -2207,6 +2207,7 @@ fun Modifier.genreVfx(
 
         Genre.SHINOBI -> {
             this
+                .levitate()
                 .katanaSlice(true, finalSecondary)
         }
 

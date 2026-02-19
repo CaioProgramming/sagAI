@@ -6,11 +6,35 @@ import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 
 object EmotionalPrompt {
     fun emotionalToneExtraction(userText: String): String {
-        val labels = EmotionalTone.entries.joinToString()
+        val labels = EmotionalTone.entries.joinToString { "${it.name}" }
         return """
-            Classify tone into exactly one label: $labels
-            Rules: Output ONLY the uppercase label. Neutral if unsure.
-            Message: $userText
+            Analyze the following message and direct the most appropriate emotional tone from the list below.
+            
+            Available Tones:
+            $labels
+            
+            Definitions:
+            - NEUTRAL: Objective, factual, standard conversation.
+            - CALM: Peaceful, relaxed, composed.
+            - CURIOUS: Inquisitive, interested, asking questions.
+            - HOPEFUL: Optimistic, looking forward to something, positive expectation.
+            - DETERMINED: Resolute, decisive, focused on a goal.
+            - EMPATHETIC: Understanding, compassionate, caring.
+            - JOYFUL: Happy, excited, delighted.
+            - CONCERNED: Worried, caring but uneasy.
+            - ANXIOUS: Nervous, uneasy, fearful of outcome.
+            - FRUSTRATED: Annoyed, stuck, blocked.
+            - ANGRY: Hostile, furious, aggressive.
+            - SAD: Unhappy, sorrowful, disappointed.
+            - MELANCHOLIC: Reflective sadness, bittersweet, nostalgic.
+            - CYNICAL: Distrustful, pessimistic, skeptical.
+
+            Instruction:
+            Select the single best matching tone for the message.
+            If the message contains multiple emotions, pick the dominant one.
+            Return ONLY the tone name (e.g., JOYFUL). Do not add explanations or punctuation.
+            
+            Message: "$userText"
             """.trimIndent()
     }
 
