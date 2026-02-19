@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.animations
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -9,6 +10,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -19,10 +22,20 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.lighter
 import kotlin.random.Random
 
 @Composable
@@ -1618,3 +1631,588 @@ fun Modifier.katanaSlice(
             }
         }
     }
+
+@Composable
+fun Modifier.lightningStorm(
+    isPlaying: Boolean = true,
+    lightningColor: Color = Color.Cyan,
+): Modifier =
+    composed {
+        if (!isPlaying) return@composed this
+
+        val infiniteTransition = rememberInfiniteTransition(label = "lightningStorm")
+
+        // 2500ms Loop
+        val progress by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(2000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "lightningProgress",
+        )
+
+        // --- Phases ---
+        // 0.0 -> 0.2: Strike (Grow from 0 to Length)
+        // 0.2 -> 0.4: Hold (Full length visible)
+        // 0.4 -> 0.7: Discharge (Start catches up to Length)
+        // 0.7 -> 1.0: Off
+
+        val strikeDuration = 0.2f
+        val holdDuration = 0.2f
+        val dischargeDuration = 0.3f
+
+        val strikeEnd = strikeDuration
+        val holdEnd = strikeEnd + holdDuration
+        val dischargeEnd = holdEnd + dischargeDuration
+
+        // Seed logic: Updates only when the cycle resets
+        val seed = remember { mutableIntStateOf(0) }
+        val lastCycle = remember { mutableLongStateOf(0L) }
+
+        if (progress < 0.02f) {
+            val now = System.currentTimeMillis()
+            if (now - lastCycle.longValue > 1000) {
+                seed.intValue = now.toInt()
+                lastCycle.longValue = now
+            }
+        }
+
+        this.drawWithContent {
+            // Draw content first
+            drawContent()
+
+            // Only draw lightning during active phases
+            if (progress < dischargeEnd) {
+                val random = Random(seed.intValue)
+
+                // --- 3-Zone Path Generation ---
+                val path =
+                    androidx.compose.ui.graphics
+                        .Path()
+                val joints = mutableListOf<Offset>()
+                val branches = mutableListOf<androidx.compose.ui.graphics.Path>()
+
+                // Pick a Zone: 0=Left, 1=Center, 2=Right
+                // Weighted: Center has slightly higher chance? Or equal?
+                // Let's do equal: 0, 1, 2
+                val zone = random.nextInt(3)
+
+                val startX: Float
+                val startY: Float
+                val endX: Float
+                val endY: Float
+
+                // Canvas Dimensions
+                val w = size.width
+                val h = size.height
+
+                when (zone) {
+                    0 -> { // LEFT ZONE (Vertical/Diagonal Strike)
+                        // Start: Strictly inside left 10%
+                        startX = random.nextFloat() * w * 0.1f
+                        startY = -h * 0.1f
+                        // End: Strictly inside left 10%
+                        endX = random.nextFloat() * w * 0.1f
+                        endY = h * 1.1f
+                    }
+
+                    2 -> { // RIGHT ZONE (Vertical/Diagonal Strike)
+                        // Start: Strictly inside right 10%
+                        startX = w * 0.9f + random.nextFloat() * w * 0.1f
+                        startY = -h * 0.1f
+                        // End: Strictly inside right 10%
+                        endX = w * 0.9f + random.nextFloat() * w * 0.1f
+                        endY = h * 1.1f
+                    }
+
+                    else -> { // CENTER ZONE (Horizontal Strike Behind)
+                        // Start/End clamped to near-bounds
+                        startX = -w * 0.1f
+                        endX = w * 1.1f
+
+                        // Vertical Position: Top 25% or Bottom 25%
+                        val isHigh = random.nextBoolean()
+
+                        if (isHigh) {
+                            startY = h * 0.2f + (random.nextFloat() - 0.5f) * h * 0.1f
+                            endY = h * 0.2f + (random.nextFloat() - 0.5f) * h * 0.1f
+                        } else {
+                            startY = h * 0.8f + (random.nextFloat() - 0.5f) * h * 0.1f
+                            endY = h * 0.8f + (random.nextFloat() - 0.5f) * h * 0.1f
+                        }
+                    }
+                }
+
+                path.moveTo(startX, startY)
+                joints.add(
+                    Offset(startX, startY),
+                )
+
+                // Recursive subdivision
+                val fragments = mutableListOf<Fragment>() // List to hold lightning fragments
+
+                fun subdivide(
+                    x1: Float,
+                    y1: Float,
+                    x2: Float,
+                    y2: Float,
+                    displacement: Float,
+                    iteration: Int,
+                ) {
+                    if (iteration <= 0) {
+                        path.lineTo(x2, y2)
+                        // Fragment Generation Chance
+                        if (random.nextFloat() < 0.25f) { // 25% chance at joints
+                            val fPath =
+                                androidx.compose.ui.graphics
+                                    .Path()
+                            val fx = x2
+                            val fy = y2
+                            fPath.moveTo(0f, 0f) // Relative to (fx, fy)
+
+                            // Small random jag
+                            val jagX = (random.nextFloat() - 0.5f) * 20f
+                            val jagY = (random.nextFloat() - 0.5f) * 20f
+                            fPath.lineTo(jagX, jagY)
+                            fPath.lineTo(
+                                jagX + (random.nextFloat() - 0.5f) * 20f,
+                                jagY + (random.nextFloat() - 0.5f) * 20f,
+                            )
+
+                            fragments.add(
+                                Fragment(
+                                    x = fx,
+                                    y = fy,
+                                    path = fPath,
+                                    dx = (random.nextFloat() - 0.5f) * 40f, // Reduced drift (was w*0.1)
+                                    dy = (random.nextFloat() - 0.5f) * 40f, // Reduced drift (was h*0.1)
+                                    rotation = random.nextFloat() * 360f,
+                                    scale = random.nextFloat() * 0.5f + 0.3f,
+                                ),
+                            )
+                        }
+                    } else {
+                        val midX = (x1 + x2) / 2
+                        val midY = (y1 + y2) / 2
+
+                        // Jitter
+                        val offsetX = (random.nextFloat() - 0.5f) * displacement
+                        val offsetY = (random.nextFloat() - 0.5f) * displacement
+
+                        val newX = midX + offsetX
+                        val newY = midY + offsetY
+
+                        // Branching Logic (Spikes)
+                        if (iteration < 4 && random.nextFloat() < 0.25f) { // Slightly higher chance
+                            val branchPath =
+                                androidx.compose.ui.graphics
+                                    .Path()
+                            branchPath.moveTo(newX, newY)
+
+                            // Branch Direction: Generally perpendicular to the main flow?
+                            // Simple random is chaotic but effective for lightning.
+                            // Let's try to base it on segment vector.
+                            // Vector (dx, dy) = (x2-x1, y2-y1)
+                            // Perp = (-dy, dx) or (dy, -dx)
+
+                            val dx = x2 - x1
+                            val dy = y2 - y1
+                            val len = kotlin.math.sqrt(dx * dx + dy * dy)
+
+                            // Normalized Perp
+                            val px = -dy / len
+                            val py = dx / len
+
+                            // Random Side
+                            val side = if (random.nextBoolean()) 1f else -1f
+                            val branchLen = w * (0.1f + random.nextFloat() * 0.2f)
+
+                            // Jitter the angle
+                            val angleJitterX = (random.nextFloat() - 0.5f) * 0.5f
+                            val angleJitterY = (random.nextFloat() - 0.5f) * 0.5f
+
+                            val bx = newX + (px * side + angleJitterX) * branchLen
+                            val by = newY + (py * side + angleJitterY) * branchLen
+
+                            branchPath.lineTo(bx, by)
+                            branches.add(branchPath)
+                        }
+
+                        subdivide(x1, y1, newX, newY, displacement / 2, iteration - 1)
+                        subdivide(newX, newY, x2, y2, displacement / 2, iteration - 1)
+                    }
+                }
+
+                // Displacement relative to distance
+                val dist = kotlin.math.hypot(endX - startX, endY - startY)
+
+                // Initial Curve Bias!
+                val curveControlX = (startX + endX) / 2 + (random.nextFloat() - 0.5f) * w * 0.4f
+                val curveControlY = (startY + endY) / 2 + (random.nextFloat() - 0.5f) * h * 0.4f
+
+                // Subdivide Start->Control and Control->End to create the base arc
+                subdivide(startX, startY, curveControlX, curveControlY, dist * 0.25f, 5)
+                subdivide(curveControlX, curveControlY, endX, endY, dist * 0.25f, 5)
+
+                // --- Animation Calculation ---
+                val androidPath = path.asAndroidPath()
+                val measure = android.graphics.PathMeasure(androidPath, false)
+                val totalLength = measure.length
+
+                val visibleStart: Float
+                val visibleEnd: Float
+
+                when {
+                    progress < strikeEnd -> {
+                        // Strike: 0 -> Length
+                        val localP = progress / strikeDuration
+                        val eased = FastOutSlowInEasing.transform(localP)
+                        visibleStart = 0f
+                        visibleEnd = totalLength * eased
+                    }
+
+                    progress < holdEnd -> {
+                        // Hold: Full path
+                        visibleStart = 0f
+                        visibleEnd = totalLength
+                    }
+
+                    else -> {
+                        // Discharge: Start -> Length
+                        val localP = (progress - holdEnd) / dischargeDuration
+                        // Ease out the tail
+                        val eased = FastOutSlowInEasing.transform(localP)
+                        visibleStart = totalLength * eased
+                        visibleEnd = totalLength
+                    }
+                }
+
+                if (visibleEnd > visibleStart) {
+                    val visiblePath = android.graphics.Path()
+                    measure.getSegment(visibleStart, visibleEnd, visiblePath, true)
+                    val composeVisiblePath = visiblePath.asComposePath()
+
+                    // --- Drawing ---
+
+                    // Helper to draw a sharp triangle cap
+                    fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSharpCap(
+                        pos: FloatArray,
+                        tan: FloatArray,
+                        width: Float,
+                        color: Color,
+                        isHead: Boolean,
+                    ) {
+                        val x = pos[0]
+                        val y = pos[1]
+                        val tx = tan[0]
+                        val ty = tan[1]
+
+                        // Perpendicular vector for base
+                        // (-ty, tx)
+                        val px = -ty
+                        val py = tx
+
+                        // normalize tangent? PosTan should be normalized usually, checks docs?
+                        // PathMeasure.getPosTan: "The returned tangent is normalized." Great.
+
+                        val halfWidth = width / 2
+
+                        // Triangle Base points
+                        val base1X = x - px * halfWidth
+                        val base1Y = y - py * halfWidth
+                        val base2X = x + px * halfWidth
+                        val base2Y = y + py * halfWidth
+
+                        // Tip point
+                        // Length of cap ~ width
+                        val tipLength = width * 1.5f
+                        val direction = if (isHead) 1f else -1f
+                        val tipX = x + tx * tipLength * direction
+                        val tipY = y + ty * tipLength * direction
+
+                        val capPath =
+                            androidx.compose.ui.graphics.Path().apply {
+                                moveTo(base1X, base1Y)
+                                lineTo(base2X, base2Y)
+                                lineTo(tipX, tipY)
+                                close()
+                            }
+
+                        drawPath(capPath, color, blendMode = BlendMode.Screen)
+                    }
+
+                    // 1. Native Glow (Atmosphere) - Softer/Wider
+                    drawIntoCanvas { canvas ->
+                        val nativeCanvas = canvas.nativeCanvas
+                        val glowPaint =
+                            android.graphics.Paint().apply {
+                                color = lightningColor.toArgb()
+                                alpha = 120 // Lower alpha for atmosphere
+                                style = android.graphics.Paint.Style.STROKE
+                                strokeWidth = 50f
+                                strokeCap = android.graphics.Paint.Cap.ROUND
+                                strokeJoin = android.graphics.Paint.Join.ROUND
+                                maskFilter =
+                                    android.graphics.BlurMaskFilter(
+                                        30f,
+                                        android.graphics.BlurMaskFilter.Blur.NORMAL,
+                                    )
+                            }
+                        nativeCanvas.drawPath(visiblePath, glowPaint)
+                    }
+
+                    // 2. Soft Body (Color) - Natural Light Blur
+                    drawIntoCanvas { canvas ->
+                        val nativeCanvas = canvas.nativeCanvas
+                        val bodyPaint =
+                            android.graphics.Paint().apply {
+                                color = lightningColor.toArgb()
+                                alpha = 255
+                                style = android.graphics.Paint.Style.STROKE
+                                strokeWidth = 15f
+                                strokeCap = android.graphics.Paint.Cap.ROUND
+                                strokeJoin = android.graphics.Paint.Join.ROUND
+                                maskFilter =
+                                    android.graphics.BlurMaskFilter(
+                                        15f,
+                                        android.graphics.BlurMaskFilter.Blur.NORMAL,
+                                    )
+                            }
+                        nativeCanvas.drawPath(visiblePath, bodyPaint)
+                    }
+
+                    // 3. Core (White) - Hot Center
+                    drawPath(
+                        path = composeVisiblePath,
+                        color = Color.White,
+                        style =
+                            androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = 5f, // Reverted Core (10 -> 5)
+                                cap = androidx.compose.ui.graphics.StrokeCap.Butt,
+                                join = androidx.compose.ui.graphics.StrokeJoin.Miter,
+                                miter = 10f,
+                            ),
+                    )
+
+                    // Draw Triangle Caps for Main Bolt
+                    val posTan = FloatArray(2)
+                    val tan = FloatArray(2)
+
+                    // Head Cap (at visibleEnd)
+                    // Head Cap (at visibleEnd)
+                    if (visibleEnd < totalLength) {
+                        measure.getPosTan(visibleEnd, posTan, tan)
+                        drawSharpCap(posTan, tan, 5f, Color.White, true) // Core
+                    } else {
+                        measure.getPosTan(totalLength, posTan, tan)
+                        drawSharpCap(posTan, tan, 5f, Color.White, true)
+                    }
+
+                    // Tail Cap (at visibleStart) - Only if discharging
+                    if (visibleStart > 0f) {
+                        measure.getPosTan(visibleStart, posTan, tan)
+                        drawSharpCap(posTan, tan, 5f, Color.White, false)
+                    }
+
+                    // 4. Branches (Spikes) -> Now Tapered Wedges
+                    branches.forEachIndexed { index, bPath ->
+                        val branchLifeStart = strikeEnd - 0.05f
+                        val branchLifeEnd = holdEnd + 0.1f
+
+                        if (progress in branchLifeStart..branchLifeEnd) {
+                            val bProgress = (progress - branchLifeStart) / (0.1f)
+                            val clampedBProgress = bProgress.coerceIn(0f, 1f)
+
+                            val fadeProgress = (progress - holdEnd) / 0.1f
+                            val bAlpha =
+                                if (progress > holdEnd) (1f - fadeProgress).coerceIn(0f, 1f) else 1f
+
+                            if (bAlpha > 0f) {
+                                // Extract Start/End from bPath
+                                // We know bPath is just moveTo(x1,y1) lineTo(x2,y2)
+                                // But Path API doesn't expose points easily in Compose.
+                                // We can use PathMeasure for the branch too.
+                                val bAndroid = bPath.asAndroidPath()
+                                val bMeasure = android.graphics.PathMeasure(bAndroid, false)
+                                val bLength = bMeasure.length
+
+                                val bPos = FloatArray(2)
+                                val bTan = FloatArray(2)
+                                bMeasure.getPosTan(0f, bPos, bTan) // Start
+
+                                val startX = bPos[0]
+                                val startY = bPos[1]
+                                val bx = bTan[0]
+                                val by = bTan[1]
+
+                                // Current End based on growth
+                                val currentLen = bLength * clampedBProgress
+                                val endX = startX + bx * currentLen
+                                val endY = startY + by * currentLen
+
+                                // Draw as Tapered Triangle (Wedge)
+                                // Base width at start: 8f -> 0f at end
+                                val baseWidth = 8f
+                                val perpX = -by
+                                val perpY = bx
+
+                                val wedge =
+                                    androidx.compose.ui.graphics.Path().apply {
+                                        moveTo(
+                                            startX + perpX * baseWidth / 2,
+                                            startY + perpY * baseWidth / 2,
+                                        )
+                                        moveTo(
+                                            startX - perpX * baseWidth / 2,
+                                            startY - perpY * baseWidth / 2,
+                                        )
+                                        lineTo(endX, endY) // Pointy end
+                                        close()
+                                    }
+
+                                drawPath(
+                                    path = wedge,
+                                    color = lightningColor.copy(alpha = bAlpha),
+                                    blendMode = BlendMode.Screen,
+                                )
+                                // White Core for Branch
+                                val coreWedge =
+                                    androidx.compose.ui.graphics.Path().apply {
+                                        moveTo(startX + perpX * 2f, startY + perpY * 2f)
+                                        moveTo(startX - perpX * 2f, startY - perpY * 2f)
+                                        lineTo(endX, endY)
+                                        close()
+                                    }
+                                drawPath(
+                                    path = coreWedge,
+                                    color = lightningColor.lighter(.8f).copy(alpha = bAlpha),
+                                    blendMode = BlendMode.Screen,
+                                )
+                            }
+                        }
+                    }
+
+                    // 5. FRAGMENTS (Jagged Electricity Particles)
+                    fragments.forEach { frag ->
+                        // Animate - Drift
+                        val t = progress / dischargeEnd
+                        val curX = frag.x + frag.dx * t
+                        val curY = frag.y + frag.dy * t
+
+                        val fAlpha =
+                            if (progress > holdEnd) {
+                                (1f - (progress - holdEnd) / dischargeDuration).coerceIn(0f, 1f)
+                            } else {
+                                1f
+                            }
+
+                        if (fAlpha > 0f) {
+                            withTransform({
+                                translate(curX, curY)
+                                rotate(frag.rotation + t * 45f)
+                                scale(frag.scale * (1f - t * 0.3f), frag.scale * (1f - t * 0.3f))
+                            }) {
+                                // Draw Fragment Glow
+                                drawPath(
+                                    path = frag.path,
+                                    color = lightningColor.copy(alpha = fAlpha),
+                                    style =
+                                        androidx.compose.ui.graphics.drawscope.Stroke(
+                                            width = 4f, // Reduced Fragment Glow (8 -> 4)
+                                            cap = androidx.compose.ui.graphics.StrokeCap.Butt,
+                                            join = androidx.compose.ui.graphics.StrokeJoin.Miter,
+                                        ),
+                                )
+                                // Draw Fragment White Core
+                                drawPath(
+                                    path = frag.path,
+                                    color = Color.White.copy(alpha = fAlpha),
+                                    style =
+                                        androidx.compose.ui.graphics.drawscope.Stroke(
+                                            width = 2f, // Reduced Fragment Core (4 -> 2)
+                                            cap = androidx.compose.ui.graphics.StrokeCap.Butt,
+                                            join = androidx.compose.ui.graphics.StrokeJoin.Miter,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+// Data class for Fragments
+data class Fragment(
+    val x: Float,
+    val y: Float,
+    val path: androidx.compose.ui.graphics.Path,
+    val dx: Float,
+    val dy: Float,
+    val rotation: Float,
+    val scale: Float,
+)
+
+@Composable
+fun Modifier.genreVfx(
+    genre: Genre,
+    primaryColor: Color? = null,
+    secondaryColor: Color? = null,
+): Modifier {
+    val finalPrimary = primaryColor ?: genre.resolveColor()
+    val finalSecondary = secondaryColor ?: genre.resolveIconColor()
+
+    return when (genre) {
+        Genre.FANTASY -> {
+            this
+                .levitate()
+                .divineAura(auraColor = finalPrimary.lighter(0.4f).copy(alpha = 0.5f))
+                .chromaticAberration(intensity = 4f, blurRadius = 5f)
+        }
+
+        Genre.CYBERPUNK -> {
+            this
+                .glitch()
+        }
+
+        Genre.HORROR -> {
+            this
+                .psychosis()
+        }
+
+        Genre.COWBOY -> {
+            this
+                .cowboyBurn(true)
+        }
+
+        Genre.CRIME -> {
+            this
+                .vhs()
+                .dreamySparkle(color = finalPrimary.lighter(0.6f))
+        }
+
+        Genre.HEROES -> {
+            this
+                .levitate()
+                .lightningStorm(lightningColor = finalPrimary.lighter(0.6f))
+        }
+
+        Genre.SPACE_OPERA -> {
+            this
+                .spaceVoyage(true)
+        }
+
+        Genre.SHINOBI -> {
+            this
+                .katanaSlice(true, finalSecondary)
+        }
+
+        Genre.PUNK_ROCK -> {
+            this
+                .glitch(true)
+        }
+    }
+}

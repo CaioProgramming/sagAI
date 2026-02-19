@@ -171,6 +171,8 @@ class ImagenClientImpl
                     buildString {
                         appendLine(genreConfig.artStyle)
                         appendLine(reviewedResult?.correctedPrompt ?: artisticPrompt)
+                        appendLine("Critical rules: ")
+                        appendLine(imageConfig.criticalRules)
                         appendLine("Rendering Instructions: ")
                         appendLine(genreConfig.renderingInstructions)
                     }

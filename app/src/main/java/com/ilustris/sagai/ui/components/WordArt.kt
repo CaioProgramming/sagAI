@@ -1,10 +1,12 @@
 package com.ilustris.sagai.ui.components
 
 import android.content.res.Configuration
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -51,20 +53,10 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
-import com.ilustris.sagai.ui.animations.chromaticAberration
-import com.ilustris.sagai.ui.animations.cowboyBurn
-import com.ilustris.sagai.ui.animations.divineAura
-import com.ilustris.sagai.ui.animations.dreamySparkle
-import com.ilustris.sagai.ui.animations.glitch
-import com.ilustris.sagai.ui.animations.heroChrome
-import com.ilustris.sagai.ui.animations.katanaSlice
-import com.ilustris.sagai.ui.animations.psychosis
-import com.ilustris.sagai.ui.animations.spaceVoyage
-import com.ilustris.sagai.ui.animations.vhs
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
 
 @Composable
@@ -307,16 +299,10 @@ fun Genre.stylisedText(
                 text = text,
                 modifier =
                     modifier
-                        .levitate()
-                        .divineAura(
-                            auraColor = colorPalette().lastOrNull() ?: color.lighter(.5f),
-                        ).chromaticAberration(intensity = 4f, blurRadius = 5f),
+                        .genreVfx(this, resolvedColor, resolvedIconColor),
                 style =
                     style.copy(
-                        brush =
-                            Brush.verticalGradient(
-                                colorPalette(),
-                            ),
+                        brush = Brush.verticalGradient(colorPalette()),
                         shadow =
                             Shadow(
                                 resolvedColor.copy(alpha = 0.5f), // Golden shadow
@@ -331,7 +317,7 @@ fun Genre.stylisedText(
             val palette = this.colorPalette()
             AutoResizeText(
                 text = text,
-                modifier = modifier.glitch(),
+                modifier = modifier.genreVfx(this),
                 style =
                     style.copy(
                         brush = Brush.verticalGradient(palette),
@@ -350,7 +336,7 @@ fun Genre.stylisedText(
                 modifier =
                     modifier
                         .padding(2.dp)
-                        .psychosis(),
+                        .genreVfx(this),
                 style =
                     style.copy(
                         brush = Brush.verticalGradient(colorPalette()),
@@ -370,7 +356,7 @@ fun Genre.stylisedText(
                 text = text,
                 modifier =
                     modifier
-                        .cowboyBurn(true)
+                        .genreVfx(this)
                         .padding(2.dp),
                 style =
                     style.copy(
@@ -386,16 +372,14 @@ fun Genre.stylisedText(
         }
 
         Genre.CRIME -> {
-            val genre = this
             AutoResizeText(
                 text = text,
                 modifier =
                     modifier
-                        .vhs()
-                        .dreamySparkle(color = resolvedColor.lighter(.6f)),
+                        .genreVfx(this, resolvedColor),
                 style =
                     style.copy(
-                        brush = Brush.verticalGradient(genre.colorPalette()),
+                        brush = Brush.verticalGradient(this.colorPalette()),
                         shadow =
                             Shadow(
                                 color = resolvedColor.copy(alpha = 0.8f),
@@ -407,27 +391,43 @@ fun Genre.stylisedText(
         }
 
         Genre.HEROES -> {
-            val palette = this.colorPalette()
-            WordArtText(
+            // Sync with lightningStorm 2500ms cycle
+            // Lightning: Strike (0-10%), Hold (10-50%), Discharge (50-100%)
+            val infiniteTransition = rememberInfiniteTransition(label = "heroShadow")
+            val glowRadius by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 0f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation =
+                            keyframes {
+                                durationMillis = 2500
+                                0f at 0 // Start
+                                30f at 200 using FastOutSlowInEasing // Strike Peak
+                                20f at 1250 // Hold End
+                                5f at 2500 // Discharge End
+                            },
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "shadowPulse",
+            )
+
+            Text(
                 text = text,
                 modifier =
                     modifier
-                        .heroChrome(color = Color.White)
-                        .chromaticAberration()
-                        .padding(4.dp),
-                fontSize = (fontSize.value * .75f).sp,
-                fontFamily = headerFont(),
-                topColor = resolvedColor.lighter(.7f), // High-power chrome edge
-                bottomColor = palette.first().darker(.3f),
-                extrusionColor = palette[1].darker(.5f),
-                extrusionDepthFactor = 0.04f,
-                numberOfExtrusionLayers = 20,
-                outlineColor = resolvedIconColor,
-                outlineWidthFactor = .08f,
-                rotationX = 35f, // X-Men Intro Tilted Perspective
-                glowColor = resolvedColor,
-                glowAlpha = 1f,
-                glowRadiusFactor = 10f,
+                        .padding(4.dp)
+                        .genreVfx(this, resolvedColor),
+                style =
+                    style.copy(
+                        fontSize = fontSize,
+                        textAlign = TextAlign.Center,
+                        shadow =
+                            Shadow(
+                                resolvedColor.lighter(0.8f), // Brighter glow
+                                blurRadius = glowRadius,
+                            ),
+                    ),
             )
         }
 
@@ -436,7 +436,7 @@ fun Genre.stylisedText(
                 text = text,
                 modifier =
                     modifier
-                        .spaceVoyage(true)
+                        .genreVfx(this)
                         .padding(8.dp),
                 style =
                     style.copy(
@@ -459,7 +459,7 @@ fun Genre.stylisedText(
                 modifier =
                     modifier
                         .padding(12.dp)
-                        .katanaSlice(true, resolvedIconColor),
+                        .genreVfx(this, secondaryColor = resolvedIconColor),
                 style =
                     style.copy(
                         brush = Brush.verticalGradient(palette),
@@ -472,7 +472,10 @@ fun Genre.stylisedText(
             RansomNoteText(
                 text = text,
                 genre = this,
-                modifier = modifier.padding(8.dp),
+                modifier =
+                    modifier
+                        .genreVfx(this)
+                        .padding(8.dp),
                 fontSize = (fontSize.value * 0.8f).sp,
                 fontFamily = this.headerFont(),
                 primaryColor = resolvedColor,

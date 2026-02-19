@@ -92,10 +92,10 @@ fun Genre.selectiveHighlight(visualConfig: GenreVisualConfig?): SelectiveColorPa
     return SelectiveColorParams(
         targetColor = targetColor,
         hueTolerance = remote.hueTolerance,
-        saturationThreshold = remote.saturationThreshold.takeIf { it >= 0f } ?: 0.02f,
-        lightnessThreshold = remote.lightnessThreshold.takeIf { it >= 0f } ?: 0.05f,
+        saturationThreshold = remote.saturationThreshold.takeIf { it >= 0f } ?: 0f,
+        lightnessThreshold = remote.lightnessThreshold.takeIf { it >= 0f } ?: 0f,
         highlightSaturationBoost = remote.highlightSaturationBoost.takeIf { it >= 0f } ?: 1f,
-        highlightLightnessBoost = remote.highlightLightnessBoost.takeIf { it >= 0f } ?: 0.05f,
+        highlightLightnessBoost = remote.highlightLightnessBoost.takeIf { it >= 0f } ?: 0f,
         desaturationFactorNonTarget = remote.desaturationFactorNonTarget.takeIf { it >= 0f } ?: 0f,
     )
 }

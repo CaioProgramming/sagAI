@@ -168,7 +168,7 @@ class SagaContentManagerImpl
                     observeMilestone()
                     sagaHistoryUseCase
                         .getSagaById(sagaId.toInt())
-                        .debounce(200)
+                        .debounce(300)
                         .collectLatest { saga ->
                             Log.d(
                                 javaClass.simpleName,
@@ -881,6 +881,7 @@ class SagaContentManagerImpl
                         )
 
                         emitMilestone(SagaMilestone.NewEvent(timeline))
+                        endTimeline(saga.currentActInfo?.currentChapterInfo)
                     }
                 }
 

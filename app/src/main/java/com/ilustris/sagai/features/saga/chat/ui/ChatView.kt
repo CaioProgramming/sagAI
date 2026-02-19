@@ -323,6 +323,7 @@ fun ChatView(
                                                                 .align(Alignment.Center)
                                                                 .reactiveShimmer(true)
                                                                 .padding(16.dp)
+                                                                .fillMaxWidth()
                                                                 .sharedBounds(
                                                                     rememberSharedContentState(
                                                                         key = "saga-style-header",

@@ -81,7 +81,6 @@ import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -322,11 +321,6 @@ private fun CharacterDetailsLoaded(
                                             useFallBack = character.emojified,
                                         ),
                             ) {
-                                Box(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(fadedGradientTopAndBottom()),
-                                )
                                 Text(
                                     text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                     textAlign = TextAlign.Center,
