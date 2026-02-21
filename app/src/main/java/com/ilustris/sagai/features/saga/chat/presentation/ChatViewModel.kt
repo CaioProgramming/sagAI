@@ -954,7 +954,7 @@ class ChatViewModel
 
         private fun startPendingSend(isAudio: Boolean) {
             val text = uiState.value.inputValue.text
-            val sendType = uiState.value.senderType
+            uiState.value.senderType
             val saga = uiState.value.sagaContent ?: return
             val mainCharacter =
                 uiState.value.selectedCharacter?.data ?: saga.mainCharacter?.data ?: return
@@ -964,7 +964,7 @@ class ChatViewModel
                 Message(
                     text = text,
                     speakerName = mainCharacter.name,
-                    senderType = sendType,
+                    senderType = SenderType.USER,
                     characterId = mainCharacter.id,
                     timelineId = currentTimeline.data.id,
                     status = MessageStatus.LOADING,
@@ -1114,8 +1114,10 @@ class ChatViewModel
         }
 
         private fun updateLoading(isLoading: Boolean) {
-            stateManager.updateLoading(isLoading)
-            sagaContentManager.setProcessing(isLoading)
+            viewModelScope.launch {
+                stateManager.updateLoading(isLoading)
+                sagaContentManager.setProcessing(isLoading)
+            }
         }
 
         private fun generateSuggestions(sceneSummary: SceneSummary? = null) {

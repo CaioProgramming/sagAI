@@ -38,7 +38,7 @@ interface SagaContentManager {
 
     fun isInDebugMode(): Boolean
 
-    fun setProcessing(bool: Boolean)
+    suspend fun setProcessing(bool: Boolean)
 
     fun checkNarrativeProgression(
         saga: SagaContent?,

@@ -949,7 +949,6 @@ fun ChatContent(
                                     )
                                 }
 
-                            // Use pre-sorted characters from ViewModel (already optimized)
                             val characters = uiState.characters
 
                             SagaTopBar(

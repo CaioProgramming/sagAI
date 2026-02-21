@@ -125,7 +125,6 @@ class MilestoneUseCaseImpl
                     )
                 }
 
-                // Introduction and Loading milestones don't need congrats messages
                 is SagaMilestone.Introduction -> {
                     stringResourceHelper.getString(R.string.milestone_introduction_fallback_message)
                 }

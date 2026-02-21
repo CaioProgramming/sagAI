@@ -62,7 +62,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -118,7 +117,8 @@ class SagaContentManagerImpl
 
         private var progressionCounter = 0
 
-        private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
+        private suspend fun setNarrativeProcessingStatus(isProcessing: Boolean) {
+            delay(500)
             isProcessingNarrative.set(isProcessing)
             _narrativeProcessingUiState.value = isProcessing
         }
@@ -128,7 +128,7 @@ class SagaContentManagerImpl
             Log.i(javaClass.simpleName, "Debug mode ${if (enabled) "enabled" else "disabled"}")
         }
 
-        override fun setProcessing(bool: Boolean) {
+        override suspend fun setProcessing(bool: Boolean) {
             isProcessing.set(bool)
             setNarrativeProcessingStatus(bool)
             Log.i(javaClass.simpleName, "Processing mode ${if (bool) "enabled" else "disabled"}")
@@ -168,7 +168,6 @@ class SagaContentManagerImpl
                     observeMilestone()
                     sagaHistoryUseCase
                         .getSagaById(sagaId.toInt())
-                        .debounce(300)
                         .collectLatest { saga ->
                             Log.d(
                                 javaClass.simpleName,
