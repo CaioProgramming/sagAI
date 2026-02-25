@@ -18,10 +18,12 @@ object NewSagaPrompts {
         userInput: String,
         conversationHistory: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
+        companion: GenreConfig.CompanionConfig? = null,
     ): String =
         buildString {
             appendLine(
-                "You are a passionate, brainstorming creative partner. Your goal is to help the user KICKSTART an amazing saga. You are NOT a form-filler; you are a co-creator.",
+                companion?.persona
+                    ?: "You are a passionate, brainstorming creative partner. Your goal is to help the user KICKSTART an amazing saga. You are NOT a form-filler; you are a co-creator.",
             )
             appendLine()
             appendLine("Current Saga Context:")
@@ -93,7 +95,9 @@ object NewSagaPrompts {
             appendLine("CRITICAL RULES:")
             appendLine("- Never repeat the same question or suggestion twice.")
             appendLine("- If the user changes the topic, follow them immediately.")
-            appendLine("- Your tone should be encouraging, creative, and fun.")
+            appendLine(
+                "- Tone style: ${companion?.conversationalStyle ?: "Your tone should be encouraging, creative, and fun."}",
+            )
             appendLine("- STOP asking questions if the user seems ready. Set 'CONTENT_READY'.")
             appendLine()
         }
@@ -102,12 +106,17 @@ object NewSagaPrompts {
         process: SagaProcess,
         saga: String,
         character: String,
+        companion: GenreConfig.CompanionConfig? = null,
     ) = buildString {
         appendLine(
-            "You are a slightly sarcastic and humorous AI assistant. Your job is to generate a short, witty, and engaging message to entertain the user while they wait for their saga to be created.",
+            companion?.persona
+                ?: "You are a slightly sarcastic and humorous AI assistant. Your job is to generate a short, witty, and engaging message to entertain the user while they wait for their saga to be created.",
         )
         appendLine("The message should be under 15 words and related to the current process.")
-        appendLine("Feel free to make jokes, be a little ironic, or use hyperbole. The user enjoys a friendly and funny tone.")
+        appendLine(
+            companion?.interludeStyle
+                ?: "Feel free to make jokes, be a little ironic, or use hyperbole. The user enjoys a friendly and funny tone.",
+        )
         appendLine("Here is the current process: ${process.name}")
         if (saga.isNotEmpty()) {
             appendLine("Here is the saga information (use it for context if you can): $saga")
@@ -161,8 +170,12 @@ object NewSagaPrompts {
         sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
+        companion: GenreConfig.CompanionConfig? = null,
     ) = buildString {
-        appendLine("You are a master storyteller, and you are creating a new saga for the user.")
+        appendLine(
+            companion?.persona
+                ?: "You are a master storyteller, and you are creating a new saga for the user.",
+        )
         appendLine("Your task is to generate a saga based on the user's input.")
         appendLine("Here is the user's input context:")
         appendLine(sagaForm.toAINormalize())
@@ -192,26 +205,38 @@ object NewSagaPrompts {
     fun characterSavedPrompt(
         character: Character,
         saga: Saga,
+        companion: GenreConfig.CompanionConfig? = null,
     ) = buildString {
-        appendLine("You are a master storyteller, and you have just created a new character for the user.")
+        appendLine(
+            companion?.persona
+                ?: "You are a master storyteller, and you have just created a new character for the user.",
+        )
         appendLine("Your task is to generate a message to let the user know that the character has been saved.")
         appendLine("Here is the character information: ${character.name} - ${character.backstory}")
         appendLine("Here is the saga information: ${saga.title} - ${saga.description}")
         appendLine("Generate a message to let the user know that the character has been saved.")
     }
 
-    fun introPrompt() =
+    fun introPrompt(companion: GenreConfig.CompanionConfig? = null) =
         buildString {
             appendLine()
-            appendLine("Your task is to generate a fun, humorous, and engaging welcome message to start creating an epic saga together!")
+            appendLine(
+                companion?.persona
+                    ?: "Your task is to generate a fun, humorous, and engaging welcome message to start creating an epic saga together!",
+            )
             appendLine()
             appendLine(
-                "- message: A casual, friendly greeting like you're texting a friend who just said they want to write a story. Be naturally enthusiastic but keep it simple and real—no corporate speak. Add a touch of humor, sarcasm, or playful irony. Mention that you have a few suggestions to start. Think: 'Alright, let's make something cool' vibes, not 'Welcome to our platform!' vibes. (max 2 sentences, conversational tone)",
+                "- message: ${
+                    companion?.conversationalStyle
+                        ?: "A casual, friendly greeting like you're texting a friend who just said they want to write a story. Be naturally enthusiastic but keep it simple and real—no corporate speak. Add a touch of humor, sarcasm, or playful irony. Mention that you have a few suggestions to start. Think: 'Alright, let's make something cool' vibes, not 'Welcome to our platform!' vibes. (max 2 sentences, conversational tone)"
+                }",
             )
 
-            appendLine(
-                "  Keep it SHORT, NATURAL, and like you're genuinely hyped to help. No formal greetings, no 'I'm here to assist you' stuff.",
-            )
+            if (companion == null) {
+                appendLine(
+                    "  Keep it SHORT, NATURAL, and like you're genuinely hyped to help. No formal greetings, no 'I'm here to assist you' stuff.",
+                )
+            }
             appendLine(
                 "- **inputHint**: A very short \"starter\" text (max 4 words). It should be a subtle nudge to spark imagination. E.g., \"Once upon a time...\", \"In a galaxy far away...\", \"What if...\"",
             )
@@ -239,14 +264,16 @@ object NewSagaPrompts {
             appendLine()
             appendLine("Important JSON rules:")
             appendLine("- Set `callback` to null.")
-            appendLine("- Keep the message playful and encouraging, not corporate or robotic.")
+            appendLine("- Keep the message thematic and engaging, not corporate or robotic.")
             appendLine("- Make suggestions feel cinematic and immediately intriguing.")
         }
 
-    fun genreAdaptationPrompt(currentDraft: SagaDraft) =
-        buildString {
-            appendLine("You are a creative narrative designer.")
-            appendLine("The user has switched the saga's genre to: ${currentDraft.genre.name}.")
+    fun genreAdaptationPrompt(
+        currentDraft: SagaDraft,
+        companion: GenreConfig.CompanionConfig? = null,
+    ) = buildString {
+        appendLine(companion?.persona ?: "You are a creative narrative designer.")
+        appendLine("The user has switched the saga's genre to: ${currentDraft.genre.name}.")
             appendLine("Current Draft:")
             appendLine(currentDraft.toAINormalize())
             appendLine()
@@ -266,10 +293,15 @@ object NewSagaPrompts {
             appendLine("- callback.data: The updated SagaDraft (ensure genre is ${currentDraft.genre.name}).")
         }
 
-    fun genreSuggestionsPrompt(genre: Genre) =
-        buildString {
-            appendLine("You are an expert story architect specializing in the ${genre.name} genre.")
-            appendLine()
+    fun genreSuggestionsPrompt(
+        genre: Genre,
+        companion: GenreConfig.CompanionConfig? = null,
+    ) = buildString {
+        appendLine(
+            companion?.persona
+                ?: "You are an expert story architect specializing in the ${genre.name} genre.",
+        )
+        appendLine()
             appendLine("Generate 3 unique, compelling story seed concepts for the ${genre.name} genre.")
             appendLine("Each seed should feel like a movie pitch that makes someone think 'I NEED to know what happens next!'")
             appendLine()
@@ -305,8 +337,12 @@ object NewSagaPrompts {
     fun refineDraftPrompt(
         rawInput: String,
         genre: Genre,
+        companion: GenreConfig.CompanionConfig? = null,
     ) = buildString {
-        appendLine("You are a master storyteller specializing in the ${genre.name} genre.")
+        appendLine(
+            companion?.persona
+                ?: "You are a master storyteller specializing in the ${genre.name} genre.",
+        )
         appendLine()
         appendLine("The user has written a rough story idea:")
         appendLine("\"$rawInput\"")
@@ -340,7 +376,10 @@ object NewSagaPrompts {
         characterInfo: CharacterInfo?,
         genreConfig: GenreConfig?,
     ) = buildString {
-        appendLine("You are a witty, slightly sarcastic but highly encouraging creative consultant.")
+        appendLine(
+            genreConfig?.companion?.persona
+                ?: "You are a witty, slightly sarcastic but highly encouraging creative consultant.",
+        )
         appendLine("Your job is to assist the user in the current step of creating their saga with flair and humor.")
         appendLine("Current Step: ${flow.name}")
         val genreName = sagaDraft?.genre?.name ?: "N/A"
@@ -350,8 +389,11 @@ object NewSagaPrompts {
         appendLine("- ALL generated content (Title, Subtitle, Input Hint, and Suggestions) MUST strictly align with the $genreName genre.")
         appendLine("- Do NOT suggest content from other genres (e.g., no spaceships in Fantasy, no magic in Crime).")
         appendLine("- The atmosphere, vocabulary, and tropes MUST be 100% $genreName.")
-        genreConfig?.let {
-            appendLine("Follow this conversation style")
+        genreConfig?.companion?.let {
+            appendLine("Follow this conversation style:")
+            appendLine(it.conversationalStyle)
+        } ?: genreConfig?.let {
+            appendLine("Follow this conversation style:")
             appendLine(it.conversationDirective)
         }
         appendLine()

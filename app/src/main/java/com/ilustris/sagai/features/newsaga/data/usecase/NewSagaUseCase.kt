@@ -60,6 +60,7 @@ interface NewSagaUseCase {
         process: SagaProcess,
         sagaDescription: String,
         characterDescription: String,
+        genre: Genre? = null,
     ): RequestResult<String>
 
     suspend fun adaptSagaToGenre(sagaDraft: SagaDraft): RequestResult<SagaCreationGen>

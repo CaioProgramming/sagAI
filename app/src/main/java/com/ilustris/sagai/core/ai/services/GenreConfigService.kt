@@ -22,7 +22,8 @@ class GenreConfigService
                 return@executeRequest baseConfig
             }
 
-            val variation = baseConfig.variations[variationId] ?: return@executeRequest baseConfig
+            val variation =
+                baseConfig.variations?.get(variationId) ?: return@executeRequest baseConfig
 
             baseConfig.copy(
                 artStyle = variation.artStyle ?: baseConfig.artStyle,

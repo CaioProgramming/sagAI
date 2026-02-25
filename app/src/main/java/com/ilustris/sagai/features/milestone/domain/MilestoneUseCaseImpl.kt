@@ -4,6 +4,7 @@ import android.util.Log
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.StringResourceHelper
@@ -17,19 +18,21 @@ class MilestoneUseCaseImpl
     constructor(
         private val gemmaClient: GemmaClient,
         private val stringResourceHelper: StringResourceHelper,
+        private val genreConfigService: GenreConfigService,
     ) : MilestoneUseCase {
         override suspend fun generateCongratsMessage(
             milestone: SagaMilestone,
             saga: SagaContent,
         ): RequestResult<String?> =
             executeRequest(false) {
+                val config = genreConfigService.getGenreConfig(saga.data.genre)
                 Log.d(
                     "MilestoneUseCase",
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
 
                 val prompt =
-                    MilestonePrompts.generateCongratsMessage(milestone, saga)
+                    MilestonePrompts.generateCongratsMessage(milestone, saga, config.companion)
                         ?: return@executeRequest getDefaultMessage(milestone, saga.data.genre)
 
                 gemmaClient.generate<String>(

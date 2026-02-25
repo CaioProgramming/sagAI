@@ -262,13 +262,15 @@ class NewSagaViewModel
 
         private fun generateProcessMessage(process: SagaProcess) {
             viewModelScope.launch(Dispatchers.IO) {
-                val sagaData = sagaStateManager.getSagaForm().toJsonFormat()
+                val sagaForm = sagaStateManager.getSagaForm()
+                val sagaData = sagaForm.toJsonFormat()
                 val characterData = characterStateManager.getCharacterInfo().toJsonFormat()
                 newSagaUseCase
                     .generateProcessMessage(
                         process = process,
                         sagaDescription = sagaData,
                         characterDescription = characterData,
+                        genre = sagaForm.genre,
                     ).onSuccess { message ->
                         _loadingMessage.value = message
                     }

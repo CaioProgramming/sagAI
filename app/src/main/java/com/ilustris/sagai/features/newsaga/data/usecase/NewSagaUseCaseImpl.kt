@@ -43,7 +43,12 @@ class NewSagaUseCaseImpl
             executeRequest {
                 val config = genreConfigService.getGenreConfig(sagaForm.genre)
                 gemmaClient.generate<Saga>(
-                    NewSagaPrompts.createSagaPrompt(sagaForm, miniChatContent, config.variations),
+                    NewSagaPrompts.createSagaPrompt(
+                        sagaForm,
+                        miniChatContent,
+                        config.variations ?: mapOf(),
+                        config.companion,
+                    ),
                     filterOutputFields =
                         listOf(
                             "id",
@@ -91,7 +96,8 @@ class NewSagaUseCaseImpl
                             currentSagaDraft = currentFormData.saga,
                             userInput = userInput,
                             conversationHistory = recentMessages,
-                            availableVariations = config.variations,
+                            availableVariations = config.variations ?: mapOf(),
+                            companion = config.companion,
                         ),
                         requireTranslation = true,
                     )!!
@@ -114,20 +120,26 @@ class NewSagaUseCaseImpl
             saga: Saga,
         ): RequestResult<String> =
             executeRequest {
-                gemmaClient.generate(NewSagaPrompts.characterSavedPrompt(character, saga))!!
+                val config = genreConfigService.getGenreConfig(saga.genre)
+                gemmaClient.generate(
+                    NewSagaPrompts.characterSavedPrompt(character, saga, config.companion),
+                )!!
             }
 
         override suspend fun generateProcessMessage(
             process: SagaProcess,
             sagaDescription: String,
             characterDescription: String,
+            genre: Genre?,
         ): RequestResult<String> =
             executeRequest {
+                val config = genre?.let { genreConfigService.getGenreConfig(it) }
                 gemmaClient.generate(
                     NewSagaPrompts.generateProcessPrompt(
                         process,
                         sagaDescription,
                         characterDescription,
+                        config?.companion,
                     ),
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
@@ -135,12 +147,24 @@ class NewSagaUseCaseImpl
 
         override suspend fun adaptSagaToGenre(sagaDraft: SagaDraft): RequestResult<SagaCreationGen> =
             executeRequest {
-                gemmaClient.generate(NewSagaPrompts.genreAdaptationPrompt(sagaDraft))!!
+                val config = genreConfigService.getGenreConfig(sagaDraft.genre)
+                gemmaClient.generate(
+                    NewSagaPrompts.genreAdaptationPrompt(
+                        sagaDraft,
+                        config.companion,
+                    ),
+                )!!
             }
 
         override suspend fun generateGenreSuggestions(genre: Genre): RequestResult<SagaCreationGen> =
             executeRequest {
-                gemmaClient.generate(NewSagaPrompts.genreSuggestionsPrompt(genre))!!
+                val config = genreConfigService.getGenreConfig(genre)
+                gemmaClient.generate(
+                    NewSagaPrompts.genreSuggestionsPrompt(
+                        genre,
+                        config.companion,
+                    ),
+                )!!
             }
 
         override suspend fun refineDraft(
@@ -148,8 +172,9 @@ class NewSagaUseCaseImpl
             genre: Genre,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
+                val config = genreConfigService.getGenreConfig(genre)
                 gemmaClient.generate(
-                    NewSagaPrompts.refineDraftPrompt(rawInput, genre),
+                    NewSagaPrompts.refineDraftPrompt(rawInput, genre, config.companion),
                     requireTranslation = true,
                 )!!
             }
@@ -163,7 +188,7 @@ class NewSagaUseCaseImpl
                 val config = sagaDraft?.genre?.let { genreConfigService.getGenreConfig(it) }
                 gemmaClient.generate(
                     NewSagaPrompts.creationAssistPrompt(flow, sagaDraft, characterInfo, config),
-                requireTranslation = true,
-            )!!
-        }
+                    requireTranslation = true,
+                )!!
+            }
     }
