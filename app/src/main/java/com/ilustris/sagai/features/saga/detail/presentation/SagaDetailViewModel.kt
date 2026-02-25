@@ -176,17 +176,17 @@ class SagaDetailViewModel
 
         fun regenerateIcon() {
             val currentSaga = saga.value ?: return
-            val isPremium = billingService.isPremium()
-            if (isPremium.not()) {
-                showPremiumSheet.value = true
-            }
             isGenerating.value = true
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
                 resetReview()
                 sagaDetailUseCase.regenerateSagaIcon(
                     currentSaga,
-                )
+                ).onFailure {
+                    if (it is BillingService.PremiumException) {
+                        showPremiumSheet.value = true
+                    }
+                }
                 isGenerating.value = false
                 _loadingMessage.value = null
             }

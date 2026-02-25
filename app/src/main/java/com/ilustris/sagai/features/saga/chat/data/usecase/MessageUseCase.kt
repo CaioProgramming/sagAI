@@ -60,4 +60,13 @@ interface MessageUseCase {
         savedMessage: Message,
         characterReference: CharacterContent?,
     ): RequestResult<Unit>
+
+    suspend fun generateExtraContent(
+        saga: SagaContent,
+        message: Message,
+        sceneSummary: SceneSummary?,
+        characterReference: CharacterContent?,
+        generateAudio: Boolean,
+        isFromUser: Boolean,
+    )
 }

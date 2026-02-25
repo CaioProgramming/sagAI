@@ -16,6 +16,8 @@ data class GenreConfig(
     val renderingInstructions: String = "",
     @SerializedName("appearanceGuidelines")
     val appearanceGuidelines: String = "",
+    @SerializedName("colorPalette")
+    val colorPalette: String = "",
     @SerializedName("conversationDirective")
     val conversationDirective: String = "",
     @SerializedName("nameDirective")
@@ -27,9 +29,18 @@ data class GenreConfig(
     @SerializedName("criticalValidation")
     val criticalValidation: String = "",
     @SerializedName("variations")
-    val variations: Map<String, VariationConfig> = emptyMap(),
+    val variations: Map<String, VariationConfig>? = null,
+    @SerializedName("companion")
+    val companion: CompanionConfig? = null,
     val imageUrl: String,
 ) {
+    data class CompanionConfig(
+        @SerializedName("tone") val tone: String = "",
+        @SerializedName("persona") val persona: String = "",
+        @SerializedName("conversationalStyle") val conversationalStyle: String = "",
+        @SerializedName("interludeStyle") val interludeStyle: String = "",
+    )
+
     data class VariationConfig(
         val name: String = "",
         val description: String = "",

@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -29,8 +30,12 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
@@ -143,7 +148,7 @@ fun Modifier.chromaticAberration(
                 val redPaint =
                     androidx.compose.ui.graphics.Paint().apply {
                         colorFilter =
-                            androidx.compose.ui.graphics.ColorFilter
+                            ColorFilter
                                 .tint(Color.Red.copy(alpha = 0.5f))
                         blendMode = BlendMode.Screen
                         asFrameworkPaint().maskFilter =
@@ -167,7 +172,7 @@ fun Modifier.chromaticAberration(
                 val cyanPaint =
                     androidx.compose.ui.graphics.Paint().apply {
                         colorFilter =
-                            androidx.compose.ui.graphics.ColorFilter
+                            ColorFilter
                                 .tint(Color.Cyan.copy(alpha = 0.5f))
                         blendMode = BlendMode.Screen
                         asFrameworkPaint().maskFilter =
@@ -680,7 +685,7 @@ fun Modifier.livingTorch(
                             val layerPaint =
                                 androidx.compose.ui.graphics.Paint().apply {
                                     colorFilter =
-                                        androidx.compose.ui.graphics.ColorFilter.tint(
+                                        ColorFilter.tint(
                                             fireColor.copy(alpha = 0.3f * invProgress * pulse),
                                         )
                                     blendMode = BlendMode.Plus
@@ -715,7 +720,7 @@ fun Modifier.livingTorch(
                         val glowPaint =
                             androidx.compose.ui.graphics.Paint().apply {
                                 colorFilter =
-                                    androidx.compose.ui.graphics.ColorFilter
+                                    ColorFilter
                                         .tint(Color.White.copy(alpha = 0.15f * pulse))
                                 blendMode = BlendMode.Plus
                             }
@@ -1025,7 +1030,7 @@ fun Modifier.spaceVoyage(isPlaying: Boolean = true): Modifier =
                     val glowPaint =
                         androidx.compose.ui.graphics.Paint().apply {
                             colorFilter =
-                                androidx.compose.ui.graphics.ColorFilter.tint(
+                                ColorFilter.tint(
                                     Color.White.copy(alpha = 0.15f),
                                 )
                             blendMode = BlendMode.Plus
@@ -1633,6 +1638,124 @@ fun Modifier.katanaSlice(
     }
 
 @Composable
+fun Modifier.sakuraWind(
+    isPlaying: Boolean = true,
+    petalColor: Color = Color(0xFFFFB7C5), // Default Sakura Pink
+    petalCount: Int = 12,
+): Modifier =
+    composed {
+        if (!isPlaying) return@composed this
+        val infiniteTransition = rememberInfiniteTransition(label = "sakuraWind")
+        val ticker by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(10000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "windTicker",
+        )
+
+        val leafPainter = rememberVectorPainter(ImageVector.vectorResource(id = R.drawable.ic_leaf))
+
+        this.drawWithContent {
+            // 1. Draw Text Content
+            drawContent()
+
+            // 2. Draw Petals
+            val random = Random(42) // Stable seed
+
+            repeat(petalCount) { i ->
+                val seed = random.nextFloat()
+                val speedMult = 0.7f + (seed * 0.6f)
+                val delayOffset = seed * 5f
+                val progress = (ticker * speedMult + delayOffset) % 1f
+
+                val x = -60f + progress * (size.width + 120f)
+                val baseY = (i.toFloat() / petalCount) * size.height
+                val waveAmplitude = 10f + (seed * 20f)
+                val waveFrequency = 1f + (seed * 1.5f)
+                val phase = (progress * waveFrequency * 2 * kotlin.math.PI.toFloat()) + (seed * 10f)
+                val y = baseY + kotlin.math.sin(phase) * waveAmplitude
+
+                val alpha =
+                    when {
+                        progress < 0.15f -> progress / 0.15f
+                        progress > 0.85f -> (1f - progress) / 0.15f
+                        else -> 1f
+                    }
+
+                if (alpha > 0f) {
+                    val scale = 0.4f + (seed * 0.8f)
+                    val rotation = progress * 1080f * (if (i % 2 == 0) 1f else -1f)
+                    val leafSize = Size(20f, 20f)
+
+                    // Motion Blur: Draw trailing echoes
+                    repeat(2) { echoIndex ->
+                        val echoOffset = (echoIndex + 1) * 12f * speedMult
+                        val echoAlpha = alpha * (0.25f / (echoIndex + 1))
+
+                        withTransform({
+                            translate(x - echoOffset, y)
+                            rotate(rotation - (echoIndex * 2f))
+                            scale(scale, scale)
+                        }) {
+                            with(leafPainter) {
+                                draw(
+                                    size = leafSize,
+                                    colorFilter = ColorFilter.tint(petalColor.copy(alpha = echoAlpha)),
+                                )
+                            }
+                        }
+                    }
+
+                    withTransform({
+                        translate(x, y)
+                        rotate(rotation)
+                        scale(scale, scale)
+                    }) {
+                        // 1. Petal Glow
+                        val glowSize = 25f
+                        drawCircle(
+                            brush =
+                                Brush.radialGradient(
+                                    colors =
+                                        listOf(
+                                            petalColor.copy(alpha = 0.4f * alpha),
+                                            petalColor.copy(alpha = 0.1f * alpha),
+                                            Color.Transparent,
+                                        ),
+                                    center = Offset(10f, 10f),
+                                    radius = glowSize,
+                                ),
+                            radius = glowSize,
+                            center = Offset(10f, 10f),
+                            blendMode = BlendMode.Screen,
+                        )
+
+                        // 2. Main Petal
+                        with(leafPainter) {
+                            draw(
+                                size = leafSize,
+                                colorFilter = ColorFilter.tint(petalColor.copy(alpha = 0.85f * alpha)),
+                            )
+                        }
+
+                        // 3. Subtle edge highlight for detail
+                        with(leafPainter) {
+                            draw(
+                                size = leafSize,
+                                colorFilter = ColorFilter.tint(Color.White.copy(alpha = 0.15f * alpha)),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+@Composable
 fun Modifier.lightningStorm(
     isPlaying: Boolean = true,
     lightningColor: Color = Color.Cyan,
@@ -2163,7 +2286,7 @@ fun Modifier.genreVfx(
     secondaryColor: Color? = null,
 ): Modifier {
     val finalPrimary = primaryColor ?: genre.resolveColor()
-    val finalSecondary = secondaryColor ?: genre.resolveIconColor()
+    secondaryColor ?: genre.resolveIconColor()
 
     return when (genre) {
         Genre.FANTASY -> {
@@ -2208,7 +2331,7 @@ fun Modifier.genreVfx(
         Genre.SHINOBI -> {
             this
                 .levitate()
-                .katanaSlice(true, finalSecondary)
+                .sakuraWind(true, finalPrimary, petalCount = 10)
         }
 
         Genre.PUNK_ROCK -> {

@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.milestone.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
@@ -78,6 +79,7 @@ fun MilestoneOverlay(
     isLoading: Boolean = false,
     onDismiss: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val viewModel: MilestoneViewModel = hiltViewModel()
     val congratsMessage by viewModel.congratsMessage.collectAsState()
@@ -94,9 +96,9 @@ fun MilestoneOverlay(
             val sparkModifier =
                 Modifier.sharedElement(
                     rememberSharedContentState(
-                        key = "saga_${saga.data.id}_spark",
+                        key = "saga_${saga.data.id}_genre_icon",
                     ),
-                    animatedVisibilityScope = this,
+                    animatedVisibilityScope = animatedVisibilityScope,
                 )
             when (it) {
                 is SagaMilestone.CurrentObjective -> {
@@ -108,6 +110,8 @@ fun MilestoneOverlay(
                         it,
                         saga,
                         message = congratsMessage,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = this,
                     ) {
                         onDismiss()
                     }

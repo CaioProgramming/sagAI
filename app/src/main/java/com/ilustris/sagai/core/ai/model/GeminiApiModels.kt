@@ -56,6 +56,10 @@ data class PrebuiltVoiceConfig(
 
 // region Response Models
 
+data class GeminiErrorResponse(
+    val error: GeminiError?,
+)
+
 data class GeminiResponse(
     val candidates: List<GeminiCandidate>?,
     val usageMetadata: GeminiUsageMetadata?,
@@ -92,6 +96,21 @@ data class GeminiError(
     val code: Int?,
     val message: String?,
     val status: String?,
+    val details: List<GeminiErrorDetail>? = null,
+)
+
+data class GeminiErrorDetail(
+    @SerializedName("@type")
+    val type: String? = null,
+    val retryDelay: String? = null,
+    val violations: List<GeminiQuotaViolation>? = null,
+)
+
+data class GeminiQuotaViolation(
+    val quotaMetric: String? = null,
+    val quotaId: String? = null,
+    val quotaDimensions: Map<String, String>? = null,
+    val quotaValue: String? = null,
 )
 
 // endregion

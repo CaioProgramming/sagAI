@@ -59,7 +59,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -282,6 +281,7 @@ class ChatViewModel
             observeSnackBarUpdates()
             observeMediaState()
             observeProcessingState()
+            observeSceneSummary()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
@@ -299,6 +299,14 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.narrativeProcessingUiState.collect { isGenerating ->
                     stateManager.updateGenerating(isGenerating)
+                }
+            }
+        }
+
+        private fun observeSceneSummary() {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.sceneSummary.collect { summary ->
+                    stateManager.updateState { it.copy(sceneSummary = summary) }
                 }
             }
         }
@@ -499,11 +507,14 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.content
                     .distinctUntilChanged { old, new ->
-                        // Only emit when meaningful content changes
-                        old?.data?.id == new?.data?.id &&
-                            old?.flatMessages()?.size == new?.flatMessages()?.size &&
-                            old?.acts?.size == new?.acts?.size &&
-                            old?.characters?.size == new?.characters?.size
+                        if (old == null || new == null) return@distinctUntilChanged old == new
+                        // Only ignore updates if ONLY playtime changed
+                        old.data.copy(playTimeMs = 0) == new.data.copy(playTimeMs = 0) &&
+                            old.acts == new.acts &&
+                            old.characters == new.characters &&
+                            old.mainCharacter == new.mainCharacter &&
+                            old.wikis == new.wikis &&
+                            old.relationships == new.relationships
                     }.collectLatest { sagaContent ->
                         Log.d(
                             "ChatViewModel",
@@ -568,22 +579,11 @@ class ChatViewModel
 
                         loadFinished = true
 
-                        if (uiState.value.showTitle) {
-                            titleAnimation()
-                        }
-
                         // Only validate message status when messages changed
                         if (messagesChanged) {
                             validateMessageStatus(sagaContent)
                         }
                     }
-            }
-        }
-
-        private fun titleAnimation() {
-            viewModelScope.launch(Dispatchers.IO) {
-                delay(3.seconds)
-                stateManager.updateState { it.copy(showTitle = false) }
             }
         }
 
@@ -1051,14 +1051,6 @@ class ChatViewModel
                     } else {
                         characterReference?.data?.name ?: message.speakerName
                     }
-                val sceneSummaryData =
-                    if (isFromUser.not()) {
-                        sceneSummary
-                    } else {
-                        messageUseCase
-                            .getSceneContext(saga)
-                            .getSuccess()
-                    }
 
                 messageUseCase
                     .saveMessage(
@@ -1069,29 +1061,34 @@ class ChatViewModel
                             sagaId = saga.data.id,
                         ),
                         isFromUser,
-                        sceneSummaryData,
+                        null,
                     ).onSuccessAsync { savedMessage ->
                         resetSuggestions()
-                        if (isFromUser) {
-                            replyMessage(savedMessage, sceneSummaryData, isAudio)
-                        }
+                        stateManager.updateInput(TextFieldValue())
 
-                        withContext(Dispatchers.IO) {
-                            messageUseCase.generateReaction(
-                                saga,
+                        viewModelScope.launch(Dispatchers.IO) {
+                            val sceneSummaryData =
+                                if (isFromUser) {
+                                    messageUseCase
+                                        .getSceneContext(saga)
+                                        .getSuccess()
+                                } else {
+                                    sceneSummary
+                                }
+
+                            if (isFromUser) {
+                                replyMessage(savedMessage, sceneSummaryData, isAudio)
+                            }
+
+                            messageUseCase.generateExtraContent(
+                                saga = saga,
                                 message = savedMessage,
                                 sceneSummary = sceneSummaryData,
+                                characterReference = characterReference,
+                                generateAudio = isAudio && isFromUser.not(),
+                                isFromUser = isFromUser,
                             )
-
-                            if (isAudio && isFromUser.not()) {
-                                messageUseCase.generateAudio(
-                                    saga,
-                                    savedMessage,
-                                    characterReference,
-                                )
-                            }
                         }
-                        stateManager.updateInput(TextFieldValue())
                     }.onFailureAsync {
                         updateSnackBar(
                             snackBar(

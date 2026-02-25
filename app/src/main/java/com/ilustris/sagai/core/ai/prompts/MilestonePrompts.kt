@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig.CompanionConfig
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -9,17 +10,18 @@ object MilestonePrompts {
     fun generateCongratsMessage(
         milestone: SagaMilestone,
         saga: SagaContent,
+        companion: CompanionConfig?,
     ): String? {
         if (milestone is SagaMilestone.Introduction) {
-            return rewriteIntroduction(milestone, saga)
+            return rewriteIntroduction(milestone, saga, companion)
         }
 
         if (milestone is SagaMilestone.Loading) {
-            return generateLoadingMessage(saga)
+            return generateLoadingMessage(saga, companion)
         }
 
         if (milestone is SagaMilestone.NewCharacter) {
-            return generateNewCharacterMessage(milestone, saga)
+            return generateNewCharacterMessage(milestone, saga, companion)
         }
 
         if (milestone is SagaMilestone.CurrentObjective) {
@@ -27,7 +29,7 @@ object MilestonePrompts {
         }
 
         val genre = saga.data.genre
-        val genreTone = getGenreTone(genre)
+        val genreTone = companion?.tone ?: ""
 
         return buildString {
             appendLine("You are a witty, clever storytelling companion. The user just achieved a milestone in their saga.")
@@ -48,12 +50,16 @@ object MilestonePrompts {
             appendLine()
             appendLine("YOUR PERSONA:")
             appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
-            appendLine(buildPersonaForGenre(genre))
+            appendLine(
+                companion?.persona ?: "Enjoys commenting playfully on story twists and turns.",
+            )
             appendLine()
             appendLine("CREATIVE GUIDELINES:")
             appendLine("- Be ORIGINAL: Don't use generic congratulations")
             appendLine("- React to SPECIFIC details from the milestone above (character names, plot points, achievements)")
-            appendLine("- Use tone that matches $genreTone but with personality and sass")
+            if (genreTone.isNotEmpty()) {
+                appendLine("- Use tone that matches $genreTone but with personality and sass")
+            }
             appendLine("- Maximum 15 words (be punchy and impactful)")
             appendLine("- Include an emotional twist: sarcasm, dark humor, irony, or unexpected warmth")
             appendLine("- Make them laugh or think 'wow, that's perfect'")
@@ -63,138 +69,139 @@ object MilestonePrompts {
             appendLine(getReferencePoints(milestone))
             appendLine()
             appendLine("TONE EXAMPLES (be creative, not copy these):")
-            appendLine(getGenreConversationalTone(genre))
+            appendLine(companion?.conversationalStyle ?: "Be creatively conversational.")
             appendLine()
             appendLine("Output ONLY the single-line provocative message, nothing else:")
         }
     }
 
-    fun generateLoadingMessage(saga: SagaContent): String =
+    fun generateLoadingMessage(
+        saga: SagaContent,
+        companion: CompanionConfig?,
+    ): String =
         buildString {
             val genre = saga.data.genre
-            appendLine("You are a witty narrator creating a brief interlude while the story loads.")
-            appendLine("Generate a SHORT, ATMOSPHERIC transition phrase like comic books and serialized fiction use.")
+            appendLine("You are a witty, slightly sarcastic narrator creating a brief, funny interlude while the story loads.")
+            appendLine("Generate a SHORT, IRONIC, and UNEXPECTED phrase that sounds like an inside joke for the ${genre.name} genre.")
             appendLine()
             appendLine("# STORY IDENTITY")
             appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
             appendLine()
-            appendLine("# GENRE INTERLUDE STYLE (INSPIRATION ONLY - DO NOT COPY)")
-            appendLine(getGenreInterludeStyle(genre))
+            appendLine("# GENRE HUMOR STYLE (INSPIRATION ONLY)")
+            appendLine(companion?.interludeStyle ?: "A funny short loading text string")
             appendLine()
             appendLine("CREATIVITY RULES:")
-            appendLine("- NEVER copy the examples above - they're just inspiration for the VIBE")
-            appendLine("- Invent something fresh, witty, and unexpected every time")
-            appendLine("- Think like a comic book writer creating a unique panel caption")
-            appendLine("- Be clever and genre-authentic, not generic")
+            appendLine("- BE FUNNY & IRONIC: Avoid being over-dramatic or too serious.")
+            appendLine("- USE LOCAL JOKES: Think about what a fan of this genre would find funny.")
+            appendLine("- BE UNEXPECTED: Invent something fresh and witty every time.")
+            appendLine("- NO CLICHÉS: Avoid generic 'loading...' or typical dramatic tropes unless used ironically.")
             appendLine()
             appendLine("REQUIREMENTS:")
-            appendLine("- Maximum 8 words (shorter is better)")
-            appendLine("- Sound like a narrative caption, NOT loading screen text")
-            appendLine("- Be vague about specifics but evocative of the genre's atmosphere")
-            appendLine("- Create anticipation without spoiling anything")
-            appendLine("- NO emojis, NO ellipsis abuse, NO meta-commentary about 'loading'")
+            appendLine("- Maximum 8 words (be punchy).")
+            appendLine("- Sound like a friendly joke or a funny observation, NOT technical loading text.")
+            appendLine("- NO emojis, NO ellipsis abuse, NO meta-commentary about 'AI' or 'system'.")
             appendLine()
-            appendLine("Output ONLY the interlude phrase:")
+            appendLine("Output ONLY the ironic interlude phrase:")
         }
 
     private fun getGenreInterludeStyle(genre: Genre): String =
         when (genre) {
             Genre.FANTASY -> {
                 """
-                Use immersive action-based moments from fantasy adventures:
-                - "Sharpening the blade..."
-                - "Consulting the ancient tome..."
-                - "Brewing a peculiar concoction..."
-                - "The runes begin to glow..."
-                - "Feeding the griffon..."
+                Think about magical mishaps or mundane hero problems:
+                - "Convincing the dragon I'm not delicious..."
+                - "Accidentally turning the bard into a frog..."
+                - "Searching for where I left my magic map..."
+                - "Brewing a potion that's probably just soup..."
+                - "Arguing with a sentient sword about its ego..."
                 """.trimIndent()
             }
 
             Genre.CYBERPUNK -> {
                 """
-                Use terminal/hacker aesthetic actions:
-                - "> Decrypting signal..."
-                - "> Bypassing firewall..."
-                - "Jacking into the network..."
-                - "Rebooting neural interface..."
-                - "Patching the exploit..."
+                Think about tech glitches and dystopian ironies:
+                - "Turning off the firewall to see if it catches fire..."
+                - "Downloading a 'legal' neural upgrade..."
+                - "Telling the vending machine I'm not a bot..."
+                - "Rebooting my artificial sense of humor..."
+                - "Patching the holes in my virtual dignity..."
                 """.trimIndent()
             }
 
             Genre.SPACE_OPERA -> {
                 """
-                Use spaceship/exploration actions:
-                - "Recalibrating hyperdrive..."
-                - "Scanning for life signs..."
-                - "Charging the ion cannons..."
-                - "Plotting the jump coordinates..."
-                - "Sealing the airlock..."
+                Think about cosmic scale vs. tiny problems:
+                - "Asking the computer why the moon is following us..."
+                - "Trying to find 'Up' in a zero-G bathroom..."
+                - "Negotiating with a space-whale for directions..."
+                - "Recalibrating the coffee machine for warp speed..."
+                - "Checking if the aliens accepted my friend request..."
                 """.trimIndent()
             }
 
             Genre.HORROR -> {
                 """
-                Use creeping dread and unsettling moments:
-                - "Something watches..."
-                - "The floorboards creak..."
-                - "Checking the locks again..."
-                - "The candle flickers..."
-                - "Listening to the silence..."
+                Think about meta-horror tropes and bad decisions:
+                - "Entering the basement despite the creepy music..."
+                - "Asking 'Who's there?' like it ever works..."
+                - "Trying to run in slow motion away from danger..."
+                - "Checking if the monster is just lonely..."
+                - "Counting the shadows to see which one moved..."
                 """.trimIndent()
             }
 
             Genre.COWBOY -> {
                 """
-                Use frontier survival and cowboy actions:
-                - "Loading the revolver..."
-                - "Tending the fire..."
-                - "Checking the horizon..."
-                - "Saddling up..."
-                - "Counting the bounty..."
+                Think about frontier grittiness and old-west irony:
+                - "Asking the horse for its political opinion..."
+                - "Polishing the spurs to look faster than I am..."
+                - "Convincing the tumbleweed to pick a side..."
+                - "Checking if this 'gold' is actually just shiny rocks..."
+                - "Wondering if beans count as a balanced diet..."
                 """.trimIndent()
             }
 
             Genre.SHINOBI -> {
                 """
-                Use ninja training and stealth actions:
-                - "Sharpening the kunai..."
-                - "Mixing the poison..."
-                - "Meditating on the void..."
-                - "Reading the scroll..."
-                - "Blending into shadow..."
+                Think about ninja training vs. everyday life:
+                - "Sharpening the katana to cut through social awkwardness..."
+                - "Blending into shadows at a loud party..."
+                - "Meditating on why I always wear black in summer..."
+                - "Reading the secret scroll that's just a grocery list..."
+                - "Practicing the 'I wasn't here' smoke bomb exit..."
                 """.trimIndent()
             }
 
             Genre.HEROES -> {
                 """
-                Use superhero preparation moments:
-                - "Suiting up..."
-                - "Scanning police frequencies..."
-                - "Patching the suit..."
-                - "Reviewing the case files..."
-                - "The signal lights up..."
+                Think about hero egos and super-power logistics:
+                - "Checking if my super soldier serum stock is full..."
+                - "Washing the cape because justice smells like laundry..."
+                - "Practicing my hero landing without breaking my knees..."
+                - "Explaining to the police why I have a sidekick..."
+                - "Reviewing the case files (mostly fan mail)..."
                 """.trimIndent()
             }
 
             Genre.CRIME -> {
                 """
-                Use noir investigation and underworld actions:
-                - "Lighting another cigarette..."
-                - "Reviewing the evidence..."
-                - "Following the money..."
-                - "Tailing the suspect..."
-                - "Loading the piece..."
+                Think about noir tropes and detective clichés:
+                - "Staring at the rain like it owes me money..."
+                - "Finding the 'smoking gun' but it's just a toaster..."
+                - "Lighting a cigarette in a non-smoking interrogation room..."
+                - "Tailing a suspect who's just going to the gym..."
+                - "Following the money until I run out of gas..."
                 """.trimIndent()
             }
 
             Genre.PUNK_ROCK -> {
                 """
-                Use rebellious underground actions:
-                - "Tuning the guitar..."
-                - "Spray painting the wall..."
-                - "Printing the zines..."
-                - "Cranking the amp..."
-                - "Patching the jacket..."
+                Think about rebellion and underground chaos:
+                - "Tuning the guitar for a three-chord revolution..."
+                - "Spray painting 'Loading' on the establishment..."
+                - "Cranking the amp to 11 just to annoy the neighbors..."
+                - "Sewing a patch that says 'I hate patches'..."
+                - "Checking if the mosh pit is still in the same place..."
                 """.trimIndent()
             }
         }
@@ -202,10 +209,11 @@ object MilestonePrompts {
     fun generateNewCharacterMessage(
         milestone: SagaMilestone.NewCharacter,
         saga: SagaContent,
+        companion: CompanionConfig?,
     ): String =
         buildString {
             val genre = saga.data.genre
-            val genreTone = getGenreTone(genre)
+            val genreTone = companion?.tone ?: ""
             appendLine("You are a witty, clever storytelling companion. A new character has just joined the saga.")
             appendLine("Generate ONE SHORT, MEMORABLE congratulatory message that REACTS DIRECTLY to this newcomer.")
             appendLine()
@@ -221,17 +229,19 @@ object MilestonePrompts {
             appendLine()
             appendLine("YOUR PERSONA:")
             appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
-            appendLine(buildPersonaForGenre(genre))
+            appendLine(companion?.persona ?: "Observes new allies with skepticism and amusement.")
             appendLine()
             appendLine("CREATIVE GUIDELINES:")
             appendLine("- Be ORIGINAL: React to specific traits, name, or role of the character.")
-            appendLine("- Tone: $genreTone with a twist of your persona's distinctive sass.")
+            if (genreTone.isNotEmpty()) {
+                appendLine("- Tone: $genreTone with a twist of your persona's distinctive sass.")
+            }
             appendLine("- Focus on the IMPACT or VIBE of this character in the world.")
             appendLine("- Maximum 15 words.")
             appendLine("- NO emojis, NO generic 'welcome to the team' phrases.")
             appendLine()
             appendLine("TONE EXAMPLES:")
-            appendLine(getGenreConversationalTone(genre))
+            appendLine(companion?.conversationalStyle ?: "Greet them creatively.")
             appendLine()
             appendLine("Output ONLY the single-line provocative character reaction:")
         }
@@ -247,168 +257,7 @@ object MilestonePrompts {
             is SagaMilestone.Loading -> "Loading"
         }
 
-    private fun getGenreTone(genre: Genre): String =
-        when (genre) {
-            Genre.FANTASY -> "epic, magical, and enchanting"
-            Genre.CYBERPUNK -> "gritty, high-tech, and rebellious"
-            Genre.SPACE_OPERA -> "grand, cosmic, and adventurous"
-            Genre.HORROR -> "dark, eerie, and suspenseful"
-            Genre.COWBOY -> "rugged, Wild West, and frontier spirit"
-            Genre.SHINOBI -> "disciplined, honor-bound, and stealthy"
-            Genre.HEROES -> "heroic, inspiring, and courageous"
-            Genre.CRIME -> "noir, mysterious, and morally complex"
-            Genre.PUNK_ROCK -> "rebellious, energetic, and anti-establishment"
-        }
-
-    private fun getGenreConversationalTone(genre: Genre): String =
-        when (genre) {
-            Genre.FANTASY -> {
-                """
-                - Use poetic, slightly archaic language with mockingly grandiose flair
-                - Sarcastically reference "chosen ones", destiny, or overused tropes
-                - Tone: Mockingly epic, ironically majestic, playfully condescending
-                """.trimIndent()
-            }
-
-            Genre.CYBERPUNK -> {
-                """
-                - Use tech slang with sarcastic hacker attitude
-                - Mock their "l33t" skills or question their life choices
-                - Tone: Cynically edgy, sarcastically cool, street-smart sass
-                """.trimIndent()
-            }
-
-            Genre.SPACE_OPERA -> {
-                """
-                - Use cosmic vocabulary but question the vastness of their ambition
-                - Reference the infinite void of space and their tiny achievement
-                - Tone: Sarcastically grand, cosmic irony, playfully insignificant
-                """.trimIndent()
-            }
-
-            Genre.HORROR -> {
-                """
-                - Use dark humor and ominous sarcasm
-                - Make fun of them for diving deeper into darkness
-                - Tone: Darkly humorous, creepily sarcastic, morbidly encouraging
-                """.trimIndent()
-            }
-
-            Genre.COWBOY -> {
-                """
-                - Use frontier slang with old-timer mockery
-                - Tease them like a grizzled veteran would a greenhorn
-                - Tone: Gruff sarcasm, weathered irony, rugged ribbing
-                """.trimIndent()
-            }
-
-            Genre.SHINOBI -> {
-                """
-                - Use discipline language but mock their "ninja way"
-                - Sarcastically question if they're truly honorable or just playing
-                - Tone: Ironically wise, sarcastically stoic, sensei-level trolling
-                """.trimIndent()
-            }
-
-            Genre.HEROES -> {
-                """
-                - Use heroic language but mock their "heroism"
-                - Question if saving the day is really that impressive
-                - Tone: Sarcastically heroic, mockingly noble, cape-wearing cynicism
-                """.trimIndent()
-            }
-
-            Genre.CRIME -> {
-                """
-                - Use noir vocabulary with detective cynicism
-                - Sarcastically treat them like a suspect or mock their "investigation"
-                - Tone: Film noir sarcasm, hard-boiled irony, morally grey snark
-                """.trimIndent()
-            }
-
-            Genre.PUNK_ROCK -> {
-                """
-                - Use rebellious slang but mock their "rebellion"
-                - Question how punk they really are or dare them to go harder
-                - Tone: Aggressively sarcastic, mockingly anti-establishment, loudly ironic
-                """.trimIndent()
-            }
-        }
-
-    private fun buildPersonaForGenre(genre: Genre): String =
-        when (genre) {
-            Genre.FANTASY -> {
-                """
-                - understands magic systems, prophecies, and chosen ones (but finds them clichéd)
-                - references fantasy tropes with ironic detachment and literary sarcasm
-                - appreciates epic quests but trolls about predictability
-                """.trimIndent()
-            }
-
-            Genre.CYBERPUNK -> {
-                """
-                - speaks in tech jargon mixed with street slang and dark humor
-                - questions authority, corporate overlords, and the surveillance state
-                - respects rebellion but mocks corporate sellouts
-                """.trimIndent()
-            }
-
-            Genre.SPACE_OPERA -> {
-                """
-                - appreciates grand cosmic scales but mocks humanity's insignificance
-                - references space exploration with existential irony
-                - finds beauty in infinity but finds your problems tiny
-                """.trimIndent()
-            }
-
-            Genre.HORROR -> {
-                """
-                - understands cosmic dread, psychological terror, and body horror
-                - finds humor in darkness and appreciates descent into madness
-                - respects fear but laughs at your brave (foolish) choices
-                """.trimIndent()
-            }
-
-            Genre.COWBOY -> {
-                """
-                - speaks like a weathered frontier veteran with gruff wisdom
-                - references the Wild West, outlaws, and survival
-                - respects grit but teases about inexperience and greenhorn mistakes
-                """.trimIndent()
-            }
-
-            Genre.SHINOBI -> {
-                """
-                - embodies honor, discipline, and the ninja code with sarcastic wisdom
-                - understands loyalty, betrayal, and the shadow world
-                - respects skill but doubts your commitment to the path
-                """.trimIndent()
-            }
-
-            Genre.HEROES -> {
-                """
-                - believes in heroism, sacrifice, and saving the world (with skepticism)
-                - references legendary deeds but questions if yours compare
-                - admires courage but mocks the burden of being humanity's savior
-                """.trimIndent()
-            }
-
-            Genre.CRIME -> {
-                """
-                - thinks like a noir detective in a corrupt world
-                - understands crime, betrayal, and moral grey zones
-                - respects cunning but doubts if you're actually that clever
-                """.trimIndent()
-            }
-
-            Genre.PUNK_ROCK -> {
-                """
-                - lives by rebellion, breaking rules, and anti-establishment values
-                - speaks with raw energy and aggressive authenticity
-                - respects punk spirit but questions if you're truly anti-conformist
-                """.trimIndent()
-            }
-        }
+    // Removed hardcoded functions: getGenreInterludeStyle, getGenreTone, getGenreConversationalTone, buildPersonaForGenre
 
     private fun getReferencePoints(milestone: SagaMilestone): String =
         when (milestone) {
@@ -465,33 +314,37 @@ object MilestonePrompts {
     fun rewriteIntroduction(
         milestone: SagaMilestone.Introduction,
         saga: SagaContent,
+        companion: CompanionConfig?,
     ): String =
         buildString {
             val genre = saga.data.genre
-            val hasOriginalText = milestone.introduction.isNotBlank()
+            val summary = milestone.sceneSummary
 
-            if (hasOriginalText) {
-                // REWRITE MODE: Shorten existing introduction
+            appendLine(
+                "You are a cinematic narrator. The user is resuming their saga at a significant point.",
+            )
+            appendLine("Your task is to SYNTHESIZE the current state of the story into a SHORT, IMPACTFUL, and CINEMATIC introduction.")
+            appendLine()
+            appendLine("# STORY IDENTITY")
+            appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+            appendLine()
+
+            if (summary != null) {
+                appendLine("# SCENE CONTEXT TO SYNTHESIZE")
+                appendLine("- Current Mood: ${summary.mood}")
+                appendLine("- Immediate Objective: ${summary.immediateObjective}")
+                appendLine("- Main Conflict: ${summary.currentConflict}")
+                appendLine("- Active Characters: ${summary.charactersPresent.joinToString()}")
+                appendLine("- Location: ${summary.currentLocation}")
+                appendLine("- Narrative Weight: ${summary.tensionLevel}")
+                appendLine()
                 appendLine(
-                    "You are a cinematic narrator. The user is beginning a new ${milestone.type.name.lowercase()} in their saga.",
+                    "INSTRUCTION: Use ALL the fields above to create a single, evocative narrative hook. Don't just list them; weave them into a cinematic 'Previously on...' or 'The story continues...' vibe.",
                 )
-                appendLine("The original introduction text is too long. Rewrite it to be SHORT, IMPACTFUL, and CINEMATIC.")
-                appendLine()
-                appendLine("# STORY IDENTITY")
-                appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
-                appendLine()
+            } else if (milestone.introduction.isNotBlank()) {
                 appendLine("# ORIGINAL TEXT TO REWRITE")
                 appendLine(milestone.introduction)
             } else {
-                // GENERATE MODE: Create fresh introduction from context
-                appendLine(
-                    "You are a cinematic narrator. The user is beginning a new ${milestone.type.name.lowercase()} in their saga.",
-                )
-                appendLine("Generate a SHORT, IMPACTFUL, CINEMATIC introduction quote for this moment.")
-                appendLine()
-                appendLine("# STORY IDENTITY")
-                appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
-                appendLine()
                 appendLine("# MILESTONE TYPE")
                 appendLine("- Type: ${milestone.type.name.lowercase()}")
                 appendLine("- This marks a significant transition in the story")
@@ -500,15 +353,17 @@ object MilestonePrompts {
             appendLine()
             appendLine("YOUR PERSONA:")
             appendLine("You speak like a ${genre.name.lowercase()} aficionado who:")
-            appendLine(buildPersonaForGenre(genre))
+            appendLine(companion?.persona ?: "Enjoys observing heroes face their fate.")
             appendLine()
             appendLine("REQUIREMENTS:")
-            appendLine("- Maximum 25 words (be punchy)")
-            appendLine("- Maintain ${genre.name.lowercase()} tone: ${getGenreTone(genre)}")
+            appendLine("- Maximum 35 words (be punchy but descriptive)")
+            if (companion?.tone?.isNotEmpty() == true) {
+                appendLine("- Maintain ${genre.name.lowercase()} tone: ${companion.tone}")
+            }
             appendLine("- Focus on the emotional core or the major shift in the narrative")
             appendLine("- Works perfectly with a typewriter animation reveal")
             appendLine("- NO emojis, NO greeting, NO meta-commentary")
             appendLine()
-            appendLine("Output ONLY the cinematic introduction:")
+            appendLine("Output ONLY the cinematic story synthesis:")
         }
 }

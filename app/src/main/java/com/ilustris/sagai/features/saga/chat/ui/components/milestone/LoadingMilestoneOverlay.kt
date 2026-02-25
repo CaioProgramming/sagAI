@@ -20,7 +20,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -49,13 +48,13 @@ fun LoadingMilestoneOverlay(
                     .padding(32.dp),
         ) {
             Image(
-                painterResource(R.drawable.ic_spark),
+                painterResource(genre.background),
                 null,
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.surfaceContainer),
                 modifier =
                     sparkModifier
                         .size(
-                            50.dp,
+                            80.dp,
                         ).reactiveShimmer(
                             true,
                             genre.shimmerColors(),

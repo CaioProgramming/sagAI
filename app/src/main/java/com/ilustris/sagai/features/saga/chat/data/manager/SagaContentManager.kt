@@ -18,6 +18,7 @@ import java.io.File
 
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
+    val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val ambientMusicFile: StateFlow<File?>
     val narrativeProcessingUiState: StateFlow<Boolean>

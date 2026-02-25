@@ -97,11 +97,10 @@ class MessageUseCaseImpl
             isFromUser: Boolean,
             sceneSummary: SceneSummary?,
         ) = executeRequest {
-            val tone = analyzeMessageTone(saga, message, isFromUser).getSuccess()
             messageRepository.saveMessage(
                 message.copy(
-                    emotionalTone = tone,
                     status = MessageStatus.OK,
+                    timestamp = System.currentTimeMillis(),
                 ),
             )
         }
@@ -331,4 +330,22 @@ class MessageUseCaseImpl
             executeRequest {
                 messageRepository.updateMessage(message)
             }
+
+        override suspend fun generateExtraContent(
+            saga: SagaContent,
+            message: Message,
+            sceneSummary: SceneSummary?,
+            characterReference: CharacterContent?,
+            generateAudio: Boolean,
+            isFromUser: Boolean,
+        ) {
+            val tone = analyzeMessageTone(saga, message, isFromUser).getSuccess()
+            if (tone != null) {
+                updateMessage(message.copy(emotionalTone = tone))
+            }
+            generateReaction(saga, message, sceneSummary)
+            if (generateAudio) {
+                generateAudio(saga, message, characterReference)
+        }
+    }
     }

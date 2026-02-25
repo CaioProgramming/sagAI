@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
-import android.icu.util.Calendar
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -24,7 +23,7 @@ class MessageRepositoryImpl
                         .saveMessage(
                             message.copy(
                                 id = 0,
-                                timestamp = Calendar.getInstance().timeInMillis,
+                                timestamp = System.currentTimeMillis(),
                                 text = message.text.trimEnd(),
                             ),
                         )!!

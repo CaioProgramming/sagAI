@@ -88,9 +88,9 @@ fun DefaultOverlay(
             exit = fadeOut(),
         ) {
             Image(
-                painterResource(R.drawable.ic_spark),
+                painterResource(genre.background),
                 null,
-                sparkModifier.size(50.dp),
+                sparkModifier.size(80.dp),
                 colorFilter = ColorFilter.tint(genre.resolveColor()),
             )
         }

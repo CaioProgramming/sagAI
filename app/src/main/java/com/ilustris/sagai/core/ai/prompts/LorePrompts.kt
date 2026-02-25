@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
@@ -147,7 +148,7 @@ object LorePrompts {
                     }
             if (chapters.isNotEmpty()) {
                 appendLine("Previous chapters context:")
-                appendLine(chapters.toJsonFormatExcludingFields(CHAPTER_EXCLUDED_FIELDS))
+                appendLine(chapters.normalizetoAIItems(CHAPTER_EXCLUDED_FIELDS))
             }
         }
 

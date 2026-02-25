@@ -6,6 +6,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.core.ai.model.GeminiContent
+import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
@@ -221,6 +222,8 @@ class GemmaClient
                                 }",
                             )
 
+                            Log.d(javaClass.simpleName, "Prompt requested: $fullPrompt")
+
                             Log.i(
                                 javaClass.simpleName,
                                 "Generated content: $responseText",
@@ -241,24 +244,62 @@ class GemmaClient
                             this@GemmaClient::class.java.simpleName,
                             "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
                         )
+                        var extractedDelay: Long? = null
                         if (e is HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
                             Log.e(
                                 this@GemmaClient::class.java.simpleName,
                                 "HTTP Error ($model): $errorBody",
                             )
+
+                            try {
+                                val errorResponse =
+                                    Gson().fromJson(errorBody, GeminiErrorResponse::class.java)
+                                val retryInfo =
+                                    errorResponse.error?.details?.find {
+                                        it.type == "type.googleapis.com/google.rpc.RetryInfo"
+                                    }
+                                extractedDelay =
+                                    retryInfo
+                                        ?.retryDelay
+                                        ?.removeSuffix("s")
+                                        ?.toDoubleOrNull()
+                                        ?.toLong()
+
+                                errorResponse.error?.details?.forEach { detail ->
+                                    detail.violations?.forEach { violation ->
+                                        Log.w(
+                                            this@GemmaClient::class.java.simpleName,
+                                            "Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})",
+                                        )
+                                    }
+                                }
+
+                                if (extractedDelay != null) {
+                                    Log.i(
+                                        this@GemmaClient::class.java.simpleName,
+                                        "Extracted precise delay from error: $extractedDelay seconds",
+                                    )
+                                }
+                            } catch (parseEx: Exception) {
+                                Log.e(
+                                    this@GemmaClient::class.java.simpleName,
+                                    "Failed to parse error body: ${parseEx.message}",
+                                )
+                            }
                         }
 
                         if (currentAttempt < maxAttempts) {
+                            val delayToApply = extractedDelay ?: RETRY_DELAY.toLong()
                             Log.w(
                                 this@GemmaClient::class.java.simpleName,
-                                "Retrying HIGH priority request in $RETRY_DELAY seconds...",
+                                "Retrying HIGH priority request in $delayToApply seconds...",
                             )
-                            delay(RETRY_DELAY.seconds)
+                            delay(delayToApply.seconds)
                         } else {
                             // Final failure
                             retryDelay =
-                                retryDelay?.let {
+                                extractedDelay?.toInt() ?: retryDelay?.let {
                                     if (it > 30) it / 2 else it + it
                                 } ?: 2
                             Log.e(

@@ -45,6 +45,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -89,7 +90,8 @@ fun ChapterContentView(
                             content,
                             chapter,
                         )
-                    }.size(100.dp)
+                    }
+                    .size(100.dp)
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
@@ -216,7 +218,8 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient())
                     .clickable {
                         requestReview(chapter)
-                    }.padding(4.dp),
+                    }
+                    .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -242,4 +245,7 @@ fun ChapterContentView(
     }
 
     StarryLoader(isGenerating, brushColors = content.data.genre.colorPalette())
+
+    val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
+    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
 }

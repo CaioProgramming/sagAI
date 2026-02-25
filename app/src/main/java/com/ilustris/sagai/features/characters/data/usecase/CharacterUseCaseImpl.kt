@@ -43,7 +43,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -97,7 +96,6 @@ class CharacterUseCaseImpl
                             imageReference = null,
                             context =
                                 buildString {
-                                    appendLine("Character Context:")
                                     appendLine(
                                         character.toAINormalize(
                                             listOf(
@@ -107,24 +105,31 @@ class CharacterUseCaseImpl
                                                 "joinedAt",
                                                 "smartZoom",
                                                 "knowledge",
+                                                "firstSceneId",
+                                                "emojified",
+                                                "hexColor",
                                             ),
                                         ),
                                     )
                                 },
-                            imageType = ImageType.CHARACTER,
+                            imageType = ImageType.ICON,
                             variationId = saga.variationId,
-                        ).getSuccess()!!
+                        )
+
+                if (image.isFailure) {
+                    throw image.error.value
+                }
 
                 val file =
-                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")!!
+                    fileHelper.saveFile(
+                        character.name,
+                        image.getSuccess(),
+                        path = "${saga.id}/characters/",
+                    )!!
                 val newCharacter =
                     character.copy(image = file.path)
                 repository.updateCharacter(newCharacter)
-                image.recycle()
 
-                withContext(Dispatchers.IO) {
-                    createSmartZoom(newCharacter)
-                }
                 newCharacter to ""
             }
 

@@ -14,7 +14,6 @@ import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -37,10 +36,10 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
-import com.ilustris.sagai.features.saga.chat.presentation.model.LoadingType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -86,10 +85,13 @@ class SagaContentManagerImpl
         private val remoteConfig: FirebaseRemoteConfig,
         private val backupService: BackupService,
         private val imageHelper: ImageHelper,
+        private val messageUseCase: MessageUseCase,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
         override val content = MutableStateFlow<SagaContent?>(null)
+        private val _sceneSummary = MutableStateFlow<SceneSummary?>(null)
+        override val sceneSummary: StateFlow<SceneSummary?> = _sceneSummary.asStateFlow()
         override val milestoneUpdate = MutableStateFlow<SagaMilestone?>(null)
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
@@ -105,6 +107,10 @@ class SagaContentManagerImpl
         private val _narrativeProcessingUiState = MutableStateFlow(false)
         override val narrativeProcessingUiState: StateFlow<Boolean> =
             _narrativeProcessingUiState.asStateFlow()
+
+        private var sagaJob: kotlinx.coroutines.Job? = null
+        private var loadingObserverJob: kotlinx.coroutines.Job? = null
+        private var milestoneObserverJob: kotlinx.coroutines.Job? = null
 
         override var snackBarUpdate: MutableStateFlow<SnackBarState?> = MutableStateFlow(null)
 
@@ -161,81 +167,130 @@ class SagaContentManagerImpl
         }
 
         override suspend fun loadSaga(sagaId: String) {
-            managerScope.launch {
-                Log.d(javaClass.simpleName, "Loading saga: $sagaId")
-                try {
-                    observeLoading()
-                    observeMilestone()
-                    sagaHistoryUseCase
-                        .getSagaById(sagaId.toInt())
-                        .collectLatest { saga ->
-                            Log.d(
-                                javaClass.simpleName,
-                                "Saga flow updated for saga -> $sagaId \n ${saga?.data.toJsonFormat()}",
-                            )
-
-                            if (saga == null) {
-                                Log.e(
-                                    javaClass.simpleName,
-                                    "loadSaga: Unexpected error loading saga($sagaId)",
-                                )
-                                content.emit(null)
-                                return@collectLatest
-                            }
-
-                            val previousSaga = content.value
-                            content.value = saga
-
-                            if (previousSaga != null &&
-                                previousSaga.data.id == saga.data.id &&
-                                previousSaga.data.playTimeMs != saga.data.playTimeMs &&
-                                previousSaga.flatMessages().size == saga.flatMessages().size &&
-                                previousSaga.acts.size == saga.acts.size
-                            ) {
+            sagaJob?.cancel()
+            sagaJob =
+                managerScope.launch {
+                    Log.d(javaClass.simpleName, "Loading saga: $sagaId")
+                    try {
+                        if (loadingObserverJob == null || loadingObserverJob?.isActive == false) {
+                            loadingObserverJob = observeLoading()
+                        }
+                        if (milestoneObserverJob == null || milestoneObserverJob?.isActive == false) {
+                            milestoneObserverJob = observeMilestone()
+                        }
+                        sagaHistoryUseCase
+                            .getSagaById(sagaId.toInt())
+                            .collectLatest { saga ->
                                 Log.d(
                                     javaClass.simpleName,
-                                    "Saga update was only playtime. Skipping narrative check.",
+                                    "Saga flow updated for saga -> $sagaId",
                                 )
-                                return@collectLatest
-                            }
 
-                            checkMessageNotifications(previousSaga, saga)
-
-                            val messages = saga.flatMessages()
-                            if (messages.isNotEmpty() &&
-                                messages
-                                    .last()
-                                    .message
-                                    .senderType == SenderType.ACTION &&
-                                isDebugModeEnabled
-                            ) {
-                                return@collectLatest
-                            }
-                            checkNarrativeProgression(saga)
-
-                            getAmbienceMusic(saga)
-
-                            validateCharacters(saga)
-
-                            if (previousSaga == null && saga.data.isEnded.not()) {
-                                saga.currentActInfo?.currentChapterInfo?.let { chapter ->
-                                    emitMilestone(
-                                        SagaMilestone.Introduction(
-                                            type = IntroductionType.CHAPTER,
-                                            titleText = chapter.data.title,
-                                            introduction = chapter.data.introduction,
-                                            number = saga.chapterNumber(chapter.data).toRoman(),
-                                        ),
+                                if (saga == null) {
+                                    Log.e(
+                                        javaClass.simpleName,
+                                        "loadSaga: Unexpected error loading saga($sagaId)",
                                     )
+                                    content.emit(null)
+                                    return@collectLatest
+                                }
+
+                                val previousSaga = content.value
+                                content.value = saga
+
+                                if (previousSaga != null &&
+                                    previousSaga.data.id == saga.data.id &&
+                                    previousSaga.data.playTimeMs != saga.data.playTimeMs &&
+                                    previousSaga.acts == saga.acts &&
+                                    previousSaga.characters == saga.characters
+                                ) {
+                                    Log.d(
+                                        javaClass.simpleName,
+                                        "Saga update was only playtime. Skipping narrative check.",
+                                    )
+                                    return@collectLatest
+                                }
+
+                                checkMessageNotifications(previousSaga, saga)
+
+                                val messages = saga.flatMessages()
+                                if (messages.isNotEmpty() &&
+                                    messages
+                                        .last()
+                                        .message
+                                        .senderType == SenderType.ACTION &&
+                                    isDebugModeEnabled
+                                ) {
+                                    return@collectLatest
+                                }
+                                checkNarrativeProgression(saga)
+
+                                getAmbienceMusic(saga)
+
+                                validateCharacters(saga)
+
+                                if (previousSaga == null && saga.data.isEnded.not()) {
+                                    saga.currentActInfo?.currentChapterInfo?.let { chapterInfo ->
+                                        val isNewChapter =
+                                            chapterInfo.events.isEmpty() ||
+                                                (
+                                                    chapterInfo.events.size == 1 &&
+                                                        chapterInfo.events
+                                                            .first()
+                                                            .messages
+                                                            .isEmpty()
+                                                )
+                                        if (isNewChapter) {
+                                            emitMilestone(
+                                                SagaMilestone.Introduction(
+                                                    type = IntroductionType.CHAPTER,
+                                                    titleText = chapterInfo.data.title,
+                                                    introduction = chapterInfo.data.introduction,
+                                                    number =
+                                                        saga
+                                                            .chapterNumber(chapterInfo.data)
+                                                            .toRoman(),
+                                                ),
+                                            )
+                                        } else {
+                                            startProcessing {
+                                                messageUseCase
+                                                    .getSceneContext(saga)
+                                                    .onSuccessAsync { summary ->
+                                                        _sceneSummary.emit(summary)
+                                                        summary?.let {
+                                                            emitMilestone(
+                                                                SagaMilestone.Introduction(
+                                                                    type = IntroductionType.RESUME,
+                                                                    titleText = chapterInfo.data.title,
+                                                                    introduction =
+                                                                        summary.immediateObjective
+                                                                            ?: summary.currentConflict
+                                                                            ?: summary.mood
+                                                                            ?: emptyString(),
+                                                                    number =
+                                                                        saga
+                                                                            .chapterNumber(
+                                                                                chapterInfo.data,
+                                                                            ).toRoman(),
+                                                                    sceneSummary = summary,
+                                                                ),
+                                                            )
+                                                        } ?: run {
+                                                            emitMilestone(null)
+                                                        }
+                                                    }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                        }
-                } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
-                    content.value = null
-                    setNarrativeProcessingStatus(false)
+                    } catch (e: Exception) {
+                        Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
+                        content.value = null
+                        setNarrativeProcessingStatus(false)
+                    }
                 }
-            }
         }
 
         private suspend fun validateCharacters(saga: SagaContent) {
@@ -327,7 +382,6 @@ class SagaContentManagerImpl
             chapter: ChapterContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                emitMilestone(SagaMilestone.Loading(LoadingType.CHAPTER))
                 val chapterUpdate =
                     chapterUseCase
                         .generateChapter(
@@ -459,8 +513,6 @@ class SagaContentManagerImpl
                 endTimeline(saga.currentActInfo?.currentChapterInfo)
                 error("Timeline already completed")
             } else {
-                emitMilestone(SagaMilestone.Loading(LoadingType.EVENT))
-
                 val timeLineUpdate = timelineUseCase.generateTimeline(saga, content).getSuccess()!!
 
                 timeLineUpdate
@@ -487,7 +539,6 @@ class SagaContentManagerImpl
         private suspend fun updateAct(currentAct: ActContent) =
             executeRequest {
                 val saga = content.value!!
-                emitMilestone(SagaMilestone.Loading(LoadingType.ACT))
                 Log.d(
                     javaClass.simpleName,
                     "updating act(${saga.currentActInfo?.data?.id})",
@@ -516,7 +567,7 @@ class SagaContentManagerImpl
                 sagaHistoryUseCase.updateSaga(saga.data.copy(currentActId = null)).asSuccess()
             }
 
-        private fun observeMilestone() {
+        private fun observeMilestone() =
             managerScope.launch {
                 milestoneUpdate.collectLatest {
                     Log.d(javaClass.simpleName, "observeMilestone:\n$it")
@@ -527,7 +578,6 @@ class SagaContentManagerImpl
                     }
                 }
             }
-        }
 
         private fun observeLoading() =
             managerScope.launch {
@@ -797,7 +847,6 @@ class SagaContentManagerImpl
                             sagaHistoryUseCase.updateSaga(
                                 saga.data.copy(currentActId = data.id),
                             )
-                            emitMilestone(SagaMilestone.Loading(LoadingType.ACT))
                             val act = actUseCase.generateActIntroduction(saga, data).getSuccess()!!
 
                             emitMilestone(
@@ -822,8 +871,6 @@ class SagaContentManagerImpl
                             actUseCase.updateAct(
                                 currentAct.data.copy(currentChapterId = chapter.id),
                             )
-
-                            emitMilestone(SagaMilestone.Loading(LoadingType.CHAPTER))
 
                             val chapterUpdate =
                                 chapterUseCase
@@ -1029,7 +1076,6 @@ class SagaContentManagerImpl
                             ),
                         ).asSuccess()
                 }
-                emitMilestone(SagaMilestone.Loading(LoadingType.ENDING))
                 val endingMessage = sagaHistoryUseCase.generateEndMessage(saga).getSuccess()!!
                 val emotionalEnding =
                     emotionalUseCase.generateEmotionalConclusion(saga).getSuccess()
@@ -1051,7 +1097,6 @@ class SagaContentManagerImpl
                 setProcessing(true)
                 try {
                     val currentSaga = content.value!!
-                    emitMilestone(SagaMilestone.Loading(LoadingType.CHARACTER))
                     if (isDebugModeEnabled) {
                         Log.i(
                             javaClass.simpleName,
@@ -1102,7 +1147,6 @@ class SagaContentManagerImpl
                 setProcessing(true)
                 try {
                     val currentSaga = content.value!!
-                    emitMilestone(SagaMilestone.Loading(LoadingType.CHARACTER))
                     if (isDebugModeEnabled) {
                         Log.i(
                             javaClass.simpleName,

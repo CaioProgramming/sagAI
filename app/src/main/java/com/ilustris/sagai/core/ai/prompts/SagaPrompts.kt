@@ -121,7 +121,7 @@ object SagaPrompts {
         appendLine()
         appendLine("**ART STYLE (MANDATORY):** ${config.artStyle}")
         appendLine()
-        appendLine(ImagePrompts.criticalGenerationRule(imageConfig))
+        appendLine(imageConfig.criticalRules)
         appendLine()
 
         appendLine("**GOOGLE BEST PRACTICES - APPLY STRICTLY:**")

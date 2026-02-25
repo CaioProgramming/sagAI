@@ -80,41 +80,63 @@ object ChatPrompts {
 
         sceneSummary?.let {
             appendLine("# SCENE STATE")
-            appendLine(sceneSummary.toAINormalize())
+            val exclusions = listOf("establishedFacts", "worldStateChanges", "possibleOutcomes")
+            appendLine(sceneSummary.toAINormalize(exclusions))
+
+            if (!sceneSummary.establishedFacts.isNullOrEmpty() || !sceneSummary.worldStateChanges.isNullOrEmpty()) {
+                appendLine("\n## ⚓ STORY ANCHORS (IMMUTABLE TRUTHS)")
+                appendLine("The following facts are FINAL and MUST BE RESPECTED. Never contradict them:")
+                sceneSummary.establishedFacts?.forEach { appendLine("- $it") }
+                sceneSummary.worldStateChanges?.forEach { appendLine("- [LATEST CHANGE]: $it") }
+                appendLine()
+            }
 
             // Inject possible outcomes as narrative guidance
             sceneSummary.possibleOutcomes?.takeIf { it.isNotEmpty() }?.let { outcomes ->
                 appendLine("\n## NARRATIVE GUIDANCE")
-                appendLine("The following are plausible directions for this scene based on current context:")
+                appendLine("Plausible directions for this moment:")
                 outcomes.forEachIndexed { index, outcome ->
                     appendLine("${index + 1}. $outcome")
                 }
-                appendLine(
-                    "These are suggestions to keep your response grounded. You may follow one, blend them, or take a different direction if the player's action demands it.",
-                )
             }
 
-            charactersInScene?.let {
-                appendLine("## Characters in Immediate Scene:")
-                appendLine(CharacterPrompts.charactersOverview(it.map { it.data }))
-                it.forEach { characterContent ->
-                    appendLine("${characterContent.data.name} relationships")
-                    appendLine(characterContent.summarizeRelationships(1))
+            charactersInScene?.let { inScene ->
+                val nonMainCharacters =
+                    inScene.filter { it.data.id != saga.mainCharacter?.data?.id }
+                if (nonMainCharacters.isNotEmpty()) {
+                    appendLine("\n## Characters in Immediate Scene:")
+                    appendLine(CharacterPrompts.charactersOverview(nonMainCharacters.map { it.data }))
+                }
+                inScene.forEach { characterContent ->
+                    appendLine(
+                        "- ${characterContent.data.name} relationships: ${
+                            characterContent.summarizeRelationships(
+                                1,
+                            )
+                        }",
+                    )
                 }
             }
         }
 
         appendLine(SagaPrompts.mainContext(saga))
 
-        appendLine("\n# FULL SAGA CAST SUMMARY")
-        appendLine("// Use this list to check if a mentioned entity is an established character or a new one.")
-        appendLine(
-            saga
-                .getCharacters(true)
-                .map {
-                    it.copy(knowledge = it.knowledge?.takeLast(25))
-                }.normalizetoAIItems(characterExclusions),
-        )
+        val charactersInSceneIds = charactersInScene?.map { it.data.id } ?: emptyList()
+        val externalCharacters = saga.getCharacters(true).filter { it.id !in charactersInSceneIds }
+
+        if (externalCharacters.isNotEmpty()) {
+            appendLine("\n# FULL SAGA CAST SUMMARY")
+            appendLine("// Characters NOT in the immediate scene. Use this list ONLY to check if a mentioned entity exists.")
+            appendLine(
+                externalCharacters
+                    .map {
+                        it.copy(
+                            backstory = if (it.backstory.length > 150) it.backstory.take(150) + "..." else it.backstory,
+                            knowledge = emptyList(),
+                        )
+                    }.normalizetoAIItems(characterExclusions),
+            )
+        }
 
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trim())
         appendLine(ActPrompts.actDirective(directive))
@@ -146,16 +168,6 @@ object ChatPrompts {
         appendLine(config.conversationDirective)
 
         appendLine("\n# CURRENT PLAYER TURN")
-        appendLine("### Character Resolution Hierarchy:")
-        appendLine("1. **LOCAL:** If the player addresses someone in `charactersPresent` (e.g., 'Anya'), THEY MUST respond.")
-        appendLine(
-            "2. **GLOBAL:** If the player addresses a character NOT in the room (e.g., calling 'Rafaela' via radio), check the `# FULL SAGA CAST SUMMARY`. If she exists, utilize her personality/knowledge.",
-        )
-        appendLine(
-            "3. **DISCOVERY:** If no existing character matches the context, return a NEW and creative `speakerName`. The system will automatically create them based on the dialogue you provide.",
-        )
-        appendLine("4. **CONTINUITY:** Identify the `speakerName` in the [LATEST MESSAGE]. YOU MUST NOT respond as that same character.")
-        appendLine("5. **PRIVACY:** NPCs cannot read 'THOUGHT' messages; they interpret only visible actions.")
 
         appendLine("\n[LATEST MESSAGE] - THE IMMEDIATE REALITY")
         appendLine("## ⚠️ THIS IS THE MOST IMPORTANT CONTEXT")
@@ -364,13 +376,13 @@ object ChatPrompts {
             appendLine("8. **spatialContext**: Current layout (e.g., 'Cramped ventilation shaft', 'Open sky', 'Crowded market').")
             appendLine("9. **narrativePacing**: The 'speed' of the scene (Urgent/Action, Slow/Atmospheric, Transitional).")
             appendLine(
-                "10. **worldStateChanges**: tangible environmental shifts (e.g., 'The door is now locked', 'The alarm is sounding').",
+                "10. **worldStateChanges**: List ANY tangible environmental or status shifts that happened in the recent turn (e.g., 'Character A died', 'The door is now locked', 'The secret cave was revealed'). Status changes like deaths or betrayals are HIGHEST PRIORITY.",
             )
             appendLine(
                 "11. **relevantPastContext**: A list of crucial past events, secrets, or lore mentioned *during the recent conversation history* that are relevant to understanding the current moment (e.g., 'Player mentioned their dead brother', 'Character X revealed they have the key'). This helps maintain continuity even when old messages rotate out.",
             )
             appendLine(
-                "12. **establishedFacts**: A list of key facts established throughout the *entire story history* that are relevant to the current context. This acts as a 'continuity anchor' to ensure the narrative moves forward. Include things the player/characters definitely know (e.g., 'The artifact is broken', 'The killer's identity is revealed'). If a fact is listed here, it must be treated as COMMON KNOWLEDGE and NEVER re-explained or treated as a new discovery.",
+                "12. **establishedFacts**: A list of PERMANENT, UNCHANGING TRUTHS established throughout the story. This is your 'Continuity Anchor'. Include major plot points, character status (DECEASED, missing, betrayed), and absolute revelations. These facts are used to prevent retcons.",
             )
             appendLine(
                 "13. **possibleOutcomes**: Extract EXACTLY 2 plausible narrative directions based on the current scene state, immediate objective, and active conflict. Each outcome must be:",

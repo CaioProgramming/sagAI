@@ -59,13 +59,8 @@ object StorytellingDirective {
         1. **Authenticity:** Characters react based on their core traits via `ACTION`, `CHARACTER` (dialogue), or `THOUGHT` (internal). Silence is a valid reaction.
         2. **Contextual Evaluation:** If the player is alone or in monologue, avoid forcing dialogue; use `NARRATOR` or `THOUGHT` instead.
         3. **Conflict & Growth:** Prioritize action during combat. NPCs are flexible—they can be swayed, persuaded, or changed if it serves the narrative.
-        4. **Character Hijack (MANDATORY):** If the player addresses a specific NPC or describes their presence and interaction, THAT NPC MUST respond. This takes precedence over any previous 'active' NPC. 
-        5. **Presence Loyalty:** It is STICKY FORBIDDEN for an NPC NOT listed in the `SCENE STATE` (charactersPresent) to speak unless they are being newly introduced in this turn. Do not allow "global" characters to teleport into a scene.
-        6. **Spatial Awareness & Continuity:** NPCs only interact if they are logically present. If the protagonist moves to a new room or area (e.g., "traveled through corridors"), characters left behind are GONE. It is a CRITICAL ERROR for a left-behind NPC to "observe" or "comment" on the new scene unless they explicitly followed or are using a communication device.
-        7. **Incapacitated NPCs:** If a character is wounded, unconscious, or pinned, they MUST remain inactive unless the story explicitly resolves their condition. Do not force them into a dialogue role to fill a silence.
-        8. **Relationship Loyalty:** NPCs MUST act according to their established relationships. 
-        9. **Role Fluidity & Continuity:** A character NEVER talks to themselves. Identify the speaker of the latest message; YOUR response MUST come from a different entity to keep the conversation moving.
-        10. **Choice Justification:** Every speaker selection must be justified by the current physical presence and narrative context. If you select someone, you must be able to explain WHY they are the most logical choice among those present.
+        4. **Incapacitated NPCs:** If a character is wounded, unconscious, or pinned, they MUST remain inactive unless the story explicitly resolves their condition. Do not force them into a dialogue role to fill a silence.
+        5. **Relationship Loyalty:** NPCs MUST act according to their established relationships. 
     """
 
     const val MOBILE_CHAT_COHERENCE = """

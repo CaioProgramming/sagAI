@@ -38,6 +38,11 @@ class CharacterDetailsViewModel
 
         val characterResume = MutableStateFlow<String?>(null)
         val isSummarizing = MutableStateFlow(false)
+        val showPremiumSheet = MutableStateFlow(false)
+
+        fun togglePremiumSheet() {
+            showPremiumSheet.value = !showPremiumSheet.value
+        }
 
         fun loadSagaAndCharacter(
             sagaId: String?,
@@ -94,7 +99,11 @@ class CharacterDetailsViewModel
                 characterUseCase.generateCharacterImage(
                     selectedCharacter,
                     sagaContent.data,
-                )
+                ).onFailure {
+                    if (it is BillingService.PremiumException) {
+                        showPremiumSheet.value = true
+                    }
+                }
                 isGenerating.value = false
                 loadingMessage.emit(null)
             }

@@ -240,12 +240,16 @@ class ChapterUseCaseImpl
                                 },
                             imageType = ImageType.COVER,
                             variationId = saga.data.variationId,
-                        ).getSuccess()!!
+                        )
+
+                if (genCover.isFailure) {
+                    throw genCover.error.value
+                }
 
                 val coverFile =
                     fileHelper.saveFile(
                         chapter.data.title,
-                        genCover,
+                        genCover.getSuccess(),
                         path = "${saga.data.id}/chapters/",
                     )!!
                 val newChapter =

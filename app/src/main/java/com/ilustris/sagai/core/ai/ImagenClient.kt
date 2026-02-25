@@ -108,7 +108,8 @@ class ImagenClientImpl
                     .candidates
                     .first()
                     .content.parts
-                    .firstNotNullOf { it.asImageOrNull() }
+                    .firstOrNull()
+                    ?.asImageOrNull()
             }
         }
 
@@ -120,85 +121,89 @@ class ImagenClientImpl
             variationId: String?,
         ): RequestResult<Bitmap> =
             executeRequest {
-                Log.d(
-                    TAG,
-                    "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name} | Variation: $variationId",
-                )
+                billingService.runPremiumRequest(bypass = true) {
+                    Log.d(
+                        TAG,
+                        "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name} | Variation: $variationId",
+                    )
 
-                // 0. FETCH CONFIGS
-                val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
-                val imageConfig = imageConfigService.getImageConfig()
+                    // 0. FETCH CONFIGS
+                    val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
+                    val imageConfig = imageConfigService.getImageConfig()
 
-                // 1. VISUAL DIRECTOR ANALYSIS
-                val visualDirection =
-                    generateVisualDirection(
-                        context,
-                        genre,
-                        genreConfig,
-                        imageConfig,
-                        imageType,
-                    ).getSuccess()
-                Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
+                    // 1. VISUAL DIRECTOR ANALYSIS
+                    val visualDirection =
+                        generateVisualDirection(
+                            context,
+                            genre,
+                            genreConfig,
+                            imageConfig,
+                            imageType,
+                        ).getSuccess()
+                    Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
 
-                // 2. ARTISTIC DESCRIPTION
-                val artisticPrompt =
-                    generateArtisticPrompt(
-                        genre,
-                        genreConfig,
-                        imageConfig,
-                        visualDirection,
-                        context,
-                    ).getSuccess() ?: error("Failed to generate base artistic prompt")
+                    // 2. ARTISTIC DESCRIPTION
+                    val artisticPrompt =
+                        generateArtisticPrompt(
+                            genre,
+                            genreConfig,
+                            imageConfig,
+                            imageType,
+                            visualDirection,
+                            context,
+                        ).getSuccess() ?: error("Failed to generate base artistic prompt")
 
-                // 3. REVIEWER CONCLUSION
-                val reviewedResult =
-                    reviewAndCorrectPrompt(
-                        imageType = imageType,
-                        visualDirection = visualDirection,
-                        genreConfig = genreConfig,
-                        imageConfig = imageConfig,
-                        genre = genre,
-                        finalPrompt = artisticPrompt,
-                        context = context,
-                    ).getSuccess()
+                    // 3. REVIEWER CONCLUSION
+                    val reviewedResult =
+                        reviewAndCorrectPrompt(
+                            imageType = imageType,
+                            visualDirection = visualDirection,
+                            genreConfig = genreConfig,
+                            imageConfig = imageConfig,
+                            genre = genre,
+                            finalPrompt = artisticPrompt,
+                            context = context,
+                        ).getSuccess()
 
-                reviewedResult?.let {
-                    Log.d(TAG, "⚖️ Final prompt reviewed.")
-                } ?: run {
-                    Log.e(TAG, "generateIntegratedImage: Failed to review")
-                }
-                val finalPrompt =
-                    buildString {
-                        appendLine(genreConfig.artStyle)
-                        appendLine(reviewedResult?.correctedPrompt ?: artisticPrompt)
-                        appendLine("Critical rules: ")
-                        appendLine(imageConfig.criticalRules)
-                        appendLine("Rendering Instructions: ")
-                        appendLine(genreConfig.renderingInstructions)
+                    reviewedResult?.let {
+                        Log.d(TAG, "⚖️ Final prompt reviewed.")
+                    } ?: run {
+                        Log.e(TAG, "generateIntegratedImage: Failed to review")
                     }
-                Log.d(
-                    TAG,
-                    buildString {
-                        appendLine("Image generation pipeline execution: ")
-                        appendLine("context: $context")
-                        appendLine("genre: ${genre.name}")
-                        appendLine("genreConfig: ${genreConfig.toJsonFormat()}")
-                        appendLine("imageConfig: ${imageConfig.toJsonFormat()}")
-                        appendLine("visualDirection: $visualDirection")
-                        appendLine("artisticPrompt: $artisticPrompt")
-                        appendLine("finalPrompt: $finalPrompt")
-                        appendLine("Revisions: ${reviewedResult.toJsonFormat()}")
-                    },
-                )
-                val generatedImage = generateImage(finalPrompt, references = emptyList())
+                    val finalPrompt =
+                        buildString {
+                            appendLine(genreConfig.artStyle)
+                            appendLine(reviewedResult?.correctedPrompt ?: artisticPrompt)
+                            appendLine("Critical rules: ")
+                            appendLine(imageConfig.criticalRules)
+                            appendLine("Rendering Instructions: ")
+                            appendLine(genreConfig.renderingInstructions)
+                        }
+                    Log.d(
+                        TAG,
+                        buildString {
+                            appendLine("Image generation pipeline execution: ")
+                            appendLine("context: $context")
+                            appendLine("genre: ${genre.name}")
+                            appendLine("genreConfig: ${genreConfig.toJsonFormat()}")
+                            appendLine("imageConfig: ${imageConfig.toJsonFormat()}")
+                            appendLine("visualDirection: $visualDirection")
+                            appendLine("artisticPrompt: $artisticPrompt")
+                            appendLine("finalPrompt: $finalPrompt")
+                            appendLine("Revisions: ${reviewedResult.toJsonFormat()}")
+                        },
+                    )
 
-                if (generatedImage == null) {
-                    Log.e(TAG, "Failed to generate image")
-                } else {
-                    Log.i(TAG, "✅ Image successfully generated.")
+                    val generatedImage = generateImage(finalPrompt, references = emptyList())
+
+                    if (generatedImage == null) {
+                        Log.e(TAG, "Failed to generate image")
+                    } else {
+                        Log.i(TAG, "✅ Image successfully generated.")
+                    }
+
+                    generatedImage!!
                 }
-
-                generatedImage!!
             }
 
         private suspend fun generateVisualDirection(
@@ -213,10 +218,10 @@ class ImagenClientImpl
                     genre,
                     genreConfig!!,
                     imageConfig,
-                    context,
                     imageType,
+                    context,
                 ),
-                temperatureRandomness = 0.8f,
+                temperatureRandomness = .5f,
                 references = emptyList(),
                 requireTranslation = false,
                 requirement = GemmaClient.ModelRequirement.HIGH,
@@ -227,6 +232,7 @@ class ImagenClientImpl
             genre: Genre,
             genreConfig: GenreConfig?,
             imageConfig: ImageConfig,
+            imageType: ImageType,
             visualDirection: String?,
             context: String,
         ): RequestResult<String> =
@@ -236,6 +242,7 @@ class ImagenClientImpl
                         genre,
                         genreConfig!!,
                         imageConfig,
+                        imageType,
                         visualDirection,
                         context,
                     )
@@ -263,6 +270,7 @@ class ImagenClientImpl
                     visualDirection,
                     genreConfig!!,
                     imageConfig,
+                    imageType,
                     finalPrompt,
                     genre,
                     context,

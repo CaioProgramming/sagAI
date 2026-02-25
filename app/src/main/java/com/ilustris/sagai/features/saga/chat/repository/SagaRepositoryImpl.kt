@@ -96,12 +96,16 @@ class SagaRepositoryImpl
                         context = context,
                         imageType = ImageType.COVER,
                         variationId = saga.variationId,
-                    ).getSuccess()!!
+                    )
+
+            if (newIcon.isFailure) {
+                throw newIcon.error.value
+            }
 
             val file =
                 fileHelper.saveFile(
                     fileName = saga.title,
-                    data = newIcon,
+                    data = newIcon.getSuccess(),
                     path = "${saga.id}",
                 )
 

@@ -3,18 +3,34 @@ package com.ilustris.sagai.core.ai.model
 import com.google.gson.annotations.SerializedName
 
 /**
+ * Defines the strict framing, composition, and agent templates for a specific image type (e.g., ICON, COVER).
+ */
+data class ImageTypeConfig(
+    @SerializedName("director")
+    val director: String = "",
+    @SerializedName("artist")
+    val artist: String = "",
+    @SerializedName("reviewer")
+    val reviewer: String = "",
+) {
+    /**
+     * Helper logic to grab an agent's string without reflection, scaling for any future agents.
+     */
+    fun getAgentTemplate(agentId: String): String =
+        when (agentId) {
+            "director" -> director
+            "artist" -> artist
+            "reviewer" -> reviewer
+            else -> ""
+        }
+}
+
+/**
  * Dynamic configuration for the image generation pipeline, fetched from Remote Config.
- * This allows for real-time updates to generation rules, type descriptions, and reviewer scopes.
  */
 data class ImageConfig(
     @SerializedName("criticalRules")
     val criticalRules: String = "",
-    @SerializedName("typeDescriptions")
-    val typeDescriptions: Map<String, String> = emptyMap(),
-    @SerializedName("directorialVisionRules")
-    val directorialVisionRules: String = "",
-    @SerializedName("artistPromptRules")
-    val artistPromptRules: String = "",
-    @SerializedName("reviewerScopes")
-    val reviewerScopes: String = "",
+    @SerializedName("typeConfigs")
+    val typeConfigs: Map<String, ImageTypeConfig> = emptyMap(),
 )
