@@ -63,6 +63,7 @@ class ImagenClientImpl
         private suspend fun generateImage(
             prompt: String,
             references: List<ImageReference>,
+            aspectRatio: String? = null,
         ): Bitmap? {
             val modelName = modelName()
             val logData =
@@ -91,6 +92,9 @@ class ImagenClientImpl
                 val promptBuilder =
                     content {
                         text(prompt.trimIndent())
+                        aspectRatio?.let {
+                            text("Aspect Ratio: $it")
+                        }
                         references.forEach {
                             image(it.bitmap)
                             text(it.description)
@@ -170,6 +174,18 @@ class ImagenClientImpl
                     } ?: run {
                         Log.e(TAG, "generateIntegratedImage: Failed to review")
                     }
+                    val typeConfig = imageConfig.typeConfigs[imageType.name]
+                    val finalAspectRatio =
+                        when (imageType) {
+                            ImageType.ICON -> {
+                                genreConfig.iconAspectRatio ?: typeConfig?.aspectRatio
+                            }
+
+                            ImageType.COVER -> {
+                                genreConfig.coverAspectRatio
+                                    ?: typeConfig?.aspectRatio
+                            }
+                        }
                     val finalPrompt =
                         buildString {
                             appendLine(genreConfig.artStyle)
@@ -178,6 +194,7 @@ class ImagenClientImpl
                             appendLine(imageConfig.criticalRules)
                             appendLine("Rendering Instructions: ")
                             appendLine(genreConfig.renderingInstructions)
+                            appendLine("Aspect Ratio: $finalAspectRatio")
                         }
                     Log.d(
                         TAG,
@@ -190,11 +207,17 @@ class ImagenClientImpl
                             appendLine("visualDirection: $visualDirection")
                             appendLine("artisticPrompt: $artisticPrompt")
                             appendLine("finalPrompt: $finalPrompt")
+                            appendLine("Aspect Ratio: $finalAspectRatio")
                             appendLine("Revisions: ${reviewedResult.toJsonFormat()}")
                         },
                     )
 
-                    val generatedImage = generateImage(finalPrompt, references = emptyList())
+                    val generatedImage =
+                        generateImage(
+                            finalPrompt,
+                        references = emptyList(),
+                        aspectRatio = finalAspectRatio
+                    )
 
                     if (generatedImage == null) {
                         Log.e(TAG, "Failed to generate image")

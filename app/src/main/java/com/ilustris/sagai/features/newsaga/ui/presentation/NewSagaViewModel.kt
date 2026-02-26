@@ -8,11 +8,13 @@ import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.manager.CharacterStateManager
 import com.ilustris.sagai.features.newsaga.data.manager.SagaStateManager
 import com.ilustris.sagai.features.newsaga.data.model.CreationAssist
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.isSagaBlank
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
@@ -131,9 +133,9 @@ class NewSagaViewModel
                             FlowPages.CREATE_SAGA -> _sagaAssist.emit(assist)
                             FlowPages.CREATE_CHARACTER -> _characterAssist.emit(assist)
                             FlowPages.SELECT_THEME -> _themeAssist.emit(assist)
-                        else -> doNothing()
+                            else -> doNothing()
+                        }
                     }
-                }
                 }
         }
 
@@ -178,6 +180,14 @@ class NewSagaViewModel
             }
         }
 
+        fun updateSagaDraft(draft: SagaDraft) {
+            sagaStateManager.updateSaga(draft)
+        }
+
+        fun updateCharacterDraft(info: CharacterInfo) {
+            characterStateManager.updateCharacter(info)
+        }
+
         fun enhanceSagaDescription(
             currentInput: String,
             onEnhanced: (String) -> Unit,
@@ -185,10 +195,10 @@ class NewSagaViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 // Implement AI enhancement call here
                 // For now we'll just refine it via the current state manager if needed,
-            // but the user wants to "Enhance" the description to update the input field.
-            // We'll need a specific prompt for "Enhancement"
+                // but the user wants to "Enhance" the description to update the input field.
+                // We'll need a specific prompt for "Enhancement"
+            }
         }
-    }
 
         fun saveSaga() {
             _isSaving.value = true

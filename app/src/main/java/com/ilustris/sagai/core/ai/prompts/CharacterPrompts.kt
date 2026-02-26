@@ -209,14 +209,6 @@ object CharacterPrompts {
         )
         appendLine("If the current character fields are empty, generate a compelling archetype for this genre.")
         appendLine()
-        appendLine("RESPONSE FORMAT (JSON ONLY):")
-        appendLine(
-            "- message: A brief, thematic confirmation of the character's adaptation (e.g., 'Rebuilding character cybernetics...', 'Equipping magic staff...').",
-        )
-        appendLine("- inputHint: A new creative starter question fitting the genre for the character (max 4 words).")
-        appendLine("- suggestions: 3 new CreationSuggestion objects (text, genre) fitting the new theme for the character.")
-        appendLine("- callback.action: 'UPDATE_DATA'")
-        appendLine("- callback.data: The updated CharacterInfo.")
     }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()

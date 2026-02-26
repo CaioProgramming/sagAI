@@ -4,7 +4,11 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.billingclient.api.ProductDetails
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,19 +21,33 @@ class PremiumViewModel
     @Inject
     constructor(
         private val billingService: BillingService,
-        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        private val analyticsService: AnalyticsService,
+        private val genreVisualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
         private val _billingState = MutableStateFlow<BillingService.BillingState?>(null)
         val billingState: StateFlow<BillingService.BillingState?> = _billingState.asStateFlow()
 
+        private val _genres = MutableStateFlow<List<Pair<Genre, GenreVisualConfig?>>>(emptyList())
+        val genres = _genres.asStateFlow()
+
         init {
             viewModelScope.launch {
+                fetchGenres()
                 billingService.checkPurchases()
                 billingService.state.collect {
                     _billingState.value = it
                 }
             }
         }
+
+        fun fetchGenres() {
+            viewModelScope.launch {
+                _genres.value =
+                    Genre.entries.map {
+                        it to genreVisualConfigService.getVisualConfig(it)
+            }
+        }
+    }
 
         fun purchaseSignature(
             activity: Activity,

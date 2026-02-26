@@ -187,7 +187,12 @@ class NewSagaUseCaseImpl
             executeRequest {
                 val config = sagaDraft?.genre?.let { genreConfigService.getGenreConfig(it) }
                 gemmaClient.generate(
-                    NewSagaPrompts.creationAssistPrompt(flow, sagaDraft, characterInfo, config),
+                    NewSagaPrompts.creationAssistPrompt(
+                        flow,
+                        sagaDraft,
+                        characterInfo,
+                        config,
+                    ),
                     requireTranslation = true,
                 )!!
             }

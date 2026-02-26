@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.util.Base64
 import android.util.Log
 import com.google.gson.Gson
+import com.google.gson.JsonParseException
+import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
@@ -121,12 +123,11 @@ class GemmaClient
                         return@withContext requestMutex.withLock {
                             val fullPrompt =
                                 buildString {
+                                    val languageRule = modelLanguage(requireTranslation)
+
                                     appendLine(prompt)
-                                    if (requireTranslation) {
-                                        appendLine(modelLanguage())
-                                    } else {
-                                        appendLine("Ensure the response is strictly in ENGLISH (EN-US).")
-                                    }
+                                    appendLine()
+                                    appendLine("No introdutory phrased focus solely on the ouput.")
                                     appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                                     if (T::class != String::class && describeOutput) {
                                         appendLine("Follow this structure:")
@@ -146,6 +147,8 @@ class GemmaClient
                                             appendLine("- CORRECT format: \"name\": \"John\"")
                                         }
                                     }
+                                    appendLine()
+                                    appendLine(languageRule)
                                 }
 
                             Log.i(
@@ -222,7 +225,7 @@ class GemmaClient
                                 }",
                             )
 
-                            Log.d(javaClass.simpleName, "Prompt requested: $fullPrompt")
+                            Log.d(javaClass.simpleName, "Prompt requested:\n$fullPrompt")
 
                             Log.i(
                                 javaClass.simpleName,
@@ -244,7 +247,12 @@ class GemmaClient
                             this@GemmaClient::class.java.simpleName,
                             "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
                         )
+
+                        // Check if it's a parsing error (no delay needed) or network error (delay recommended)
+                        val isParsingError =
+                            e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
                         var extractedDelay: Long? = null
+
                         if (e is HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
                             Log.e(
@@ -290,18 +298,29 @@ class GemmaClient
                         }
 
                         if (currentAttempt < maxAttempts) {
-                            val delayToApply = extractedDelay ?: RETRY_DELAY.toLong()
-                            Log.w(
-                                this@GemmaClient::class.java.simpleName,
-                                "Retrying HIGH priority request in $delayToApply seconds...",
-                            )
-                            delay(delayToApply.seconds)
+                            val delayToApply =
+                                if (isParsingError) 0L else (extractedDelay ?: RETRY_DELAY.toLong())
+
+                            if (delayToApply > 0) {
+                                Log.w(
+                                    this@GemmaClient::class.java.simpleName,
+                                    "Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...",
+                                )
+                                delay(delayToApply.seconds)
+                            } else {
+                                Log.w(
+                                    this@GemmaClient::class.java.simpleName,
+                                    "Retrying immediately due to parsing error (${e.javaClass.simpleName})...",
+                                )
+                            }
                         } else {
                             // Final failure
-                            retryDelay =
-                                extractedDelay?.toInt() ?: retryDelay?.let {
-                                    if (it > 30) it / 2 else it + it
-                                } ?: 2
+                            if (!isParsingError) {
+                                retryDelay =
+                                    extractedDelay?.toInt() ?: retryDelay?.let {
+                                        if (it > 30) it / 2 else it + it
+                                    } ?: 2
+                            }
                             Log.e(
                                 javaClass.simpleName,
                                 "Final failure after $maxAttempts attempts.",

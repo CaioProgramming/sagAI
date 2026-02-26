@@ -171,6 +171,7 @@ class SagaContentManagerImpl
             sagaJob =
                 managerScope.launch {
                     Log.d(javaClass.simpleName, "Loading saga: $sagaId")
+                    content.value = null
                     try {
                         if (loadingObserverJob == null || loadingObserverJob?.isActive == false) {
                             loadingObserverJob = observeLoading()

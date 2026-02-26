@@ -35,9 +35,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -68,9 +70,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,6 +89,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
@@ -106,6 +111,7 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -346,29 +352,55 @@ fun NewSagaView(
                     )
                 }
 
-                AnimatedContent(assist, modifier = Modifier.padding(16.dp)) { assist ->
-                    if (assist != null && assist.title.isNotEmpty()) {
+                AnimatedContent(
+                    targetState = assist,
+                    modifier = Modifier.padding(16.dp),
+                    label = "AssistAnimation",
+                ) { currentAssist ->
+                    if (currentAssist == null || currentAssist.title.isEmpty() || isLoading) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(80.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_spark),
+                                null,
+                                tint = contentColor.copy(alpha = 0.5f),
+                                modifier =
+                                    Modifier
+                                        .size(48.dp)
+                                        .reactiveShimmer(true),
+                            )
+                        }
+                    } else {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .reactiveShimmer(isLoading),
+                                ) {
                             Text(
-                                assist.title,
+                                currentAssist.title.uppercase(),
                                 style =
-                                    MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontFamily = genre?.bodyFont(),
+                                    MaterialTheme.typography.headlineMedium.copy(
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = genre?.headerFont(),
+                                        letterSpacing = 2.sp,
                                     ),
                                 textAlign = TextAlign.Center,
                                 color = contentColor,
                             )
-                            if (assist.subtitle.isNotEmpty()) {
+                            if (currentAssist.subtitle.isNotEmpty()) {
                                 Text(
-                                    assist.subtitle,
+                                    currentAssist.subtitle,
                                     style =
                                         MaterialTheme.typography.bodyMedium.copy(
                                             fontFamily = genre?.bodyFont(),
+                                            fontStyle = FontStyle.Italic,
                                         ),
                                     textAlign = TextAlign.Center,
                                     color = contentColor.copy(alpha = 0.7f),
@@ -392,6 +424,7 @@ fun NewSagaView(
                     when (flow) {
                         FlowPages.SELECT_THEME -> {
                             GenrePicker(
+                                isLoading = isLoading,
                                 visuals = genreVisuals ?: emptyList(),
                                 currentGenre = genre,
                                 pagerState = genrePagerState,
@@ -413,6 +446,7 @@ fun NewSagaView(
                                 suggestions = sagaAssist.suggestions,
                                 content = draft,
                                 face = sagaCardSide,
+                                isLoading = isLoading,
                                 onFlip = {
                                     sagaCardSide = it
                                 },
@@ -420,6 +454,16 @@ fun NewSagaView(
                                     val seed = it.description.ifEmpty { it.text }
                                     sagaInput = seed
                                     viewModel.sendSagaMessage(seed)
+                                },
+                                onTitleChange = {
+                                    draft?.let { s ->
+                                        viewModel.updateSagaDraft(s.copy(title = it))
+                                    }
+                                },
+                                onDescriptionChange = {
+                                    draft?.let { s ->
+                                        viewModel.updateSagaDraft(s.copy(description = it))
+                                    }
                                 },
                             )
                         }
@@ -437,6 +481,7 @@ fun NewSagaView(
                                 suggestions = characterAssist.suggestions,
                                 content = characterDraft,
                                 face = characterCardSide,
+                                isLoading = isLoading,
                                 onFlip = {
                                     characterCardSide = it
                                 },
@@ -444,6 +489,16 @@ fun NewSagaView(
                                     val seed = it.description.ifEmpty { it.text }
                                     characterInput = seed
                                     viewModel.sendCharacterMessage(seed)
+                                },
+                                onTitleChange = {
+                                    characterDraft?.let { c ->
+                                        viewModel.updateCharacterDraft(c.copy(name = it))
+                                    }
+                                },
+                                onDescriptionChange = {
+                                    characterDraft?.let { c ->
+                                        viewModel.updateCharacterDraft(c.copy(description = it))
+                                    }
                                 },
                             )
                         }
@@ -474,7 +529,8 @@ fun NewSagaView(
                                         .dropShadow(shape) {
                                             color = primaryColor
                                             radius = 20f
-                                        }.border(1.dp, borderBrush, shape)
+                                        }
+                                        .border(1.dp, borderBrush, shape)
                                         .clip(shape)
                                         .background(backgroundColor, shape)
                                         .reactiveShimmer(true),
@@ -753,12 +809,15 @@ private fun SuggestionsContent(
                             1.dp,
                             itemGradient,
                             shape,
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .2f),
                             shape,
-                        ).clickable {
+                        )
+                        .clickable {
                             onSelect(it)
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
@@ -845,6 +904,7 @@ private fun TopBarContent(
 
 @Composable
 private fun GenrePicker(
+    isLoading: Boolean,
     currentGenre: Genre?,
     visuals: List<Pair<Genre, GenreVisualConfig?>>,
     pagerState: PagerState,
@@ -853,6 +913,7 @@ private fun GenrePicker(
     val coroutineScope = rememberCoroutineScope()
     HorizontalPager(
         pagerState,
+        userScrollEnabled = !isLoading,
         contentPadding = PaddingValues(50.dp),
         pageSpacing = 16.dp,
         beyondViewportPageCount = 1,
@@ -874,10 +935,10 @@ private fun GenrePicker(
                         .graphicsLayer {
                             val pageOffset =
                                 (
-                                    (pagerState.currentPage - page) +
-                                        pagerState
-                                            .currentPageOffsetFraction
-                                ).absoluteValue
+                                        (pagerState.currentPage - page) +
+                                                pagerState
+                                                    .currentPageOffsetFraction
+                                        ).absoluteValue
                             lerp(
                                 start = 0.85f,
                                 stop = 1f,
@@ -892,7 +953,8 @@ private fun GenrePicker(
                                     stop = 1f,
                                     fraction = 1f - pageOffset.coerceIn(0f, 1f),
                                 )
-                        }.levitate(isSelected)
+                        }
+                        .levitate(isSelected)
                         .fillMaxWidth()
                         .aspectRatio(0.8f),
             ) {
@@ -915,9 +977,12 @@ private fun FlipCardForm(
     suggestions: List<CreationSuggestion>,
     content: Any?,
     face: CardFace,
+    isLoading: Boolean = false,
     onEnhanceClick: () -> Unit = {},
     onSeedClick: (CreationSuggestion) -> Unit = {},
     onFlip: (CardFace) -> Unit = {},
+    onTitleChange: (String) -> Unit = {},
+    onDescriptionChange: (String) -> Unit = {},
 ) {
     val shape = genre?.bubble(isNarrator = true) ?: RoundedCornerShape(24.dp)
     val borderBrush = genre?.gradient(true) ?: SolidColor(Color.Transparent)
@@ -999,6 +1064,7 @@ private fun FlipCardForm(
 
                     // Main Text Input
                     BasicTextField(
+                        enabled = !isLoading,
                         value = textValue,
                         onValueChange = onTextChange,
                         textStyle =
@@ -1010,7 +1076,8 @@ private fun FlipCardForm(
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .reactiveShimmer(isLoading),
                         decorationBox = { innerTextField ->
                             Box {
                                 if (textValue.isEmpty()) {
@@ -1054,8 +1121,11 @@ private fun FlipCardForm(
 
                             SuggestionsContent(
                                 suggestions = suggestions,
+                                modifier = Modifier.reactiveShimmer(isLoading),
                                 onSelect = {
-                                    onSeedClick(it)
+                                    if (!isLoading) {
+                                        onSeedClick(it)
+                                    }
                                 },
                             )
                         }
@@ -1101,43 +1171,128 @@ private fun FlipCardForm(
                             is SagaDraft -> {
                                 val genre = content.genre
 
-                                genre.stylisedText(
-                                    content.title,
+                                BasicTextField(
+                                    value = content.title,
+                                    onValueChange = onTitleChange,
+                                    textStyle =
+                                        MaterialTheme.typography.displaySmall.copy(
+                                            fontFamily = genre.headerFont(),
+                                            textAlign = TextAlign.Center,
+                                            brush = Brush.verticalGradient(genre.colorPalette()),
+                                        ),
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
                                             .padding(16.dp),
+                                    cursorBrush = SolidColor(genre.resolveIconColor()),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (content.title.isEmpty()) {
+                                                Text(
+                                                    "Saga Title",
+                                                    style =
+                                                        MaterialTheme.typography.displaySmall.copy(
+                                                            fontFamily = genre.headerFont(),
+                                                            textAlign = TextAlign.Center,
+                                                            color =
+                                                                genre
+                                                                    .resolveIconColor()
+                                                                    .copy(alpha = 0.3f),
+                                                        ),
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    },
                                 )
 
-                                Text(
-                                    content.description,
-                                    style =
+                                BasicTextField(
+                                    value = content.description,
+                                    onValueChange = onDescriptionChange,
+                                    textStyle =
                                         MaterialTheme.typography.bodyMedium.copy(
                                             fontFamily = genre.bodyFont(),
+                                            textAlign = TextAlign.Center,
+                                            color = genre.resolveIconColor(),
                                         ),
-                                    textAlign = TextAlign.Center,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .verticalScroll(rememberScrollState())
+                                            .padding(horizontal = 16.dp),
+                                    cursorBrush = SolidColor(genre.resolveIconColor()),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (content.description.isEmpty()) {
+                                                Text(
+                                                    "Saga Description",
+                                                    style =
+                                                        MaterialTheme.typography.bodyMedium.copy(
+                                                            fontFamily = genre.bodyFont(),
+                                                            textAlign = TextAlign.Center,
+                                                            color =
+                                                                genre
+                                                                    .resolveIconColor()
+                                                                    .copy(alpha = 0.3f),
+                                                        ),
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    },
                                 )
                             }
 
                             is CharacterInfo -> {
-                                if (genre == null) {
-                                    Text(
-                                        content.name,
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                    )
-                                } else {
-                                    genre.stylisedText(
-                                        content.name,
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                    )
-                                }
+                                BasicTextField(
+                                    value = content.name,
+                                    onValueChange = onTitleChange,
+                                    textStyle =
+                                        MaterialTheme.typography.displaySmall.copy(
+                                            fontFamily =
+                                                genre?.headerFont()
+                                                    ?: MaterialTheme.typography.displaySmall.fontFamily,
+                                            textAlign = TextAlign.Center,
+                                            brush =
+                                                Brush.verticalGradient(
+                                                    genre?.colorPalette() ?: listOf(
+                                                        MaterialTheme.colorScheme.primary,
+                                                        MaterialTheme.colorScheme.secondary,
+                                                    ),
+                                                ),
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                    cursorBrush =
+                                        SolidColor(
+                                            genre?.resolveIconColor()
+                                                ?: MaterialTheme.colorScheme.onSurface,
+                                        ),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (content.name.isEmpty()) {
+                                                Text(
+                                                    "Character Name",
+                                                    style =
+                                                        MaterialTheme.typography.displaySmall.copy(
+                                                            fontFamily = genre?.headerFont(),
+                                                            textAlign = TextAlign.Center,
+                                                            color =
+                                                                (
+                                                                    genre?.resolveIconColor()
+                                                                        ?: MaterialTheme.colorScheme.onSurface
+                                                                ).copy(
+                                                                    alpha = 0.3f,
+                                                                ),
+                                                        ),
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    },
+                                )
 
                                 Text(
                                     content.gender,
@@ -1150,12 +1305,48 @@ private fun FlipCardForm(
                                         ),
                                 )
 
-                                Text(
-                                    content.description,
-                                    style =
+                                BasicTextField(
+                                    value = content.description,
+                                    onValueChange = onDescriptionChange,
+                                    textStyle =
                                         MaterialTheme.typography.bodyMedium.copy(
                                             fontFamily = genre?.bodyFont(),
+                                            textAlign = TextAlign.Center,
+                                            color =
+                                                genre?.resolveIconColor()
+                                                    ?: MaterialTheme.colorScheme.onSurface,
                                         ),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .verticalScroll(rememberScrollState())
+                                            .padding(16.dp),
+                                    cursorBrush =
+                                        SolidColor(
+                                            genre?.resolveIconColor()
+                                                ?: MaterialTheme.colorScheme.onSurface,
+                                        ),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.Center) {
+                                            if (content.description.isEmpty()) {
+                                                Text(
+                                                    "Character Description",
+                                                    style =
+                                                        MaterialTheme.typography.bodyMedium.copy(
+                                                            fontFamily = genre?.bodyFont(),
+                                                            textAlign = TextAlign.Center,
+                                                            color =
+                                                                (
+                                                                    genre?.resolveIconColor()
+                                                                        ?: MaterialTheme.colorScheme.onSurface).copy(
+                                                                    alpha = 0.3f,
+                                                                ),
+                                                        ),
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    },
                                 )
                             }
                         }

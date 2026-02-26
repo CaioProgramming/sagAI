@@ -93,6 +93,15 @@ class ChatViewModel
         private var lastEventId: Int = 0
         private var lastMessageCount: Int = 0
 
+        private var sagaObserverJob: kotlinx.coroutines.Job? = null
+        private var milestoneObserverJob: kotlinx.coroutines.Job? = null
+        private var musicObserverJob: kotlinx.coroutines.Job? = null
+        private var preferencesObserverJob: kotlinx.coroutines.Job? = null
+        private var snackBarObserverJob: kotlinx.coroutines.Job? = null
+        private var mediaObserverJob: kotlinx.coroutines.Job? = null
+        private var processingObserverJob: kotlinx.coroutines.Job? = null
+        private var sceneSummaryObserverJob: kotlinx.coroutines.Job? = null
+
         fun handleAction(action: ChatUiAction) {
             when (action) {
                 is ChatUiAction.SendInput -> {
@@ -237,13 +246,12 @@ class ChatViewModel
             }
         }
 
-        private fun observeMileStone() {
+        private fun observeMileStone() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.milestoneUpdate.collect {
                     stateManager.updateMilestone(it)
                 }
             }
-        }
 
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
@@ -272,44 +280,68 @@ class ChatViewModel
             lastActId = 0
             lastChapterId = 0
             lastEventId = 0
-            stateManager.updateState { it.copy(chatState = ChatState.Loading) }
+            lastMessageCount = 0
+            loadFinished = false
+            stateManager.updateState {
+                it.copy(
+                    chatState = ChatState.Loading,
+                    sagaContent = null,
+                    messages = emptyList(),
+                    characters = emptyList(),
+                )
+            }
+            sagaContentManager.content.value = null
             enableDebugMode(isDebug)
-            observeSaga()
-            observeMileStone()
-            observeAmbientMusicServiceControl()
-            observePreferences()
-            observeSnackBarUpdates()
-            observeMediaState()
-            observeProcessingState()
-            observeSceneSummary()
+
+            sagaObserverJob?.cancel()
+            sagaObserverJob = observeSaga()
+
+            milestoneObserverJob?.cancel()
+            milestoneObserverJob = observeMileStone()
+
+            musicObserverJob?.cancel()
+            musicObserverJob = observeAmbientMusicServiceControl()
+
+            preferencesObserverJob?.cancel()
+            preferencesObserverJob = observePreferences()
+
+            snackBarObserverJob?.cancel()
+            snackBarObserverJob = observeSnackBarUpdates()
+
+            mediaObserverJob?.cancel()
+            mediaObserverJob = observeMediaState()
+
+            processingObserverJob?.cancel()
+            processingObserverJob = observeProcessingState()
+
+            sceneSummaryObserverJob?.cancel()
+            sceneSummaryObserverJob = observeSceneSummary()
+
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
         }
 
-        private fun observeMediaState() {
+        private fun observeMediaState() =
             viewModelScope.launch(Dispatchers.IO) {
                 audioMediaPlayerManager.isPlaying.collect { isPlaying ->
                     stateManager.updateState { it.copy(isPlaying = isPlaying) }
                 }
             }
-        }
 
-        private fun observeProcessingState() {
+        private fun observeProcessingState() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.narrativeProcessingUiState.collect { isGenerating ->
                     stateManager.updateGenerating(isGenerating)
                 }
             }
-        }
 
-        private fun observeSceneSummary() {
+        private fun observeSceneSummary() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.sceneSummary.collect { summary ->
                     stateManager.updateState { it.copy(sceneSummary = summary) }
                 }
             }
-        }
 
         fun observeSnackBarUpdates() =
             viewModelScope.launch(Dispatchers.IO) {
@@ -332,7 +364,7 @@ class ChatViewModel
                 }
             }
 
-        private fun observePreferences() {
+        private fun observePreferences() =
             viewModelScope.launch(Dispatchers.IO) {
                 settingsUseCase.getSmartSuggestionsEnabled().collect {
                     stateManager.updateState { s -> s.copy(smartSuggestionsEnabled = it) }
@@ -343,7 +375,7 @@ class ChatViewModel
                 }
 
                 settingsUseCase.getMessageEffectsEnabled().collect {
-                    stateManager.updateGenerating(it)
+                    stateManager.updateState { s -> s.copy(messageEffectsEnabled = it) }
                 }
 
                 settingsUseCase.backupEnabled().collect {
@@ -359,7 +391,6 @@ class ChatViewModel
                     }
                 }
             }
-        }
 
         fun updateInput(value: TextFieldValue) {
             stateManager.updateInput(value)
@@ -503,7 +534,7 @@ class ChatViewModel
             stateManager.updateInput(TextFieldValue(""))
         }
 
-        private fun observeSaga() {
+    private fun observeSaga() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.content
                     .distinctUntilChanged { old, new ->
@@ -516,6 +547,13 @@ class ChatViewModel
                             old.wikis == new.wikis &&
                             old.relationships == new.relationships
                     }.collectLatest { sagaContent ->
+                        if (sagaContent != null && sagaContent.data.id.toString() != currentSagaIdForService) {
+                            Log.w(
+                                "ChatViewModel",
+                                "observeSaga: Ignored stale saga content (${sagaContent.data.id} != $currentSagaIdForService)",
+                            )
+                            return@collectLatest
+                        }
                         Log.d(
                             "ChatViewModel",
                             "observeSaga triggered for genre: ${sagaContent?.data?.genre}",
@@ -585,7 +623,6 @@ class ChatViewModel
                         }
                     }
             }
-        }
 
         private fun validateMessageStatus(sagaContent: SagaContent) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -715,7 +752,7 @@ class ChatViewModel
             }
         }
 
-        private fun observeAmbientMusicServiceControl() {
+        private fun observeAmbientMusicServiceControl() =
             viewModelScope.launch(Dispatchers.IO) {
                 if (uiState.value.sagaContent == null) return@launch
                 sagaContentManager.ambientMusicFile.collect { musicFile ->
@@ -789,7 +826,6 @@ class ChatViewModel
                     }
                 }
             }
-        }
 
         private var startTime: Long = 0L
 

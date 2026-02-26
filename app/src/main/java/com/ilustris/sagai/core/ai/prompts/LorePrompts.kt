@@ -1,9 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.findTimelineChapter
@@ -11,7 +9,6 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.isFirstAct
 import com.ilustris.sagai.features.home.data.model.isTimelineOnFirstChapter
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 object LorePrompts {
@@ -78,37 +75,19 @@ object LorePrompts {
         appendLine(
             "If NO new significant timeline event is found in the conversation, you should still generate a Timeline object, but with a title like \"Quiet Conversation\" or \"No New Developments\" and a description reflecting that the conversation continued without a major plot progression.",
         )
-        appendLine("For the SINGLE timeline event you generate, create a complete JSON object with the following fields:")
-        appendLine(
-            "- \"title\": Generate a SHORT and ASSERTIVE title for this event. It should be concise (ideally 3-7 words) and directly capture the essence of the event.",
-        )
-        appendLine(
-            "- \"content\": Write a MEDIUM-LENGTH narrative description of what happened in the event (e.g., 1-3 paragraphs). This description must provide USEFUL INFORMATION, focusing on key actions, important dialogue, critical decisions, significant discoveries, or consequences revealed in the conversation.",
-        )
-        appendLine("")
         appendLine(
             "Focus ONLY on generating this single timeline event. Do NOT generate lists of events, world knowledge entries, or character updates.",
         )
-
-        appendLine("Saga Context:")
-        appendLine(sagaContent.data.toJsonFormatExcludingFields(SAGA_EXCLUDED_FIELDS))
-
-        appendLine("Main Character Context:")
-        appendLine(
-            sagaContent.mainCharacter?.data?.toJsonFormatExcludingFields(
-                ChatPrompts.characterExclusions,
-            ),
-        )
-
+        appendLine(SagaPrompts.mainContext(sagaContent))
         storyContext(sagaContent, currentTimeline)
 
         appendLine("CONVERSATION HISTORY TO SUMMARIZE (New Segment - e.g., last ${UpdateRules.LORE_UPDATE_LIMIT} messages):")
         appendLine("// This is the new chunk of messages that needs to be analyzed for a new lore event.")
         appendLine("// Focus on extracting the most significant and lasting single event from this segment.")
         appendLine(
-            currentTimeline.messages.joinToString(";\n") {
-                it.joinMessage().formatToString()
-            },
+            currentTimeline.messages.map { it.message }.normalizetoAIItems(
+                ChatPrompts.messageExclusions,
+            ),
         )
     }.trimIndent()
 
@@ -131,7 +110,7 @@ object LorePrompts {
                 sagaContent.acts.filter { it.data.id != chapterAct?.data?.id && it.isComplete() }
             if (acts.isNotEmpty()) {
                 appendLine("Previous acts context:")
-                appendLine(acts.toJsonFormatExcludingFields(ACT_EXCLUDED_FIELDS))
+                appendLine(acts.normalizetoAIItems(ACT_EXCLUDED_FIELDS))
             }
         }
 
@@ -160,7 +139,7 @@ object LorePrompts {
                 ?.let {
                     if (it.isNotEmpty()) {
                         appendLine("Previous timeline context:")
-                        appendLine(it.toJsonFormatExcludingFields(TIMELINE_EXCLUDED_FIELDS))
+                        appendLine(it.normalizetoAIItems(TIMELINE_EXCLUDED_FIELDS))
                     }
                 }
         }

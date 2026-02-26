@@ -32,6 +32,10 @@ data class GenreConfig(
     val variations: Map<String, VariationConfig>? = null,
     @SerializedName("companion")
     val companion: CompanionConfig? = null,
+    @SerializedName("iconAspectRatio")
+    val iconAspectRatio: String? = null,
+    @SerializedName("coverAspectRatio")
+    val coverAspectRatio: String? = null,
     val imageUrl: String,
 ) {
     data class CompanionConfig(

@@ -24,6 +24,7 @@ object PromptKeys {
     const val CRITICAL_RULES = "criticalRules"
     const val VISUAL_DIRECTION = "visualDirection"
     const val FINAL_PROMPT = "finalPrompt"
+    const val ASPECT_RATIO = "aspectRatio"
 }
 
 object AgentIds {
@@ -85,8 +86,21 @@ object ImagePrompts {
                     ),
                 PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
                 PromptKeys.VISUAL_DIRECTION to (visualDirection ?: ""),
-            PromptKeys.FINAL_PROMPT to (finalPrompt ?: "")
-        )
+                PromptKeys.FINAL_PROMPT to (finalPrompt ?: ""),
+                PromptKeys.ASPECT_RATIO to (
+                    when (imageType) {
+                        ImageType.ICON -> {
+                            config.iconAspectRatio
+                                ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
+                        }
+
+                        ImageType.COVER -> {
+                            config.coverAspectRatio
+                                ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
+                        }
+                        }
+                        ),
+            )
 
         return agentTemplate.injectVariables(variables)
     }

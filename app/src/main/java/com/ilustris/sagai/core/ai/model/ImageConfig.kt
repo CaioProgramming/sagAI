@@ -12,6 +12,8 @@ data class ImageTypeConfig(
     val artist: String = "",
     @SerializedName("reviewer")
     val reviewer: String = "",
+    @SerializedName("aspectRatio")
+    val aspectRatio: String? = null,
 ) {
     /**
      * Helper logic to grab an agent's string without reflection, scaling for any future agents.

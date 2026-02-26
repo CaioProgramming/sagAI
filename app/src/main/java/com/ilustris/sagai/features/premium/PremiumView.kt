@@ -35,6 +35,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,7 +58,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -78,7 +82,7 @@ fun PremiumView(
     onDismiss: () -> Unit = {},
     premiumViewModel: PremiumViewModel = hiltViewModel(),
 ) {
-    val genres = Genre.entries
+    val genres by premiumViewModel.genres.collectAsStateWithLifecycle()
     var currentIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val billingState by premiumViewModel.billingState.collectAsState()
     val activity = LocalActivity.current
@@ -91,7 +95,9 @@ fun PremiumView(
     val gridItems =
         remember(genres) {
             val items =
-                genres.map { PremiumGridItem.GenreItem(it) }.toMutableList<PremiumGridItem>()
+                genres
+                    .map { PremiumGridItem.GenreItem(it.first, it.second) }
+                    .toMutableList<PremiumGridItem>()
             val totalCount = items.size
             val middle = totalCount / 2
             // Find the nearest multiple of 3 to the middle
@@ -133,21 +139,26 @@ fun PremiumView(
                 ) { index ->
                     when (val item = gridItems[index]) {
                         is PremiumGridItem.GenreItem -> {
-                            val genreIndex = genres.indexOf(item.genre)
+                            val genreIndex =
+                                genres.indexOfFirst {
+                                    it.first == item.genre
+                                }
                             val scale by animateFloatAsState(
                                 targetValue = if (genreIndex == currentIndex) 1f else .9f,
                                 animationSpec = tween(durationMillis = 500, easing = EaseIn),
                                 label = "scale",
                             )
 
-                            GenreCard(
-                                item.genre,
-                                genreIndex == currentIndex,
-                                Modifier
-                                    .aspectRatio(1f)
-                                    .scale(scale),
-                                false,
-                            ) { }
+                            CompositionLocalProvider(LocalGenreVisualConfig provides item.config) {
+                                GenreCard(
+                                    item.genre,
+                                    genreIndex == currentIndex,
+                                    Modifier
+                                        .aspectRatio(1f)
+                                        .scale(scale),
+                                    false,
+                                ) { }
+                            }
                         }
 
                         PremiumGridItem.PremiumAction -> {
@@ -280,6 +291,7 @@ fun PremiumView(
 private sealed interface PremiumGridItem {
     data class GenreItem(
         val genre: Genre,
+        val config: GenreVisualConfig?,
     ) : PremiumGridItem
 
     data object PremiumAction : PremiumGridItem
@@ -330,14 +342,17 @@ fun PremiumCard(
                         10.dp,
                         Brush.verticalGradient(holographicGradient),
                     ),
-                ).border(
+                )
+                .border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
                     RoundedCornerShape(15.dp),
-                ).background(
+                )
+                .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     RoundedCornerShape(15.dp),
-                ).clickable { onClick() }
+                )
+                .clickable { onClick() }
                 .padding(16.dp),
     ) {
         Row(
@@ -354,10 +369,12 @@ fun PremiumCard(
                             1.dp,
                             MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
                             iconShape,
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.background,
                             iconShape,
-                        ).size(24.dp)
+                        )
+                        .size(24.dp)
                         .padding(4.dp)
                         .gradientFill(Brush.verticalGradient(holographicGradient)),
             )
