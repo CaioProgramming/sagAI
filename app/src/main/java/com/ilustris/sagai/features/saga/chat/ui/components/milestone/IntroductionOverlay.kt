@@ -90,7 +90,7 @@ fun IntroductionOverlay(
         ) {
             AnimatedVisibility(showContent) {
                 Text(
-                    text = "$title - ${introduction.titleText}",
+                    text = "$title ${introduction.titleText}",
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = genre.bodyFont(),

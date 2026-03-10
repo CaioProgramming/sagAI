@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.home.data.model.getCurrentMessages
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -26,7 +27,6 @@ object ChatPrompts {
             "audioPath",
             "audible",
             "status",
-            "reasoning",
         )
     val sagaExclusions =
         listOf(
@@ -74,31 +74,11 @@ object ChatPrompts {
             }
         appendLine("# IDENTITY & PROTOCOL")
         appendLine(Core.roleDefinition(saga.data))
-        appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
-        appendLine(ChatRules.TAG_BASED_EXPRESSION_SYSTEM.trim())
-        appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trim())
 
         sceneSummary?.let {
-            appendLine("# SCENE STATE")
+            appendLine("\n# SCENE STATE")
             val exclusions = listOf("establishedFacts", "worldStateChanges", "possibleOutcomes")
             appendLine(sceneSummary.toAINormalize(exclusions))
-
-            if (!sceneSummary.establishedFacts.isNullOrEmpty() || !sceneSummary.worldStateChanges.isNullOrEmpty()) {
-                appendLine("\n## ⚓ STORY ANCHORS (IMMUTABLE TRUTHS)")
-                appendLine("The following facts are FINAL and MUST BE RESPECTED. Never contradict them:")
-                sceneSummary.establishedFacts?.forEach { appendLine("- $it") }
-                sceneSummary.worldStateChanges?.forEach { appendLine("- [LATEST CHANGE]: $it") }
-                appendLine()
-            }
-
-            // Inject possible outcomes as narrative guidance
-            sceneSummary.possibleOutcomes?.takeIf { it.isNotEmpty() }?.let { outcomes ->
-                appendLine("\n## NARRATIVE GUIDANCE")
-                appendLine("Plausible directions for this moment:")
-                outcomes.forEachIndexed { index, outcome ->
-                    appendLine("${index + 1}. $outcome")
-                }
-            }
 
             charactersInScene?.let { inScene ->
                 val nonMainCharacters =
@@ -117,15 +97,36 @@ object ChatPrompts {
                     )
                 }
             }
+
+            if (!sceneSummary.establishedFacts.isNullOrEmpty() || !sceneSummary.worldStateChanges.isNullOrEmpty()) {
+                if (!sceneSummary.worldStateChanges.isNullOrEmpty()) {
+                    appendLine("\n## 🔥 WHAT JUST CHANGED")
+                    appendLine("These are RECENT shifts. Your response should naturally acknowledge them:")
+                    sceneSummary.worldStateChanges?.forEach { appendLine("- $it") }
+                }
+            }
+
+            // Inject possible outcomes as narrative guidance
+            sceneSummary.possibleOutcomes?.takeIf { it.isNotEmpty() }?.let { outcomes ->
+                appendLine("\n## NARRATIVE GUIDANCE")
+                appendLine("Plausible directions for this moment:")
+                outcomes.forEachIndexed { index, outcome ->
+                    appendLine("${index + 1}. $outcome")
+                }
+            }
         }
 
+        appendLine(conversationHistory(saga))
+        appendLine(ActPrompts.actDirective(directive))
+
+        appendLine("\n# SAGA REFERENCE DATA")
         appendLine(SagaPrompts.mainContext(saga))
 
         val charactersInSceneIds = charactersInScene?.map { it.data.id } ?: emptyList()
         val externalCharacters = saga.getCharacters(true).filter { it.id !in charactersInSceneIds }
 
         if (externalCharacters.isNotEmpty()) {
-            appendLine("\n# FULL SAGA CAST SUMMARY")
+            appendLine("\n## FULL SAGA CAST SUMMARY")
             appendLine("// Characters NOT in the immediate scene. Use this list ONLY to check if a mentioned entity exists.")
             appendLine(
                 externalCharacters
@@ -138,9 +139,21 @@ object ChatPrompts {
             )
         }
 
+        sceneSummary?.let {
+            if (!sceneSummary.establishedFacts.isNullOrEmpty()) {
+                appendLine("\n## 📋 BACKGROUND CONTINUITY (Reference Only)")
+                appendLine("These facts are TRUE. Do NOT contradict them.")
+                appendLine("⚠️ Do NOT actively bring these up or discuss them unless the player asks about them directly.")
+                sceneSummary.establishedFacts?.forEach { appendLine("- $it") }
+            }
+            appendLine()
+        }
+
+        appendLine("\n# RULES & PROTOCOLS")
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trim())
-        appendLine(ActPrompts.actDirective(directive))
-        appendLine(conversationHistory(saga))
+        appendLine(ChatRules.TAG_BASED_EXPRESSION_SYSTEM.trim())
+        appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trim())
+        appendLine(ChatRules.outputRules())
 
         appendLine("\n# STORYTELLING DIRECTIVES")
         appendLine(StorytellingDirective.NPC_AGENCY_AND_REALISM)
@@ -164,6 +177,14 @@ object ChatPrompts {
             "4. **TRUST THE LATEST MESSAGE:** The [LATEST MESSAGE] below is the ABSOLUTE TRUTH of what just happened. It supersedes older context.",
         )
         appendLine("5. **NO RETCONS:** Never ignore, contradict, or 'undo' events from recent messages. Build FORWARD from them.")
+
+        appendLine("\n## ⚠️ FORWARD MOMENTUM")
+        appendLine("Your reply MUST advance the story BEYOND everything above.")
+        appendLine("❌ Do NOT re-describe or re-explain events from the conversation history.")
+        appendLine("❌ Do NOT bring up background facts unless the player directly asks.")
+        appendLine("✅ React to [LATEST MESSAGE] with FRESH narrative content.")
+        appendLine("✅ If the scene feels stalled, introduce a new development or NPC reaction.")
+
         appendLine("\n# GENRE STYLING & TONE")
         appendLine(config.conversationDirective)
 
@@ -471,14 +492,32 @@ object ChatPrompts {
         saga: SagaContent,
         threshold: Int = UpdateRules.LORE_UPDATE_LIMIT,
     ) = buildString {
-        appendLine("Conversation History (Newest First):")
-        appendLine(
+        val currentMessages =
             saga
-                .flatMessages()
-                .map { it.message }
-                .sortedByDescending { it.timestamp }
-                .take(threshold)
-                .normalizetoAIItems(excludingFields = messageExclusions),
-        )
+                .getCurrentMessages()
+                ?.sortedBy { it.timestamp }
+                ?: emptyList()
+
+        if (currentMessages.size >= 5) {
+            appendLine("\n## Recent Conversation (Chronological):")
+            appendLine(
+                currentMessages
+                    .takeLast(threshold)
+                    .normalizetoAIItems(excludingFields = messageExclusions),
+            )
+        } else {
+            val recentGlobalMessages =
+                saga
+                    .flatMessages()
+                    .map { it.message }
+                    .sortedBy { it.timestamp }
+                    .takeLast(threshold)
+
+            appendLine("\n## Recent Conversation (Chronological):")
+            appendLine(
+                recentGlobalMessages
+                    .normalizetoAIItems(excludingFields = messageExclusions),
+            )
+        }
     }
 }

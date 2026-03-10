@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.features.characters.data.model.Character
-
 object ChatRules {
     val TAG_BASED_EXPRESSION_SYSTEM =
         """
@@ -113,7 +111,7 @@ object ChatRules {
            - Before generating the dialogue, you must briefly reason: "Who is in the room? Who was spoken to? Who is the most logical next speaker?" Use this logic to fill the `reasoning` field.
         """.trimIndent()
 
-    fun outputRules(mainCharacter: Character?) =
+    fun outputRules() =
         """
         # OUTPUT PROTOCOL & NARRATIVE MOMENTUM
         1. **Momentum:** Progression is MANDATORY. Introduce new stakes or developments.
@@ -124,7 +122,6 @@ object ChatRules {
         6. **Balanced Persona:** 
            - `NARRATOR`: Descriptive text ONLY. NO dialogue.
            - `CHARACTER`: Dialogue focused. Use *[Action]* tags ONLY if the action is physically significant to the scene.
-        7. **Formatting:** Return ONLY valid JSON matching the `AIReply` structure (reasoning string + message object).
         """.trimIndent()
 }
 
