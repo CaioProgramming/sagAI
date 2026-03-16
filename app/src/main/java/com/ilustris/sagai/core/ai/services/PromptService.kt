@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.services
 
 import android.util.Log
+import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toPromptVariables
@@ -87,11 +88,48 @@ class PromptServiceImpl
             remoteConfigKey: String,
             variables: Map<String, String>,
         ): String {
-            val template =
-                remoteConfigService.getString(remoteConfigKey)
-                    ?: throw IllegalStateException("Prompt template not found for Remote Config key: $remoteConfigKey")
-            Log.d("PromptService", "buildRemotePrompt: Fetched template for key '$remoteConfigKey'")
-            return buildPrompt(template, variables)
+            val blueprint =
+                remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey)!!
+
+            Log.d("PromptService", "buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
+            if (blueprint.template.isBlank()) {
+                throw IllegalStateException(
+                    "Prompt template not found for Remote Config key: $remoteConfigKey",
+                )
+            }
+
+            return buildString {
+                // 1. Identity
+                if (blueprint.role.isNotBlank()) {
+                    appendLine("# IDENTITY")
+                    appendLine(blueprint.role)
+                    appendLine()
+                }
+
+                // 2. Local Governance (Directives)
+                if (blueprint.directives.isNotEmpty()) {
+                    appendLine("# MODULE DIRECTIVES")
+                    blueprint.directives.forEach { (key, value) ->
+                        appendLine("## $key")
+                        appendLine(value)
+                    }
+                    appendLine()
+                }
+
+                // 3. Narrative Rules
+                if (blueprint.rules.isNotEmpty()) {
+                    appendLine("# MODULE RULES")
+                    blueprint.rules.forEach { (key, value) ->
+                        appendLine("## $key")
+                        appendLine(value)
+                    }
+                    appendLine()
+                }
+
+                // 4. The Core Template
+                appendLine("# TASK DEFINITION")
+                appendLine(buildPrompt(blueprint.template, variables))
+            }.trimIndent()
         }
 
         override suspend fun <T : Any> buildRemotePrompt(
@@ -99,10 +137,6 @@ class PromptServiceImpl
             variablesDataClass: T,
         ): String {
             val stringMap = variablesDataClass.toPromptVariables()
-            Log.d(
-                "PromptService",
-                "buildRemotePrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys",
-            )
             return buildRemotePrompt(remoteConfigKey, stringMap)
         }
     }

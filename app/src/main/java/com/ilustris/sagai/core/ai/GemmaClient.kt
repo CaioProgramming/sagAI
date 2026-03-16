@@ -126,15 +126,12 @@ class GemmaClient
                             val directives = promptService.getPromptDirectives().directives
                             val fullPrompt =
                                 buildString {
-                                    val languageRule =
-                                        promptService.buildPrompt(
-                                            directives["PREFERRED_LANGUAGE"] ?: "",
-                                            mapOf("language" to getLanguage(requireTranslation)),
-                                        )
-
                                     appendLine(prompt)
                                     appendLine()
+                                    appendLine("---")
+                                    appendLine("# CORE GOVERNANCE (CRITICAL)")
 
+                                    // 1. Structural requirements (Output Type & Schema)
                                     val outputDirective =
                                         promptService.buildPrompt(
                                             directives["OUTPUT_DIRECTIVE"] ?: "",
@@ -155,13 +152,19 @@ class GemmaClient
                                                 ),
                                             )
                                         appendLine(structureRule)
-                                        // Add JSON string rules if the output contains string fields
-                                        if (containsStringFields(T::class.java)) {
-                                            appendLine()
-                                            appendLine(directives["JSON_STRING_INTEGRITY"] ?: "")
-                                        }
                                     }
-                                    appendLine()
+
+                                    // 2. Data Integrity (JSON rules)
+                                    if (containsStringFields(T::class.java)) {
+                                        appendLine(directives["JSON_STRING_INTEGRITY"] ?: "")
+                                    }
+
+                                    // 3. Narrative & Linguistic bounds
+                                    val languageRule =
+                                        promptService.buildPrompt(
+                                            directives["PREFERRED_LANGUAGE"] ?: "",
+                                            mapOf("language" to getLanguage(requireTranslation)),
+                                        )
                                     appendLine(languageRule)
                                 }
 

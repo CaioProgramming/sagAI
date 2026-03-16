@@ -19,16 +19,12 @@ import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 
 data class ReplyMessageArgs(
-    val roleDefinition: String,
     val sceneStateBlock: String,
     val conversationHistory: String,
     val actDirective: String,
     val sagaMainContext: String,
     val externalCharactersBlock: String,
     val backgroundContinuityBlock: String,
-    val continuityFactsRules: String,
-    val individualKnowledgeRules: String,
-    val progressionDirective: String,
     val conversationDirective: String,
     val latestMessageContent: String,
 )
@@ -59,7 +55,6 @@ data class TypoFixArgs(
 )
 
 data class ReactionArgs(
-    val roleDefinition: String,
     val sagaMainContext: String,
     val sceneSummary: String,
     val charactersPresent: String,
@@ -153,13 +148,6 @@ object ChatPrompts {
             sceneSummary?.charactersPresent?.mapNotNull {
                 saga.findCharacter(it)
             }
-
-        val roleDefinition =
-            promptService.buildPrompt(
-                promptDirectives.roleDefinition,
-                mapOf("sagaTitle" to saga.data.title),
-            )
-
         val sceneStateBlock =
             sceneSummary?.let { summary ->
                 assembleSceneStateBlock(promptService, summary, saga, charactersInScene)
@@ -173,16 +161,12 @@ object ChatPrompts {
 
         val args =
             ReplyMessageArgs(
-                roleDefinition = roleDefinition,
                 sceneStateBlock = sceneStateBlock,
                 conversationHistory = conversationHistory(promptDirectives, saga),
                 actDirective = saga.getDirective(narrativeRules),
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 externalCharactersBlock = externalCharactersBlock,
                 backgroundContinuityBlock = backgroundContinuityBlock,
-                continuityFactsRules = promptDirectives.continuityFactsRules,
-                individualKnowledgeRules = promptDirectives.individualKnowledgeRules,
-                progressionDirective = promptDirectives.progressionDirective,
                 conversationDirective = config.conversationDirective,
                 latestMessageContent = message.toAINormalize(messageExclusions),
             )
@@ -309,13 +293,6 @@ object ChatPrompts {
     ): String {
         val mainCharacter = saga.mainCharacter!!
         val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
-
-        val roleDefinition =
-            promptService.buildPrompt(
-                promptDirectives.roleDefinition,
-                mapOf("sagaTitle" to saga.data.title),
-            )
-
         val relationshipsBlock =
             buildString {
                 characters.forEach {
@@ -327,7 +304,6 @@ object ChatPrompts {
 
         val args =
             ReactionArgs(
-                roleDefinition = roleDefinition,
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 sceneSummary = summary.toAINormalize(),
                 charactersPresent = summary.charactersPresent.joinToString(),
@@ -389,22 +365,7 @@ object ChatPrompts {
         config: GenreConfig,
     ): String {
         val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
-        val relationshipBlock =
-            relationWithCharacter?.let {
-                promptService.buildPrompt(
-                    promptDirectives.characterRelationshipLabel.ifBlank { StorytellingDirective.CHARACTER_RELATIONSHIP },
-                    mapOf("relationship" to it.summarizeRelation()),
-                )
-            } ?: ""
-
-        if (selectedCharacter.data.id == saga.mainCharacter.data.id) {
-            promptDirectives.notificationRoleMain
-        } else {
-            promptService.buildPrompt(
-                promptDirectives.notificationRoleNPC,
-                mapOf("mainCharacterName" to saga.mainCharacter.data.name),
-            )
-        }
+        val relationshipBlock = relationWithCharacter?.summarizeRelation(1) ?: ""
 
         val args =
             NotificationArgs(

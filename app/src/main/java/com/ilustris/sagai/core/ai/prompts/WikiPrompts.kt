@@ -11,7 +11,6 @@ import com.ilustris.sagai.features.wiki.data.model.MergeWiki
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class WikiGenerationArgs(
-    val roleDefinition: String,
     val existingWikis: String,
     val eventContext: String,
     val conversationDirective: String,
@@ -40,7 +39,6 @@ object WikiPrompts {
 
         val args =
             WikiGenerationArgs(
-                roleDefinition = promptService.getPromptDirectives().get("WIKI_GENERATOR_ROLE"),
                 existingWikis =
                     if (wikis.isEmpty()) {
                         "No existing wiki entries in the current chapter."
