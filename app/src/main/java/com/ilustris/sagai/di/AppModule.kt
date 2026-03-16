@@ -18,6 +18,8 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.PromptServiceImpl
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -211,7 +213,8 @@ object AppModule {
     fun providesSummarizationClient(
         remoteConfigService: RemoteConfigService,
         geminiApiService: GeminiApiService,
-    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService)
+        promptService: PromptService,
+    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService, promptService)
 
     @Provides
     @Singleton
@@ -258,6 +261,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun providePromptService(remoteConfigService: RemoteConfigService): PromptService = PromptServiceImpl(remoteConfigService)
+
+    @Provides
+    @Singleton
     fun provideImagenClient(
         remoteConfigService: RemoteConfigService,
         genreConfigService: GenreConfigService,
@@ -265,6 +272,7 @@ object AppModule {
         analyticsService: AnalyticsService,
         imageConfigService: ImageConfigService,
         gemmaClient: GemmaClient,
+        promptService: PromptService,
     ): ImagenClient =
         ImagenClientImpl(
             billingService,
@@ -273,6 +281,7 @@ object AppModule {
             imageConfigService,
             gemmaClient,
             analyticsService,
+            promptService,
         )
 
     @Provides

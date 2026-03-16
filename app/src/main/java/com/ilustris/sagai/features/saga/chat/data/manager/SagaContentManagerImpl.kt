@@ -255,32 +255,34 @@ class SagaContentManagerImpl
                                             )
                                         } else {
                                             startProcessing {
-                                                messageUseCase
-                                                    .getSceneContext(saga)
-                                                    .onSuccessAsync { summary ->
-                                                        _sceneSummary.emit(summary)
-                                                        summary?.let {
-                                                            emitMilestone(
-                                                                SagaMilestone.Introduction(
-                                                                    type = IntroductionType.RESUME,
-                                                                    titleText = chapterInfo.data.title,
-                                                                    introduction =
-                                                                        summary.immediateObjective
-                                                                            ?: summary.currentConflict
-                                                                            ?: summary.mood
-                                                                            ?: emptyString(),
-                                                                    number =
-                                                                        saga
-                                                                            .chapterNumber(
-                                                                                chapterInfo.data,
-                                                                            ).toRoman(),
-                                                                    sceneSummary = summary,
-                                                                ),
-                                                            )
-                                                        } ?: run {
-                                                            emitMilestone(null)
+                                                if (_sceneSummary.value == null) {
+                                                    messageUseCase
+                                                        .getSceneContext(saga)
+                                                        .onSuccessAsync { summary ->
+                                                            _sceneSummary.emit(summary)
+                                                            summary?.let {
+                                                                emitMilestone(
+                                                                    SagaMilestone.Introduction(
+                                                                        type = IntroductionType.RESUME,
+                                                                        titleText = chapterInfo.data.title,
+                                                                        introduction =
+                                                                            summary.immediateObjective
+                                                                                ?: summary.currentConflict
+                                                                                ?: summary.mood
+                                                                                ?: emptyString(),
+                                                                        number =
+                                                                            saga
+                                                                                .chapterNumber(
+                                                                                    chapterInfo.data,
+                                                                                ).toRoman(),
+                                                                        sceneSummary = summary,
+                                                                    ),
+                                                                )
+                                                            } ?: run {
+                                                                emitMilestone(null)
+                                                            }
                                                         }
-                                                    }
+                                                }
                                             }
                                         }
                                     }

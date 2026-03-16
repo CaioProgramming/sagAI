@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.ImageReference
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
@@ -36,6 +37,7 @@ class GemmaClient
     constructor(
         private val remoteConfigService: RemoteConfigService,
         val geminiApiService: GeminiApiService,
+        val promptService: PromptService,
     ) : AIClient() {
         @PublishedApi
         internal val requestMutex = Mutex()
@@ -121,45 +123,61 @@ class GemmaClient
                 for (currentAttempt in 1..maxAttempts) {
                     try {
                         return@withContext requestMutex.withLock {
+                            val directives = promptService.getPromptDirectives().directives
                             val fullPrompt =
                                 buildString {
-                                    val languageRule = modelLanguage(requireTranslation)
+                                    val languageRule =
+                                        promptService.buildPrompt(
+                                            directives["PREFERRED_LANGUAGE"] ?: "",
+                                            mapOf("language" to getLanguage(requireTranslation)),
+                                        )
 
                                     appendLine(prompt)
                                     appendLine()
-                                    appendLine("No introdutory phrased focus solely on the ouput.")
-                                    appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
-                                    if (T::class != String::class && describeOutput) {
-                                        appendLine("Follow this structure:")
-                                        appendLine(
-                                            toJsonMap(
-                                                T::class.java,
-                                                filteredFields = filterOutputFields,
-                                            ),
+
+                                    val outputDirective =
+                                        promptService.buildPrompt(
+                                            directives["OUTPUT_DIRECTIVE"] ?: "",
+                                            mapOf("outputType" to T::class.java.simpleName),
                                         )
+                                    appendLine(outputDirective)
+
+                                    if (T::class != String::class && describeOutput) {
+                                        val structureRule =
+                                            promptService.buildPrompt(
+                                                directives["STRUCTURE_DIRECTIVE"] ?: "",
+                                                mapOf(
+                                                    "structure" to
+                                                        toJsonMap(
+                                                            T::class.java,
+                                                            filteredFields = filterOutputFields,
+                                                        ),
+                                                ),
+                                            )
+                                        appendLine(structureRule)
                                         // Add JSON string rules if the output contains string fields
                                         if (containsStringFields(T::class.java)) {
                                             appendLine()
-                                            appendLine("CRITICAL JSON STRING RULES:")
-                                            appendLine("- Any double quote inside a string value MUST be escaped as \\\"")
-                                            appendLine("- Example: \"text\": \"He said \\\"hello\\\" to me\"")
-                                            appendLine("- NEVER leave string values unquoted like: \"name\": John")
-                                            appendLine("- CORRECT format: \"name\": \"John\"")
+                                            appendLine(directives["JSON_STRING_INTEGRITY"] ?: "")
                                         }
                                     }
                                     appendLine()
                                     appendLine(languageRule)
                                 }
 
+                            val promptLength =
+                                fullPrompt.length +
+                                    references.filterNotNull().sumOf {
+                                        it.description.length
+                                    }
                             Log.i(
                                 this@GemmaClient::class.java.simpleName,
-                                "Requesting $model\nPrompt with ${
-                                    fullPrompt.length +
-                                        references.filterNotNull().sumOf {
-                                            it.description.length
-                                        }
-                                } chars.",
+                                "Requesting $model\nPrompt with $promptLength chars.",
                             )
+
+                            if (promptLength > (INPUT_TOKEN_LIMIT * 2)) {
+                                throw IllegalArgumentException("Prompt is too long. verify your prompt and try again.")
+                            }
 
                             val parts = mutableListOf<GeminiPart>()
                             parts.add(GeminiPart(text = fullPrompt))

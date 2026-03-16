@@ -85,4 +85,9 @@ object StorytellingDirective {
         2. **Ignorance is Dramatic:** If a character has no specific knowledge on a topic that others do, they should react with ignorance, curiosity, or confusion. Do NOT hallucinate shared knowledge.
         3. **Secrets Matter:** If the 'knowledge' list implies a secret (e.g., 'Knows the traitor is X'), do not blurt it out unless it fits the character's motivation.
     """
+
+    const val CONVERSATION_HISTORY = "\n## Recent Conversation (Chronological):"
+    const val RECENT_CONTEXT = "\n# RECENT CONTEXT\nThe story just went like this: \"{message}\""
+    const val CHARACTER_RELATIONSHIP =
+        "### Character Relationship story with Player:\n{relationship}"
 }

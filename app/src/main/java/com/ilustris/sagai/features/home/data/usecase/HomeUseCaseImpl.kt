@@ -32,6 +32,7 @@ class HomeUseCaseImpl
         private val sagaBackupService: SagaBackupService,
         private val remoteConfig: FirebaseRemoteConfig,
         private val sagaDetailUseCase: SagaDetailUseCase,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         billingService: BillingService,
     ) : HomeUseCase {
         override val billingState = billingService.state
@@ -41,7 +42,7 @@ class HomeUseCaseImpl
         override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
             executeRequest {
                 Log.d("HomeUseCaseImpl", "Fetching new dynamic saga texts...")
-                val prompt = HomePrompts.dynamicSagaCreationPrompt()
+                val prompt = HomePrompts.dynamicSagaCreationPrompt(promptService)
 
                 val result =
                     gemmaClient.generate<DynamicSagaPrompt>(

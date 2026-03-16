@@ -63,6 +63,8 @@ class CharacterUseCaseImpl
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
         private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
         @param:ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
@@ -157,6 +159,7 @@ class CharacterUseCaseImpl
                     )!!
                 val prompt =
                     CharacterPrompts.characterGeneration(
+                        promptService,
                         sagaContent,
                         config,
                         description,
@@ -212,7 +215,12 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Unit> =
             executeRequest {
-                val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
+                val prompt =
+                    CharacterPrompts.characterLoreGeneration(
+                        promptService,
+                        timeline,
+                        saga.getCharacters(),
+                    )
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
                         prompt,
@@ -274,6 +282,7 @@ class CharacterUseCaseImpl
                     val charactersList = saga.getCharacters()
                     val prompt =
                         CharacterPrompts.findNickNames(
+                            promptService,
                             charactersList,
                             timelineContent.messages.map { it.message },
                             timelineContent.data,
@@ -329,8 +338,20 @@ class CharacterUseCaseImpl
                     return@executeRequest character.data.backstory
                 }
                 val config =
-                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val prompt = CharacterPrompts.characterResume(character, saga, config)
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)!!
+                val promptDirectives =
+                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                            ?: emptyMap(),
+                    )
+                val prompt =
+                    CharacterPrompts.characterResume(
+                        promptService,
+                        promptDirectives,
+                        character,
+                        saga,
+                        config,
+                    )
                 gemmaClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
@@ -345,7 +366,8 @@ class CharacterUseCaseImpl
                 val characters = saga.getCharacters()
                 if (characters.isEmpty()) return@executeRequest
 
-                val prompt = CharacterPrompts.knowledgeUpdatePrompt(timeline, characters)
+                val prompt =
+                    CharacterPrompts.knowledgeUpdatePrompt(promptService, timeline, characters)
                 val result =
                     gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,

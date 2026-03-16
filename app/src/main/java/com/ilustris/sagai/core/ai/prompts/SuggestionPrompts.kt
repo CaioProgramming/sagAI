@@ -11,6 +11,7 @@ object SuggestionPrompts {
         saga: SagaContent,
         character: Character,
         sceneSummary: SceneSummary,
+        promptDirectives: PromptDirectives,
     ): String =
         buildString {
             appendLine("You are an AI assistant for a text-based role-playing game.")
@@ -22,7 +23,7 @@ object SuggestionPrompts {
             appendLine(sceneSummary.toAINormalize())
             appendLine("Latest messages")
             appendLine(
-                ChatPrompts.conversationHistory(saga, 7),
+                ChatPrompts.conversationHistory(promptDirectives, saga, 7),
             )
 
             appendLine("\n# TAG-BASED EXPRESSION SYSTEM")

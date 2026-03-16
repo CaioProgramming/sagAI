@@ -14,10 +14,16 @@ class NewCharacterUseCaseImpl
     @Inject
     constructor(
         private val gemmaClient: GemmaClient,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
     ) : NewCharacterUseCase {
         override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<CharacterCreationGen> =
             executeRequest {
-                gemmaClient.generate(CharacterPrompts.characterIntroPrompt(sagaContext))!!
+                gemmaClient.generate(
+                    CharacterPrompts.characterIntroPrompt(
+                        promptService,
+                        sagaContext,
+                    ),
+                )!!
             }
 
         override suspend fun replyCharacterForm(
@@ -35,6 +41,7 @@ class NewCharacterUseCaseImpl
                 val response =
                     gemmaClient.generate<CharacterCreationGen>(
                         CharacterPrompts.conversationalCharacterReply(
+                            promptService = promptService,
                             currentCharacterInfo = currentCharacterInfo,
                             userInput = userInput,
                             conversationHistory = recentMessages,
@@ -53,6 +60,7 @@ class NewCharacterUseCaseImpl
             executeRequest {
                 gemmaClient.generate(
                     CharacterPrompts.characterAdaptationPrompt(
+                        promptService,
                         characterInfo,
                         newGenre,
                     ),
@@ -65,8 +73,12 @@ class NewCharacterUseCaseImpl
         ): RequestResult<CharacterCreationGen> =
             executeRequest {
                 gemmaClient.generate(
-                    CharacterPrompts.refineCharacterDraftPrompt(rawInput, sagaContext),
+                    CharacterPrompts.refineCharacterDraftPrompt(
+                        promptService,
+                        rawInput,
+                        sagaContext,
+                    ),
                     requireTranslation = true,
-            )!!
-        }
+                )!!
+            }
     }

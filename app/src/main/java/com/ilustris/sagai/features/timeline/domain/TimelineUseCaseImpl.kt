@@ -4,8 +4,10 @@ import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.LorePrompts
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -27,6 +29,9 @@ class TimelineUseCaseImpl
         private val wikiUseCase: WikiUseCase,
         private val characterUseCase: CharacterUseCase,
         private val gemmaClient: GemmaClient,
+        private val promptService: PromptService,
+        private val remoteConfigService: RemoteConfigService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : TimelineUseCase {
         override suspend fun getAllTimelines() = timelineRepository.getAllTimelines()
 
@@ -36,12 +41,20 @@ class TimelineUseCaseImpl
             saga: SagaContent,
             currentTimeline: TimelineContent,
         ) = executeRequest {
+            val narrativeRules =
+                com.ilustris.sagai.core.narrative.NarrativeRules(
+                    remoteConfigService.getJson<Map<String, Any>>("narrative_rules") ?: emptyMap(),
+                )
+            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
             val newLore =
                 gemmaClient
                     .generate<Timeline>(
                         LorePrompts.loreGeneration(
-                            saga,
-                            currentTimeline,
+                            promptService = promptService,
+                            narrativeRules = narrativeRules,
+                            sagaContent = saga,
+                            currentTimeline = currentTimeline,
+                            config = genreConfig,
                         ),
                         filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
                         useCore = true,
@@ -111,9 +124,22 @@ class TimelineUseCaseImpl
             saga: SagaContent,
             timelineContent: Timeline,
         ) = executeRequest {
+            val promptRules =
+                com.ilustris.sagai.core.ai.prompts.PromptRules(
+                    remoteConfigService.getJson<Map<String, String>>("prompt_rules") ?: emptyMap(),
+                )
+            val promptDirectives =
+                com.ilustris.sagai.core.ai.prompts.PromptDirectives(
+                    remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                        ?: emptyMap(),
+                )
+
             val objectivePrompt =
                 ChatPrompts.sceneSummarizationPrompt(
-                    saga,
+                    promptService = promptService,
+                    promptRules = promptRules,
+                    promptDirectives = promptDirectives,
+                    saga = saga,
                 )
             val summary =
                 gemmaClient

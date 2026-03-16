@@ -18,6 +18,7 @@ import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
@@ -50,6 +51,7 @@ class ImagenClientImpl
         private val imageConfigService: ImageConfigService,
         private val gemmaClient: GemmaClient,
         private val analyticsService: AnalyticsService,
+        private val promptService: PromptService,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -238,6 +240,7 @@ class ImagenClientImpl
         ) = executeRequest {
             gemmaClient.generate<String>(
                 ImagePrompts.generateDirectorialVision(
+                    promptService,
                     genre,
                     genreConfig!!,
                     imageConfig,
@@ -262,6 +265,7 @@ class ImagenClientImpl
             executeRequest {
                 val prompt =
                     ImagePrompts.generateArtistPrompt(
+                        promptService,
                         genre,
                         genreConfig!!,
                         imageConfig,
@@ -290,6 +294,7 @@ class ImagenClientImpl
         ) = executeRequest {
             val reviewerPrompt =
                 ImagePrompts.reviewImagePrompt(
+                    promptService,
                     visualDirection,
                     genreConfig!!,
                     imageConfig,

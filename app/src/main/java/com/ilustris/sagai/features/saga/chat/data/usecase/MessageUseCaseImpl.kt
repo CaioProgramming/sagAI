@@ -5,7 +5,6 @@ import android.util.Log
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.Voice
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
@@ -20,7 +19,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -43,11 +41,12 @@ class MessageUseCaseImpl
         private val reactionRepository: ReactionRepository,
         private val characterRepository: CharacterRepository,
         private val sagaRepository: SagaRepository,
-        private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val audioGenClient: AudioGenClient,
         private val fileHelper: FileHelper,
         private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -65,12 +64,26 @@ class MessageUseCaseImpl
             executeRequest {
                 val config =
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val promptRules =
+                    com.ilustris.sagai.core.ai.prompts.PromptRules(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_rules")
+                            ?: emptyMap(),
+                    )
+                val promptDirectives =
+                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                            ?: emptyMap(),
+                    )
+
                 gemmaClient.generate<TypoFix>(
                     ChatPrompts.checkForTypo(
-                        saga,
-                        config,
-                        message,
-                        saga.flatMessages().lastOrNull()?.message,
+                        promptService = promptService,
+                        promptRules = promptRules,
+                        promptDirectives = promptDirectives,
+                        saga = saga,
+                        config = config,
+                        message = message,
+                        lastMessage = saga.flatMessages().lastOrNull()?.message,
                     ),
                     requireTranslation = true,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
@@ -79,9 +92,23 @@ class MessageUseCaseImpl
 
         override suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?> =
             executeRequest {
+                val promptRules =
+                    com.ilustris.sagai.core.ai.prompts.PromptRules(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_rules")
+                            ?: emptyMap(),
+                    )
+                val promptDirectives =
+                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                            ?: emptyMap(),
+                    )
+
                 gemmaClient.generate<SceneSummary>(
                     prompt =
                         ChatPrompts.sceneSummarizationPrompt(
+                            promptService = promptService,
+                            promptRules = promptRules,
+                            promptDirectives = promptDirectives,
                             saga = saga,
                         ),
                     temperatureRandomness = 0.2f,
@@ -110,7 +137,7 @@ class MessageUseCaseImpl
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
-            val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
+            val prompt = EmotionalPrompt.emotionalToneExtraction(promptService, message.text)
             val raw =
                 gemmaClient
                     .generate<String>(
@@ -155,19 +182,38 @@ class MessageUseCaseImpl
 
                 val config =
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val promptRules =
+                    com.ilustris.sagai.core.ai.prompts.PromptRules(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_rules")
+                            ?: emptyMap(),
+                    )
+                val promptDirectives =
+                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                            ?: emptyMap(),
+                    )
+                val narrativeRules =
+                    com.ilustris.sagai.core.narrative.NarrativeRules(
+                        remoteConfigService.getJson<Map<String, Any>>("narrative_rules")
+                            ?: emptyMap(),
+                    )
                 val genText =
                     gemmaClient.generate<AIReply>(
                         prompt =
                             ChatPrompts.replyMessagePrompt(
+                                promptService = promptService,
+                                promptRules = promptRules,
+                                promptDirectives = promptDirectives,
+                                narrativeRules = narrativeRules,
                                 saga = saga,
                                 message = message.message,
-                                directive = saga.getDirective(),
                                 sceneSummary = sceneSummary!!,
                                 config = config,
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                         filterOutputFields =
                             ChatPrompts.messageExclusions,
+                        useCore = true,
                     )
 
                 Log.i(
@@ -202,11 +248,21 @@ class MessageUseCaseImpl
                     it.characterTwo.id in charactersInScene.map { character -> character.data.id }
             }
 
+            val promptDirectives =
+                remoteConfigService.getJson<com.ilustris.sagai.core.ai.prompts.PromptDirectives>("prompt_directives")
+                    ?: throw Exception("Prompt directives not found in remote config")
+
+            val config =
+                genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+
             val prompt =
                 ChatPrompts.generateReactionPrompt(
+                    promptService = promptService,
+                    promptDirectives = promptDirectives,
                     saga = saga,
                     summary = sceneSummary,
                     messageToReact = message,
+                    config = config,
                 )
 
             val reaction =
@@ -346,6 +402,6 @@ class MessageUseCaseImpl
             generateReaction(saga, message, sceneSummary)
             if (generateAudio) {
                 generateAudio(saga, message, characterReference)
+            }
         }
-    }
     }

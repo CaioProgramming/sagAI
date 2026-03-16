@@ -38,6 +38,8 @@ class ChapterUseCaseImpl
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : ChapterUseCase {
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
@@ -260,10 +262,13 @@ class ChapterUseCaseImpl
                 chapterRepository.updateChapter(newChapter)
             }
 
-        private fun generateChapterPrompt(
+        private suspend fun generateChapterPrompt(
             saga: SagaContent,
             currentChapter: ChapterContent,
-        ) = ChapterPrompts.chapterGeneration(saga, currentChapter)
+        ): String {
+            val config = genreConfigService.getGenreConfig(saga.data.genre)
+            return ChapterPrompts.chapterGeneration(promptService, saga, currentChapter, config)
+        }
 
         override suspend fun generateChapterIntroduction(
             saga: SagaContent,
@@ -271,8 +276,15 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Chapter> =
             executeRequest {
+                val config = genreConfigService.getGenreConfig(saga.data.genre)
                 val prompt =
-                    ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
+                    ChapterPrompts.chapterIntroductionPrompt(
+                        promptService,
+                        saga,
+                        chapter,
+                        act,
+                        config,
+                    )
                 val intro =
                     gemmaClient.generate<String>(
                         prompt,

@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.core.narrative.ActDirectives
+import com.ilustris.sagai.core.narrative.ActPurpose
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -58,7 +60,11 @@ data class SagaContent(
     )
     val relationships: List<RelationshipContent> = emptyList(),
 ) {
-    fun isFull(): Boolean = acts.count { it.isComplete() } == UpdateRules.MAX_ACTS_LIMIT
+    fun isFull(narrativeRules: NarrativeRules? = null): Boolean =
+        acts.count { it.isComplete() } == (
+            narrativeRules?.maxActsLimit
+                ?: UpdateRules.MAX_ACTS_LIMIT
+        )
 
     fun isComplete(): Boolean = isFull() && data.endMessage.isNotEmpty()
 
@@ -176,17 +182,43 @@ fun SagaContent.actNumber(act: Act?): Int =
         1
     }
 
-fun SagaContent.getDirective(): String {
+fun SagaContent.getDirective(narrativeRules: NarrativeRules? = null): String {
     val actsCount = acts.size
     Log.d(
         javaClass.simpleName,
         "Getting directive. Total acts count: $actsCount for saga(${this.data.id}) -> ${this.data.title}",
     )
+    if (narrativeRules != null) {
+        return when (actsCount) {
+            0, 1 -> narrativeRules.firstActDirectives
+            2 -> narrativeRules.secondActDirectives
+            3 -> narrativeRules.thirdActDirectives
+            else -> narrativeRules.firstActDirectives
+        }
+    }
     return when (actsCount) {
         0, 1 -> ActDirectives.FIRST_ACT_DIRECTIVES
         2 -> ActDirectives.SECOND_ACT_DIRECTIVES
         3 -> ActDirectives.THIRD_ACT_DIRECTIVES
         else -> ActDirectives.FIRST_ACT_DIRECTIVES
+    }
+}
+
+fun SagaContent.getPurpose(narrativeRules: NarrativeRules? = null): String {
+    val actsCount = acts.size
+    if (narrativeRules != null) {
+        return when (actsCount) {
+            0, 1 -> narrativeRules.firstActPurpose
+            2 -> narrativeRules.secondActPurpose
+            3 -> narrativeRules.thirdActPurpose
+            else -> narrativeRules.firstActPurpose
+        }
+    }
+    return when (actsCount) {
+        0, 1 -> ActPurpose.FIRST_ACT_PURPOSE
+        2 -> ActPurpose.SECOND_ACT_PURPOSE
+        3 -> ActPurpose.THIRD_ACT_PURPOSE
+        else -> ActPurpose.FIRST_ACT_PURPOSE
     }
 }
 

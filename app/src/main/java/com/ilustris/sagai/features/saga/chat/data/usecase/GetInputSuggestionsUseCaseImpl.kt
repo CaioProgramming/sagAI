@@ -2,9 +2,11 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -17,6 +19,7 @@ class GetInputSuggestionsUseCaseImpl
     @Inject
     constructor(
         private val gemmaClient: GemmaClient,
+        private val remoteConfigService: RemoteConfigService,
     ) : GetInputSuggestionsUseCase {
         override suspend fun invoke(
             chatMessages: List<MessageContent>,
@@ -26,11 +29,18 @@ class GetInputSuggestionsUseCaseImpl
         ): RequestResult<List<Suggestion>> =
             executeRequest(false) {
                 val contextSummary = sceneSummary ?: error("can't generate suggestions without context")
+                val promptDirectives =
+                    PromptDirectives(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                            ?: emptyMap(),
+                    )
+
                 val prompt =
                     SuggestionPrompts.generateSuggestionsPrompt(
                         saga,
                         character = currentUserCharacter!!,
                         contextSummary,
+                        promptDirectives,
                     )
 
                 Log.d("GetInputSuggestions", "Sending prompt to GemmaClient for suggestions.")

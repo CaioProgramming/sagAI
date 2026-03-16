@@ -45,6 +45,8 @@ class SagaDetailUseCaseImpl
         private val sagaBackupService: SagaBackupService,
         private val backupService: com.ilustris.sagai.core.file.BackupService,
         private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
             val topCharacters = listOf(saga.mainCharacter!!.data)
@@ -147,7 +149,7 @@ class SagaDetailUseCaseImpl
             executeRequest {
                 val config =
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val prompt = SagaPrompts.generateStoryBriefing(saga, config)
+                val prompt = SagaPrompts.generateStoryBriefing(promptService, saga, config)
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
 
@@ -158,7 +160,12 @@ class SagaDetailUseCaseImpl
                 }
                 val config =
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val prompt = SagaPrompts.sagaResume(saga, config)
+                val promptDirectives =
+                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
+                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
+                            ?: emptyMap(),
+                    )
+                val prompt = SagaPrompts.sagaResume(promptService, promptDirectives, saga, config)
                 textGenClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,

@@ -57,7 +57,7 @@ class TextGenClient(
                 }
             val fullPrompt =
                 if (requireTranslation) {
-                    "$prompt ${modelLanguage()}"
+                    "$prompt ${getLanguage(requireTranslation)}"
                 } else {
                     prompt
                 }

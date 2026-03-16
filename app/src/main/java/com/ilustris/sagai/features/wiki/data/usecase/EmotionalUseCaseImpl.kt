@@ -11,13 +11,22 @@ class EmotionalUseCaseImpl
     @Inject
     constructor(
         private val gemmaClient: GemmaClient,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : EmotionalUseCase {
         override suspend fun generateEmotionalReview(
             sagaContent: SagaContent,
             context: String,
         ): RequestResult<String> =
             executeRequest {
-                val prompt = EmotionalPrompt.generateEmotionalReview(sagaContent, context)
+                val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                val prompt =
+                    EmotionalPrompt.generateEmotionalReview(
+                        promptService,
+                        sagaContent,
+                        context,
+                        config,
+                    )
                 gemmaClient
                     .generate<String>(
                         prompt = prompt,
@@ -31,16 +40,28 @@ class EmotionalUseCaseImpl
         ): RequestResult<String> =
             executeRequest {
                 if (emotionalSummary.isEmpty()) error("No summary provided can't generate profile.")
+                val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
                 gemmaClient.generate<String>(
-                    prompt = EmotionalPrompt.generateEmotionalProfile(emotionalSummary),
+                    prompt =
+                        EmotionalPrompt.generateEmotionalProfile(
+                            promptService,
+                            emotionalSummary,
+                            config,
+                        ),
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
         override suspend fun generateEmotionalConclusion(sagaContent: SagaContent): RequestResult<String> =
             executeRequest {
+                val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
                 gemmaClient.generate<String>(
-                    prompt = EmotionalPrompt.generateEmotionalConclusion(sagaContent),
+                    prompt =
+                        EmotionalPrompt.generateEmotionalConclusion(
+                            promptService,
+                            sagaContent,
+                            config,
+                        ),
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
             }

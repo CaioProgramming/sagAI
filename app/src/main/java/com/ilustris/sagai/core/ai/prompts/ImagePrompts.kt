@@ -4,28 +4,8 @@ import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.ReviewerStrictness
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-
-/**
- * The specific keys used to inject variables into Remote Config master templates.
- * This object serves as the documentation for which variables are available to developers in Firebase.
- */
-object PromptKeys {
-    const val GENRE = "genre"
-    const val CONTEXT = "context"
-    const val IMAGE_TYPE = "imageType"
-    const val ART_STYLE = "artStyle"
-    const val CONVERSATION_DIRECTIVE = "conversationDirective"
-    const val APPEARANCE_GUIDELINES = "appearanceGuidelines"
-    const val COLOR_PALETTE = "colorPalette"
-    const val CRITICAL_VALIDATION = "criticalValidation"
-    const val REVIEWER_STRICTNESS = "reviewerStrictness"
-    const val VALIDATION_RULES = "validationRules"
-    const val CRITICAL_RULES = "criticalRules"
-    const val VISUAL_DIRECTION = "visualDirection"
-    const val FINAL_PROMPT = "finalPrompt"
-    const val ASPECT_RATIO = "aspectRatio"
-}
 
 object AgentIds {
     const val DIRECTOR = "director"
@@ -33,23 +13,29 @@ object AgentIds {
     const val REVIEWER = "reviewer"
 }
 
+data class ImagePromptArgs(
+    val genre: String,
+    val context: String,
+    val imageType: String,
+    val artStyle: String,
+    val conversationDirective: String,
+    val appearanceGuidelines: String,
+    val colorPalette: String,
+    val criticalValidation: String,
+    val reviewerStrictness: String,
+    val validationRules: String,
+    val criticalRules: String,
+    val visualDirection: String,
+    val finalPrompt: String,
+    val aspectRatio: String,
+)
+
 object ImagePrompts {
-
     /**
-     * Dumb template engine: replaces {key} with the corresponding value.
-     */
-    private fun String.injectVariables(variables: Map<String, String>): String {
-        var result = this
-        variables.forEach { (key, value) ->
-            result = result.replace("{$key}", value)
-        }
-        return result
-    }
-
-    /**
-     * A unified god function that executes any AI agent by feeding it the corresponding PromptKeys.
+     * A unified god function that executes any AI agent by feeding it the ImagePromptArgs.
      */
     fun generateAgentPrompt(
+        promptService: PromptService,
         agentId: String,
         genre: Genre,
         config: GenreConfig,
@@ -61,33 +47,26 @@ object ImagePrompts {
     ): String {
         val agentTemplate = imageConfig.typeConfigs[imageType.name]?.getAgentTemplate(agentId) ?: ""
 
-        val variables =
-            mapOf(
-                PromptKeys.GENRE to genre.name,
-                PromptKeys.CONTEXT to context,
-                PromptKeys.IMAGE_TYPE to imageType.name.replace("_", " "),
-                PromptKeys.ART_STYLE to config.artStyle,
-                PromptKeys.CONVERSATION_DIRECTIVE to config.conversationDirective,
-                PromptKeys.APPEARANCE_GUIDELINES to config.appearanceGuidelines,
-                PromptKeys.COLOR_PALETTE to config.colorPalette,
-                PromptKeys.CRITICAL_VALIDATION to (
-                    config.criticalValidation.takeIf { it.isNotBlank() }
-                        ?: ""
-                ),
-                PromptKeys.REVIEWER_STRICTNESS to
+        val args =
+            ImagePromptArgs(
+                genre = genre.name,
+                context = context,
+                imageType = imageType.name.replace("_", " "),
+                artStyle = config.artStyle,
+                conversationDirective = config.conversationDirective,
+                appearanceGuidelines = config.appearanceGuidelines,
+                colorPalette = config.colorPalette,
+                criticalValidation = config.criticalValidation.takeIf { it.isNotBlank() } ?: "",
+                reviewerStrictness =
                     (
                         config.reviewerStrictness
                             ?: ReviewerStrictness.STRICT
                     ).description,
-                PromptKeys.VALIDATION_RULES to
-                    config.getValidationRules(
-                        genre.name,
-                        config.colorPalette,
-                    ),
-                PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
-                PromptKeys.VISUAL_DIRECTION to (visualDirection ?: ""),
-                PromptKeys.FINAL_PROMPT to (finalPrompt ?: ""),
-                PromptKeys.ASPECT_RATIO to (
+                validationRules = config.getValidationRules(genre.name, config.colorPalette),
+                criticalRules = imageConfig.criticalRules,
+                visualDirection = visualDirection ?: "",
+                finalPrompt = finalPrompt ?: "",
+                aspectRatio =
                     when (imageType) {
                         ImageType.ICON -> {
                             config.iconAspectRatio
@@ -98,23 +77,31 @@ object ImagePrompts {
                             config.coverAspectRatio
                                 ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
                         }
-                        }
-                        ),
+                    },
             )
 
-        return agentTemplate.injectVariables(variables)
+        return promptService.buildPrompt(agentTemplate, args)
     }
 
-    // Wrappers to maintain compatibility with ImagenClientImpl until we refactor it too.
     fun generateDirectorialVision(
+        promptService: PromptService,
         genre: Genre,
         config: GenreConfig,
         imageConfig: ImageConfig,
         imageType: ImageType,
         context: String,
-    ) = generateAgentPrompt(AgentIds.DIRECTOR, genre, config, imageConfig, imageType, context)
+    ) = generateAgentPrompt(
+        promptService,
+        AgentIds.DIRECTOR,
+        genre,
+        config,
+        imageConfig,
+        imageType,
+        context,
+    )
 
     fun generateArtistPrompt(
+        promptService: PromptService,
         genre: Genre,
         config: GenreConfig,
         imageConfig: ImageConfig,
@@ -122,16 +109,18 @@ object ImagePrompts {
         visualDirection: String?,
         context: String,
     ) = generateAgentPrompt(
+        promptService,
         AgentIds.ARTIST,
         genre,
         config,
         imageConfig,
         imageType,
         context,
-        visualDirection
+        visualDirection,
     )
 
     fun reviewImagePrompt(
+        promptService: PromptService,
         visualDirection: String?,
         config: GenreConfig,
         imageConfig: ImageConfig,
@@ -140,6 +129,7 @@ object ImagePrompts {
         genre: Genre = Genre.CYBERPUNK,
         context: String,
     ) = generateAgentPrompt(
+        promptService,
         AgentIds.REVIEWER,
         genre,
         config,
@@ -147,6 +137,6 @@ object ImagePrompts {
         imageType,
         context,
         visualDirection,
-        finalPrompt
+        finalPrompt,
     )
 }
