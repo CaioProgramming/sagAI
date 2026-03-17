@@ -135,7 +135,7 @@ class GemmaClient
                                     val outputDirective =
                                         promptService.buildPrompt(
                                             directives["OUTPUT_DIRECTIVE"] ?: "",
-                                            mapOf("outputType" to T::class.java.simpleName),
+                                            mapOf("type" to T::class.java.simpleName),
                                         )
                                     appendLine(outputDirective)
 

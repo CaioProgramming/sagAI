@@ -18,6 +18,6 @@ object HomePrompts {
                 expectedJsonStructure = toJsonMap(DynamicSagaPrompt::class.java),
             )
 
-        return promptService.buildRemotePrompt("dynamic_saga_creation_prompt", args)
+        return promptService.buildRemotePrompt("dynamic_saga_creation_blueprint", args)
     }
 }

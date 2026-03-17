@@ -97,7 +97,7 @@ object CharacterPrompts {
                 userInput = userInput,
             )
 
-        return promptService.buildRemotePrompt("character_reply_prompt", args)
+        return promptService.buildRemotePrompt("character_reply_blueprint", args)
     }
 
     suspend fun characterIntroPrompt(
@@ -111,7 +111,7 @@ object CharacterPrompts {
                 genreName = sagaContext?.genre?.name ?: "FANTASY",
             )
 
-        return promptService.buildRemotePrompt("character_intro_prompt", args)
+        return promptService.buildRemotePrompt("character_intro_blueprint", args)
     }
 
     suspend fun characterAdaptationPrompt(
@@ -125,7 +125,7 @@ object CharacterPrompts {
                 currentCharacterDraft = currentCharacterInfo.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt("character_adaptation_prompt", args)
+        return promptService.buildRemotePrompt("character_adaptation_blueprint", args)
     }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
@@ -206,7 +206,7 @@ object CharacterPrompts {
                 appearanceGuidelines = config.appearanceGuidelines,
             )
 
-        return promptService.buildRemotePrompt("character_generation_prompt", args)
+        return promptService.buildRemotePrompt("character_generation_blueprint", args)
     }
 
     suspend fun characterLoreGeneration(
@@ -226,7 +226,7 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("character_lore_prompt", args)
+        return promptService.buildRemotePrompt("character_lore_blueprint", args)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -252,7 +252,7 @@ object CharacterPrompts {
                 recentMessages = messages.normalizetoAIItems(messageExclusions),
             )
 
-        return promptService.buildRemotePrompt("character_nicknames_prompt", args)
+        return promptService.buildRemotePrompt("character_nicknames_blueprint", args)
     }
 
     suspend fun generateCharacterRelation(
@@ -276,7 +276,7 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("character_relation_prompt", args)
+        return promptService.buildRemotePrompt("character_relation_blueprint", args)
     }
 
     suspend fun characterResume(
@@ -324,7 +324,7 @@ object CharacterPrompts {
                 toneStyle = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("character_resume_prompt", args)
+        return promptService.buildRemotePrompt("character_resume_blueprint", args)
     }
 
     suspend fun knowledgeUpdatePrompt(
@@ -338,7 +338,7 @@ object CharacterPrompts {
                 charactersContext = characters.normalizetoAIItems(ChatPrompts.characterExclusions),
             )
 
-        return promptService.buildRemotePrompt("knowledge_update_prompt", args)
+        return promptService.buildRemotePrompt("knowledge_update_blueprint", args)
     }
 
     suspend fun refineCharacterDraftPrompt(
@@ -352,6 +352,6 @@ object CharacterPrompts {
                 sagaContext = sagaContext?.toAINormalize() ?: "",
             )
 
-        return promptService.buildRemotePrompt("refine_character_draft_prompt", args)
+        return promptService.buildRemotePrompt("refine_character_draft_blueprint", args)
     }
 }

@@ -106,7 +106,7 @@ object NewSagaPrompts {
                 companionConversationalStyle = companion?.conversationalStyle ?: "",
             )
 
-        return promptService.buildRemotePrompt("conversational_saga_reply_prompt", args)
+        return promptService.buildRemotePrompt("conversational_saga_reply_blueprint", args)
     }
 
     suspend fun generateProcessPrompt(
@@ -135,7 +135,7 @@ object NewSagaPrompts {
                 processSpecificInstruction = processSpecificInstruction,
             )
 
-        return promptService.buildRemotePrompt("saga_process_prompt", args)
+        return promptService.buildRemotePrompt("saga_process_blueprint", args)
     }
 
     suspend fun createSagaPrompt(
@@ -158,7 +158,7 @@ object NewSagaPrompts {
                 availableVariations = variationsBlock,
             )
 
-        return promptService.buildRemotePrompt("create_saga_prompt", args)
+        return promptService.buildRemotePrompt("create_saga_blueprint", args)
     }
 
     suspend fun characterSavedPrompt(
@@ -176,7 +176,7 @@ object NewSagaPrompts {
                 sagaDescription = saga.description,
             )
 
-        return promptService.buildRemotePrompt("character_saved_prompt", args)
+        return promptService.buildRemotePrompt("character_saved_blueprint", args)
     }
 
     suspend fun introPrompt(
@@ -190,7 +190,7 @@ object NewSagaPrompts {
                 genreEnumNames = Genre.entries.joinToString(", ") { it.name },
             )
 
-        return promptService.buildRemotePrompt("new_saga_intro_prompt", args)
+        return promptService.buildRemotePrompt("new_saga_intro_blueprint", args)
     }
 
     suspend fun genreAdaptationPrompt(
@@ -205,7 +205,7 @@ object NewSagaPrompts {
                 currentDraft = currentDraft.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt("genre_adaptation_prompt", args)
+        return promptService.buildRemotePrompt("genre_adaptation_blueprint", args)
     }
 
     suspend fun genreSuggestionsPrompt(
@@ -219,7 +219,7 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt("genre_suggestions_prompt", args)
+        return promptService.buildRemotePrompt("genre_suggestions_blueprint", args)
     }
 
     suspend fun refineDraftPrompt(
@@ -235,7 +235,7 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt("new_saga_refine_draft_prompt", args)
+        return promptService.buildRemotePrompt("new_saga_refine_draft_blueprint", args)
     }
 
     suspend fun creationAssistPrompt(
@@ -266,6 +266,6 @@ object NewSagaPrompts {
                 flowSpecificObjectives = flowSpecificObjectives,
             )
 
-        return promptService.buildRemotePrompt("creation_assist_prompt", args)
+        return promptService.buildRemotePrompt("creation_assist_blueprint", args)
     }
 }

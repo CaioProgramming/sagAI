@@ -124,21 +124,10 @@ class TimelineUseCaseImpl
             saga: SagaContent,
             timelineContent: Timeline,
         ) = executeRequest {
-            val promptRules =
-                com.ilustris.sagai.core.ai.prompts.PromptRules(
-                    remoteConfigService.getJson<Map<String, String>>("prompt_rules") ?: emptyMap(),
-                )
-            val promptDirectives =
-                com.ilustris.sagai.core.ai.prompts.PromptDirectives(
-                    remoteConfigService.getJson<Map<String, String>>("prompt_directives")
-                        ?: emptyMap(),
-                )
-
             val objectivePrompt =
                 ChatPrompts.sceneSummarizationPrompt(
                     promptService = promptService,
-                    promptRules = promptRules,
-                    promptDirectives = promptDirectives,
+                    promptDirectives = promptService.getPromptDirectives(),
                     saga = saga,
                 )
             val summary =

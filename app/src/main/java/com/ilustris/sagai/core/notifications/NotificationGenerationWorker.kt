@@ -12,7 +12,6 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -80,22 +79,10 @@ class NotificationGenerationWorker
                     // Gerar resumo da cena
                     val sceneSummary =
                         executeRequest {
-                            val promptRules =
-                                com.ilustris.sagai.core.ai.prompts.PromptRules(
-                                    remoteConfigService.getJson<Map<String, String>>("prompt_rules")
-                                        ?: emptyMap(),
-                                )
-                            val promptDirectives =
-                                PromptDirectives(
-                                    remoteConfigService.getJson<Map<String, String>>("prompt_directives")
-                                        ?: emptyMap(),
-                                )
-
                             gemmaClient.generate<SceneSummary>(
                                 ChatPrompts.sceneSummarizationPrompt(
                                     promptService = promptService,
-                                    promptRules = promptRules,
-                                    promptDirectives = promptDirectives,
+                                    promptDirectives = promptService.getPromptDirectives(),
                                     saga = sagaContent,
                                 ),
                             )
@@ -114,16 +101,10 @@ class NotificationGenerationWorker
 
                             val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
 
-                            val promptDirectives =
-                                PromptDirectives(
-                                    remoteConfigService.getJson<Map<String, String>>("prompt_directives")
-                                        ?: emptyMap(),
-                                )
-
                             val prompt =
                                 ChatPrompts.scheduledNotificationPrompt(
                                     promptService = promptService,
-                                    promptDirectives = promptDirectives,
+                                    promptDirectives = promptService.getPromptDirectives(),
                                     saga = sagaContent,
                                     selectedCharacter = selectedCharacter,
                                     sceneSummary = sceneSummary,

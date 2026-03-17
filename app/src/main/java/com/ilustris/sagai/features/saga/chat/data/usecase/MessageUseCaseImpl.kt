@@ -68,9 +68,6 @@ class MessageUseCaseImpl
                 gemmaClient.generate<TypoFix>(
                     ChatPrompts.checkForTypo(
                         promptService = promptService,
-                        promptRules =
-                            com.ilustris.sagai.core.ai.prompts
-                                .PromptRules(),
                         promptDirectives = promptService.getPromptDirectives(),
                         saga = saga,
                         config = config,
@@ -88,10 +85,7 @@ class MessageUseCaseImpl
                     prompt =
                         ChatPrompts.sceneSummarizationPrompt(
                             promptService = promptService,
-                            promptRules =
-                                com.ilustris.sagai.core.ai.prompts
-                                    .PromptRules(),
-                                promptDirectives = promptService.getPromptDirectives(),
+                            promptDirectives = promptService.getPromptDirectives(),
                             saga = saga,
                         ),
                     temperatureRandomness = 0.2f,
@@ -120,17 +114,12 @@ class MessageUseCaseImpl
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
-            val promptDirectives =
-                com.ilustris.sagai.core.ai.prompts.PromptDirectives(
-                    remoteConfigService.getJson<Map<String, String>>("prompt_directives")
-                        ?: emptyMap(),
-                )
             val prompt =
                 EmotionalPrompt.emotionalToneExtraction(
-                promptService,
-                promptDirectives,
-                message.text
-            )
+                    promptService,
+                    promptService.getPromptDirectives(),
+                    message.text,
+                )
             val raw =
                 gemmaClient
                     .generate<String>(
@@ -185,7 +174,6 @@ class MessageUseCaseImpl
                         prompt =
                             ChatPrompts.replyMessagePrompt(
                                 promptService = promptService,
-                                promptRules = com.ilustris.sagai.core.ai.prompts.PromptRules(),
                                 promptDirectives = promptService.getPromptDirectives(),
                                 narrativeRules = narrativeRules,
                                 saga = saga,
@@ -305,6 +293,7 @@ class MessageUseCaseImpl
                 val audioConfig =
                     gemmaClient.generate<AudioConfig>(
                         AudioPrompts.audioConfigPrompt(
+                            promptService,
                             saga,
                             message = savedMessage,
                             character = characterReference,

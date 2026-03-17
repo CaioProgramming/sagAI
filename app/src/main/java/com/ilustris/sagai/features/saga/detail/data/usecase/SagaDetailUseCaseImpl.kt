@@ -78,7 +78,8 @@ class SagaDetailUseCaseImpl
                     genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
                 steps.forEach { step ->
                     emit(ReviewState.Loading(step.progressMessage))
-                    currentReview = step.generate(content, currentReview, textGenClient, config)
+                    currentReview =
+                        step.generate(promptService, content, currentReview, textGenClient, config)
                 }
 
                 val finalSaga = content.data.copy(review = currentReview)
@@ -160,12 +161,13 @@ class SagaDetailUseCaseImpl
                 }
                 val config =
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val promptDirectives =
-                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
-                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
-                            ?: emptyMap(),
-                    )
-                val prompt = SagaPrompts.sagaResume(promptService, promptDirectives, saga, config)
+                val prompt =
+                    SagaPrompts.sagaResume(
+                        promptService,
+                        promptService.getPromptDirectives(),
+                        saga,
+                        config,
+                )
                 textGenClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,

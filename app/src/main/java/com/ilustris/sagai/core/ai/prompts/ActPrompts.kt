@@ -93,7 +93,7 @@ object ActPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("act_conclusion_prompt", args)
+        return promptService.buildRemotePrompt("act_conclusion_blueprint", args)
     }
 
     suspend fun actIntroductionPrompt(
@@ -147,7 +147,7 @@ object ActPrompts {
                     ) ?: "",
             )
 
-        return promptService.buildRemotePrompt("act_introduction_prompt", args)
+        return promptService.buildRemotePrompt("act_introduction_blueprint", args)
     }
 
     suspend fun actsOverview(
@@ -163,7 +163,7 @@ object ActPrompts {
             )
 
         return promptService.buildRemotePrompt(
-            "acts_overview_template",
+            "acts_overview_blueprint",
             ActOverviewArgs(actsSummary),
         )
     }

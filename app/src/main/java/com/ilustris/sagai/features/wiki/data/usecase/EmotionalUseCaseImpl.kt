@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import javax.inject.Inject
 
@@ -13,6 +14,7 @@ class EmotionalUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val remoteConfigService: RemoteConfigService,
     ) : EmotionalUseCase {
         override suspend fun generateEmotionalReview(
             sagaContent: SagaContent,
@@ -23,6 +25,7 @@ class EmotionalUseCaseImpl
                 val prompt =
                     EmotionalPrompt.generateEmotionalReview(
                         promptService,
+                        promptService.getPromptDirectives(),
                         sagaContent,
                         context,
                         config,
@@ -45,6 +48,7 @@ class EmotionalUseCaseImpl
                     prompt =
                         EmotionalPrompt.generateEmotionalProfile(
                             promptService,
+                            promptService.getPromptDirectives(),
                             emotionalSummary,
                             config,
                         ),
@@ -59,6 +63,7 @@ class EmotionalUseCaseImpl
                     prompt =
                         EmotionalPrompt.generateEmotionalConclusion(
                             promptService,
+                            promptService.getPromptDirectives(),
                             sagaContent,
                             config,
                         ),

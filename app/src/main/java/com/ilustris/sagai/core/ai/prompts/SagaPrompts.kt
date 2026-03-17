@@ -94,7 +94,7 @@ object SagaPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("end_credits_prompt", args)
+        return promptService.buildRemotePrompt("end_credits_blueprint", args)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -116,7 +116,7 @@ object SagaPrompts {
                 characterHexColor = characterHexColor,
             )
 
-        return promptService.buildRemotePrompt("icon_description_prompt", args)
+        return promptService.buildRemotePrompt("icon_description_blueprint", args)
     }
 
     suspend fun reviewGeneration(
@@ -153,7 +153,7 @@ object SagaPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("review_generation_prompt", args)
+        return promptService.buildRemotePrompt("review_generation_blueprint", args)
     }
 
     suspend fun generateStoryBriefing(
@@ -177,7 +177,7 @@ object SagaPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("story_briefing_prompt", args)
+        return promptService.buildRemotePrompt("story_briefing_blueprint", args)
     }
 
     suspend fun sagaResume(
@@ -200,6 +200,6 @@ object SagaPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("saga_resume_prompt", args)
+        return promptService.buildRemotePrompt("saga_resume_blueprint", args)
     }
 }

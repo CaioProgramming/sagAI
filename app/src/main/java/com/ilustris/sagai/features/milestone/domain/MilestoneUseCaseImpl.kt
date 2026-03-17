@@ -19,6 +19,7 @@ class MilestoneUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val stringResourceHelper: StringResourceHelper,
         private val genreConfigService: GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
     ) : MilestoneUseCase {
         override suspend fun generateCongratsMessage(
             milestone: SagaMilestone,
@@ -32,8 +33,12 @@ class MilestoneUseCaseImpl
                 )
 
                 val prompt =
-                    MilestonePrompts.generateCongratsMessage(milestone, saga, config.companion)
-                        ?: return@executeRequest getDefaultMessage(milestone, saga.data.genre)
+                    MilestonePrompts.generateCongratsMessage(
+                        promptService,
+                        milestone,
+                        saga,
+                        config.companion,
+                    ) ?: return@executeRequest getDefaultMessage(milestone, saga.data.genre)
 
                 gemmaClient.generate<String>(
                     prompt,

@@ -49,7 +49,7 @@ object EmotionalPrompt {
                 availableTones = EmotionalTone.entries.joinToString { it.name },
                 userText = userText,
             )
-        return promptService.buildRemotePrompt("emotional_tone_extraction_prompt", args)
+        return promptService.buildRemotePrompt("emotional_tone_extraction_blueprint", args)
     }
 
     suspend fun generateEmotionalReview(
@@ -71,7 +71,7 @@ object EmotionalPrompt {
                 analysisData = context,
                 conversationDirective = config.conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_review_prompt", args)
+        return promptService.buildRemotePrompt("emotional_review_blueprint", args)
     }
 
     suspend fun generateEmotionalConclusion(
@@ -92,7 +92,7 @@ object EmotionalPrompt {
                 emotionalJourneySummary = saga.emotionalSummary(),
                 conversationDirective = config.conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_conclusion_prompt", args)
+        return promptService.buildRemotePrompt("emotional_conclusion_blueprint", args)
     }
 
     suspend fun generateEmotionalProfile(
@@ -112,6 +112,6 @@ object EmotionalPrompt {
                 behaviorNotes = summary,
                 conversationDirective = config.conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_profile_prompt", args)
+        return promptService.buildRemotePrompt("emotional_profile_blueprint", args)
     }
 }

@@ -61,7 +61,7 @@ object WikiPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("wiki_generation_prompt", args)
+        return promptService.buildRemotePrompt("wiki_generation_blueprint", args)
     }
 
     suspend fun mergeWiki(
@@ -80,6 +80,6 @@ object WikiPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("merge_wiki_prompt", args)
+        return promptService.buildRemotePrompt("merge_wiki_blueprint", args)
     }
 }

@@ -82,7 +82,7 @@ object LorePrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("lore_generation_prompt", args)
+        return promptService.buildRemotePrompt("lore_generation_blueprint", args)
     }
 
     private fun storyContext(sagaContent: SagaContent) =

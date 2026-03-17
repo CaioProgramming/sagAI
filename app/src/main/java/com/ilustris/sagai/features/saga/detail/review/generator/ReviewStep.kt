@@ -15,6 +15,7 @@ interface ReviewStep {
     val progressMessage: String
 
     suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
@@ -26,12 +27,13 @@ class IntroStep : ReviewStep {
     override val progressMessage = "Pulling up the best bits..."
 
     override suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
         config: GenreConfig?,
     ): Review {
-        val prompt = ReviewPrompts.introductionPrompt(saga, config)
+        val prompt = ReviewPrompts.introductionPrompt(promptService, saga, config)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(introduction = stage)
@@ -42,13 +44,14 @@ class ExpressivenessStep : ReviewStep {
     override val progressMessage = "Checking out your mood swings..."
 
     override suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
         config: GenreConfig?,
     ): Review {
         val emotionalRank = saga.rankMainCharacterEmotionalTones()
-        val prompt = ReviewPrompts.expressivenessPrompt(saga, config, emotionalRank)
+        val prompt = ReviewPrompts.expressivenessPrompt(promptService, saga, config, emotionalRank)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(expressiveness = stage)
@@ -59,6 +62,7 @@ class PlaystyleStep : ReviewStep {
     override val progressMessage = "Looking at when you skipped sleep..."
 
     override suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
@@ -76,7 +80,14 @@ class PlaystyleStep : ReviewStep {
         val mostActiveHour = saga.rankByHour().maxByOrNull { it.value.size }?.key ?: 0
 
         val prompt =
-            ReviewPrompts.playstylePrompt(saga, config, playTime, mostActiveHour, totalExpressive)
+            ReviewPrompts.playstylePrompt(
+                promptService,
+                saga,
+                config,
+                playTime,
+                mostActiveHour,
+                totalExpressive,
+            )
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(playstyle = stage)
@@ -93,6 +104,7 @@ class CharactersStep : ReviewStep {
     override val progressMessage = "Seeing who you hung out with..."
 
     override suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
@@ -108,7 +120,7 @@ class CharactersStep : ReviewStep {
                 ).take(3)
                 .map { it.first.name to it.second }
 
-        val prompt = ReviewPrompts.connectionsPrompt(saga, config, topCharacters)
+        val prompt = ReviewPrompts.connectionsPrompt(promptService, saga, config, topCharacters)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(topCharacters = stage)
@@ -119,12 +131,13 @@ class JourneyStep : ReviewStep {
     override val progressMessage = "Recalling the chaos we made..."
 
     override suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
         config: GenreConfig?,
     ): Review {
-        val prompt = ReviewPrompts.actsInsightPrompt(saga, config)
+        val prompt = ReviewPrompts.actsInsightPrompt(promptService, saga, config)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(actsInsight = stage)
@@ -135,12 +148,13 @@ class ConclusionStep : ReviewStep {
     override val progressMessage = "One last toast to our story..."
 
     override suspend fun generate(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
         saga: SagaContent,
         currentReview: Review,
         client: GemmaClient,
         config: GenreConfig?,
     ): Review {
-        val prompt = ReviewPrompts.conclusionPrompt(saga, config)
+        val prompt = ReviewPrompts.conclusionPrompt(promptService, saga, config)
         val stage =
             client.generate<ReviewStage>(prompt, requirement = GemmaClient.ModelRequirement.HIGH)
         return currentReview.copy(conclusion = stage)

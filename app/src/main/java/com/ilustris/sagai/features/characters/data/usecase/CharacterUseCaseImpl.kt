@@ -339,15 +339,10 @@ class CharacterUseCaseImpl
                 }
                 val config =
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)!!
-                val promptDirectives =
-                    com.ilustris.sagai.core.ai.prompts.PromptDirectives(
-                        remoteConfigService.getJson<Map<String, String>>("prompt_directives")
-                            ?: emptyMap(),
-                    )
                 val prompt =
                     CharacterPrompts.characterResume(
                         promptService,
-                        promptDirectives,
+                        promptService.getPromptDirectives(),
                         character,
                         saga,
                         config,

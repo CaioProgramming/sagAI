@@ -115,7 +115,7 @@ object ChapterPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("chapter_introduction_prompt", args)
+        return promptService.buildRemotePrompt("chapter_introduction_blueprint", args)
     }
 
     private suspend fun assembleFirstChapterContextBlock(
@@ -236,6 +236,6 @@ object ChapterPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("chapter_generation_prompt", args)
+        return promptService.buildRemotePrompt("chapter_generation_blueprint", args)
     }
 }

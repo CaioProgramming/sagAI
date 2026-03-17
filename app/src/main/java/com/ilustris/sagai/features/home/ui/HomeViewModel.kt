@@ -8,7 +8,6 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.backup.filterBackups
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -22,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -102,9 +100,9 @@ class HomeViewModel
                                 _visualConfigs.emit(configs.toMap())
                             }
                         }
+                    }
                 }
             }
-        }
         }
 
         fun getBriefing(saga: SagaContent) {
@@ -136,12 +134,12 @@ class HomeViewModel
 
         fun checkForBackups() {
             viewModelScope.launch {
-                backupService.getBackedUpSagas().onSuccessAsync {
+                /*backupService.getBackedUpSagas().onSuccessAsync {
                     val availableSagas = sagas.first()
                     _backupAvailable.emit(
                         it.filterBackups(availableSagas.map { it.data }).isNotEmpty(),
                     )
-                }
+                }*/
             }
         }
 
