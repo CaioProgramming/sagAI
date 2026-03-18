@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -181,6 +182,30 @@ class SagaContentManagerImpl
                         }
                         sagaHistoryUseCase
                             .getSagaById(sagaId.toInt())
+                            .catch { e ->
+                                val readableMessage =
+                                    when {
+                                        e is IllegalArgumentException && e.message?.contains("No enum constant") == true -> {
+                                            "⚠️ A story record contains corrupted data (invalid enum value: ${
+                                                e.message?.substringAfterLast(
+                                                    ".",
+                                                )
+                                            }).\nTry reinstalling the app or contact support if the issue persists."
+                                        }
+
+                                        else -> {
+                                            "⚠️ Failed to load story data: ${e.message}"
+                                        }
+                                    }
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "loadSaga: Room Flow error for saga $sagaId — ${e.message}",
+                                    e,
+                                )
+                                updateSnackBar(snackBar(readableMessage))
+                                content.value = null
+                                setNarrativeProcessingStatus(false)
+                            }
                             .collectLatest { saga ->
                                 Log.d(
                                     javaClass.simpleName,

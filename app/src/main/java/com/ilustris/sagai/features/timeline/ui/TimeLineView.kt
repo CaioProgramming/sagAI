@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +69,9 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
@@ -848,12 +852,17 @@ fun AvatarTimelineIcon(
         }
 
         AsyncImage(
-            model = icon,
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(icon)
+                    .crossfade(true)
+                    .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             onState = {
                 textVisible =
-                    if (it !is coil3.compose.AsyncImagePainter.State.Success) {
+                    if (it !is AsyncImagePainter.State.Success) {
                         1f
                     } else {
                         0f

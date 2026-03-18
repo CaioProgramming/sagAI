@@ -116,7 +116,6 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -509,78 +508,6 @@ fun ChatBubble(
                                                         bubbleShape,
                                                     )
                                             }
-                                        }
-
-                                        SenderType.THOUGHT -> {
-                                            Modifier
-                                                .combinedClickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = ripple(),
-                                                    onClick = {
-                                                        if (isSelectionMode) {
-                                                            onAction(
-                                                                MessageAction.ToggleSelection(
-                                                                    message.id,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                    onLongClick = {
-                                                        if (!isSelectionMode) {
-                                                            onAction(
-                                                                MessageAction.LongPress(
-                                                                    message.id,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                ).emotionalEntrance(
-                                                    message.emotionalTone,
-                                                    messageEffectsEnabled,
-                                                ).wrapContentSize()
-                                                .background(
-                                                    MaterialTheme.colorScheme.surfaceContainer,
-                                                    bubbleShape,
-                                                ).dashedBorder(
-                                                    strokeWidth = 1.dp,
-                                                    color =
-                                                        MaterialTheme.colorScheme.onBackground.copy(
-                                                            alpha = 0.5f,
-                                                        ),
-                                                    shape = bubbleShape,
-                                                    dashLength = 10.dp,
-                                                    gapLength = 5.dp,
-                                                )
-                                        }
-
-                                        SenderType.ACTION -> {
-                                            Modifier
-                                                .combinedClickable(
-                                                    interactionSource = interactionSource,
-                                                    indication = ripple(),
-                                                    onClick = {
-                                                        if (isSelectionMode) {
-                                                            onAction(
-                                                                MessageAction.ToggleSelection(
-                                                                    message.id,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                    onLongClick = {
-                                                        if (!isSelectionMode) {
-                                                            onAction(
-                                                                MessageAction.LongPress(
-                                                                    message.id,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                                ).emotionalEntrance(
-                                                    message.emotionalTone,
-                                                    messageEffectsEnabled,
-                                                ).wrapContentSize()
-                                                .background(Color.Black, bubbleShape)
                                         }
 
                                         else -> {

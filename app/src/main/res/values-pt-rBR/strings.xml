@@ -23,6 +23,7 @@
     <string name="lets_create_saga_subtitle">A IA vai te ajudar a dar vida a tudo; não seja tímido com os detalhes da sua jornada.</string>
     <string name="next">Continuar</string>
     <string name="user_action_title">Falar</string>
+    <string name="sender_type_user_title">Você</string>
     <string name="sender_type_narrator_title">Narrar</string>
     <string name="sender_type_thought_title">Pensar</string>
     <string name="sender_type_action_title">Ação</string>

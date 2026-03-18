@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +44,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveImageUrl
@@ -106,7 +109,12 @@ fun GenreAvatar(
     ) {
         val backgroundBrush = Brush.verticalGradient(backgroundColor.darkerPalette())
         AsyncImage(
-            model = genre.resolveImageUrl(),
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(genre.resolveImageUrl())
+                    .crossfade(true)
+                    .build(),
             contentDescription = stringResource(genre.title),
             contentScale = ContentScale.Crop,
             modifier =
@@ -169,7 +177,6 @@ fun GenreCard(
         if (showDetails) 15f else 0f,
     )
     val borderColor = genre.gradient(true)
-    genre.resolveColor()
     val image = genre.resolveImageUrl()
 
     Box(
@@ -183,7 +190,12 @@ fun GenreCard(
             .background(MaterialTheme.colorScheme.background),
     ) {
         AsyncImage(
-            image,
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(image)
+                    .crossfade(true)
+                    .build(),
             contentDescription = genre.name,
             contentScale = ContentScale.Crop,
             onSuccess = {

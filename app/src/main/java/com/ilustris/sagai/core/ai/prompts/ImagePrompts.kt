@@ -32,9 +32,14 @@ data class ImagePromptArgs(
 
 object ImagePrompts {
     /**
-     * A unified god function that executes any AI agent by feeding it the ImagePromptArgs.
+     * Core executor: resolves the blueprint key for the given agent + image type from
+     * [imageConfig], then builds the full prompt via [PromptService.buildRemotePrompt].
+     *
+     * This replaces the old approach of holding raw template strings inside [ImageConfig].
+     * Blueprint keys follow the pattern: "{imageType}_{agentId}_blueprint"
+     * e.g. "icon_director_blueprint", "cover_artist_blueprint".
      */
-    fun generateAgentPrompt(
+    suspend fun generateAgentPrompt(
         promptService: PromptService,
         agentId: String,
         genre: Genre,
@@ -45,7 +50,10 @@ object ImagePrompts {
         visualDirection: String? = null,
         finalPrompt: String? = null,
     ): String {
-        val agentTemplate = imageConfig.typeConfigs[imageType.name]?.getAgentTemplate(agentId) ?: ""
+        val typeConfig = imageConfig.typeConfigs[imageType.name]
+        val blueprintKey =
+            typeConfig?.getBlueprintKey(agentId)
+                ?: "${imageType.name.lowercase()}_${agentId}_blueprint"
 
         val args =
             ImagePromptArgs(
@@ -80,10 +88,10 @@ object ImagePrompts {
                     },
             )
 
-        return promptService.buildPrompt(agentTemplate, args)
+        return promptService.buildRemotePrompt(blueprintKey, args)
     }
 
-    fun generateDirectorialVision(
+    suspend fun generateDirectorialVision(
         promptService: PromptService,
         genre: Genre,
         config: GenreConfig,
@@ -100,7 +108,7 @@ object ImagePrompts {
         context,
     )
 
-    fun generateArtistPrompt(
+    suspend fun generateArtistPrompt(
         promptService: PromptService,
         genre: Genre,
         config: GenreConfig,
@@ -119,7 +127,7 @@ object ImagePrompts {
         visualDirection,
     )
 
-    fun reviewImagePrompt(
+    suspend fun reviewImagePrompt(
         promptService: PromptService,
         visualDirection: String?,
         config: GenreConfig,
@@ -140,3 +148,4 @@ object ImagePrompts {
         finalPrompt,
     )
 }
+

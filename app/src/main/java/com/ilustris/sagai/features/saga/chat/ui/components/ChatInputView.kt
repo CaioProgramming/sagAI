@@ -112,6 +112,11 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
+import com.ilustris.sagai.features.saga.chat.data.model.filterUserInputTypes
+import com.ilustris.sagai.features.saga.chat.data.model.icon
+import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
+import com.ilustris.sagai.features.saga.chat.data.model.tag
+import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.GradientType

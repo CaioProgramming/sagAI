@@ -40,24 +40,21 @@ object AudioPrompts {
             }
 
         val characterProfile =
-            if (character != null) {
-                character.data.toAINormalize(
-                    listOf(
-                        "id",
-                        "image",
-                        "sagaId",
-                        "joinedAt",
-                        "details",
-                        "emojified",
-                        "hexColor",
-                        "firstSceneId",
-                        "smartZoom",
-                        "voice",
-                    ),
-                )
-            } else {
-                ""
-            }
+            character?.data?.toAINormalize(
+                listOf(
+                    "id",
+                    "image",
+                    "sagaId",
+                    "joinedAt",
+                    "details",
+                    "emojified",
+                    "hexColor",
+                    "firstSceneId",
+                    "smartZoom",
+                    "voice",
+                ),
+            )
+                ?: ""
 
         val characterGender =
             character

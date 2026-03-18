@@ -28,6 +28,7 @@
     <string name="save_changes">Save changes</string>
     <string name="next">Continue</string>
     <string name="user_action_title">Speak</string>
+    <string name="sender_type_user_title">You</string>
     <string name="sender_type_narrator_title">Narrate</string>
     <string name="sender_type_thought_title">Think</string>
     <string name="sender_type_action_title">Action</string>

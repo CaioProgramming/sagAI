@@ -178,7 +178,7 @@ class GemmaClient
                                 "Requesting $model\nPrompt with $promptLength chars.",
                             )
 
-                            if (promptLength > (INPUT_TOKEN_LIMIT * 2)) {
+                            if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
                                 throw IllegalArgumentException("Prompt is too long. verify your prompt and try again.")
                             }
 

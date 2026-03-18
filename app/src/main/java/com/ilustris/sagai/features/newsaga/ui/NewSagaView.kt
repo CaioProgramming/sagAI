@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -80,6 +81,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
@@ -552,7 +555,12 @@ fun NewSagaView(
                                                 )
                                             } else {
                                                 AsyncImage(
-                                                    it.icon,
+                                                    model =
+                                                        ImageRequest
+                                                            .Builder(LocalContext.current)
+                                                            .data(it.icon)
+                                                            .crossfade(true)
+                                                            .build(),
                                                     null,
                                                     contentScale = ContentScale.Crop,
                                                     modifier =
@@ -612,7 +620,12 @@ fun NewSagaView(
                                                 )
                                             } else {
                                                 AsyncImage(
-                                                    it.image,
+                                                    model =
+                                                        ImageRequest
+                                                            .Builder(LocalContext.current)
+                                                            .data(it.image)
+                                                            .crossfade(true)
+                                                            .build(),
                                                     null,
                                                     contentScale = ContentScale.Crop,
                                                     modifier =
@@ -825,7 +838,12 @@ private fun SuggestionsContent(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     AsyncImage(
-                        model = genre.resolveBackground(),
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(genre.resolveBackground())
+                                .crossfade(true)
+                                .build(),
                         contentDescription = null,
                         colorFilter = ColorFilter.tint(genre.resolveIconColor()),
                         modifier = Modifier.size(12.dp),
@@ -1013,7 +1031,12 @@ private fun FlipCardForm(
                 ) {
                     val icon = genre?.resolveBackground() ?: R.drawable.ic_spark
                     AsyncImage(
-                        model = icon,
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(icon)
+                                .crossfade(true)
+                                .build(),
                         null,
                         modifier =
                             Modifier
@@ -1355,7 +1378,12 @@ private fun FlipCardForm(
                     Box(Modifier.fillMaxSize()) {
                         val icon = genre?.resolveBackground() ?: R.drawable.ic_spark
                         AsyncImage(
-                            model = icon,
+                            model =
+                                ImageRequest
+                                    .Builder(LocalContext.current)
+                                    .data(icon)
+                                    .crossfade(true)
+                                    .build(),
                             null,
                             modifier =
                                 Modifier
