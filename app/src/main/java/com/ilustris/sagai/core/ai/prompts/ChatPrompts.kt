@@ -218,7 +218,7 @@ object ChatPrompts {
                 outputStructure = toJsonMap(TypoFix::class.java),
             )
 
-        return promptService.buildRemotePrompt("chat_typo_blueprint", args)
+        return promptService.buildRemotePrompt("chat_writing_pal_blueprint", args)
     }
 
     suspend fun generateReactionPrompt(

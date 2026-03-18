@@ -135,7 +135,7 @@ object NewSagaPrompts {
                 processSpecificInstruction = processSpecificInstruction,
             )
 
-        return promptService.buildRemotePrompt("saga_process_blueprint", args)
+        return promptService.buildRemotePrompt("saga_process_interlude_blueprint", args)
     }
 
     suspend fun createSagaPrompt(
@@ -158,7 +158,7 @@ object NewSagaPrompts {
                 availableVariations = variationsBlock,
             )
 
-        return promptService.buildRemotePrompt("create_saga_blueprint", args)
+        return promptService.buildRemotePrompt("initial_saga_kickoff_blueprint", args)
     }
 
     suspend fun characterSavedPrompt(
@@ -190,7 +190,7 @@ object NewSagaPrompts {
                 genreEnumNames = Genre.entries.joinToString(", ") { it.name },
             )
 
-        return promptService.buildRemotePrompt("new_saga_intro_blueprint", args)
+        return promptService.buildRemotePrompt("creation_intro_blueprint", args)
     }
 
     suspend fun genreAdaptationPrompt(
@@ -235,7 +235,7 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt("new_saga_refine_draft_blueprint", args)
+        return promptService.buildRemotePrompt("refine_saga_draft_blueprint", args)
     }
 
     suspend fun creationAssistPrompt(
@@ -266,6 +266,6 @@ object NewSagaPrompts {
                 flowSpecificObjectives = flowSpecificObjectives,
             )
 
-        return promptService.buildRemotePrompt("creation_assist_blueprint", args)
+        return promptService.buildRemotePrompt("creation_flow_assist_blueprint", args)
     }
 }

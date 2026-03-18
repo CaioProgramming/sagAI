@@ -97,7 +97,7 @@ object CharacterPrompts {
                 userInput = userInput,
             )
 
-        return promptService.buildRemotePrompt("character_reply_blueprint", args)
+        return promptService.buildRemotePrompt("conversational_character_reply_blueprint", args)
     }
 
     suspend fun characterIntroPrompt(
@@ -252,7 +252,7 @@ object CharacterPrompts {
                 recentMessages = messages.normalizetoAIItems(messageExclusions),
             )
 
-        return promptService.buildRemotePrompt("character_nicknames_blueprint", args)
+        return promptService.buildRemotePrompt("character_nickname_blueprint", args)
     }
 
     suspend fun generateCharacterRelation(

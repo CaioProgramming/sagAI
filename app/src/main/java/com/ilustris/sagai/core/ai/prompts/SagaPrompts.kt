@@ -94,7 +94,7 @@ object SagaPrompts {
                 conversationDirective = config.conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("end_credits_blueprint", args)
+        return promptService.buildRemotePrompt("saga_end_credits_blueprint", args)
     }
 
     @Suppress("ktlint:standard:max-line-length")
