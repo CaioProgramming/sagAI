@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.chapter.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -24,10 +24,13 @@ data class ChapterContent(
     )
     val currentEventInfo: TimelineContent? = null,
 ) {
-    fun isFull(): Boolean = events.count { it.isComplete() } >= UpdateRules.CHAPTER_UPDATE_LIMIT
+    fun isFull(
+        updateLimit: Int,
+        narrativeRules: NarrativeRules,
+    ): Boolean = events.count { it.isComplete(narrativeRules) } >= updateLimit
 
-    fun isComplete(): Boolean =
-        isFull() &&
+    fun isComplete(narrativeRules: NarrativeRules): Boolean =
+        isFull(narrativeRules.chapterUpdateLimit, narrativeRules) &&
             data.title.isNotEmpty() &&
             data.overview.isNotEmpty()
 

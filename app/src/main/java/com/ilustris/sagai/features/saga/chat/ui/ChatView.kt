@@ -680,8 +680,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(vertical = padding.calculateBottomPadding())
+                                    }.padding(vertical = padding.calculateBottomPadding())
                                     .animateContentSize(),
                             enter = slideInVertically(),
                             exit = slideOutVertically { it },
@@ -752,8 +751,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(
+                                    }.padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -851,8 +849,7 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    )
-                                    .wrapContentSize(),
+                                    ).wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -1384,9 +1381,9 @@ fun ChatList(
                     }
                 }
 
-                chapter.timelineSummaries.forEach { timeline ->
-
-                    if (timeline.isComplete()) {
+                chapter.timelineSummaries.forEach { timelineDisplay ->
+                    val timeline = timelineDisplay.timeline
+                    if (timelineDisplay.isComplete) {
                         item(key = "timeline-${timeline.data.id}") {
                             val shape =
                                 genre.bubble(

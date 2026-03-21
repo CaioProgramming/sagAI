@@ -26,18 +26,19 @@ class MilestoneUseCaseImpl
             saga: SagaContent,
         ): RequestResult<String?> =
             executeRequest(false) {
-                val config = genreConfigService.getGenreConfig(saga.data.genre)
                 Log.d(
                     "MilestoneUseCase",
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
+
+                val identity = genreConfigService.conversationBlueprint(saga.data.genre)
 
                 val prompt =
                     MilestonePrompts.generateCongratsMessage(
                         promptService,
                         milestone,
                         saga,
-                        config.companion,
+                        identity,
                     ) ?: return@executeRequest getDefaultMessage(milestone, saga.data.genre)
 
                 gemmaClient.generate<String>(

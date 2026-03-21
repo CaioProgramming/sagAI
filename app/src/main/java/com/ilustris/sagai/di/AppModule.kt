@@ -246,7 +246,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesGenreConfigService(remoteConfigService: RemoteConfigService): GenreConfigService = GenreConfigService(remoteConfigService)
+    fun providesGenreConfigService(
+        remoteConfigService: RemoteConfigService,
+        promptService: PromptService,
+    ): GenreConfigService = GenreConfigService(remoteConfigService, promptService)
 
     @Provides
     @Singleton

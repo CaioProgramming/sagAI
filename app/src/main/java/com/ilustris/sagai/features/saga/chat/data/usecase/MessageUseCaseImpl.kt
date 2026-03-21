@@ -13,11 +13,12 @@ import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -57,22 +58,23 @@ class MessageUseCaseImpl
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
+        private suspend fun fetchNarrativeRules() = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+
         override suspend fun checkMessageTypo(
             saga: SagaContent,
             message: String,
         ): RequestResult<TypoFix?> =
             executeRequest {
-                val config =
-                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(saga.data.genre)
+                val narrativeRules = fetchNarrativeRules()
                 gemmaClient.generate<TypoFix>(
                     ChatPrompts.checkForTypo(
                         promptService = promptService,
-                        promptDirectives = promptService.getPromptDirectives(),
                         saga = saga,
-                        config = config,
+                        conversationDirective = conversationDirective,
+                        updateLimit = narrativeRules.loreUpdateLimit,
                         message = message,
-                        lastMessage = saga.flatMessages().lastOrNull()?.message,
                     ),
                     requireTranslation = true,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
@@ -85,8 +87,8 @@ class MessageUseCaseImpl
                     prompt =
                         ChatPrompts.sceneSummarizationPrompt(
                             promptService = promptService,
-                            promptDirectives = promptService.getPromptDirectives(),
                             saga = saga,
+                            remoteConfigService.getNarrativeRules(),
                         ),
                     temperatureRandomness = 0.2f,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
@@ -162,24 +164,20 @@ class MessageUseCaseImpl
                     saga.findCharacter(characterName)
                 } ?: emptyList()
 
-                val config =
-                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val narrativeRules =
-                    com.ilustris.sagai.core.narrative.NarrativeRules(
-                        remoteConfigService.getJson<Map<String, Any>>("narrative_rules")
-                            ?: emptyMap(),
-                    )
+                genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(saga.data.genre)
+                val narrativeRules = fetchNarrativeRules()
                 val genText =
                     gemmaClient.generate<AIReply>(
                         prompt =
                             ChatPrompts.replyMessagePrompt(
                                 promptService = promptService,
-                                promptDirectives = promptService.getPromptDirectives(),
-                                narrativeRules = narrativeRules,
                                 saga = saga,
                                 message = message.message,
                                 sceneSummary = sceneSummary!!,
-                                config = config,
+                                conversationDirective = conversationDirective,
+                                updateLimit = narrativeRules.loreUpdateLimit,
                             ),
                         filterOutputFields =
                             ChatPrompts.messageExclusions,
@@ -218,17 +216,17 @@ class MessageUseCaseImpl
                     it.characterTwo.id in charactersInScene.map { character -> character.data.id }
             }
 
-            val config =
-                genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+            genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+
+            val conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre)
 
             val prompt =
                 ChatPrompts.generateReactionPrompt(
                     promptService = promptService,
-                    promptDirectives = promptService.getPromptDirectives(),
                     saga = saga,
                     summary = sceneSummary,
                     messageToReact = message,
-                    config = config,
+                    conversationDirective = conversationDirective,
                 )
 
             val reaction =

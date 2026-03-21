@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
@@ -11,7 +10,8 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.file.ImageHelper
-import com.ilustris.sagai.core.narrative.ActDirectives
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toRoman
@@ -83,7 +83,7 @@ class SagaContentManagerImpl
         private val actUseCase: ActUseCase,
         private val emotionalUseCase: EmotionalUseCase,
         private val fileCacheService: FileCacheService,
-        private val remoteConfig: FirebaseRemoteConfig,
+        private val remoteConfig: RemoteConfigService,
         private val backupService: BackupService,
         private val imageHelper: ImageHelper,
         private val messageUseCase: MessageUseCase,
@@ -205,8 +205,7 @@ class SagaContentManagerImpl
                                 updateSnackBar(snackBar(readableMessage))
                                 content.value = null
                                 setNarrativeProcessingStatus(false)
-                            }
-                            .collectLatest { saga ->
+                            }.collectLatest { saga ->
                                 Log.d(
                                     javaClass.simpleName,
                                     "Saga flow updated for saga -> $sagaId",
@@ -255,7 +254,10 @@ class SagaContentManagerImpl
 
                                 validateCharacters(saga)
 
-                                if (previousSaga == null && saga.data.isEnded.not()) {
+                                val rules = fetchNarrativeRules()
+                                if (previousSaga == null && saga.data.isEnded.not() &&
+                                    saga.flatEvents().filter { it.isComplete(rules) }.size > 1
+                                ) {
                                     saga.currentActInfo?.currentChapterInfo?.let { chapterInfo ->
                                         val isNewChapter =
                                             chapterInfo.events.isEmpty() ||
@@ -361,7 +363,7 @@ class SagaContentManagerImpl
 
         private suspend fun getAmbienceMusic(saga: SagaContent) {
             val genre = saga.data.genre
-            val fileUrl = remoteConfig.getString(genre.ambientMusicConfigKey)
+            val fileUrl = remoteConfig.getString(genre.ambientMusicConfigKey) ?: return
 
             if (fileUrl.isEmpty()) {
                 Log.e(javaClass.simpleName, "getAmbienceMusic: Invalid URL for ${genre.name}")
@@ -394,11 +396,14 @@ class SagaContentManagerImpl
             }
         }
 
+        private suspend fun fetchNarrativeRules() = remoteConfig.getNarrativeRules()
+
         private suspend fun startChapter(act: ActContent) =
             executeRequest {
                 setNarrativeProcessingStatus(true)
+
                 val lastChapter = act.chapters.lastOrNull()
-                if (lastChapter?.isComplete()?.not() == true) {
+                if (lastChapter?.isComplete(fetchNarrativeRules())?.not() == true) {
                     actUseCase.updateAct(act.data.copy(currentChapterId = lastChapter.data.id))
                     throw IllegalArgumentException("Chapter is already set at this act")
                 }
@@ -507,7 +512,7 @@ class SagaContentManagerImpl
         private suspend fun startTimeline(currentChapter: ChapterContent) =
             executeRequest {
                 val lastTimeline = currentChapter.events.lastOrNull()
-                if (lastTimeline?.isComplete()?.not() == true) {
+                if (lastTimeline?.isComplete(fetchNarrativeRules())?.not() == true) {
                     chapterUseCase.updateChapter(
                         currentChapter.data.copy(
                             currentEventId = lastTimeline.data.id,
@@ -537,7 +542,7 @@ class SagaContentManagerImpl
             saga: SagaContent,
             content: TimelineContent,
         ) = executeRequest {
-            if (content.isComplete()) {
+            if (content.isComplete(fetchNarrativeRules())) {
                 endTimeline(saga.currentActInfo?.currentChapterInfo)
                 error("Timeline already completed")
             } else {
@@ -550,7 +555,7 @@ class SagaContentManagerImpl
         private suspend fun createAct(currentSaga: SagaContent) =
             executeRequest {
                 val lastAct = currentSaga.acts.lastOrNull()
-                if (lastAct?.isComplete()?.not() == true) {
+                if (lastAct?.isComplete(fetchNarrativeRules())?.not() == true) {
                     sagaHistoryUseCase.updateSaga(
                         currentSaga.data.copy(currentActId = lastAct.data.id),
                     )
@@ -593,6 +598,21 @@ class SagaContentManagerImpl
         private suspend fun endAct(saga: SagaContent) =
             executeRequest {
                 sagaHistoryUseCase.updateSaga(saga.data.copy(currentActId = null)).asSuccess()
+            }
+
+        private suspend fun generateActIntroduction(currentAct: ActContent) =
+            executeRequest {
+                val saga = content.value!!
+                actUseCase.generateActIntroduction(saga, currentAct.data).getSuccess()!!
+            }
+
+        private suspend fun generateChapterIntroduction(currentChapter: ChapterContent) =
+            executeRequest {
+                val saga = content.value!!
+                val currentAct = saga.currentActInfo!!
+                chapterUseCase
+                    .generateChapterIntroduction(saga, currentChapter.data, currentAct)
+                    .getSuccess()!!
             }
 
         private fun observeMilestone() =
@@ -661,7 +681,8 @@ class SagaContentManagerImpl
                         return@withLock
                     }
 
-                    val narrativeStep = NarrativeCheck.validateProgression(currentSaga)
+                    val narrativeStep =
+                        NarrativeCheck.validateProgression(currentSaga, fetchNarrativeRules())
                     Log.d(
                         javaClass.simpleName,
                         "checkNarrativeProgression: Step ${narrativeStep.javaClass.simpleName}",
@@ -688,6 +709,10 @@ class SagaContentManagerImpl
                                     updateAct(narrativeStep.act)
                                 }
 
+                                is NarrativeStep.GenerateActIntroduction -> {
+                                    generateActIntroduction(narrativeStep.act)
+                                }
+
                                 is NarrativeStep.StartChapter -> {
                                     startChapter(narrativeStep.act)
                                 }
@@ -697,6 +722,10 @@ class SagaContentManagerImpl
                                         currentSaga,
                                         narrativeStep.chapter,
                                     )
+                                }
+
+                                is NarrativeStep.GenerateChapterIntroduction -> {
+                                    generateChapterIntroduction(narrativeStep.chapter)
                                 }
 
                                 is NarrativeStep.StartTimeline -> {
@@ -870,24 +899,25 @@ class SagaContentManagerImpl
             when (step) {
                 is NarrativeStep.StartAct -> {
                     (result.value as? Act)?.let { data ->
-
                         startProcessing {
                             sagaHistoryUseCase.updateSaga(
                                 saga.data.copy(currentActId = data.id),
                             )
-                            val act = actUseCase.generateActIntroduction(saga, data).getSuccess()!!
-
-                            emitMilestone(
-                                SagaMilestone.Introduction(
-                                    type = IntroductionType.ACT,
-                                    titleText = act.title,
-                                    introduction = act.introduction,
-                                    number = saga.actNumber(act).toRoman(),
-                                ),
-                            )
                         }
-
                         backupSaga()
+                    }
+                }
+
+                is NarrativeStep.GenerateActIntroduction -> {
+                    (result.value as? Act)?.let { act ->
+                        emitMilestone(
+                            SagaMilestone.Introduction(
+                                type = IntroductionType.ACT,
+                                titleText = act.title,
+                                introduction = act.introduction,
+                                number = saga.actNumber(act).toRoman(),
+                            ),
+                        )
                     }
                 }
 
@@ -899,24 +929,20 @@ class SagaContentManagerImpl
                             actUseCase.updateAct(
                                 currentAct.data.copy(currentChapterId = chapter.id),
                             )
-
-                            val chapterUpdate =
-                                chapterUseCase
-                                    .generateChapterIntroduction(
-                                        saga = content.value!!,
-                                        chapterContent = chapter,
-                                        act = currentAct,
-                                    ).getSuccess()!!
-
-                            emitMilestone(
-                                SagaMilestone.Introduction(
-                                    type = IntroductionType.CHAPTER,
-                                    titleText = chapterUpdate.title,
-                                    introduction = chapterUpdate.introduction,
-                                    number = saga.chapterNumber(chapter).toRoman(),
-                                ),
-                            )
                         }
+                    }
+                }
+
+                is NarrativeStep.GenerateChapterIntroduction -> {
+                    (result.value as? Chapter)?.let { chapterUpdate ->
+                        emitMilestone(
+                            SagaMilestone.Introduction(
+                                type = IntroductionType.CHAPTER,
+                                titleText = chapterUpdate.title,
+                                introduction = chapterUpdate.introduction,
+                                number = saga.chapterNumber(chapterUpdate).toRoman(),
+                            ),
+                        )
                     }
                 }
 
@@ -984,17 +1010,20 @@ class SagaContentManagerImpl
         private suspend fun clearInvalidContent() {
             val saga = content.value ?: return
             val act = saga.currentActInfo ?: return
-
-            val invalidActs = saga.acts.filter { it.data.id != act.data.id && it.isComplete().not() }
+            val invalidActs =
+                saga.acts.filter {
+                    it.data.id != act.data.id && it.isComplete(fetchNarrativeRules()).not()
+                }
             invalidActs.forEach {
                 actUseCase.deleteAct(it.data)
             }
 
             act.let { currentAct ->
+                val rules = fetchNarrativeRules()
                 val currentChapter = currentAct.currentChapterInfo
                 val invalidChapters =
                     currentAct.chapters.filter {
-                        it.data.id != currentChapter?.data?.id && it.isComplete().not()
+                        it.data.id != currentChapter?.data?.id && it.isComplete(rules).not()
                     }
                 invalidChapters.forEach {
                     chapterUseCase.deleteChapter(it.data)
@@ -1005,7 +1034,11 @@ class SagaContentManagerImpl
 
                     val invalidEvents =
                         it.events.filter {
-                            it.data.id != currentEvent?.data?.id && it.isComplete().not()
+                            it.data.id != currentEvent?.data?.id &&
+                                it
+                                    .isComplete(
+                                        fetchNarrativeRules(),
+                                    ).not()
                         }
 
                     Log.w(javaClass.simpleName, "Invalid events -> ${invalidEvents.size} ")
@@ -1020,26 +1053,9 @@ class SagaContentManagerImpl
         private suspend fun checkObjective(showMilestone: Boolean = false) =
             executeRequest {
                 val saga = content.value ?: return@executeRequest null
-                val act = saga.currentActInfo ?: return@executeRequest null
+                saga.currentActInfo ?: return@executeRequest null
 
                 clearInvalidContent()
-
-                act.let { currentAct ->
-
-                    if (currentAct.data.introduction.isEmpty()) {
-                        actUseCase.generateActIntroduction(saga, currentAct.data)
-                    }
-
-                    currentAct.currentChapterInfo?.let { currentChapter ->
-                        if (currentChapter.data.introduction.isBlank()) {
-                            chapterUseCase.generateChapterIntroduction(
-                                saga,
-                                currentChapter.data,
-                                currentAct,
-                            )
-                        }
-                    }
-                }
             }
 
         override suspend fun getCurrentObjective(sceneSummary: SceneSummary) {
@@ -1201,19 +1217,4 @@ class SagaContentManagerImpl
             }
 
         suspend fun generateEnding(saga: SagaContent) = createEndingMessage(saga)
-
-        override fun getDirective(): String {
-            val currentSaga = content.value
-            val actsCount = currentSaga?.acts?.size ?: 0
-            Log.d(
-                javaClass.simpleName,
-                "Getting directive. Total acts count: $actsCount for saga ${currentSaga?.data?.id}",
-            )
-            return when (actsCount) {
-                0, 1 -> ActDirectives.FIRST_ACT_DIRECTIVES
-                2 -> ActDirectives.SECOND_ACT_DIRECTIVES
-                3 -> ActDirectives.THIRD_ACT_DIRECTIVES
-                else -> ActDirectives.FIRST_ACT_DIRECTIVES
-            }
-        }
     }

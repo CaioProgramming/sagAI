@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
@@ -9,7 +8,6 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 
@@ -53,8 +51,8 @@ data class StoryBriefingArgs(
 
 data class SagaResumeArgs(
     val sagaTitle: String,
-    val sagaMainContext: String,
-    val storyProgression: String,
+    val sagaContext: String,
+    val sceneSummary: String,
     val genreName: String,
     val conversationDirective: String,
 )
@@ -66,7 +64,6 @@ object SagaPrompts {
         ommitCharacter: Boolean = false,
     ) = buildString {
         val selectedCharacter = character ?: saga.mainCharacter
-        appendLine("Saga Context:")
         appendLine(saga.data.toAINormalize(ChatPrompts.sagaExclusions))
         if (ommitCharacter.not()) {
             selectedCharacter?.let {
@@ -78,9 +75,8 @@ object SagaPrompts {
 
     suspend fun endCredits(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val args =
             EndCreditsArgs(
@@ -90,39 +86,17 @@ object SagaPrompts {
                         .map { it.data }
                         .normalizetoAIItems(ChatPrompts.characterExclusions),
                 relationshipBlock = saga.mainCharacter?.summarizeRelationships() ?: "",
-                historyBlock = saga.acts.joinToString("\n") { it.actSummary(saga, false) },
-                conversationDirective = config.conversationDirective,
+                historyBlock = saga.acts.joinToString("\n") { it.actSummary(false) },
+                conversationDirective = conversationDirective,
             )
 
         return promptService.buildRemotePrompt("saga_end_credits_blueprint", args)
     }
 
-    @Suppress("ktlint:standard:max-line-length")
-    suspend fun iconDescription(
-        promptService: PromptService,
-        genre: Genre,
-        config: GenreConfig,
-        imageConfig: com.ilustris.sagai.core.ai.model.ImageConfig,
-        context: String,
-        visualDirection: String?,
-        characterHexColor: String? = null,
-    ): String {
-        val args =
-            IconDescriptionArgs(
-                artStyle = config.artStyle,
-                criticalRules = imageConfig.criticalRules,
-                context = context,
-                visualDirection = visualDirection ?: "",
-                characterHexColor = characterHexColor,
-            )
-
-        return promptService.buildRemotePrompt("icon_description_blueprint", args)
-    }
-
     suspend fun reviewGeneration(
         promptService: PromptService,
         saga: SagaContent,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val topInteractiveCharacters =
             saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
@@ -145,12 +119,12 @@ object SagaPrompts {
                 actionCount = actionCount.toString(),
                 thinkCount = thinkCount.toString(),
                 narratorCount = narratorCount.toString(),
-                actsHistory = saga.acts.joinToString("\n") { it.actSummary(saga, false) },
+                actsHistory = saga.acts.joinToString("\n") { it.actSummary(false) },
                 charactersRanking =
                     topInteractiveCharacters.joinToString(";\n") {
                         "name: ${it.first.name}, messageCount: ${it.second}"
                     },
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
             )
 
         return promptService.buildRemotePrompt("review_generation_blueprint", args)
@@ -159,14 +133,14 @@ object SagaPrompts {
     suspend fun generateStoryBriefing(
         promptService: PromptService,
         saga: SagaContent,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val args =
             StoryBriefingArgs(
                 sagaTitle = saga.data.title,
                 genreName = saga.data.genre.name,
                 protagonistName = saga.mainCharacter?.data?.name ?: "Unnamed Hero",
-                actsHistory = saga.acts.joinToString("; ") { it.actSummary(saga) },
+                actsHistory = saga.acts.joinToString("; ") { it.actSummary() },
                 recentMessages =
                     saga
                         .flatMessages()
@@ -174,7 +148,7 @@ object SagaPrompts {
                         .reversed()
                         .map { it.message }
                         .normalizetoAIItems(excludingFields = messageExclusions),
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
             )
 
         return promptService.buildRemotePrompt("story_briefing_blueprint", args)
@@ -182,22 +156,21 @@ object SagaPrompts {
 
     suspend fun sagaResume(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val args =
             SagaResumeArgs(
                 sagaTitle = saga.data.title,
-                sagaMainContext = mainContext(saga),
-                storyProgression =
+                sagaContext = mainContext(saga),
+                sceneSummary =
                     if (saga.acts.isEmpty()) {
                         ""
                     } else {
-                        saga.acts.joinToString("\n") { it.actSummary(saga) }
+                        saga.acts.joinToString("\n") { it.actSummary() }
                     },
                 genreName = saga.data.genre.name,
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
             )
 
         return promptService.buildRemotePrompt("saga_resume_blueprint", args)

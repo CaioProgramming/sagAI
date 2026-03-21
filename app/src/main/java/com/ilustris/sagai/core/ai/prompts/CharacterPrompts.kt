@@ -203,7 +203,7 @@ object CharacterPrompts {
                         .take(5)
                         .map { it.message }
                         .normalizetoAIItems(excludingFields = messageExclusions),
-                appearanceGuidelines = config.appearanceGuidelines,
+                appearanceGuidelines = "",
             )
 
         return promptService.buildRemotePrompt("character_generation_blueprint", args)
@@ -321,7 +321,7 @@ object CharacterPrompts {
                     """.trimIndent(),
                 journeyEvents = journeyEvents,
                 relationships = relationshipsBlock,
-                toneStyle = config.conversationDirective,
+                toneStyle = "",
             )
 
         return promptService.buildRemotePrompt("character_resume_blueprint", args)

@@ -4,22 +4,21 @@ import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.MergeWiki
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.model.WikiType
 
 data class WikiGenerationArgs(
+    val sagaContext: String,
+    val eventData: String,
     val existingWikis: String,
-    val eventContext: String,
-    val conversationDirective: String,
-    val outputStructure: String,
+    val globalWikiIndex: String,
+    val wikiTypes: String,
 )
 
 data class MergeWikiArgs(
-    val wikiItems: String,
-    val outputStructure: String,
+    val wikiList: String,
 )
 
 object WikiPrompts {
@@ -29,23 +28,24 @@ object WikiPrompts {
         event: Timeline,
         config: GenreConfig,
     ): String {
-        val wikis =
-            saga.currentActInfo
-                ?.currentChapterInfo
-                ?.events
-                ?.flatMap { it.updatedWikis } ?: emptyList()
-
         val wikiExclusion = listOf("createdAt", "sagaId", "id", "timelineId", "type")
+
+        val eventRawText = "${event.title} ${event.content}".lowercase()
+
+        val relevantWikis =
+            saga.wikis.filter { wiki ->
+                eventRawText.contains(wiki.title.lowercase()) || wiki.timelineId == event.id
+            }
+
+        val globalWikiIndex =
+            (saga.wikis - relevantWikis.toSet()).joinToString(", ") {
+                "${it.emojiTag ?: ""} ${it.title}"
+            }
 
         val args =
             WikiGenerationArgs(
-                existingWikis =
-                    if (wikis.isEmpty()) {
-                        "No existing wiki entries in the current chapter."
-                    } else {
-                        wikis.formatToJsonArray(excludingFields = wikiExclusion)
-                    },
-                eventContext =
+                sagaContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
+                eventData =
                     event.toJsonFormatExcludingFields(
                         listOf(
                             "createdAt",
@@ -53,12 +53,14 @@ object WikiPrompts {
                             "emotionalReview",
                         ),
                     ),
-                conversationDirective = config.conversationDirective,
-                outputStructure =
-                    toJsonMap(
-                        Wiki::class.java,
-                        filteredFields = listOf("id", "sagaId", "timelineId", "createdAt"),
-                    ),
+                existingWikis =
+                    if (relevantWikis.isEmpty()) {
+                        "No relevant existing wiki entries detected for this event."
+                    } else {
+                        relevantWikis.formatToJsonArray(excludingFields = wikiExclusion)
+                    },
+                globalWikiIndex = globalWikiIndex,
+                wikiTypes = WikiType.entries.joinToString(", "),
             )
 
         return promptService.buildRemotePrompt("wiki_generation_blueprint", args)
@@ -72,12 +74,7 @@ object WikiPrompts {
 
         val args =
             MergeWikiArgs(
-                wikiItems = wikis.formatToJsonArray(excludingFields = wikiExclusion),
-                outputStructure =
-                    toJsonMap(
-                        MergeWiki::class.java,
-                        filteredFields = wikiExclusion,
-                    ),
+                wikiList = wikis.formatToJsonArray(excludingFields = wikiExclusion),
             )
 
         return promptService.buildRemotePrompt("merge_wiki_blueprint", args)

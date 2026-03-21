@@ -254,6 +254,7 @@
     <string name="smart_fix" translatable="false">Smart Fix</string>
 
     <string name="smart_fix_description">Receive automatic AI correction suggestions based on your story and theme. The suggestions help to enrich the vocabulary and add depth to the narrative.</string>
+    <string name="smart_fix_button">Enhance ✨</string>
     <string name="message_effects">Message Effects</string>
     <string name="message_effects_description">Bring your story to life with dynamic animations that reflect the mood of each moment</string>
     <string name="clear_data_button">Clear Data</string>

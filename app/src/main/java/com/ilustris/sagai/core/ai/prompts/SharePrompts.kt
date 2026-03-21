@@ -106,7 +106,7 @@ object SharePrompts {
         val args =
             ShareHistoryArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
-                historyContext = saga.acts.joinToString(".\n") { it.actSummary(saga, false) },
+                historyContext = saga.acts.joinToString(".\n") { it.actSummary(false) },
             )
         return promptService.buildRemotePrompt("share_history_blueprint", args)
     }

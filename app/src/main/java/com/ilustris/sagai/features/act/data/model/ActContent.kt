@@ -2,14 +2,12 @@ package com.ilustris.sagai.features.act.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
-import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.ai.prompts.LorePrompts
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
-import com.ilustris.sagai.features.home.data.model.chapterNumber
 
 data class ActContent(
     @Embedded
@@ -27,53 +25,65 @@ data class ActContent(
     )
     val chapters: List<ChapterContent> = emptyList(),
 ) {
-    fun isFull(): Boolean = chapters.count { it.isComplete() } >= UpdateRules.ACT_UPDATE_LIMIT
+    fun isFull(
+        actLimit: Int,
+        rules: NarrativeRules,
+    ): Boolean = chapters.count { it.isComplete(rules) } >= actLimit
 
-    fun isComplete(): Boolean =
-        isFull() &&
+    fun isComplete(rules: NarrativeRules): Boolean =
+        isFull(rules.actUpdateLimit, rules) &&
             data.title.isNotEmpty() &&
             data.content.isNotEmpty()
 
-    fun emotionalSummary(sagaContent: SagaContent) =
+    fun emotionalSummary() =
         buildString {
-            appendLine("${sagaContent.actNumber(data)} Act ${data.title}")
-            appendLine("Emotional notes for chapters in this act:")
-            chapters.forEach {
-                appendLine("${sagaContent.chapterNumber(it.data)} Chapter ${it.data.title}: ${it.data.emotionalReview}")
-            }
+            appendLine(
+                this.toAINormalize(
+                    listOf(
+                        "id",
+                        "currentChapterId",
+                        "sagaId",
+                        "actId",
+                        "featuredCharacters",
+                        "coverImage",
+                        "createdAt",
+                        "content",
+                    ),
+                ),
+            )
+            chapters.normalizetoAIItems(
+                listOf(
+                    "id",
+                    "currentEventId",
+                    "sagaId",
+                    "actId",
+                    "featuredCharacters",
+                    "coverImage",
+                    "createdAt",
+                    "overview",
+                ),
+            )
         }
 
-    fun actSummary(
-        saga: SagaContent,
-        showEvents: Boolean = true,
-    ) = buildString {
-        appendLine("${saga.actNumber(data)} Act ${data.title}")
-        appendLine("Introduction: ")
-        appendLine(data.introduction)
-        appendLine("Chapters: ")
-        chapters.forEach {
-            appendLine("${saga.chapterNumber(it.data)}: ${it.data.title}")
-            appendLine("Introduction: ")
-            appendLine(it.data.introduction)
-            if (it.data.overview.isNotBlank()) {
-                appendLine("Overview: ")
-                appendLine(it.data.overview)
-            }
-
-            if (showEvents) {
-                appendLine("Events: ")
-                it.events.forEach {
+    fun actSummary(showEvents: Boolean = true) =
+        buildString {
+            appendLine(
+                data.toAINormalize(LorePrompts.ACT_EXCLUDED_FIELDS),
+            )
+            appendLine("CHAPTERS in this act:")
+            chapters.forEach {
+                appendLine(
+                    it.data.toAINormalize(
+                        LorePrompts.CHAPTER_EXCLUDED_FIELDS,
+                    ),
+                )
+                if (showEvents) {
                     appendLine(
-                        it.data.toAINormalize(
-                            TimelinePrompts.timelineExclusions,
+                        it.events.map { it.data }.normalizetoAIItems(
+                            LorePrompts.TIMELINE_EXCLUDED_FIELDS,
                         ),
                     )
                 }
             }
         }
-        if (data.content.isNotBlank()) {
-            appendLine("Overview: ")
-            appendLine(data.content)
-        }
-    }
 }

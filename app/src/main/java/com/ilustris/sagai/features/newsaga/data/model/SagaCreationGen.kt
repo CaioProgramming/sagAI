@@ -41,6 +41,7 @@ data class ChatMessage(
 data class CreationAssist(
     val title: String = "",
     val subtitle: String = "",
+    val message: String = "",
     val suggestions: List<CreationSuggestion> = emptyList(),
     val inputHint: String = "",
 )

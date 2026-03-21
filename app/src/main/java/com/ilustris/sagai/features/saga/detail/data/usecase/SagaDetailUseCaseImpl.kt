@@ -148,9 +148,12 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             executeRequest {
-                val config =
-                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val prompt = SagaPrompts.generateStoryBriefing(promptService, saga, config)
+                val prompt =
+                    SagaPrompts.generateStoryBriefing(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
 
@@ -159,15 +162,12 @@ class SagaDetailUseCaseImpl
                 if (saga.chaptersSize() < 1) {
                     return@executeRequest saga.data.description
                 }
-                val config =
-                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
                 val prompt =
                     SagaPrompts.sagaResume(
                         promptService,
-                        promptService.getPromptDirectives(),
                         saga,
-                        config,
-                )
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
                 textGenClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,

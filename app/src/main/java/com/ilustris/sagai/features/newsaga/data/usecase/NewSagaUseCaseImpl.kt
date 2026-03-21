@@ -4,8 +4,10 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -25,7 +27,8 @@ class NewSagaUseCaseImpl
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
         private val genreConfigService: GenreConfigService,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val promptService: PromptService,
+        private val remoteConfigService: RemoteConfigService,
     ) : NewSagaUseCase {
         override suspend fun createSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
@@ -43,13 +46,14 @@ class NewSagaUseCaseImpl
         ): RequestResult<Saga> =
             executeRequest {
                 val config = genreConfigService.getGenreConfig(sagaForm.genre)
+                val identity = genreConfigService.conversationBlueprint(sagaForm.genre)
                 gemmaClient.generate<Saga>(
                     NewSagaPrompts.createSagaPrompt(
                         promptService,
                         sagaForm,
                         miniChatContent,
                         config.variations ?: mapOf(),
-                        config.companion,
+                        identity,
                     ),
                     filterOutputFields =
                         listOf(
@@ -90,6 +94,7 @@ class NewSagaUseCaseImpl
 
                 val userInput = currentMessages.last().text
                 val config = genreConfigService.getGenreConfig(currentFormData.saga.genre)
+                val identity = genreConfigService.conversationBlueprint(currentFormData.saga.genre)
 
                 // Single AI call to extract, enhance, and provide helpful suggestions
                 val response =
@@ -100,7 +105,7 @@ class NewSagaUseCaseImpl
                             userInput = userInput,
                             conversationHistory = recentMessages,
                             availableVariations = config.variations ?: mapOf(),
-                            companion = config.companion,
+                            identity = identity,
                         ),
                         requireTranslation = true,
                     )!!
@@ -128,13 +133,13 @@ class NewSagaUseCaseImpl
             saga: Saga,
         ): RequestResult<String> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(saga.genre)
+                val identity = genreConfigService.conversationBlueprint(saga.genre)
                 gemmaClient.generate(
                     NewSagaPrompts.characterSavedPrompt(
                         promptService,
                         character,
                         saga,
-                        config.companion,
+                        identity,
                     ),
                 )!!
             }
@@ -146,14 +151,14 @@ class NewSagaUseCaseImpl
             genre: Genre?,
         ): RequestResult<String> =
             executeRequest {
-                val config = genre?.let { genreConfigService.getGenreConfig(it) }
+                val identity = genre?.let { genreConfigService.conversationBlueprint(it) } ?: ""
                 gemmaClient.generate(
                     NewSagaPrompts.generateProcessPrompt(
                         promptService,
                         process,
                         sagaDescription,
                         characterDescription,
-                        config?.companion,
+                        identity,
                     ),
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
@@ -161,24 +166,24 @@ class NewSagaUseCaseImpl
 
         override suspend fun adaptSagaToGenre(sagaDraft: SagaDraft): RequestResult<SagaCreationGen> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(sagaDraft.genre)
+                val identity = genreConfigService.conversationBlueprint(sagaDraft.genre)
                 gemmaClient.generate(
                     NewSagaPrompts.genreAdaptationPrompt(
                         promptService,
                         sagaDraft,
-                        config.companion,
+                        identity,
                     ),
                 )!!
             }
 
         override suspend fun generateGenreSuggestions(genre: Genre): RequestResult<SagaCreationGen> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(genre)
+                val identity = genreConfigService.conversationBlueprint(genre)
                 gemmaClient.generate(
                     NewSagaPrompts.genreSuggestionsPrompt(
                         promptService,
                         genre,
-                        config.companion,
+                        identity,
                     ),
                 )!!
             }
@@ -188,13 +193,13 @@ class NewSagaUseCaseImpl
             genre: Genre,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(genre)
+                val identity = genreConfigService.conversationBlueprint(genre)
                 gemmaClient.generate(
                     NewSagaPrompts.refineDraftPrompt(
                         promptService,
                         rawInput,
                         genre,
-                        config.companion,
+                        identity,
                     ),
                     requireTranslation = true,
                 )!!
@@ -207,6 +212,9 @@ class NewSagaUseCaseImpl
         ): RequestResult<CreationAssist> =
             executeRequest {
                 val config = sagaDraft?.genre?.let { genreConfigService.getGenreConfig(it) }
+                val objectives =
+                    remoteConfigService.getJson<Map<String, String>>("creation_flow_objectives")!!
+                val flowSpecificObjectives = objectives[flow.name]!!
                 gemmaClient.generate(
                     NewSagaPrompts.creationAssistPrompt(
                         promptService,
@@ -214,6 +222,7 @@ class NewSagaUseCaseImpl
                         sagaDraft,
                         characterInfo,
                         config,
+                        flowSpecificObjectives,
                     ),
                     requireTranslation = true,
                 )!!

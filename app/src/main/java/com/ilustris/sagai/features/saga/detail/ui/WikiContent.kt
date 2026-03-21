@@ -144,7 +144,6 @@ fun WikiContent(
                     )
                 }
 
-                if (chapter.isComplete()) {
                     item(span = { GridItemSpan(2) }) {
                         Box(
                             Modifier.fillMaxWidth(),
@@ -183,7 +182,6 @@ fun WikiContent(
                             }
                         }
                     }
-                }
             }
 
             item(span = { GridItemSpan(2) }) {

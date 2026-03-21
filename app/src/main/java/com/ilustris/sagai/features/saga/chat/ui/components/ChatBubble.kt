@@ -297,6 +297,7 @@ fun ChatBubble(
                                         borderSize = 2.dp,
                                         pixelation = 0f,
                                         grainRadius = 0f,
+                                        useFallback = true,
                                         modifier =
                                             Modifier
                                                 .padding(8.dp)

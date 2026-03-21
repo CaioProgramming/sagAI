@@ -1061,7 +1061,15 @@ fun ChatInputView(
                                         ),
                                 ) {
                                     Text(
-                                        "Corrigir",
+                                        stringResource(
+                                            if (it.status ==
+                                                TypoStatus.ENHANCEMENT
+                                            ) {
+                                                R.string.smart_fix_button
+                                            } else {
+                                                R.string.regenerate
+                                            },
+                                        ),
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),
@@ -1086,7 +1094,7 @@ fun ChatInputView(
                                         ),
                                 ) {
                                     Text(
-                                        "Continuar",
+                                        stringResource(R.string.next),
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),

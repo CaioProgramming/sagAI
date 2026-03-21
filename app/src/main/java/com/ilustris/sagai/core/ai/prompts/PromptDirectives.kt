@@ -5,17 +5,11 @@ data class PromptDirectives(
 ) {
     fun get(key: String): String = directives[key] ?: ""
 
-    /**
-     * Structural/Agnostic bricks reused across many templates.
-     */
-    val jsonStringIntegrity get() = get("JSON_STRING_INTEGRITY")
-    val outputJsonDirective get() = get("OUTPUT_JSON_DIRECTIVE")
-    val preferredLanguage get() = get("PREFERRED_LANGUAGE")
-
     // Dynamic UI-specific shorthand
     val conversationHistory get() = get("conversationHistory")
     val recentContext get() = get("recentContext")
     val roleEmotionalReviewer get() = get("role_emotional_reviewer")
+    val roleEmotionalCounselor get() = get("role_emotional_counselor")
     val characterResumeNoEvents get() = get("CHARACTER_RESUME_NO_EVENTS")
     val characterResumeNoRelationships get() = get("CHARACTER_RESUME_NO_RELATIONSHIPS")
 }

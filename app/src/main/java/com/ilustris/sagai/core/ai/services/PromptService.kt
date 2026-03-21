@@ -15,6 +15,7 @@ interface PromptService {
     fun buildPrompt(
         template: String,
         variables: Map<String, String>,
+        logEnabled: Boolean = true,
     ): String
 
     /**
@@ -24,6 +25,7 @@ interface PromptService {
     fun <T : Any> buildPrompt(
         template: String,
         variablesDataClass: T,
+        logEnabled: Boolean = true,
     ): String
 
     /**
@@ -33,6 +35,7 @@ interface PromptService {
     suspend fun buildRemotePrompt(
         remoteConfigKey: String,
         variables: Map<String, String>,
+        logEnabled: Boolean = true,
     ): String
 
     /**
@@ -41,6 +44,7 @@ interface PromptService {
     suspend fun <T : Any> buildRemotePrompt(
         remoteConfigKey: String,
         variablesDataClass: T,
+        logEnabled: Boolean = true,
     ): String
 
     suspend fun getPromptDirectives(): PromptDirectives
@@ -59,39 +63,50 @@ class PromptServiceImpl
         override fun buildPrompt(
             template: String,
             variables: Map<String, String>,
+            logEnabled: Boolean,
         ): String {
             var result = template
-            Log.d(javaClass.simpleName, "buildPrompt: Received args ->\n$variables")
+            if (logEnabled) {
+                Log.d(javaClass.simpleName, "buildPrompt: Received args ->\n$variables")
+            }
             variables.forEach { (key, value) ->
                 if (result.contains("{$key}")) {
-                    Log.d("PromptService", "buildPrompt: Replaced {$key}")
+                    if (logEnabled) {
+                        Log.d("PromptService", "buildPrompt: Replaced {$key}")
+                    }
                     result = result.replace("{$key}", value)
                 }
             }
-            Log.d("PromptService", "buildPrompt: New Prompt ->\n$result")
+            if (logEnabled) {
+                Log.d("PromptService", "buildPrompt: New Prompt ->\n$result")
+            }
             return result
         }
 
         override fun <T : Any> buildPrompt(
             template: String,
             variablesDataClass: T,
+            logEnabled: Boolean,
         ): String {
             val stringMap = variablesDataClass.toPromptVariables()
             Log.d(
                 "PromptService",
                 "buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys",
             )
-            return buildPrompt(template, stringMap)
+            return buildPrompt(template, stringMap, logEnabled)
         }
 
         override suspend fun buildRemotePrompt(
             remoteConfigKey: String,
             variables: Map<String, String>,
+            logEnabled: Boolean,
         ): String {
             val blueprint =
                 remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey)!!
 
-            Log.d("PromptService", "buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
+            if (logEnabled) {
+                Log.d("PromptService", "buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
+            }
             if (blueprint.template.isBlank()) {
                 throw IllegalStateException(
                     "Prompt template not found for Remote Config key: $remoteConfigKey",
@@ -128,15 +143,16 @@ class PromptServiceImpl
 
                 // 4. The Core Template
                 appendLine("# TASK DEFINITION")
-                appendLine(buildPrompt(blueprint.template, variables))
+                appendLine(buildPrompt(blueprint.template, variables, logEnabled))
             }.trimIndent()
         }
 
         override suspend fun <T : Any> buildRemotePrompt(
             remoteConfigKey: String,
             variablesDataClass: T,
+            logEnabled: Boolean,
         ): String {
             val stringMap = variablesDataClass.toPromptVariables()
-            return buildRemotePrompt(remoteConfigKey, stringMap)
+            return buildRemotePrompt(remoteConfigKey, stringMap, logEnabled)
         }
     }

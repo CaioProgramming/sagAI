@@ -3,11 +3,13 @@ package com.ilustris.sagai.features.timeline.domain
 import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.LorePrompts
+import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -42,19 +44,16 @@ class TimelineUseCaseImpl
             currentTimeline: TimelineContent,
         ) = executeRequest {
             val narrativeRules =
-                com.ilustris.sagai.core.narrative.NarrativeRules(
-                    remoteConfigService.getJson<Map<String, Any>>("narrative_rules") ?: emptyMap(),
-                )
-            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
+                remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
             val newLore =
                 gemmaClient
                     .generate<Timeline>(
-                        LorePrompts.loreGeneration(
+                        TimelinePrompts.generateTimelinePrompt(
                             promptService = promptService,
                             narrativeRules = narrativeRules,
                             sagaContent = saga,
                             currentTimeline = currentTimeline,
-                            config = genreConfig,
+                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                         ),
                         filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
                         useCore = true,
@@ -127,8 +126,8 @@ class TimelineUseCaseImpl
             val objectivePrompt =
                 ChatPrompts.sceneSummarizationPrompt(
                     promptService = promptService,
-                    promptDirectives = promptService.getPromptDirectives(),
                     saga = saga,
+                    remoteConfigService.getNarrativeRules(),
                 )
             val summary =
                 gemmaClient

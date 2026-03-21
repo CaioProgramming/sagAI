@@ -60,10 +60,7 @@ class ActUseCaseImpl
             }
 
         private suspend fun generateActPrompt(saga: SagaContent): String {
-            val narrativeRules =
-                NarrativeRules(
-                    remoteConfigService.getJson<Map<String, Any>>("narrative_rules") ?: emptyMap(),
-                )
+            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
 
             val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
             return ActPrompts.generateActConclusion(
@@ -75,28 +72,13 @@ class ActUseCaseImpl
             )
         }
 
-        private suspend fun getPurpose(actCount: Int): String {
-            val narrativeRules =
-                NarrativeRules(
-                    remoteConfigService.getJson<Map<String, Any>>("narrative_rules") ?: emptyMap(),
-                )
-            return when (actCount) {
-                1 -> narrativeRules.firstActPurpose
-                2 -> narrativeRules.secondActPurpose
-                else -> narrativeRules.thirdActPurpose
-        }
-    }
-
         override suspend fun generateActIntroduction(
             saga: SagaContent,
             act: Act,
         ) = executeRequest {
             val isFirst = saga.acts.isEmpty()
             val previousAct = if (isFirst) null else saga.acts.last()
-            val narrativeRules =
-                NarrativeRules(
-                    remoteConfigService.getJson<Map<String, Any>>("narrative_rules") ?: emptyMap(),
-                )
+            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
 
             val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
             val prompt =
@@ -121,7 +103,7 @@ class ActUseCaseImpl
                 emotionalUseCase
                     .generateEmotionalProfile(
                         saga,
-                        act.emotionalSummary(saga),
+                        act.emotionalSummary(),
                     ).getSuccess()!!
 
             actRepository.updateAct(act.data.copy(emotionalReview = profile))

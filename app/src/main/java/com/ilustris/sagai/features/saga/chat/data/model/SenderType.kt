@@ -18,16 +18,14 @@ enum class SenderType {
     USER,
     CHARACTER,
 
-    // Legacy values — kept so old persisted strings don't crash on read.
-    // The TypeConverter maps these to CHARACTER on the way out.
-    @Deprecated("Use CHARACTER + inline <narrator> tag instead")
-    NARRATOR,
-
     @Deprecated("Use CHARACTER + inline <think> tag instead")
     THOUGHT,
 
     @Deprecated("Use CHARACTER + inline <action> tag instead")
     ACTION,
+
+    @Deprecated("Use CHARACTER + inline <narrator> tag instead")
+    NARRATOR,
     ;
 
     /**

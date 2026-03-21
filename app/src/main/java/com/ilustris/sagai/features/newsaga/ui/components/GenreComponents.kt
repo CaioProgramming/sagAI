@@ -1,9 +1,16 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
+import android.graphics.Matrix
+import android.graphics.Shader
 import android.util.Log
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,11 +39,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +60,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveImageUrl
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -161,6 +175,7 @@ fun GenreCard(
     genre: Genre,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
     showText: Boolean = true,
     onClick: (Genre) -> Unit,
 ) {
@@ -177,7 +192,21 @@ fun GenreCard(
         if (showDetails) 15f else 0f,
     )
     val borderColor = genre.gradient(true)
+    val palette = genre.colorPalette()
     val image = genre.resolveImageUrl()
+    val layoutDirection = LocalLayoutDirection.current
+
+    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "rotation",
+    )
 
     Box(
         modifier
@@ -186,7 +215,30 @@ fun GenreCard(
                 this.brush = borderColor
                 this.spread = shadowRadius
             }.clip(shape)
-            .border(borderSize, borderColor, shape)
+            .drawWithContent {
+                drawContent()
+                if (isLoading) {
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    val brush =
+                        object : ShaderBrush() {
+                            override fun createShader(size: Size): Shader {
+                                val shader =
+                                    sweepGradient(palette)
+                                        .let { it as ShaderBrush }
+                                        .createShader(size)
+                                val matrix = Matrix()
+                                matrix.setRotate(rotation, size.width / 2, size.height / 2)
+                                shader.setLocalMatrix(matrix)
+                                return shader
+                            }
+                        }
+                    drawOutline(
+                        outline = outline,
+                        brush = brush,
+                        style = Stroke(width = 2.dp.toPx()),
+                    )
+                }
+            }.border(borderSize, borderColor, shape)
             .background(MaterialTheme.colorScheme.background),
     ) {
         AsyncImage(

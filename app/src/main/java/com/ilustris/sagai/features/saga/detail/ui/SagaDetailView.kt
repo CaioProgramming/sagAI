@@ -105,7 +105,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.data.State
-import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.act.ui.ActReader
@@ -195,6 +195,7 @@ fun SagaDetailView(
     val sagaResume by viewModel.sagaResume.collectAsStateWithLifecycle()
     val isSummarizingSaga by viewModel.isSummarizingSaga.collectAsStateWithLifecycle()
     val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
+    val narrativeRules by viewModel.narrativeRules.collectAsStateWithLifecycle()
 
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
@@ -230,6 +231,7 @@ fun SagaDetailView(
         emotionalCardReference = emotionalCardReference,
         backupEnabled = backupEnabled,
         visualConfig = visualConfig,
+        narrativeRules = narrativeRules,
         onChangeSection = {
             section = it
             if (it == DetailAction.DELETE) {
@@ -345,6 +347,7 @@ fun SagaDetailView(
 
 fun LazyListScope.SagaDrawerContent(
     content: SagaContent,
+    narrativeRules: NarrativeRules?,
     openReview: () -> Unit = {},
 ) {
     with(this) {
@@ -371,8 +374,7 @@ fun LazyListScope.SagaDrawerContent(
                         .reactiveShimmer(
                             content.data.review != null,
                             targetValue = 250f,
-                        )
-                        .clickable {
+                        ).clickable {
                             openReview()
                         },
                 )
@@ -397,8 +399,7 @@ fun LazyListScope.SagaDrawerContent(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                         shape,
-                    )
-                    .background(
+                    ).background(
                         MaterialTheme.colorScheme.background,
                         shape,
                     )
@@ -427,7 +428,8 @@ fun LazyListScope.SagaDrawerContent(
 
                 if (chaptersInAct.isNotEmpty()) {
                     chaptersInAct.forEachIndexed { chapterIndex, chapter ->
-                        val eventsInChapter = chapter.events.filter { it.isComplete() }
+                        val eventsInChapter =
+                            chapter.events.filter { it.data.isEmpty().not() }
 
                         var expandedEvents by remember {
                             mutableStateOf(false)
@@ -439,8 +441,7 @@ fun LazyListScope.SagaDrawerContent(
                                     .clip(shape)
                                     .clickable {
                                         expandedEvents = !expandedEvents
-                                    }
-                                    .fillMaxWidth(),
+                                    }.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
@@ -485,12 +486,12 @@ fun LazyListScope.SagaDrawerContent(
                             }
                         }
 
-                        if (chapter.isComplete().not()) {
+                        if (chapter.data.isEmpty().not()) {
                             Text(
                                 stringResource(
                                     id = R.string.events_count,
                                     eventsInChapter.size,
-                                    UpdateRules.CHAPTER_UPDATE_LIMIT,
+                                    narrativeRules?.chapterUpdateLimit ?: 0,
                                 ),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
@@ -524,7 +525,7 @@ fun LazyListScope.SagaDrawerContent(
                                     stringResource(
                                         id = R.string.messages_count,
                                         messageCount ?: 0,
-                                        UpdateRules.LORE_UPDATE_LIMIT,
+                                        narrativeRules?.loreUpdateLimit ?: 0,
                                     ),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
@@ -572,6 +573,7 @@ fun SagaDetailContentView(
     originalBitmap: Bitmap? = null,
     segmentedBitmap: Bitmap? = null,
     visualConfig: GenreVisualConfig? = null,
+    narrativeRules: NarrativeRules?,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -623,7 +625,7 @@ fun SagaDetailContentView(
                                                 ),
                                         )
                                     }
-                                    SagaDrawerContent(sagaContent) {
+                                    SagaDrawerContent(sagaContent, narrativeRules) {
                                         openReview()
                                     }
                                 }
@@ -864,6 +866,7 @@ fun SagaDetailContentViewPreview() {
         createEmotionalReview = {},
         createTimelineReview = {},
         closeReview = {},
+        narrativeRules = null,
     )
 }
 
@@ -966,8 +969,12 @@ private fun SagaDetailInitialView(
                         var highlightParams by remember {
                             mutableStateOf(genreHighlight)
                         }
-                        val chapters = remember { saga.flatChapters().filter { it.isComplete() } }
-                        val events = remember { saga.flatEvents().filter { it.isComplete() } }
+                        val chapters =
+                            remember {
+                                saga.flatChapters().filter { it.data.isEmpty().not() }
+                            }
+                        val events =
+                            remember { saga.flatEvents().filter { it.data.isEmpty().not() } }
                         val messages = remember { saga.flatMessages() }
                         val relationships = remember { saga.relationshipsSortedByEvents() }
                         LazyVerticalGrid(
@@ -996,8 +1003,7 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     )
@@ -1018,7 +1024,7 @@ private fun SagaDetailInitialView(
                                                             currentModifier
                                                                 .padding(8.dp)
                                                                 .fillMaxWidth(),
-                                                            )
+                                                    )
                                                 }
                                             } else {
                                                 AsyncImage(

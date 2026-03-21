@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
@@ -65,7 +66,6 @@ class NotificationGenerationWorker
                         return@withTimeout Result.success()
                     }
 
-                    // Verificar se tem personagens
                     if (sagaContent.characters.isEmpty()) {
                         Log.e(TAG, "No characters found for saga: $sagaId")
                         return@withTimeout Result.failure()
@@ -76,19 +76,23 @@ class NotificationGenerationWorker
                         return@withTimeout Result.failure()
                     }
 
-                    // Gerar resumo da cena
+                    val rules =
+                        remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
+                            Log.e(TAG, "Failed to fetch narrative rules")
+                            return@withTimeout Result.failure()
+                        }
+
                     val sceneSummary =
                         executeRequest {
                             gemmaClient.generate<SceneSummary>(
                                 ChatPrompts.sceneSummarizationPrompt(
                                     promptService = promptService,
-                                    promptDirectives = promptService.getPromptDirectives(),
                                     saga = sagaContent,
+                                    rules,
                                 ),
                             )
                         }.getSuccess()
 
-                    // Gerar mensagem smart
                     val (character, generatedMessage) =
                         sceneSummary?.let {
                             val selectedCharacter =
@@ -99,16 +103,17 @@ class NotificationGenerationWorker
                                         }
                                     }.randomOrNull() ?: sagaContent.characters.first()
 
-                            val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                            genreConfigService.getGenreConfig(sagaContent.data.genre)
+                            val conversationDirective =
+                                genreConfigService.conversationBlueprint(sagaContent.data.genre)
 
                             val prompt =
                                 ChatPrompts.scheduledNotificationPrompt(
                                     promptService = promptService,
-                                    promptDirectives = promptService.getPromptDirectives(),
                                     saga = sagaContent,
                                     selectedCharacter = selectedCharacter,
                                     sceneSummary = sceneSummary,
-                                    config = config!!,
+                                    conversationDirective = conversationDirective,
                                 )
 
                             delay(3.seconds)

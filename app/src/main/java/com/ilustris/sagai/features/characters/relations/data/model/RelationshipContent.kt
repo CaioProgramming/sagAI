@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -61,7 +60,7 @@ data class RelationshipContent(
             events.find { event -> event.id == it.timelineId }?.createdAt
         }
 
-    fun summarizeRelation(threshold: Int = UpdateRules.CHAPTER_UPDATE_LIMIT) =
+    fun summarizeRelation(threshold: Int = 3) =
         "${characterOne.name} ${data.emoji} ${characterTwo.name} - ${data.title}:\n${
             relationshipEvents.takeLast(threshold)
                 .normalizetoAIItems(listOf("timestamp", "relationId", "timelineId", "id", "emoji"))

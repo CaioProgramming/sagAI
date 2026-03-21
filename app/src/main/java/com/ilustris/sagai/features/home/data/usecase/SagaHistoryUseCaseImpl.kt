@@ -42,11 +42,13 @@ class SagaHistoryUseCaseImpl
 
         override suspend fun generateEndMessage(saga: SagaContent): RequestResult<String> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(saga.data.genre)
-                val promptDirectives = promptService.getPromptDirectives()
+                genreConfigService.getGenreConfig(saga.data.genre)
+                promptService.getPromptDirectives()
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(saga.data.genre)
                 gemmaClient
                     .generate<String>(
-                        SagaPrompts.endCredits(promptService, promptDirectives, saga, config),
+                        SagaPrompts.endCredits(promptService, saga, conversationDirective),
                     )!!
             }
 

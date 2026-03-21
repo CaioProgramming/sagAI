@@ -5,10 +5,12 @@ package com.ilustris.sagai.features.newsaga.ui
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -104,13 +107,14 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
@@ -118,6 +122,8 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shimmerize
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
@@ -149,7 +155,6 @@ fun NewSagaView(
             FlowPages.entries.size
         }
 
-    // Keep the genre state alive at the root so it doesn't reset during transitions
     val genrePagerState =
         rememberPagerState(
             initialPage = Genre.entries.indexOf(sagaFormState?.draft?.genre).coerceAtLeast(0),
@@ -170,6 +175,16 @@ fun NewSagaView(
 
     var isSagaRefining by remember { mutableStateOf(false) }
     var isCharacterRefining by remember { mutableStateOf(false) }
+    var showGenreCards by remember { mutableStateOf(false) }
+
+    LaunchedEffect(themeAssist) {
+        if (themeAssist.title.isNotEmpty() && pagerState.currentPage == FlowPages.SELECT_THEME.ordinal) {
+            delay(800)
+            showGenreCards = true
+        } else {
+            showGenreCards = false
+        }
+    }
 
     LaunchedEffect(sagaFormState?.isLoading) {
         if (sagaFormState?.isLoading == true) {
@@ -308,44 +323,28 @@ fun NewSagaView(
                 else -> null
             }
 
-        val contentColor =
-            if (flow !=
-                FlowPages.SELECT_THEME
-            ) {
-                (genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground)
-            } else {
-                MaterialTheme.colorScheme.onBackground
-            }
+        val contentColor = MaterialTheme.colorScheme.onBackground
 
         val isLoading =
             isSaving ||
                 characterState?.isLoading == true ||
                 sagaFormState?.isLoading == true
 
-        val backgroundColor by animateColorAsState(
-            targetValue =
-                if (flow ==
-                    FlowPages.SELECT_THEME
-                ) {
-                    MaterialTheme.colorScheme.background
-                } else {
-                    genre?.resolveColor()?.darker()
-                        ?: MaterialTheme.colorScheme.background
-                },
-            animationSpec = tween(600),
-            label = "backgroundColor",
-        )
+        val backgroundColor = MaterialTheme.colorScheme.background
 
         Box(Modifier.fillMaxSize()) {
             Column(
                 modifier =
                     Modifier
                         .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                         .background(MaterialTheme.colorScheme.background)
                         .background(backgroundColor.copy(alpha = .2f))
                         .animateContentSize(),
             ) {
-                AnimatedContent(genre) {
+                AnimatedContent(genre, transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                }) {
                     TopBarContent(
                         genre = it,
                         modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -356,28 +355,15 @@ fun NewSagaView(
                 }
 
                 AnimatedContent(
-                    targetState = assist,
+                    targetState = genre,
                     modifier = Modifier.padding(16.dp),
                     label = "AssistAnimation",
-                ) { currentAssist ->
-                    if (currentAssist == null || currentAssist.title.isEmpty() || isLoading) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(80.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_spark),
-                                null,
-                                tint = contentColor.copy(alpha = 0.5f),
-                                modifier =
-                                    Modifier
-                                        .size(48.dp)
-                                        .reactiveShimmer(true),
-                            )
-                        }
-                    } else {
+                    transitionSpec = {
+                        (fadeIn(tween(1000, 200)) + slideInVertically { it / 2 }) togetherWith
+                            fadeOut(tween(500))
+                    },
+                ) {
+                    assist?.let { currentAssist ->
                         Column(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -385,24 +371,24 @@ fun NewSagaView(
                                 Modifier
                                     .fillMaxWidth()
                                     .reactiveShimmer(isLoading),
-                                ) {
-                            Text(
-                                currentAssist.title.uppercase(),
+                        ) {
+                            AutoResizeText(
+                                currentAssist.title,
                                 style =
                                     MaterialTheme.typography.headlineMedium.copy(
                                         fontWeight = FontWeight.Black,
-                                        fontFamily = genre?.headerFont(),
+                                        fontFamily = it?.headerFont(),
                                         letterSpacing = 2.sp,
+                                        textAlign = TextAlign.Center,
+                                        color = contentColor,
                                     ),
-                                textAlign = TextAlign.Center,
-                                color = contentColor,
                             )
                             if (currentAssist.subtitle.isNotEmpty()) {
                                 Text(
                                     currentAssist.subtitle,
                                     style =
                                         MaterialTheme.typography.bodyMedium.copy(
-                                            fontFamily = genre?.bodyFont(),
+                                            fontFamily = it?.bodyFont(),
                                             fontStyle = FontStyle.Italic,
                                         ),
                                     textAlign = TextAlign.Center,
@@ -422,17 +408,23 @@ fun NewSagaView(
                             .weight(1f)
                             .graphicsLayer(clip = false),
                 ) { page ->
-                    // CRITICAL: Use the 'page' index provided by the loop, not pagerState.currentPage
                     val flow = FlowPages.entries[page]
                     when (flow) {
                         FlowPages.SELECT_THEME -> {
-                            GenrePicker(
-                                isLoading = isLoading,
-                                visuals = genreVisuals ?: emptyList(),
-                                currentGenre = genre,
-                                pagerState = genrePagerState,
+                            AnimatedVisibility(
+                                visible = showGenreCards,
+                                enter = fadeIn(tween(1000)) + slideInVertically { it / 4 },
+                                exit = fadeOut(tween(500)),
+                                modifier = Modifier.fillMaxSize(),
                             ) {
-                                viewModel.updateGenre(it)
+                                GenrePicker(
+                                    isLoading = isLoading,
+                                    visuals = genreVisuals ?: emptyList(),
+                                    currentGenre = genre,
+                                    pagerState = genrePagerState,
+                                ) {
+                                    viewModel.updateGenre(it)
+                                }
                             }
                         }
 
@@ -445,6 +437,7 @@ fun NewSagaView(
                                 },
                                 title = sagaAssist.title,
                                 subtitle = sagaAssist.subtitle,
+                                message = sagaAssist.message,
                                 inputHint = sagaAssist.inputHint,
                                 suggestions = sagaAssist.suggestions,
                                 content = draft,
@@ -480,6 +473,7 @@ fun NewSagaView(
                                 },
                                 title = characterAssist.title,
                                 subtitle = characterAssist.subtitle,
+                                message = characterAssist.message,
                                 inputHint = characterAssist.inputHint,
                                 suggestions = characterAssist.suggestions,
                                 content = characterDraft,
@@ -532,8 +526,7 @@ fun NewSagaView(
                                         .dropShadow(shape) {
                                             color = primaryColor
                                             radius = 20f
-                                        }
-                                        .border(1.dp, borderBrush, shape)
+                                        }.border(1.dp, borderBrush, shape)
                                         .clip(shape)
                                         .background(backgroundColor, shape)
                                         .reactiveShimmer(true),
@@ -690,7 +683,18 @@ fun NewSagaView(
                         genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground
                     val primaryColor = it?.resolveColor() ?: MaterialTheme.colorScheme.primary
                     val buttonAlpha by animateFloatAsState(
-                        if (FlowPages.entries[pagerState.currentPage] == FlowPages.GENERATING) 0f else 1f,
+                        if (FlowPages.entries[pagerState.currentPage] == FlowPages.GENERATING ||
+                            (FlowPages.entries[pagerState.currentPage] == FlowPages.SELECT_THEME && !showGenreCards)
+                        ) {
+                            0f
+                        } else {
+                            1f
+                        },
+                    )
+                    val glowRadius by animateFloatAsState(
+                        if (isLoading) 30f else 10f,
+                        animationSpec = tween(500),
+                        label = "buttonGlow",
                     )
                     Button(
                         enabled = isLoading.not() && flow != FlowPages.GENERATING,
@@ -726,20 +730,32 @@ fun NewSagaView(
                             ButtonDefaults.buttonColors().copy(
                                 containerColor = primaryColor,
                                 contentColor = contentColor,
-                                disabledContainerColor = primaryColor.copy(alpha = 0.5f),
-                                disabledContentColor = primaryColor.copy(alpha = 0.5f),
+                                disabledContainerColor = MaterialTheme.colorScheme.background,
+                                disabledContentColor =
+                                    MaterialTheme.colorScheme.onBackground.copy(
+                                        alpha = 0.5f,
+                                    ),
                             ),
                         shape = shape,
                         border =
                             BorderStroke(
                                 1.dp,
-                                Brush.linearGradient(primaryColor.darkerPalette()),
+                                Brush.linearGradient(
+                                    it?.colorPalette() ?: primaryColor.fadeColors(),
+                                ),
                             ),
                         modifier =
                             Modifier
                                 .alpha(buttonAlpha)
                                 .padding(16.dp)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .dropShadow(shape) {
+                                    if (isLoading) {
+                                        color = primaryColor
+                                        radius = glowRadius
+                                        this.spread = glowRadius / 2
+                                    }
+                                },
                     ) {
                         Text(
                             buttonText,
@@ -822,15 +838,12 @@ private fun SuggestionsContent(
                             1.dp,
                             itemGradient,
                             shape,
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.background.copy(alpha = .2f),
                             shape,
-                        )
-                        .clickable {
+                        ).clickable {
                             onSelect(it)
-                        }
-                        .padding(16.dp),
+                        }.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
@@ -948,15 +961,16 @@ private fun GenrePicker(
             GenreCard(
                 genre,
                 isSelected,
+                isLoading = isLoading && isSelected,
                 modifier =
                     Modifier
                         .graphicsLayer {
                             val pageOffset =
                                 (
-                                        (pagerState.currentPage - page) +
-                                                pagerState
-                                                    .currentPageOffsetFraction
-                                        ).absoluteValue
+                                    (pagerState.currentPage - page) +
+                                        pagerState
+                                            .currentPageOffsetFraction
+                                ).absoluteValue
                             lerp(
                                 start = 0.85f,
                                 stop = 1f,
@@ -971,8 +985,7 @@ private fun GenrePicker(
                                     stop = 1f,
                                     fraction = 1f - pageOffset.coerceIn(0f, 1f),
                                 )
-                        }
-                        .levitate(isSelected)
+                        }.levitate(isSelected)
                         .fillMaxWidth()
                         .aspectRatio(0.8f),
             ) {
@@ -991,6 +1004,7 @@ private fun FlipCardForm(
     onTextChange: (String) -> Unit,
     title: String = "",
     subtitle: String = "",
+    message: String = "",
     inputHint: String?,
     suggestions: List<CreationSuggestion>,
     content: Any?,
@@ -1026,6 +1040,7 @@ private fun FlipCardForm(
             if (title.isEmpty()) {
                 Box(
                     Modifier
+                        .imePadding()
                         .fillMaxSize()
                         .reactiveShimmer(true),
                 ) {
@@ -1041,7 +1056,8 @@ private fun FlipCardForm(
                         modifier =
                             Modifier
                                 .size(64.dp)
-                                .align(Alignment.Center),
+                                .align(Alignment.Center)
+                                .reactiveShimmer(isLoading, primaryColor.shimmerize()),
                         colorFilter =
                             ColorFilter.tint(
                                 contentColor.copy(alpha = .4f),
@@ -1056,11 +1072,12 @@ private fun FlipCardForm(
                             .padding(8.dp)
                             .dropShadow(shape, {
                                 color = primaryColor
-                                radius = 15f
+                                radius = 25f
                             })
                             .border(1.dp, borderBrush, shape)
                             .clip(shape)
                             .background(backgroundColor, shape)
+                            .verticalScroll(rememberScrollState())
                             .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -1074,9 +1091,9 @@ private fun FlipCardForm(
                         color = contentColor,
                     )
 
-                    if (subtitle.isNotEmpty()) {
+                    if (message.isNotEmpty()) {
                         Text(
-                            text = subtitle,
+                            text = message,
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = genre?.bodyFont(),
@@ -1361,7 +1378,8 @@ private fun FlipCardForm(
                                                             color =
                                                                 (
                                                                     genre?.resolveIconColor()
-                                                                        ?: MaterialTheme.colorScheme.onSurface).copy(
+                                                                        ?: MaterialTheme.colorScheme.onSurface
+                                                                ).copy(
                                                                     alpha = 0.3f,
                                                                 ),
                                                         ),

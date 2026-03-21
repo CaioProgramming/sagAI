@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
@@ -57,19 +56,22 @@ object EmotionalPrompt {
         promptDirectives: PromptDirectives,
         saga: SagaContent,
         context: String,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val roleDefinition =
             promptService.buildPrompt(
                 promptDirectives.roleEmotionalReviewer,
-                mapOf("sagaTitle" to saga.data.title),
+                mapOf(
+                    "sagaTitle" to saga.data.title,
+                    "conversationDirective" to conversationDirective,
+                ),
             )
         val args =
             EmotionalReviewArgs(
                 roleDefinition = roleDefinition,
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 analysisData = context,
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
             )
         return promptService.buildRemotePrompt("emotional_review_blueprint", args)
     }
@@ -78,19 +80,22 @@ object EmotionalPrompt {
         promptService: PromptService,
         promptDirectives: PromptDirectives,
         saga: SagaContent,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val roleDefinition =
             promptService.buildPrompt(
-                promptDirectives.roleEmotionalReviewer,
-                mapOf("sagaTitle" to saga.data.title),
+                promptDirectives.roleEmotionalCounselor,
+                mapOf(
+                    "sagaTitle" to saga.data.title,
+                    "conversationDirective" to conversationDirective,
+                ),
             )
         val args =
             EmotionalConclusionArgs(
                 roleDefinition = roleDefinition,
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 emotionalJourneySummary = saga.emotionalSummary(),
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
             )
         return promptService.buildRemotePrompt("emotional_conclusion_blueprint", args)
     }
@@ -98,20 +103,25 @@ object EmotionalPrompt {
     suspend fun generateEmotionalProfile(
         promptService: PromptService,
         promptDirectives: PromptDirectives,
+        saga: SagaContent,
         summary: String,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val roleDefinition =
             promptService.buildPrompt(
                 promptDirectives.roleEmotionalReviewer,
-                emptyMap(),
+                mapOf(
+                    "sagaTitle" to saga.data.title,
+                    "conversationDirective" to conversationDirective,
+                ),
             )
         val args =
-            EmotionalProfileArgs(
+            EmotionalReviewArgs(
                 roleDefinition = roleDefinition,
-                behaviorNotes = summary,
-                conversationDirective = config.conversationDirective,
+                sagaMainContext = SagaPrompts.mainContext(saga),
+                analysisData = summary,
+                conversationDirective = conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_profile_blueprint", args)
+        return promptService.buildRemotePrompt("emotional_review_blueprint", args)
     }
 }

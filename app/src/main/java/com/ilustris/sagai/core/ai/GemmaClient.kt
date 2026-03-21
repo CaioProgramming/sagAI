@@ -74,7 +74,7 @@ class GemmaClient
             } ?: requirement.defaultModel
 
         suspend fun coreKey() =
-            remoteConfigService.getString(CORE_FLAG)?.let {
+            remoteConfigService.getString(CORE_FLAG, false)?.let {
                 it.ifEmpty {
                     error("Couldn't fetch gemma Model")
                 }
@@ -84,7 +84,7 @@ class GemmaClient
             if (useCore) {
                 coreKey()
             } else {
-                remoteConfigService.getString(KEY_FLAG)?.ifEmpty {
+                remoteConfigService.getString(KEY_FLAG, false)?.ifEmpty {
                     error("Couldn't fetch firebase key")
                 } ?: error("Flag Value unavailable.")
             }
@@ -101,7 +101,10 @@ class GemmaClient
         ): T? =
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
-                    Log.w(javaClass.simpleName, "Applying reactive delay due to high token count in last request.")
+                    Log.w(
+                        javaClass.simpleName,
+                        "Applying reactive delay due to high token count in last request.",
+                    )
                     retryDelay = 5
                     delay((retryDelay ?: 5).seconds)
                 }
@@ -136,6 +139,7 @@ class GemmaClient
                                         promptService.buildPrompt(
                                             directives["OUTPUT_DIRECTIVE"] ?: "",
                                             mapOf("type" to T::class.java.simpleName),
+                                            false,
                                         )
                                     appendLine(outputDirective)
 
@@ -150,6 +154,7 @@ class GemmaClient
                                                             filteredFields = filterOutputFields,
                                                         ),
                                                 ),
+                                                false,
                                             )
                                         appendLine(structureRule)
                                     }
@@ -164,6 +169,7 @@ class GemmaClient
                                         promptService.buildPrompt(
                                             directives["PREFERRED_LANGUAGE"] ?: "",
                                             mapOf("language" to getLanguage(requireTranslation)),
+                                            false,
                                         )
                                     appendLine(languageRule)
                                 }

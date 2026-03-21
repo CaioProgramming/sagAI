@@ -106,7 +106,10 @@ class NewSagaViewModel
             }
         }
 
-        fun assistCreation(flow: FlowPages) {
+        fun assistCreation(
+            flow: FlowPages,
+            force: Boolean = false,
+        ) {
             if (flow != FlowPages.CREATE_SAGA && flow != FlowPages.CREATE_CHARACTER && flow != FlowPages.SELECT_THEME) return
 
             val currentAssist =
@@ -116,7 +119,7 @@ class NewSagaViewModel
                     FlowPages.SELECT_THEME -> _themeAssist.value
                     else -> CreationAssist()
                 }
-            if (currentAssist.title.isNotEmpty()) return // Rough "cache" check
+            if (currentAssist.title.isNotEmpty() && !force) return // Rough "cache" check
 
             assistJob?.cancel()
             assistJob =
@@ -157,10 +160,7 @@ class NewSagaViewModel
             sagaStateManager.updateGenre(genre)
 
             if (previousGenre != genre) {
-                viewModelScope.launch {
-                    _sagaAssist.emit(CreationAssist())
-                    _characterAssist.emit(CreationAssist())
-                }
+                // Assist reset and regeneration removed as per instruction
             }
 
             viewModelScope.launch(Dispatchers.IO) {

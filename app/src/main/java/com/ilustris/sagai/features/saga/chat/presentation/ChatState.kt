@@ -77,5 +77,10 @@ data class ActDisplayData(
 data class ChapterDisplayData(
     val chapter: ChapterContent,
     val isComplete: Boolean,
-    val timelineSummaries: List<TimelineContent>,
+    val timelineSummaries: List<TimelineDisplayData>,
+)
+
+data class TimelineDisplayData(
+    val isComplete: Boolean,
+    val timeline: TimelineContent,
 )

@@ -156,7 +156,7 @@ fun PremiumView(
                                     Modifier
                                         .aspectRatio(1f)
                                         .scale(scale),
-                                    false,
+                                    showText = false,
                                 ) { }
                             }
                         }

@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 
 data class ConversationalSagaReplyArgs(
-    val companionPersona: String,
     val currentSagaDraft: String,
     val conversationHistory: String,
     val userInput: String,
@@ -71,7 +70,7 @@ data class NewSagaRefineDraftArgs(
 data class CreationAssistArgs(
     val companionPersona: String,
     val conversationalStyle: String,
-    val flowName: String,
+    val flowPageName: String,
     val genreName: String,
     val sagaDraft: String,
     val characterInfo: String,
@@ -86,7 +85,7 @@ object NewSagaPrompts {
         userInput: String,
         conversationHistory: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String,
     ): String {
         val variationsBlock =
             availableVariations.entries.joinToString("\n") { (id, config) ->
@@ -95,7 +94,6 @@ object NewSagaPrompts {
 
         val args =
             ConversationalSagaReplyArgs(
-                companionPersona = companion?.persona ?: "",
                 currentSagaDraft = currentSagaDraft.toAINormalize(),
                 conversationHistory =
                     conversationHistory.takeLast(10).joinToString("\n") { msg ->
@@ -103,7 +101,7 @@ object NewSagaPrompts {
                     },
                 userInput = userInput,
                 availableVariations = variationsBlock,
-                companionConversationalStyle = companion?.conversationalStyle ?: "",
+                companionConversationalStyle = identity,
             )
 
         return promptService.buildRemotePrompt("conversational_saga_reply_blueprint", args)
@@ -114,7 +112,7 @@ object NewSagaPrompts {
         process: SagaProcess,
         saga: String,
         character: String,
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val processSpecificInstruction =
             when (process) {
@@ -127,8 +125,8 @@ object NewSagaPrompts {
 
         val args =
             GenerateProcessArgs(
-                companionPersona = companion?.persona ?: "",
-                interludeStyle = companion?.interludeStyle ?: "",
+                companionPersona = identity,
+                interludeStyle = identity,
                 processName = process.name,
                 sagaDescription = saga,
                 characterDescription = character,
@@ -143,7 +141,7 @@ object NewSagaPrompts {
         sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val variationsBlock =
             availableVariations.entries.joinToString("\n") { (id, config) ->
@@ -152,7 +150,7 @@ object NewSagaPrompts {
 
         val args =
             CreateSagaArgs(
-                companionPersona = companion?.persona ?: "",
+                companionPersona = identity,
                 sagaForm = sagaForm.toAINormalize(),
                 miniChatContent = miniChatContent.joinToString("\n") { "${it.sender.name}: ${it.text}" },
                 availableVariations = variationsBlock,
@@ -165,11 +163,11 @@ object NewSagaPrompts {
         promptService: PromptService,
         character: Character,
         saga: Saga,
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val args =
             CharacterSavedArgs(
-                companionPersona = companion?.persona ?: "",
+                companionPersona = identity,
                 characterName = character.name,
                 characterBackstory = character.backstory,
                 sagaTitle = saga.title,
@@ -181,12 +179,12 @@ object NewSagaPrompts {
 
     suspend fun introPrompt(
         promptService: PromptService,
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val args =
             IntroPromptArgs(
-                companionPersona = companion?.persona ?: "",
-                conversationalStyle = companion?.conversationalStyle ?: "",
+                companionPersona = identity,
+                conversationalStyle = identity,
                 genreEnumNames = Genre.entries.joinToString(", ") { it.name },
             )
 
@@ -196,11 +194,11 @@ object NewSagaPrompts {
     suspend fun genreAdaptationPrompt(
         promptService: PromptService,
         currentDraft: SagaDraft,
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val args =
             GenreAdaptationArgs(
-                companionPersona = companion?.persona ?: "",
+                companionPersona = identity,
                 genreName = currentDraft.genre.name,
                 currentDraft = currentDraft.toAINormalize(),
             )
@@ -211,11 +209,11 @@ object NewSagaPrompts {
     suspend fun genreSuggestionsPrompt(
         promptService: PromptService,
         genre: Genre,
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val args =
             GenreSuggestionsArgs(
-                companionPersona = companion?.persona ?: "",
+                companionPersona = identity,
                 genreName = genre.name,
             )
 
@@ -226,11 +224,11 @@ object NewSagaPrompts {
         promptService: PromptService,
         rawInput: String,
         genre: Genre,
-        companion: GenreConfig.CompanionConfig? = null,
+        identity: String = "",
     ): String {
         val args =
             NewSagaRefineDraftArgs(
-                companionPersona = companion?.persona ?: "",
+                companionPersona = identity,
                 rawInput = rawInput,
                 genreName = genre.name,
             )
@@ -244,22 +242,13 @@ object NewSagaPrompts {
         sagaDraft: SagaDraft?,
         characterInfo: CharacterInfo?,
         genreConfig: GenreConfig?,
+        flowSpecificObjectives: String,
     ): String {
-        val flowSpecificObjectives =
-            when (flow) {
-                FlowPages.CREATE_SAGA -> "Title: Humorous CTA. Subtitle: Witty nudge. Input Hint: Inspiring prompt. Suggestions: 3 wild story seeds."
-                FlowPages.CREATE_CHARACTER -> "Title: Character CTA. Subtitle: Funny nudge. Input Hint: Targeted prompt. Suggestions: 3 archetypes."
-                FlowPages.SELECT_THEME -> "Title: Welcoming CTA. Subtitle: Witty nudge. Input Hint: None. Suggestions: None."
-                else -> ""
-            }
-
         val args =
             CreationAssistArgs(
-                companionPersona = genreConfig?.companion?.persona ?: "",
-                conversationalStyle =
-                    genreConfig?.companion?.let { it.conversationalStyle }
-                        ?: genreConfig?.let { it.conversationDirective } ?: "",
-                flowName = flow.name,
+                companionPersona = "",
+                conversationalStyle = "",
+                flowPageName = flow.name,
                 genreName = sagaDraft?.genre?.name ?: "N/A",
                 sagaDraft = sagaDraft?.toAINormalize() ?: "",
                 characterInfo = characterInfo?.toAINormalize() ?: "",

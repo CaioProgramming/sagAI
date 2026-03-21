@@ -1,23 +1,18 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.home.data.model.getCurrentMessages
-import com.ilustris.sagai.features.home.data.model.getDirective
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-
 
 data class TypoFixArgs(
     val sagaMainContext: String,
@@ -25,7 +20,6 @@ data class TypoFixArgs(
     val conversationDirective: String,
     val recentContext: String,
     val message: String,
-    val outputStructure: String,
 )
 
 data class ReactionArgs(
@@ -51,6 +45,7 @@ data class ReplyMessageArgs(
     val backgroundContinuityContent: String,
     val conversationDirective: String,
     val latestMessageContent: String,
+    val genreConversationSoul: String,
 )
 
 data class SceneSummaryArgs(
@@ -121,12 +116,11 @@ object ChatPrompts {
     @Suppress("ktlint:standard:max-line-length")
     suspend fun replyMessagePrompt(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
-        narrativeRules: NarrativeRules,
         saga: SagaContent,
         message: Message,
         sceneSummary: SceneSummary?,
-        config: GenreConfig,
+        conversationDirective: String,
+        updateLimit: Int,
     ): String {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
@@ -141,7 +135,7 @@ object ChatPrompts {
 
         val relationshipsBlock =
             charactersInScene?.joinToString("\n") { characterContent ->
-                "- ${characterContent.data.name} relationships: ${
+                "- ${characterContent.data.name}: ${
                     characterContent.summarizeRelationships(
                         1,
                     )
@@ -154,68 +148,54 @@ object ChatPrompts {
             externalCharacters
                 .map {
                     it.copy(
-                        backstory = if (it.backstory.length > 150) it.backstory.take(150) + "..." else it.backstory,
-                        knowledge = emptyList(),
+                        backstory = it.backstory,
+                        knowledge = it.knowledge?.takeLast(10) ?: emptyList(),
                     )
                 }.normalizetoAIItems(characterExclusions)
 
-        val args =
-            ReplyMessageArgs(
-                sceneSummary =
-                    sceneSummary?.toAINormalize(
-                        listOf(
-                            "establishedFacts",
-                            "worldStateChanges",
-                            "possibleOutcomes",
-                        ),
-                    ) ?: "",
-                charactersInScene = CharacterPrompts.charactersOverview(nonMainCharacters),
-                relationshipsBlock = relationshipsBlock,
-                recentChanges =
-                    sceneSummary?.worldStateChanges?.joinToString("\n") { "- $it" }
-                        ?: "",
-                narrativeGuidance =
-                    sceneSummary?.possibleOutcomes?.joinToString("\n") { "- $it" }
-                        ?: "",
-                conversationHistory = conversationHistory(promptDirectives, saga),
-                actDirective = saga.getDirective(narrativeRules),
-                sagaMainContext = SagaPrompts.mainContext(saga),
-                externalCharactersContent = externalCharactersContent,
-                backgroundContinuityContent =
-                    sceneSummary?.establishedFacts?.joinToString("\n") { "- $it" }
-                        ?: "",
-                conversationDirective = config.conversationDirective,
-                latestMessageContent = message.toAINormalize(messageExclusions),
+        val argsMap =
+            mutableMapOf(
+                "sceneContext" to (sceneSummary?.toAINormalize() ?: ""),
+                "charactersPresent" to CharacterPrompts.charactersOverview(nonMainCharacters),
+                "relationshipsBlock" to relationshipsBlock,
+                "conversationHistory" to conversationHistory(updateLimit, saga),
+                "actDirective" to
+                    promptService.buildRemotePrompt(
+                        saga.getDirectiveKey(),
+                        emptyMap(),
+                    ),
+                "sagaMainContext" to SagaPrompts.mainContext(saga),
+                "externalCharacters" to externalCharactersContent,
+                "conversationDirective" to conversationDirective,
+                "latestMessage" to message.toAINormalize(messageExclusions),
+                "genreConversationSoul" to conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("reply_generation_blueprint", args)
+        return promptService.buildRemotePrompt("reply_generation_blueprint", argsMap)
     }
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun checkForTypo(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
-        config: GenreConfig,
+        conversationDirective: String,
+        updateLimit: Int,
         message: String,
-        lastMessage: Message? = null,
     ): String {
         val recentContext =
-            lastMessage?.let {
-                promptService.buildPrompt(
-                    promptDirectives.recentContext.ifBlank { StorytellingDirective.RECENT_CONTEXT },
-                    mapOf("message" to it.text),
-                )
-            } ?: ""
+            conversationHistory(
+                updateLimit,
+                saga,
+                1,
+            )
 
         val args =
             TypoFixArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
                 genreName = saga.data.genre.name,
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
                 recentContext = recentContext,
                 message = message,
-                outputStructure = toJsonMap(TypoFix::class.java),
             )
 
         return promptService.buildRemotePrompt("chat_writing_pal_blueprint", args)
@@ -223,11 +203,10 @@ object ChatPrompts {
 
     suspend fun generateReactionPrompt(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         summary: SceneSummary,
         saga: SagaContent,
         messageToReact: Message,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val mainCharacter = saga.mainCharacter!!
         val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
@@ -247,7 +226,7 @@ object ChatPrompts {
                 charactersPresent = summary.charactersPresent.joinToString(),
                 messageToReact = messageToReact.text,
                 relationshipsBlock = relationshipsBlock,
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
                 genreName = saga.data.genre.name,
             )
 
@@ -256,13 +235,13 @@ object ChatPrompts {
 
     suspend fun sceneSummarizationPrompt(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
+        rules: NarrativeRules,
     ): String {
         val historicalContext =
             buildString {
                 saga.acts.forEach {
-                    appendLine(it.actSummary(saga, false))
+                    appendLine(it.actSummary(false))
                 }
             }
 
@@ -272,23 +251,21 @@ object ChatPrompts {
         val args =
             SceneSummaryArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
-                activeSegmentSummary = saga.currentActInfo?.actSummary(saga, true) ?: "",
+                activeSegmentSummary = saga.currentActInfo?.actSummary(true) ?: "",
                 historicalContext = historicalContext,
-                conversationHistory = conversationHistory(promptDirectives, saga),
+                conversationHistory = conversationHistory(rules.loreUpdateLimit, saga),
                 latestMessageContent = latestMessageContent,
             )
 
         return promptService.buildRemotePrompt("scene_summarization_blueprint", args)
     }
 
-
     suspend fun scheduledNotificationPrompt(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
         selectedCharacter: CharacterContent,
         sceneSummary: SceneSummary,
-        config: GenreConfig,
+        conversationDirective: String,
     ): String {
         val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
         val relationshipBlock = relationWithCharacter?.summarizeRelation(1) ?: ""
@@ -299,51 +276,35 @@ object ChatPrompts {
                 sceneSummaryContent = sceneSummary.toAINormalize(),
                 characterContext = selectedCharacter.data.toAINormalize(characterExclusions),
                 relationshipBlock = relationshipBlock,
-                conversationHistory = conversationHistory(promptDirectives, saga),
+                conversationHistory = conversationHistory(10, saga),
                 characterName = selectedCharacter.data.name,
                 sagaMainCharName = saga.mainCharacter.data.name,
-                conversationDirective = config.conversationDirective,
+                conversationDirective = conversationDirective,
             )
 
         return promptService.buildRemotePrompt("chat_notification_blueprint", args)
     }
 
     fun conversationHistory(
-        promptDirectives: PromptDirectives,
+        loreUpdateLimit: Int,
         saga: SagaContent,
-        threshold: Int = UpdateRules.LORE_UPDATE_LIMIT,
+        threshold: Int = loreUpdateLimit,
     ) = buildString {
+        val currentTimeline = saga.getCurrentTimeLine()
         val currentMessages =
-            saga
-                .getCurrentMessages()
-                ?.sortedBy { it.timestamp }
-                ?: emptyList()
-
-        val header =
-            promptDirectives.conversationHistory.ifBlank {
-                StorytellingDirective.CONVERSATION_HISTORY
+            currentTimeline?.let {
+                if (it.messages.size >= loreUpdateLimit / 2) {
+                    it.messages.map { it.message }.sortedBy { it.timestamp }
+                } else {
+                    saga.flatMessages().map { it.message }.sortedBy { it.timestamp }
+                }
+            } ?: run {
+                saga.flatMessages().map { it.message }.sortedBy { it.timestamp }
             }
-
-        if (currentMessages.size >= 5) {
-            appendLine(header)
-            appendLine(
-                currentMessages
-                    .takeLast(threshold)
-                    .normalizetoAIItems(excludingFields = messageExclusions),
-            )
-        } else {
-            val recentGlobalMessages =
-                saga
-                    .flatMessages()
-                    .map { it.message }
-                    .sortedBy { it.timestamp }
-                    .takeLast(threshold)
-
-            appendLine(header)
-            appendLine(
-                recentGlobalMessages
-                    .normalizetoAIItems(excludingFields = messageExclusions),
-            )
-        }
+        appendLine(
+            currentMessages
+                .takeLast(threshold)
+                .normalizetoAIItems(excludingFields = messageExclusions),
+        )
     }
 }

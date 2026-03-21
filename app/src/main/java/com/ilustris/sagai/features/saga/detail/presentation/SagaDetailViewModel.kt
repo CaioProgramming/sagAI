@@ -4,12 +4,14 @@ import android.graphics.Bitmap
 import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -33,7 +35,7 @@ class SagaDetailViewModel
     @Inject
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
-        private val remoteConfig: FirebaseRemoteConfig,
+        private val remoteConfig: RemoteConfigService,
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val visualConfigService: GenreVisualConfigService,
@@ -58,11 +60,12 @@ class SagaDetailViewModel
         val sagaResume = MutableStateFlow<String?>(null)
         val isSummarizingSaga = MutableStateFlow(false)
         val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
+        val narrativeRules = MutableStateFlow<NarrativeRules?>(null)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
-                remoteConfig.fetchAndActivate()
-                emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
+                val emotionalCard = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
+                emotionalCard?.let { emotionalCardReference.emit(it) }
             }
         }
 
@@ -73,7 +76,6 @@ class SagaDetailViewModel
         fun fetchSagaDetails(sagaId: String) {
             showIntro.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
                 _state.value = State.Loading
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
                     saga?.let { data ->
@@ -102,6 +104,7 @@ class SagaDetailViewModel
                         launchIntroSequence()
                     }
                 }
+                narrativeRules.emit(remoteConfig.getNarrativeRules())
             }
         }
 
@@ -180,13 +183,14 @@ class SagaDetailViewModel
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
                 resetReview()
-                sagaDetailUseCase.regenerateSagaIcon(
-                    currentSaga,
-                ).onFailure {
-                    if (it is BillingService.PremiumException) {
-                        showPremiumSheet.value = true
+                sagaDetailUseCase
+                    .regenerateSagaIcon(
+                        currentSaga,
+                    ).onFailure {
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
                     }
-                }
                 isGenerating.value = false
                 _loadingMessage.value = null
             }

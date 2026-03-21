@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.model.GenreConfig.CompanionConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -11,7 +10,6 @@ data class CongratsMilestoneArgs(
     val milestoneContext: String,
     val genreName: String,
     val persona: String,
-    val genreTone: String,
     val conversationalStyle: String,
     val referencePoints: String,
 )
@@ -46,18 +44,19 @@ object MilestonePrompts {
         promptService: PromptService,
         milestone: SagaMilestone,
         saga: SagaContent,
-        companion: CompanionConfig?,
+        identity: String,
     ): String? {
+        saga.data.genre
         if (milestone is SagaMilestone.Introduction) {
-            return rewriteIntroduction(promptService, milestone, saga, companion)
+            return rewriteIntroduction(promptService, milestone, saga, identity)
         }
 
         if (milestone is SagaMilestone.Loading) {
-            return generateLoadingMessage(promptService, saga, companion)
+            return generateLoadingMessage(promptService, saga, identity)
         }
 
         if (milestone is SagaMilestone.NewCharacter) {
-            return generateNewCharacterMessage(promptService, milestone, saga, companion)
+            return generateNewCharacterMessage(promptService, milestone, saga, identity)
         }
 
         if (milestone is SagaMilestone.CurrentObjective) {
@@ -76,10 +75,8 @@ object MilestonePrompts {
                     ),
                 genreName = saga.data.genre.name,
                 persona =
-                    companion?.persona
-                        ?: "Enjoys commenting playfully on story twists and turns.",
-                genreTone = companion?.tone ?: "",
-                conversationalStyle = companion?.conversationalStyle ?: "Be creatively conversational.",
+                identity,
+                conversationalStyle = identity,
                 referencePoints = getReferencePoints(milestone),
             )
 
@@ -89,13 +86,13 @@ object MilestonePrompts {
     suspend fun generateLoadingMessage(
         promptService: PromptService,
         saga: SagaContent,
-        companion: CompanionConfig?,
+        identity: String,
     ): String {
         val args =
             LoadingMessageArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
                 genreName = saga.data.genre.name,
-                interludeStyle = companion?.interludeStyle ?: "A funny short loading text string",
+                interludeStyle = identity,
             )
         return promptService.buildRemotePrompt("loading_message_blueprint", args)
     }
@@ -104,16 +101,16 @@ object MilestonePrompts {
         promptService: PromptService,
         milestone: SagaMilestone.NewCharacter,
         saga: SagaContent,
-        companion: CompanionConfig?,
+        identity: String,
     ): String {
         val args =
             NewCharacterMilestoneArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
                 newCharacterInfo = milestone.character.toAINormalize(fieldsToExclude = ChatPrompts.characterExclusions),
                 genreName = saga.data.genre.name,
-                persona = companion?.persona ?: "Observes new allies with skepticism and amusement.",
-                genreTone = companion?.tone ?: "",
-            conversationalStyle = companion?.conversationalStyle ?: "Greet them creatively.",
+                persona = identity,
+                genreTone = identity,
+                conversationalStyle = identity,
             )
         return promptService.buildRemotePrompt("new_character_milestone_blueprint", args)
     }
@@ -124,27 +121,34 @@ object MilestonePrompts {
                 ""
             }
 
-            is SagaMilestone.NewEvent ->
+            is SagaMilestone.NewEvent -> {
                 """
                 - The event title and what actually happened
                 - Characters involved and their relationships
                 - Plot importance and emotional impact
                 """.trimIndent()
+            }
 
-            is SagaMilestone.ChapterFinished -> """
+            is SagaMilestone.ChapterFinished -> {
+                """
                 - Chapter title and the arc it covered
                 - Major plot points and character developments
-            """.trimIndent()
+                """.trimIndent()
+            }
 
-            is SagaMilestone.ActFinished -> """
+            is SagaMilestone.ActFinished -> {
+                """
                 - Act title and its scope within the saga
                 - Major themes and conflicts resolved
                 """.trimIndent()
+            }
 
-            is SagaMilestone.CurrentObjective -> """
+            is SagaMilestone.CurrentObjective -> {
+                """
                 - The actual objective they need to achieve
                 - Stakes and why it matters to the story
                 """.trimIndent()
+            }
 
             else -> {
                 ""
@@ -155,7 +159,7 @@ object MilestonePrompts {
         promptService: PromptService,
         milestone: SagaMilestone.Introduction,
         saga: SagaContent,
-        companion: CompanionConfig?,
+        identity: String,
     ): String {
         val summary = milestone.sceneSummary
         val sceneContextSynthesize =
@@ -182,13 +186,13 @@ object MilestonePrompts {
         val args =
             IntroMilestoneArgs(
                 genreName = saga.data.genre.name,
-            sagaMainContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
-            sceneContextSynthesize = sceneContextSynthesize,
-            originalTextRewrite = milestone.introduction,
-            milestoneTypeContext = milestoneTypeContext,
-            persona = companion?.persona ?: "Enjoys observing heroes face their fate.",
-            genreTone = companion?.tone ?: ""
-        )
+                sagaMainContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
+                sceneContextSynthesize = sceneContextSynthesize,
+                originalTextRewrite = milestone.introduction,
+                milestoneTypeContext = milestoneTypeContext,
+                persona = identity,
+                genreTone = identity,
+            )
 
         return promptService.buildRemotePrompt("intro_milestone_blueprint", args)
     }

@@ -20,9 +20,10 @@ import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SagaMediaService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
-import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -76,6 +77,7 @@ class ChatViewModel
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val scheduledNotificationService: ScheduledNotificationService,
         private val visualConfigService: GenreVisualConfigService,
+        private val remoteConfigService: RemoteConfigService,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -534,7 +536,7 @@ class ChatViewModel
             stateManager.updateInput(TextFieldValue(""))
         }
 
-    private fun observeSaga() =
+        private fun observeSaga() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.content
                     .distinctUntilChanged { old, new ->
@@ -572,12 +574,22 @@ class ChatViewModel
                         Log.d("ChatViewModel", "Fetched visual config: $visualConfig")
                         stateManager.updateVisualConfig(visualConfig)
 
+                        val rules =
+                            remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
+                                Log.e(
+                                    this@ChatViewModel.javaClass.simpleName,
+                                    "observeSaga: Couldn't fetch rules",
+                                )
+                                return@collectLatest
+                            }
+
                         // Cache flatMessages to avoid multiple traversals
                         val flatMessages = sagaContent.flatMessages()
                         val currentMessageCount = flatMessages.size
                         val messagesChanged = currentMessageCount != lastMessageCount
 
-                        val messages = SagaContentUIMapper.mapToActDisplayData(sagaContent.acts)
+                        val messages =
+                            SagaContentUIMapper.mapToActDisplayData(sagaContent.acts, rules)
 
                         // Only re-sort characters when message count changes (expensive operation)
                         val characters =
@@ -657,26 +669,28 @@ class ChatViewModel
         }
 
         private fun updateProgress(sagaContent: SagaContent) {
-            val progress =
-                when {
-                    sagaContent.isComplete() -> {
-                        1f
-                    }
+            viewModelScope.launch {
+                val rules =
+                    remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: return@launch
+                val progress =
+                    when {
+                        sagaContent.isComplete(rules) -> {
+                            1f
+                        }
 
-                    (
-                        sagaContent.getCurrentTimeLine()?.messages?.size
-                            ?: 0
-                    ) < UpdateRules.LORE_UPDATE_LIMIT -> {
-                        val messageCount = sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
-                        val maxCount = UpdateRules.LORE_UPDATE_LIMIT
-                        messageCount.toFloat() / maxCount.toFloat()
-                    }
+                        sagaContent.getCurrentTimeLine() != null -> {
+                            val updateLimit = rules?.loreUpdateLimit ?: 10
+                            val messageCount = sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
+                            val maxCount = updateLimit
+                            messageCount.toFloat() / maxCount.toFloat()
+                        }
 
-                    else -> {
-                        0f
+                        else -> {
+                            0f
+                        }
                     }
-                }
-            stateManager.updateState { it.copy(loreUpdateProgress = progress) }
+                stateManager.updateState { it.copy(loreUpdateProgress = progress) }
+            }
         }
 
         private fun checkIfUpdatesService(sagaContent: SagaContent) {
@@ -839,8 +853,8 @@ class ChatViewModel
             )
         }
 
-        override fun onDestroy(owner: LifecycleOwner) {
-            super.onDestroy(owner)
+        override fun onStop(owner: LifecycleOwner) {
+            super.onStop(owner)
             val saga = uiState.value.sagaContent
             if (saga != null) {
                 viewModelScope.launch(Dispatchers.IO) {
@@ -947,6 +961,13 @@ class ChatViewModel
 
                 if (isAudio) {
                     checkTypo(isAudio)
+                    return@launch
+                }
+
+                val shouldSkipBalance = isAudio || kotlin.random.Random.nextFloat() < 0.35f
+
+                if (!shouldSkipBalance) {
+                    startPendingSend(isAudio)
                     return@launch
                 }
 

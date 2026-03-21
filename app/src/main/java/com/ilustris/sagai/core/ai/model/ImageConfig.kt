@@ -17,6 +17,8 @@ data class ImageTypeConfig(
     val artist: String = "",
     @SerializedName("reviewer")
     val reviewer: String = "",
+    @SerializedName("config")
+    val config: String = "",
     @SerializedName("aspectRatio")
     val aspectRatio: String? = null,
 ) {

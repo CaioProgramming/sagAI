@@ -6,10 +6,15 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -38,8 +43,9 @@ class ChapterUseCaseImpl
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: PromptService,
+        private val genreConfigService: GenreConfigService,
+        private val remoteConfigService: RemoteConfigService,
     ) : ChapterUseCase {
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
@@ -112,19 +118,38 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapterContent: ChapterContent,
         ) = executeRequest {
+            val rules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
             val emotionalReview =
                 emotionalUseCase
                     .generateEmotionalReview(
                         saga,
                         buildString {
-                            appendLine("Chapter Title: ${chapterContent.data.title}")
-                            appendLine("Chapter Introduction: ${chapterContent.data.introduction}")
-                            chapterContent.events.filter { it.isComplete() }.forEach { event ->
-                                appendLine("Event Title: ${event.data.title}")
-                                appendLine("Event description: ${event.data.content}")
-                                appendLine("Event emotional review: ${event.data.emotionalReview}")
-                                appendLine("Event emotional ranking: ${event.emotionalRanking(saga.mainCharacter?.data)}")
-                            }
+                            appendLine(
+                                chapterContent.data.toAINormalize(
+                                    listOf(
+                                        "id",
+                                        "sagaId",
+                                        "currentEventId",
+                                        "coverImage",
+                                        "createdAt",
+                                        "actId",
+                                        "featuredCharacters",
+                                    ),
+                                ),
+                            )
+                            appendLine(
+                                chapterContent.events
+                                    .filter { it.isComplete(rules) }
+                                    .map { it.data }
+                                    .toAINormalize(
+                                        listOf(
+                                            "id",
+                                            "chapterId",
+                                            "createdAt",
+                                            "currentEventId",
+                                        ),
+                                    ),
+                            )
                         },
                     ).getSuccess()!!
 
@@ -167,7 +192,8 @@ class ChapterUseCaseImpl
         }
 
         private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
-            val emptyEvents = chapter.events.filter { it.isComplete().not() }.map { it.data }
+            val rules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+            val emptyEvents = chapter.events.filter { it.isComplete(rules).not() }.map { it.data }
             if (emptyEvents.isEmpty()) {
                 Log.w(javaClass.simpleName, "cleanUpEmptyTimeLines: No timelines to clean up")
                 return
@@ -266,8 +292,14 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             currentChapter: ChapterContent,
         ): String {
-            val config = genreConfigService.getGenreConfig(saga.data.genre)
-            return ChapterPrompts.chapterGeneration(promptService, saga, currentChapter, config)
+            val conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre)
+            return ChapterPrompts.chapterGeneration(
+                promptService,
+                saga,
+                currentChapter,
+                remoteConfigService.getNarrativeRules(),
+                conversationDirective,
+            )
         }
 
         override suspend fun generateChapterIntroduction(
@@ -276,14 +308,15 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(saga.data.genre)
+                genreConfigService.getGenreConfig(saga.data.genre)
                 val prompt =
                     ChapterPrompts.chapterIntroductionPrompt(
                         promptService,
                         saga,
                         chapter,
                         act,
-                        config,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                        remoteConfigService.getNarrativeRules(),
                     )
                 val intro =
                     gemmaClient.generate<String>(

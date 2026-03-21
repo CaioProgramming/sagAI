@@ -20,7 +20,9 @@ data class Chapter(
     @ColumnInfo(index = true)
     val actId: Int,
     val featuredCharacters: List<Int> = emptyList(),
-)
+) {
+    fun isEmpty() = title.isEmpty() && overview.isEmpty()
+}
 
 data class ChapterGeneration(
     val title: String,

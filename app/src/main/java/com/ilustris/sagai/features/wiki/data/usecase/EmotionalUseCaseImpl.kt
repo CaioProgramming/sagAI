@@ -21,14 +21,15 @@ class EmotionalUseCaseImpl
             context: String,
         ): RequestResult<String> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(sagaContent.data.genre)
                 val prompt =
                     EmotionalPrompt.generateEmotionalReview(
                         promptService,
                         promptService.getPromptDirectives(),
                         sagaContent,
                         context,
-                        config,
+                        conversationDirective,
                     )
                 gemmaClient
                     .generate<String>(
@@ -43,14 +44,16 @@ class EmotionalUseCaseImpl
         ): RequestResult<String> =
             executeRequest {
                 if (emotionalSummary.isEmpty()) error("No summary provided can't generate profile.")
-                val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(sagaContent.data.genre)
                 gemmaClient.generate<String>(
                     prompt =
                         EmotionalPrompt.generateEmotionalProfile(
                             promptService,
                             promptService.getPromptDirectives(),
+                            sagaContent,
                             emotionalSummary,
-                            config,
+                            conversationDirective,
                         ),
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
@@ -58,14 +61,15 @@ class EmotionalUseCaseImpl
 
         override suspend fun generateEmotionalConclusion(sagaContent: SagaContent): RequestResult<String> =
             executeRequest {
-                val config = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(sagaContent.data.genre)
                 gemmaClient.generate<String>(
                     prompt =
                         EmotionalPrompt.generateEmotionalConclusion(
                             promptService,
                             promptService.getPromptDirectives(),
                             sagaContent,
-                            config,
+                            conversationDirective,
                         ),
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!

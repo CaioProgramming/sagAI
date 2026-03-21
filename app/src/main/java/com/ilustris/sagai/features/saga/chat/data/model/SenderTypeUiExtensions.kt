@@ -33,11 +33,11 @@ val SenderType.tag: ExpressiveTag?
 @DrawableRes
 fun SenderType.icon(): Int =
     when (this) {
-        SenderType.USER -> R.drawable.ic_send
+        SenderType.USER -> R.drawable.ic_spark
         SenderType.CHARACTER -> R.drawable.ic_spark
-        SenderType.NARRATOR -> R.drawable.ic_note
-        SenderType.ACTION -> R.drawable.ic_feather
-        SenderType.THOUGHT -> R.drawable.ic_lamp
+        SenderType.NARRATOR -> R.drawable.ic_feather
+        SenderType.ACTION -> R.drawable.action_icon
+        SenderType.THOUGHT -> R.drawable.think_icon
     }
 
 /** Short display title resource for this sender type. */

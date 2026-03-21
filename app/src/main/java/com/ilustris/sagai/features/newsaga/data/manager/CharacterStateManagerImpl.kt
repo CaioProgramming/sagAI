@@ -231,6 +231,6 @@ class CharacterStateManagerImpl
                 }.onFailure { e ->
                     Log.e(javaClass.simpleName, "refineDraft: Error", e)
                 }
-        updateLoading(false)
-    }
+            updateLoading(false)
+        }
     }

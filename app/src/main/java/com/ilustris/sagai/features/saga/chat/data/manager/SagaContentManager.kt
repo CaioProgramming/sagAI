@@ -33,8 +33,6 @@ interface SagaContentManager {
 
     suspend fun generateCharacterImage(character: Character): RequestResult<Character>
 
-    fun getDirective(): String
-
     fun setDebugMode(enabled: Boolean)
 
     fun isInDebugMode(): Boolean

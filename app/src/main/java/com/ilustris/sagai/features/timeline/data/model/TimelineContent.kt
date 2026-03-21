@@ -1,14 +1,13 @@
 package com.ilustris.sagai.features.timeline.data.model
 
 import androidx.room.Embedded
-import androidx.room.Junction // Import Junction
+import androidx.room.Junction
 import androidx.room.Relation
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.features.characters.data.model.Character // Already imported
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
-// Import RelationshipContent and RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -56,10 +55,10 @@ data class TimelineContent(
     )
     val newlyAppearedCharacters: List<Character> = emptyList(),
 ) {
-    fun isFull(): Boolean = messages.size >= UpdateRules.LORE_UPDATE_LIMIT
+    fun isFull(loreLimit: Int): Boolean = messages.size >= loreLimit
 
-    fun isComplete(): Boolean =
-        isFull() &&
+    fun isComplete(narrativeRules: NarrativeRules): Boolean =
+        isFull(narrativeRules.loreUpdateLimit) &&
             data.title.isNotEmpty() &&
             data.content.isNotEmpty()
 

@@ -52,7 +52,7 @@ object ReviewPrompts {
         val args =
             ReviewIntroArgs(
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
-                conversationDirective = config?.conversationDirective ?: "",
+                conversationDirective = "",
             )
         return promptService.buildRemotePrompt("review_introduction_blueprint", args)
     }
@@ -71,7 +71,7 @@ object ReviewPrompts {
                 playTime = playTime,
                 peakHour = "${mostActiveHour}h",
                 interactionCount = totalExpressive.toString(),
-                conversationDirective = config?.conversationDirective ?: "",
+                conversationDirective = "",
             )
         return promptService.buildRemotePrompt("review_playstyle_blueprint", args)
     }
@@ -87,7 +87,7 @@ object ReviewPrompts {
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
                 emotionalRank = emotionalRank.joinToString { it.first.name },
                 emotionalSummary = saga.emotionalSummary(),
-                conversationDirective = config?.conversationDirective ?: "",
+                conversationDirective = "",
             )
         return promptService.buildRemotePrompt("review_expressiveness_blueprint", args)
     }
@@ -102,7 +102,7 @@ object ReviewPrompts {
             ReviewConnectionsArgs(
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
                 topBonds = topCharacters.joinToString { it.first },
-                conversationDirective = config?.conversationDirective ?: "",
+                conversationDirective = "",
             )
         return promptService.buildRemotePrompt("review_connections_blueprint", args)
     }
@@ -116,7 +116,7 @@ object ReviewPrompts {
             ReviewActsInsightArgs(
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
                 worldHistory = saga.acts.joinToString { it.data.title },
-                conversationDirective = config?.conversationDirective ?: "",
+                conversationDirective = "",
             )
         return promptService.buildRemotePrompt("review_acts_insight_blueprint", args)
     }
@@ -129,8 +129,8 @@ object ReviewPrompts {
         val args =
             ReviewConclusionArgs(
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
-                conversationDirective = config?.conversationDirective ?: ""
-        )
+                conversationDirective = "",
+            )
         return promptService.buildRemotePrompt("review_conclusion_blueprint", args)
     }
 }

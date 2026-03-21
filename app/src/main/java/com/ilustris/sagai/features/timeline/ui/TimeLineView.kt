@@ -234,7 +234,7 @@ fun TimeLineContent(
                     }
 
                     items(
-                        chapter.events.filter { it.isComplete() },
+                        chapter.events.filter { it.data.isEmpty().not() },
                         key = {
                             DetailAction.TIMELINE.sharedElementItemKey(
                                 saga.data.id,
