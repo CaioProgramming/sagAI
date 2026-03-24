@@ -310,8 +310,8 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     var cleanedJsonString = this!!
     Log.i(logTag, "Sanitizing raw string: $cleanedJsonString")
 
-    // 1. Remove common markdown code block delimiters
-    cleanedJsonString = cleanedJsonString.replace("```json", "").replace("```", "")
+    // 1. Remove common markdown code block delimiters (e.g., ```json, ```text, ```)
+    cleanedJsonString = cleanedJsonString.replace(Regex("```[a-zA-Z]*"), "").replace("```", "")
 
     // 2. Trim leading/trailing whitespace
     cleanedJsonString = cleanedJsonString.trim()

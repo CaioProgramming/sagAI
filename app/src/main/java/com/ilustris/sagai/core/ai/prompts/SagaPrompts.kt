@@ -64,6 +64,7 @@ object SagaPrompts {
         ommitCharacter: Boolean = false,
     ) = buildString {
         val selectedCharacter = character ?: saga.mainCharacter
+        appendLine("Story: ")
         appendLine(saga.data.toAINormalize(ChatPrompts.sagaExclusions))
         if (ommitCharacter.not()) {
             selectedCharacter?.let {

@@ -387,7 +387,7 @@ fun charactersStyleRules(
             offset = Offset(.5f, .3f),
         )
 
-    val mainColor = if (character.id == mainCharacter?.id) genreColor else characterColor
+    val mainColor = characterColor
     val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
     val span =
         SpanStyle(

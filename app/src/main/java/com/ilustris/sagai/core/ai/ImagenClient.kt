@@ -10,6 +10,7 @@ import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImagePromptReview
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -17,7 +18,6 @@ import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
-import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
@@ -50,7 +50,6 @@ class ImagenClientImpl
         private val imageConfigService: ImageConfigService,
         private val gemmaClient: GemmaClient,
         private val analyticsService: AnalyticsService,
-        private val promptService: PromptService,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -64,6 +63,7 @@ class ImagenClientImpl
         private suspend fun generateImage(
             prompt: String,
             references: List<ImageReference>,
+            aspectRatio: String? = null,
         ): Bitmap? {
             val modelName = modelName()
             val logData =
@@ -92,6 +92,9 @@ class ImagenClientImpl
                 val promptBuilder =
                     content {
                         text(prompt.trimIndent())
+                        aspectRatio?.let {
+                            text("Aspect Ratio: $it")
+                        }
                         references.forEach {
                             image(it.bitmap)
                             text(it.description)
@@ -128,12 +131,9 @@ class ImagenClientImpl
                         "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name} | Variation: $variationId",
                     )
 
-                    // 0. FETCH CONFIGS — fetch once, pass down
+                    // 0. FETCH CONFIGS
                     val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
-                    val genreVisualSoul = genreConfigService.visualSoulBlueprint(genre)
-                    val renderingMandate = genreConfigService.renderingBlueprint(genre)
-
-                    val typeConfigBlueprint = imageConfigService.getImageConfig(imageType)
+                    val imageConfig = imageConfigService.getImageConfig()
 
                     // 1. VISUAL DIRECTOR ANALYSIS
                     val visualDirection =
@@ -141,8 +141,8 @@ class ImagenClientImpl
                             context,
                             genre,
                             genreConfig,
+                            imageConfig,
                             imageType,
-                            genreVisualSoul,
                         ).getSuccess()
                     Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
 
@@ -151,19 +151,20 @@ class ImagenClientImpl
                         generateArtisticPrompt(
                             genre,
                             genreConfig,
+                            imageConfig,
                             imageType,
-                            genreVisualSoul,
                             visualDirection,
                             context,
                         ).getSuccess() ?: error("Failed to generate base artistic prompt")
 
+                    // 3. REVIEWER CONCLUSION
                     val reviewedResult =
                         reviewAndCorrectPrompt(
                             imageType = imageType,
                             visualDirection = visualDirection,
                             genreConfig = genreConfig,
+                            imageConfig = imageConfig,
                             genre = genre,
-                            genreVisualSoul = genreVisualSoul,
                             finalPrompt = artisticPrompt,
                             context = context,
                         ).getSuccess()
@@ -173,28 +174,40 @@ class ImagenClientImpl
                     } ?: run {
                         Log.e(TAG, "generateIntegratedImage: Failed to review")
                     }
+                    val typeConfig = imageConfig.typeConfigs[imageType.name]
+                    val finalAspectRatio =
+                        when (imageType) {
+                            ImageType.ICON -> {
+                                genreConfig.iconAspectRatio ?: typeConfig?.aspectRatio
+                            }
 
+                            ImageType.COVER -> {
+                                genreConfig.coverAspectRatio
+                                    ?: typeConfig?.aspectRatio
+                            }
+                        }
                     val finalPrompt =
                         buildString {
-                            appendLine(genreVisualSoul)
+                            appendLine(genreConfig.artStyle)
                             appendLine(reviewedResult?.correctedPrompt ?: artisticPrompt)
-                            appendLine("RENDER INSTRUCTIONS: ")
-                            appendLine(renderingMandate)
-                            appendLine("TECHNICAL CONFIGURATION")
-                            appendLine(typeConfigBlueprint)
+                            appendLine("Critical rules: ")
+                            appendLine(imageConfig.criticalRules)
+                            appendLine("Rendering Instructions: ")
+                            appendLine(genreConfig.renderingInstructions)
+                            appendLine("Aspect Ratio: $finalAspectRatio")
                         }
-
                     Log.d(
                         TAG,
                         buildString {
                             appendLine("Image generation pipeline execution: ")
                             appendLine("context: $context")
                             appendLine("genre: ${genre.name}")
+                            appendLine("genreConfig: ${genreConfig.toJsonFormat()}")
+                            appendLine("imageConfig: ${imageConfig.toJsonFormat()}")
                             appendLine("visualDirection: $visualDirection")
                             appendLine("artisticPrompt: $artisticPrompt")
-                            appendLine("renderingMandate: $renderingMandate")
                             appendLine("finalPrompt: $finalPrompt")
-                            appendLine("Configuration: $typeConfigBlueprint")
+                            appendLine("Aspect Ratio: $finalAspectRatio")
                             appendLine("Revisions: ${reviewedResult.toJsonFormat()}")
                         },
                     )
@@ -203,6 +216,7 @@ class ImagenClientImpl
                         generateImage(
                             finalPrompt,
                             references = emptyList(),
+                            aspectRatio = finalAspectRatio,
                         )
 
                     if (generatedImage == null) {
@@ -219,15 +233,14 @@ class ImagenClientImpl
             context: String,
             genre: Genre,
             genreConfig: GenreConfig?,
+            imageConfig: ImageConfig,
             imageType: ImageType,
-            genreVisualSoul: String,
         ) = executeRequest {
             gemmaClient.generate<String>(
                 ImagePrompts.generateDirectorialVision(
-                    promptService,
                     genre,
                     genreConfig!!,
-                    genreVisualSoul,
+                    imageConfig,
                     imageType,
                     context,
                 ),
@@ -241,19 +254,18 @@ class ImagenClientImpl
         private suspend fun generateArtisticPrompt(
             genre: Genre,
             genreConfig: GenreConfig?,
+            imageConfig: ImageConfig,
             imageType: ImageType,
-            genreVisualSoul: String,
             visualDirection: String?,
             context: String,
         ): RequestResult<String> =
             executeRequest {
                 val prompt =
                     ImagePrompts.generateArtistPrompt(
-                        promptService,
                         genre,
                         genreConfig!!,
+                        imageConfig,
                         imageType,
-                        genreVisualSoul,
                         visualDirection,
                         context,
                     )
@@ -270,18 +282,17 @@ class ImagenClientImpl
         private suspend fun reviewAndCorrectPrompt(
             imageType: ImageType,
             visualDirection: String?,
-            genreConfig: GenreConfig,
+            genreConfig: GenreConfig?,
+            imageConfig: ImageConfig,
             genre: Genre,
-            genreVisualSoul: String,
             finalPrompt: String,
             context: String,
         ) = executeRequest {
             val reviewerPrompt =
                 ImagePrompts.reviewImagePrompt(
-                    promptService,
                     visualDirection,
-                    genreConfig,
-                    genreVisualSoul,
+                    genreConfig!!,
+                    imageConfig,
                     imageType,
                     finalPrompt,
                     genre,

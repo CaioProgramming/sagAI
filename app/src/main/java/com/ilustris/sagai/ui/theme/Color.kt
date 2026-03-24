@@ -4,6 +4,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -156,3 +158,48 @@ fun Modifier.contrast(contrastFactor: Float): Modifier {
         }
     }
 }
+
+fun Modifier.colorTemperature(temperature: Float): Modifier {
+    // temperature > 0 -> wamer (adds red/yellow, reduces blue)
+    // temperature < 0 -> cooler (adds blue, reduces red/yellow)
+    val colorMatrix =
+        ColorMatrix().apply {
+            this[0, 0] = 1f + (temperature * 0.5f) // Red
+            this[1, 1] =
+                1f + (temperature * 0.2f) // Green (to make it yellowish/orange rather than just red)
+            this[2, 2] = 1f - (temperature * 0.5f) // Blue
+        }
+    val filter = ColorFilter.colorMatrix(colorMatrix)
+    val paint = Paint().apply { colorFilter = filter }
+    return drawWithCache {
+        val canvasBounds = Rect(Offset.Zero, size)
+        onDrawWithContent {
+            drawIntoCanvas {
+                it.saveLayer(canvasBounds, paint)
+                drawContent()
+                it.restore()
+            }
+        }
+    }
+}
+
+fun Modifier.vignette(
+    strength: Float,
+    softness: Float,
+): Modifier =
+    drawWithCache {
+        val outerRadius = size.width.coerceAtLeast(size.height) * (1f - (softness * 0.5f))
+        val gradient =
+            Brush.radialGradient(
+                colors = listOf(Color.Transparent, Color.Black.copy(alpha = strength.coerceIn(0f, 1f))),
+                center = Offset(size.width / 2f, size.height / 2f),
+                radius = outerRadius.coerceAtLeast(1f),
+            )
+        onDrawWithContent {
+            drawContent()
+            drawRect(
+                brush = gradient,
+                blendMode = BlendMode.Multiply,
+            )
+        }
+    }

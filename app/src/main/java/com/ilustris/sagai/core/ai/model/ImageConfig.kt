@@ -1,14 +1,9 @@
 package com.ilustris.sagai.core.ai.model
 
 import com.google.gson.annotations.SerializedName
-import com.ilustris.sagai.core.ai.prompts.AgentIds
 
 /**
- * Defines the blueprint keys and aspect ratio for a specific image type (e.g., ICON, COVER).
- *
- * Each agent field now holds a Firebase Remote Config blueprint key (e.g. "icon_director_blueprint")
- * instead of a raw template string. This aligns image generation with the modular
- * PromptBlueprint architecture used across all other AI systems.
+ * Defines the strict framing, composition, and agent templates for a specific image type (e.g., ICON, COVER).
  */
 data class ImageTypeConfig(
     @SerializedName("director")
@@ -17,20 +12,17 @@ data class ImageTypeConfig(
     val artist: String = "",
     @SerializedName("reviewer")
     val reviewer: String = "",
-    @SerializedName("config")
-    val config: String = "",
     @SerializedName("aspectRatio")
     val aspectRatio: String? = null,
 ) {
     /**
-     * Returns the Firebase Remote Config blueprint key for a given agent role.
-     * e.g. agentId "director" for ICON → "icon_director_blueprint"
+     * Helper logic to grab an agent's string without reflection, scaling for any future agents.
      */
-    fun getBlueprintKey(agentId: String): String =
+    fun getAgentTemplate(agentId: String): String =
         when (agentId) {
-            AgentIds.DIRECTOR -> director
-            AgentIds.ARTIST -> artist
-            AgentIds.REVIEWER -> reviewer
+            "director" -> director
+            "artist" -> artist
+            "reviewer" -> reviewer
             else -> ""
         }
 }

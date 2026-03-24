@@ -70,20 +70,23 @@ data class ActContent(
             appendLine(
                 data.toAINormalize(LorePrompts.ACT_EXCLUDED_FIELDS),
             )
-            appendLine("CHAPTERS in this act:")
-            chapters.forEach {
-                appendLine(
-                    it.data.toAINormalize(
-                        LorePrompts.CHAPTER_EXCLUDED_FIELDS,
-                    ),
+            appendLine("CHAPTERS: ")
+            chapters.forEach { chapter ->
+                val isLastChapter = chapter == chapters.last()
+                appendLine(chapters.indexOf(chapter) + 1)
+                append(
+                    chapter.data.toAINormalize(LorePrompts.CHAPTER_EXCLUDED_FIELDS),
                 )
-                if (showEvents) {
+                appendLine()
+                if (showEvents && isLastChapter) {
+                    appendLine("LATEST CHAPTER EVENTS:")
                     appendLine(
-                        it.events.map { it.data }.normalizetoAIItems(
+                        chapter.events.map { it.data }.normalizetoAIItems(
                             LorePrompts.TIMELINE_EXCLUDED_FIELDS,
                         ),
                     )
                 }
             }
+            appendLine("]")
         }
 }

@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
@@ -77,17 +78,15 @@ class ActUseCaseImpl
             act: Act,
         ) = executeRequest {
             val isFirst = saga.acts.isEmpty()
-            val previousAct = if (isFirst) null else saga.acts.last()
-            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+            if (isFirst) null else saga.acts.last()
 
-            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
+            genreConfigService.getGenreConfig(saga.data.genre)
             val prompt =
                 ActPrompts.actIntroductionPrompt(
-                    promptService,
-                    narrativeRules,
-                    saga,
-                    genreConfig,
-                    previousAct,
+                    promptService = promptService,
+                    saga = saga,
+                    narrativeRules = remoteConfigService.getNarrativeRules(),
+                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                 )
 
             val intro = gemmaClient.generate<String>(prompt, useCore = true)!!

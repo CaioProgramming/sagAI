@@ -32,7 +32,7 @@ enum class ReviewerStrictness(
      */
     CONSERVATIVE(
         "You are a CONSERVATIVE reviewer. Fix clear violations: " +
-            "incorrect framing (body parts outside camera view), " +
+                "incorrect framing (body parts outside camera view), " +
             "banned terminology from the art style (e.g., 'brown eyes' when dots required), " +
             "missing mandatory elements (backgrounds, environment details when required by style). " +
             "Preserve the original description's artistic intent and personality. " +
@@ -45,7 +45,7 @@ enum class ReviewerStrictness(
      */
     STRICT(
         "You are a STRICT reviewer. Enforce ALL art style rules precisely: " +
-            "exact framing compliance, zero tolerance for banned terms, mandatory inclusion of all required elements, " +
+                "exact framing compliance, zero tolerance for banned terms, mandatory inclusion of all required elements, " +
             "precise anatomy terminology matching the style (e.g., 'cartoon proportions' not 'realistic'), " +
             "complete background descriptions when required. Rewrite sections if needed to achieve full compliance.",
     ),

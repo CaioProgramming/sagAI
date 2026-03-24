@@ -34,7 +34,7 @@ interface PromptService {
      */
     suspend fun buildRemotePrompt(
         remoteConfigKey: String,
-        variables: Map<String, String>,
+        variables: Map<String, String> = emptyMap(),
         logEnabled: Boolean = true,
     ): String
 
@@ -102,7 +102,7 @@ class PromptServiceImpl
             logEnabled: Boolean,
         ): String {
             val blueprint =
-                remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey)!!
+                remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
 
             if (logEnabled) {
                 Log.d("PromptService", "buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
@@ -114,36 +114,47 @@ class PromptServiceImpl
             }
 
             return buildString {
-                // 1. Identity
-                if (blueprint.role.isNotBlank()) {
-                    appendLine("# IDENTITY")
-                    appendLine(blueprint.role)
-                    appendLine()
-                }
-
-                // 2. Local Governance (Directives)
-                if (blueprint.directives.isNotEmpty()) {
-                    appendLine("# MODULE DIRECTIVES")
-                    blueprint.directives.forEach { (key, value) ->
-                        appendLine("## $key")
-                        appendLine(value)
+                if (blueprint.omitHeaders) {
+                    if (blueprint.role.isNotBlank()) appendLine(blueprint.role)
+                    if (blueprint.directives.isNotEmpty()) {
+                        blueprint.directives.values.forEach { appendLine(it) }
                     }
-                    appendLine()
-                }
-
-                // 3. Narrative Rules
-                if (blueprint.rules.isNotEmpty()) {
-                    appendLine("# MODULE RULES")
-                    blueprint.rules.forEach { (key, value) ->
-                        appendLine("## $key")
-                        appendLine(value)
+                    if (blueprint.rules.isNotEmpty()) {
+                        blueprint.rules.values.forEach { appendLine(it) }
                     }
-                    appendLine()
-                }
+                    appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                } else {
+                    // 1. Identity
+                    if (blueprint.role.isNotBlank()) {
+                        appendLine("# IDENTITY")
+                        appendLine(blueprint.role)
+                        appendLine()
+                    }
 
-                // 4. The Core Template
-                appendLine("# TASK DEFINITION")
-                appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                    // 2. Local Governance (Directives)
+                    if (blueprint.directives.isNotEmpty()) {
+                        appendLine("# MODULE DIRECTIVES")
+                        blueprint.directives.forEach { (key, value) ->
+                            appendLine("## $key")
+                            appendLine(value)
+                        }
+                        appendLine()
+                    }
+
+                    // 3. Narrative Rules
+                    if (blueprint.rules.isNotEmpty()) {
+                        appendLine("# RULES")
+                        blueprint.rules.forEach { (key, value) ->
+                            appendLine("## $key")
+                            appendLine(value)
+                        }
+                        appendLine()
+                    }
+
+                    // 4. The Core Template
+                    appendLine("# TASK DEFINITION")
+                    appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                }
             }.trimIndent()
         }
 

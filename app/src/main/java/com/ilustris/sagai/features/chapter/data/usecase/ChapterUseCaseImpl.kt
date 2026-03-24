@@ -311,12 +311,10 @@ class ChapterUseCaseImpl
                 genreConfigService.getGenreConfig(saga.data.genre)
                 val prompt =
                     ChapterPrompts.chapterIntroductionPrompt(
-                        promptService,
-                        saga,
-                        chapter,
-                        act,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                        remoteConfigService.getNarrativeRules(),
+                        promptService = promptService,
+                        sagaContent = saga,
+                        currentChapter = chapter,
+                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
                 val intro =
                     gemmaClient.generate<String>(

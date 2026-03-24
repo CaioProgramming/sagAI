@@ -26,7 +26,6 @@ class EmotionalUseCaseImpl
                 val prompt =
                     EmotionalPrompt.generateEmotionalReview(
                         promptService,
-                        promptService.getPromptDirectives(),
                         sagaContent,
                         context,
                         conversationDirective,
@@ -50,7 +49,6 @@ class EmotionalUseCaseImpl
                     prompt =
                         EmotionalPrompt.generateEmotionalProfile(
                             promptService,
-                            promptService.getPromptDirectives(),
                             sagaContent,
                             emotionalSummary,
                             conversationDirective,

@@ -1,18 +1,14 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getPurposeKey
-import com.ilustris.sagai.features.saga.chat.data.model.Message
-import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 data class ActConclusionArgs(
     val sagaMainContext: String,
@@ -33,13 +29,8 @@ data class ActOverviewArgs(
 )
 
 data class ActIntroArgs(
-    val actTitle: String,
-    val sagaOverview: String,
-    val mainCharacterData: String,
-    val recentTimelineContext: String,
-    val recentMessagesContext: String,
-    val conversationDirective: String,
-    val previousActSummary: String = "",
+    val context: String,
+    val pastEvents: String? = null,
 )
 
 object ActPrompts {
@@ -51,7 +42,7 @@ object ActPrompts {
         sagaContent: SagaContent,
         currentActContent: ActContent,
         narrativeRules: NarrativeRules,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
     ): String {
         val isFirstAct =
             sagaContent.acts
@@ -101,70 +92,29 @@ object ActPrompts {
 
     suspend fun actIntroductionPrompt(
         promptService: PromptService,
-        narrativeRules: NarrativeRules,
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
-        previousAct: ActContent? = null,
+        narrativeRules: NarrativeRules,
+        conversationDirective: String,
     ): String {
-        val actNumber = if (previousAct == null) 1 else saga.actNumber(previousAct.data) + 1
-        val actTitle = "Act $actNumber"
-
-        val recentEvents = saga.flatEvents().map { it.data }.takeLast(6)
-        val recentMsgs = saga.flatMessages().map { it.message }.takeLast(8)
-
-        fun List<Timeline>.toBulletList(): String {
-            if (this.isEmpty()) return ""
-            return this.joinToString(separator = "\n") { t -> "- ${t.title}: ${t.content.take(120).replace('\n', ' ')}" }
-        }
-
-        fun List<Message>.toBulletList(): String {
-            if (this.isEmpty()) return ""
-            return this.joinToString(separator = "\n") { m -> "- ${m.speakerName ?: m.senderType}: ${m.text.take(140).replace('\n', ' ')}" }
-        }
-
-        val recentTimelineBullets =
-            recentEvents.toBulletList().ifBlank { "No recent timeline events available." }
-        val recentMessagesBullets =
-            recentMsgs.toBulletList().ifBlank { "No recent messages available." }
-
         val blueprintKey =
-            if (previousAct == null) "act_1_intro_blueprint" else "transitional_act_intro_blueprint"
+            if (saga.currentActInfo == saga.acts.first()) "act_1_intro_blueprint" else "transitional_act_intro_blueprint"
+
+        val isFirstAct = saga.currentActInfo == saga.acts.first()
+        val historyEvents = saga.acts.filter { it.isComplete(narrativeRules) }
 
         val args =
             ActIntroArgs(
-                actTitle = actTitle,
-                sagaOverview = saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
-                mainCharacterData =
-                    saga.mainCharacter?.data?.toJsonFormatExcludingFields(ChatPrompts.characterExclusions)
-                        ?: "No character info available",
-                recentTimelineContext = recentTimelineBullets,
-                recentMessagesContext = recentMessagesBullets,
-                conversationDirective = "",
-                previousActSummary =
-                    previousAct?.data?.toJsonFormatExcludingFields(
-                        listOf("id", "sagaId", "currentChapterId"),
-                    ) ?: "",
+                context = SagaPrompts.mainContext(saga),
+                pastEvents =
+                    if (isFirstAct) {
+                        null
+                    } else {
+                        historyEvents.joinToString("\n") {
+                            it.actSummary(it == historyEvents.last())
+                        }
+                    },
             )
 
         return promptService.buildRemotePrompt(blueprintKey, args)
-    }
-
-    suspend fun actsOverview(
-        promptService: PromptService,
-        saga: SagaContent,
-        narrativeRules: NarrativeRules,
-    ): String {
-        val acts = saga.acts.filter { it.isComplete(narrativeRules) }.map { it.data }
-        if (acts.isEmpty()) return ""
-
-        val actsSummary =
-            acts.normalizetoAIItems(
-                excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
-            )
-
-        return promptService.buildRemotePrompt(
-            "acts_overview_blueprint",
-            ActOverviewArgs(actsSummary),
-        )
     }
 }

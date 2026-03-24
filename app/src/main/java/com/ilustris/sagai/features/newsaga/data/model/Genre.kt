@@ -103,19 +103,6 @@ fun Genre.selectiveHighlight(visualConfig: GenreVisualConfig?): SelectiveColorPa
 @Composable
 fun Genre.selectiveHighlight(): SelectiveColorParams? = selectiveHighlight(LocalGenreVisualConfig.current)
 
-fun Genre.defaultHeaderImage() =
-    when (this) {
-        Genre.FANTASY -> R.drawable.fantasy_card
-        Genre.CYBERPUNK -> R.drawable.scifi_card
-        Genre.HORROR -> R.drawable.horror_card
-        Genre.HEROES -> R.drawable.hero_card
-        Genre.CRIME -> R.drawable.crime_card
-        Genre.SHINOBI -> R.drawable.shinobi_card
-        Genre.SPACE_OPERA -> R.drawable.space_opera_card
-        Genre.COWBOY -> R.drawable.cowboys_card
-        Genre.PUNK_ROCK -> R.drawable.punk_rock_card
-    }
-
 fun Genre.shimmerColors(visualConfig: GenreVisualConfig?): List<Color> {
     val palette = colorPalette(visualConfig)
     val primary = resolveColor(visualConfig)
@@ -262,11 +249,10 @@ fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color = visualConf
 fun Genre.resolveIconColor(): Color = resolveIconColor(LocalGenreVisualConfig.current)
 
 /** Resolve the image for the genre. Falls back to default header image. */
-fun Genre.resolveImageUrl(visualConfig: GenreVisualConfig?): Any =
-    visualConfig?.imageUrl?.takeIf { it.isNotBlank() } ?: defaultHeaderImage()
+fun Genre.resolveImageUrl(visualConfig: GenreVisualConfig?): String? = visualConfig?.imageUrl
 
 @Composable
-fun Genre.resolveImageUrl(): Any = resolveImageUrl(LocalGenreVisualConfig.current)
+fun Genre.resolveImageUrl(): String? = resolveImageUrl(LocalGenreVisualConfig.current)
 
 /** Resolve the background image for the genre. Falls back to enum property. */
 fun Genre.resolveBackground(visualConfig: GenreVisualConfig?): Any =

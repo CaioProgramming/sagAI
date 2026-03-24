@@ -5,4 +5,5 @@ data class PromptBlueprint(
     val template: String = "",
     val directives: Map<String, String> = emptyMap(),
     val rules: Map<String, String> = emptyMap(),
+    val omitHeaders: Boolean = false,
 )

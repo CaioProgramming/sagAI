@@ -12,7 +12,6 @@ data class EmotionalToneArgs(
 )
 
 data class EmotionalReviewArgs(
-    val roleDefinition: String,
     val sagaMainContext: String,
     val analysisData: String,
     val conversationDirective: String,
@@ -53,22 +52,12 @@ object EmotionalPrompt {
 
     suspend fun generateEmotionalReview(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
         context: String,
         conversationDirective: String,
     ): String {
-        val roleDefinition =
-            promptService.buildPrompt(
-                promptDirectives.roleEmotionalReviewer,
-                mapOf(
-                    "sagaTitle" to saga.data.title,
-                    "conversationDirective" to conversationDirective,
-                ),
-            )
         val args =
             EmotionalReviewArgs(
-                roleDefinition = roleDefinition,
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 analysisData = context,
                 conversationDirective = conversationDirective,
@@ -102,22 +91,12 @@ object EmotionalPrompt {
 
     suspend fun generateEmotionalProfile(
         promptService: PromptService,
-        promptDirectives: PromptDirectives,
         saga: SagaContent,
         summary: String,
         conversationDirective: String,
     ): String {
-        val roleDefinition =
-            promptService.buildPrompt(
-                promptDirectives.roleEmotionalReviewer,
-                mapOf(
-                    "sagaTitle" to saga.data.title,
-                    "conversationDirective" to conversationDirective,
-                ),
-            )
         val args =
             EmotionalReviewArgs(
-                roleDefinition = roleDefinition,
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 analysisData = summary,
                 conversationDirective = conversationDirective,

@@ -15,13 +15,10 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
@@ -31,7 +28,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -94,6 +90,7 @@ import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.shimmerize
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -310,133 +307,122 @@ private fun CharacterDetailsLoaded(
             LazyColumn(
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .statusBarsPadding(),
+                        .fillMaxSize(),
                 state = listState,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
                     if (character.image.isNotBlank()) {
                         Box(
-                            Modifier
-                                .fillMaxWidth(),
-                        ) {
-                            Box(
+                            contentAlignment = Alignment.Center,
+                            modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .height(450.dp)
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .clipToBounds(),
+                                    .fillParentMaxHeight(.6f),
+                        ) {
+                            DepthLayout(
+                                imagePath = character.image,
+                                modifier =
+                                    Modifier
+                                        .fillParentMaxHeight(.6f)
+                                        .fillMaxSize()
+                                        .clickable(enabled = character.emojified || character.image.isEmpty()) {
+                                            viewModel.regenerate(
+                                                sagaContent,
+                                                character,
+                                            )
+                                        },
+                                imageModifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer(
+                                            scaleX = animatedScale,
+                                            scaleY = animatedScale,
+                                            translationX = animatedTranslationX,
+                                            translationY = animatedTranslationY,
+                                            transformOrigin = TransformOrigin.Center,
+                                        ).effectForGenre(
+                                            genre,
+                                        ),
                             ) {
-                                DepthLayout(
-                                    imagePath = character.image,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .clickable(enabled = character.emojified || character.image.isEmpty()) {
-                                                viewModel.regenerate(
-                                                    sagaContent,
-                                                    character,
-                                                )
-                                            },
-                                    imageModifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .graphicsLayer(
-                                                scaleX = animatedScale,
-                                                scaleY = animatedScale,
-                                                translationX = animatedTranslationX,
-                                                translationY = animatedTranslationY,
-                                                transformOrigin = TransformOrigin.Center,
-                                            ).effectForGenre(
-                                                genre,
-                                                useFallBack = character.emojified,
-                                            ),
+                                Box(
+                                    Modifier
+                                        .align(Alignment.TopCenter)
+                                        .background(fadeGradientTop(adaptiveColor))
+                                        .fillMaxWidth()
+                                        .clipToBounds()
+                                        .padding(8.dp),
                                 ) {
-                                    Box(
+                                    genre.stylisedText(
+                                        text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                         modifier =
                                             Modifier
-                                                .fillMaxWidth()
-                                                .padding(32.dp)
-                                                .align(Alignment.TopCenter)
-                                                .background(fadeGradientTop(adaptiveColor)),
+                                                .alpha(titleAnimation)
+                                                .reactiveShimmer(true, characterColor.shimmerize())
+                                                .padding(16.dp)
+                                                .align(Alignment.TopCenter),
                                     )
-                                }
-
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .background(fadeGradientBottom(adaptiveColor))
-                                            .align(Alignment.BottomCenter)
-                                            .padding(16.dp)
-                                            .fillMaxWidth(),
-                                ) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Image(
-                                            painterResource(R.drawable.ic_spark),
-                                            stringResource(id = R.string.share_character_cd),
-                                            modifier =
-                                                Modifier
-                                                    .size(24.dp)
-                                                    .clip(CircleShape)
-                                                    .clickable {
-                                                        onShareCharacter()
-                                                    },
-                                            colorFilter = ColorFilter.tint(characterColor),
-                                        )
-
-                                        Text(
-                                            character.profile.occupation,
-                                            style =
-                                                MaterialTheme.typography.titleSmall.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    color = characterColor,
-                                                    textAlign = TextAlign.Center,
-                                                ),
-                                        )
-
-                                        character.nicknames?.let {
-                                            if (it.isNotEmpty()) {
-                                                Text(
-                                                    text =
-                                                        stringResource(
-                                                            id = R.string.character_details_aka,
-                                                            it.joinToString(", "),
-                                                        ),
-                                                    style =
-                                                        MaterialTheme.typography.titleMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                            color = characterColor.copy(alpha = 0.8f),
-                                                            textAlign = TextAlign.Center,
-                                                        ),
-                                                )
-                                            }
-                                        }
-                                    }
                                 }
                             }
 
-                            genre.stylisedText(
-                                text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier =
                                     Modifier
-                                        .alpha(titleAnimation)
+                                        .background(fadeGradientBottom(adaptiveColor))
+                                        .padding(16.dp)
                                         .fillMaxWidth()
-                                        .reactiveShimmer(true)
-                                        .offset(y = 12.dp.unaryMinus())
-                                        .align(Alignment.TopCenter),
-                            )
+                                        .align(Alignment.BottomCenter),
+                            ) {
+                                Image(
+                                    painterResource(R.drawable.ic_spark),
+                                    stringResource(id = R.string.share_character_cd),
+                                    modifier =
+                                        Modifier
+                                            .size(24.dp)
+                                            .clip(CircleShape)
+                                            .clickable {
+                                                onShareCharacter()
+                                            },
+                                    colorFilter = ColorFilter.tint(characterColor),
+                                )
+
+                                Text(
+                                    character.profile.occupation,
+                                    style =
+                                        MaterialTheme.typography.titleSmall.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color = adaptiveTextColor,
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                )
+
+                                character.nicknames?.let {
+                                    if (it.isNotEmpty()) {
+                                        Text(
+                                            text =
+                                                stringResource(
+                                                    id = R.string.character_details_aka,
+                                                    it.joinToString(", "),
+                                                ),
+                                            style =
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = adaptiveTextColor,
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Image(
-                                painterResource(R.drawable.ic_spark),
+                                painterResource(genre.background),
                                 null,
                                 Modifier
+                                    .statusBarsPadding()
                                     .clickable {
                                         viewModel.regenerate(
                                             sagaContent,
@@ -449,7 +435,36 @@ private fun CharacterDetailsLoaded(
 
                             genre.stylisedText(
                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                modifier = Modifier.fillMaxWidth(),
                             )
+
+                            Text(
+                                character.profile.occupation,
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        color = characterColor,
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
+
+                            character.nicknames?.let {
+                                if (it.isNotEmpty()) {
+                                    Text(
+                                        text =
+                                            stringResource(
+                                                id = R.string.character_details_aka,
+                                                it.joinToString(", "),
+                                            ),
+                                        style =
+                                            MaterialTheme.typography.titleMedium.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color = characterColor.copy(alpha = 0.8f),
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                    )
+                                }
+                            }
                         }
                     }
                 }

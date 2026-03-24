@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.home.data.model
 
 import android.icu.util.Calendar
-import android.util.Log
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -67,6 +66,11 @@ data class SagaContent(
 
     fun messagesSize() = acts.sumOf { it.chapters.sumOf { it.events.sumOf { it.messages.size } } }
 }
+
+fun SagaContent.historySummary() =
+    acts.joinToString(";\n---\n") {
+        "${acts.indexOf(it) + 1} - ${it.actSummary(it == acts.last())}"
+    }
 
 fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
     if (filterMainCharacter) {
@@ -175,16 +179,13 @@ fun SagaContent.actNumber(act: Act?): Int =
         1
     }
 
-fun SagaContent.getDirectiveKey(): String {
-    val actsCount = acts.size
-    Log.d(
-        javaClass.simpleName,
-        "Getting directive. Total acts count: $actsCount for saga(${this.data.id}) -> ${this.data.title}",
-    )
-    return when (actsCount) {
-        0, 1 -> "act_1_hook_blueprint"
-        2 -> "act_2_rising_action_blueprint"
-        3 -> "act_3_resolution_blueprint"
+fun SagaContent.getDirectiveKey(targetAct: Act? = null): String {
+    val act = targetAct ?: currentActInfo?.data
+    val actIndex = acts.indexOfFirst { it.data.id == act?.id }
+    return when (actIndex) {
+        0 -> "act_1_hook_blueprint"
+        1 -> "act_2_rising_action_blueprint"
+        2 -> "act_3_resolution_blueprint"
         else -> "act_1_hook_blueprint"
     }
 }

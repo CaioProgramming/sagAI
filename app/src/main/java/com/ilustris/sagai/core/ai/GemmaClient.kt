@@ -126,52 +126,40 @@ class GemmaClient
                 for (currentAttempt in 1..maxAttempts) {
                     try {
                         return@withContext requestMutex.withLock {
-                            val directives = promptService.getPromptDirectives().directives
+                            val structure =
+                                if (T::class != String::class &&
+                                    describeOutput
+                                ) {
+                                    toJsonMap(T::class.java, filteredFields = filterOutputFields)
+                                } else {
+                                    T::class.java.simpleName
+                                }
+
+                            val formattingRule =
+                                if (T::class == String::class) {
+                                    "Respond using PURE NARRATIVE TEXT. No brackets, no keys, and no JSON wrapping."
+                                } else {
+                                    "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
+                                }
+
+                            val corePrompt =
+                                promptService.buildRemotePrompt(
+                                    remoteConfigKey = "core_blueprint",
+                                    variables =
+                                        mapOf(
+                                            "language" to getLanguage(requireTranslation),
+                                            "type" to T::class.java.simpleName,
+                                            "structure" to structure,
+                                            "formattingRule" to formattingRule,
+                                        ),
+                                    logEnabled = false,
+                                )
+
                             val fullPrompt =
                                 buildString {
                                     appendLine(prompt)
                                     appendLine()
-                                    appendLine("---")
-                                    appendLine("# CORE GOVERNANCE (CRITICAL)")
-
-                                    // 1. Structural requirements (Output Type & Schema)
-                                    val outputDirective =
-                                        promptService.buildPrompt(
-                                            directives["OUTPUT_DIRECTIVE"] ?: "",
-                                            mapOf("type" to T::class.java.simpleName),
-                                            false,
-                                        )
-                                    appendLine(outputDirective)
-
-                                    if (T::class != String::class && describeOutput) {
-                                        val structureRule =
-                                            promptService.buildPrompt(
-                                                directives["STRUCTURE_DIRECTIVE"] ?: "",
-                                                mapOf(
-                                                    "structure" to
-                                                        toJsonMap(
-                                                            T::class.java,
-                                                            filteredFields = filterOutputFields,
-                                                        ),
-                                                ),
-                                                false,
-                                            )
-                                        appendLine(structureRule)
-                                    }
-
-                                    // 2. Data Integrity (JSON rules)
-                                    if (containsStringFields(T::class.java)) {
-                                        appendLine(directives["JSON_STRING_INTEGRITY"] ?: "")
-                                    }
-
-                                    // 3. Narrative & Linguistic bounds
-                                    val languageRule =
-                                        promptService.buildPrompt(
-                                            directives["PREFERRED_LANGUAGE"] ?: "",
-                                            mapOf("language" to getLanguage(requireTranslation)),
-                                            false,
-                                        )
-                                    appendLine(languageRule)
+                                    appendLine(corePrompt)
                                 }
 
                             val promptLength =
@@ -260,8 +248,16 @@ class GemmaClient
                             )
 
                             if (T::class == String::class) {
-                                Log.i(javaClass.simpleName, "Prompt request result:\n$responseText")
-                                return@withLock responseText as T
+                                val cleanedText =
+                                    responseText
+                                        .replace(Regex("```[a-zA-Z]*"), "")
+                                        .replace("```", "")
+                                        .trim()
+                                Log.i(
+                                    javaClass.simpleName,
+                                    "Prompt request result (Cleaned):\n$cleanedText",
+                                )
+                                return@withLock cleanedText as T
                             }
 
                             val cleanedJsonString =

@@ -5,24 +5,27 @@ import android.graphics.RuntimeShader
 import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.brightness
+import com.ilustris.sagai.ui.theme.colorTemperature
 import com.ilustris.sagai.ui.theme.contrast
 import com.ilustris.sagai.ui.theme.grayScale
+import com.ilustris.sagai.ui.theme.vignette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
@@ -129,7 +132,7 @@ fun Modifier.effectForGenre(
         return this.fallbackEffect(genre, visualConfig)
     }
 
-    val agslShaderSource = loadShaderFromAssetsOnce("fantasy_shader.agsl")
+    val agslShaderSource = loadShaderFromAssetsOnce("genre_filter_shader.agsl")
     if (agslShaderSource == null) {
         Log.w("EffectForGenre", "AGSL Shader source is null. Applying no effect. Applying fallback")
         return this.fallbackEffect(genre)
@@ -142,7 +145,6 @@ fun Modifier.effectForGenre(
         }
 
     var composableSize by remember { mutableStateOf(IntSize.Zero) }
-    var timeState by remember { mutableStateOf(0f) }
 
     val uniformValues =
         genre.shaderParams(
@@ -152,42 +154,41 @@ fun Modifier.effectForGenre(
             visualConfig = visualConfig,
         )
 
-    LaunchedEffect(uniformValues?.grainIntensity) {
-        val grainIntensity = uniformValues?.grainIntensity ?: 0f
-        if (grainIntensity > 0.001f) {
-            while (true) {
-                androidx.compose.runtime.withFrameMillis { frameTime ->
-                    timeState = (frameTime % 100000L) / 1000.0f
-                }
-            }
-        } else {
-            timeState = 0f
-        }
-    }
-
     if (uniformValues == null) return this
 
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
+                // Adaptive scale factor based on an assumed 1080px reference.
+                // Weakens grain and pixel-based blurs on small elements (like avatars) to prevent destroying legibility.
+                val maxDim = maxOf(composableSize.width, composableSize.height).toFloat()
+                val scaleFactor = (maxDim / 1080f).coerceIn(0.05f, 1f)
+
                 runtimeShader.setFloatUniform(
                     "iResolution",
                     composableSize.width.toFloat(),
                     composableSize.height.toFloat(),
                 )
-                runtimeShader.setFloatUniform("iTime", timeState)
                 runtimeShader.setFloatUniform(
                     "u_aspectRatio",
                     composableSize.width.toFloat() / composableSize.height.toFloat(),
                 )
-                runtimeShader.setFloatUniform("u_grainIntensity", uniformValues.grainIntensity)
+                runtimeShader.setFloatUniform(
+                    "u_grainIntensity",
+                    uniformValues.grainIntensity * scaleFactor,
+                )
                 runtimeShader.setFloatUniform("u_bloomThreshold", uniformValues.bloomThreshold)
                 runtimeShader.setFloatUniform("u_bloomIntensity", uniformValues.bloomIntensity)
-                runtimeShader.setFloatUniform("u_bloomRadius", uniformValues.bloomRadius)
-                runtimeShader.setFloatUniform("u_softFocusRadius", uniformValues.softFocusRadius)
+                runtimeShader.setFloatUniform(
+                    "u_bloomRadius",
+                    uniformValues.bloomRadius * scaleFactor,
+                )
+                runtimeShader.setFloatUniform(
+                    "u_softFocusRadius",
+                    uniformValues.softFocusRadius * scaleFactor,
+                )
                 runtimeShader.setFloatUniform("u_saturation", uniformValues.saturation)
                 runtimeShader.setFloatUniform("u_contrast", uniformValues.contrast)
                 runtimeShader.setFloatUniform("u_brightness", uniformValues.brightness)
@@ -208,7 +209,7 @@ fun Modifier.effectForGenre(
                 runtimeShader.setFloatUniform("u_vignetteSoftness", uniformValues.vignetteSoftness)
                 runtimeShader.setFloatUniform(
                     "u_pixelationBlockSize",
-                    uniformValues.pixelationBlockSize,
+                    uniformValues.pixelationBlockSize * scaleFactor,
                 )
                 runtimeShader.setFloatUniform(
                     "u_colorTemperature",
@@ -252,6 +253,10 @@ fun Modifier.fallbackEffect(
     val saturation = shaderParams.saturation
     val brightnessValue = shaderParams.brightness
     val contrastValue = shaderParams.contrast
+    val colorTemperature = shaderParams.colorTemperature
+    val vignetteStrength = shaderParams.vignetteStrength
+    val vignetteSoftness = shaderParams.vignetteSoftness
+    val softFocusRadius = shaderParams.softFocusRadius
 
     var modifier: Modifier = this
 
@@ -263,6 +268,15 @@ fun Modifier.fallbackEffect(
     }
     if (contrastValue != 1.0f) {
         modifier = modifier.contrast(contrastValue)
+    }
+    if (colorTemperature != 0f) {
+        modifier = modifier.colorTemperature(colorTemperature)
+    }
+    if (vignetteStrength > 0f) {
+        modifier = modifier.vignette(vignetteStrength, vignetteSoftness)
+    }
+    if (softFocusRadius > 0f) {
+        modifier = modifier.blur(softFocusRadius.dp)
     }
     return modifier
 }

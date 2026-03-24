@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -459,6 +460,15 @@ class SagaContentManagerImpl
                                 characterUseCase.updateCharacterKnowledge(
                                     timelineContent.data,
                                     saga,
+                                )
+                                if (timelineContent.updatedWikis.isEmpty()) {
+                                    wikiUseCase.generateWiki(saga, timelineContent.data)
+                                }
+                                emotionalUseCase.generateEmotionalReview(
+                                    saga,
+                                    timelineContent.messages
+                                        .map { it.message }
+                                        .normalizetoAIItems(),
                                 )
                                 Log.i(
                                     javaClass.simpleName,
@@ -1063,11 +1073,12 @@ class SagaContentManagerImpl
             val event = saga.getCurrentTimeLine() ?: return
             if (event.data.currentObjective.isNullOrEmpty()) {
                 startProcessing {
-                    timelineUseCase
-                        .getTimelineObjective(saga, event.data)
-                        .onSuccessAsync {
-                            emitMilestone(SagaMilestone.CurrentObjective(it))
-                        }
+                    val updatedTimeline =
+                        event.data.copy(
+                            currentObjective = sceneSummary.immediateObjective,
+                        )
+                    timelineUseCase.updateTimeline(updatedTimeline)
+                    showObjective()
                 }
             }
         }

@@ -275,7 +275,6 @@ object AppModule {
         analyticsService: AnalyticsService,
         imageConfigService: ImageConfigService,
         gemmaClient: GemmaClient,
-        promptService: PromptService,
     ): ImagenClient =
         ImagenClientImpl(
             billingService,
@@ -284,7 +283,6 @@ object AppModule {
             imageConfigService,
             gemmaClient,
             analyticsService,
-            promptService,
         )
 
     @Provides

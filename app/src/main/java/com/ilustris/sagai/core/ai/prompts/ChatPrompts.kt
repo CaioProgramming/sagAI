@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
+import com.ilustris.sagai.features.home.data.model.historySummary
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -49,11 +50,10 @@ data class ReplyMessageArgs(
 )
 
 data class SceneSummaryArgs(
-    val sagaMainContext: String,
-    val activeSegmentSummary: String,
-    val historicalContext: String,
+    val sagaContext: String,
+    val recentActivity: String,
     val conversationHistory: String,
-    val latestMessageContent: String,
+    val latestMessage: String,
 )
 
 data class NotificationArgs(
@@ -238,23 +238,15 @@ object ChatPrompts {
         saga: SagaContent,
         rules: NarrativeRules,
     ): String {
-        val historicalContext =
-            buildString {
-                saga.acts.forEach {
-                    appendLine(it.actSummary(false))
-                }
-            }
-
         val latestMessage = saga.flatMessages().maxByOrNull { it.message.timestamp }?.message
         val latestMessageContent = latestMessage?.toAINormalize(messageExclusions) ?: ""
 
         val args =
             SceneSummaryArgs(
-                sagaMainContext = SagaPrompts.mainContext(saga),
-                activeSegmentSummary = saga.currentActInfo?.actSummary(true) ?: "",
-                historicalContext = historicalContext,
+                sagaContext = SagaPrompts.mainContext(saga),
+                recentActivity = saga.historySummary(),
                 conversationHistory = conversationHistory(rules.loreUpdateLimit, saga),
-                latestMessageContent = latestMessageContent,
+                latestMessage = latestMessageContent,
             )
 
         return promptService.buildRemotePrompt("scene_summarization_blueprint", args)
