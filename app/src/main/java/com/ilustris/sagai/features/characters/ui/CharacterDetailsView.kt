@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -79,6 +80,7 @@ import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -341,7 +343,8 @@ private fun CharacterDetailsLoaded(
                                             translationX = animatedTranslationX,
                                             translationY = animatedTranslationY,
                                             transformOrigin = TransformOrigin.Center,
-                                        ).effectForGenre(
+                                        )
+                                        .effectForGenre(
                                             genre,
                                         ),
                             ) {
@@ -358,6 +361,7 @@ private fun CharacterDetailsLoaded(
                                         modifier =
                                             Modifier
                                                 .alpha(titleAnimation)
+                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
                                                 .reactiveShimmer(true, characterColor.shimmerize())
                                                 .padding(16.dp)
                                                 .align(Alignment.TopCenter),
@@ -428,14 +432,19 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
 
                             genre.stylisedText(
                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
+                                        .reactiveShimmer(true),
                             )
 
                             Text(
@@ -551,7 +560,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

@@ -107,11 +107,10 @@ fun IntroductionOverlay(
                         Modifier
                             .padding(8.dp)
                             .fillMaxWidth()
-                            .sharedBounds(
-                                sharedContentState =
-                                    rememberSharedContentState(
-                                        key = "saga-style-header",
-                                    ),
+                            .sharedElement(
+                                rememberSharedContentState(
+                                    key = "saga_${saga.data.id}_title",
+                                ),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             ),
                 )
