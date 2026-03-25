@@ -17,4 +17,5 @@ data class AIAuditLog(
     val reasoning: String? = null,
     val rawResponse: String? = null,
     val errorMessage: String? = null,
+    val suggestion: String? = null,
 )

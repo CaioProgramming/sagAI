@@ -76,6 +76,7 @@ class MessageUseCaseImpl
                         updateLimit = narrativeRules.loreUpdateLimit,
                         message = message,
                     ),
+                    blueprintKey = ChatPrompts.CHAT_WRITING_PAL_BLUEPRINT,
                     requireTranslation = true,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
@@ -90,6 +91,7 @@ class MessageUseCaseImpl
                             saga = saga,
                             remoteConfigService.getNarrativeRules(),
                         ),
+                    blueprintKey = ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT,
                     temperatureRandomness = 0.2f,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )
@@ -126,6 +128,7 @@ class MessageUseCaseImpl
                 gemmaClient
                     .generate<String>(
                         prompt,
+                        blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT,
                         requireTranslation = false,
                         requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )?.trim()
@@ -179,6 +182,7 @@ class MessageUseCaseImpl
                                 conversationDirective = conversationDirective,
                                 updateLimit = narrativeRules.loreUpdateLimit,
                             ),
+                        blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
                         filterOutputFields =
                             ChatPrompts.messageExclusions,
                         useCore = true,
@@ -232,6 +236,7 @@ class MessageUseCaseImpl
             val reaction =
                 gemmaClient.generate<ReactionGen>(
                     prompt,
+                    blueprintKey = ChatPrompts.CHAT_REACTION_BLUEPRINT,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             Log.d(
@@ -296,6 +301,7 @@ class MessageUseCaseImpl
                             message = savedMessage,
                             character = characterReference,
                         ),
+                        blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
                         requireTranslation = false,
                         requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )!!

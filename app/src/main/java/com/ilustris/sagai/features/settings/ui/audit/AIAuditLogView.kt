@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +13,17 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -29,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,15 +48,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,23 +78,39 @@ fun AIAuditLogView(
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
     val statusFilter by viewModel.statusFilter.collectAsState()
+    val dataTypeFilter by viewModel.dataTypeFilter.collectAsState()
+    val modelFilter by viewModel.modelFilter.collectAsState()
+    val availableDataTypes by viewModel.availableDataTypes.collectAsState()
+    val availableModels by viewModel.availableModels.collectAsState()
+
+    val loadingSuggestionId by viewModel.loadingSuggestionId.collectAsState()
+    val pipelineInsight by viewModel.pipelineInsight.collectAsState()
+    val isPipelineInsightLoading by viewModel.isPipelineInsightLoading.collectAsState()
 
     var showClearDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("AI Audit Logs", style = MaterialTheme.typography.titleLarge) },
+                title = {
+                    Text(
+                        stringResource(R.string.audit_logs_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(painterResource(R.drawable.ic_back_left), contentDescription = "Back")
+                        Icon(
+                            painterResource(R.drawable.ic_back_left),
+                            contentDescription = stringResource(R.string.back_button_description),
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { showClearDialog = true }) {
                         Icon(
                             painterResource(R.drawable.ic_delete),
-                            contentDescription = "Clear Logs",
+                            contentDescription = stringResource(R.string.audit_logs_clear_button),
                         )
                     }
                 },
@@ -98,19 +131,32 @@ fun AIAuditLogView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
+                PipelineInsightCard(
+                    insight = pipelineInsight,
+                    isLoading = isPipelineInsightLoading,
+                    onRequestInsight = { viewModel.requestGlobalInsight() },
+                )
+            }
+            item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(
+                                androidx.compose.foundation.rememberScrollState(),
+                            ).padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     FilterChip(
                         selected = statusFilter == null,
-                        onClick = { viewModel.updateFilter(null) },
-                        label = { Text("All") },
+                        onClick = { viewModel.updateStatusFilter(null) },
+                        label = { Text(stringResource(R.string.audit_logs_all)) },
                     )
                     FilterChip(
                         selected = statusFilter == "SUCCESS",
-                        onClick = { viewModel.updateFilter("SUCCESS") },
-                        label = { Text("Success") },
+                        onClick = { viewModel.updateStatusFilter("SUCCESS") },
+                        label = { Text(stringResource(R.string.audit_logs_success)) },
                         colors =
                             FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -119,38 +165,91 @@ fun AIAuditLogView(
                     )
                     FilterChip(
                         selected = statusFilter == "ERROR",
-                        onClick = { viewModel.updateFilter("ERROR") },
-                        label = { Text("Error") },
+                        onClick = { viewModel.updateStatusFilter("ERROR") },
+                        label = { Text(stringResource(R.string.audit_logs_error)) },
                         colors =
                             FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
                                 selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
                             ),
                     )
+
+                    if (availableDataTypes.isNotEmpty()) {
+                        VerticalDivider(modifier = Modifier.height(24.dp))
+                        availableDataTypes.forEach { dt ->
+                            FilterChip(
+                                selected = dataTypeFilter == dt,
+                                onClick = { viewModel.updateDataTypeFilter(if (dataTypeFilter == dt) null else dt) },
+                                label = { Text(dt) },
+                                colors =
+                                    FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    ),
+                            )
+                        }
+                    }
+
+                    if (availableModels.isNotEmpty()) {
+                        VerticalDivider(modifier = Modifier.height(24.dp))
+                        availableModels.forEach { mod ->
+                            FilterChip(
+                                selected = modelFilter == mod,
+                                onClick = { viewModel.updateModelFilter(if (modelFilter == mod) null else mod) },
+                                label = { Text(mod) },
+                                colors =
+                                    FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
+
+            val groupedLogs =
+                logs.groupBy {
+                    SimpleDateFormat(
+                        "MMM dd, yyyy",
+                        Locale.getDefault(),
+                    ).format(Date(it.timestamp))
+                }
 
             if (logs.isEmpty()) {
                 item {
                     Text(
-                        text = "No logs recorded yet.",
+                        text = stringResource(R.string.audit_logs_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(16.dp),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                     )
                 }
             } else {
-                item {
-                    Column(
-                        Modifier
-                            .clip(RoundedCornerShape(15.dp))
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
-                            ),
-                    ) {
-                        logs.forEachIndexed { index, log ->
-                            AuditLogItem(log, isLast = index == logs.lastIndex)
+                groupedLogs.forEach { (dateStr, logList) ->
+                    item {
+                        Text(
+                            text = dateStr,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp, start = 4.dp),
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                    items(logList) { log ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(15.dp),
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                ),
+                        ) {
+                            AuditLogItem(
+                                log = log,
+                                isLast = true,
+                                isLoadingSuggestion = loadingSuggestionId == log.id,
+                                onRequestSuggestion = { viewModel.requestSuggestion(log) },
+                            )
                         }
                     }
                 }
@@ -160,19 +259,19 @@ fun AIAuditLogView(
         if (showClearDialog) {
             AlertDialog(
                 onDismissRequest = { showClearDialog = false },
-                title = { Text("Clear Audit Logs") },
-                text = { Text("Are you sure you want to delete all AI Audit Logs? This action cannot be undone.") },
+                title = { Text(stringResource(R.string.audit_logs_clear_dialog_title)) },
+                text = { Text(stringResource(R.string.audit_logs_clear_dialog_message)) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.clearLogs()
                         showClearDialog = false
                     }) {
-                        Text("Clear")
+                        Text(stringResource(R.string.audit_logs_clear_button))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showClearDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 },
             )
@@ -184,6 +283,8 @@ fun AIAuditLogView(
 fun AuditLogItem(
     log: AIAuditLog,
     isLast: Boolean,
+    isLoadingSuggestion: Boolean,
+    onRequestSuggestion: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -212,23 +313,42 @@ fun AuditLogItem(
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         maxLines = if (expanded) Int.MAX_VALUE else 1,
                     )
-                    Box(
+
+                    Text(
+                        text = log.status,
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = statusColor,
+                            ),
                         modifier =
                             Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(statusColor.copy(alpha = 0.15f))
                                 .border(1.dp, statusColor, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = log.status,
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = statusColor,
-                                ),
-                        )
-                    }
+                    )
+                }
+
+                if (!log.blueprintKey.isNullOrEmpty()) {
+                    Text(
+                        text = log.blueprintKey,
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                    RoundedCornerShape(4.dp),
+                                ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                .padding(8.dp),
+                    )
                 }
 
                 Row(
@@ -240,29 +360,6 @@ fun AuditLogItem(
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
                         modifier = Modifier.alpha(.7f),
                     )
-
-                    if (!log.blueprintKey.isNullOrEmpty()) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                        RoundedCornerShape(4.dp),
-                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                                    .padding(horizontal = 4.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = log.blueprintKey,
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontWeight = FontWeight.Medium,
-                                    ),
-                            )
-                        }
-                    }
                 }
             }
 
@@ -289,7 +386,7 @@ fun AuditLogItem(
             ) {
                 if (!log.errorMessage.isNullOrEmpty()) {
                     Text(
-                        text = "Error:",
+                        text = stringResource(R.string.audit_logs_error_label),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -302,7 +399,7 @@ fun AuditLogItem(
 
                 if (!log.reasoning.isNullOrEmpty()) {
                     Text(
-                        text = "Reasoning (Chain-of-Thought):",
+                        text = stringResource(R.string.audit_logs_reasoning),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
                     Box(
@@ -324,7 +421,7 @@ fun AuditLogItem(
 
                 if (!log.rawResponse.isNullOrEmpty()) {
                     Text(
-                        text = "Raw Response:",
+                        text = stringResource(R.string.audit_logs_raw_response),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
                     Box(
@@ -332,16 +429,60 @@ fun AuditLogItem(
                             Modifier
                                 .fillMaxWidth()
                                 .background(
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                    Color(0xFF1E1E1E),
                                     RoundedCornerShape(8.dp),
                                 ).padding(12.dp),
                     ) {
+                        JsonCodeBlock(jsonString = log.rawResponse)
+                    }
+                }
+
+                if (!log.blueprintKey.isNullOrEmpty()) {
+                    if (log.suggestion != null) {
                         Text(
-                            text = log.rawResponse,
-                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.alpha(0.8f),
+                            text = "Improvement sugestion",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
                         )
+
+                        Text(
+                            text = log.suggestion,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                        RoundedCornerShape(8.dp),
+                                    ).padding(12.dp),
+                        )
+                    } else {
+                        Button(
+                            onClick = onRequestSuggestion,
+                            enabled = !isLoadingSuggestion,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .reactiveShimmer(isLoadingSuggestion)
+                                    .gradientFill(
+                                        Brush.horizontalGradient(
+                                            holographicGradient,
+                                        ),
+                                    ),
+                            colors =
+                                ButtonDefaults.textButtonColors(),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_spark),
+                                contentDescription = null,
+                                modifier =
+                                    Modifier
+                                        .size(24.dp)
+                                        .padding(horizontal = 8.dp),
+                            )
+                            Text("Suggest Improvements", fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
             }
@@ -353,6 +494,170 @@ fun AuditLogItem(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
                 thickness = 1.dp,
             )
+        }
+    }
+}
+
+@Composable
+fun JsonCodeBlock(jsonString: String) {
+    val annotatedString =
+        buildAnnotatedString {
+            val keyRegex = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"\\s*:".toRegex()
+            val stringRegex = "\"([^\"\\\\]*(?:\\\\.[^\"\\\\]*)*)\"".toRegex()
+            val numberRegex = "\\b(-?\\d+(\\.\\d+)?)\\b".toRegex()
+            val booleanRegex = "\\b(true|false|null)\\b".toRegex()
+
+            var lastIndex = 0
+
+            // Combine all candidates and sort by match start
+            val candidates =
+                (
+                    keyRegex.findAll(jsonString) +
+                        stringRegex.findAll(jsonString) +
+                        numberRegex.findAll(jsonString) +
+                        booleanRegex.findAll(jsonString)
+                ).sortedBy { it.range.first }
+
+            candidates.forEach { match ->
+                if (match.range.first >= lastIndex) {
+                    // Append text before match
+                    append(jsonString.substring(lastIndex, match.range.first))
+
+                    val style =
+                        when {
+                            keyRegex.matches(match.value) -> SpanStyle(color = Color(0xFF9CDCFE))
+
+                            // VSCode-like Light Blue for keys
+                            stringRegex.matches(match.value) -> SpanStyle(color = Color(0xFFCE9178))
+
+                            // VSCode-like Orange/Red for strings
+                            numberRegex.matches(match.value) -> SpanStyle(color = Color(0xFFB5CEA8))
+
+                            // VSCode-like Green for numbers
+                            booleanRegex.matches(match.value) -> SpanStyle(color = Color(0xFF569CD6))
+
+                            // VSCode-like Blue for booleans/null
+                            else -> SpanStyle(color = Color.White)
+                        }
+
+                    withStyle(style) {
+                        append(match.value)
+                    }
+                    lastIndex = match.range.last + 1
+                }
+            }
+            append(jsonString.substring(lastIndex))
+        }
+
+    Text(
+        text = annotatedString,
+        style =
+            MaterialTheme.typography.bodySmall.copy(
+                fontFamily = FontFamily.Monospace,
+                lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified,
+            ),
+        color = Color.White.copy(alpha = 0.9f),
+    )
+}
+
+@Composable
+fun PipelineInsightCard(
+    insight: RequestResult<String>,
+    isLoading: Boolean,
+    onRequestInsight: () -> Unit,
+) {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .gradientFill(Brush.horizontalGradient(holographicGradient))
+                .reactiveShimmer(isLoading),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_spark),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = "Saga Master Insight",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            if (isLoading) {
+                Text(
+                    text = "The Master is analyzing the pipeline data...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.8f),
+                )
+            } else {
+                when (insight) {
+                    is RequestResult.Success -> {
+                        val data = insight.value
+                        if (data.isBlank()) {
+                            Text(
+                                text = "Analyze the last 3 successful generations to find strategic pipeline improvements.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.8f),
+                            )
+                            Button(
+                                onClick = onRequestInsight,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = Color.White.copy(alpha = 0.2f),
+                                        contentColor = Color.White,
+                                    ),
+                            ) {
+                                Text("Consult Saga Master", fontWeight = FontWeight.SemiBold)
+                            }
+                        } else {
+                            Text(
+                                text = data,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.9f),
+                            )
+                            TextButton(
+                                onClick = onRequestInsight,
+                                modifier = Modifier.align(Alignment.End),
+                            ) {
+                                Text(
+                                    "Refresh ✨",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+                    }
+
+                    is RequestResult.Error -> {
+                        Text(
+                            text = insight.value.message ?: "Unknown Error",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White,
+                        )
+                        TextButton(onClick = onRequestInsight) {
+                            Text("Retry", color = Color.White)
+                        }
+                    }
+                }
+            }
         }
     }
 }

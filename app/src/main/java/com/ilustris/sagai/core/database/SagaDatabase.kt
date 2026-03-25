@@ -45,7 +45,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Reaction::class,
         AIAuditLog::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(IntListConverter::class, EnumConverters::class)

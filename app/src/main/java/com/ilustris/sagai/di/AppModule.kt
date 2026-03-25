@@ -413,6 +413,11 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesPaletteUseCase(paletteUseCaseImpl: PaletteUseCaseImpl): PaletteUseCase
+
+    @Binds
+    abstract fun providesAIAuditLogUseCase(
+        aiAuditLogUseCaseImpl: com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCaseImpl,
+    ): com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -452,6 +457,11 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsReactionRepository(reactionRepositoryImpl: ReactionRepositoryImpl): ReactionRepository
+
+    @Binds
+    abstract fun bindsAIAuditLogRepository(
+        aiAuditLogRepositoryImpl: com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepositoryImpl,
+    ): com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepository
 }
 
 @Module

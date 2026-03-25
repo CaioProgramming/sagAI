@@ -47,6 +47,7 @@ class HomeUseCaseImpl
                 val result =
                     gemmaClient.generate<DynamicSagaPrompt>(
                         prompt,
+                        blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
                         temperatureRandomness = .5f,
                         requireTranslation = true,
                     )

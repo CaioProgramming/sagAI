@@ -45,12 +45,20 @@ class NotificationGenerationWorker
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
             return try {
-                withTimeout(20.seconds) {
+                withTimeout(60.seconds) {
                     Log.d(javaClass.simpleName, "Generating notification...")
                     val sagaId = inputData.getInt(KEY_SAGA_ID, -1)
                     if (sagaId == -1) {
                         Log.e(TAG, "Invalid saga ID provided")
                         return@withTimeout Result.failure()
+                    }
+
+                    if (androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(
+                            androidx.lifecycle.Lifecycle.State.STARTED,
+                        )
+                    ) {
+                        Log.w(TAG, "App is in foreground, aborting notification generation")
+                        return@withTimeout Result.success()
                     }
 
                     Log.d(TAG, "Starting notification generation for saga: $sagaId")

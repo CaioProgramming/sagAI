@@ -668,7 +668,7 @@ fun SettingsView(
                     shape = RoundedCornerShape(15.dp),
                 ) {
                     Text(
-                        "AI Audit Logs",
+                        stringResource(R.string.audit_logs_title),
                         modifier =
                             Modifier
                                 .fillMaxWidth()

@@ -542,4 +542,17 @@
     <string name="review_stage_journey_subtitle_default">The path we took</string>
     <string name="review_stage_conclusion_title">The Legacy</string>
     <string name="review_stage_conclusion_subtitle_default">What remains</string>
+
+    <!-- AI Audit Logs -->
+    <string name="audit_logs_title">AI Audit Logs</string>
+    <string name="audit_logs_all">All</string>
+    <string name="audit_logs_success">Success</string>
+    <string name="audit_logs_error">Error</string>
+    <string name="audit_logs_empty">No logs recorded yet.</string>
+    <string name="audit_logs_clear_dialog_title">Clear Audit Logs</string>
+    <string name="audit_logs_clear_dialog_message">Are you sure you want to delete all AI Audit Logs? This action cannot be undone.</string>
+    <string name="audit_logs_clear_button">Clear</string>
+    <string name="audit_logs_reasoning">Reasoning (Chain-of-Thought):</string>
+    <string name="audit_logs_raw_response">Raw Response:</string>
+    <string name="audit_logs_error_label">Error:</string>
 </resources>

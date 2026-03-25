@@ -509,6 +509,19 @@
     <string name="review_stage_journey_subtitle_default">O caminho que fizemos</string>
     <string name="review_stage_conclusion_title">O Legado</string>
     <string name="review_stage_conclusion_subtitle_default">O que ficou</string>
+
+    <!-- Logs de Auditoria de IA -->
+    <string name="audit_logs_title">Logs de Auditoria de IA</string>
+    <string name="audit_logs_all">Todos</string>
+    <string name="audit_logs_success">Sucesso</string>
+    <string name="audit_logs_error">Erro</string>
+    <string name="audit_logs_empty">Nenhum log registrado ainda.</string>
+    <string name="audit_logs_clear_dialog_title">Limpar Logs de Auditoria</string>
+    <string name="audit_logs_clear_dialog_message">Tem certeza que deseja apagar todos os logs de auditoria de IA? Esta ação não pode ser desfeita.</string>
+    <string name="audit_logs_clear_button">Limpar</string>
+    <string name="audit_logs_reasoning">Raciocínio (Chain-of-Thought):</string>
+    <string name="audit_logs_raw_response">Resposta Bruta:</string>
+    <string name="audit_logs_error_label">Erro:</string>
 </resources>
 
 

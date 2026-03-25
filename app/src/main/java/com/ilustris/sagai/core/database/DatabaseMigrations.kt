@@ -81,5 +81,20 @@ object DatabaseMigrations {
             }
         }
 
-    fun getAllMigrations(): Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_6_7)
+    val MIGRATION_7_8 =
+        object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `suggestion` TEXT")
+            }
+        }
+
+    fun getAllMigrations(): Array<Migration> =
+        arrayOf(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+            MIGRATION_4_5,
+            MIGRATION_6_7,
+            MIGRATION_7_8,
+        )
 }
