@@ -156,6 +156,14 @@ enum class Routes(
             )
         },
     ),
+    AUDIT_LOGS(
+        showBottomNav = false,
+        view = { nav, padding, _, _ ->
+            com.ilustris.sagai.features.settings.ui.audit
+                .AIAuditLogView(nav)
+        },
+        topBarContent = { Box {} },
+    ),
 }
 
 @Composable

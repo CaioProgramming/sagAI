@@ -24,6 +24,7 @@ import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
 import com.ilustris.sagai.core.file.BackupService
@@ -198,6 +199,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAIAuditLogDao(database: SagaDatabase): AIAuditLogDao = database.aiAuditLogDao()
+
+    @Provides
+    @Singleton
     fun provideDatabaseBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
@@ -214,7 +219,8 @@ object AppModule {
         remoteConfigService: RemoteConfigService,
         geminiApiService: GeminiApiService,
         promptService: PromptService,
-    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService, promptService)
+        aiAuditLogDao: AIAuditLogDao,
+    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService, promptService, aiAuditLogDao)
 
     @Provides
     @Singleton

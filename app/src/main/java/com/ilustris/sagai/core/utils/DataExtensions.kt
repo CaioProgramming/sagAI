@@ -204,7 +204,12 @@ fun toJsonMap(
                 val customDescription =
                     fieldCustomDescriptions.find { it.first == field.name }
                 if (customDescription != null) {
-                    "\"${customDescription.first}\": \"${customDescription.second}\""
+                    val value = customDescription.second
+                    if (value.startsWith("{") || value.startsWith("[")) {
+                        "\"${customDescription.first}\": $value"
+                    } else {
+                        "\"${customDescription.first}\": \"$value\""
+                    }
                 } else {
                     "\"$fieldName\": $fieldValue"
                 }

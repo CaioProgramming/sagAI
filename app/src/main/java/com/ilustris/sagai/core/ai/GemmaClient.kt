@@ -7,6 +7,8 @@ import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
@@ -15,6 +17,8 @@ import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
@@ -38,6 +42,7 @@ class GemmaClient
         private val remoteConfigService: RemoteConfigService,
         val geminiApiService: GeminiApiService,
         val promptService: PromptService,
+        @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
     ) : AIClient() {
         @PublishedApi
         internal val requestMutex = Mutex()
@@ -89,6 +94,9 @@ class GemmaClient
                 } ?: error("Flag Value unavailable.")
             }
 
+        /**
+         * @param blueprintKey Optional key identifying the prompt blueprint used. Providing this greatly helps trace prompt generation in the local debugging ai_audit_logs database.
+         */
         suspend inline fun <reified T> generate(
             prompt: String,
             references: List<ImageReference?> = emptyList(),
@@ -98,6 +106,7 @@ class GemmaClient
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.HIGH,
+            blueprintKey: String? = null,
         ): T? =
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
@@ -130,7 +139,15 @@ class GemmaClient
                                 if (T::class != String::class &&
                                     describeOutput
                                 ) {
-                                    toJsonMap(T::class.java, filteredFields = filterOutputFields)
+                                    val dataStructure =
+                                        toJsonMap(
+                                            T::class.java,
+                                            filteredFields = filterOutputFields,
+                                        )
+                                    toJsonMap(
+                                        AIGeneration::class.java,
+                                        fieldCustomDescriptions = listOf("data" to dataStructure),
+                                    )
                                 } else {
                                     if (T::class == String::class) {
                                         "Simple String text no JSON Object"
@@ -261,15 +278,58 @@ class GemmaClient
                                     javaClass.simpleName,
                                     "Prompt request result (Cleaned):\n$cleanedText",
                                 )
+                                if (BuildConfig.DEBUG) {
+                                    aiAuditLogDao.insertLog(
+                                        AIAuditLog(
+                                            model = model,
+                                            blueprintKey = blueprintKey,
+                                            dataType = "String",
+                                            status = "SUCCESS",
+                                            rawResponse = responseText,
+                                        ),
+                                    )
+                                }
                                 return@withLock cleanedText as T
                             }
 
                             val cleanedJsonString =
-                                responseText.sanitizeAndExtractJsonString(T::class.java)
-                            val typeToken = object : TypeToken<T>() {}
-                            Gson().fromJson(cleanedJsonString, typeToken.type)
+                                responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)
+                            val typeToken = object : TypeToken<AIGeneration<T>>() {}
+                            val aiGeneration =
+                                Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+                            if (BuildConfig.DEBUG) {
+                                aiAuditLogDao.insertLog(
+                                    AIAuditLog(
+                                        model = model,
+                                        blueprintKey = blueprintKey,
+                                        dataType = T::class.java.simpleName,
+                                        status = "SUCCESS",
+                                        reasoning = aiGeneration?.reasoning,
+                                        rawResponse = responseText,
+                                    ),
+                                )
+                            }
+                            aiGeneration.data
                         }
                     } catch (e: Exception) {
+                        if (BuildConfig.DEBUG) {
+                            try {
+                                aiAuditLogDao.insertLog(
+                                    AIAuditLog(
+                                        model = model,
+                                        blueprintKey = blueprintKey,
+                                        dataType = T::class.java.simpleName,
+                                        status = "ERROR",
+                                        errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                    ),
+                                )
+                            } catch (logEx: Exception) {
+                                Log.e(
+                                    this@GemmaClient::class.java.simpleName,
+                                    "Error saving log: ${logEx.message}",
+                                )
+                            }
+                        }
                         Log.e(
                             this@GemmaClient::class.java.simpleName,
                             "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",

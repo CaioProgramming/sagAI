@@ -655,6 +655,30 @@ fun SettingsView(
             }
         }
 
+        if (com.ilustris.sagai.BuildConfig.DEBUG) {
+            item {
+                Button(
+                    onClick = { navController?.navigateToRoute(Routes.AUDIT_LOGS) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    shape = RoundedCornerShape(15.dp),
+                ) {
+                    Text(
+                        "AI Audit Logs",
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Start,
+                    )
+                }
+            }
+        }
+
         item {
             Spacer(Modifier.size(50.dp))
         }
