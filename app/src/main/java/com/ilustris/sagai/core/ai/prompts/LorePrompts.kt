@@ -16,6 +16,8 @@ data class LoreGenerationArgs(
 )
 
 object LorePrompts {
+    const val LORE_GENERATION_BLUEPRINT = "lore_generation_blueprint"
+
     private val SAGA_EXCLUDED_FIELDS =
         listOf(
             "id",
@@ -83,7 +85,7 @@ object LorePrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("lore_generation_blueprint", args)
+        return promptService.buildRemotePrompt(LORE_GENERATION_BLUEPRINT, args)
     }
 
     fun storyContext(

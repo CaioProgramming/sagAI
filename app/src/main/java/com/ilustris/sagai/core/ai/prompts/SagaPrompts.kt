@@ -58,6 +58,11 @@ data class SagaResumeArgs(
 )
 
 object SagaPrompts {
+    const val REVIEW_GENERATION_BLUEPRINT = "review_generation_blueprint"
+    const val SAGA_END_CREDITS_BLUEPRINT = "saga_end_credits_blueprint"
+    const val SAGA_RESUME_BLUEPRINT = "saga_resume_blueprint"
+    const val STORY_BRIEFING_BLUEPRINT = "story_briefing_blueprint"
+
     fun mainContext(
         saga: SagaContent,
         character: CharacterContent? = null,
@@ -91,7 +96,7 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("saga_end_credits_blueprint", args)
+        return promptService.buildRemotePrompt(SAGA_END_CREDITS_BLUEPRINT, args)
     }
 
     suspend fun reviewGeneration(
@@ -128,7 +133,7 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("review_generation_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun generateStoryBriefing(
@@ -152,7 +157,7 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("story_briefing_blueprint", args)
+        return promptService.buildRemotePrompt(STORY_BRIEFING_BLUEPRINT, args)
     }
 
     suspend fun sagaResume(
@@ -174,6 +179,6 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("saga_resume_blueprint", args)
+        return promptService.buildRemotePrompt(SAGA_RESUME_BLUEPRINT, args)
     }
 }

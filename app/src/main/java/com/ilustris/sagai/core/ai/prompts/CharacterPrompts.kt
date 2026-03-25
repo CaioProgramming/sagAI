@@ -79,6 +79,17 @@ data class RefineDraftArgs(
 
 @Suppress("ktlint:standard:max-line-length")
 object CharacterPrompts {
+    const val CHARACTER_ADAPTATION_BLUEPRINT = "character_adaptation_blueprint"
+    const val CHARACTER_GENERATION_BLUEPRINT = "character_generation_blueprint"
+    const val CHARACTER_INTRO_BLUEPRINT = "character_intro_blueprint"
+    const val CHARACTER_LORE_BLUEPRINT = "character_lore_blueprint"
+    const val CHARACTER_NICKNAME_BLUEPRINT = "character_nickname_blueprint"
+    const val CHARACTER_RELATION_BLUEPRINT = "character_relation_blueprint"
+    const val CHARACTER_RESUME_BLUEPRINT = "character_resume_blueprint"
+    const val CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT = "conversational_character_reply_blueprint"
+    const val KNOWLEDGE_UPDATE_BLUEPRINT = "knowledge_update_blueprint"
+    const val REFINE_CHARACTER_DRAFT_BLUEPRINT = "refine_character_draft_blueprint"
+
     suspend fun conversationalCharacterReply(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         currentCharacterInfo: CharacterInfo,
@@ -97,7 +108,7 @@ object CharacterPrompts {
                 userInput = userInput,
             )
 
-        return promptService.buildRemotePrompt("conversational_character_reply_blueprint", args)
+        return promptService.buildRemotePrompt(CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT, args)
     }
 
     suspend fun characterIntroPrompt(
@@ -111,7 +122,7 @@ object CharacterPrompts {
                 genreName = sagaContext?.genre?.name ?: "FANTASY",
             )
 
-        return promptService.buildRemotePrompt("character_intro_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_INTRO_BLUEPRINT, args)
     }
 
     suspend fun characterAdaptationPrompt(
@@ -125,7 +136,7 @@ object CharacterPrompts {
                 currentCharacterDraft = currentCharacterInfo.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt("character_adaptation_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_ADAPTATION_BLUEPRINT, args)
     }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
@@ -206,7 +217,7 @@ object CharacterPrompts {
                 appearanceGuidelines = "",
             )
 
-        return promptService.buildRemotePrompt("character_generation_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun characterLoreGeneration(
@@ -226,7 +237,7 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("character_lore_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_LORE_BLUEPRINT, args)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -252,7 +263,7 @@ object CharacterPrompts {
                 recentMessages = messages.normalizetoAIItems(messageExclusions),
             )
 
-        return promptService.buildRemotePrompt("character_nickname_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_NICKNAME_BLUEPRINT, args)
     }
 
     suspend fun generateCharacterRelation(
@@ -276,7 +287,7 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("character_relation_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_RELATION_BLUEPRINT, args)
     }
 
     suspend fun characterResume(
@@ -324,7 +335,7 @@ object CharacterPrompts {
                 toneStyle = "",
             )
 
-        return promptService.buildRemotePrompt("character_resume_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_RESUME_BLUEPRINT, args)
     }
 
     suspend fun knowledgeUpdatePrompt(
@@ -338,7 +349,7 @@ object CharacterPrompts {
                 charactersContext = characters.normalizetoAIItems(ChatPrompts.characterExclusions),
             )
 
-        return promptService.buildRemotePrompt("knowledge_update_blueprint", args)
+        return promptService.buildRemotePrompt(KNOWLEDGE_UPDATE_BLUEPRINT, args)
     }
 
     suspend fun refineCharacterDraftPrompt(
@@ -352,6 +363,6 @@ object CharacterPrompts {
                 sagaContext = sagaContext?.toAINormalize() ?: "",
             )
 
-        return promptService.buildRemotePrompt("refine_character_draft_blueprint", args)
+        return promptService.buildRemotePrompt(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
     }
 }

@@ -132,7 +132,11 @@ class GemmaClient
                                 ) {
                                     toJsonMap(T::class.java, filteredFields = filterOutputFields)
                                 } else {
-                                    T::class.java.simpleName
+                                    if (T::class == String::class) {
+                                        "Simple String text no JSON Object"
+                                    } else {
+                                        T::class.java.simpleName
+                                    }
                                 }
 
                             val formattingRule =

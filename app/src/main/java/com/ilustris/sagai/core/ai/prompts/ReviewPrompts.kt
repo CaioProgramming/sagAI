@@ -44,6 +44,13 @@ data class ReviewConclusionArgs(
 )
 
 object ReviewPrompts {
+    const val REVIEW_ACTS_INSIGHT_BLUEPRINT = "review_acts_insight_blueprint"
+    const val REVIEW_CONCLUSION_BLUEPRINT = "review_conclusion_blueprint"
+    const val REVIEW_CONNECTIONS_BLUEPRINT = "review_connections_blueprint"
+    const val REVIEW_EXPRESSIVENESS_BLUEPRINT = "review_expressiveness_blueprint"
+    const val REVIEW_INTRODUCTION_BLUEPRINT = "review_introduction_blueprint"
+    const val REVIEW_PLAYSTYLE_BLUEPRINT = "review_playstyle_blueprint"
+
     suspend fun introductionPrompt(
         promptService: PromptService,
         saga: SagaContent,
@@ -54,7 +61,7 @@ object ReviewPrompts {
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
                 conversationDirective = "",
             )
-        return promptService.buildRemotePrompt("review_introduction_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_INTRODUCTION_BLUEPRINT, args)
     }
 
     suspend fun playstylePrompt(
@@ -73,7 +80,7 @@ object ReviewPrompts {
                 interactionCount = totalExpressive.toString(),
                 conversationDirective = "",
             )
-        return promptService.buildRemotePrompt("review_playstyle_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_PLAYSTYLE_BLUEPRINT, args)
     }
 
     suspend fun expressivenessPrompt(
@@ -89,7 +96,7 @@ object ReviewPrompts {
                 emotionalSummary = saga.emotionalSummary(),
                 conversationDirective = "",
             )
-        return promptService.buildRemotePrompt("review_expressiveness_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_EXPRESSIVENESS_BLUEPRINT, args)
     }
 
     suspend fun connectionsPrompt(
@@ -104,7 +111,7 @@ object ReviewPrompts {
                 topBonds = topCharacters.joinToString { it.first },
                 conversationDirective = "",
             )
-        return promptService.buildRemotePrompt("review_connections_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_CONNECTIONS_BLUEPRINT, args)
     }
 
     suspend fun actsInsightPrompt(
@@ -118,7 +125,7 @@ object ReviewPrompts {
                 worldHistory = saga.acts.joinToString { it.data.title },
                 conversationDirective = "",
             )
-        return promptService.buildRemotePrompt("review_acts_insight_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_ACTS_INSIGHT_BLUEPRINT, args)
     }
 
     suspend fun conclusionPrompt(
@@ -131,6 +138,6 @@ object ReviewPrompts {
                 characterName = saga.mainCharacter?.data?.name ?: "buddy",
                 conversationDirective = "",
             )
-        return promptService.buildRemotePrompt("review_conclusion_blueprint", args)
+        return promptService.buildRemotePrompt(REVIEW_CONCLUSION_BLUEPRINT, args)
     }
 }

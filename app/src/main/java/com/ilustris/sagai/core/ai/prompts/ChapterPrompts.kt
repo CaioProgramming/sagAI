@@ -28,6 +28,9 @@ data class ChapterGenerationArgs(
 )
 
 object ChapterPrompts {
+    const val CHAPTER_GENERATION_BLUEPRINT = "chapter_generation_blueprint"
+    const val CHAPTER_INTRODUCTION_BLUEPRINT = "chapter_introduction_blueprint"
+
     val CHAPTER_EXCLUSIONS =
         listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
 
@@ -50,7 +53,7 @@ object ChapterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("chapter_introduction_blueprint", args)
+        return promptService.buildRemotePrompt(CHAPTER_INTRODUCTION_BLUEPRINT, args)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -120,6 +123,6 @@ object ChapterPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("chapter_generation_blueprint", args)
+        return promptService.buildRemotePrompt(CHAPTER_GENERATION_BLUEPRINT, args)
     }
 }

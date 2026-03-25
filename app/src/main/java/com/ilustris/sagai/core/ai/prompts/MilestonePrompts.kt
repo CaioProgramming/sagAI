@@ -40,6 +40,11 @@ data class IntroMilestoneArgs(
 )
 
 object MilestonePrompts {
+    const val CONGRATS_MILESTONE_BLUEPRINT = "congrats_milestone_blueprint"
+    const val INTRO_MILESTONE_BLUEPRINT = "intro_milestone_blueprint"
+    const val LOADING_MESSAGE_BLUEPRINT = "loading_message_blueprint"
+    const val NEW_CHARACTER_MILESTONE_BLUEPRINT = "new_character_milestone_blueprint"
+
     suspend fun generateCongratsMessage(
         promptService: PromptService,
         milestone: SagaMilestone,
@@ -80,7 +85,7 @@ object MilestonePrompts {
                 referencePoints = getReferencePoints(milestone),
             )
 
-        return promptService.buildRemotePrompt("congrats_milestone_blueprint", args)
+        return promptService.buildRemotePrompt(CONGRATS_MILESTONE_BLUEPRINT, args)
     }
 
     suspend fun generateLoadingMessage(
@@ -94,7 +99,7 @@ object MilestonePrompts {
                 genreName = saga.data.genre.name,
                 interludeStyle = identity,
             )
-        return promptService.buildRemotePrompt("loading_message_blueprint", args)
+        return promptService.buildRemotePrompt(LOADING_MESSAGE_BLUEPRINT, args)
     }
 
     suspend fun generateNewCharacterMessage(
@@ -112,7 +117,7 @@ object MilestonePrompts {
                 genreTone = identity,
                 conversationalStyle = identity,
             )
-        return promptService.buildRemotePrompt("new_character_milestone_blueprint", args)
+        return promptService.buildRemotePrompt(NEW_CHARACTER_MILESTONE_BLUEPRINT, args)
     }
 
     private fun getReferencePoints(milestone: SagaMilestone): String =
@@ -194,6 +199,6 @@ object MilestonePrompts {
                 genreTone = identity,
             )
 
-        return promptService.buildRemotePrompt("intro_milestone_blueprint", args)
+        return promptService.buildRemotePrompt(INTRO_MILESTONE_BLUEPRINT, args)
     }
 }

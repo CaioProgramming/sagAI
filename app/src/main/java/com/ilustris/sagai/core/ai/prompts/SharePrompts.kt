@@ -41,6 +41,12 @@ data class ShareCharacterArgs(
 )
 
 object SharePrompts {
+    const val SHARE_CHARACTER_BLUEPRINT = "share_character_blueprint"
+    const val SHARE_EMOTIONAL_BLUEPRINT = "share_emotional_blueprint"
+    const val SHARE_HISTORY_BLUEPRINT = "share_history_blueprint"
+    const val SHARE_PLAYSTYLE_BLUEPRINT = "share_playstyle_blueprint"
+    const val SHARE_RELATIONS_BLUEPRINT = "share_relations_blueprint"
+
     val sagaExcludedFields =
         listOf(
             "id",
@@ -79,7 +85,7 @@ object SharePrompts {
                     ),
                 sagaMainContext = SagaPrompts.mainContext(sagaContent),
             )
-        return promptService.buildRemotePrompt("share_playstyle_blueprint", args)
+        return promptService.buildRemotePrompt(SHARE_PLAYSTYLE_BLUEPRINT, args)
     }
 
     suspend fun emotionalPrompt(
@@ -96,7 +102,7 @@ object SharePrompts {
                         ?.profile
                         ?.toAINormalize() ?: "",
             )
-        return promptService.buildRemotePrompt("share_emotional_blueprint", args)
+        return promptService.buildRemotePrompt(SHARE_EMOTIONAL_BLUEPRINT, args)
     }
 
     suspend fun historyPrompt(
@@ -108,7 +114,7 @@ object SharePrompts {
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 historyContext = saga.acts.joinToString(".\n") { it.actSummary(false) },
             )
-        return promptService.buildRemotePrompt("share_history_blueprint", args)
+        return promptService.buildRemotePrompt(SHARE_HISTORY_BLUEPRINT, args)
     }
 
     suspend fun relationsPrompt(
@@ -120,7 +126,7 @@ object SharePrompts {
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 relationshipContext = saga.mainCharacter?.summarizeRelationships() ?: "",
             )
-        return promptService.buildRemotePrompt("share_relations_blueprint", args)
+        return promptService.buildRemotePrompt(SHARE_RELATIONS_BLUEPRINT, args)
     }
 
     suspend fun characterPrompt(
@@ -145,6 +151,6 @@ object SharePrompts {
                         listOf("id", "characterId", "gameTimelineId", "createdAt"),
                     ),
             )
-        return promptService.buildRemotePrompt("share_character_blueprint", args)
+        return promptService.buildRemotePrompt(SHARE_CHARACTER_BLUEPRINT, args)
     }
 }

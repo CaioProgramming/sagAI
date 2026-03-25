@@ -20,6 +20,8 @@ data class TimelineArgs(
 )
 
 object TimelinePrompts {
+    const val LORE_GENERATION_BLUEPRINT = "lore_generation_blueprint"
+
     val timelineExclusions = listOf("id", "chapterId", "createdAt", "emotionalReview")
 
     suspend fun generateTimelinePrompt(
@@ -60,6 +62,6 @@ object TimelinePrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("lore_generation_blueprint", args)
+        return promptService.buildRemotePrompt(LORE_GENERATION_BLUEPRINT, args)
     }
 }

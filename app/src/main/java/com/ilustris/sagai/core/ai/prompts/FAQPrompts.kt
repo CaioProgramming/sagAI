@@ -10,6 +10,8 @@ data class FAQArgs(
 )
 
 object FAQPrompts {
+    const val FAQ_ASK_AI_BLUEPRINT = "faq_ask_ai_blueprint"
+
     suspend fun getAskAiPrompt(
         promptService: PromptService,
         query: String,
@@ -20,6 +22,6 @@ object FAQPrompts {
                 query = query,
                 faqContext = context.toAINormalize(),
             )
-        return promptService.buildRemotePrompt("faq_ask_ai_blueprint", args)
+        return promptService.buildRemotePrompt(FAQ_ASK_AI_BLUEPRINT, args)
     }
 }

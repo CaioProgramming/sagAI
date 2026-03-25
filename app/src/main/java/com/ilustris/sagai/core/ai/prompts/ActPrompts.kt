@@ -34,6 +34,9 @@ data class ActIntroArgs(
 )
 
 object ActPrompts {
+    const val ACT_CLOSURE_INSTRUCTION_TEMPLATE = "act_closure_instruction_template"
+    const val ACT_CONCLUSION_BLUEPRINT = "act_conclusion_blueprint"
+
     val ACT_EXCLUSIONS = listOf("id, sagaId, currentChapterId")
 
     @Suppress("ktlint:standard:max-line-length")
@@ -63,7 +66,7 @@ object ActPrompts {
 
         val closureInstruction =
             promptService.buildRemotePrompt(
-                "act_closure_instruction_template",
+                ACT_CLOSURE_INSTRUCTION_TEMPLATE,
                 mapOf("actNumber" to sagaContent.actNumber(currentActContent.data)),
             )
 
@@ -87,7 +90,7 @@ object ActPrompts {
                 conversationDirective = "",
             )
 
-        return promptService.buildRemotePrompt("act_conclusion_blueprint", args)
+        return promptService.buildRemotePrompt(ACT_CONCLUSION_BLUEPRINT, args)
     }
 
     suspend fun actIntroductionPrompt(

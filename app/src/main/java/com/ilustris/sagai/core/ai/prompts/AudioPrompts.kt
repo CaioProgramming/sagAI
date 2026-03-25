@@ -18,6 +18,8 @@ data class AudioConfigArgs(
 )
 
 object AudioPrompts {
+    const val AUDIO_CONFIG_BLUEPRINT = "audio_config_blueprint"
+
     fun transcribeInstruction() = "Generate a short, playful message about listening to the user. Example: 'I'm all ears!'"
 
     suspend fun audioConfigPrompt(
@@ -74,6 +76,6 @@ object AudioPrompts {
                 voiceSelectionGuide = Voice.getVoiceSelectionGuide(),
             )
 
-        return promptService.buildRemotePrompt("audio_config_blueprint", args)
+        return promptService.buildRemotePrompt(AUDIO_CONFIG_BLUEPRINT, args)
     }
 }

@@ -17,6 +17,8 @@ data class SuggestionArgs(
 )
 
 object SuggestionPrompts {
+    const val SAGA_INPUT_SUGGESTIONS_BLUEPRINT = "saga_input_suggestions_blueprint"
+
     @Suppress("ktlint:standard:max-line-length")
     suspend fun generateSuggestionsPrompt(
         promptService: PromptService,
@@ -59,6 +61,6 @@ object SuggestionPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt("saga_input_suggestions_blueprint", args)
+        return promptService.buildRemotePrompt(SAGA_INPUT_SUGGESTIONS_BLUEPRINT, args)
     }
 }

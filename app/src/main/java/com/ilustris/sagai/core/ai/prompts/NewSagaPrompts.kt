@@ -79,6 +79,16 @@ data class CreationAssistArgs(
 
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
+    const val CHARACTER_SAVED_BLUEPRINT = "character_saved_blueprint"
+    const val CONVERSATIONAL_SAGA_REPLY_BLUEPRINT = "conversational_saga_reply_blueprint"
+    const val CREATION_FLOW_ASSIST_BLUEPRINT = "creation_flow_assist_blueprint"
+    const val CREATION_INTRO_BLUEPRINT = "creation_intro_blueprint"
+    const val GENRE_ADAPTATION_BLUEPRINT = "genre_adaptation_blueprint"
+    const val GENRE_SUGGESTIONS_BLUEPRINT = "genre_suggestions_blueprint"
+    const val INITIAL_SAGA_KICKOFF_BLUEPRINT = "initial_saga_kickoff_blueprint"
+    const val REFINE_SAGA_DRAFT_BLUEPRINT = "refine_saga_draft_blueprint"
+    const val SAGA_PROCESS_INTERLUDE_BLUEPRINT = "saga_process_interlude_blueprint"
+
     suspend fun conversationalSagaReply(
         promptService: PromptService,
         currentSagaDraft: SagaDraft,
@@ -104,7 +114,7 @@ object NewSagaPrompts {
                 companionConversationalStyle = identity,
             )
 
-        return promptService.buildRemotePrompt("conversational_saga_reply_blueprint", args)
+        return promptService.buildRemotePrompt(CONVERSATIONAL_SAGA_REPLY_BLUEPRINT, args)
     }
 
     suspend fun generateProcessPrompt(
@@ -133,7 +143,7 @@ object NewSagaPrompts {
                 processSpecificInstruction = processSpecificInstruction,
             )
 
-        return promptService.buildRemotePrompt("saga_process_interlude_blueprint", args)
+        return promptService.buildRemotePrompt(SAGA_PROCESS_INTERLUDE_BLUEPRINT, args)
     }
 
     suspend fun createSagaPrompt(
@@ -156,7 +166,7 @@ object NewSagaPrompts {
                 availableVariations = variationsBlock,
             )
 
-        return promptService.buildRemotePrompt("initial_saga_kickoff_blueprint", args)
+        return promptService.buildRemotePrompt(INITIAL_SAGA_KICKOFF_BLUEPRINT, args)
     }
 
     suspend fun characterSavedPrompt(
@@ -174,7 +184,7 @@ object NewSagaPrompts {
                 sagaDescription = saga.description,
             )
 
-        return promptService.buildRemotePrompt("character_saved_blueprint", args)
+        return promptService.buildRemotePrompt(CHARACTER_SAVED_BLUEPRINT, args)
     }
 
     suspend fun introPrompt(
@@ -188,7 +198,7 @@ object NewSagaPrompts {
                 genreEnumNames = Genre.entries.joinToString(", ") { it.name },
             )
 
-        return promptService.buildRemotePrompt("creation_intro_blueprint", args)
+        return promptService.buildRemotePrompt(CREATION_INTRO_BLUEPRINT, args)
     }
 
     suspend fun genreAdaptationPrompt(
@@ -203,7 +213,7 @@ object NewSagaPrompts {
                 currentDraft = currentDraft.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt("genre_adaptation_blueprint", args)
+        return promptService.buildRemotePrompt(GENRE_ADAPTATION_BLUEPRINT, args)
     }
 
     suspend fun genreSuggestionsPrompt(
@@ -217,7 +227,7 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt("genre_suggestions_blueprint", args)
+        return promptService.buildRemotePrompt(GENRE_SUGGESTIONS_BLUEPRINT, args)
     }
 
     suspend fun refineDraftPrompt(
@@ -233,7 +243,7 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt("refine_saga_draft_blueprint", args)
+        return promptService.buildRemotePrompt(REFINE_SAGA_DRAFT_BLUEPRINT, args)
     }
 
     suspend fun creationAssistPrompt(
@@ -255,6 +265,6 @@ object NewSagaPrompts {
                 flowSpecificObjectives = flowSpecificObjectives,
             )
 
-        return promptService.buildRemotePrompt("creation_flow_assist_blueprint", args)
+        return promptService.buildRemotePrompt(CREATION_FLOW_ASSIST_BLUEPRINT, args)
     }
 }

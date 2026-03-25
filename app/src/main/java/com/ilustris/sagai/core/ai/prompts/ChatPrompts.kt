@@ -68,6 +68,12 @@ data class NotificationArgs(
 )
 
 object ChatPrompts {
+    const val CHAT_NOTIFICATION_BLUEPRINT = "chat_notification_blueprint"
+    const val CHAT_REACTION_BLUEPRINT = "chat_reaction_blueprint"
+    const val CHAT_WRITING_PAL_BLUEPRINT = "chat_writing_pal_blueprint"
+    const val REPLY_GENERATION_BLUEPRINT = "reply_generation_blueprint"
+    const val SCENE_SUMMARIZATION_BLUEPRINT = "scene_summarization_blueprint"
+
     val messageExclusions =
         listOf(
             "id",
@@ -171,7 +177,7 @@ object ChatPrompts {
                 "genreConversationSoul" to conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("reply_generation_blueprint", argsMap)
+        return promptService.buildRemotePrompt(REPLY_GENERATION_BLUEPRINT, argsMap)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -198,7 +204,7 @@ object ChatPrompts {
                 message = message,
             )
 
-        return promptService.buildRemotePrompt("chat_writing_pal_blueprint", args)
+        return promptService.buildRemotePrompt(CHAT_WRITING_PAL_BLUEPRINT, args)
     }
 
     suspend fun generateReactionPrompt(
@@ -230,7 +236,7 @@ object ChatPrompts {
                 genreName = saga.data.genre.name,
             )
 
-        return promptService.buildRemotePrompt("chat_reaction_blueprint", args)
+        return promptService.buildRemotePrompt(CHAT_REACTION_BLUEPRINT, args)
     }
 
     suspend fun sceneSummarizationPrompt(
@@ -249,7 +255,7 @@ object ChatPrompts {
                 latestMessage = latestMessageContent,
             )
 
-        return promptService.buildRemotePrompt("scene_summarization_blueprint", args)
+        return promptService.buildRemotePrompt(SCENE_SUMMARIZATION_BLUEPRINT, args)
     }
 
     suspend fun scheduledNotificationPrompt(
@@ -274,7 +280,7 @@ object ChatPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt("chat_notification_blueprint", args)
+        return promptService.buildRemotePrompt(CHAT_NOTIFICATION_BLUEPRINT, args)
     }
 
     fun conversationHistory(

@@ -31,6 +31,10 @@ data class EmotionalProfileArgs(
 )
 
 object EmotionalPrompt {
+    const val EMOTIONAL_CONCLUSION_BLUEPRINT = "emotional_conclusion_blueprint"
+    const val EMOTIONAL_REVIEW_BLUEPRINT = "emotional_review_blueprint"
+    const val EMOTIONAL_TONE_EXTRACTION_BLUEPRINT = "emotional_tone_extraction_blueprint"
+
     suspend fun emotionalToneExtraction(
         promptService: PromptService,
         promptDirectives: PromptDirectives,
@@ -47,7 +51,7 @@ object EmotionalPrompt {
                 availableTones = EmotionalTone.entries.joinToString { it.name },
                 userText = userText,
             )
-        return promptService.buildRemotePrompt("emotional_tone_extraction_blueprint", args)
+        return promptService.buildRemotePrompt(EMOTIONAL_TONE_EXTRACTION_BLUEPRINT, args)
     }
 
     suspend fun generateEmotionalReview(
@@ -62,7 +66,7 @@ object EmotionalPrompt {
                 analysisData = context,
                 conversationDirective = conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_review_blueprint", args)
+        return promptService.buildRemotePrompt(EMOTIONAL_REVIEW_BLUEPRINT, args)
     }
 
     suspend fun generateEmotionalConclusion(
@@ -86,7 +90,7 @@ object EmotionalPrompt {
                 emotionalJourneySummary = saga.emotionalSummary(),
                 conversationDirective = conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_conclusion_blueprint", args)
+        return promptService.buildRemotePrompt(EMOTIONAL_CONCLUSION_BLUEPRINT, args)
     }
 
     suspend fun generateEmotionalProfile(
@@ -101,6 +105,6 @@ object EmotionalPrompt {
                 analysisData = summary,
                 conversationDirective = conversationDirective,
             )
-        return promptService.buildRemotePrompt("emotional_review_blueprint", args)
+        return promptService.buildRemotePrompt(EMOTIONAL_REVIEW_BLUEPRINT, args)
     }
 }

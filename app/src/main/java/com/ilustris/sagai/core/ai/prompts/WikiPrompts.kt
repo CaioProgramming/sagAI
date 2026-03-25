@@ -22,6 +22,9 @@ data class MergeWikiArgs(
 )
 
 object WikiPrompts {
+    const val MERGE_WIKI_BLUEPRINT = "merge_wiki_blueprint"
+    const val WIKI_GENERATION_BLUEPRINT = "wiki_generation_blueprint"
+
     suspend fun generateWiki(
         promptService: PromptService,
         saga: SagaContent,
@@ -63,7 +66,7 @@ object WikiPrompts {
                 wikiTypes = WikiType.entries.joinToString(", "),
             )
 
-        return promptService.buildRemotePrompt("wiki_generation_blueprint", args)
+        return promptService.buildRemotePrompt(WIKI_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun mergeWiki(
@@ -77,6 +80,6 @@ object WikiPrompts {
                 wikiList = wikis.formatToJsonArray(excludingFields = wikiExclusion),
             )
 
-        return promptService.buildRemotePrompt("merge_wiki_blueprint", args)
+        return promptService.buildRemotePrompt(MERGE_WIKI_BLUEPRINT, args)
     }
 }
