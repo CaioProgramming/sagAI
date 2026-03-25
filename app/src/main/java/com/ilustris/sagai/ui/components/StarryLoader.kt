@@ -216,7 +216,7 @@ fun StarryLoader(
                             .alpha(starsAlpha)
                             .fillMaxSize()
                             .gradientFill(Brush.verticalGradient(brushColors)),
-                    starColor = brushColors.firstOrNull() ?: Color.White,
+                    starColor = Color.White,
                 )
 
                 Canvas(
