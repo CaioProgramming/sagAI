@@ -78,14 +78,12 @@ sealed class SagaMilestone(
             isIntrusive = true,
         )
 
-    data class Loading(
-        val type: LoadingType = LoadingType.EVENT,
-    ) : SagaMilestone(
-            title = 0,
-            subtitle = "",
-            delay = 0.seconds,
-            isIntrusive = true,
-        )
+    data object Loading : SagaMilestone(
+        title = 0,
+        subtitle = "",
+        delay = 0.seconds,
+        isIntrusive = true,
+    )
 }
 
 enum class LoadingType {

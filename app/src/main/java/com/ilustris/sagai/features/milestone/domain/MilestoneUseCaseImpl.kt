@@ -31,6 +31,8 @@ class MilestoneUseCaseImpl
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
 
+                if (milestone is SagaMilestone.Loading) error("Loading doesn't need message")
+
                 val identity = genreConfigService.conversationBlueprint(saga.data.genre)
 
                 val prompt =

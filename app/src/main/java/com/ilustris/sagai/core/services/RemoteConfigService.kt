@@ -12,10 +12,11 @@ class RemoteConfigService {
     }
 
     suspend fun getString(
-        key: String,
+        key: String?,
         logEnabled: Boolean = true,
     ): String? =
         fetchFlag("getString", key, logEnabled) {
+            if (key == null) return@fetchFlag "Key: $key not found"
             firebaseRemoteConfig.getString(key)
         }
 
@@ -26,7 +27,7 @@ class RemoteConfigService {
     suspend fun getDouble(key: String): Double? = fetchFlag("getDouble", key) { firebaseRemoteConfig.getDouble(key) }
 
     suspend inline fun <reified T> getJson(
-        key: String,
+        key: String?,
         logEnabled: Boolean = true,
     ): T? {
         val jsonString = getString(key, logEnabled)
@@ -46,7 +47,7 @@ class RemoteConfigService {
 
     private suspend fun <T> fetchFlag(
         method: String,
-        key: String,
+        key: String?,
         logEnabled: Boolean = true,
         block: suspend () -> T,
     ): T? =

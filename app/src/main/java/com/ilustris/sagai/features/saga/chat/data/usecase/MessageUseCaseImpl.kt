@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import MessageStatus
 import android.util.Log
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.model.AudioConfig
@@ -20,7 +19,6 @@ import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -172,7 +170,7 @@ class MessageUseCaseImpl
                     genreConfigService.conversationBlueprint(saga.data.genre)
                 val narrativeRules = fetchNarrativeRules()
                 val genText =
-                    gemmaClient.generate<AIReply>(
+                    gemmaClient.generate<Message>(
                         prompt =
                             ChatPrompts.replyMessagePrompt(
                                 promptService = promptService,
@@ -192,8 +190,7 @@ class MessageUseCaseImpl
                     "MessageUseCaseImpl",
                     "AI Reasoning for message generation: ${genText?.reasoning}",
                 )
-                val reasoning = if (BuildConfig.DEBUG) genText?.reasoning else null
-                genText?.message!!.copy(reasoning = reasoning)
+                genText!!
             }
 
         override suspend fun generateReaction(

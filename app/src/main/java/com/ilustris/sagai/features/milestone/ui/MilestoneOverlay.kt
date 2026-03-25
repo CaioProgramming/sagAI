@@ -100,6 +100,13 @@ fun MilestoneOverlay(
                     ),
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
+            val titleModifier =
+                Modifier.sharedElement(
+                    rememberSharedContentState(
+                        key = "saga_${saga.data.id}_title",
+                    ),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
             when (it) {
                 is SagaMilestone.CurrentObjective -> {
                     Box {}
@@ -119,9 +126,9 @@ fun MilestoneOverlay(
 
                 is SagaMilestone.Loading -> {
                     LoadingMilestoneOverlay(
-                        genre,
+                        saga.data,
                         sparkModifier,
-                        message = congratsMessage,
+                        titleModifier,
                     )
                 }
 
@@ -219,12 +226,10 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }
-                        .background(
+                        }.background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        )
-                        .padding(4.dp)
+                        ).padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,

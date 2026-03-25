@@ -259,58 +259,30 @@ class SagaContentManagerImpl
                                 if (previousSaga == null && saga.data.isEnded.not() &&
                                     saga.flatEvents().filter { it.isComplete(rules) }.size > 1
                                 ) {
-                                    saga.currentActInfo?.currentChapterInfo?.let { chapterInfo ->
-                                        val isNewChapter =
-                                            chapterInfo.events.isEmpty() ||
-                                                (
-                                                    chapterInfo.events.size == 1 &&
-                                                        chapterInfo.events
-                                                            .first()
-                                                            .messages
-                                                            .isEmpty()
+                                    saga.currentActInfo?.currentChapterInfo?.let { chapter ->
+                                        emitMilestone(SagaMilestone.Loading)
+                                        startProcessing {
+                                            val sceneContext =
+                                                _sceneSummary.value
+                                                    ?: messageUseCase.getSceneContext(saga).getSuccess()
+                                            sceneContext?.let { summary ->
+                                                emitMilestone(
+                                                    SagaMilestone.Introduction(
+                                                        type = IntroductionType.RESUME,
+                                                        titleText = emptyString(),
+                                                        introduction =
+                                                            summary.immediateObjective
+                                                                ?: summary.currentConflict
+                                                                ?: summary.mood
+                                                                ?: emptyString(),
+                                                        number =
+                                                            saga
+                                                                .chapterNumber(
+                                                                    chapter.data,
+                                                                ).toRoman(),
+                                                        sceneSummary = summary,
+                                                    ),
                                                 )
-                                        if (isNewChapter) {
-                                            emitMilestone(
-                                                SagaMilestone.Introduction(
-                                                    type = IntroductionType.CHAPTER,
-                                                    titleText = chapterInfo.data.title,
-                                                    introduction = chapterInfo.data.introduction,
-                                                    number =
-                                                        saga
-                                                            .chapterNumber(chapterInfo.data)
-                                                            .toRoman(),
-                                                ),
-                                            )
-                                        } else {
-                                            startProcessing {
-                                                if (_sceneSummary.value == null) {
-                                                    messageUseCase
-                                                        .getSceneContext(saga)
-                                                        .onSuccessAsync { summary ->
-                                                            _sceneSummary.emit(summary)
-                                                            summary?.let {
-                                                                emitMilestone(
-                                                                    SagaMilestone.Introduction(
-                                                                        type = IntroductionType.RESUME,
-                                                                        titleText = chapterInfo.data.title,
-                                                                        introduction =
-                                                                            summary.immediateObjective
-                                                                                ?: summary.currentConflict
-                                                                                ?: summary.mood
-                                                                                ?: emptyString(),
-                                                                        number =
-                                                                            saga
-                                                                                .chapterNumber(
-                                                                                    chapterInfo.data,
-                                                                                ).toRoman(),
-                                                                        sceneSummary = summary,
-                                                                    ),
-                                                                )
-                                                            } ?: run {
-                                                                emitMilestone(null)
-                                                            }
-                                                        }
-                                                }
                                             }
                                         }
                                     }
@@ -320,6 +292,7 @@ class SagaContentManagerImpl
                         Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
                         content.value = null
                         setNarrativeProcessingStatus(false)
+                        emitMilestone(null)
                     }
                 }
         }
@@ -712,14 +685,17 @@ class SagaContentManagerImpl
                                 }
 
                                 is NarrativeStep.GenerateSagaEnding -> {
+                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
                                     generateEnding(currentSaga)
                                 }
 
                                 is NarrativeStep.GenerateAct -> {
+                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
                                     updateAct(narrativeStep.act)
                                 }
 
                                 is NarrativeStep.GenerateActIntroduction -> {
+                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
                                     generateActIntroduction(narrativeStep.act)
                                 }
 
@@ -735,6 +711,7 @@ class SagaContentManagerImpl
                                 }
 
                                 is NarrativeStep.GenerateChapterIntroduction -> {
+                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
                                     generateChapterIntroduction(narrativeStep.chapter)
                                 }
 
@@ -743,6 +720,8 @@ class SagaContentManagerImpl
                                 }
 
                                 is NarrativeStep.GenerateTimeLine -> {
+                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
+
                                     updateTimeline(
                                         currentSaga,
                                         narrativeStep.timeline,
@@ -1150,6 +1129,7 @@ class SagaContentManagerImpl
 
             executeRequest {
                 setProcessing(true)
+                emitMilestone(content.value?.data?.let { SagaMilestone.Loading })
                 try {
                     val currentSaga = content.value!!
                     if (isDebugModeEnabled) {

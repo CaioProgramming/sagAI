@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.settings.ui.audit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -48,9 +46,8 @@ class AIAuditLogViewModel
         private val _loadingSuggestionId = MutableStateFlow<Int?>(null)
         val loadingSuggestionId: StateFlow<Int?> = _loadingSuggestionId.asStateFlow()
 
-        private val _pipelineInsight =
-            MutableStateFlow<RequestResult<String>>(RequestResult.Success(""))
-        val pipelineInsight: StateFlow<RequestResult<String>> = _pipelineInsight.asStateFlow()
+        private val _pipelineInsight = MutableStateFlow<String?>(null)
+        val pipelineInsight = _pipelineInsight.asStateFlow()
 
         private val _isPipelineInsightLoading = MutableStateFlow(false)
         val isPipelineInsightLoading: StateFlow<Boolean> = _isPipelineInsightLoading.asStateFlow()
@@ -86,7 +83,7 @@ class AIAuditLogViewModel
             }
         }
 
-    fun updateStatusFilter(status: String?) {
+        fun updateStatusFilter(status: String?) {
             _statusFilter.value = status
         }
 
@@ -114,10 +111,12 @@ class AIAuditLogViewModel
             viewModelScope.launch {
                 aiAuditLogUseCase
                     .generateGlobalInsight(_logs.value)
-                    .onEach {
+                    .onSuccessAsync {
                         _pipelineInsight.value = it
-                    _isPipelineInsightLoading.value = false
-                }.collect {}
+                        _isPipelineInsightLoading.value = false
+                    }.onFailure {
+                        _isPipelineInsightLoading.value = false
+                    }
+            }
         }
-    }
     }

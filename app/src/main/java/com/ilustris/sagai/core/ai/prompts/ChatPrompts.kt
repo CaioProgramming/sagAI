@@ -86,6 +86,7 @@ object ChatPrompts {
             "audioPath",
             "audible",
             "status",
+            "reasoning",
         )
     val sagaExclusions =
         listOf(

@@ -1,7 +1,11 @@
 package com.ilustris.sagai.features.settings.ui.audit
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,28 +20,31 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,25 +57,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shimmerize
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,55 +99,105 @@ fun AIAuditLogView(
 
     var showClearDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.audit_logs_title),
-                        style = MaterialTheme.typography.titleLarge,
+    LaunchedEffect(logs) {
+        if (pipelineInsight == null && logs.isNotEmpty()) viewModel.requestGlobalInsight()
+    }
+
+    var optionsExpanded by remember { mutableStateOf(false) }
+
+    LazyColumn(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier =
+                        Modifier
+                            .padding(top = 16.dp)
+                            .clip(CircleShape)
+                            .size(32.dp),
+                    colors =
+                        IconButtonDefaults.iconButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_back_left),
+                        null,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxSize(),
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            painterResource(R.drawable.ic_back_left),
-                            contentDescription = stringResource(R.string.back_button_description),
-                        )
+                }
+                Box(Modifier.weight(1f))
+
+                IconButton({
+                    optionsExpanded = true
+                }, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painterResource(R.drawable.ic_menu),
+                        "Options",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxSize(),
+                    )
+
+                    DropdownMenu(optionsExpanded, onDismissRequest = { optionsExpanded = false }) {
+                        DropdownMenuItem({
+                            Text(stringResource(R.string.clear_data_button))
+                        }, leadingIcon = {
+                            Icon(
+                                painterResource(R.drawable.ic_delete),
+                                null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }, onClick = {
+                            showClearDialog = true
+                            optionsExpanded = false
+                        })
                     }
-                },
-                actions = {
-                    IconButton(onClick = { showClearDialog = true }) {
-                        Icon(
-                            painterResource(R.drawable.ic_delete),
-                            contentDescription = stringResource(R.string.audit_logs_clear_button),
-                        )
-                    }
-                },
-                colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                    ),
-            )
-        },
-    ) { padding ->
-        LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                PipelineInsightCard(
-                    insight = pipelineInsight,
-                    isLoading = isPipelineInsightLoading,
-                    onRequestInsight = { viewModel.requestGlobalInsight() },
+                }
+            }
+        }
+
+        stickyHeader {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(16.dp),
+            ) {
+                Text(
+                    stringResource(R.string.audit_logs_title),
+                    style =
+                        MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black,
+                        ),
+                    textAlign = TextAlign.Start,
                 )
             }
-            item {
+        }
+
+        item {
+            PipelineInsightCard(
+                insight = pipelineInsight,
+                isLoading = isPipelineInsightLoading,
+            )
+        }
+        item {
+            AnimatedVisibility(logs.isNotEmpty()) {
                 Row(
                     modifier =
                         Modifier
@@ -207,75 +267,75 @@ fun AIAuditLogView(
                     }
                 }
             }
+        }
 
-            val groupedLogs =
-                logs.groupBy {
-                    SimpleDateFormat(
-                        "MMM dd, yyyy",
-                        Locale.getDefault(),
-                    ).format(Date(it.timestamp))
-                }
+        val groupedLogs =
+            logs.groupBy {
+                SimpleDateFormat(
+                    "MMM dd, yyyy",
+                    Locale.getDefault(),
+                ).format(Date(it.timestamp))
+            }
 
-            if (logs.isEmpty()) {
+        if (logs.isEmpty()) {
+            item {
+                Text(
+                    text = stringResource(R.string.audit_logs_empty),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                )
+            }
+        } else {
+            groupedLogs.forEach { (dateStr, logList) ->
                 item {
                     Text(
-                        text = stringResource(R.string.audit_logs_empty),
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        text = dateStr,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp, start = 4.dp),
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                 }
-            } else {
-                groupedLogs.forEach { (dateStr, logList) ->
-                    item {
-                        Text(
-                            text = dateStr,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp, start = 4.dp),
-                            color = MaterialTheme.colorScheme.onBackground,
+                items(logList) { log ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(15.dp),
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            ),
+                    ) {
+                        AuditLogItem(
+                            log = log,
+                            isLast = true,
+                            isLoadingSuggestion = loadingSuggestionId == log.id,
+                            onRequestSuggestion = { viewModel.requestSuggestion(log) },
                         )
-                    }
-                    items(logList) { log ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(15.dp),
-                            colors =
-                                CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                                ),
-                        ) {
-                            AuditLogItem(
-                                log = log,
-                                isLast = true,
-                                isLoadingSuggestion = loadingSuggestionId == log.id,
-                                onRequestSuggestion = { viewModel.requestSuggestion(log) },
-                            )
-                        }
                     }
                 }
             }
         }
+    }
 
-        if (showClearDialog) {
-            AlertDialog(
-                onDismissRequest = { showClearDialog = false },
-                title = { Text(stringResource(R.string.audit_logs_clear_dialog_title)) },
-                text = { Text(stringResource(R.string.audit_logs_clear_dialog_message)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.clearLogs()
-                        showClearDialog = false
-                    }) {
-                        Text(stringResource(R.string.audit_logs_clear_button))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showClearDialog = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                },
-            )
-        }
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = { Text(stringResource(R.string.audit_logs_clear_dialog_title)) },
+            text = { Text(stringResource(R.string.audit_logs_clear_dialog_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearLogs()
+                    showClearDialog = false
+                }) {
+                    Text(stringResource(R.string.audit_logs_clear_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 }
 
@@ -562,100 +622,58 @@ fun JsonCodeBlock(jsonString: String) {
 
 @Composable
 fun PipelineInsightCard(
-    insight: RequestResult<String>,
+    insight: String?,
     isLoading: Boolean,
-    onRequestInsight: () -> Unit,
 ) {
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .gradientFill(Brush.horizontalGradient(holographicGradient))
-                .reactiveShimmer(isLoading),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_spark),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = "Saga Master Insight",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            if (isLoading) {
-                Text(
-                    text = "The Master is analyzing the pipeline data...",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.8f),
-                )
+    SharedTransitionLayout {
+        AnimatedContent(insight) {
+            if (it == null) {
+                Box(
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        null,
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        modifier =
+                            Modifier
+                                .sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    this@AnimatedContent,
+                                ).size(50.dp)
+                                .reactiveShimmer(
+                                    isLoading,
+                                    MaterialTheme.colorScheme.primary.shimmerize(),
+                                    duration = 2.seconds,
+                                ),
+                    )
+                }
             } else {
-                when (insight) {
-                    is RequestResult.Success -> {
-                        val data = insight.value
-                        if (data.isBlank()) {
-                            Text(
-                                text = "Analyze the last 3 successful generations to find strategic pipeline improvements.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.8f),
-                            )
-                            Button(
-                                onClick = onRequestInsight,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp),
-                                colors =
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = Color.White.copy(alpha = 0.2f),
-                                        contentColor = Color.White,
-                                    ),
-                            ) {
-                                Text("Consult Saga Master", fontWeight = FontWeight.SemiBold)
-                            }
-                        } else {
-                            Text(
-                                text = data,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.9f),
-                            )
-                            TextButton(
-                                onClick = onRequestInsight,
-                                modifier = Modifier.align(Alignment.End),
-                            ) {
-                                Text(
-                                    "Refresh ✨",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                            }
-                        }
-                    }
+                insight?.let {
+                    var expanded by remember { mutableStateOf(false) }
+                    val alpha by animateFloatAsState(if (expanded) 1f else 0.7f)
 
-                    is RequestResult.Error -> {
-                        Text(
-                            text = insight.value.message ?: "Unknown Error",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White,
-                        )
-                        TextButton(onClick = onRequestInsight) {
-                            Text("Retry", color = Color.White)
-                        }
-                    }
+                    Text(
+                        text = if (expanded) insight else insight.take(100) + "...",
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                brush = Brush.verticalGradient(holographicGradient),
+                                fontWeight = FontWeight.Light,
+                            ),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier =
+                            Modifier
+                                .animateContentSize()
+                                .alpha(alpha)
+                                .padding(
+                                    16.dp,
+                                ).clickable {
+                                    expanded = !expanded
+                                },
+                    )
                 }
             }
         }

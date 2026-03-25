@@ -136,32 +136,26 @@ class GemmaClient
                     try {
                         return@withContext requestMutex.withLock {
                             val structure =
-                                if (T::class != String::class &&
-                                    describeOutput
-                                ) {
+                                if (describeOutput) {
                                     val dataStructure =
-                                        toJsonMap(
-                                            T::class.java,
-                                            filteredFields = filterOutputFields,
-                                        )
+                                        if (T::class == String::class) {
+                                            "\"string\""
+                                        } else {
+                                            toJsonMap(
+                                                T::class.java,
+                                                filteredFields = filterOutputFields,
+                                            )
+                                        }
                                     toJsonMap(
                                         AIGeneration::class.java,
                                         fieldCustomDescriptions = listOf("data" to dataStructure),
                                     )
                                 } else {
-                                    if (T::class == String::class) {
-                                        "Simple String text no JSON Object"
-                                    } else {
-                                        T::class.java.simpleName
-                                    }
+                                    T::class.java.simpleName
                                 }
 
                             val formattingRule =
-                                if (T::class == String::class) {
-                                    "Respond using PURE NARRATIVE TEXT. No brackets, no keys, and no JSON wrapping."
-                                } else {
-                                    "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
-                                }
+                                "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
                             val corePrompt =
                                 promptService.buildRemotePrompt(
@@ -267,30 +261,6 @@ class GemmaClient
                                 javaClass.simpleName,
                                 "Generated content: $responseText",
                             )
-
-                            if (T::class == String::class) {
-                                val cleanedText =
-                                    responseText
-                                        .replace(Regex("```[a-zA-Z]*"), "")
-                                        .replace("```", "")
-                                        .trim()
-                                Log.i(
-                                    javaClass.simpleName,
-                                    "Prompt request result (Cleaned):\n$cleanedText",
-                                )
-                                if (BuildConfig.DEBUG) {
-                                    aiAuditLogDao.insertLog(
-                                        AIAuditLog(
-                                            model = model,
-                                            blueprintKey = blueprintKey,
-                                            dataType = "String",
-                                            status = "SUCCESS",
-                                            rawResponse = responseText,
-                                        ),
-                                    )
-                                }
-                                return@withLock cleanedText as T
-                            }
 
                             val cleanedJsonString =
                                 responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)

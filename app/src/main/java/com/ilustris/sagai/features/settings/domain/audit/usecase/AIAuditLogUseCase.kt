@@ -11,5 +11,5 @@ interface AIAuditLogUseCase {
 
     suspend fun generateSuggestion(log: AIAuditLog): RequestResult<Unit>
 
-    suspend fun generateGlobalInsight(logs: List<AIAuditLog>): Flow<RequestResult<String>>
+    suspend fun generateGlobalInsight(logs: List<AIAuditLog>): RequestResult<String>
 }
