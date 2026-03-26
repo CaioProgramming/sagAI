@@ -75,6 +75,8 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
+import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
@@ -410,6 +412,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesSagaBackupService(sagaBackupServiceImpl: SagaBackupServiceImpl): SagaBackupService
+
+    @Binds
+    abstract fun providesOnboardingUseCase(onboardingUseCaseImpl: OnboardingUseCaseImpl): OnboardingUseCase
 
     @Binds
     abstract fun providesPaletteUseCase(paletteUseCaseImpl: PaletteUseCaseImpl): PaletteUseCase

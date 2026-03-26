@@ -163,6 +163,12 @@ class SettingsViewModel
                 .map { sagas ->
                     sagas.sumOf { it.data.playTimeMs }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+        fun clearPreferences() {
+            viewModelScope.launch {
+                settingsUseCase.clearPreferences()
+            }
+    }
     }
 
 data class SagaStorageInfo(

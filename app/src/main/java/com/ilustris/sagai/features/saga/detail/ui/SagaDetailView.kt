@@ -130,8 +130,9 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
-import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -338,7 +339,13 @@ fun SagaDetailView(
         )
     }
 
-    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.togglePremiumSheet() },
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.fetchSagaDetails(sagaId)
@@ -374,8 +381,7 @@ fun LazyListScope.SagaDrawerContent(
                         .reactiveShimmer(
                             content.data.review != null,
                             targetValue = 250f,
-                        )
-                        .clickable {
+                        ).clickable {
                             openReview()
                         },
                 )
@@ -400,12 +406,10 @@ fun LazyListScope.SagaDrawerContent(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                         shape,
-                    )
-                    .background(
+                    ).background(
                         MaterialTheme.colorScheme.background,
                         shape,
-                    )
-                    .padding(4.dp)
+                    ).padding(4.dp)
                     .animateContentSize(
                         animationSpec = tween(500, easing = EaseIn),
                     ),
@@ -443,8 +447,7 @@ fun LazyListScope.SagaDrawerContent(
                                     .clip(shape)
                                     .clickable {
                                         expandedEvents = !expandedEvents
-                                    }
-                                    .fillMaxWidth(),
+                                    }.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
@@ -1007,8 +1010,7 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     )
@@ -1453,8 +1455,7 @@ private fun SagaDetailInitialView(
                                                                     )!!,
                                                             ),
                                                             animatedVisibilityScope = animationScopes.second,
-                                                        )
-                                                        .padding(8.dp)
+                                                        ).padding(8.dp)
                                                         .weight(1f),
                                             )
 
@@ -1495,8 +1496,7 @@ private fun SagaDetailInitialView(
                                                             selectSection(
                                                                 DetailAction.TIMELINE,
                                                             )
-                                                        }
-                                                        .fillMaxWidth()
+                                                        }.fillMaxWidth()
                                                         .wrapContentHeight(),
                                             )
                                         } ?: run {
@@ -1534,8 +1534,7 @@ private fun SagaDetailInitialView(
                                                                     )!!,
                                                             ),
                                                             animatedVisibilityScope = animationScopes.second,
-                                                        )
-                                                        .padding(8.dp)
+                                                        ).padding(8.dp)
                                                         .weight(1f),
                                             )
 
@@ -1603,8 +1602,7 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    )
-                                                    .padding(8.dp)
+                                                    ).padding(8.dp)
                                                     .weight(1f),
                                         )
 
@@ -1651,8 +1649,7 @@ private fun SagaDetailInitialView(
                                                         selectSection(
                                                             DetailAction.CHAPTERS,
                                                         )
-                                                    }
-                                                    .padding(8.dp),
+                                                    }.padding(8.dp),
                                             )
                                         }
                                     }
@@ -1667,8 +1664,7 @@ private fun SagaDetailInitialView(
                                         Modifier
                                             .clickable {
                                                 selectSection(DetailAction.ACTS)
-                                            }
-                                            .height(200.dp)
+                                            }.height(200.dp)
                                             .fillMaxWidth()
                                             .reactiveShimmer(
                                                 true,
@@ -1728,17 +1724,14 @@ private fun SagaDetailInitialView(
                                             .padding(16.dp)
                                             .clip(
                                                 shape,
-                                            )
-                                            .border(
+                                            ).border(
                                                 1.dp,
                                                 MaterialTheme.colorScheme.onBackground.gradientFade(),
                                                 shape,
-                                            )
-                                            .background(
+                                            ).background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            )
-                                            .fillMaxWidth()
+                                            ).fillMaxWidth()
                                             .height(200.dp)
                                             .clickable {
                                                 openEmotionalReview()
@@ -1765,8 +1758,7 @@ private fun SagaDetailInitialView(
                                                     .align(Alignment.BottomCenter)
                                                     .background(
                                                         fadeGradientBottom(),
-                                                    )
-                                                    .fillMaxWidth()
+                                                    ).fillMaxWidth()
                                                     .padding(horizontal = 16.dp, vertical = 24.dp),
                                         ) {
                                             Text(
@@ -1865,8 +1857,7 @@ private fun SagaDetailInitialView(
                                             Modifier
                                                 .clickable {
                                                     openDrawer()
-                                                }
-                                                .padding(horizontal = 8.dp)
+                                                }.padding(horizontal = 8.dp)
                                                 .size(24.dp),
                                     )
                                 },
@@ -1907,8 +1898,7 @@ private fun SagaDetailInitialView(
                                                     .background(
                                                         MaterialTheme.colorScheme.surfaceContainer,
                                                         shape,
-                                                    )
-                                                    .padding(8.dp),
+                                                    ).padding(8.dp),
                                         ) {
                                             item(span = { GridItemSpan(2) }) {
                                                 Text(

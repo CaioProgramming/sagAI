@@ -45,7 +45,8 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.premium.PremiumView
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -247,5 +248,11 @@ fun ChapterContentView(
     StarryLoader(isGenerating, brushColors = content.data.genre.colorPalette())
 
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
-    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.togglePremiumSheet() },
+        )
+    }
 }

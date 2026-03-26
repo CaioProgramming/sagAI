@@ -97,9 +97,10 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
-import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.ui.SettingsView
@@ -272,12 +273,15 @@ fun HomeView(
         }
     }
 
-    PremiumView(
-        isVisible = showPremiumSheet,
-        onDismiss = {
-            showPremiumSheet = false
-        },
-    )
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = {
+                showPremiumSheet = false
+            },
+        )
+    }
 
     if (showBackupSheet) {
         BackupSheet(true, {
@@ -305,6 +309,8 @@ fun HomeView(
         isLoading,
         loadingMessage,
     )
+
+    OnboardingDialog(type = OnboardingType.APP_INTRO)
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -406,7 +412,8 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -454,10 +461,12 @@ private fun SharedTransitionScope.ChatList(
                         .reactiveShimmer(
                             true,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }.fillMaxWidth(),
+                        }
+                        .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
@@ -719,76 +728,76 @@ fun ChatCard(
             )
         }
     }
+}
 
-    @Preview(showBackground = true)
-    @Composable
-    fun HomeViewPreview() {
-        SagAITheme {
-            val route = Routes.HOME
-            Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-                TopAppBar(
-                    title = {
-                        route.title?.let {
-                            Text(
-                                text = stringResource(it),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.headlineMedium,
+@Preview(showBackground = true)
+@Composable
+fun HomeViewPreview() {
+    SagAITheme {
+        val route = Routes.HOME
+        Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+            TopAppBar(
+                title = {
+                    route.title?.let {
+                        Text(
+                            text = stringResource(it),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                        )
+                    } ?: run {
+                        Box(Modifier.fillMaxWidth()) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                contentDescription = stringResource(R.string.app_name),
                                 modifier =
                                     Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                            )
-                        } ?: run {
-                            Box(Modifier.fillMaxWidth()) {
-                                Image(
-                                    painterResource(R.drawable.ic_spark),
-                                    contentDescription = stringResource(R.string.app_name),
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.Center)
-                                            .size(50.dp),
-                                )
-                            }
-                        }
-                    },
-                    actions = {},
-                    navigationIcon = {
-                        Box(modifier = Modifier.size(24.dp))
-                    },
-                )
-            }) { padding ->
-                AnimatedContent(padding) {
-                    Box(modifier = Modifier.padding(it)) {
-                        val previewChats =
-                            List(10) {
-                                SagaContent(
-                                    Saga(
-                                        title = "Chat ${it + 1}",
-                                        description = "The journey of our lifes",
-                                        genre = Genre.FANTASY,
-                                        icon = "",
-                                        isEnded = true,
-                                        createdAt = Calendar.getInstance().timeInMillis,
-                                        mainCharacterId = null,
-                                    ),
-                                    mainCharacter = null,
-                                    acts = emptyList(),
-                                )
-                            }
-                        SharedTransitionLayout {
-                            ChatList(
-                                sagas = previewChats,
-                                animatedContentScope = this@AnimatedContent,
-                                showDebugButton = true,
-                                isPremium = true,
-                                dynamicNewSagaTexts =
-                                    DynamicSagaPrompt(
-                                        "Dynamic Title Preview",
-                                        "Dynamic Subtitle Preview",
-                                    ),
-                                isLoadingDynamicPrompts = false,
+                                        .align(Alignment.Center)
+                                        .size(50.dp),
                             )
                         }
+                    }
+                },
+                actions = {},
+                navigationIcon = {
+                    Box(modifier = Modifier.size(24.dp))
+                },
+            )
+        }) { padding ->
+            AnimatedContent(padding) {
+                Box(modifier = Modifier.padding(it)) {
+                    val previewChats =
+                        List(10) {
+                            SagaContent(
+                                Saga(
+                                    title = "Chat ${it + 1}",
+                                    description = "The journey of our lifes",
+                                    genre = Genre.FANTASY,
+                                    icon = "",
+                                    isEnded = true,
+                                    createdAt = Calendar.getInstance().timeInMillis,
+                                    mainCharacterId = null,
+                                ),
+                                mainCharacter = null,
+                                acts = emptyList(),
+                            )
+                        }
+                    SharedTransitionLayout {
+                        ChatList(
+                            sagas = previewChats,
+                            animatedContentScope = this@AnimatedContent,
+                            showDebugButton = true,
+                            isPremium = true,
+                            dynamicNewSagaTexts =
+                                DynamicSagaPrompt(
+                                    "Dynamic Title Preview",
+                                    "Dynamic Subtitle Preview",
+                                ),
+                            isLoadingDynamicPrompts = false,
+                        )
                     }
                 }
             }

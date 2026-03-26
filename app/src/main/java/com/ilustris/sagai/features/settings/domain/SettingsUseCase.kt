@@ -60,6 +60,8 @@ interface SettingsUseCase {
     suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit>
 
     suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit>
+
+    suspend fun clearPreferences()
 }
 
 class SettingsUseCaseImpl
@@ -173,4 +175,8 @@ class SettingsUseCaseImpl
                     }
                 } ?: error("Could not open input stream for source URI")
             }
+
+        override suspend fun clearPreferences() {
+            dataStorePreferences.clearAll()
+        }
     }

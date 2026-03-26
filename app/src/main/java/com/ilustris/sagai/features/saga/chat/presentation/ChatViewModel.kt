@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
 import MessageStatus
+import ai.atick.material.MaterialColor
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -36,6 +37,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.newsaga.data.model.parseColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
@@ -595,7 +597,7 @@ class ChatViewModel
                         val characters =
                             if (messagesChanged || uiState.value.characters.isEmpty()) {
                                 sortCharactersByMessageCount(
-                                    sagaContent.getCharacters(),
+                                    sagaContent.characters.map { it.data },
                                     flatMessages,
                                 )
                             } else {
@@ -679,7 +681,7 @@ class ChatViewModel
                         }
 
                         sagaContent.getCurrentTimeLine() != null -> {
-                            val updateLimit = rules?.loreUpdateLimit ?: 10
+                            val updateLimit = rules.loreUpdateLimit ?: 10
                             val messageCount = sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
                             val maxCount = updateLimit
                             messageCount.toFloat() / maxCount.toFloat()
@@ -698,35 +700,46 @@ class ChatViewModel
             if (newActCount != currentActCountForService && currentSagaIdForService != null) {
                 currentActCountForService = newActCount
                 sagaContentManager.ambientMusicFile.value?.let { musicFile ->
-                    if (musicFile.exists()) {
-                        val playbackMetadata =
-                            PlaybackMetadata(
-                                sagaId = sagaContent.data.id,
-                                sagaTitle = sagaContent.data.title,
-                                sagaIcon = sagaContent.data.icon,
-                                color =
-                                    sagaContent.data.genre
-                                        .resolveColor(null)
-                                        .toArgb(),
-                                currentActNumber = newActCount.coerceAtLeast(1),
-                                currentChapter =
-                                    sagaContent.getCurrentTimeLine()?.let { timeline ->
-                                        sagaContent.chapterNumber(
-                                            sagaContent
-                                                .flatChapters()
-                                                .find { it.data.id == timeline.data.chapterId }
-                                                ?.data,
-                                        )
-                                    } ?: 0,
-                                totalActs = sagaContent.acts.size,
-                                timelineObjective =
-                                    sagaContent.getCurrentTimeLine()?.data?.currentObjective
-                                        ?: "Unknown Objective",
-                                mediaFilePath = musicFile.absolutePath,
-                                genre = sagaContent.data.genre,
+                    viewModelScope.launch(Dispatchers.IO) {
+                        if (musicFile.exists()) {
+                            val genre = sagaContent.data.genre
+                            val genreColor =
+                                visualConfigService
+                                    .getVisualConfig(genre)
+                                    ?.primaryColor
+                                    ?.parseColor() ?: MaterialColor.Blue400
+                            val playbackMetadata =
+                                PlaybackMetadata(
+                                    sagaId = sagaContent.data.id,
+                                    sagaTitle = sagaContent.data.title,
+                                    sagaIcon = sagaContent.data.icon,
+                                    color = genreColor.toArgb(),
+                                    currentActNumber = newActCount.coerceAtLeast(1),
+                                    currentChapter =
+                                        sagaContent.getCurrentTimeLine()?.let { timeline ->
+                                            sagaContent.chapterNumber(
+                                                sagaContent
+                                                    .flatChapters()
+                                                    .find { it.data.id == timeline.data.chapterId }
+                                                    ?.data,
+                                            )
+                                        } ?: 0,
+                                    totalActs = sagaContent.acts.size,
+                                    timelineObjective =
+                                        sagaContent.getCurrentTimeLine()?.data?.currentObjective
+                                            ?: "Unknown Objective",
+                                    mediaFilePath = musicFile.absolutePath,
+                                    genre = sagaContent.data.genre,
+                                )
+                            controlMediaPlayerService(
+                                SagaMediaService.ACTION_PLAY,
+                                playbackMetadata,
                             )
-                        controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
-                        Log.d("ChatViewModel", "New act ($newActCount). Updated SagaMediaService.")
+                            Log.d(
+                                "ChatViewModel",
+                                "New act ($newActCount). Updated SagaMediaService.",
+                            )
+                        }
                     }
                 }
             }

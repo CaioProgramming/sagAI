@@ -80,6 +80,7 @@ class AIAuditLogViewModel
         fun clearLogs() {
             viewModelScope.launch {
                 aiAuditLogUseCase.clearLogs()
+                _pipelineInsight.emit(null)
             }
         }
 

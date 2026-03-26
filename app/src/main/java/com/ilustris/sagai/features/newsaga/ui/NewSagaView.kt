@@ -106,6 +106,8 @@ import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -785,6 +787,8 @@ fun NewSagaView(
                     ),
             )
 
+            OnboardingDialog(type = OnboardingType.CREATION_GUIDE)
+
             // Error dialog
             if (savingError != null) {
                 AlertDialog(
@@ -841,7 +845,8 @@ private fun SuggestionsContent(
                         ).background(
                             MaterialTheme.colorScheme.background.copy(alpha = .2f),
                             shape,
-                        ).clickable {
+                        )
+                        .clickable {
                             onSelect(it)
                         }.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -967,8 +972,8 @@ private fun GenrePicker(
                         .graphicsLayer {
                             val pageOffset =
                                 (
-                                    (pagerState.currentPage - page) +
-                                        pagerState
+                                        (pagerState.currentPage - page) +
+                                                pagerState
                                             .currentPageOffsetFraction
                                 ).absoluteValue
                             lerp(
@@ -985,7 +990,8 @@ private fun GenrePicker(
                                     stop = 1f,
                                     fraction = 1f - pageOffset.coerceIn(0f, 1f),
                                 )
-                        }.levitate(isSelected)
+                        }
+                        .levitate(isSelected)
                         .fillMaxWidth()
                         .aspectRatio(0.8f),
             ) {

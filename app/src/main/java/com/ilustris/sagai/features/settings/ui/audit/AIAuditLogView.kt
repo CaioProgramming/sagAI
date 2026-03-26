@@ -5,6 +5,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -140,32 +142,37 @@ fun AIAuditLogView(
                 }
                 Box(Modifier.weight(1f))
 
-                IconButton({
-                    optionsExpanded = true
-                }, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        painterResource(R.drawable.ic_menu),
-                        "Options",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .fillMaxSize(),
-                    )
+                AnimatedVisibility(logs.isNotEmpty(), enter = scaleIn(), exit = scaleOut()) {
+                    IconButton({
+                        optionsExpanded = true
+                    }, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            painterResource(R.drawable.ic_menu),
+                            "Options",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
+                        )
 
-                    DropdownMenu(optionsExpanded, onDismissRequest = { optionsExpanded = false }) {
-                        DropdownMenuItem({
-                            Text(stringResource(R.string.clear_data_button))
-                        }, leadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.ic_delete),
-                                null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }, onClick = {
-                            showClearDialog = true
-                            optionsExpanded = false
-                        })
+                        DropdownMenu(
+                            optionsExpanded,
+                            onDismissRequest = { optionsExpanded = false },
+                        ) {
+                            DropdownMenuItem({
+                                Text(stringResource(R.string.clear_data_button))
+                            }, leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.ic_delete),
+                                    null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }, onClick = {
+                                showClearDialog = true
+                                optionsExpanded = false
+                            })
+                        }
                     }
                 }
             }
@@ -204,7 +211,8 @@ fun AIAuditLogView(
                             .fillMaxWidth()
                             .horizontalScroll(
                                 androidx.compose.foundation.rememberScrollState(),
-                            ).padding(bottom = 8.dp),
+                            )
+                            .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -406,7 +414,8 @@ fun AuditLogItem(
                                     1.dp,
                                     MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                     RoundedCornerShape(4.dp),
-                                ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                )
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                 .padding(8.dp),
                     )
                 }
@@ -469,7 +478,8 @@ fun AuditLogItem(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(8.dp),
-                                ).padding(8.dp),
+                                )
+                                .padding(8.dp),
                     ) {
                         Text(
                             text = log.reasoning,
@@ -491,7 +501,8 @@ fun AuditLogItem(
                                 .background(
                                     Color(0xFF1E1E1E),
                                     RoundedCornerShape(8.dp),
-                                ).padding(12.dp),
+                                )
+                                .padding(12.dp),
                     ) {
                         JsonCodeBlock(jsonString = log.rawResponse)
                     }
@@ -515,7 +526,8 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    ).padding(12.dp),
+                                    )
+                                    .padding(12.dp),
                         )
                     } else {
                         Button(
@@ -637,13 +649,14 @@ fun PipelineInsightCard(
                     Image(
                         painterResource(R.drawable.ic_spark),
                         null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.surfaceContainer),
                         modifier =
                             Modifier
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).size(50.dp)
+                                )
+                                .size(50.dp)
                                 .reactiveShimmer(
                                     isLoading,
                                     MaterialTheme.colorScheme.primary.shimmerize(),
@@ -670,7 +683,8 @@ fun PipelineInsightCard(
                                 .alpha(alpha)
                                 .padding(
                                     16.dp,
-                                ).clickable {
+                                )
+                                .clickable {
                                     expanded = !expanded
                                 },
                     )

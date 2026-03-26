@@ -69,10 +69,11 @@ import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSe
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.PlaythroughSheet
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
-import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -593,6 +594,38 @@ fun SettingsView(
 
         item {
             Button(
+                onClick = { viewModel.clearPreferences() },
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                shape = RoundedCornerShape(15.dp),
+            ) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.clear_preferences),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        stringResource(R.string.clear_preferences_explanation),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.alpha(0.6f),
+                    )
+                }
+            }
+        }
+
+        item {
+            Button(
                 onClick = {
                     exportLauncher.launch("sagai_database_backup.db")
                 },
@@ -711,12 +744,15 @@ fun SettingsView(
         openAppSettings(context)
     }, { requestedPermission = null })
 
-    PremiumView(
-        isVisible = premiumSheetVisible,
-        onDismiss = {
-            premiumSheetVisible = false
-        },
-    )
+    if (premiumSheetVisible) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = {
+                premiumSheetVisible = false
+            },
+        )
+    }
 
     if (showBackupSheet) {
         BackupSheet(showBackups, onDismiss = {

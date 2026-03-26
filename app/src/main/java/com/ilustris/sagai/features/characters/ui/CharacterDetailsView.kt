@@ -69,7 +69,8 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.features.premium.PremiumView
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
@@ -202,7 +203,13 @@ fun CharacterDetailsContent(
     }
 
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
-    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.togglePremiumSheet() },
+        )
+    }
 }
 
 @OptIn(

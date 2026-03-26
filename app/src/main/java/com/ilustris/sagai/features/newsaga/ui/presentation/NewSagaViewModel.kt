@@ -81,6 +81,8 @@ class NewSagaViewModel
         private val _themeAssist = MutableStateFlow(CreationAssist())
         val themeAssist = _themeAssist.asStateFlow()
 
+        val genreVisualConfigService = visualConfigService
+
         private var assistJob: kotlinx.coroutines.Job? = null
 
         init {

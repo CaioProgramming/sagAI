@@ -136,6 +136,8 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
@@ -484,6 +486,11 @@ fun ChatView(
                     }
                 }
             }
+
+            OnboardingDialog(
+                type = OnboardingType.GAMEPLAY_GUIDE,
+                genre = content?.data?.genre,
+            )
         } else {
             if (uiState.isGenerating.not() && uiState.isLoading.not()) {
                 Column(
@@ -1616,7 +1623,8 @@ fun CharactersTopIcons(
                         )
                         .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).clip(CircleShape)
+                        )
+                        .clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

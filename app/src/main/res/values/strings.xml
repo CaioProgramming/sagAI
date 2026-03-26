@@ -263,6 +263,8 @@
     <string name="clear_data_dialog_confirm">Yes, wipe everything</string>
     <string name="clear_data_dialog_cancel">No, keep my data</string>
     <string name="clear_cache">Clear cache</string>
+    <string name="clear_preferences">Clear Preferences</string>
+    <string name="clear_preferences_explanation">Reset all your preferences and onboarding progress. Useful for testing or starting fresh.</string>
     <string name="restore_purchases">Restore purchases</string>
     <string name="not_premium_title_label">Join</string>
     <string name="premium_label_title">You are</string>
@@ -542,6 +544,21 @@
     <string name="review_stage_journey_subtitle_default">The path we took</string>
     <string name="review_stage_conclusion_title">The Legacy</string>
     <string name="review_stage_conclusion_subtitle_default">What remains</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Continue</string>
+    <string name="onboarding_finish">Got it</string>
+    <string name="onboarding_creation_guide_finish">Start Creation</string>
+    <string name="onboarding_gameplay_guide_finish">Start Saga</string>
+    <string name="onboarding_app_intro_fallback_title">Welcome to Sagas</string>
+    <string name="onboarding_app_intro_fallback_description">Sagas is your personal AI co-author and Art Director. Dive into evolving stories across different genres, where your choices shape the world.</string>
+    <string name="onboarding_creation_guide_fallback_title">Creation Guide</string>
+    <string name="onboarding_creation_guide_fallback_description">The more you describe, the more unique and personal the saga becomes. Don\'t worry, you can always edit details later.</string>
+    <string name="onboarding_gameplay_guide_fallback_title">Gameplay Guide</string>
+    <string name="onboarding_gameplay_guide_fallback_description">Turn-based interaction: write your action, and the AI continues the narrative. Every decision matters!</string>
+    <string name="onboarding_premium_guide_fallback_title">Sagas Pro</string>
+    <string name="onboarding_premium_guide_fallback_description">Unlock the full power of AI with Sagas Pro. Higher resolution images, more complex storytelling, and unlimited adventures await.</string>
 
     <!-- AI Audit Logs -->
     <string name="audit_logs_title">AI Audit Logs</string>

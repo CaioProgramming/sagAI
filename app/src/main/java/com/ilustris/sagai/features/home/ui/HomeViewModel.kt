@@ -82,6 +82,8 @@ class HomeViewModel
         private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
         val visualConfigs = _visualConfigs.asStateFlow()
 
+        val genreVisualConfigService = visualConfigService
+
         init {
             checkDebug()
             getDynamicPrompts()
