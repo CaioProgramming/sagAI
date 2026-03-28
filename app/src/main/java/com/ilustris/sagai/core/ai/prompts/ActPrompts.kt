@@ -5,6 +5,8 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
@@ -17,6 +19,7 @@ data class ActConclusionArgs(
     val chaptersInCurrentAct: String,
     val previousActContext: String,
     val closureInstruction: String,
+    val expectedOutputFormat: String,
     val conversationDirective: String,
 )
 
@@ -87,6 +90,11 @@ object ActPrompts {
                     previousAct?.data?.toAINormalize(ACT_EXCLUSIONS)
                         ?: "This is the first act, no previous context available.",
                 closureInstruction = closureInstruction,
+                expectedOutputFormat =
+                    toJsonMap(
+                        Act::class.java,
+                        filteredFields = listOf("id", "sagaId", "currentChapterId", "introduction"),
+                    ),
                 conversationDirective = "",
             )
 

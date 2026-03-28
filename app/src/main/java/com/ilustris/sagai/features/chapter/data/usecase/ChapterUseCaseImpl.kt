@@ -19,17 +19,12 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
-import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -63,55 +58,35 @@ class ChapterUseCaseImpl
         ) = executeRequest {
             val genChapter =
                 gemmaClient
-                    .generate<ChapterGeneration>(
+                    .generate<Chapter>(
                         prompt =
                             generateChapterPrompt(
                                 saga = saga,
                                 currentChapter = chapterContent,
+                            ),
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "currentEventId",
+                                "coverImage",
+                                "createdAt",
+                                "actId",
                             ),
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
-            val genChapterCharacters =
-                genChapter.featuredCharacters.mapNotNull { charactersNames ->
-                    saga.characters
-                        .find {
-                            it.data.name.equals(
-                                charactersNames,
-                                ignoreCase = true,
-                            )
-                        }?.data
-                        ?.id
-                }
-
-            val featuredCharacters =
-                chapterContent
-                    .fetchChapterMessages()
-                    .rankTopCharacters(saga.getCharacters())
-                    .take(3)
-                    .map { it.first.id }
-
-            val chapterUpdate =
-                updateChapter(
-                    chapterContent.data.copy(
-                        title = genChapter.title,
-                        overview = genChapter.overview,
-                        featuredCharacters = genChapterCharacters.ifEmpty { featuredCharacters },
-                        currentEventId = null,
-                    ),
-                )
-            withContext(Dispatchers.IO) {
-                generateEmotionalReview(
-                    saga,
-                    chapterContent.copy(
-                        data = chapterUpdate,
-                    ),
-                )
-            }
-
-            chapterUpdate
+            updateChapter(
+                chapterContent.data.copy(
+                    title = genChapter.title,
+                    overview = genChapter.overview,
+                    introduction = genChapter.introduction,
+                    featuredCharacters = genChapter.featuredCharacters.take(3),
+                    emotionalReview = genChapter.emotionalReview,
+                    currentEventId = null,
+                ),
+            )
         }
 
         override suspend fun generateEmotionalReview(

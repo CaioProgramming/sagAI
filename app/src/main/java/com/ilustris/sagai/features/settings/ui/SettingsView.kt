@@ -100,6 +100,7 @@ fun SettingsView(
     val hasSagasWithChapters by viewModel.hasSagasWithChapters.collectAsStateWithLifecycle(null)
 
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
+    val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
 
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
@@ -194,17 +195,21 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).clickable {
+                        )
+                        .clickable {
                             showPlaythroughSheet = true
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -247,7 +252,8 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(12.dp),
+                        )
+                        .padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -288,9 +294,11 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).clickable {
+                            )
+                            .clickable {
                                 viewModel.clearCache()
-                            }.padding(16.dp),
+                            }
+                            .padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -338,7 +346,8 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -423,7 +432,8 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    ).padding(8.dp),
+                    )
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
@@ -549,6 +559,21 @@ fun SettingsView(
                         viewModel.setMessageEffectsEnabled(!it)
                     },
                 )
+
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.story_guides),
+                    stringResource(R.string.story_guides_description),
+                    isActivated = showTutorials,
+                    onClickSwitch = {
+                        viewModel.setShowTutorials(!it)
+                    },
+                )
             }
         }
 
@@ -586,7 +611,8 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(8.dp),
+                        )
+                        .padding(8.dp),
             )
         }
 

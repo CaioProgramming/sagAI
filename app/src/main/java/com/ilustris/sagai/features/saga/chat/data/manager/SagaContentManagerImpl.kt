@@ -14,7 +14,6 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -95,6 +94,7 @@ class SagaContentManagerImpl
         private val _sceneSummary = MutableStateFlow<SceneSummary?>(null)
         override val sceneSummary: StateFlow<SceneSummary?> = _sceneSummary.asStateFlow()
         override val milestoneUpdate = MutableStateFlow<SagaMilestone?>(null)
+        override val isOnboardingVisible = MutableStateFlow(false)
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
             MutableSharedFlow(
@@ -180,6 +180,13 @@ class SagaContentManagerImpl
                         }
                         if (milestoneObserverJob == null || milestoneObserverJob?.isActive == false) {
                             milestoneObserverJob = observeMilestone()
+                        }
+                        managerScope.launch {
+                            isOnboardingVisible.collect { isVisible ->
+                                if (!isVisible && content.value != null) {
+                                    checkNarrativeProgression(content.value)
+                                }
+                            }
                         }
                         sagaHistoryUseCase
                             .getSagaById(sagaId.toInt())
@@ -437,12 +444,6 @@ class SagaContentManagerImpl
                                 if (timelineContent.updatedWikis.isEmpty()) {
                                     wikiUseCase.generateWiki(saga, timelineContent.data)
                                 }
-                                emotionalUseCase.generateEmotionalReview(
-                                    saga,
-                                    timelineContent.messages
-                                        .map { it.message }
-                                        .normalizetoAIItems(),
-                                )
                                 Log.i(
                                     javaClass.simpleName,
                                     "Nickname analysis completed successfully.",
@@ -629,6 +630,14 @@ class SagaContentManagerImpl
                     Log.i(
                         javaClass.simpleName,
                         "checkNarrativeProgression: already in progress, skipping.",
+                    )
+                    return@launch
+                }
+
+                if (isOnboardingVisible.value) {
+                    Log.i(
+                        javaClass.simpleName,
+                        "checkNarrativeProgression: onboarding visible, skipping.",
                     )
                     return@launch
                 }

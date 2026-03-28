@@ -26,6 +26,7 @@ interface SagaContentManager {
     var snackBarUpdate: MutableStateFlow<SnackBarState?>
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
+    val isOnboardingVisible: MutableStateFlow<Boolean>
 
     suspend fun loadSaga(sagaId: String)
 

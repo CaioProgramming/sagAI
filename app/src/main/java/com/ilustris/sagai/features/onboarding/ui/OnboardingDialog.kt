@@ -145,8 +145,9 @@ private fun OnboardingContentSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         shape = shape,
+        dragHandle = null,
     ) {
         Box(
             modifier =
@@ -515,8 +516,7 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }
-                    .graphicsLayer {
+                    }.graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -529,8 +529,7 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }
-                    .zoomAnimation(),
+                    }.zoomAnimation(),
         )
     }
 }

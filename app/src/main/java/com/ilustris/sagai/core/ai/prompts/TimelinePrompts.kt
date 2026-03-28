@@ -3,8 +3,10 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 data class TimelineArgs(
@@ -16,6 +18,7 @@ data class TimelineArgs(
     val genreName: String,
     val characterName: String,
     val loreUpdateLimit: String,
+    val expectedOutputFormat: String,
     val conversationDirective: String = "",
 )
 
@@ -38,7 +41,7 @@ object TimelinePrompts {
                 .filter { it.id != currentTimeline.data.id }
                 .takeLast(5)
 
-        fun List<com.ilustris.sagai.features.timeline.data.model.Timeline>.toBulletList(): String {
+        fun List<Timeline>.toBulletList(): String {
             if (this.isEmpty()) return "No recent events recorded."
             return this.joinToString(separator = "\n") { t ->
                 "- ${t.title}: ${t.content.take(150).replace('\n', ' ')}"
@@ -59,6 +62,11 @@ object TimelinePrompts {
                 genreName = sagaContent.data.genre.name,
                 characterName = sagaContent.mainCharacter?.data?.name ?: "Unknown",
                 loreUpdateLimit = narrativeRules.loreUpdateLimit.toString(),
+                expectedOutputFormat =
+                    toJsonMap(
+                        Timeline::class.java,
+                        filteredFields = listOf("id", "chapterId", "createdAt", "currentObjective"),
+                    ),
                 conversationDirective = conversationDirective,
             )
 

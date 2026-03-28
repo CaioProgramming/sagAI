@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.findChapterAct
@@ -23,6 +22,7 @@ data class ChapterIntroductionArgs(
 
 data class ChapterGenerationArgs(
     val combinedContextJson: String,
+    val characterIndex: String,
     val expectedOutputFormat: String,
     val conversationDirective: String,
 )
@@ -116,9 +116,18 @@ object ChapterPrompts {
         val args =
             ChapterGenerationArgs(
                 combinedContextJson = combinedContextJson,
+                characterIndex = SagaPrompts.charactersSummary(sagaContent),
                 expectedOutputFormat =
                     toJsonMap(
-                        ChapterGeneration::class.java,
+                        Chapter::class.java,
+                        filteredFields =
+                            listOf(
+                                "id",
+                                "currentEventId",
+                                "coverImage",
+                                "createdAt",
+                                "actId",
+                            ),
                     ),
                 conversationDirective = conversationDirective,
             )

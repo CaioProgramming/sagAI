@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -60,6 +61,7 @@ data class ChatUiState(
     val editingMessage: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
     val showMessageOptions: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
     val visualConfig: com.ilustris.sagai.core.ai.model.GenreVisualConfig? = null,
+    val onboardingType: OnboardingType? = null,
 )
 
 data class MessageSelectionState(

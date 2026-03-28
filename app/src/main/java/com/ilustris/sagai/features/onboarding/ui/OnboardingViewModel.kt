@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +28,7 @@ class OnboardingViewModel
         val genreVisualConfigService: GenreVisualConfigService,
         private val onboardingStateMapper: OnboardingStateMapper,
         private val billingService: BillingService,
+        private val settingsUseCase: SettingsUseCase,
     ) : ViewModel() {
         private val _onboardingState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
         val onboardingState = _onboardingState.asStateFlow()
@@ -156,6 +158,11 @@ class OnboardingViewModel
                     is OnboardingAction.Dismiss -> {
                         _onboardingState.value = OnboardingUiState.Idle
                         currentType = null
+                    }
+
+                    is OnboardingAction.DeactivateTutorials -> {
+                        settingsUseCase.setShowTutorials(false)
+                        handleAction(OnboardingAction.Dismiss)
                     }
 
                     else -> { // UI-internal actions like Next/Skip are handled by PagerState

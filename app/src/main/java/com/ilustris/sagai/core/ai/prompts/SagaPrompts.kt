@@ -181,4 +181,9 @@ object SagaPrompts {
 
         return promptService.buildRemotePrompt(SAGA_RESUME_BLUEPRINT, args)
     }
+
+    fun charactersSummary(saga: SagaContent): String =
+        saga.characters.joinToString("\n") {
+            "- ${it.data.id}: ${it.data.name}"
+        }
 }

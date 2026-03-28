@@ -572,4 +572,7 @@
     <string name="audit_logs_reasoning">Reasoning (Chain-of-Thought):</string>
     <string name="audit_logs_raw_response">Raw Response:</string>
     <string name="audit_logs_error_label">Error:</string>
+    <string name="story_guides">Story Guides</string>
+    <string name="story_guides_description">Show introductory guides when starting a new saga universe.</string>
+    <string name="onboarding_dont_show_again">Don\'t show again</string>
 </resources>

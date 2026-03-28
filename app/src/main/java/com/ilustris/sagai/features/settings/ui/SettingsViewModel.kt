@@ -28,7 +28,7 @@ class SettingsViewModel
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
         val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
-
+        val showTutorials = settingsUseCase.getShowTutorials()
         val backupEnabled = settingsUseCase.backupEnabled()
 
         private val _memoryUsage = MutableStateFlow<Long?>(null)
@@ -89,6 +89,12 @@ class SettingsViewModel
         fun setMessageEffectsEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 settingsUseCase.setMessageEffectsEnabled(enabled)
+            }
+        }
+
+        fun setShowTutorials(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setShowTutorials(enabled)
             }
     }
 

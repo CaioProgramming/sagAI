@@ -39,6 +39,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.newsaga.data.model.parseColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaContentUIMapper
@@ -61,6 +62,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -423,6 +425,11 @@ class ChatViewModel
             }
         }
 
+        fun onOnboardingDismissed() {
+            sagaContentManager.isOnboardingVisible.value = false
+            stateManager.updateOnboardingType(null)
+        }
+
         fun retryAiResponse(message: Message?) {
             val currentSaga = uiState.value.sagaContent ?: return
             viewModelScope.launch(Dispatchers.IO) {
@@ -630,6 +637,15 @@ class ChatViewModel
                         updateProgress(sagaContent)
 
                         loadFinished = true
+
+                        if (sagaContent.acts.isEmpty() &&
+                            settingsUseCase
+                                .getShowTutorials()
+                                .first()
+                        ) {
+                            sagaContentManager.isOnboardingVisible.value = true
+                            stateManager.updateOnboardingType(OnboardingType.GAMEPLAY_GUIDE)
+                        }
 
                         // Only validate message status when messages changed
                         if (messagesChanged) {

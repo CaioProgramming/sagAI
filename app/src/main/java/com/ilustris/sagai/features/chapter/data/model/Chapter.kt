@@ -23,9 +23,3 @@ data class Chapter(
 ) {
     fun isEmpty() = title.isEmpty() && overview.isEmpty()
 }
-
-data class ChapterGeneration(
-    val title: String,
-    val overview: String,
-    val featuredCharacters: List<String>,
-)

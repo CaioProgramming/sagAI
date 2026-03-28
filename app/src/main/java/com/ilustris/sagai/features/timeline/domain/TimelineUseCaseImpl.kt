@@ -55,24 +55,23 @@ class TimelineUseCaseImpl
                             currentTimeline = currentTimeline,
                             conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                         ),
-                        filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
-                        useCore = true,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "chapterId",
+                                "createdAt",
+                                "currentObjective",
+                            ),
+                            useCore = true,
                     )!!
 
-            val timelineUpdate =
-                updateTimeline(
-                    currentTimeline.data.copy(
-                        title = newLore.title,
-                        content = newLore.content,
-                    ),
-                )
-
-            generateEmotionalReview(
-                saga,
-                currentTimeline.copy(
-                    data = timelineUpdate,
+            updateTimeline(
+                currentTimeline.data.copy(
+                    title = newLore.title,
+                    content = newLore.content,
+                    emotionalReview = newLore.emotionalReview,
                 ),
-            ).getSuccess()!!
+            )
         }
 
         override suspend fun generateEmotionalReview(

@@ -19,6 +19,8 @@ sealed class OnboardingAction {
     data class Finish(
         val metadata: Map<String, Any?> = emptyMap(),
     ) : OnboardingAction()
+
+    data object DeactivateTutorials : OnboardingAction()
 }
 
 data class OnboardingButton(
