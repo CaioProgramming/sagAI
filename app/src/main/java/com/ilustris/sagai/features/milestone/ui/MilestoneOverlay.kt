@@ -96,7 +96,7 @@ fun MilestoneOverlay(
             val sparkModifier =
                 Modifier.sharedElement(
                     rememberSharedContentState(
-                        key = "saga_${saga.data.id}_genre_icon",
+                        key = "saga_${saga.data.id}_spark",
                     ),
                     animatedVisibilityScope = animatedVisibilityScope,
                 )

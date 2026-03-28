@@ -16,67 +16,67 @@ Genre(
     val color: Color,
     val iconColor: Color,
     @DrawableRes
-    val background: Int,
+    val icon: Int,
 ) {
     FANTASY(
         title = R.string.genre_fantasy,
         color = Color(0xFF8B2635),
         iconColor = Color.White,
-        background = R.drawable.fantasy,
+        icon = R.drawable.fantasy,
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
         color = Color(0xFF8B00FF),
         iconColor = Color.White,
-        background = R.drawable.scifi,
+        icon = R.drawable.scifi,
     ),
 
     HORROR(
         title = R.string.genre_horror,
         color = Color(0xFF1C2541),
         iconColor = Color.White,
-        background = R.drawable.horror,
+        icon = R.drawable.horror,
     ),
 
     HEROES(
         title = R.string.genre_heroes,
         color = Color(0xFF003F88),
         iconColor = Color.White,
-        background = R.drawable.hero,
+        icon = R.drawable.hero,
     ),
     CRIME(
         title = R.string.genre_crime,
         color = Color(0xFFE91E63),
         iconColor = Color.White,
-        background = R.drawable.crime,
+        icon = R.drawable.crime,
     ),
 
     SHINOBI(
         title = R.string.genre_shinobi,
         color = Color(0xFF5C2751),
         iconColor = Color.White,
-        background = R.drawable.shinobi_background,
+        icon = R.drawable.shinobi_background,
     ),
 
     SPACE_OPERA(
         title = R.string.genre_space_opera,
         color = Color(0xFF0081A7),
         iconColor = Color.White,
-        background = R.drawable.space_opera,
+        icon = R.drawable.space_opera,
     ),
 
     COWBOY(
         title = R.string.genre_cowboys,
         color = Color(0xFF8B4513),
         iconColor = Color.White,
-        background = R.drawable.cowboys,
+        icon = R.drawable.cowboys,
     ),
 
     PUNK_ROCK(
         title = R.string.genre_punk_rock,
         color = Color(0xFF00B050),
         iconColor = Color.White,
-        background = R.drawable.punk_rock,
+        icon = R.drawable.punk_rock,
     ),
     ;
 
@@ -255,8 +255,7 @@ fun Genre.resolveImageUrl(visualConfig: GenreVisualConfig?): String? = visualCon
 fun Genre.resolveImageUrl(): String? = resolveImageUrl(LocalGenreVisualConfig.current)
 
 /** Resolve the background image for the genre. Falls back to enum property. */
-fun Genre.resolveBackground(visualConfig: GenreVisualConfig?): Any =
-    visualConfig?.backgroundUrl?.takeIf { it.isNotBlank() } ?: this.background
+fun Genre.resolveBackground(visualConfig: GenreVisualConfig?): Any = visualConfig?.backgroundUrl?.takeIf { it.isNotBlank() } ?: this.icon
 
 @Composable
 fun Genre.resolveBackground(): Any = resolveBackground(LocalGenreVisualConfig.current)

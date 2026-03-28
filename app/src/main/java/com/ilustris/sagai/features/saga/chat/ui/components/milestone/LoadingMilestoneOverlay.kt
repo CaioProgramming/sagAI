@@ -48,7 +48,7 @@ fun LoadingMilestoneOverlay(
                     .padding(32.dp),
         ) {
             Image(
-                painterResource(genre.background),
+                painterResource(genre.icon),
                 null,
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
                 modifier =

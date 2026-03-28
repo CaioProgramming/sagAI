@@ -192,16 +192,16 @@ private fun OnboardingContentSheet(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         var currentIcon by remember {
-                            mutableStateOf(Genre.entries.random().background)
+                            mutableStateOf(Genre.entries.random().icon)
                         }
 
                         LaunchedEffect(pagerState.currentPage) {
                             currentIcon =
                                 Genre.entries
                                     .filter {
-                                        it.background != currentIcon
+                                        it.icon != currentIcon
                                     }.random()
-                                    .background
+                                    .icon
                         }
 
                         repeat(state.pages.size) { iteration ->
@@ -373,8 +373,8 @@ fun OnboardingStandardContent(page: OnboardingPage) {
     Column(
         modifier =
             Modifier
-                .fillMaxSize()
-                .padding(32.dp),
+                .fillMaxWidth()
+                .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -385,7 +385,7 @@ fun OnboardingStandardContent(page: OnboardingPage) {
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = page.description,
             modifier = Modifier.fillMaxWidth(),
@@ -515,7 +515,8 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }.graphicsLayer {
+                    }
+                    .graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -528,7 +529,8 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }.zoomAnimation(),
+                    }
+                    .zoomAnimation(),
         )
     }
 }
@@ -556,7 +558,7 @@ private fun GenreImage(
     modifier: Modifier = Modifier,
 ) {
     AsyncImage(
-        model = config?.imageUrl ?: genre.background,
+        model = config?.imageUrl ?: genre.icon,
         contentDescription = null,
         modifier =
             modifier

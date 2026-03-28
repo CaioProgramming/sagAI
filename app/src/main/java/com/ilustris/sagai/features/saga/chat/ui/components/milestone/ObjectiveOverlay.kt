@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
@@ -48,7 +47,7 @@ fun ObjectiveOverlay(
                 .padding(16.dp),
     ) {
         Image(
-            painterResource(R.drawable.ic_spark),
+            painterResource(genre.icon),
             null,
             sparkModifier.size(32.dp),
             colorFilter = ColorFilter.tint(genre.resolveIconColor()),

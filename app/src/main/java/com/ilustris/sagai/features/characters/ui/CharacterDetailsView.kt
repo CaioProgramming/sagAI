@@ -430,7 +430,7 @@ private fun CharacterDetailsLoaded(
                     } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Image(
-                                painterResource(genre.background),
+                                painterResource(genre.icon),
                                 null,
                                 Modifier
                                     .statusBarsPadding()
@@ -439,8 +439,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -567,8 +566,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }
