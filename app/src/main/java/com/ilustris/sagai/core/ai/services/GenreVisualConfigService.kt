@@ -45,12 +45,4 @@ class GenreVisualConfigService(
         }
         return config
     }
-
-    /**
-     * Clears the in-memory cache, forcing the next call to re-fetch from Remote Config.
-     * Useful after a Remote Config force-refresh.
-     */
-    fun invalidateCache() {
-        cache.clear()
-    }
 }

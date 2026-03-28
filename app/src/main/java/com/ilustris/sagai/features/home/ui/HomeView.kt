@@ -5,6 +5,7 @@ package com.ilustris.sagai.features.home.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
@@ -181,7 +182,8 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).reactiveShimmer(
+                                )
+                                .reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     2.seconds,
@@ -197,7 +199,42 @@ fun HomeView(
                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                     ModalDrawerSheet(
                                         drawerContainerColor = MaterialTheme.colorScheme.background,
-                                    ) { SettingsView(navController) }
+                                    ) {
+                                        AnimatedContent(
+                                            targetState = drawerState.targetValue,
+                                            transitionSpec = {
+                                                fadeIn() togetherWith fadeOut()
+                                            },
+                                            label = "DrawerContent",
+                                        ) { targetValue ->
+                                            if (targetValue == DrawerValue.Open || drawerState.isOpen) {
+                                                SettingsView(
+                                                    navController,
+                                                    onOpenPremiumOnboarding = {
+                                                        showPremiumSheet = true
+                                                        coroutineScope.launch {
+                                                            drawerState.close()
+                                                        }
+                                                    },
+                                                )
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Image(
+                                                        painterResource(R.drawable.ic_spark),
+                                                        contentDescription = null,
+                                                        modifier =
+                                                            Modifier
+                                                                .size(64.dp)
+                                                                .alpha(0.1f),
+                                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             },
                         ) {
@@ -239,7 +276,9 @@ fun HomeView(
                                         viewModel.createFakeSaga()
                                     },
                                     openPremiumSheet = {
-                                        showPremiumSheet = true
+                                        if (showPremiumSheet.not()) {
+                                            showPremiumSheet = true
+                                        }
                                     },
                                     recoverSagas = {
                                         showBackupSheet = true
@@ -273,14 +312,16 @@ fun HomeView(
         }
     }
 
-    if (showPremiumSheet) {
-        OnboardingDialog(
-            type = OnboardingType.PREMIUM_GUIDE,
-            force = true,
-            onDismiss = {
-                showPremiumSheet = false
-            },
-        )
+    AnimatedVisibility(showPremiumSheet) {
+        if (showPremiumSheet) {
+            OnboardingDialog(
+                type = OnboardingType.PREMIUM_GUIDE,
+                force = true,
+                onDismiss = {
+                    showPremiumSheet = false
+                },
+            )
+        }
     }
 
     if (showBackupSheet) {
@@ -369,7 +410,8 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -461,8 +503,7 @@ private fun SharedTransitionScope.ChatList(
                         .reactiveShimmer(
                             true,
                             duration = 10.seconds,
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
                         }

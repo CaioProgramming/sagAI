@@ -442,11 +442,12 @@ fun Modifier.zoomAnimation(): Modifier {
     )
 
     return this
+        .clipToBounds()
         .graphicsLayer(
             scaleX = scale,
             scaleY = scale,
             transformOrigin = TransformOrigin.Center,
-        ).clipToBounds()
+        )
 }
 
 @Composable

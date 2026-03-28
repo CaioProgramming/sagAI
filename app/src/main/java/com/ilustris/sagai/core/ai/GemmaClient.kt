@@ -279,7 +279,9 @@ class GemmaClient
                                     ),
                                 )
                             }
-                            aiGeneration.data
+                            val data = aiGeneration.data
+                            Log.d(javaClass.simpleName, "AI data ->\n$data\n")
+                            data
                         }
                     } catch (e: Exception) {
                         if (BuildConfig.DEBUG) {

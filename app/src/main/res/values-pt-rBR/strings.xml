@@ -231,6 +231,7 @@
     <string name="clear_data_dialog_confirm">Sim, apagar tudo</string>
     <string name="clear_data_dialog_cancel">Não, manter meus dados</string>
     <string name="clear_cache">Limpar cache</string>
+    <string name="clear_preferences_explanation">Limpe suas preferências para ver tutoriais de novo.</string>
     <string name="restore_purchases">Restaurar compras</string>
     <string name="not_premium_title_label">Junte-se ao</string>
     <string name="premium_label_title">Você é</string>
@@ -320,6 +321,7 @@
     <string name="character_details_aka">vulgo: %s</string>
     <string name="read_more">Ler mais...</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
+    <string name="smart_fix_button">Refinar</string>
     <string name="message_effects">Efeitos de Mensagem</string>
     <string name="message_effects_description">Dê vida à sua história com animações dinâmicas que refletem o clima de cada momento</string>
 
@@ -335,6 +337,7 @@
     <string name="backup_loading_restoring_saga">Restaurando %s...</string>
 
     <!-- Conversation Snippet Sharing -->
+    <string name="restore_database_button">Restaurar banco de dados</string>
     <string name="messages_selected">%1$d de %2$d mensagens selecionadas</string>
     <string name="share">Compartilhar</string>
     <string name="cancel">Cancelar</string>
@@ -490,6 +493,7 @@
     <string name="milestone_fallback_loading_heroes">Organizando o desafio e polindo a capa...</string>
     <string name="milestone_fallback_loading_crime">Conectando as evidências e percorrendo as ruas noir...</string>
     <string name="milestone_fallback_loading_punk_rock">Afinando os amplificadores e conferindo o setlist...</string>
+    <string name="generate_saga">Gerar</string>
     <string name="regenerate">Regenerar</string>
     <string name="save_changes">Salvar alterações</string>
 
@@ -522,6 +526,21 @@
     <string name="audit_logs_reasoning">Raciocínio (Chain-of-Thought):</string>
     <string name="audit_logs_raw_response">Resposta Bruta:</string>
     <string name="audit_logs_error_label">Erro:</string>
+    <string name="clear_preferences">Limpar preferências</string>
+    <string name="backup_loading_restoring_database">Restaurando banco de dados...</string>
+    <string name="backup_loading_creating">Criando backup</string>
+    <string name="backup_disabled_warning_title">Backup desabilitado</string>
+    <string name="backup_disabled_warning_message">Suas sagas não estão fazendo backup, exporte seus dados para mantê-las</string>
+    <string name="export_database_button">Exportar banco de dados</string>
+    <string name="import_database_button">Importar banco de dados</string>
+    <string name="restore_database_title">Backups de banco de dados</string>
+    <string name="restore_database_description">Selecione um backup para restaurar suas histórias</string>
+    <string name="onboarding_skip">Pular</string>
+    <string name="onboarding_next">Continuar</string>
+    <string name="onboarding_finish">Entendi</string>
+    <string name="onboarding_creation_guide_finish">Começar a criar</string>
+    <string name="onboarding_gameplay_guide_finish">Começar saga</string>
+    <string name="onboarding_app_intro_fallback_title">Bem-vindo ao sagas</string>
 </resources>
 
 

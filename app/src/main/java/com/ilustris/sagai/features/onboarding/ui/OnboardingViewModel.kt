@@ -7,8 +7,10 @@ import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingContent
+import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,27 +19,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed class OnboardingUiState {
-    data object Idle : OnboardingUiState()
-
-    data object Loading : OnboardingUiState()
-
-    data class Content(
-        val content: OnboardingContent,
-        val visualConfig: GenreVisualConfig? = null,
-    ) : OnboardingUiState()
-
-    data class Error(
-        val message: String,
-    ) : OnboardingUiState()
-}
-
 @HiltViewModel
 class OnboardingViewModel
     @Inject
     constructor(
         private val onboardingUseCase: OnboardingUseCase,
         val genreVisualConfigService: GenreVisualConfigService,
+        private val onboardingStateMapper: OnboardingStateMapper,
         private val billingService: BillingService,
     ) : ViewModel() {
         private val _onboardingState = MutableStateFlow<OnboardingUiState>(OnboardingUiState.Idle)
@@ -52,6 +40,8 @@ class OnboardingViewModel
 
         private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
         val visualConfigs = _visualConfigs.asStateFlow()
+
+        private val cachedContent = mutableMapOf<String, OnboardingContent>()
 
         init {
             viewModelScope.launch {
@@ -73,9 +63,31 @@ class OnboardingViewModel
         fun checkOnboarding(
             type: OnboardingType,
             genre: Genre? = null,
+            saga: Saga? = null,
             force: Boolean = false,
         ) {
-            if (_onboardingState.value is OnboardingUiState.Loading || (currentType == type && !force)) return
+            val cacheKey = "${type.name}_${genre?.name ?: "default"}"
+            if (_onboardingState.value is OnboardingUiState.Loading) {
+                if (_onboardingState.value.type == type) return
+            }
+
+            if (!force && cachedContent.containsKey(cacheKey)) {
+                viewModelScope.launch {
+                    val content = cachedContent[cacheKey]!!
+                    _onboardingState.emit(
+                        onboardingStateMapper.buildOnboardingState(
+                            type,
+                            content,
+                            genre,
+                            saga,
+                        ),
+                    )
+                    currentType = type
+                }
+                return
+            }
+
+            if (currentType == type && !force) return
             fetchJob?.cancel()
             fetchJob =
                 viewModelScope.launch {
@@ -85,14 +97,20 @@ class OnboardingViewModel
                         onboardingUseCase
                             .getContent(type, genre)
                             .onSuccessAsync { content ->
-                                val visualConfig =
-                                    genre?.let { genreVisualConfigService.getVisualConfig(it) }
-                                _onboardingState.emit(OnboardingUiState.Content(content, visualConfig))
+                                cachedContent[cacheKey] = content
+                                _onboardingState.emit(
+                                    onboardingStateMapper.buildOnboardingState(
+                                        type,
+                                        content,
+                                        genre,
+                                        saga,
+                                    ),
+                                )
                                 onboardingUseCase.markSeen(type)
-                                currentConfig.emit(visualConfig)
                             }.onFailureAsync {
                                 _onboardingState.emit(
                                     OnboardingUiState.Error(
+                                        type,
                                         it.message ?: "Unknown error",
                                     ),
                                 )
@@ -112,6 +130,37 @@ class OnboardingViewModel
             viewModelScope.launch {
                 _onboardingState.emit(OnboardingUiState.Idle)
                 currentType = null
+            }
+        }
+
+        fun handleAction(
+            action: OnboardingAction,
+            activity: MainActivity? = null,
+        ) {
+            viewModelScope.launch {
+                when (action) {
+                    is OnboardingAction.Subscribe -> {
+                        val disabledState =
+                            billingService.state.value as? BillingService.BillingState.SignatureDisabled
+                        val product = disabledState?.products?.firstOrNull()
+                        val offerToken = product?.subscriptionOfferDetails?.firstOrNull()?.offerToken
+                        if (activity != null && product != null && offerToken != null) {
+                            purchasePremium(activity, product, offerToken)
+                        }
+                    }
+
+                    is OnboardingAction.Restore -> {
+                        restorePurchases()
+                    }
+
+                    is OnboardingAction.Dismiss -> {
+                        _onboardingState.value = OnboardingUiState.Idle
+                        currentType = null
+                    }
+
+                    else -> { // UI-internal actions like Next/Skip are handled by PagerState
+                    }
+                }
             }
         }
 

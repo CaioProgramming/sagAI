@@ -51,6 +51,7 @@ import com.ilustris.sagai.core.services.FirebaseInstallationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.core.usecase.PaletteUseCaseImpl
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -75,6 +76,7 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
@@ -355,6 +357,21 @@ object AppModule {
     fun providesWorkManagerScheduler(
         @ApplicationContext context: Context,
     ): WorkManagerScheduler = WorkManagerSchedulerImpl(context)
+
+    @Provides
+    @Singleton
+    fun providesOnboardingStateMapper(
+        billingService: BillingService,
+        stringResourceHelper: StringResourceHelper,
+        genreConfigService: GenreVisualConfigService,
+        remoteConfigService: RemoteConfigService,
+    ): OnboardingStateMapper =
+        OnboardingStateMapper(
+            billingService,
+            stringResourceHelper,
+            genreConfigService,
+            remoteConfigService,
+        )
 }
 
 @InstallIn(ViewModelComponent::class)

@@ -16,6 +16,10 @@ data class OnboardingPage(
     val emoji: String = "",
 )
 
+data class OnboardingAsset(
+    val image: String,
+)
+
 enum class OnboardingType(
     val preferenceKey: String,
     val configKey: String,

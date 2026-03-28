@@ -219,8 +219,7 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient())
                     .clickable {
                         requestReview(chapter)
-                    }
-                    .padding(4.dp),
+                    }.padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

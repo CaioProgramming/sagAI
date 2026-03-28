@@ -69,8 +69,6 @@ import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSe
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
-import com.ilustris.sagai.features.onboarding.data.OnboardingType
-import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.PlaythroughSheet
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
@@ -89,6 +87,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 fun SettingsView(
     navController: NavHostController? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenPremiumOnboarding: () -> Unit = {},
 ) {
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle(false)
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
@@ -110,7 +109,6 @@ fun SettingsView(
     var showClearDialog by remember { mutableStateOf(false) }
     val isWiping by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    var premiumSheetVisible by remember { mutableStateOf(false) }
     var requestedPermission by remember {
         mutableStateOf<String?>(null)
     }
@@ -569,7 +567,7 @@ fun SettingsView(
             PremiumCard(
                 isUserPro = isUserPro,
                 onClick = {
-                    premiumSheetVisible = true
+                    onOpenPremiumOnboarding()
                 },
             )
         }
@@ -743,16 +741,6 @@ fun SettingsView(
     PermissionComponent(requestedPermission, {
         openAppSettings(context)
     }, { requestedPermission = null })
-
-    if (premiumSheetVisible) {
-        OnboardingDialog(
-            type = OnboardingType.PREMIUM_GUIDE,
-            force = true,
-            onDismiss = {
-                premiumSheetVisible = false
-            },
-        )
-    }
 
     if (showBackupSheet) {
         BackupSheet(showBackups, onDismiss = {

@@ -160,7 +160,15 @@ class NewSagaUseCaseImpl
                         characterDescription,
                         identity,
                     ),
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    filterOutputFields =
+                        listOf(
+                            "id",
+                            "smartZoom",
+                            "emojified",
+                            "hexColor",
+                            "voice",
+                    ),
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
