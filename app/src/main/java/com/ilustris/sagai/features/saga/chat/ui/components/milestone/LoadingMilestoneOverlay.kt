@@ -66,7 +66,7 @@ fun LoadingMilestoneOverlay(
 
             genre.stylisedText(
                 saga.title,
-                modifier = titleModifier,
+                modifier = titleModifier.fillMaxWidth(),
             )
         }
     }

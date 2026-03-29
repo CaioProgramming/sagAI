@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -37,7 +39,8 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingAsset
-import com.ilustris.sagai.ui.theme.glow
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import kotlinx.coroutines.delay
 import kotlin.random.Random
@@ -130,24 +133,38 @@ fun MorphingAvatarBackground(icons: List<String>) {
     }
 
     Box(
-        modifier = Modifier.padding(vertical = 32.dp).fillMaxSize(),
+        modifier =
+            Modifier
+                .padding(vertical = 32.dp)
+                .fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
+        StarryTextPlaceholder(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .gradientFill(
+                        Brush.verticalGradient(
+                            holographicGradient,
+                        ),
+                    ),
+        )
         AnimatedContent(fixedCharacter, transitionSpec = {
             scaleIn() + fadeIn() togetherWith scaleOut()
-        }) {
+        }, modifier = Modifier.clip(CircleShape)) {
             AsyncImage(
                 it,
                 contentDescription = null,
                 modifier =
                     Modifier
-                        .clip(CircleShape)
-                        .size(100.dp)
+                        .glitch()
                         .levitate()
-                        .glow(
-                            MaterialTheme.colorScheme.primary,
-                            true,
-                        ),
+                        .dropShadow(CircleShape) {
+                            this.brush = Brush.verticalGradient(holographicGradient)
+                            this.radius = 15f
+                            this.spread = 10f
+                        }.clip(CircleShape)
+                        .size(200.dp),
                 contentScale = ContentScale.Crop,
             )
         }
@@ -176,7 +193,10 @@ fun StackedCardsBackground(
     }
 
     Box(
-        modifier = Modifier.padding(vertical = 32.dp).fillMaxSize(),
+        modifier =
+            Modifier
+                .padding(vertical = 32.dp)
+                .fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         StarryTextPlaceholder(Modifier.fillMaxSize())

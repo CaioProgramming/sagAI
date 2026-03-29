@@ -45,19 +45,28 @@ class ActUseCaseImpl
         ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                val newAct = gemmaClient.generate<Act>(titlePrompt, useCore = true)!!
+                val newAct =
+                    gemmaClient.generate<Act>(
+                        titlePrompt,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "sagaId",
+                                "currentChapterId",
+                                "introduction",
+                            ),
+                        useCore = true,
+                    )!!
 
-                val actUpdate =
-                    updateAct(
-                        actContent.data.copy(
-                            sagaId = saga.data.id,
-                            currentChapterId = null,
-                            title = newAct.title,
-                            content = newAct.content,
-                        ),
-                    )
-
-                generateEmotionalProfile(saga, actContent.copy(data = actUpdate)).getSuccess()!!
+                updateAct(
+                    actContent.data.copy(
+                        sagaId = saga.data.id,
+                        currentChapterId = null,
+                        title = newAct.title,
+                        content = newAct.content,
+                        emotionalReview = newAct.emotionalReview,
+                    ),
+                )
             }
 
         private suspend fun generateActPrompt(saga: SagaContent): String {

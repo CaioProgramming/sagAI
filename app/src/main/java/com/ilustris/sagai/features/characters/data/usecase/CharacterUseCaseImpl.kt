@@ -156,7 +156,7 @@ class CharacterUseCaseImpl
                     genreConfigService.getGenreConfig(
                         sagaContent.data.genre,
                         sagaContent.data.variationId,
-                    )!!
+                    )
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         promptService,
@@ -180,6 +180,10 @@ class CharacterUseCaseImpl
                                 "image",
                                 "joinedAt",
                                 "sagaId",
+                                "smartZoom",
+                                "voice",
+                                "hexColor",
+                                "firstSceneId",
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!

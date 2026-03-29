@@ -82,11 +82,9 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.chromaticAberration
-import com.ilustris.sagai.ui.theme.FluidGradient
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -145,13 +143,15 @@ private fun OnboardingContentSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color.Transparent,
         shape = shape,
         dragHandle = null,
+        containerColor = Color.Transparent,
     ) {
         Box(
             modifier =
                 Modifier
+                    .padding(top = 16.dp)
+                    .background(MaterialTheme.colorScheme.background, shape)
                     .clip(shape)
                     .fillMaxWidth()
                     .fillMaxHeight(),
@@ -383,6 +383,7 @@ fun OnboardingStandardContent(page: OnboardingPage) {
             text = page.title,
             modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -390,7 +391,8 @@ fun OnboardingStandardContent(page: OnboardingPage) {
         Text(
             text = page.description,
             modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Normal,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
         )
@@ -478,7 +480,7 @@ fun MorphingGenresBackground(
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(5.seconds)
+            delay(3.seconds)
             val hasConfigs =
                 visualConfigs.containsKey(currentGenre) &&
                     visualConfigs.containsKey(nextGenre)
@@ -532,22 +534,6 @@ fun MorphingGenresBackground(
                     }.zoomAnimation(),
         )
     }
-}
-
-@Composable
-fun LiquidGradientBackground() {
-    val viewModel: OnboardingViewModel = hiltViewModel()
-    val visualConfigs by viewModel.visualConfigs.collectAsStateWithLifecycle()
-
-    val colors =
-        remember(visualConfigs) {
-            visualConfigs.values
-                .mapNotNull { it.primaryColor.hexToColor() }
-                .filter { it != Color.Unspecified && it != Color.Transparent }
-                .ifEmpty { holographicGradient }
-        }
-
-    FluidGradient(colors = colors)
 }
 
 @Composable

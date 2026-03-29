@@ -5,7 +5,6 @@ package com.ilustris.sagai.features.newsaga.ui
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -115,6 +114,7 @@ import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -413,19 +413,34 @@ fun NewSagaView(
                     val flow = FlowPages.entries[page]
                     when (flow) {
                         FlowPages.SELECT_THEME -> {
-                            AnimatedVisibility(
-                                visible = showGenreCards,
-                                enter = fadeIn(tween(1000)) + slideInVertically { it / 4 },
-                                exit = fadeOut(tween(500)),
+                            AnimatedContent(
+                                showGenreCards,
+                                transitionSpec = {
+                                    fadeIn(tween(1000)) + slideInVertically { -it } togetherWith
+                                        fadeOut(tween(500))
+                                },
                                 modifier = Modifier.fillMaxSize(),
                             ) {
-                                GenrePicker(
-                                    isLoading = isLoading,
-                                    visuals = genreVisuals ?: emptyList(),
-                                    currentGenre = genre,
-                                    pagerState = genrePagerState,
-                                ) {
-                                    viewModel.updateGenre(it)
+                                if (it) {
+                                    GenrePicker(
+                                        isLoading = isLoading,
+                                        visuals = genreVisuals ?: emptyList(),
+                                        currentGenre = genre,
+                                        pagerState = genrePagerState,
+                                    ) {
+                                        viewModel.updateGenre(it)
+                                    }
+                                } else {
+                                    Box(
+                                        Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        SparkLoader(
+                                            Brush.verticalGradient(holographicGradient),
+                                            modifier = Modifier.size(64.dp),
+                                            strokeSize = 2.dp,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -528,7 +543,8 @@ fun NewSagaView(
                                         .dropShadow(shape) {
                                             color = primaryColor
                                             radius = 20f
-                                        }.border(1.dp, borderBrush, shape)
+                                        }
+                                        .border(1.dp, borderBrush, shape)
                                         .clip(shape)
                                         .background(backgroundColor, shape)
                                         .reactiveShimmer(true),
@@ -842,13 +858,14 @@ private fun SuggestionsContent(
                             1.dp,
                             itemGradient,
                             shape,
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .2f),
                             shape,
-                        )
-                        .clickable {
+                        ).clickable {
                             onSelect(it)
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
@@ -973,7 +990,7 @@ private fun GenrePicker(
                             val pageOffset =
                                 (
                                         (pagerState.currentPage - page) +
-                                                pagerState
+                                        pagerState
                                             .currentPageOffsetFraction
                                 ).absoluteValue
                             lerp(

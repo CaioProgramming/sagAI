@@ -17,6 +17,7 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingUiState
 import com.ilustris.sagai.features.onboarding.ui.PremiumBackground
 import com.ilustris.sagai.features.onboarding.ui.SparkBackground
 import com.ilustris.sagai.features.onboarding.ui.StarfieldBackground
+import com.ilustris.sagai.ui.animations.MorphingAvatarBackground
 import com.ilustris.sagai.ui.animations.StackedCardsBackground
 import com.ilustris.sagai.ui.theme.FluidGradient
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -53,7 +54,8 @@ class OnboardingStateMapper
         ): List<OnboardingUiPage> {
             val storyAssets =
                 remoteConfigService.getJson<List<OnboardingAsset>>("story_faces") ?: emptyList()
-            remoteConfigService.getJson<List<OnboardingAsset>>("avatar_faces") ?: emptyList()
+            val iconsAssets =
+                remoteConfigService.getJson<List<OnboardingAsset>>("avatar_faces") ?: emptyList()
             val genreConfigs = Genre.entries.associateWith { genreVisualConfig.getVisualConfig(it) }
 
             return content.pages.mapIndexed { index, page ->
@@ -91,8 +93,12 @@ class OnboardingStateMapper
                                     { StackedCardsBackground(assets = storyAssets) }
                                 }
 
+                                2 -> {
+                                    { MorphingAvatarBackground(iconsAssets.map { it.image }) }
+                                }
+
                                 else -> {
-                                    { FluidGradient(holographicGradient) }
+                                    { SparkBackground() }
                                 }
                             }
                         }

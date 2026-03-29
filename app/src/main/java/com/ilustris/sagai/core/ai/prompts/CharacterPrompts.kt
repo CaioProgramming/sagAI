@@ -75,6 +75,7 @@ data class KnowledgeUpdateArgs(
 data class RefineDraftArgs(
     val userInput: String,
     val sagaContext: String,
+    val appearanceGuidelines: String,
 )
 
 @Suppress("ktlint:standard:max-line-length")
@@ -214,7 +215,7 @@ object CharacterPrompts {
                         .take(5)
                         .map { it.message }
                         .normalizetoAIItems(excludingFields = messageExclusions),
-                appearanceGuidelines = "",
+                appearanceGuidelines = config.appearanceGuidelines,
             )
 
         return promptService.buildRemotePrompt(CHARACTER_GENERATION_BLUEPRINT, args)
@@ -356,11 +357,13 @@ object CharacterPrompts {
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         rawInput: String,
         sagaContext: SagaDraft?,
+        appearanceGuidelines: String,
     ): String {
         val args =
             RefineDraftArgs(
                 userInput = rawInput,
                 sagaContext = sagaContext?.toAINormalize() ?: "",
+                appearanceGuidelines = appearanceGuidelines,
             )
 
         return promptService.buildRemotePrompt(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)

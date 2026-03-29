@@ -15,6 +15,7 @@ class NewCharacterUseCaseImpl
     constructor(
         private val gemmaClient: GemmaClient,
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : NewCharacterUseCase {
         override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<CharacterCreationGen> =
             executeRequest {
@@ -72,11 +73,20 @@ class NewCharacterUseCaseImpl
             sagaContext: SagaDraft?,
         ): RequestResult<CharacterCreationGen> =
             executeRequest {
+                val appearanceGuidelines =
+                    sagaContext?.let {
+                        genreConfigService
+                            .getGenreConfig(
+                                it.genre,
+                                it.variationId ?: "",
+                            )?.appearanceGuidelines
+                    } ?: ""
                 gemmaClient.generate(
                     CharacterPrompts.refineCharacterDraftPrompt(
                         promptService,
                         rawInput,
                         sagaContext,
+                        appearanceGuidelines,
                     ),
                     requireTranslation = true,
                 )!!

@@ -200,40 +200,15 @@ fun HomeView(
                                     ModalDrawerSheet(
                                         drawerContainerColor = MaterialTheme.colorScheme.background,
                                     ) {
-                                        AnimatedContent(
-                                            targetState = drawerState.targetValue,
-                                            transitionSpec = {
-                                                fadeIn() togetherWith fadeOut()
-                                            },
-                                            label = "DrawerContent",
-                                        ) { targetValue ->
-                                            if (targetValue == DrawerValue.Open || drawerState.isOpen) {
-                                                SettingsView(
-                                                    navController,
-                                                    onOpenPremiumOnboarding = {
-                                                        showPremiumSheet = true
-                                                        coroutineScope.launch {
-                                                            drawerState.close()
-                                                        }
-                                                    },
-                                                )
-                                            } else {
-                                                Box(
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentAlignment = Alignment.Center,
-                                                ) {
-                                                    Image(
-                                                        painterResource(R.drawable.ic_spark),
-                                                        contentDescription = null,
-                                                        modifier =
-                                                            Modifier
-                                                                .size(64.dp)
-                                                                .alpha(0.1f),
-                                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
-                                                    )
+                                        SettingsView(
+                                            navController,
+                                            onOpenPremiumOnboarding = {
+                                                showPremiumSheet = true
+                                                coroutineScope.launch {
+                                                    drawerState.close()
                                                 }
-                                            }
-                                        }
+                                            },
+                                        )
                                     }
                                 }
                             },
@@ -410,8 +385,7 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }
-                                    .wrapContentWidth()
+                                    }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -454,8 +428,7 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -503,7 +476,8 @@ private fun SharedTransitionScope.ChatList(
                         .reactiveShimmer(
                             true,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
                         }
