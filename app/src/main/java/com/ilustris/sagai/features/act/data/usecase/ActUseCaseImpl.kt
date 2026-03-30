@@ -2,9 +2,11 @@ package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.narrative.ActPurpose
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
@@ -19,6 +21,9 @@ class ActUseCaseImpl
         private val actRepository: ActRepository,
         private val gemmaClient: GemmaClient,
         private val emotionalUseCase: EmotionalUseCase,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val genreConfigService: GenreConfigService,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -40,43 +45,58 @@ class ActUseCaseImpl
         ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                val newAct = gemmaClient.generate<Act>(titlePrompt, useCore = true)!!
+                val newAct =
+                    gemmaClient.generate<Act>(
+                        titlePrompt,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "sagaId",
+                                "currentChapterId",
+                                "introduction",
+                            ),
+                        useCore = true,
+                    )!!
 
-                val actUpdate =
-                    updateAct(
-                        actContent.data.copy(
-                            sagaId = saga.data.id,
-                            currentChapterId = null,
-                            title = newAct.title,
-                            content = newAct.content,
-                        ),
-                    )
-
-                generateEmotionalProfile(saga, actContent.copy(data = actUpdate)).getSuccess()!!
+                updateAct(
+                    actContent.data.copy(
+                        sagaId = saga.data.id,
+                        currentChapterId = null,
+                        title = newAct.title,
+                        content = newAct.content,
+                        emotionalReview = newAct.emotionalReview,
+                    ),
+                )
             }
 
-        private fun generateActPrompt(saga: SagaContent) =
-            ActPrompts.generateActConclusion(
+        private suspend fun generateActPrompt(saga: SagaContent): String {
+            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+
+            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
+            return ActPrompts.generateActConclusion(
+                promptService,
                 saga,
                 saga.currentActInfo!!,
-                getPurpose(saga.acts.size),
+                narrativeRules,
+                genreConfig,
             )
-
-        private fun getPurpose(actCount: Int) =
-            when (actCount) {
-                1 -> ActPurpose.FIRST_ACT_PURPOSE
-                2 -> ActPurpose.SECOND_ACT_PURPOSE
-                else -> ActPurpose.THIRD_ACT_PURPOSE
-            }
+        }
 
         override suspend fun generateActIntroduction(
             saga: SagaContent,
             act: Act,
         ) = executeRequest {
             val isFirst = saga.acts.isEmpty()
-            val previousAct = if (isFirst) null else saga.acts.last()
+            if (isFirst) null else saga.acts.last()
 
-            val prompt = ActPrompts.actIntroductionPrompt(saga, previousAct)
+            genreConfigService.getGenreConfig(saga.data.genre)
+            val prompt =
+                ActPrompts.actIntroductionPrompt(
+                    promptService = promptService,
+                    saga = saga,
+                    narrativeRules = remoteConfigService.getNarrativeRules(),
+                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                )
 
             val intro = gemmaClient.generate<String>(prompt, useCore = true)!!
             actRepository
@@ -91,7 +111,7 @@ class ActUseCaseImpl
                 emotionalUseCase
                     .generateEmotionalProfile(
                         saga,
-                        act.emotionalSummary(saga),
+                        act.emotionalSummary(),
                     ).getSuccess()!!
 
             actRepository.updateAct(act.data.copy(emotionalReview = profile))

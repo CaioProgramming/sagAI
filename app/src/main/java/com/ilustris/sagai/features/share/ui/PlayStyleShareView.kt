@@ -52,6 +52,8 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
@@ -61,9 +63,9 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -75,6 +77,8 @@ fun PlayStyleShareView(
 ) {
     val saga = remember { content.data }
     val genre = remember { saga.genre }
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
@@ -118,15 +122,13 @@ fun PlayStyleShareView(
                                     viewModel.saveBitmap(bitmap, ShareType.PLAYSTYLE.name)
                                 }
                         }
-                    }
-                    .drawWithContent {
+                    }.drawWithContent {
                         graphicsLayer.record {
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }
-                    .padding(8.dp)
-                    .background(genre.color),
+                    }.padding(8.dp)
+                    .background(resolvedColor),
             ) {
                 Box(
                     modifier =
@@ -162,11 +164,11 @@ fun PlayStyleShareView(
                                     style =
                                         MaterialTheme.typography.labelMedium.copy(
                                             fontFamily = genre.bodyFont(),
-                                            color = genre.iconColor,
+                                            color = resolvedIconColor,
                                             textAlign = TextAlign.Center,
                                             shadow =
                                                 Shadow(
-                                                    genre.color,
+                                                    resolvedColor,
                                                     blurRadius = 10f,
                                                     offset = Offset(2f, 0f),
                                                 ),
@@ -185,14 +187,13 @@ fun PlayStyleShareView(
                                             brush =
                                                 Brush.verticalGradient(
                                                     listOf(
-                                                        genre.color,
-                                                        genre.iconColor,
+                                                        resolvedColor,
+                                                        resolvedIconColor,
                                                     ),
                                                 ),
-                                            shadow = Shadow(genre.color, blurRadius = 10f),
+                                            shadow = Shadow(resolvedColor, blurRadius = 10f),
                                         ),
                                 )
-
                             }
                         }
 
@@ -202,29 +203,28 @@ fun PlayStyleShareView(
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
                                     fontFamily = genre.bodyFont(),
-                                    color = genre.iconColor,
+                                    color = resolvedIconColor,
                                     textAlign = TextAlign.Center,
                                     fontStyle = FontStyle.Italic,
                                     fontWeight = FontWeight.W600,
                                     letterSpacing = 5.sp,
                                     shadow =
                                         Shadow(
-                                            genre.color,
+                                            resolvedColor,
                                             blurRadius = 5f,
                                             offset = Offset(5f, 0f),
                                         ),
                                 ),
                         )
-
                     } else {
                         AsyncImage(
                             saga.icon,
                             null,
                             modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .effectForGenre(genre)
-                                .selectiveColorHighlight(genre.selectiveHighlight()),
+                                Modifier
+                                    .fillMaxSize()
+                                    .effectForGenre(genre)
+                                    .selectiveColorHighlight(genre.selectiveHighlight()),
                             contentScale = ContentScale.Crop,
                         )
                         Column(
@@ -240,11 +240,11 @@ fun PlayStyleShareView(
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = genre.bodyFont(),
-                                        color = genre.iconColor,
+                                        color = resolvedIconColor,
                                         textAlign = TextAlign.Center,
                                         shadow =
                                             Shadow(
-                                                genre.color,
+                                                resolvedColor,
                                                 blurRadius = 10f,
                                                 offset = Offset(2f, 0f),
                                             ),
@@ -263,11 +263,11 @@ fun PlayStyleShareView(
                                         brush =
                                             Brush.verticalGradient(
                                                 listOf(
-                                                    genre.color,
-                                                    genre.iconColor,
+                                                    resolvedColor,
+                                                    resolvedIconColor,
                                                 ),
                                             ),
-                                        shadow = Shadow(genre.color, blurRadius = 10f),
+                                        shadow = Shadow(resolvedColor, blurRadius = 10f),
                                     ),
                             )
 
@@ -276,21 +276,19 @@ fun PlayStyleShareView(
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontFamily = genre.bodyFont(),
-                                        color = genre.iconColor,
+                                        color = resolvedIconColor,
                                         textAlign = TextAlign.Center,
                                         fontStyle = FontStyle.Italic,
                                         fontWeight = FontWeight.W600,
                                         letterSpacing = 5.sp,
                                         shadow =
                                             Shadow(
-                                                genre.color,
+                                                resolvedColor,
                                                 blurRadius = 5f,
                                                 offset = Offset(5f, 0f),
                                             ),
                                     ),
                             )
-
-
                         }
                     }
 
@@ -298,7 +296,7 @@ fun PlayStyleShareView(
                         Modifier
                             .align(Alignment.BottomCenter)
                             .fillMaxSize()
-                            .background(fadeGradientBottom(genre.color)),
+                            .background(fadeGradientBottom(resolvedColor)),
                     )
 
                     Column(Modifier.align(Alignment.BottomCenter)) {
@@ -309,7 +307,7 @@ fun PlayStyleShareView(
                                 Modifier
                                     .size(24.dp)
                                     .align(Alignment.CenterHorizontally),
-                            colorFilter = ColorFilter.tint(genre.iconColor),
+                            colorFilter = ColorFilter.tint(resolvedIconColor),
                         )
 
                         Text(
@@ -317,7 +315,7 @@ fun PlayStyleShareView(
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontFamily = genre.bodyFont(),
-                                    color = genre.iconColor,
+                                    color = resolvedIconColor,
                                 ),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                         )
@@ -330,14 +328,11 @@ fun PlayStyleShareView(
                                     .align(Alignment.CenterHorizontally),
                         )
                     }
-
                 }
-
-
             }
         }
 
-        StarryLoader(isLoading, brushColors = saga.genre.colorPalette())
+        StarryLoader(isLoading, brushColors = genre.colorPalette())
     }
 
     LaunchedEffect(Unit) {
@@ -364,7 +359,6 @@ fun PlayStyleShareView(
         }
     }
 }
-
 
 @Preview(
     showBackground = true,

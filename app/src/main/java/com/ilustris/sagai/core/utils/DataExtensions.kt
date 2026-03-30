@@ -204,7 +204,12 @@ fun toJsonMap(
                 val customDescription =
                     fieldCustomDescriptions.find { it.first == field.name }
                 if (customDescription != null) {
-                    "\"${customDescription.first}\": \"${customDescription.second}\""
+                    val value = customDescription.second
+                    if (value.startsWith("{") || value.startsWith("[")) {
+                        "\"${customDescription.first}\": $value"
+                    } else {
+                        "\"${customDescription.first}\": \"$value\""
+                    }
                 } else {
                     "\"$fieldName\": $fieldValue"
                 }
@@ -244,7 +249,6 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     val exclusionStrategy =
         object : ExclusionStrategy {
             override fun shouldSkipField(f: FieldAttributes): Boolean = fieldsToExclude.contains(f.name)
-
             override fun shouldSkipClass(clazz: Class<*>): Boolean = false
         }
 
@@ -255,6 +259,21 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
             .create()
 
     return gson.toJson(this)
+}
+
+fun Any.toPromptVariables(): Map<String, String> {
+    val gson = GsonBuilder().create()
+    val json = gson.toJson(this)
+    val mapType = object : com.google.gson.reflect.TypeToken<Map<String, Any>>() {}.type
+    val rawMap: Map<String, Any> = gson.fromJson(json, mapType)
+
+    return rawMap.mapValues { (_, value) ->
+        if (value is Double && value % 1 == 0.0) {
+            value.toInt().toString()
+        } else {
+            value.toString()
+        }
+    }
 }
 
 fun doNothing() {
@@ -296,8 +315,8 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     var cleanedJsonString = this!!
     Timber.tag(logTag).i("Sanitizing raw string: $cleanedJsonString")
 
-    // 1. Remove common markdown code block delimiters
-    cleanedJsonString = cleanedJsonString.replace("```json", "").replace("```", "")
+    // 1. Remove common markdown code block delimiters (e.g., ```json, ```text, ```)
+    cleanedJsonString = cleanedJsonString.replace(Regex("```[a-zA-Z]*"), "").replace("```", "")
 
     // 2. Trim leading/trailing whitespace
     cleanedJsonString = cleanedJsonString.trim()

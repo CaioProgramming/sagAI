@@ -57,13 +57,44 @@ object DatabaseMigrations {
     val MIGRATION_3_4 =
         object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Activity/Expressiveness slide columns
                 db.execSQL("ALTER TABLE sagas ADD COLUMN activity_hook_title TEXT")
                 db.execSQL("ALTER TABLE sagas ADD COLUMN activity_hook_subtitle TEXT")
                 db.execSQL("ALTER TABLE sagas ADD COLUMN activity_content_title TEXT")
                 db.execSQL("ALTER TABLE sagas ADD COLUMN activity_content_subtitle TEXT")
+            }
         }
-    }
 
-    fun getAllMigrations(): Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    val MIGRATION_4_5 =
+        object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sagas ADD COLUMN variationId TEXT")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sagas_variationId` ON `sagas` (`variationId`)")
+            }
+        }
+
+    val MIGRATION_6_7 =
+        object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `ai_audit_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `model` TEXT NOT NULL, `blueprintKey` TEXT, `dataType` TEXT NOT NULL, `status` TEXT NOT NULL, `reasoning` TEXT, `rawResponse` TEXT, `errorMessage` TEXT)",
+                )
+            }
+        }
+
+    val MIGRATION_7_8 =
+        object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `suggestion` TEXT")
+            }
+        }
+
+    fun getAllMigrations(): Array<Migration> =
+        arrayOf(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+            MIGRATION_4_5,
+            MIGRATION_6_7,
+            MIGRATION_7_8,
+        )
 }

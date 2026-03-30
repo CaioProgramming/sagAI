@@ -212,7 +212,23 @@ class CharacterStateManagerImpl
                         updateAiText(it.message)
                     }
                 }.onFailure {
+                }.onFailure {
                     Timber.e(it, "adaptToGenre: Error adapting character to genre")
+                }
+            updateLoading(false)
+        }
+
+        override suspend fun refineDraft(
+            rawInput: String,
+            sagaForm: SagaDraft?,
+        ) {
+            updateLoading(true)
+            newCharacterUseCase
+                .refineCharacterDraft(rawInput, sagaForm)
+                .onSuccess { gen ->
+                    handleGeneratedContent(gen)
+                }.onFailure { e ->
+                    Log.e(javaClass.simpleName, "refineDraft: Error", e)
                 }
             updateLoading(false)
         }

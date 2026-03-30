@@ -91,7 +91,7 @@ fun ChapterContent(
                         titleModifier = titleModifier,
                     )
                 }
-                items(saga.flatChapters().filter { it.isComplete() }) {
+                items(saga.flatChapters().filter { it.data.isEmpty().not() }) {
                     val chapterModifier =
                         this@with.sharedTransitionActionItemModifier(
                             DetailAction.CHAPTERS,

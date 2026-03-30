@@ -14,10 +14,17 @@ class NewCharacterUseCaseImpl
     @Inject
     constructor(
         private val gemmaClient: GemmaClient,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : NewCharacterUseCase {
         override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<CharacterCreationGen> =
             executeRequest {
-                gemmaClient.generate(CharacterPrompts.characterIntroPrompt(sagaContext))!!
+                gemmaClient.generate(
+                    CharacterPrompts.characterIntroPrompt(
+                        promptService,
+                        sagaContext,
+                    ),
+                )!!
             }
 
         override suspend fun replyCharacterForm(
@@ -35,6 +42,7 @@ class NewCharacterUseCaseImpl
                 val response =
                     gemmaClient.generate<CharacterCreationGen>(
                         CharacterPrompts.conversationalCharacterReply(
+                            promptService = promptService,
                             currentCharacterInfo = currentCharacterInfo,
                             userInput = userInput,
                             conversationHistory = recentMessages,
@@ -53,9 +61,34 @@ class NewCharacterUseCaseImpl
             executeRequest {
                 gemmaClient.generate(
                     CharacterPrompts.characterAdaptationPrompt(
+                        promptService,
                         characterInfo,
                         newGenre,
                     ),
-            )!!
+                )!!
+            }
+
+        override suspend fun refineCharacterDraft(
+            rawInput: String,
+            sagaContext: SagaDraft?,
+        ): RequestResult<CharacterCreationGen> =
+            executeRequest {
+                val appearanceGuidelines =
+                    sagaContext?.let {
+                        genreConfigService
+                            .getGenreConfig(
+                                it.genre,
+                                it.variationId ?: "",
+                            )?.appearanceGuidelines
+                    } ?: ""
+                gemmaClient.generate(
+                    CharacterPrompts.refineCharacterDraftPrompt(
+                        promptService,
+                        rawInput,
+                        sagaContext,
+                        appearanceGuidelines,
+                    ),
+                    requireTranslation = true,
+                )!!
             }
     }

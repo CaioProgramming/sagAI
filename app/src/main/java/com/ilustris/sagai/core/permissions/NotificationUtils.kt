@@ -13,10 +13,6 @@ object NotificationUtils {
     private const val CHAT_CHANNEL_DESCRIPTION = "Notifications for new messages in your sagas." // User-visible description
     const val CHAT_NOTIFICATION_ID = 1
 
-    // Constants for Media Notification Channel
-    const val MEDIA_CHANNEL_ID = "sagai_media_channel" // Matches ID in MediaNotificationManagerImpl
-    private const val MEDIA_CHANNEL_NAME = "Media Playback" // User-visible name
-    private const val MEDIA_CHANNEL_DESCRIPTION = "Notifications for media playback controls." // User-visible description
 
     fun createChatNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -24,19 +20,6 @@ object NotificationUtils {
             val channel =
                 NotificationChannel(CHAT_CHANNEL_ID, CHAT_CHANNEL_NAME, importance).apply {
                     description = CHAT_CHANNEL_DESCRIPTION
-                }
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    fun createMediaNotificationChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_LOW
-            val channel =
-                NotificationChannel(MEDIA_CHANNEL_ID, MEDIA_CHANNEL_NAME, importance).apply {
-                    description = MEDIA_CHANNEL_DESCRIPTION
                 }
             val notificationManager: NotificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

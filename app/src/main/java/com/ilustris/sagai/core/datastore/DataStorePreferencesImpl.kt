@@ -114,6 +114,10 @@ class DataStorePreferencesImpl
                 preferences.remove(booleanPreferencesKey(key))
                 preferences.remove(intPreferencesKey(key))
                 preferences.remove(longPreferencesKey(key))
+            }
         }
-    }
+
+        override suspend fun clearAll() {
+            context.dataStore.edit { it.clear() }
+        }
     }

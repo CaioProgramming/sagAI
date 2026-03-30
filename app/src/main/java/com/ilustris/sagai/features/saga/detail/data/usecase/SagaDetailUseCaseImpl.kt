@@ -44,6 +44,9 @@ class SagaDetailUseCaseImpl
         private val wikiUseCase: WikiUseCase,
         private val sagaBackupService: SagaBackupService,
         private val backupService: com.ilustris.sagai.core.file.BackupService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
             val topCharacters = listOf(saga.mainCharacter!!.data)
@@ -71,9 +74,12 @@ class SagaDetailUseCaseImpl
 
                 var currentReview = Review()
 
+                val config =
+                    genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
                 steps.forEach { step ->
                     emit(ReviewState.Loading(step.progressMessage))
-                    currentReview = step.generate(content, currentReview, textGenClient)
+                    currentReview =
+                        step.generate(promptService, content, currentReview, textGenClient, config)
                 }
 
                 val finalSaga = content.data.copy(review = currentReview)
@@ -142,7 +148,12 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             executeRequest {
-                val prompt = SagaPrompts.generateStoryBriefing(saga)
+                val prompt =
+                    SagaPrompts.generateStoryBriefing(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
 
@@ -151,7 +162,12 @@ class SagaDetailUseCaseImpl
                 if (saga.chaptersSize() < 1) {
                     return@executeRequest saga.data.description
                 }
-                val prompt = SagaPrompts.sagaResume(saga)
+                val prompt =
+                    SagaPrompts.sagaResume(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
                 textGenClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,

@@ -31,11 +31,15 @@ interface SettingsUseCase {
 
     fun getMessageEffectsEnabled(): Flow<Boolean>
 
+    fun getShowTutorials(): Flow<Boolean>
+
     fun backupEnabled(): Flow<Boolean>
 
     suspend fun setSmartSuggestionsEnabled(enabled: Boolean)
 
     suspend fun setMessageEffectsEnabled(enabled: Boolean)
+
+    suspend fun setShowTutorials(enabled: Boolean)
 
     suspend fun getAppStorageUsage(): Long
 
@@ -60,6 +64,12 @@ interface SettingsUseCase {
     suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit>
 
     suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit>
+
+    suspend fun clearPreferences()
+
+    fun getMusicEnabled(): Flow<Boolean>
+
+    suspend fun setMusicEnabled(enabled: Boolean)
 }
 
 class SettingsUseCaseImpl
@@ -80,6 +90,8 @@ class SettingsUseCaseImpl
         companion object {
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
             const val MESSAGE_EFFECTS_ENABLED_KEY = "message_effects_enabled"
+            const val TUTORIALS_ENABLED_KEY = "tutorials_enabled"
+            const val MUSIC_ENABLED_KEY = "music_enabled"
         }
 
         override fun getNotificationsEnabled(): Flow<Boolean> =
@@ -91,6 +103,8 @@ class SettingsUseCaseImpl
 
         override fun getMessageEffectsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
 
+        override fun getShowTutorials(): Flow<Boolean> = dataStorePreferences.getBoolean(TUTORIALS_ENABLED_KEY, true)
+
         override fun backupEnabled() = backupService.backupEnabled()
 
         override suspend fun setSmartSuggestionsEnabled(enabled: Boolean) =
@@ -98,6 +112,12 @@ class SettingsUseCaseImpl
 
         override suspend fun setMessageEffectsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
+
+    override suspend fun setShowTutorials(enabled: Boolean) = dataStorePreferences.setBoolean(TUTORIALS_ENABLED_KEY, enabled)
+
+        override fun getMusicEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MUSIC_ENABLED_KEY, true)
+
+        override suspend fun setMusicEnabled(enabled: Boolean) = dataStorePreferences.setBoolean(MUSIC_ENABLED_KEY, enabled)
 
         override suspend fun getAppStorageUsage(): Long =
             fileHelper.getDirectorySize(context.cacheDir) +
@@ -173,4 +193,8 @@ class SettingsUseCaseImpl
                     }
                 } ?: error("Could not open input stream for source URI")
             }
+
+        override suspend fun clearPreferences() {
+            dataStorePreferences.clearAll()
+        }
     }

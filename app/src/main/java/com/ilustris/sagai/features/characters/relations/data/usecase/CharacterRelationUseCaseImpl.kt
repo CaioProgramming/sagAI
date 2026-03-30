@@ -20,13 +20,15 @@ class CharacterRelationUseCaseImpl
     constructor(
         private val gemmaClient: GemmaClient,
         private val relationRepository: CharacterRelationRepository,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
     ) : CharacterRelationUseCase {
         override suspend fun generateCharacterRelation(
             timeline: Timeline,
             saga: SagaContent,
         ): RequestResult<Unit> =
             executeRequest {
-                val prompt = CharacterPrompts.generateCharacterRelation(timeline, saga)
+                val prompt =
+                    CharacterPrompts.generateCharacterRelation(promptService, timeline, saga)
                 val generatedRelationsData =
                     gemmaClient.generate<RelationGenerationGen>(prompt)!!
 

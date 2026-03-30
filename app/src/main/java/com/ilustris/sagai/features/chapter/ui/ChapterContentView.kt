@@ -45,19 +45,21 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -89,7 +91,8 @@ fun ChapterContentView(
                             content,
                             chapter,
                         )
-                    }.size(100.dp)
+                    }
+                    .size(100.dp)
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
@@ -242,4 +245,13 @@ fun ChapterContentView(
     }
 
     StarryLoader(isGenerating, brushColors = content.data.genre.colorPalette())
+
+    val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.togglePremiumSheet() },
+        )
+    }
 }

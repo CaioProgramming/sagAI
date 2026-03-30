@@ -1,127 +1,85 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.MergeWiki
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
 
+data class WikiGenerationArgs(
+    val sagaContext: String,
+    val eventData: String,
+    val existingWikis: String,
+    val globalWikiIndex: String,
+    val wikiTypes: String,
+)
+
+data class MergeWikiArgs(
+    val wikiList: String,
+)
+
 object WikiPrompts {
-    fun generateWiki(
+    const val MERGE_WIKI_BLUEPRINT = "merge_wiki_blueprint"
+    const val WIKI_GENERATION_BLUEPRINT = "wiki_generation_blueprint"
+
+    suspend fun generateWiki(
+        promptService: PromptService,
         saga: SagaContent,
         event: Timeline,
-    ) = buildString {
-        val wikis =
-            saga.currentActInfo
-                ?.currentChapterInfo
-                ?.events
-                ?.flatMap { it.updatedWikis } ?: emptyList()
-        appendLine(
-            "ROLE: You are an intelligent system tasked with extracting, structuring and creating a emoji for new or updated information from a provided list of recent timeline events to populate a game wiki.",
-        )
-        appendLine(
-            "Your goal is to identify key entities and plot points and provide concise, factual summaries based *only* on the new information present in these events.",
-        )
-        appendLine("")
-        appendLine("// The 'title' field MUST be a short (2-3 word) title for the wiki entry.")
-        appendLine("// The 'emoji' field MUST be a valid unicode emoji that is relevant to the wiki entry.")
-        appendLine("// This is the cast of characters in the saga.")
-        appendLine("// IMPORTANT: DO NOT SAVE ANY INDIVIDUAL CHARACTERS AS WIKI ITEMS.")
-        appendLine("")
-        appendLine("EXISTING WORLD WIKI ENTRIES (For context and consistent terminology):")
-        appendLine("// This is a comprehensive list of all known world entities in the saga's World Knowledge Base.")
-        appendLine(
-            "// Use this list to understand existing entities and their structure, and to avoid creating duplicate entries for information already known or to update existing entries with new details.",
-        )
-        if (wikis.isEmpty()) {
-            appendLine("// No existing wiki entries in the current chapter.")
-        } else {
-            appendLine(
-                wikis.formatToJsonArray(
-                    excludingFields =
+        config: GenreConfig,
+    ): String {
+        val wikiExclusion = listOf("createdAt", "sagaId", "id", "timelineId", "type")
+
+        val eventRawText = "${event.title} ${event.content}".lowercase()
+
+        val relevantWikis =
+            saga.wikis.filter { wiki ->
+                eventRawText.contains(wiki.title.lowercase()) || wiki.timelineId == event.id
+            }
+
+        val globalWikiIndex =
+            (saga.wikis - relevantWikis.toSet()).joinToString(", ") {
+                "${it.emojiTag ?: ""} ${it.title}"
+            }
+
+        val args =
+            WikiGenerationArgs(
+                sagaContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
+                eventData =
+                    event.toJsonFormatExcludingFields(
                         listOf(
                             "createdAt",
-                            "sagaId",
-                            "id",
-                            "timelineId",
-                            "type",
+                            "chapterId",
+                            "emotionalReview",
                         ),
-                ),
-            )
-        }
-
-        appendLine("Always follow that structure:")
-        appendLine("[")
-        appendLine(
-            " ${toJsonMap(
-                Wiki::class.java,
-                filteredFields =
-                    listOf(
-                        "id",
-                        "sagaId",
-                        "timelineId",
-                        "createdAt",
                     ),
-            )}",
-        )
-        appendLine("]")
-        appendLine("// REMINDER: FOR 'FACTIONS' TYPE, ONLY INCLUDE GROUPS OR ORGANIZATIONS, NOT SINGLE INDIVIDUALS.")
-        appendLine("// REMINDER: WRITE SHORT TITLES.")
-        appendLine("// REMINDER: DO NOT INCLUDE SPECIFIC CHARACTERS IN THE WIKI OUTPUT.")
-        appendLine("// IMPORTANT: TYPE FIELD MUST BE A STRING WITH ONE OF THIS OPTIONS: ${WikiType.entries.joinToString { it.name }}.")
-        appendLine(
-            "// For 'EVENT' type entries, only include significant, world-building events (e.g., city festivals, major incidents affecting the public, a new city-wide policy). DO NOT include specific character actions (e.g., 'Julie sabotaged the server') or direct plot progression points that are already detailed in the timeline.",
-        )
-        appendLine("")
-        appendLine("RECENT STORY EVENTS FOR WIKI EXTRACTION:")
-        appendLine("// This is the most recent event that occurred in the story.")
-        appendLine(
-            "// Extract all relevant NEW entities (locations, items, technologies, organizations, plot points, concepts, events) or significant UPDATES to existing entities from these events.",
-        )
-        appendLine("// CRITICAL: DO NOT EXTRACT OR INCLUDE ANY INDIVIDUAL CHARACTERS IN THE WIKI OUTPUT.")
-        appendLine(event.toJsonFormatExcludingFields(fieldsToExclude = listOf("createdAt", "chapterId", "emotionalReview")))
-        appendLine(
-            "FINAL AND CRITICAL RULE: DO NOT GENERATE WIKI ENTRIES FOR INDIVIDUAL CHARACTERS. Ensure 'FACTION' type is used ONLY for groups or ILLEGAL organizations.",
-        )
+                existingWikis =
+                    if (relevantWikis.isEmpty()) {
+                        "No relevant existing wiki entries detected for this event."
+                    } else {
+                        relevantWikis.formatToJsonArray(excludingFields = wikiExclusion)
+                    },
+                globalWikiIndex = globalWikiIndex,
+                wikiTypes = WikiType.entries.joinToString(", "),
+            )
+
+        return promptService.buildRemotePrompt(WIKI_GENERATION_BLUEPRINT, args)
     }
 
-    fun mergeWiki(wikis: List<Wiki>) =
-        buildString {
-            val wikiExclusion = listOf("id", "sagaId", "timelineId", "createdAt")
+    suspend fun mergeWiki(
+        promptService: PromptService,
+        wikis: List<Wiki>,
+    ): String {
+        val wikiExclusion = listOf("id", "sagaId", "timelineId", "createdAt")
 
-            appendLine("ROLE: You are an intelligent system tasked with merging and consolidating Wiki entries from a story chapter.")
-            appendLine("INPUT: A list of Wiki items from the current chapter (see below).")
-            appendLine("TASK:")
-            appendLine(
-                "- Analyze the provided Wiki items and identify entries that refer to the same or closely related entities (e.g., locations, organizations, technologies, events).",
+        val args =
+            MergeWikiArgs(
+                wikiList = wikis.formatToJsonArray(excludingFields = wikiExclusion),
             )
-            appendLine(
-                "- Merge related or duplicate items into a single WikiItem, combining all relevant details and removing redundancies or conflicts.",
-            )
-            appendLine("- Ensure the merged item is clear, concise, and follows the Wiki structure: title, emoji, type, description, etc.")
-            appendLine("- Do NOT merge items of different types or unrelated entities.")
-            appendLine("- Do NOT include individual character entries in the output.")
-            appendLine("")
-            appendLine("CRITICAL OPTIMIZATION:")
-            appendLine("- ONLY include items in the output that actually need to be merged with another item.")
-            appendLine(
-                "- If a Wiki item is unique and has no duplicates or closely related items to merge with, DO NOT include it in the response.",
-            )
-            appendLine("- This keeps the response focused and efficient - only report items that require action.")
-            appendLine("- For items with no merge candidate, set 'secondItem' to an empty string (\"\") or null.")
-            appendLine("")
-            appendLine("EXISTING WIKI ITEMS TO ANALYZE")
-            appendLine(
-                wikis.formatToJsonArray(
-                    excludingFields = wikiExclusion,
-                ),
-            )
-            appendLine("REQUIRED OUTPUT:")
-            appendLine("[ ${toJsonMap(MergeWiki::class.java, filteredFields = wikiExclusion)} ]")
-            appendLine("")
-            appendLine("REMINDER: Only output items that need merging. Empty list [] is valid if no merges are needed.")
-        }
+
+        return promptService.buildRemotePrompt(MERGE_WIKI_BLUEPRINT, args)
+    }
 }

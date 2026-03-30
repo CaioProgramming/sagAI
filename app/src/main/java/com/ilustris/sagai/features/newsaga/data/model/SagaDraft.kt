@@ -4,4 +4,5 @@ data class SagaDraft(
     val title: String = "",
     val description: String = "",
     val genre: Genre = Genre.entries.random(),
+    val variationId: String? = null,
 )

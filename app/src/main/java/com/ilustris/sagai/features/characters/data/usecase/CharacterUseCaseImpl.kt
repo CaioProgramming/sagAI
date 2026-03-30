@@ -43,7 +43,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -63,6 +62,9 @@ class CharacterUseCaseImpl
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
         @param:ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
@@ -96,7 +98,6 @@ class CharacterUseCaseImpl
                             imageReference = null,
                             context =
                                 buildString {
-                                    appendLine("Character Context:")
                                     appendLine(
                                         character.toAINormalize(
                                             listOf(
@@ -106,23 +107,31 @@ class CharacterUseCaseImpl
                                                 "joinedAt",
                                                 "smartZoom",
                                                 "knowledge",
+                                                "firstSceneId",
+                                                "emojified",
+                                                "hexColor",
                                             ),
                                         ),
                                     )
                                 },
-                            imageType = ImageType.CHARACTER,
-                        ).getSuccess()!!
+                            imageType = ImageType.ICON,
+                            variationId = saga.variationId,
+                        )
+
+                if (image.isFailure) {
+                    throw image.error.value
+                }
 
                 val file =
-                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")!!
+                    fileHelper.saveFile(
+                        character.name,
+                        image.getSuccess(),
+                        path = "${saga.id}/characters/",
+                    )!!
                 val newCharacter =
                     character.copy(image = file.path)
                 repository.updateCharacter(newCharacter)
-                image.recycle()
 
-                withContext(Dispatchers.IO) {
-                    createSmartZoom(newCharacter)
-                }
                 newCharacter to ""
             }
 
@@ -143,9 +152,16 @@ class CharacterUseCaseImpl
                 val bannedNames = repository.getAllCharacterNames()
                 // Generate theme color first to pass to AI for appearance guidance
                 val themeColor = getRandomColorHex()
+                val config =
+                    genreConfigService.getGenreConfig(
+                        sagaContent.data.genre,
+                        sagaContent.data.variationId,
+                    )
                 val prompt =
                     CharacterPrompts.characterGeneration(
+                        promptService,
                         sagaContent,
+                        config,
                         description,
                         bannedNames,
                         themeColor,
@@ -163,6 +179,10 @@ class CharacterUseCaseImpl
                                 "image",
                                 "joinedAt",
                                 "sagaId",
+                                "smartZoom",
+                                "voice",
+                                "hexColor",
+                                "firstSceneId",
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
@@ -198,7 +218,12 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Unit> =
             executeRequest {
-                val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
+                val prompt =
+                    CharacterPrompts.characterLoreGeneration(
+                        promptService,
+                        timeline,
+                        saga.getCharacters(),
+                    )
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
                         prompt,
@@ -258,6 +283,7 @@ class CharacterUseCaseImpl
                     val charactersList = saga.getCharacters()
                     val prompt =
                         CharacterPrompts.findNickNames(
+                            promptService,
                             charactersList,
                             timelineContent.messages.map { it.message },
                             timelineContent.data,
@@ -311,7 +337,16 @@ class CharacterUseCaseImpl
                 if (character.events.isEmpty()) {
                     return@executeRequest character.data.backstory
                 }
-                val prompt = CharacterPrompts.characterResume(character, saga)
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)!!
+                val prompt =
+                    CharacterPrompts.characterResume(
+                        promptService,
+                        promptService.getPromptDirectives(),
+                        character,
+                        saga,
+                        config,
+                    )
                 gemmaClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
@@ -326,7 +361,8 @@ class CharacterUseCaseImpl
                 val characters = saga.getCharacters()
                 if (characters.isEmpty()) return@executeRequest
 
-                val prompt = CharacterPrompts.knowledgeUpdatePrompt(timeline, characters)
+                val prompt =
+                    CharacterPrompts.knowledgeUpdatePrompt(promptService, timeline, characters)
                 val result =
                     gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,

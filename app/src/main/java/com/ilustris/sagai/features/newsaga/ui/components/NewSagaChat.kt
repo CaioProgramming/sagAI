@@ -41,10 +41,13 @@ import com.ilustris.sagai.features.newsaga.data.manager.FormState
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Sender
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.BubbleStyle
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.shape
@@ -109,8 +112,8 @@ fun NewSagaChat(
                                 .padding(vertical = 16.dp),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = genre.color,
-                                contentColor = genre.iconColor,
+                                containerColor = genre.resolveColor(),
+                                contentColor = genre.resolveIconColor(),
                             ),
                         shape = genre.shape(),
                     ) {
@@ -137,20 +140,26 @@ fun ChatMessageBubble(
     isLast: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val textColor = remember { genre.iconColor }
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+    val textColor = remember(resolvedIconColor) { resolvedIconColor }
     val isUSer = remember { message.sender == Sender.USER }
-    remember { if (isUSer) genre.iconColor else genre.color }
 
     val bubbleStyle =
-        remember(message.sender == Sender.USER, genre) {
+        remember(message.sender == Sender.USER, genre, resolvedColor, resolvedIconColor) {
             if (isUSer) {
-                BubbleStyle.userBubble(genre)
+                BubbleStyle.userBubble(genre, resolvedColor, resolvedIconColor)
             } else {
-                BubbleStyle.characterBubble(genre, false)
+                BubbleStyle.characterBubble(
+                    genre,
+                    false,
+                    resolvedColor.darker(.4f),
+                    resolvedIconColor,
+                )
             }
         }
 
-    val bubbleShape = remember { genre.bubble(bubbleStyle.tailAlignment) }
+    val bubbleShape = genre.bubble(bubbleStyle.tailAlignment)
 
     Column(modifier.padding(16.dp)) {
         Row(

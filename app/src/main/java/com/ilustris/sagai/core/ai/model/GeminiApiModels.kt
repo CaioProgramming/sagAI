@@ -21,14 +21,20 @@ data class GeminiContent(
 )
 
 data class GeminiPart(
-    val text: String,
+    val text: String? = null,
+    @SerializedName("inline_data")
+    val inlineData: GeminiInlineData? = null,
 )
 
 data class GeminiGenerationConfig(
     @SerializedName("response_modalities")
-    val responseModalities: List<String>,
+    val responseModalities: List<String>? = null,
     @SerializedName("speech_config")
     val speechConfig: GeminiSpeechConfig? = null,
+    @SerializedName("temperature")
+    val temperature: Float? = null,
+    @SerializedName("response_mime_type")
+    val responseMimeType: String? = null,
 )
 
 data class GeminiSpeechConfig(
@@ -49,6 +55,10 @@ data class PrebuiltVoiceConfig(
 // endregion
 
 // region Response Models
+
+data class GeminiErrorResponse(
+    val error: GeminiError?,
+)
 
 data class GeminiResponse(
     val candidates: List<GeminiCandidate>?,
@@ -86,6 +96,21 @@ data class GeminiError(
     val code: Int?,
     val message: String?,
     val status: String?,
+    val details: List<GeminiErrorDetail>? = null,
+)
+
+data class GeminiErrorDetail(
+    @SerializedName("@type")
+    val type: String? = null,
+    val retryDelay: String? = null,
+    val violations: List<GeminiQuotaViolation>? = null,
+)
+
+data class GeminiQuotaViolation(
+    val quotaMetric: String? = null,
+    val quotaId: String? = null,
+    val quotaDimensions: Map<String, String>? = null,
+    val quotaValue: String? = null,
 )
 
 // endregion

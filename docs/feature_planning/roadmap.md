@@ -156,6 +156,16 @@ own dedicated folder containing detailed tasks and implementation plans.
 * **Archive**: `../../archive/feature_planning/punk_rock_theme_plan.md`
 * **Description**: Implementation of the "Punk Rock" genre with rebellious aesthetics, graffiti visuals, and specific AI rules.
 
+### 19. Onboarding System 🎓
+
+* **Status**: Planning
+* **Folder**: `onboarding/`
+* **Plan**: `onboarding/plan.md`
+* **Description**: AI-generated contextual onboarding using full-screen pager dialogs. RemoteConfig
+  provides context per onboarding type, GemmaClient generates casual slides dynamically. Three
+  contexts: App Intro (first launch), Creation Guide (first saga), Gameplay Guide (first chat).
+  Phased rollout starting with App Intro. Component designed for future reuse in PremiumView.
+
 ---
 ## Usage
 

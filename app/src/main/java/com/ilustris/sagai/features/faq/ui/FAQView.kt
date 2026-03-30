@@ -280,7 +280,7 @@ private fun SharedTransitionScope.FaqContentView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(15.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .padding(16.dp),
                 leadingIcon = {
                     Icon(painterResource(R.drawable.search), null)

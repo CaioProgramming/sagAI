@@ -2,7 +2,10 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.usecase.PaletteUseCase
+import com.ilustris.sagai.core.utils.toAINormalize
 import timber.log.Timber
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -24,19 +27,26 @@ class CharacterDetailsViewModel
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val characterUseCase: CharacterUseCase,
         private val billingService: BillingService,
+        private val paletteUseCase: PaletteUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
         val character = MutableStateFlow<CharacterContent?>(null)
+        val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
         val isSummarizing = MutableStateFlow(false)
+        val showPremiumSheet = MutableStateFlow(false)
+
+        fun togglePremiumSheet() {
+            showPremiumSheet.value = !showPremiumSheet.value
+        }
 
         fun loadSagaAndCharacter(
             sagaId: String?,
-            characterId: String?,
+            characterId: Int?,
         ) {
             if (sagaId == null) return
             if (characterId == null) return
@@ -86,10 +96,15 @@ class CharacterDetailsViewModel
             isGenerating.value = true
             loadingMessage.value = "Gerando ${selectedCharacter.name}..."
             viewModelScope.launch(Dispatchers.IO) {
-                characterUseCase.generateCharacterImage(
-                    selectedCharacter,
-                    sagaContent.data,
-                )
+                characterUseCase
+                    .generateCharacterImage(
+                        selectedCharacter,
+                        sagaContent.data,
+                    ).onFailure {
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
+                    }
                 isGenerating.value = false
                 loadingMessage.emit(null)
             }
@@ -101,7 +116,16 @@ class CharacterDetailsViewModel
         ) {
             characterResume.value = null
             viewModelScope.launch(Dispatchers.IO) {
-                characterContent?.let { generateResume(sagaContent, it) }
+                characterContent?.let {
+                    generateResume(sagaContent, it)
+                    if (it.data.image.isNotEmpty()) {
+                        val palette = paletteUseCase.extractPalette(it.data.image)
+                        Log.d(javaClass.simpleName, "Extracted palette: ${palette.toAINormalize()}")
+                        imagePalette.value = palette.getSuccess()
+                    } else {
+                        imagePalette.value = null
+                    }
+                }
             }
         }
     }

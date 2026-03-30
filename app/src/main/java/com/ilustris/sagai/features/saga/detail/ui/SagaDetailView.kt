@@ -102,8 +102,10 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.data.State
-import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.act.ui.ActReader
@@ -124,9 +126,13 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.relationshipsSortedByEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
-import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -148,6 +154,7 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -158,7 +165,6 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import com.mikepenz.hypnoticcanvas.utils.round
-import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -189,6 +195,8 @@ fun SagaDetailView(
     val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
     val sagaResume by viewModel.sagaResume.collectAsStateWithLifecycle()
     val isSummarizingSaga by viewModel.isSummarizingSaga.collectAsStateWithLifecycle()
+    val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
+    val narrativeRules by viewModel.narrativeRules.collectAsStateWithLifecycle()
 
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
@@ -223,6 +231,8 @@ fun SagaDetailView(
         showTitleOnly = showIntro,
         emotionalCardReference = emotionalCardReference,
         backupEnabled = backupEnabled,
+        visualConfig = visualConfig,
+        narrativeRules = narrativeRules,
         onChangeSection = {
             section = it
             if (it == DetailAction.DELETE) {
@@ -329,7 +339,13 @@ fun SagaDetailView(
         )
     }
 
-    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.togglePremiumSheet() },
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.fetchSagaDetails(sagaId)
@@ -338,6 +354,7 @@ fun SagaDetailView(
 
 fun LazyListScope.SagaDrawerContent(
     content: SagaContent,
+    narrativeRules: NarrativeRules?,
     openReview: () -> Unit = {},
 ) {
     with(this) {
@@ -349,24 +366,24 @@ fun LazyListScope.SagaDrawerContent(
                     duration = 1.seconds,
                 )
             Column(Modifier.fillMaxWidth()) {
-                Icon(
-                    painterResource(R.drawable.ic_spark),
-                    null,
-                    tint = content.data.genre.color,
-                    modifier =
-                        Modifier
-                            .clip(CircleShape)
-                            .gradientFill(brush)
-                            .padding(4.dp)
-                            .size(50.dp)
-                            .align(Alignment.CenterHorizontally)
-                            .reactiveShimmer(
-                                content.data.review != null,
-                                targetValue = 250f,
-                            )
-                            .clickable {
-                                openReview()
-                            },
+                val genre = content.data.genre
+                val icon = genre.resolveBackground()
+
+                AsyncImage(
+                    model = icon,
+                    contentDescription = "Open Review",
+                    Modifier
+                        .clip(CircleShape)
+                        .gradientFill(brush)
+                        .padding(4.dp)
+                        .size(50.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .reactiveShimmer(
+                            content.data.review != null,
+                            targetValue = 250f,
+                        ).clickable {
+                            openReview()
+                        },
                 )
             }
         }
@@ -389,12 +406,10 @@ fun LazyListScope.SagaDrawerContent(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                         shape,
-                    )
-                    .background(
+                    ).background(
                         MaterialTheme.colorScheme.background,
                         shape,
-                    )
-                    .padding(4.dp)
+                    ).padding(4.dp)
                     .animateContentSize(
                         animationSpec = tween(500, easing = EaseIn),
                     ),
@@ -419,7 +434,8 @@ fun LazyListScope.SagaDrawerContent(
 
                 if (chaptersInAct.isNotEmpty()) {
                     chaptersInAct.forEachIndexed { chapterIndex, chapter ->
-                        val eventsInChapter = chapter.events.filter { it.isComplete() }
+                        val eventsInChapter =
+                            chapter.events.filter { it.data.isEmpty().not() }
 
                         var expandedEvents by remember {
                             mutableStateOf(false)
@@ -431,8 +447,7 @@ fun LazyListScope.SagaDrawerContent(
                                     .clip(shape)
                                     .clickable {
                                         expandedEvents = !expandedEvents
-                                    }
-                                    .fillMaxWidth(),
+                                    }.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
@@ -477,12 +492,12 @@ fun LazyListScope.SagaDrawerContent(
                             }
                         }
 
-                        if (chapter.isComplete().not()) {
+                        if (chapter.data.isEmpty().not()) {
                             Text(
                                 stringResource(
                                     id = R.string.events_count,
                                     eventsInChapter.size,
-                                    UpdateRules.CHAPTER_UPDATE_LIMIT,
+                                    narrativeRules?.chapterUpdateLimit ?: 0,
                                 ),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
@@ -516,7 +531,7 @@ fun LazyListScope.SagaDrawerContent(
                                     stringResource(
                                         id = R.string.messages_count,
                                         messageCount ?: 0,
-                                        UpdateRules.LORE_UPDATE_LIMIT,
+                                        narrativeRules?.loreUpdateLimit ?: 0,
                                     ),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
@@ -563,6 +578,8 @@ fun SagaDetailContentView(
     modifier: Modifier = Modifier,
     originalBitmap: Bitmap? = null,
     segmentedBitmap: Bitmap? = null,
+    visualConfig: GenreVisualConfig? = null,
+    narrativeRules: NarrativeRules?,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -570,13 +587,16 @@ fun SagaDetailContentView(
     var showEmotionalReview by remember { mutableStateOf(false) }
 
     saga?.let { sagaContent ->
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        CompositionLocalProvider(
+            LocalLayoutDirection provides LayoutDirection.Rtl,
+            LocalGenreVisualConfig provides visualConfig,
+        ) {
             Box(modifier = modifier) {
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
                         val genre = sagaContent.data.genre
-                        val brush = genre.color.gradientFade()
+                        val brush = genre.resolveColor().gradientFade()
                         val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                             ModalDrawerSheet(
@@ -611,7 +631,7 @@ fun SagaDetailContentView(
                                                 ),
                                         )
                                     }
-                                    SagaDrawerContent(sagaContent) {
+                                    SagaDrawerContent(sagaContent, narrativeRules) {
                                         openReview()
                                     }
                                 }
@@ -852,6 +872,7 @@ fun SagaDetailContentViewPreview() {
         createEmotionalReview = {},
         createTimelineReview = {},
         closeReview = {},
+        narrativeRules = null,
     )
 }
 
@@ -943,15 +964,10 @@ private fun SagaDetailInitialView(
                             saga.data.title,
                             modifier =
                                 Modifier
+                                    .fillMaxWidth()
                                     .align(Alignment.Center)
                                     .reactiveShimmer(true)
-                                    .padding(16.dp)
-                                    .sharedElement(
-                                        rememberSharedContentState(
-                                            key = "saga-style-header",
-                                        ),
-                                        animatedVisibilityScope = this@AnimatedContent,
-                                    ),
+                                    .padding(8.dp),
                         )
                     }
                 } else {
@@ -960,8 +976,12 @@ private fun SagaDetailInitialView(
                         var highlightParams by remember {
                             mutableStateOf(genreHighlight)
                         }
-                        val chapters = remember { saga.flatChapters().filter { it.isComplete() } }
-                        val events = remember { saga.flatEvents().filter { it.isComplete() } }
+                        val chapters =
+                            remember {
+                                saga.flatChapters().filter { it.data.isEmpty().not() }
+                            }
+                        val events =
+                            remember { saga.flatEvents().filter { it.data.isEmpty().not() } }
                         val messages = remember { saga.flatMessages() }
                         val relationships = remember { saga.relationshipsSortedByEvents() }
                         LazyVerticalGrid(
@@ -990,8 +1010,7 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     )
@@ -1006,19 +1025,12 @@ private fun SagaDetailInitialView(
                                                             .effectForGenre(saga.data.genre)
                                                             .selectiveColorHighlight(highlightParams),
                                                 ) {
-                                                    Text(
+                                                    genre.stylisedText(
                                                         saga.data.title,
                                                         modifier =
-                                                            currentModifier.padding(8.dp),
-                                                        style =
-                                                            MaterialTheme.typography.displaySmall.copy(
-                                                                fontFamily = saga.data.genre.headerFont(),
-                                                                brush =
-                                                                    saga.data.genre.gradient(
-                                                                        true,
-                                                                    ),
-                                                                textAlign = TextAlign.Center,
-                                                            ),
+                                                            currentModifier
+                                                                .fillMaxWidth()
+                                                                .padding(8.dp),
                                                     )
                                                 }
                                             } else {
@@ -1035,16 +1047,9 @@ private fun SagaDetailInitialView(
                                                     contentScale = ContentScale.Crop,
                                                 )
 
-                                                Text(
+                                                genre.stylisedText(
                                                     saga.data.title,
-                                                    maxLines = 2,
-                                                    style =
-                                                        MaterialTheme.typography.displaySmall.copy(
-                                                            fontFamily = saga.data.genre.headerFont(),
-                                                            brush = saga.data.genre.gradient(true),
-                                                            textAlign = TextAlign.Center,
-                                                        ),
-                                                    modifier = currentModifier,
+                                                    modifier = currentModifier.padding(8.dp),
                                                 )
                                             }
 
@@ -1069,31 +1074,17 @@ private fun SagaDetailInitialView(
                                                         if (saga.data.icon.isEmpty()) {
                                                             selectSection(DetailAction.REGENERATE)
                                                         }
-                                                    }
-                                                    .gradientFill(
+                                                    }.gradientFill(
                                                         saga.data.genre.gradient(),
                                                     ),
                                         )
 
-                                        Text(
+                                        genre.stylisedText(
                                             saga.data.title,
-                                            maxLines = 2,
-                                            style =
-                                                MaterialTheme.typography.headlineLarge.copy(
-                                                    fontFamily = saga.data.genre.headerFont(),
-                                                    brush = saga.data.genre.gradient(true),
-                                                    textAlign = TextAlign.Center,
-                                                ),
                                             modifier =
                                                 Modifier
                                                     .padding(8.dp)
                                                     .fillMaxWidth()
-                                                    .sharedElement(
-                                                        rememberSharedContentState(
-                                                            key = "saga-style-header",
-                                                        ),
-                                                        animatedVisibilityScope = this@AnimatedContent,
-                                                    )
                                                     .reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
@@ -1218,8 +1209,11 @@ private fun SagaDetailInitialView(
                                         Modifier
                                             .padding(16.dp)
                                             .clip(shape = shape)
-                                            .border(1.dp, genre.color.gradientFade(), shape)
-                                            .background(genre.color.gradientFade())
+                                            .border(
+                                                1.dp,
+                                                genre.resolveColor().gradientFade(),
+                                                shape,
+                                            ).background(genre.resolveColor().gradientFade())
                                             .fillMaxWidth()
                                             .height(300.dp)
                                             .clickable {
@@ -1242,7 +1236,7 @@ private fun SagaDetailInitialView(
                                                 .fillMaxWidth()
                                                 .fillMaxHeight(.8f)
                                                 .background(
-                                                    fadeGradientBottom(genre.color),
+                                                    fadeGradientBottom(genre.resolveColor()),
                                                 ),
                                         )
 
@@ -1259,7 +1253,7 @@ private fun SagaDetailInitialView(
                                                 style =
                                                     MaterialTheme.typography.headlineMedium.copy(
                                                         fontFamily = genre.headerFont(),
-                                                        color = genre.iconColor,
+                                                        color = genre.resolveIconColor(),
                                                     ),
                                             )
 
@@ -1270,7 +1264,7 @@ private fun SagaDetailInitialView(
                                                 style =
                                                     MaterialTheme.typography.labelMedium.copy(
                                                         fontFamily = genre.bodyFont(),
-                                                        color = genre.iconColor,
+                                                        color = genre.resolveIconColor(),
                                                     ),
                                             )
                                         }
@@ -1335,8 +1329,7 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    )
-                                                    .padding(8.dp)
+                                                    ).padding(8.dp)
                                                     .weight(1f),
                                         )
 
@@ -1462,8 +1455,7 @@ private fun SagaDetailInitialView(
                                                                     )!!,
                                                             ),
                                                             animatedVisibilityScope = animationScopes.second,
-                                                        )
-                                                        .padding(8.dp)
+                                                        ).padding(8.dp)
                                                         .weight(1f),
                                             )
 
@@ -1504,8 +1496,7 @@ private fun SagaDetailInitialView(
                                                             selectSection(
                                                                 DetailAction.TIMELINE,
                                                             )
-                                                        }
-                                                        .fillMaxWidth()
+                                                        }.fillMaxWidth()
                                                         .wrapContentHeight(),
                                             )
                                         } ?: run {
@@ -1543,8 +1534,7 @@ private fun SagaDetailInitialView(
                                                                     )!!,
                                                             ),
                                                             animatedVisibilityScope = animationScopes.second,
-                                                        )
-                                                        .padding(8.dp)
+                                                        ).padding(8.dp)
                                                         .weight(1f),
                                             )
 
@@ -1612,8 +1602,7 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    )
-                                                    .padding(8.dp)
+                                                    ).padding(8.dp)
                                                     .weight(1f),
                                         )
 
@@ -1675,12 +1664,12 @@ private fun SagaDetailInitialView(
                                         Modifier
                                             .clickable {
                                                 selectSection(DetailAction.ACTS)
-                                            }
-                                            .height(200.dp)
+                                            }.height(200.dp)
                                             .fillMaxWidth()
                                             .reactiveShimmer(
                                                 true,
-                                                saga.data.genre.color
+                                                saga.data.genre
+                                                    .resolveColor()
                                                     .darkerPalette()
                                                     .plus(Color.Transparent),
                                             ),
@@ -1735,17 +1724,14 @@ private fun SagaDetailInitialView(
                                             .padding(16.dp)
                                             .clip(
                                                 shape,
-                                            )
-                                            .border(
+                                            ).border(
                                                 1.dp,
                                                 MaterialTheme.colorScheme.onBackground.gradientFade(),
                                                 shape,
-                                            )
-                                            .background(
+                                            ).background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            )
-                                            .fillMaxWidth()
+                                            ).fillMaxWidth()
                                             .height(200.dp)
                                             .clickable {
                                                 openEmotionalReview()
@@ -1756,7 +1742,7 @@ private fun SagaDetailInitialView(
                                             null,
                                             colorFilter =
                                                 ColorFilter.tint(
-                                                    genre.color,
+                                                    genre.resolveColor(),
                                                     blendMode = BlendMode.Multiply,
                                                 ),
                                             modifier =
@@ -1772,8 +1758,7 @@ private fun SagaDetailInitialView(
                                                     .align(Alignment.BottomCenter)
                                                     .background(
                                                         fadeGradientBottom(),
-                                                    )
-                                                    .fillMaxWidth()
+                                                    ).fillMaxWidth()
                                                     .padding(horizontal = 16.dp, vertical = 24.dp),
                                         ) {
                                             Text(
@@ -1801,7 +1786,8 @@ private fun SagaDetailInitialView(
                                             .fillMaxWidth()
                                             .reactiveShimmer(
                                                 true,
-                                                saga.data.genre.color
+                                                saga.data.genre
+                                                    .resolveColor()
                                                     .darkerPalette()
                                                     .plus(Color.Transparent),
                                             ),
@@ -1866,13 +1852,12 @@ private fun SagaDetailInitialView(
                                     Icon(
                                         painterResource(R.drawable.ic_spark),
                                         null,
-                                        tint = saga.data.genre.color,
+                                        tint = saga.data.genre.resolveColor(),
                                         modifier =
                                             Modifier
                                                 .clickable {
                                                     openDrawer()
-                                                }
-                                                .padding(horizontal = 8.dp)
+                                                }.padding(horizontal = 8.dp)
                                                 .size(24.dp),
                                     )
                                 },
@@ -1913,8 +1898,7 @@ private fun SagaDetailInitialView(
                                                     .background(
                                                         MaterialTheme.colorScheme.surfaceContainer,
                                                         shape,
-                                                    )
-                                                    .padding(8.dp),
+                                                    ).padding(8.dp),
                                         ) {
                                             item(span = { GridItemSpan(2) }) {
                                                 Text(
@@ -1928,71 +1912,83 @@ private fun SagaDetailInitialView(
                                             }
 
                                             item {
-                                                SimpleSlider(
-                                                    stringResource(id = R.string.hue_tolerance),
-                                                    maxValue = 1f,
-                                                    value = highlightParams.hueTolerance,
-                                                ) { value ->
-                                                    highlightParams =
-                                                        highlightParams.copy(hueTolerance = value)
+                                                highlightParams?.let { params ->
+                                                    SimpleSlider(
+                                                        stringResource(id = R.string.hue_tolerance),
+                                                        maxValue = 1f,
+                                                        value = params.hueTolerance,
+                                                    ) { value ->
+                                                        highlightParams =
+                                                            params.copy(hueTolerance = value)
+                                                    }
                                                 }
                                             }
 
                                             item {
-                                                SimpleSlider(
-                                                    stringResource(id = R.string.saturation_threshold),
-                                                    maxValue = 1f,
-                                                    value = highlightParams.saturationThreshold,
-                                                ) { value ->
-                                                    highlightParams =
-                                                        highlightParams.copy(saturationThreshold = value)
+                                                highlightParams?.let { params ->
+                                                    SimpleSlider(
+                                                        stringResource(id = R.string.saturation_threshold),
+                                                        maxValue = 1f,
+                                                        value = params.saturationThreshold,
+                                                    ) { value ->
+                                                        highlightParams =
+                                                            params.copy(saturationThreshold = value)
+                                                    }
                                                 }
                                             }
 
                                             item {
-                                                SimpleSlider(
-                                                    stringResource(id = R.string.lightness_threshold),
-                                                    maxValue = 1f,
-                                                    value = highlightParams.lightnessThreshold,
-                                                ) { value ->
-                                                    highlightParams =
-                                                        highlightParams.copy(lightnessThreshold = value)
+                                                highlightParams?.let { params ->
+                                                    SimpleSlider(
+                                                        stringResource(id = R.string.lightness_threshold),
+                                                        maxValue = 1f,
+                                                        value = params.lightnessThreshold,
+                                                    ) { value ->
+                                                        highlightParams =
+                                                            params.copy(lightnessThreshold = value)
+                                                    }
                                                 }
                                             }
 
                                             item {
-                                                SimpleSlider(
-                                                    stringResource(id = R.string.highlight_boost),
-                                                    maxValue = 2f,
-                                                    value = highlightParams.highlightSaturationBoost,
-                                                ) { value ->
-                                                    highlightParams =
-                                                        highlightParams.copy(
-                                                            highlightSaturationBoost = value,
-                                                        )
+                                                highlightParams?.let { params ->
+                                                    SimpleSlider(
+                                                        stringResource(id = R.string.highlight_boost),
+                                                        maxValue = 2f,
+                                                        value = params.highlightSaturationBoost,
+                                                    ) { value ->
+                                                        highlightParams =
+                                                            params.copy(
+                                                                highlightSaturationBoost = value,
+                                                            )
+                                                    }
                                                 }
                                             }
 
                                             item {
-                                                SimpleSlider(
-                                                    stringResource(id = R.string.highlight_lightness_boost),
-                                                    maxValue = 2f,
-                                                    value = highlightParams.highlightLightnessBoost,
-                                                ) { value ->
-                                                    highlightParams =
-                                                        highlightParams.copy(highlightLightnessBoost = value)
+                                                highlightParams?.let { params ->
+                                                    SimpleSlider(
+                                                        stringResource(id = R.string.highlight_lightness_boost),
+                                                        maxValue = 2f,
+                                                        value = params.highlightLightnessBoost,
+                                                    ) { value ->
+                                                        highlightParams =
+                                                            params.copy(highlightLightnessBoost = value)
+                                                    }
                                                 }
                                             }
                                             item {
-                                                SimpleSlider(
-                                                    stringResource(id = R.string.desaturation_factor),
-                                                    maxValue = 1f,
-                                                    value = highlightParams.desaturationFactorNonTarget,
-                                                ) { value ->
-                                                    highlightParams =
-                                                        highlightParams.copy(
-                                                            desaturationFactorNonTarget = value,
-                                                        )
+                                                highlightParams?.let { params ->
+                                                    SimpleSlider(
+                                                        stringResource(id = R.string.desaturation_factor),
+                                                        maxValue = 1f,
+                                                        value = params.desaturationFactorNonTarget,
+                                                    ) { value ->
+                                                        highlightParams =
+                                                            params.copy(
+                                                                desaturationFactorNonTarget = value,
+                                                            )
+                                                    }
                                                 }
                                             }
                                         }
@@ -2009,9 +2005,9 @@ private fun SagaDetailInitialView(
                                             }
                                         },
                                         colors =
-                                            IconButtonDefaults.iconButtonColors().copy(
-                                                genre.color,
-                                                genre.iconColor,
+                                            IconButtonDefaults.iconButtonColors(
+                                                containerColor = genre.resolveColor(),
+                                                contentColor = genre.resolveIconColor(),
                                             ),
                                         modifier =
                                             Modifier

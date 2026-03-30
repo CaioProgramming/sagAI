@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.characters.ui.components
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.MaterialTheme
@@ -21,13 +20,42 @@ import com.ilustris.sagai.ui.theme.bodyFont
 fun CharacterStats(
     character: Character,
     genre: Genre,
+    contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
     LazyRow(modifier = Modifier.padding(16.dp)) {
-        item { VerticalLabel(character.details.physicalTraits.gender, "Gênero", genre) }
-        item { VerticalLabel("${character.details.physicalTraits.height}cm", "Altura", genre) }
-        item { VerticalLabel("${character.details.physicalTraits.weight}kg", "Peso", genre) }
-        item { VerticalLabel(character.details.physicalTraits.race, "Raça", genre) }
-        item { VerticalLabel(character.details.physicalTraits.ethnicity, "Etnia", genre) }
+        item {
+            VerticalLabel(
+                character.details.physicalTraits.gender,
+                "Gênero",
+                genre,
+                contentColor,
+            )
+        }
+        item {
+            VerticalLabel(
+                "${character.details.physicalTraits.height}cm",
+                "Altura",
+                genre,
+                contentColor,
+            )
+        }
+        item {
+            VerticalLabel(
+                "${character.details.physicalTraits.weight}kg",
+                "Peso",
+                genre,
+                contentColor,
+            )
+        }
+        item { VerticalLabel(character.details.physicalTraits.race, "Raça", genre, contentColor) }
+        item {
+            VerticalLabel(
+                character.details.physicalTraits.ethnicity,
+                "Etnia",
+                genre,
+                contentColor,
+            )
+        }
     }
 }
 
@@ -36,6 +64,7 @@ fun VerticalLabel(
     value: String,
     label: String,
     genre: Genre,
+    contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -48,6 +77,7 @@ fun VerticalLabel(
                     fontFamily = genre.bodyFont(),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
+                    color = contentColor,
                 ),
         )
 
@@ -57,6 +87,7 @@ fun VerticalLabel(
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = genre.bodyFont(),
                     textAlign = TextAlign.Center,
+                    color = contentColor,
                 ),
             modifier = Modifier.alpha(.4f),
         )

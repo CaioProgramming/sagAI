@@ -1,10 +1,17 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
+import android.graphics.Matrix
+import android.graphics.Shader
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,38 +29,47 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveImageUrl
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun GenreSelectionCard(
@@ -88,8 +104,9 @@ fun GenreAvatar(
     modifier: Modifier = Modifier,
     onClick: (Genre) -> Unit,
 ) {
+    val resolvedColor = genre.resolveColor()
     val backgroundColor by animateColorAsState(
-        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer,
+        if (isSelected) resolvedColor else MaterialTheme.colorScheme.surfaceContainer,
     )
 
     val scale by animateFloatAsState(
@@ -105,9 +122,14 @@ fun GenreAvatar(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val backgroundBrush = Brush.verticalGradient(backgroundColor.darkerPalette())
-        Image(
-            painterResource(genre.defaultHeaderImage()),
-            stringResource(genre.title),
+        AsyncImage(
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(genre.resolveImageUrl())
+                    .crossfade(true)
+                    .build(),
+            contentDescription = stringResource(genre.title),
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
@@ -153,65 +175,103 @@ fun GenreCard(
     genre: Genre,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
     showText: Boolean = true,
     onClick: (Genre) -> Unit,
 ) {
-    val saturation by animateFloatAsState(
-        if (isSelected) 1f else 0f,
-        tween(500, easing = EaseIn),
-    )
-    val scale by animateFloatAsState(
-        if (isSelected) 1f else .8f,
-        tween(700, easing = EaseIn),
+    val shape = genre.bubble(isNarrator = true)
+    var showDetails by remember {
+        mutableStateOf(false)
+    }
+
+    val borderSize by animateDpAsState(
+        if (showDetails) 1.dp else 0.dp,
     )
 
-    val borderColor = genre.gradient()
+    val shadowRadius by animateFloatAsState(
+        if (showDetails) 15f else 0f,
+    )
+    val borderColor = genre.gradient(true)
+    val palette = genre.colorPalette()
+    val image = genre.resolveImageUrl()
+    val layoutDirection = LocalLayoutDirection.current
 
-    val shape = RoundedCornerShape(genre.cornerSize())
+    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "rotation",
+    )
 
     Box(
         modifier
-            .border(
-                2.dp,
-                borderColor,
-                shape,
-            ).clip(RoundedCornerShape(genre.cornerSize()))
-            .clipToBounds()
-            .clickable {
-                onClick(genre)
-            },
+            .dropShadow(shape) {
+                radius = shadowRadius
+                this.brush = borderColor
+                this.spread = shadowRadius
+            }.clip(shape)
+            .drawWithContent {
+                drawContent()
+                if (isLoading) {
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    val brush =
+                        object : ShaderBrush() {
+                            override fun createShader(size: Size): Shader {
+                                val shader =
+                                    sweepGradient(palette)
+                                        .let { it as ShaderBrush }
+                                        .createShader(size)
+                                val matrix = Matrix()
+                                matrix.setRotate(rotation, size.width / 2, size.height / 2)
+                                shader.setLocalMatrix(matrix)
+                                return shader
+                            }
+                        }
+                    drawOutline(
+                        outline = outline,
+                        brush = brush,
+                        style = Stroke(width = 2.dp.toPx()),
+                    )
+                }
+            }.border(borderSize, borderColor, shape)
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        val imageUrl = genre.defaultHeaderImage()
-
-        Image(
-            painterResource(imageUrl),
-            genre.name,
+        AsyncImage(
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(image)
+                    .crossfade(true)
+                    .build(),
+            contentDescription = genre.name,
             contentScale = ContentScale.Crop,
+            onSuccess = {
+                showDetails = true
+            },
+            onError = {
+                showDetails = false
+                Log.i("GenreComponent", "GenreCard: Failed to load -> $image ")
+            },
             modifier =
                 Modifier
                     .fillMaxSize()
                     .effectForGenre(genre)
-                    .selectiveColorHighlight(
-                        genre.selectiveHighlight(),
-                    ).clipToBounds(),
+                    .selectiveColorHighlight(genre),
         )
 
-        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
         if (showText) {
-            Text(
+            genre.stylisedText(
                 stringResource(genre.title),
-                maxLines = 2,
-                style =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        textAlign = TextAlign.Center,
-                        fontFamily = genre.headerFont(),
-                        brush = genre.gradient(true, 2.seconds, 500f),
-                    ),
+                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(2.dp)
-                        .align(Alignment.Center),
+                        .align(Alignment.Center)
+                        .padding(16.dp),
             )
         }
     }
@@ -248,7 +308,14 @@ fun GenreCardPreview() {
     ) {
         items(Genre.entries.size) {
             val genre = Genre.entries[it]
-            GenreCard(genre, isSelected = true, modifier = Modifier.fillMaxWidth().size(300.dp)) {
+            GenreCard(
+                genre,
+                isSelected = true,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .size(300.dp),
+            ) {
                 selectedGenre.value = it
             }
         }

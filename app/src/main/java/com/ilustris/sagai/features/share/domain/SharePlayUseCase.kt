@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SharePrompts
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileCacheService
@@ -42,6 +43,7 @@ class SharePlayUseCaseImpl
         @ApplicationContext
         private val context: Context,
         private val gemmaClient: GemmaClient,
+        private val promptService: PromptService,
     ) : SharePlayUseCase {
         override suspend fun saveBitmapToCache(
             bitmap: Bitmap,
@@ -77,16 +79,46 @@ class SharePlayUseCaseImpl
             executeRequest {
                 val prompt =
                     when (shareType) {
-                        ShareType.PLAYSTYLE ->
+                        ShareType.PLAYSTYLE -> {
                             SharePrompts.playStylePrompt(
+                                promptService,
                                 saga.mainCharacter!!,
                                 saga,
                             )
-                        ShareType.EMOTIONS -> SharePrompts.emotionalPrompt(saga)
-                        ShareType.HISTORY -> SharePrompts.historyPrompt(saga)
-                        ShareType.RELATIONS -> SharePrompts.relationsPrompt(saga)
-                        ShareType.CHARACTER -> SharePrompts.characterPrompt(character!!, saga)
-                        else -> emptyString()
+                        }
+
+                        ShareType.EMOTIONS -> {
+                            SharePrompts.emotionalPrompt(
+                                promptService,
+                                saga,
+                            )
+                        }
+
+                        ShareType.HISTORY -> {
+                            SharePrompts.historyPrompt(
+                                promptService,
+                                saga,
+                            )
+                        }
+
+                        ShareType.RELATIONS -> {
+                            SharePrompts.relationsPrompt(
+                                promptService,
+                                saga,
+                            )
+                        }
+
+                        ShareType.CHARACTER -> {
+                            SharePrompts.characterPrompt(
+                                promptService,
+                                character!!,
+                                saga,
+                            )
+                        }
+
+                        else -> {
+                            emptyString()
+                        }
                     }
 
                 gemmaClient.generate<ShareText>(prompt)!!

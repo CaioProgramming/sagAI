@@ -7,14 +7,15 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.ui.components.NewChapterContent
-import com.ilustris.sagai.features.saga.chat.ui.components.NewCharacterContent
-import com.ilustris.sagai.features.saga.chat.ui.components.NewEventContent
+import com.ilustris.sagai.features.milestone.ui.NewChapterContent
+import com.ilustris.sagai.features.milestone.ui.NewCharacterContent
+import com.ilustris.sagai.features.milestone.ui.NewEventContent
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-enum class IntroductionType { ACT, CHAPTER }
+enum class IntroductionType { ACT, CHAPTER, RESUME }
 
 sealed class SagaMilestone(
     val title: Int,
@@ -69,6 +70,7 @@ sealed class SagaMilestone(
         val titleText: String,
         val introduction: String,
         val number: String,
+        val sceneSummary: SceneSummary? = null,
     ) : SagaMilestone(
             R.string.introduction_milestone,
             titleText,
@@ -76,14 +78,12 @@ sealed class SagaMilestone(
             isIntrusive = true,
         )
 
-    data class Loading(
-        val type: LoadingType = LoadingType.EVENT,
-    ) : SagaMilestone(
-            title = 0,
-            subtitle = "",
-            delay = 0.seconds,
-            isIntrusive = true,
-        )
+    data object Loading : SagaMilestone(
+        title = 0,
+        subtitle = "",
+        delay = 0.seconds,
+        isIntrusive = true,
+    )
 }
 
 enum class LoadingType {
@@ -91,4 +91,5 @@ enum class LoadingType {
     CHAPTER,
     EVENT,
     ENDING,
+    CHARACTER,
 }

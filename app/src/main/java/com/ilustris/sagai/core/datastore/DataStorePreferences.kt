@@ -64,4 +64,6 @@ interface DataStorePreferences {
     )
 
     suspend fun removeKey(key: String)
+
+    suspend fun clearAll()
 }

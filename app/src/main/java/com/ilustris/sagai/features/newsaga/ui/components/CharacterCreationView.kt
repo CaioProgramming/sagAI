@@ -26,6 +26,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.manager.FormState.CharacterForm
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.shape
@@ -72,8 +74,8 @@ fun CharacterCreationView(
                             .padding(vertical = 16.dp),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = genre.color,
-                            contentColor = genre.iconColor,
+                            containerColor = genre.resolveColor(),
+                            contentColor = genre.resolveIconColor(),
                         ),
                     shape = genre.shape(),
                 ) {

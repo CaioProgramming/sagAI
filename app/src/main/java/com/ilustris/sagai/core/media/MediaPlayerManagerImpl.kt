@@ -31,11 +31,9 @@ class MediaPlayerManagerImpl
         ) {
             val file = File(path)
             Timber.i("prepareDataSource: Playing file ${file.absolutePath}")
-            mediaPlayer?.let {
+            if (mediaPlayer != null) {
                 Timber.i("Releasing existing MediaPlayer before preparing new data source.")
-                it.stop()
-                it.reset()
-                it.release()
+                release()
             }
             if (file.exists().not()) {
                 Timber.e("Audio file does not exist at path: $path")
@@ -45,39 +43,51 @@ class MediaPlayerManagerImpl
 
             try {
                 if (mediaPlayer == null) {
-                    Timber.i("Creating new MediaPlayer instance.")
-                    mediaPlayer = MediaPlayer()
+                    Timber.i("Creating new MediaPlayer instancefor: ${file.name}")
+                    mediaPlayer =
+                        MediaPlayer().apply {
+                            val audioAttributes =
+                                android.media.AudioAttributes
+                                    .Builder()
+                                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                                    .build()
+                            setAudioAttributes(audioAttributes)
+                        }
                 }
 
-                mediaPlayer =
-                    mediaPlayer?.apply {
-                        setDataSource(context, file.toUri())
-                        isLooping = looping
-                        setOnPreparedListener {
-                            Timber.i("MediaPlayer prepared for: ${file.name}")
+                mediaPlayer?.apply {
+                    Log.d(TAG, "Resetting MediaPlayer.")
+                    reset()
+                    Log.d(TAG, "Setting data source: ${file.absolutePath}")
+                    setDataSource(file.absolutePath)
+                    isLooping = looping
+                    setOnPreparedListener {
+                        Timber.i("MediaPlayer prepared for: ${file.name}")
                             onPrepared?.invoke()
                         }
                         setOnErrorListener { _, what, extra ->
-                            Timber.e("MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}")
-                            _isPlaying.value = false
-                            onError?.invoke(Exception("MediaPlayer Error: what: $what, extra: $extra"))
-                            // Release the player on error
-                            release()
-                            true
-                        }
+                            Timber.e(
+                            "MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}",
+                        )
+                        _isPlaying.value = false
+                        onError?.invoke(Exception("MediaPlayer Error: what: $what, extra: $extra"))
+                        release()
+                        true
+                    }
 
-                        setOnCompletionListener {
-                            Timber.i("MediaPlayer playback completed for: ${file.name}")
+                    setOnCompletionListener {
+                        Timber.i("MediaPlayer playback completed for: ${file.name}")
                             if (!isLooping) {
                                 _isPlaying.value = false
                             }
                             onCompletion?.invoke()
-                            // Release the player on completion
                             release()
-                            mediaPlayer = null
-                        }
-                        prepareAsync()
+                        mediaPlayer = null
                     }
+                    Log.d(TAG, "Calling prepareAsync.")
+                    prepareAsync()
+                }
             } catch (e: Exception) {
                 Timber.e(e, "Error preparing MediaPlayer for file: ${file.name}")
                 _isPlaying.value = false

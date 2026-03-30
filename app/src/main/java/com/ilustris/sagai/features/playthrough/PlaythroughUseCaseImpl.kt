@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.PlaythroughPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.features.playthrough.data.model.PlayThroughData
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map

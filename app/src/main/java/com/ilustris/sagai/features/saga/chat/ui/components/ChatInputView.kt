@@ -105,17 +105,24 @@ import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
+import com.ilustris.sagai.features.saga.chat.data.model.filterUserInputTypes
+import com.ilustris.sagai.features.saga.chat.data.model.icon
+import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
+import com.ilustris.sagai.features.saga.chat.data.model.tag
+import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -277,9 +284,12 @@ fun ChatInputView(
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
 ) {
-    val action = sendType
+    val actualCharacter = content.findCharacter(selectedCharacter?.data?.id)
+    val genre = content.data.genre
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     val inputBrush =
-        content.data.genre.gradient(
+        genre.gradient(
             isGenerating,
             duration = 2.seconds,
         )
@@ -331,13 +341,11 @@ fun ChatInputView(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
     )
     val inputShape =
-        remember {
-            content.data.genre.bubble(
-                BubbleTailAlignment.BottomLeft,
-                tailWidth = 0.dp,
-                tailHeight = 0.dp,
-            )
-        }
+        content.data.genre.bubble(
+            BubbleTailAlignment.BottomLeft,
+            tailWidth = 0.dp,
+            tailHeight = 0.dp,
+        )
 
     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
     val rotation by infiniteTransition.animateFloat(
@@ -378,7 +386,7 @@ fun ChatInputView(
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             color =
-                                content.data.genre.color
+                                resolvedColor
                                     .copy(alpha = .5f),
                         ),
                     fontFamily = content.data.genre.bodyFont(),
@@ -415,25 +423,20 @@ fun ChatInputView(
                                 .fillParentMaxWidth(.7f),
                         colors =
                             ButtonDefaults.outlinedButtonColors().copy(
-                                contentColor = content.data.genre.color,
+                                contentColor = resolvedColor,
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                             ),
                     ) {
-                        Icon(
-                            painterResource(it.type.icon()),
-                            contentDescription = it.type.description(),
-                            modifier =
-                                Modifier
-                                    .padding(4.dp)
-                                    .size(12.dp)
-                                    .reactiveShimmer(
-                                        true,
-                                        content.data.genre.color
-                                            .darkerPalette()
-                                            .plus(Color.Transparent),
-                                        duration = 5.seconds,
-                                    ),
-                        )
+                        it.type.icon()?.let { icon ->
+                            Icon(
+                                painterResource(icon),
+                                contentDescription = it.type.description(),
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .size(12.dp),
+                            )
+                        }
 
                         // Use styled annotated string for suggestions with tags
                         val styledText =
@@ -444,11 +447,6 @@ fun ChatInputView(
                         Text(
                             styledText,
                             style = MaterialTheme.typography.labelSmall,
-                            modifier =
-                                Modifier.reactiveShimmer(
-                                    true,
-                                    duration = 5.seconds,
-                                ),
                         )
                     }
                 }
@@ -461,6 +459,7 @@ fun ChatInputView(
                 getCursorInsideTag(inputField.text, inputField.selection.start)
             }
 
+        val palette = content.data.genre.colorPalette()
         Row(
             modifier =
                 Modifier
@@ -478,7 +477,7 @@ fun ChatInputView(
                                         val shader =
                                             (
                                                 sweepGradient(
-                                                    content.data.genre.colorPalette(),
+                                                    palette,
                                                 ) as ShaderBrush
                                             ).createShader(size)
                                         val matrix = Matrix()
@@ -549,18 +548,19 @@ fun ChatInputView(
                                     shape,
                                     Shadow(
                                         radius = 5.dp,
-                                        genre.color,
+                                        resolvedColor,
                                     ),
-                                ).border(1.dp, genre.color.gradientFade(), shape)
+                                ).border(1.dp, resolvedColor.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
-                                ).clip(shape)
+                                )
+                                .clip(shape)
                                 .padding(8.dp),
                     ) {
                         item(span = { GridItemSpan(4) }) {
                             Text(
-                                "Selecionar personagem",
+                                stringResource(R.string.select_character),
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -592,7 +592,7 @@ fun ChatInputView(
                 },
             ) {
                 AnimatedContent(
-                    selectedCharacter,
+                    actualCharacter,
                     transitionSpec = {
                         scaleIn() togetherWith scaleOut()
                     },
@@ -614,6 +614,7 @@ fun ChatInputView(
                             genre = content.data.genre,
                             grainRadius = 0f,
                             pixelation = 0f,
+                            useFallback = true,
                             modifier =
                                 Modifier
                                     .fillMaxSize(),
@@ -718,12 +719,13 @@ fun ChatInputView(
                                 content.getCharacters(),
                                 content.wikis,
                                 inputField.text,
+                                resolvedColor,
                                 tagBackgroundColor,
                                 textStyle.color,
                             )
                         },
                         cursorBrush =
-                            content.data.genre.color
+                            resolvedColor
                                 .solidGradient(),
                         decorationBox = { innerTextField ->
                             val boxPadding = 12.dp
@@ -753,7 +755,7 @@ fun ChatInputView(
                                     Box {
                                         innerTextField()
                                         AnimatedContent(
-                                            action,
+                                            sendType,
                                             modifier = Modifier.alpha(hintAlpha),
                                         ) {
                                             Text(
@@ -770,7 +772,7 @@ fun ChatInputView(
                                     AnimatedVisibility(isImeVisible) {
                                         val suggestionsState = rememberLazyListState()
 
-                                        LaunchedEffect(action) {
+                                        LaunchedEffect(sendType) {
                                             suggestionsState.animateScrollToItem(0)
                                         }
 
@@ -787,15 +789,15 @@ fun ChatInputView(
                                                     SenderType
                                                         .filterUserInputTypes()
                                                         .sortedByDescending {
-                                                            it == action
+                                                            it == sendType
                                                         }
                                                 }
 
                                             items(inputs) {
-                                                val genre = content.data.genre
+                                                content.data.genre
                                                 val backColor by animateColorAsState(
                                                     if (it.tag == currentTagInside) {
-                                                        genre.color.copy(alpha = .3f)
+                                                        resolvedColor.copy(alpha = .3f)
                                                     } else {
                                                         MaterialTheme.colorScheme.background.copy(
                                                             alpha = .3f,
@@ -804,7 +806,7 @@ fun ChatInputView(
                                                 )
                                                 val contentColor by animateColorAsState(
                                                     if (it.tag == currentTagInside) {
-                                                        genre.color
+                                                        resolvedColor
                                                     } else {
                                                         MaterialTheme.colorScheme.onBackground.copy(
                                                             alpha = .5f,
@@ -813,10 +815,6 @@ fun ChatInputView(
                                                 )
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement =
-                                                        Arrangement.spacedBy(
-                                                            4.dp,
-                                                        ),
                                                     modifier =
                                                         Modifier
                                                             .padding(4.dp)
@@ -834,17 +832,13 @@ fun ChatInputView(
                                                                         )
                                                                     onUpdateInput(newValue)
                                                                 }
-                                                            }.padding(8.dp)
-                                                            .animateContentSize()
-                                                            .reactiveShimmer(
-                                                                it.tag == currentTagInside,
-                                                                repeatMode = RepeatMode.Restart,
-                                                                duration = 2.seconds,
-                                                            ),
+                                                            }
+                                                            .padding(8.dp)
+                                                            .animateContentSize(),
                                                 ) {
                                                     val weight =
-                                                        if (it == action) FontWeight.Bold else FontWeight.Normal
-                                                    it.icon().let { icon ->
+                                                        if (it == SenderType.ACTION) FontWeight.Bold else FontWeight.Normal
+                                                    it.icon()?.let { icon ->
                                                         Image(
                                                             painterResource(icon),
                                                             null,
@@ -893,17 +887,17 @@ fun ChatInputView(
             }
 
             val iconBackground by animateColorAsState(
-                if (isGenerating) Color.Transparent else content.data.genre.color,
+                if (isGenerating) Color.Transparent else resolvedColor,
             )
 
             val iconTint by animateColorAsState(
-                if (isGenerating) content.data.genre.color else content.data.genre.iconColor,
+                if (isGenerating) resolvedColor else resolvedIconColor,
             )
 
             Box(contentAlignment = Alignment.Center) {
                 if (isSendingPending) {
                     CircularProgressIndicator(
-                        color = content.data.genre.color,
+                        color = resolvedColor,
                         trackColor = Color.Transparent,
                         strokeWidth = 2.dp,
                         modifier =
@@ -967,7 +961,8 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .reactiveShimmer(
                                     isGenerating,
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     ) { loading ->
                         val icon =
                             if (isEditing) {
@@ -1021,11 +1016,12 @@ fun ChatInputView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .border(1.dp, genre.color.gradientFade(), inputShape)
+                                .border(1.dp, resolvedColor.gradientFade(), inputShape)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     inputShape,
-                                ).padding(16.dp),
+                                )
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
@@ -1069,16 +1065,24 @@ fun ChatInputView(
                                     },
                                     colors =
                                         ButtonDefaults.buttonColors().copy(
-                                            containerColor = genre.color,
-                                            contentColor = genre.iconColor,
+                                            containerColor = resolvedColor,
+                                            contentColor = resolvedIconColor,
                                         ),
                                 ) {
                                     Text(
-                                        "Corrigir",
+                                        stringResource(
+                                            if (it.status ==
+                                                TypoStatus.ENHANCEMENT
+                                            ) {
+                                                R.string.smart_fix_button
+                                            } else {
+                                                R.string.regenerate
+                                            },
+                                        ),
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),
-                                                color = genre.iconColor,
+                                                color = resolvedIconColor,
                                             ),
                                     )
                                 }
@@ -1099,7 +1103,7 @@ fun ChatInputView(
                                         ),
                                 ) {
                                     Text(
-                                        "Continuar",
+                                        stringResource(R.string.next),
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),

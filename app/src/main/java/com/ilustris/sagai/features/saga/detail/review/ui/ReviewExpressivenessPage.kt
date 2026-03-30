@@ -32,13 +32,14 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.MascotEmotionFace
+import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -95,12 +96,11 @@ class ReviewExpressivenessPage(
                 Modifier
                     .animateContentSize(
                         tween(1200, easing = LinearOutSlowInEasing),
-                    )
-                    .fillMaxWidth(),
+                    ).fillMaxWidth(),
         ) {
-            MascotEmotionFace(
+            VibeShapeDrawing(
                 emotionalTone = emotionalTone.first,
-                genre = genre,
+                strokeWidth = 4.dp,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -109,6 +109,7 @@ class ReviewExpressivenessPage(
                             true,
                             shimmerColors = emotionalTone.first.color.shimmerize(),
                         ),
+                color = genre.resolveColor(),
                 onFinishDraw = {
                     coroutineScope.launch {
                         delay(1500)
@@ -174,7 +175,7 @@ class ReviewExpressivenessPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.color,
+                            contentColor = genre.resolveColor(),
                         ),
                 ) {
                     Text(stringResource(R.string.share))

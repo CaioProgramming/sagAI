@@ -58,6 +58,7 @@ import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
 import com.ilustris.sagai.features.saga.detail.ui.titleAndSubtitle
@@ -173,17 +174,15 @@ fun CharactersGalleryContent(
                         containerColor = MaterialTheme.colorScheme.background,
                         dragHandle = { Box {} },
                     ) {
-                        saga.characters.find { it.data.id == id }?.let { character ->
-                            CharacterDetailsContent(
-                                saga,
-                                character,
-                                openEvent = { event ->
-                                    event?.let {
-                                        onOpenEvent(event)
-                                    }
-                                },
-                            )
-                        }
+                        CharacterDetailsContent(
+                            saga,
+                            id,
+                            openEvent = { event ->
+                                event?.let {
+                                    onOpenEvent(event)
+                                }
+                            },
+                        )
                     }
                 }
 
@@ -313,7 +312,7 @@ fun CharacterHorizontalView(
                     style.copy(
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.W700,
-                        color = character.hexColor.hexToColor() ?: genre.color,
+                        color = character.hexColor.hexToColor() ?: genre.resolveColor(),
                     ),
                 textAlign = TextAlign.Start,
                 modifier = Modifier.weight(1f),

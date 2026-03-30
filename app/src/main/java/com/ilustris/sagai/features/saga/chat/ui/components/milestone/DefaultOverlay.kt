@@ -34,6 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
@@ -75,9 +77,10 @@ fun DefaultOverlay(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxSize(),
+        modifier =
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxSize(),
     ) {
         AnimatedVisibility(
             showIcon,
@@ -85,10 +88,10 @@ fun DefaultOverlay(
             exit = fadeOut(),
         ) {
             Image(
-                painterResource(R.drawable.ic_spark),
+                painterResource(genre.icon),
                 null,
-                sparkModifier.size(50.dp),
-                colorFilter = ColorFilter.tint(genre.color),
+                sparkModifier.size(80.dp),
+                colorFilter = ColorFilter.tint(genre.resolveColor()),
             )
         }
 
@@ -135,8 +138,10 @@ fun DefaultOverlay(
             }
         }
 
-        Box(Modifier.padding(16.dp)) {
-            extraContent()
+        AnimatedVisibility(showSubtitle) {
+            Box(Modifier.padding(16.dp)) {
+                extraContent()
+            }
         }
 
         AnimatedVisibility(showButton, enter = slideInVertically { -it }, exit = fadeOut()) {
@@ -147,8 +152,8 @@ fun DefaultOverlay(
                 shape = genre.bubble(isNarrator = true),
                 colors =
                     ButtonDefaults.elevatedButtonColors().copy(
-                        containerColor = genre.color,
-                        contentColor = genre.iconColor,
+                        containerColor = genre.resolveColor(),
+                        contentColor = genre.resolveIconColor(),
                     ),
             ) {
                 Text(stringResource(R.string.continue_button))

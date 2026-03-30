@@ -18,6 +18,7 @@ import java.io.File
 
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
+    val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val ambientMusicFile: StateFlow<File?>
     val narrativeProcessingUiState: StateFlow<Boolean>
@@ -25,6 +26,7 @@ interface SagaContentManager {
     var snackBarUpdate: MutableStateFlow<SnackBarState?>
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
+    val isOnboardingVisible: MutableStateFlow<Boolean>
 
     suspend fun loadSaga(sagaId: String)
 
@@ -32,13 +34,11 @@ interface SagaContentManager {
 
     suspend fun generateCharacterImage(character: Character): RequestResult<Character>
 
-    fun getDirective(): String
-
     fun setDebugMode(enabled: Boolean)
 
     fun isInDebugMode(): Boolean
 
-    fun setProcessing(bool: Boolean)
+    suspend fun setProcessing(bool: Boolean)
 
     fun checkNarrativeProgression(
         saga: SagaContent?,

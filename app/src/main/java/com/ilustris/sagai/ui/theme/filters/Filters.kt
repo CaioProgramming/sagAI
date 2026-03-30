@@ -1,3 +1,5 @@
+package com.ilustris.sagai.ui.theme.filters
+
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
@@ -10,22 +12,21 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.brightness
+import com.ilustris.sagai.ui.theme.colorTemperature
 import com.ilustris.sagai.ui.theme.contrast
-import com.ilustris.sagai.ui.theme.filters.CowboyColorTones
-import com.ilustris.sagai.ui.theme.filters.CrimeColorTones
-import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
-import com.ilustris.sagai.ui.theme.filters.HeroColorTones
-import com.ilustris.sagai.ui.theme.filters.HorrorColorTones
-import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
-import com.ilustris.sagai.ui.theme.filters.ShinobiColorTones
 import com.ilustris.sagai.ui.theme.grayScale
+import com.ilustris.sagai.ui.theme.vignette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
@@ -54,211 +55,85 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
     }.value
 }
 
-fun Genre.colorTones() =
-    when (this) {
-        Genre.FANTASY -> FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
-        Genre.CYBERPUNK -> SciFiColorTones.CYBERPUNK_NEON_NIGHT
-        Genre.HORROR -> HorrorColorTones.MOONLIGHT_MYSTIQUE
-        Genre.HEROES -> HeroColorTones.URBAN_COMIC_VIBRANCY
-        Genre.CRIME -> CrimeColorTones.DIVINE_ACADEMIC_PARADISE
-        Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
-        Genre.SHINOBI -> ShinobiColorTones.BLOOD_MOON_ASSASSIN
-        Genre.COWBOY -> CowboyColorTones.DESERT_SUNSET
-        Genre.PUNK_ROCK -> FantasyColorTones.ETHEREAL_CYAN_STARLIGHT // Placeholder - will use vibrant tones
-    }
+@Composable
+fun Genre.colorTones(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current): ColorTonePalette? {
+    val remote = visualConfig?.colorTones ?: return null
+    // We only return null if the crucial lists are not 3-elements long (RGB)
+    if (remote.highlightTint.size != 3 || remote.shadowTint.size != 3) return null
+    return ColorTonePalette(
+        name = remote.name.ifBlank { "Remote" },
+        highlightTint =
+            Triple(
+                remote.highlightTint[0],
+                remote.highlightTint[1],
+                remote.highlightTint[2],
+            ),
+        shadowTint = Triple(remote.shadowTint[0], remote.shadowTint[1], remote.shadowTint[2]),
+        defaultTintStrength = remote.defaultTintStrength,
+    )
+}
 
+@Composable
 fun Genre.shaderParams(
     customGrain: Float? = null,
     focusRadius: Float? = null,
     pixelSize: Float? = null,
-) = when (this) {
-    Genre.FANTASY -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .2f,
-            softFocusRadius = focusRadius ?: .04f,
-            saturation = .4f,
-            contrast = 1.3f,
-            brightness = -0.05f,
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = 0.2f,
-            vignetteSoftness = 0.7f,
-            pixelationBlockSize = 0f,
-            colorTemperature = .1f,
-        )
-    }
-
-    Genre.CYBERPUNK -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .15f,
-            bloomThreshold = .3f,
-            bloomIntensity = .2f,
-            bloomRadius = 1.3f,
-            softFocusRadius = focusRadius ?: .2f,
-            saturation = .5f,
-            contrast = 1.5f,
-            brightness = -.02f,
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .3f,
-            vignetteSoftness = 1f,
-            pixelationBlockSize = 0.0f,
-            colorTemperature = .05f.unaryMinus(), // Slightly cool for Sci-Fi
-        )
-    }
-
-    Genre.HORROR -> {
-        ShaderParams(
-            grainIntensity = .1f,
-            bloomThreshold = 0.4f,
-            bloomIntensity = 0.1f,
-            bloomRadius = 1.0f,
-            softFocusRadius = 0f,
-            saturation = .5f,
-            contrast = 1.5f,
-            brightness = .1f.unaryMinus(),
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = 1f,
-            vignetteSoftness = 0.8f,
-            pixelationBlockSize = pixelSize ?: 3.5f,
-            colorTemperature = .3f.unaryMinus(),
-        )
-    }
-
-    Genre.HEROES -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .1f,
-            bloomThreshold = 0f,
-            bloomIntensity = 0f,
-            bloomRadius = 0f,
-            softFocusRadius = focusRadius ?: .2f,
-            saturation = .9f,
-            contrast = 1.3f,
-            brightness = .05f,
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .1f,
-            vignetteSoftness = 1f,
-            pixelationBlockSize = 0.0f,
-            colorTemperature = .15f,
-        )
-    }
-
-    Genre.CRIME -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .05f, // Even cleaner for "Divine Perfection"
-            softFocusRadius = focusRadius ?: .12f, // Luminous bloom
-            saturation = .72f, // Noble, muted realism
-            contrast = 1.25f, // Defined masterpiece structure
-            brightness = .0f,
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .12f, // Focused composition
-            vignetteSoftness = 0.8f,
-            pixelationBlockSize = 0f,
-            colorTemperature = .1f, // Slightly warmer for "Golden Hour"
-        )
-    }
-
-    Genre.SPACE_OPERA -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .3f,
-            bloomThreshold = .3f,
-            bloomIntensity = .2f,
-            bloomRadius = 1.0f,
-            softFocusRadius = focusRadius ?: .3f,
-            saturation = .85f,
-            contrast = 1.5f,
-            brightness = 0f,
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = 0.3f,
-            vignetteStrength = .2f,
-            vignetteSoftness = 0.9f,
-            pixelationBlockSize = 0.0f,
-            colorTemperature = .1f.unaryMinus(),
-        )
-    }
-
-    Genre.SHINOBI -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .25f,
-            bloomThreshold = .6f,
-            bloomIntensity = .1f,
-            bloomRadius = .1f,
-            softFocusRadius = focusRadius ?: .1f,
-            saturation = .6f,
-            contrast = 1.4f,
-            brightness = .15f.unaryMinus(),
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .5f,
-            vignetteSoftness = 1f,
-            pixelationBlockSize = pixelSize ?: 0.0f,
-            colorTemperature = .1f.unaryMinus(),
-        )
-    }
-
-    Genre.COWBOY -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .2f,
-            contrast = 1.4f,
-            colorTemperature = .2f,
-            vignetteStrength = .3f,
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            saturation = 0.7f,
-            brightness = -.03f,
-            softFocusRadius = focusRadius ?: 0.1f,
-            vignetteSoftness = 0.8f,
-        )
-    }
-
-    Genre.PUNK_ROCK -> {
-        ShaderParams(
-            grainIntensity = customGrain ?: .2f,
-            softFocusRadius = focusRadius ?: .1f,
-            saturation = .7f,
-            contrast = 1.2f,
-            brightness = .01f.unaryMinus(),
-            highlightTint = colorTones().highlightTint,
-            shadowTint = colorTones().shadowTint,
-            tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .15f,
-            vignetteSoftness = 1f,
-            pixelationBlockSize = 0.0f,
-            colorTemperature = .05f,
-        )
-    }
-
-    else -> {
-        ShaderParams()
-    }
+    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
+): ShaderParams? {
+    val remote = visualConfig?.shaderParams ?: return null
+    val tones = colorTones(visualConfig)
+    return ShaderParams(
+        grainIntensity = customGrain ?: remote.grainIntensity,
+        bloomThreshold = remote.bloomThreshold,
+        bloomIntensity = remote.bloomIntensity,
+        bloomRadius = remote.bloomRadius,
+        softFocusRadius = focusRadius ?: remote.softFocusRadius,
+        saturation = remote.saturation,
+        contrast = remote.contrast,
+        brightness = remote.brightness,
+        highlightTint =
+            if (remote.highlightTint.size == 3) {
+                Triple(
+                    remote.highlightTint[0],
+                    remote.highlightTint[1],
+                    remote.highlightTint[2],
+                )
+            } else {
+                tones?.highlightTint ?: Triple(1f, 1f, 1f)
+            },
+        shadowTint =
+            if (remote.shadowTint.size == 3) {
+                Triple(
+                    remote.shadowTint[0],
+                    remote.shadowTint[1],
+                    remote.shadowTint[2],
+                )
+            } else {
+                tones?.shadowTint ?: Triple(0f, 0f, 0f)
+            },
+        tintStrength = remote.tintStrength.takeIf { it != 0f } ?: tones?.defaultTintStrength ?: 0f,
+        vignetteStrength = remote.vignetteStrength,
+        vignetteSoftness = remote.vignetteSoftness,
+        pixelationBlockSize = pixelSize ?: remote.pixelationBlockSize,
+        colorTemperature = remote.colorTemperature,
+    )
 }
 
 @Composable
 fun Modifier.effectForGenre(
-    genre: Genre,
+    genre: Genre?,
+    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
     focusRadius: Float? = null,
     customGrain: Float? = null,
     pixelSize: Float? = null,
     useFallBack: Boolean = false,
 ): Modifier {
+    if (genre == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || useFallBack) {
-        return this.fallbackEffect(genre)
+        return this.fallbackEffect(genre, visualConfig)
     }
 
-    val agslShaderSource = loadShaderFromAssetsOnce("fantasy_shader.agsl")
-    // If the shader source is null (failed to load), return the modifier unmodified
-    // or apply a fallback visual.
+    val agslShaderSource = loadShaderFromAssetsOnce("genre_filter_shader.agsl")
     if (agslShaderSource == null) {
         Timber.w("AGSL Shader source is null. Applying no effect. Applying fallback")
         return this.fallbackEffect(genre)
@@ -271,51 +146,50 @@ fun Modifier.effectForGenre(
         }
 
     var composableSize by remember { mutableStateOf(IntSize.Zero) }
-    // For iTime, if you want animation. If not, you can pass a constant or omit setting it.
-    var timeState by remember { mutableStateOf(0f) }
-    LaunchedEffect(Unit) {
-        // This will run only once or if the key changes
-        // This is a simple way to animate time. For more complex animations,
-        // you might use Animatable or other animation APIs.
-        // If your shader doesn't use iTime for visual changes, you can simplify this.
-        while (true) {
-            timeState = (System.currentTimeMillis() % 100000L) / 1000.0f
-            kotlinx.coroutines.delay(16) // Aim for ~60 FPS
-        }
-    }
 
-    // Define shader parameters based on Genre
-    FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
-    SciFiColorTones.CYBERPUNK_NEON_NIGHT
-    HorrorColorTones.MOONLIGHT_MYSTIQUE
-    HeroColorTones.URBAN_COMIC_VIBRANCY
-    CrimeColorTones.MIAMI_NEON_SUNSET
-    FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
     val uniformValues =
-        remember(genre, pixelSize) {
-            genre.shaderParams(
-                customGrain = customGrain,
-                focusRadius = focusRadius,
-                pixelSize = pixelSize,
-            )
-        }
+        genre.shaderParams(
+            customGrain = customGrain,
+            focusRadius = focusRadius,
+            pixelSize = pixelSize,
+            visualConfig = visualConfig,
+        )
+
+    if (uniformValues == null) return this
 
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
         }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
+                // Adaptive scale factor based on an assumed 1080px reference.
+                // Weakens grain and pixel-based blurs on small elements (like avatars) to prevent destroying legibility.
+                val maxDim = maxOf(composableSize.width, composableSize.height).toFloat()
+                val scaleFactor = (maxDim / 1080f).coerceIn(0.05f, 1f)
+
                 runtimeShader.setFloatUniform(
                     "iResolution",
                     composableSize.width.toFloat(),
                     composableSize.height.toFloat(),
                 )
-                runtimeShader.setFloatUniform("iTime", timeState)
-                runtimeShader.setFloatUniform("u_grainIntensity", uniformValues.grainIntensity)
+                runtimeShader.setFloatUniform(
+                    "u_aspectRatio",
+                    composableSize.width.toFloat() / composableSize.height.toFloat(),
+                )
+                runtimeShader.setFloatUniform(
+                    "u_grainIntensity",
+                    uniformValues.grainIntensity * scaleFactor,
+                )
                 runtimeShader.setFloatUniform("u_bloomThreshold", uniformValues.bloomThreshold)
                 runtimeShader.setFloatUniform("u_bloomIntensity", uniformValues.bloomIntensity)
-                runtimeShader.setFloatUniform("u_bloomRadius", uniformValues.bloomRadius)
-                runtimeShader.setFloatUniform("u_softFocusRadius", uniformValues.softFocusRadius)
+                runtimeShader.setFloatUniform(
+                    "u_bloomRadius",
+                    uniformValues.bloomRadius * scaleFactor,
+                )
+                runtimeShader.setFloatUniform(
+                    "u_softFocusRadius",
+                    uniformValues.softFocusRadius * scaleFactor,
+                )
                 runtimeShader.setFloatUniform("u_saturation", uniformValues.saturation)
                 runtimeShader.setFloatUniform("u_contrast", uniformValues.contrast)
                 runtimeShader.setFloatUniform("u_brightness", uniformValues.brightness)
@@ -336,7 +210,7 @@ fun Modifier.effectForGenre(
                 runtimeShader.setFloatUniform("u_vignetteSoftness", uniformValues.vignetteSoftness)
                 runtimeShader.setFloatUniform(
                     "u_pixelationBlockSize",
-                    uniformValues.pixelationBlockSize,
+                    uniformValues.pixelationBlockSize * scaleFactor,
                 )
                 runtimeShader.setFloatUniform(
                     "u_colorTemperature",
@@ -372,11 +246,18 @@ data class ShaderParams(
 )
 
 @Composable
-fun Modifier.fallbackEffect(genre: Genre): Modifier {
-    val shaderParams = genre.shaderParams()
+fun Modifier.fallbackEffect(
+    genre: Genre,
+    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
+): Modifier {
+    val shaderParams = genre.shaderParams(visualConfig = visualConfig) ?: return this
     val saturation = shaderParams.saturation
     val brightnessValue = shaderParams.brightness
     val contrastValue = shaderParams.contrast
+    val colorTemperature = shaderParams.colorTemperature
+    val vignetteStrength = shaderParams.vignetteStrength
+    val vignetteSoftness = shaderParams.vignetteSoftness
+    val softFocusRadius = shaderParams.softFocusRadius
 
     var modifier: Modifier = this
 
@@ -388,6 +269,15 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
     }
     if (contrastValue != 1.0f) {
         modifier = modifier.contrast(contrastValue)
+    }
+    if (colorTemperature != 0f) {
+        modifier = modifier.colorTemperature(colorTemperature)
+    }
+    if (vignetteStrength > 0f) {
+        modifier = modifier.vignette(vignetteStrength, vignetteSoftness)
+    }
+    if (softFocusRadius > 0f) {
+        modifier = modifier.blur(softFocusRadius.dp)
     }
     return modifier
 }

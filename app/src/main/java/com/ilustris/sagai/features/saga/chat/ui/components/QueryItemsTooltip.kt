@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
@@ -51,9 +52,9 @@ fun QueryItemsTooltip(
                     shape,
                     Shadow(
                         radius = 5.dp,
-                        genre.color,
+                        genre.resolveColor(),
                     ),
-                ).border(1.dp, genre.color.gradientFade(), shape)
+                ).border(1.dp, genre.resolveColor().gradientFade(), shape)
                 .background(
                     MaterialTheme.colorScheme.background,
                     shape,
@@ -86,7 +87,7 @@ fun QueryItemsTooltip(
 
                             Row(
                                 Modifier
-                                    .border(1.dp, genre.color.copy(alpha = .2f), shape)
+                                    .border(1.dp, genre.resolveColor().copy(alpha = .2f), shape)
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
                                         shape,
@@ -115,7 +116,7 @@ fun QueryItemsTooltip(
                                             fontFamily = genre.bodyFont(),
                                             color =
                                                 character.data.hexColor.hexToColor()
-                                                    ?: genre.color,
+                                                    ?: genre.resolveColor(),
                                         ),
                                 )
                             }
@@ -126,7 +127,7 @@ fun QueryItemsTooltip(
                         items(currentType.filteredWikis) { wiki ->
                             Row(
                                 Modifier
-                                    .border(1.dp, genre.color.copy(alpha = .2f), shape)
+                                    .border(1.dp, genre.resolveColor().copy(alpha = .2f), shape)
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
                                         shape,

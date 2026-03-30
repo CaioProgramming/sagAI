@@ -100,12 +100,14 @@ enum class EmotionalTone(
     }
 
     companion object {
-        fun getTone(tone: String?) =
-            try {
-                if (tone == null) NEUTRAL else valueOf(tone.uppercase())
-            } catch (e: Exception) {
-                NEUTRAL
-            }
+        fun getTone(tone: String?): EmotionalTone {
+            if (tone.isNullOrBlank()) return NEUTRAL
+
+            val validTones = entries.associateBy { it.name }
+            val words = tone.uppercase().split(Regex("[^A-Z]+"))
+
+            return words.firstNotNullOfOrNull { validTones[it] } ?: NEUTRAL
+        }
     }
 }
 

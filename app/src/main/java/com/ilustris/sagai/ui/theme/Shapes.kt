@@ -11,24 +11,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -36,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlin.math.max
 import kotlin.time.Duration
@@ -207,21 +204,14 @@ fun DrawShape(
     )
 }
 
+@Composable
+fun Genre?.cornerSize(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current): Dp {
+    if (visualConfig == null || visualConfig.cornerSizeDp < 0f) return 0.dp
+    return visualConfig.cornerSizeDp.dp
+}
 
-
-fun Genre?.cornerSize() =
-    when (this) {
-        Genre.FANTASY -> 20.dp
-        Genre.CYBERPUNK -> 10.dp
-        Genre.HORROR -> 7.dp
-        Genre.HEROES -> 4.dp
-        Genre.CRIME -> 25.dp
-        Genre.SPACE_OPERA -> 5.dp
-        Genre.SHINOBI -> 15.dp
-        else -> 0.dp
-    }
-
-fun Genre?.shape() = RoundedCornerShape(this.cornerSize())
+@Composable
+fun Genre?.shape(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current) = RoundedCornerShape(this.cornerSize(visualConfig))
 
 fun Morph.toComposePath(
     progress: Float,

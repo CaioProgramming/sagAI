@@ -2,9 +2,11 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
-import timber.log.Timber
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -17,6 +19,8 @@ class GetInputSuggestionsUseCaseImpl
     @Inject
     constructor(
         private val gemmaClient: GemmaClient,
+        private val remoteConfigService: RemoteConfigService,
+        private val promptService: PromptService,
     ) : GetInputSuggestionsUseCase {
         override suspend fun invoke(
             chatMessages: List<MessageContent>,
@@ -26,11 +30,16 @@ class GetInputSuggestionsUseCaseImpl
         ): RequestResult<List<Suggestion>> =
             executeRequest(false) {
                 val contextSummary = sceneSummary ?: error("can't generate suggestions without context")
+                val narrativeRules =
+                    remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+
                 val prompt =
                     SuggestionPrompts.generateSuggestionsPrompt(
+                        promptService,
                         saga,
                         character = currentUserCharacter!!,
-                        contextSummary,
+                        sceneSummary = contextSummary,
+                        updateLimit = narrativeRules.loreUpdateLimit,
                     )
 
                 Timber.d("Sending prompt to GemmaClient for suggestions.")

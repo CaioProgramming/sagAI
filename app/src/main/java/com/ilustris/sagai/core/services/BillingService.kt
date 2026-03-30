@@ -126,8 +126,11 @@ class BillingService
 
         fun isPremium() = state.value is BillingState.SignatureEnabled
 
-        suspend fun <R> runPremiumRequest(block: suspend () -> R): R? =
-            if (isPremium()) {
+        suspend fun <R> runPremiumRequest(
+            bypass: Boolean = false,
+            block: suspend () -> R,
+        ): R =
+            if (isPremium() || (bypass && BuildConfig.DEBUG)) {
                 block()
             } else {
                 throw PremiumException(firebaseInstallationService.getCurrentInstallationId())

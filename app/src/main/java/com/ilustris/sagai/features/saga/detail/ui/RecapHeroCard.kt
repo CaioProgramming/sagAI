@@ -18,6 +18,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.review.ui.DynamicCard
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -62,20 +63,21 @@ fun RecapHeroCard(
         titleStyle =
             MaterialTheme.typography.headlineSmall.copy(
                 fontFamily = saga.data.genre.headerFont(),
-                color = genre.iconColor,
+                color = genre.resolveIconColor(),
             ),
         subtitleStyle =
             MaterialTheme.typography.labelMedium.copy(
                 fontFamily = saga.data.genre.bodyFont(),
-                color = genre.iconColor,
+                color = genre.resolveIconColor(),
             ),
-        lineColor = genre.iconColor,
+        lineColor = genre.resolveIconColor(),
         modifier =
             modifier
                 .background(
                     genre.colorPalette().random(),
                     shape,
-                ).clip(shape)
+                )
+                .clip(shape)
                 .clickable {
                     onClick()
                 },

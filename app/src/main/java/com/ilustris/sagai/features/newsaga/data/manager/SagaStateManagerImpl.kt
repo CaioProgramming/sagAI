@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
+import android.util.Log
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
-import timber.log.Timber
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
@@ -33,6 +33,7 @@ class SagaStateManagerImpl
         override val formState = _formState.asStateFlow()
 
         override fun updateGenre(genre: Genre) {
+            Log.d(javaClass.simpleName, "updateGenre: Updating genre to -> $genre")
             if (_formState.value == null) {
                 _formState.value = FormState.NewSagaForm()
             }
@@ -54,13 +55,13 @@ class SagaStateManagerImpl
 
             when (action) {
                 CallBackAction.CONTENT_READY -> {
-                    Timber.d("handleCallback: Saga is ready to save")
+                    Log.d(javaClass.simpleName, "handleCallback: Saga is ready to save")
                 }
 
                 CallBackAction.UPDATE_DATA,
                 CallBackAction.AWAITING_CONFIRMATION,
                 -> {
-                    Timber.d("handleCallback: Saga not ready yet")
+                    Log.d(javaClass.simpleName, "handleCallback: Saga not ready yet")
                 }
 
                 else -> {
@@ -115,9 +116,9 @@ class SagaStateManagerImpl
                     )
                     handleGeneratedContent(response)
                 }.onFailure { e ->
-                    Timber.e(
-                        e,
-                        "sendMessage: Error getting generated content",
+                    Log.e(
+                        javaClass.simpleName,
+                        "sendMessage: Error getting generated content $e",
                     )
                 }
             updateLoading(false)
@@ -211,12 +212,13 @@ class SagaStateManagerImpl
             )
 
             response.callback?.let { callback ->
-                Timber.d(
+                Log.d(
+                    javaClass.simpleName,
                     "handleGeneratedContent: Checking new generated content $callback",
                 )
                 val sagaDraft: SagaDraft? = callback.data
                 sagaDraft?.let {
-                    Timber.i("handleGeneratedContent: Updating form to $it")
+                    Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
                     updateSaga(it)
                 }
             }
@@ -241,8 +243,37 @@ class SagaStateManagerImpl
                         )
                     }
                 }.onFailure {
-                    Timber.e(it, "adaptToGenre: Error adapting to genre")
-            }
+                    Log.e(javaClass.simpleName, "adaptToGenre: Error adapting to genre", it)
+                }
             updateLoading(false)
         }
+
+        override suspend fun generateGenreSuggestions() {
+            val draft = getSagaForm()
+            // Only generate suggestions if the form is blank — otherwise adaptToGenre handles it
+            if (draft.title.isNotBlank() || draft.description.isNotBlank()) return
+
+            updateLoading(true)
+            newSagaUseCase
+                .generateGenreSuggestions(draft.genre)
+                .onSuccess { gen ->
+                    handleGeneratedContent(gen)
+                }.onFailure { e ->
+                    Log.e(javaClass.simpleName, "generateGenreSuggestions: Error", e)
+                }
+            updateLoading(false)
+        }
+
+        override suspend fun refineDraft(rawInput: String) {
+            val draft = getSagaForm()
+            updateLoading(true)
+            newSagaUseCase
+                .refineDraft(rawInput, draft.genre)
+                .onSuccess { gen ->
+                    handleGeneratedContent(gen)
+                }.onFailure { e ->
+                    Log.e(javaClass.simpleName, "refineDraft: Error", e)
+            }
+        updateLoading(false)
+    }
     }
