@@ -42,6 +42,7 @@ import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
+import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
@@ -310,6 +311,11 @@ object AppModule {
     fun providesWorkManagerScheduler(
         @ApplicationContext context: Context,
     ): WorkManagerScheduler = WorkManagerSchedulerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideMascotEmotionService(remoteConfigService: RemoteConfigService): MascotEmotionService =
+        MascotEmotionService(remoteConfigService)
 }
 
 @InstallIn(ViewModelComponent::class)

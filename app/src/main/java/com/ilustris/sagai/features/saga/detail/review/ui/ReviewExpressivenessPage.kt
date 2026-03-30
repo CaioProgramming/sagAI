@@ -38,7 +38,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
+import com.ilustris.sagai.ui.theme.components.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -98,9 +98,9 @@ class ReviewExpressivenessPage(
                     )
                     .fillMaxWidth(),
         ) {
-            VibeShapeDrawing(
+            MascotEmotionFace(
                 emotionalTone = emotionalTone.first,
-                strokeWidth = 4.dp,
+                genre = genre,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -109,7 +109,6 @@ class ReviewExpressivenessPage(
                             true,
                             shimmerColors = emotionalTone.first.color.shimmerize(),
                         ),
-                color = genre.color,
                 onFinishDraw = {
                     coroutineScope.launch {
                         delay(1500)

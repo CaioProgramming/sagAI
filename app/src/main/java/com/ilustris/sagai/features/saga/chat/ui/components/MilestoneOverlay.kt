@@ -38,13 +38,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
-import com.ilustris.sagai.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -60,7 +60,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOver
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
+import com.ilustris.sagai.ui.theme.components.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.headerFont
@@ -242,8 +242,9 @@ fun NewEventContent(
         val stats = event.statsSummary()
         val topTone = event.messages.rankEmotionalTone().first()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            VibeShapeDrawing(
+            MascotEmotionFace(
                 topTone.first,
+                genre = genre,
                 modifier = Modifier.size(64.dp),
             )
 
