@@ -46,7 +46,7 @@ class CharacterDetailsViewModel
 
         fun loadSagaAndCharacter(
             sagaId: String?,
-            characterId: String?,
+            characterId: Int?,
         ) {
             if (sagaId == null) return
             if (characterId == null) return
@@ -96,14 +96,15 @@ class CharacterDetailsViewModel
             isGenerating.value = true
             loadingMessage.value = "Gerando ${selectedCharacter.name}..."
             viewModelScope.launch(Dispatchers.IO) {
-                characterUseCase.generateCharacterImage(
-                    selectedCharacter,
-                    sagaContent.data,
-                ).onFailure {
-                    if (it is BillingService.PremiumException) {
-                        showPremiumSheet.value = true
+                characterUseCase
+                    .generateCharacterImage(
+                        selectedCharacter,
+                        sagaContent.data,
+                    ).onFailure {
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
                     }
-                }
                 isGenerating.value = false
                 loadingMessage.emit(null)
             }

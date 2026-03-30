@@ -128,7 +128,7 @@ enum class Routes(
             CharacterDetailsView(
                 navHostController = nav,
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
-                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+                characterId = nav.currentBackStackEntry?.arguments?.getInt(CHARACTER_DETAIL.arguments[1]),
             )
         },
     ),

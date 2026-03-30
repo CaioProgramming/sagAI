@@ -29,6 +29,7 @@ class SettingsViewModel
 
         val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
         val showTutorials = settingsUseCase.getShowTutorials()
+        val musicEnabled = settingsUseCase.getMusicEnabled()
         val backupEnabled = settingsUseCase.backupEnabled()
 
         private val _memoryUsage = MutableStateFlow<Long?>(null)
@@ -95,6 +96,12 @@ class SettingsViewModel
         fun setShowTutorials(enabled: Boolean) {
             viewModelScope.launch {
                 settingsUseCase.setShowTutorials(enabled)
+            }
+        }
+
+        fun setMusicEnabled(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setMusicEnabled(enabled)
             }
     }
 

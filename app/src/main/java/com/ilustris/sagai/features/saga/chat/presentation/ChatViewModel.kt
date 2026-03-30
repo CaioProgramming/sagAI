@@ -19,7 +19,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
-import com.ilustris.sagai.core.media.SagaMediaService
+import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
@@ -61,8 +61,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -260,9 +262,6 @@ class ChatViewModel
             }
 
         private var loadFinished = false
-        private var currentSagaIdForService: String? = null
-
-        private var currentActCountForService: Int = 0
 
         private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -282,7 +281,6 @@ class ChatViewModel
             }
             stateManager.updateLoading(true)
             notificationManager.clearNotifications()
-            currentSagaIdForService = sagaId
             lastActId = 0
             lastChapterId = 0
             lastEventId = 0
@@ -550,7 +548,6 @@ class ChatViewModel
                 sagaContentManager.content
                     .distinctUntilChanged { old, new ->
                         if (old == null || new == null) return@distinctUntilChanged old == new
-                        // Only ignore updates if ONLY playtime changed
                         old.data.copy(playTimeMs = 0) == new.data.copy(playTimeMs = 0) &&
                             old.acts == new.acts &&
                             old.characters == new.characters &&
@@ -558,13 +555,7 @@ class ChatViewModel
                             old.wikis == new.wikis &&
                             old.relationships == new.relationships
                     }.collectLatest { sagaContent ->
-                        if (sagaContent != null && sagaContent.data.id.toString() != currentSagaIdForService) {
-                            Log.w(
-                                "ChatViewModel",
-                                "observeSaga: Ignored stale saga content (${sagaContent.data.id} != $currentSagaIdForService)",
-                            )
-                            return@collectLatest
-                        }
+
                         Log.d(
                             "ChatViewModel",
                             "observeSaga triggered for genre: ${sagaContent?.data?.genre}",
@@ -626,8 +617,6 @@ class ChatViewModel
                         if (uiState.value.selectedCharacter == null) {
                             sagaContent.mainCharacter?.let { updateCharacter(it) }
                         }
-
-                        checkIfUpdatesService(sagaContent)
 
                         // Only validate character updates when messages changed
                         if (messagesChanged) {
@@ -711,161 +700,38 @@ class ChatViewModel
             }
         }
 
-        private fun checkIfUpdatesService(sagaContent: SagaContent) {
-            val newActCount = sagaContent.acts.size
-            if (newActCount != currentActCountForService && currentSagaIdForService != null) {
-                currentActCountForService = newActCount
-                sagaContentManager.ambientMusicFile.value?.let { musicFile ->
-                    viewModelScope.launch(Dispatchers.IO) {
-                        if (musicFile.exists()) {
-                            val genre = sagaContent.data.genre
-                            val genreColor =
-                                visualConfigService
-                                    .getVisualConfig(genre)
-                                    ?.primaryColor
-                                    ?.parseColor() ?: MaterialColor.Blue400
-                            val playbackMetadata =
-                                PlaybackMetadata(
-                                    sagaId = sagaContent.data.id,
-                                    sagaTitle = sagaContent.data.title,
-                                    sagaIcon = sagaContent.data.icon,
-                                    color = genreColor.toArgb(),
-                                    currentActNumber = newActCount.coerceAtLeast(1),
-                                    currentChapter =
-                                        sagaContent.getCurrentTimeLine()?.let { timeline ->
-                                            sagaContent.chapterNumber(
-                                                sagaContent
-                                                    .flatChapters()
-                                                    .find { it.data.id == timeline.data.chapterId }
-                                                    ?.data,
-                                            )
-                                        } ?: 0,
-                                    totalActs = sagaContent.acts.size,
-                                    timelineObjective =
-                                        sagaContent.getCurrentTimeLine()?.data?.currentObjective
-                                            ?: "Unknown Objective",
-                                    mediaFilePath = musicFile.absolutePath,
-                                    genre = sagaContent.data.genre,
-                                )
-                            controlMediaPlayerService(
-                                SagaMediaService.ACTION_PLAY,
-                                playbackMetadata,
-                            )
-                            Log.d(
-                                "ChatViewModel",
-                                "New act ($newActCount). Updated SagaMediaService.",
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun controlMediaPlayerService(
-            action: String,
-            metadata: PlaybackMetadata? = null,
-        ) {
-            if (action != SagaMediaService.ACTION_PLAY && action != SagaMediaService.ACTION_STOP &&
-                action != SagaMediaService.ACTION_PAUSE_MUSIC &&
-                action != SagaMediaService.ACTION_RESUME_MUSIC
-            ) {
-                Log.w("ChatViewModel", "Invalid action for SagaMediaService: $action")
-                return
-            }
-            val serviceIntent =
-                Intent(context, SagaMediaService::class.java).apply {
-                    this.action = action
-                    metadata?.let {
-                        putExtra(SagaMediaService.EXTRA_SAGA_CONTENT_JSON, it.toJsonFormat())
-                    }
-                }
-            try {
-                context.startService(serviceIntent)
-                Log.d(
-                    "ChatViewModel",
-                    "Sent $action to SagaMediaService. Metadata: ${metadata?.toJsonFormat()}",
-                )
-            } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error controlling SagaMediaService with action $action", e)
-                updateSnackBar(
-                    snackBar(
-                        "Não foi possível iniciar o serviço áudio. Verifique as permissões",
-                    ),
-                )
-            }
-        }
-
         private fun observeAmbientMusicServiceControl() =
             viewModelScope.launch(Dispatchers.IO) {
-                if (uiState.value.sagaContent == null) return@launch
-                sagaContentManager.ambientMusicFile.collect { musicFile ->
-
-                    Log.i(
-                        javaClass.simpleName,
-                        "observeAmbientMusicServiceControl: file updated -> $musicFile",
-                    )
-                    if (musicFile == null && uiState.value.isPlaying.not()) {
-                        Log.w(
-                            javaClass.simpleName,
-                            "observeAmbientMusicServiceControl: Music not found skipping player",
+                combine(
+                    sagaContentManager.ambientMusicFile,
+                    stateManager.uiState.map { it.sagaContent }.distinctUntilChanged(),
+                ) { musicFile, sagaContent ->
+                    musicFile
+                }.collectLatest { musicFile ->
+                    if (musicFile != null && musicFile.exists()) {
+                        Log.d(
+                            "ChatViewModel",
+                            "Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}",
                         )
-                        return@collect
-                    }
-
-                    val currentSagaData =
-                        uiState.value.sagaContent?.data // Use data from current saga content
-
-                    if (currentSagaData != null && musicFile != null && musicFile.exists()) {
-                        if (currentSagaIdForService == currentSagaData.id.toString()) {
-                            val playbackMetadata =
-                                PlaybackMetadata(
-                                    sagaId = currentSagaData.id,
-                                    sagaTitle = currentSagaData.title,
-                                    sagaIcon = currentSagaData.icon,
-                                    currentActNumber =
-                                        uiState.value.sagaContent
-                                            ?.acts
-                                            ?.size
-                                            ?.coerceAtLeast(1) ?: 1,
-                                    currentChapter =
-                                        uiState.value.sagaContent
-                                            ?.getCurrentTimeLine()
-                                            ?.let { timeline ->
-                                                uiState.value.sagaContent?.chapterNumber(
-                                                    uiState.value.sagaContent
-                                                        ?.flatChapters()
-                                                        ?.find { it.data.id == timeline.data.chapterId }
-                                                        ?.data,
-                                                )
-                                            } ?: 0,
-                                    totalActs =
-                                        uiState.value.sagaContent
-                                            ?.acts
-                                            ?.size ?: 1,
-                                    timelineObjective =
-                                        uiState.value.sagaContent
-                                            ?.getCurrentTimeLine()
-                                            ?.data
-                                            ?.currentObjective ?: "Unknown Objective",
-                                    mediaFilePath = musicFile.absolutePath,
-                                    color = currentSagaData.genre.resolveColor(null).toArgb(),
-                                    genre = currentSagaData.genre,
+                        val musicIntent =
+                            Intent(context, SagaPlaybackService::class.java).apply {
+                                action = SagaPlaybackService.ACTION_START
+                                putExtra(
+                                    SagaPlaybackService.EXTRA_MUSIC_PATH,
+                                    musicFile.absolutePath,
                                 )
-                            currentActCountForService = playbackMetadata.currentActNumber
-                            controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
-                            Log.d(
-                                "ChatViewModel",
-                                "Ambient music file available. Instructing SagaMediaService to play.",
-                            )
-                        }
+                            }
+                        context.startService(musicIntent)
                     } else {
-                        if (currentSagaIdForService != null && (musicFile == null || !musicFile.exists())) {
-                            Log.d(
-                                "ChatViewModel",
-                                "Ambient music file null/invalid for current saga. Instructing service to stop.",
-                            )
-                            controlMediaPlayerService(SagaMediaService.ACTION_STOP)
-                        }
+                        Log.d(
+                            "ChatViewModel",
+                            "Music file not available. Instructing SagaPlaybackService to stop.",
+                        )
+                        context.startService(
+                            Intent(context, SagaPlaybackService::class.java).apply {
+                                action = SagaPlaybackService.ACTION_STOP
+                            },
+                        )
                     }
                 }
             }
@@ -876,14 +742,21 @@ class ChatViewModel
             super.onResume(owner)
             startTime = System.currentTimeMillis()
             scheduledNotificationService.cancelScheduledNotifications()
-            Log.d(
-                "ChatViewModel",
-                "Lifecycle: onResume. SagaMediaService manages its own state. Start time: $startTime",
+            Log.d("ChatViewModel", "Lifecycle: onResume. Informing service to resume.")
+            context.startService(
+                Intent(context, SagaPlaybackService::class.java).apply {
+                    action = SagaPlaybackService.ACTION_RESUME
+                },
             )
         }
 
         override fun onStop(owner: LifecycleOwner) {
             super.onStop(owner)
+            context.startService(
+                Intent(context, SagaPlaybackService::class.java).apply {
+                    action = SagaPlaybackService.ACTION_STOP
+                },
+            )
             val saga = uiState.value.sagaContent
             if (saga != null) {
                 viewModelScope.launch(Dispatchers.IO) {
@@ -894,7 +767,12 @@ class ChatViewModel
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
-            Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
+            Log.d("ChatViewModel", "Lifecycle: onPause called. Informing service to pause.")
+            context.startService(
+                Intent(context, SagaPlaybackService::class.java).apply {
+                    action = SagaPlaybackService.ACTION_PAUSE
+                },
+            )
             isForeground = false
             viewModelScope.launch(Dispatchers.IO) {
                 if (startTime != 0L) {
@@ -916,8 +794,12 @@ class ChatViewModel
 
         override fun onCleared() {
             super.onCleared()
-            Log.d("ChatViewModel", "onCleared called. Instructing SagaMediaService to stop.")
-            controlMediaPlayerService(SagaMediaService.ACTION_STOP)
+            Log.d("ChatViewModel", "onCleared called. Killing music service.")
+            context.startService(
+                Intent(context, SagaPlaybackService::class.java).apply {
+                    action = SagaPlaybackService.ACTION_STOP
+                },
+            )
             audioMediaPlayerManager.release()
         }
 
@@ -1470,7 +1352,6 @@ class ChatViewModel
             messageId: Int,
             audioPath: String,
         ) {
-            controlMediaPlayerService(SagaMediaService.ACTION_PAUSE_MUSIC)
             audioMediaPlayerManager.prepareDataSource(
                 path = audioPath,
                 looping = false,
@@ -1519,7 +1400,6 @@ class ChatViewModel
                         }
                     }
                     stopProgressUpdates()
-                    controlMediaPlayerService(SagaMediaService.ACTION_RESUME_MUSIC)
                 },
             )
         }
@@ -1532,11 +1412,9 @@ class ChatViewModel
                 }
             }
             stopProgressUpdates()
-            controlMediaPlayerService(SagaMediaService.ACTION_RESUME_MUSIC)
         }
 
         private fun resumeAudio() {
-            controlMediaPlayerService(SagaMediaService.ACTION_PAUSE_MUSIC)
             audioMediaPlayerManager.play()
             viewModelScope.launch(Dispatchers.Main) {
                 stateManager.updateState { s ->
@@ -1554,7 +1432,6 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.Main) {
                 stateManager.updateState { it.copy(audioPlaybackState = null) }
             }
-            controlMediaPlayerService(SagaMediaService.ACTION_RESUME_MUSIC)
         }
 
         private fun startProgressUpdates(messageId: Int) {

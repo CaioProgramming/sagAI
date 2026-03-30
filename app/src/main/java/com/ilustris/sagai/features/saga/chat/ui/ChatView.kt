@@ -477,7 +477,7 @@ fun ChatView(
                     ) {
                         CharacterDetailsContent(
                             it,
-                            requestedCharacter,
+                            requestedCharacter.data.id,
                             openEvent = {
                                 navigateToSaga()
                             },

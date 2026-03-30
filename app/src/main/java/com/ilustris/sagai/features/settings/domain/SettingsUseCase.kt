@@ -66,6 +66,10 @@ interface SettingsUseCase {
     suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit>
 
     suspend fun clearPreferences()
+
+    fun getMusicEnabled(): Flow<Boolean>
+
+    suspend fun setMusicEnabled(enabled: Boolean)
 }
 
 class SettingsUseCaseImpl
@@ -87,6 +91,7 @@ class SettingsUseCaseImpl
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
             const val MESSAGE_EFFECTS_ENABLED_KEY = "message_effects_enabled"
             const val TUTORIALS_ENABLED_KEY = "tutorials_enabled"
+            const val MUSIC_ENABLED_KEY = "music_enabled"
         }
 
         override fun getNotificationsEnabled(): Flow<Boolean> =
@@ -109,6 +114,10 @@ class SettingsUseCaseImpl
             dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
 
     override suspend fun setShowTutorials(enabled: Boolean) = dataStorePreferences.setBoolean(TUTORIALS_ENABLED_KEY, enabled)
+
+        override fun getMusicEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MUSIC_ENABLED_KEY, true)
+
+        override suspend fun setMusicEnabled(enabled: Boolean) = dataStorePreferences.setBoolean(MUSIC_ENABLED_KEY, enabled)
 
         override suspend fun getAppStorageUsage(): Long =
             fileHelper.getDirectorySize(context.cacheDir) +

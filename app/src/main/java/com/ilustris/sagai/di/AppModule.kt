@@ -37,8 +37,6 @@ import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
-import com.ilustris.sagai.core.media.notification.MediaNotificationManager
-import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
@@ -374,7 +372,7 @@ object AppModule {
         )
 }
 
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 abstract class UseCaseModule {
     @Binds
@@ -442,7 +440,7 @@ abstract class UseCaseModule {
     ): com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCase
 }
 
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 abstract class RepositoryModule {
     @Binds
@@ -486,10 +484,3 @@ abstract class RepositoryModule {
     ): com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepository
 }
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class NotificationModule {
-    @Binds
-    @Singleton
-    abstract fun bindMediaNotificationManager(mediaNotificationManagerImpl: MediaNotificationManagerImpl): MediaNotificationManager
-}

@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,6 +77,7 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
@@ -101,7 +103,7 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun CharacterDetailsView(
     sagaId: String? = null,
-    characterId: String? = null,
+    characterId: Int? = null,
     navHostController: NavHostController,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
@@ -118,7 +120,7 @@ fun CharacterDetailsView(
         if (it != null) {
             CharacterDetailsContent(
                 it,
-                character,
+                characterId,
             )
         } else {
             SparkIcon(
@@ -137,13 +139,12 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     sagaContent: SagaContent,
-    characterContent: CharacterContent?,
+    characterId: Int?,
     openEvent: (Timeline?) -> Unit = {},
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
     val genre = sagaContent.data.genre
     val resolvedColor = genre.resolveColor()
-    genre.resolveIconColor()
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
@@ -154,9 +155,14 @@ fun CharacterDetailsContent(
 
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
-    LaunchedEffect(characterContent) {
-        viewModel.init(characterContent, sagaContent)
-        currentCharacter = characterContent
+    LaunchedEffect(characterId) {
+        currentCharacter = sagaContent.findCharacter(characterId)
+    }
+
+    LaunchedEffect(currentCharacter) {
+        currentCharacter?.let {
+            viewModel.init(it, sagaContent)
+        }
     }
 
     AnimatedContent(
@@ -175,6 +181,19 @@ fun CharacterDetailsContent(
                 onShareCharacter = { shareCharacter = true },
                 imagePalette = imagePalette,
             )
+        } else {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                val genre = sagaContent.data.genre
+                Icon(
+                    painterResource(genre.icon),
+                    null,
+                    tint = genre.color,
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .genreVfx(genre),
+                )
+            }
         }
     }
 
@@ -189,15 +208,12 @@ fun CharacterDetailsContent(
         brushColors = genre.colorPalette(),
     )
 
-    // State for ShareSheet - moved to parent scope
-
-    // Reset share state when character changes to prevent stale state
-    LaunchedEffect(characterContent?.data?.id) {
+    LaunchedEffect(currentCharacter?.data?.id) {
         shareCharacter = false
     }
 
-    if (shareCharacter && characterContent != null) {
-        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {
+    if (shareCharacter && currentCharacter != null) {
+        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, currentCharacter, onDismiss = {
             shareCharacter = false
         })
     }
@@ -350,8 +366,7 @@ private fun CharacterDetailsLoaded(
                                             translationX = animatedTranslationX,
                                             translationY = animatedTranslationY,
                                             transformOrigin = TransformOrigin.Center,
-                                        )
-                                        .effectForGenre(
+                                        ).effectForGenre(
                                             genre,
                                         ),
                             ) {
@@ -439,7 +454,8 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -566,7 +582,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

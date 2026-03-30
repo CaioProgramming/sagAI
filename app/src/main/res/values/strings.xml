@@ -575,4 +575,7 @@
     <string name="story_guides">Story Guides</string>
     <string name="story_guides_description">Show introductory guides when starting a new saga universe.</string>
     <string name="onboarding_dont_show_again">Don\'t show again</string>
+    <string name="settings_music_title">Background Music</string>
+    <string name="settings_music_description">Play atmospheric music tailored to your saga genre for a more immersive experience.</string>
+    <string name="select_character">Selecionar personagem</string>
 </resources>

@@ -101,6 +101,7 @@ fun SettingsView(
 
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
     val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
+    val musicEnabled by viewModel.musicEnabled.collectAsStateWithLifecycle(true)
 
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
@@ -572,6 +573,21 @@ fun SettingsView(
                     isActivated = showTutorials,
                     onClickSwitch = {
                         viewModel.setShowTutorials(!it)
+                    },
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.settings_music_title),
+                    stringResource(R.string.settings_music_description),
+                    isActivated = musicEnabled,
+                    onClickSwitch = {
+                        viewModel.setMusicEnabled(!it)
                     },
                 )
             }

@@ -28,7 +28,6 @@ class SagaApp :
         super.onCreate()
         fetchRemoteConfig()
         NotificationUtils.createChatNotificationChannel(this)
-        NotificationUtils.createMediaNotificationChannel(this)
         CoroutineScope(Dispatchers.IO).launch {
             billingService.checkPurchases()
         }

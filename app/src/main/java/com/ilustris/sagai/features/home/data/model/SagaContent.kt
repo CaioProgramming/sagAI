@@ -97,7 +97,7 @@ fun SagaContent.findChapter(chapterId: Int) = flatChapters().find { it.data.id =
 
 fun SagaContent.findAct(actId: Int) = acts.find { it.data.id == actId }
 
-fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
+fun SagaContent.findCharacter(characterId: Int?) = characters.find { it.data.id == characterId }
 
 fun SagaContent.findCharacter(name: String?): CharacterContent? {
     if (name == null) return null

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -87,6 +88,7 @@ class SagaContentManagerImpl
         private val backupService: BackupService,
         private val imageHelper: ImageHelper,
         private val messageUseCase: MessageUseCase,
+        private val genreConfigService: GenreConfigService,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -229,6 +231,9 @@ class SagaContentManagerImpl
                                 }
 
                                 val previousSaga = content.value
+                                if (previousSaga == null) {
+                                    emitMilestone(SagaMilestone.Loading)
+                                }
                                 content.value = saga
 
                                 if (previousSaga != null &&
@@ -263,33 +268,40 @@ class SagaContentManagerImpl
                                 validateCharacters(saga)
 
                                 val rules = fetchNarrativeRules()
-                                if (previousSaga == null && saga.data.isEnded.not() &&
-                                    saga.flatEvents().filter { it.isComplete(rules) }.size > 1
-                                ) {
-                                    saga.currentActInfo?.currentChapterInfo?.let { chapter ->
-                                        emitMilestone(SagaMilestone.Loading)
-                                        startProcessing {
-                                            val sceneContext =
-                                                _sceneSummary.value
-                                                    ?: messageUseCase.getSceneContext(saga).getSuccess()
-                                            sceneContext?.let { summary ->
-                                                emitMilestone(
-                                                    SagaMilestone.Introduction(
-                                                        type = IntroductionType.RESUME,
-                                                        titleText = emptyString(),
-                                                        introduction =
-                                                            summary.immediateObjective
-                                                                ?: summary.currentConflict
-                                                                ?: summary.mood
-                                                                ?: emptyString(),
-                                                        number =
-                                                            saga
-                                                                .chapterNumber(
-                                                                    chapter.data,
-                                                                ).toRoman(),
-                                                        sceneSummary = summary,
-                                                    ),
-                                                )
+                                if (previousSaga == null) {
+                                    emitMilestone(null)
+                                    if (saga.data.isEnded.not() && saga
+                                            .flatEvents()
+                                            .filter { it.isComplete(rules) }
+                                            .size > 1
+                                    ) {
+                                        saga.currentActInfo?.currentChapterInfo?.let { chapter ->
+                                            emitMilestone(SagaMilestone.Loading)
+                                            startProcessing {
+                                                val sceneContext =
+                                                    _sceneSummary.value
+                                                        ?: messageUseCase
+                                                            .getSceneContext(saga)
+                                                            .getSuccess()
+                                                sceneContext?.let { summary ->
+                                                    emitMilestone(
+                                                        SagaMilestone.Introduction(
+                                                            type = IntroductionType.RESUME,
+                                                            titleText = emptyString(),
+                                                            introduction =
+                                                                summary.immediateObjective
+                                                                    ?: summary.currentConflict
+                                                                    ?: summary.mood
+                                                                    ?: emptyString(),
+                                                            number =
+                                                                saga
+                                                                    .chapterNumber(
+                                                                        chapter.data,
+                                                                    ).toRoman(),
+                                                            sceneSummary = summary,
+                                                        ),
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -344,7 +356,7 @@ class SagaContentManagerImpl
 
         private suspend fun getAmbienceMusic(saga: SagaContent) {
             val genre = saga.data.genre
-            val fileUrl = remoteConfig.getString(genre.ambientMusicConfigKey) ?: return
+            val fileUrl = genreConfigService.getGenreConfig(genre).ambientMusicUrl
 
             if (fileUrl.isEmpty()) {
                 Log.e(javaClass.simpleName, "getAmbienceMusic: Invalid URL for ${genre.name}")
@@ -352,7 +364,8 @@ class SagaContentManagerImpl
             }
 
             withContext(Dispatchers.IO) {
-                val newMusicFile = fileCacheService.getFile(fileUrl)
+                val extension = Uri.parse(fileUrl).path?.substringAfterLast(".", "mp3") ?: "mp3"
+                val newMusicFile = fileCacheService.getFile(fileUrl, extension)
                 if (newMusicFile?.absolutePath != ambientMusicFile.value?.absolutePath) {
                     ambientMusicFile.emit(newMusicFile)
                 } else if (newMusicFile == null && ambientMusicFile.value != null) {

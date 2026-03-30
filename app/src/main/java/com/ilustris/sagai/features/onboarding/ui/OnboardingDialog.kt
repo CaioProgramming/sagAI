@@ -3,6 +3,7 @@
 package com.ilustris.sagai.features.onboarding.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
@@ -120,6 +121,29 @@ fun OnboardingDialog(
     } else if (uiState is OnboardingUiState.Error && uiState.type == type) {
         SideEffect {
             onDismiss()
+        }
+    }
+
+    AnimatedVisibility(uiState is OnboardingUiState.Loading) {
+        Box(
+            Modifier
+                .padding(32.dp)
+                .fillMaxSize(),
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_spark),
+                null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .size(64.dp)
+                        .reactiveShimmer(
+                            true,
+                            shimmerColors = holographicGradient,
+                            targetValue = 200f,
+                        ),
+            )
         }
     }
 }
@@ -518,7 +542,8 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }.graphicsLayer {
+                    }
+                    .graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -531,7 +556,8 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }.zoomAnimation(),
+                    }
+                    .zoomAnimation(),
         )
     }
 }

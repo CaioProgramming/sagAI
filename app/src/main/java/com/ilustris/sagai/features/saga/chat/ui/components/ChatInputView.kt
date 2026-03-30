@@ -105,6 +105,7 @@ import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
@@ -283,6 +284,7 @@ fun ChatInputView(
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
 ) {
+    val actualCharacter = content.findCharacter(selectedCharacter?.data?.id)
     val genre = content.data.genre
     val resolvedColor = genre.resolveColor()
     val resolvedIconColor = genre.resolveIconColor()
@@ -474,10 +476,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                    sweepGradient(
-                                                        palette,
-                                                    ) as ShaderBrush
-                                                    ).createShader(size)
+                                                sweepGradient(
+                                                    palette,
+                                                ) as ShaderBrush
+                                            ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -500,8 +502,7 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }
-                    .dropShadow(inputShape, {
+                    }.dropShadow(inputShape, {
                         brush = inputBrush
                         radius = glowRadius
                     })
@@ -549,8 +550,7 @@ fun ChatInputView(
                                         radius = 5.dp,
                                         resolvedColor,
                                     ),
-                                )
-                                .border(1.dp, resolvedColor.gradientFade(), shape)
+                                ).border(1.dp, resolvedColor.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
@@ -560,7 +560,7 @@ fun ChatInputView(
                     ) {
                         item(span = { GridItemSpan(4) }) {
                             Text(
-                                "Selecionar personagem",
+                                stringResource(R.string.select_character),
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -581,8 +581,7 @@ fun ChatInputView(
                                             coroutineScope.launch {
                                                 characterToolTipState.dismiss()
                                             }
-                                        }
-                                        .size(36.dp),
+                                        }.size(36.dp),
                                 textStyle =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -593,7 +592,7 @@ fun ChatInputView(
                 },
             ) {
                 AnimatedContent(
-                    selectedCharacter,
+                    actualCharacter,
                     transitionSpec = {
                         scaleIn() togetherWith scaleOut()
                     },
@@ -615,6 +614,7 @@ fun ChatInputView(
                             genre = content.data.genre,
                             grainRadius = 0f,
                             pixelation = 0f,
+                            useFallback = true,
                             modifier =
                                 Modifier
                                     .fillMaxSize(),
@@ -823,8 +823,7 @@ fun ChatInputView(
                                                             .background(
                                                                 backColor,
                                                                 inputShape,
-                                                            )
-                                                            .clickable(enabled = currentTagInside == null) {
+                                                            ).clickable(enabled = currentTagInside == null) {
                                                                 it.tag?.let { tag ->
                                                                     val newValue =
                                                                         insertExpressiveTag(

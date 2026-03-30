@@ -174,17 +174,15 @@ fun CharactersGalleryContent(
                         containerColor = MaterialTheme.colorScheme.background,
                         dragHandle = { Box {} },
                     ) {
-                        saga.characters.find { it.data.id == id }?.let { character ->
-                            CharacterDetailsContent(
-                                saga,
-                                character,
-                                openEvent = { event ->
-                                    event?.let {
-                                        onOpenEvent(event)
-                                    }
-                                },
-                            )
-                        }
+                        CharacterDetailsContent(
+                            saga,
+                            id,
+                            openEvent = { event ->
+                                event?.let {
+                                    onOpenEvent(event)
+                                }
+                            },
+                        )
                     }
                 }
 
