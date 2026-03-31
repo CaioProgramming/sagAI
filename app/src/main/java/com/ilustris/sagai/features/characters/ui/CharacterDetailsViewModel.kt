@@ -1,12 +1,12 @@
 package com.ilustris.sagai.features.characters.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.core.utils.toAINormalize
-import timber.log.Timber
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -18,6 +18,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel

@@ -2,8 +2,7 @@ package com.ilustris.sagai.core.media
 
 import android.content.Context
 import android.media.MediaPlayer
-import android.net.Uri
-import androidx.core.net.toUri
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,17 +56,17 @@ class MediaPlayerManagerImpl
                 }
 
                 mediaPlayer?.apply {
-                    Log.d(TAG, "Resetting MediaPlayer.")
+                    Log.d(javaClass.simpleName, "Resetting MediaPlayer.")
                     reset()
-                    Log.d(TAG, "Setting data source: ${file.absolutePath}")
+                    Log.d(javaClass.simpleName, "Setting data source: ${file.absolutePath}")
                     setDataSource(file.absolutePath)
                     isLooping = looping
                     setOnPreparedListener {
                         Timber.i("MediaPlayer prepared for: ${file.name}")
-                            onPrepared?.invoke()
-                        }
-                        setOnErrorListener { _, what, extra ->
-                            Timber.e(
+                        onPrepared?.invoke()
+                    }
+                    setOnErrorListener { _, what, extra ->
+                        Timber.e(
                             "MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}",
                         )
                         _isPlaying.value = false
@@ -78,14 +77,14 @@ class MediaPlayerManagerImpl
 
                     setOnCompletionListener {
                         Timber.i("MediaPlayer playback completed for: ${file.name}")
-                            if (!isLooping) {
-                                _isPlaying.value = false
-                            }
-                            onCompletion?.invoke()
-                            release()
+                        if (!isLooping) {
+                            _isPlaying.value = false
+                        }
+                        onCompletion?.invoke()
+                        release()
                         mediaPlayer = null
                     }
-                    Log.d(TAG, "Calling prepareAsync.")
+                    Log.d(javaClass.simpleName, "Calling prepareAsync.")
                     prepareAsync()
                 }
             } catch (e: Exception) {

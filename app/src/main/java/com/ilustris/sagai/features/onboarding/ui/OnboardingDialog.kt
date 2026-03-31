@@ -127,6 +127,7 @@ fun OnboardingDialog(
     AnimatedVisibility(uiState is OnboardingUiState.Loading) {
         Box(
             Modifier
+                .background(fadeGradientBottom())
                 .padding(32.dp)
                 .fillMaxSize(),
         ) {
@@ -137,11 +138,11 @@ fun OnboardingDialog(
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
-                        .size(64.dp)
+                        .size(50.dp)
                         .reactiveShimmer(
                             true,
                             shimmerColors = holographicGradient,
-                            targetValue = 200f,
+                            targetValue = 100f,
                         ),
             )
         }
@@ -424,6 +425,50 @@ fun OnboardingStandardContent(page: OnboardingPage) {
 }
 
 @Composable
+fun OnboardingMascotContent(
+    page: OnboardingPage,
+    mascotUrl: String,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        AsyncImage(
+            model = mascotUrl,
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(240.dp)
+                    .levitate(true)
+                    .chromaticAberration(true),
+            contentScale = ContentScale.Fit,
+        )
+
+        Text(
+            text = page.title,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+
+        Text(
+            text = page.description,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+        )
+    }
+}
+
+@Composable
 fun CinematicBackground(config: GenreVisualConfig?) {
     AsyncImage(
         model = config?.imageUrl ?: emptyString(),
@@ -542,8 +587,7 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }
-                    .graphicsLayer {
+                    }.graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -556,8 +600,7 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }
-                    .zoomAnimation(),
+                    }.zoomAnimation(),
         )
     }
 }

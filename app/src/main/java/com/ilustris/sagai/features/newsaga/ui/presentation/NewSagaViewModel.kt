@@ -146,12 +146,14 @@ class NewSagaViewModel
 
         fun sendSagaMessage(userInput: String) {
             viewModelScope.launch(Dispatchers.IO) {
+                if (userInput.isEmpty()) return@launch
                 sagaStateManager.refineDraft(userInput)
             }
         }
 
         fun sendCharacterMessage(userInput: String) {
             viewModelScope.launch(Dispatchers.IO) {
+                if (userInput.isEmpty()) return@launch
                 val sagaForm = sagaStateManager.getSagaForm()
                 characterStateManager.refineDraft(userInput, sagaForm)
             }

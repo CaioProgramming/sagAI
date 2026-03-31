@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
+import android.util.Log
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
-import timber.log.Timber
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.usecase.NewCharacterUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import timber.log.Timber
 import javax.inject.Inject
 
 class CharacterStateManagerImpl

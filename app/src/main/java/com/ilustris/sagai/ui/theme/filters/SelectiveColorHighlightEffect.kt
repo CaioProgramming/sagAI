@@ -3,10 +3,10 @@ package com.ilustris.sagai.ui.theme.filters
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import timber.log.Timber
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import timber.log.Timber
 
 private const val DEFAULT_TOLERANCE = 0.20f
 private const val DEFAULT_SATURATION_THRESHOLD = 0.02f
@@ -95,8 +96,7 @@ fun Modifier.selectiveColorHighlight(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

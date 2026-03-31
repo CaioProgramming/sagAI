@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import timber.log.Timber
 import javax.inject.Inject
 
 class GetInputSuggestionsUseCaseImpl
