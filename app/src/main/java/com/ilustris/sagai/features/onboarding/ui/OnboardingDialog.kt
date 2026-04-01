@@ -83,7 +83,9 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.chromaticAberration
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -127,24 +129,36 @@ fun OnboardingDialog(
     AnimatedVisibility(uiState is OnboardingUiState.Loading) {
         Box(
             Modifier
-                .background(fadeGradientBottom())
                 .padding(32.dp)
                 .fillMaxSize(),
         ) {
-            Icon(
-                painterResource(R.drawable.ic_spark),
-                null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .size(50.dp)
-                        .reactiveShimmer(
-                            true,
-                            shimmerColors = holographicGradient,
-                            targetValue = 100f,
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        fadeGradientTop(
+                            MaterialTheme.colorScheme.primary,
                         ),
-            )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_spark),
+                    null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .size(24.dp)
+                            .levitate()
+                            .reactiveShimmer(
+                                true,
+                                shimmerColors = holographicGradient,
+                                targetValue = 100f,
+                            ),
+                )
+            }
         }
     }
 }
@@ -426,45 +440,34 @@ fun OnboardingStandardContent(page: OnboardingPage) {
 
 @Composable
 fun OnboardingMascotContent(
-    page: OnboardingPage,
-    mascotUrl: String,
+    mascotUrl: String?,
+    genre: Genre? = null,
+    color: Color? = null,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    Box(
+        Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
-            model = mascotUrl,
-            contentDescription = null,
+        StarryTextPlaceholder(
             modifier =
-                Modifier
-                    .size(240.dp)
-                    .levitate(true)
-                    .chromaticAberration(true),
-            contentScale = ContentScale.Fit,
+                Modifier.reactiveShimmer(
+                    true,
+                    (color ?: holographicGradient.first()).darkerPalette(),
+                ),
         )
-
-        Text(
-            text = page.title,
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Text(
-            text = page.description,
-            modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Normal,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-        )
+        mascotUrl?.let {
+            AsyncImage(
+                model = it,
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .size(240.dp)
+                        .levitate(true)
+                        .effectForGenre(genre),
+                contentScale = ContentScale.Fit,
+            )
+        }
     }
 }
 
@@ -587,7 +590,8 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }.graphicsLayer {
+                    }
+                    .graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -600,7 +604,8 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }.zoomAnimation(),
+                    }
+                    .zoomAnimation(),
         )
     }
 }

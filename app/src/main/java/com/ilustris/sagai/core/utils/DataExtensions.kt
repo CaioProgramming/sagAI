@@ -2,9 +2,9 @@ package com.ilustris.sagai.core.utils
 
 import com.google.firebase.ai.type.Schema
 import com.google.gson.ExclusionStrategy
-import timber.log.Timber
 import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
+import timber.log.Timber
 import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -121,100 +121,72 @@ fun toJsonMap(
     filteredFields: List<String> = emptyList(),
     fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
+    val obj = toJsonMapObject(clazz, filteredFields, fieldCustomDescriptions, mutableSetOf())
+    val gson = GsonBuilder().setPrettyPrinting().create()
+    return gson.toJson(obj)
+}
+
+private fun toJsonMapObject(
+    clazz: Class<*>,
+    filteredFields: List<String>,
+    fieldCustomDescriptions: List<Pair<String, String>>,
+    visited: MutableSet<Class<*>>,
+): Any {
     when {
-        clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
-        clazz == String::class.java -> return "\"string\""
-        clazz == Int::class.java || clazz == Integer::class.java -> return "0"
-        clazz == Boolean::class.java -> return "false | true"
-        clazz == Double::class.java -> return "0.0"
-        clazz == Float::class.java -> return "0.0"
-        clazz == Long::class.java -> return "0"
-        clazz == Byte::class.java -> return "0"
-        clazz == Short::class.java -> return "0"
-        clazz == Char::class.java -> return "\"string\""
+        clazz.isEnum -> return clazz.enumConstants?.joinToString(" | ") ?: "string"
+        clazz == String::class.java -> return "string"
+        clazz == Int::class.java || clazz == Integer::class.java -> return 0
+        clazz == Boolean::class.java -> return false
+        clazz == Double::class.java -> return 0.0
+        clazz == Float::class.java -> return 0.0
+        clazz == Long::class.java -> return 0
+        clazz == Byte::class.java -> return 0
+        clazz == Short::class.java -> return 0
+        clazz == Char::class.java -> return "string"
     }
 
-    val deniedFields =
-        filteredFields
-            .plus("\$stable")
-            .plus("companion")
-    val fields =
-        clazz
-            .declaredFields
-            .filter {
-                deniedFields.contains(it.name).not()
-            }.joinToString(separator = ",\n") { field ->
-                val fieldName = field.name
+    if (visited.contains(clazz)) return "circular_reference_detected"
+    visited.add(clazz)
+
+    val map = linkedMapOf<String, Any>()
+    val deniedFields = filteredFields + "\$stable" + "companion"
+
+    clazz.declaredFields
+        .filter { !deniedFields.contains(it.name) }
+        .sortedBy { it.name }
+        .forEach { field ->
+            val customDesc = fieldCustomDescriptions.find { it.first == field.name }
+            if (customDesc != null) {
+                try {
+                    map[field.name] =
+                        com.google.gson.JsonParser
+                            .parseString(customDesc.second)
+                } catch (e: Exception) {
+                    map[field.name] = customDesc.second
+                }
+            } else {
                 val fieldType = field.type
-                val fieldValue =
-                    when {
-                        fieldType.isEnum -> {
-                            "${fieldType.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
+                if (List::class.java.isAssignableFrom(fieldType) ||
+                    Array::class.java.isAssignableFrom(
+                        fieldType,
+                    )
+                ) {
+                    val genericType = field.genericType as? ParameterizedType
+                    val itemType = genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
+                    map[field.name] =
+                        if (itemType != null) {
+                            listOf(toJsonMapObject(itemType, filteredFields, emptyList(), visited))
+                        } else {
+                            emptyList<Any>()
                         }
-
-                        fieldType == String::class.java -> {
-                            "\"string\""
-                        }
-
-                        fieldType == Int::class.java || fieldType == Integer::class.java -> {
-                            "0"
-                        }
-
-                        fieldType == Boolean::class.java -> {
-                            "false"
-                        }
-
-                        fieldType == Double::class.java -> {
-                            "0.0"
-                        }
-
-                        fieldType == Float::class.java -> {
-                            "0.0"
-                        }
-
-                        fieldType == Long::class.java -> {
-                            "0"
-                        }
-
-                        List::class.java.isAssignableFrom(fieldType) ||
-                            Array::class.java.isAssignableFrom(
-                                fieldType,
-                            )
-                        -> {
-                            // Extract generic type parameter from List/Array
-                            val genericType = field.genericType as? ParameterizedType
-                            val itemType =
-                                genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
-
-                            if (itemType != null) {
-                                // Recursively get the structure - works for both primitives and complex objects
-                                val itemJson =
-                                    toJsonMap(itemType, filteredFields, fieldCustomDescriptions)
-                                "[ $itemJson ]"
-                            } else {
-                                // Unknown type - just show empty array
-                                "[]"
-                            }
-                        }
-
-                        else -> {
-                            toJsonMap(fieldType, filteredFields, fieldCustomDescriptions)
-                        }
-                    }
-                val customDescription =
-                    fieldCustomDescriptions.find { it.first == field.name }
-                if (customDescription != null) {
-                    val value = customDescription.second
-                    if (value.startsWith("{") || value.startsWith("[")) {
-                        "\"${customDescription.first}\": $value"
-                    } else {
-                        "\"${customDescription.first}\": \"$value\""
-                    }
                 } else {
-                    "\"$fieldName\": $fieldValue"
+                    map[field.name] =
+                        toJsonMapObject(fieldType, filteredFields, emptyList(), visited)
                 }
             }
-    return "{\n$fields\n}"
+        }
+    visited.remove(clazz)
+    return map
 }
 
 fun Any?.toJsonFormat(): String {
@@ -249,6 +221,7 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     val exclusionStrategy =
         object : ExclusionStrategy {
             override fun shouldSkipField(f: FieldAttributes): Boolean = fieldsToExclude.contains(f.name)
+
             override fun shouldSkipClass(clazz: Class<*>): Boolean = false
         }
 

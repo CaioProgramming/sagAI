@@ -18,12 +18,15 @@ enum class SagaProcess {
     FINALIZING,
     SUCCESS,
     LISTENING,
+    SAVED_CHARACTER,
 }
 
 interface NewSagaUseCase {
     suspend fun createSaga(saga: Saga): RequestResult<Saga>
 
     suspend fun updateSaga(saga: Saga): RequestResult<Saga>
+
+    suspend fun deleteSaga(saga: Saga): RequestResult<Unit>
 
     suspend fun generateSaga(
         sagaForm: SagaDraft,
@@ -51,15 +54,10 @@ interface NewSagaUseCase {
 
     suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen>
 
-    suspend fun generateCharacterSavedMark(
-        character: Character,
-        saga: Saga,
-    ): RequestResult<String>
-
     suspend fun generateProcessMessage(
         process: SagaProcess,
-        sagaDescription: String,
-        characterDescription: String,
+        saga: SagaForm,
+        character: CharacterInfo,
         genre: Genre? = null,
     ): RequestResult<String>
 

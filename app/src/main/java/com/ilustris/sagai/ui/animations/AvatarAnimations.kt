@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -157,13 +158,14 @@ fun MorphingAvatarBackground(icons: List<String>) {
                 contentDescription = null,
                 modifier =
                     Modifier
-                        .glitch()
-                        .levitate()
                         .dropShadow(CircleShape) {
                             this.brush = Brush.verticalGradient(holographicGradient)
                             this.radius = 15f
                             this.spread = 10f
-                        }.clip(CircleShape)
+                        }.background(MaterialTheme.colorScheme.background, CircleShape)
+                        .clip(CircleShape)
+                        .glitch()
+                        .levitate()
                         .size(200.dp),
                 contentScale = ContentScale.Crop,
             )

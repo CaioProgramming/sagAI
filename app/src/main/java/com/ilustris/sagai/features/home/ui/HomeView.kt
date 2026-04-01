@@ -5,7 +5,6 @@ package com.ilustris.sagai.features.home.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
@@ -182,8 +181,7 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     2.seconds,
@@ -287,16 +285,14 @@ fun HomeView(
         }
     }
 
-    AnimatedVisibility(showPremiumSheet) {
-        if (showPremiumSheet) {
-            OnboardingDialog(
-                type = OnboardingType.PREMIUM_GUIDE,
-                force = true,
-                onDismiss = {
-                    showPremiumSheet = false
-                },
-            )
-        }
+    if (showPremiumSheet && isLoading.not()) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = {
+                showPremiumSheet = false
+            },
+        )
     }
 
     if (showBackupSheet) {
@@ -326,7 +322,9 @@ fun HomeView(
         loadingMessage,
     )
 
-    OnboardingDialog(type = OnboardingType.APP_INTRO)
+    if (!isLoading.not()) {
+        OnboardingDialog(type = OnboardingType.APP_INTRO)
+    }
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -476,12 +474,10 @@ private fun SharedTransitionScope.ChatList(
                         .reactiveShimmer(
                             true,
                             duration = 10.seconds,
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }
-                        .fillMaxWidth(),
+                        }.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(

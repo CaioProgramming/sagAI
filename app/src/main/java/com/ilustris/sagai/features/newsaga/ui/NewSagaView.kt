@@ -2,7 +2,6 @@
 
 package com.ilustris.sagai.features.newsaga.ui
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
@@ -89,7 +88,6 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -197,10 +195,6 @@ fun NewSagaView(
             }
             isSagaRefining = false
         }
-    }
-
-    LaunchedEffect(sagaFormState) {
-        Log.d("NewSaga", "Saga Form update -> ${sagaFormState.toJsonFormat()}")
     }
 
     LaunchedEffect(characterState?.isLoading) {
@@ -313,9 +307,10 @@ fun NewSagaView(
 
     val genre = sagaFormState?.draft?.genre
     val visualConfig = genreVisuals?.find { it.first == genre }?.second
+    val draft = sagaFormState?.draft
+    val characterInfo = characterState?.characterInfo
 
     CompositionLocalProvider(LocalGenreVisualConfig provides visualConfig) {
-        val draft = sagaFormState?.draft
         val characterDraft = characterState?.characterInfo
         val assist =
             when (flow) {
@@ -543,8 +538,7 @@ fun NewSagaView(
                                         .dropShadow(shape) {
                                             color = primaryColor
                                             radius = 20f
-                                        }
-                                        .border(1.dp, borderBrush, shape)
+                                        }.border(1.dp, borderBrush, shape)
                                         .clip(shape)
                                         .background(backgroundColor, shape)
                                         .reactiveShimmer(true),
@@ -714,8 +708,31 @@ fun NewSagaView(
                         animationSpec = tween(500),
                         label = "buttonGlow",
                     )
+                    val isInputValid =
+                        when (flow) {
+                            FlowPages.CREATE_SAGA -> {
+                                if (sagaCardSide == CardFace.Front) {
+                                    sagaInput.isNotBlank()
+                                } else {
+                                    draft?.title?.isNotBlank() == true && draft.description?.isNotBlank() == true
+                                }
+                            }
+
+                            FlowPages.CREATE_CHARACTER -> {
+                                if (characterCardSide == CardFace.Front) {
+                                    characterInput.isNotBlank()
+                                } else {
+                                    characterInfo?.name?.isNotBlank() == true && characterInfo?.description?.isNotBlank() == true
+                                }
+                            }
+
+                            else -> {
+                                true
+                            }
+                        }
+
                     Button(
-                        enabled = isLoading.not() && flow != FlowPages.GENERATING,
+                        enabled = isLoading.not() && flow != FlowPages.GENERATING && isInputValid,
                         onClick = {
                             when (flow) {
                                 FlowPages.SELECT_THEME -> {
@@ -858,14 +875,12 @@ private fun SuggestionsContent(
                             1.dp,
                             itemGradient,
                             shape,
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.background.copy(alpha = .2f),
                             shape,
                         ).clickable {
                             onSelect(it)
-                        }
-                        .padding(16.dp),
+                        }.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
@@ -944,7 +959,6 @@ private fun TopBarContent(
                 stringResource(R.string.home_create_new_saga_title),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre?.bodyFont(),
                         textAlign = TextAlign.Center,
                     ),
                 modifier = Modifier.weight(1f),
@@ -989,7 +1003,7 @@ private fun GenrePicker(
                         .graphicsLayer {
                             val pageOffset =
                                 (
-                                        (pagerState.currentPage - page) +
+                                    (pagerState.currentPage - page) +
                                         pagerState
                                             .currentPageOffsetFraction
                                 ).absoluteValue
@@ -1007,8 +1021,7 @@ private fun GenrePicker(
                                     stop = 1f,
                                     fraction = 1f - pageOffset.coerceIn(0f, 1f),
                                 )
-                        }
-                        .levitate(isSelected)
+                        }.levitate(isSelected)
                         .fillMaxWidth()
                         .aspectRatio(0.8f),
             ) {
@@ -1046,6 +1059,13 @@ private fun FlipCardForm(
         genre?.resolveColor()?.darker(.4f) ?: MaterialTheme.colorScheme.surfaceContainer
     val primaryColor = genre?.resolveColor() ?: MaterialTheme.colorScheme.primary
 
+    val isValidData =
+        when (content) {
+            is SagaDraft -> content.title.isNotBlank() || content.description.isNotBlank()
+            is CharacterInfo -> content.name.isNotBlank() || content.description.isNotBlank() || content.gender.isNotBlank()
+            else -> false
+        }
+
     FlipCard(
         modifier =
             Modifier
@@ -1055,7 +1075,7 @@ private fun FlipCardForm(
         onClick = {
             if (face == CardFace.Back) {
                 onFlip(CardFace.Front)
-            } else {
+            } else if (isValidData) {
                 onFlip(CardFace.Back)
             }
         },
@@ -1197,22 +1217,7 @@ private fun FlipCardForm(
             }
         },
         back = {
-            val isValidData =
-                when (content) {
-                    is SagaDraft -> {
-                        val data = content
-                        data.title.isNotBlank() || data.description.isNotBlank()
-                    }
-
-                    is CharacterInfo -> {
-                        val data = content
-                        data.name.isNotBlank() || data.gender.isNotBlank() || data.description.isNotBlank()
-                    }
-
-                    else -> {
-                        false
-                    }
-                }
+            // isValidData moved to top of FlipCardForm
 
             AnimatedContent(
                 isValidData,

@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -221,9 +220,15 @@ class NewSagaViewModel
                     val characterResult = characterStateManager.prepareCharacterData(saga)
 
                     val character =
-                        characterResult.getSuccess() ?: throw Exception("Failed to create character")
+                        characterResult.getSuccess() ?: run {
+                            sagaResult.getSuccess()?.let {
+                                newSagaUseCase.deleteSaga(it)
+                            }
+                            throw Exception("Failed to create character")
+                        }
 
                     savedContent.emit(saga to character)
+                    generateProcessMessage(SagaProcess.SAVED_CHARACTER)
 
                     // Step 3: Update saga with character ID
                     val updatedSaga = saga.copy(mainCharacterId = character.id)
@@ -276,15 +281,14 @@ class NewSagaViewModel
 
         private fun generateProcessMessage(process: SagaProcess) {
             viewModelScope.launch(Dispatchers.IO) {
-                val sagaForm = sagaStateManager.getSagaForm()
-                val sagaData = sagaForm.toJsonFormat()
-                val characterData = characterStateManager.getCharacterInfo().toJsonFormat()
+                val sagaForm = getSagaForm()
+                val characterInfo = characterStateManager.getCharacterInfo()
                 newSagaUseCase
                     .generateProcessMessage(
                         process = process,
-                        sagaDescription = sagaData,
-                        characterDescription = characterData,
-                        genre = sagaForm.genre,
+                        saga = sagaForm,
+                        character = characterInfo,
+                        genre = sagaForm.saga.genre,
                     ).onSuccess { message ->
                         _loadingMessage.value = message
                     }

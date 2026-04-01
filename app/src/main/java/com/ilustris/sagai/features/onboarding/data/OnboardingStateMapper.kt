@@ -11,12 +11,12 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.ui.MorphingGenresBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingAction
 import com.ilustris.sagai.features.onboarding.ui.OnboardingButton
+import com.ilustris.sagai.features.onboarding.ui.OnboardingMascotContent
 import com.ilustris.sagai.features.onboarding.ui.OnboardingStandardContent
 import com.ilustris.sagai.features.onboarding.ui.OnboardingUiPage
 import com.ilustris.sagai.features.onboarding.ui.OnboardingUiState
 import com.ilustris.sagai.features.onboarding.ui.PremiumBackground
 import com.ilustris.sagai.features.onboarding.ui.SparkBackground
-import com.ilustris.sagai.features.onboarding.ui.StarfieldBackground
 import com.ilustris.sagai.ui.animations.MorphingAvatarBackground
 import com.ilustris.sagai.ui.animations.StackedCardsBackground
 import com.ilustris.sagai.ui.theme.FluidGradient
@@ -57,16 +57,39 @@ class OnboardingStateMapper
             val iconsAssets =
                 remoteConfigService.getJson<List<OnboardingAsset>>("avatar_faces") ?: emptyList()
             val genreConfigs = Genre.entries.associateWith { genreVisualConfig.getVisualConfig(it) }
+            val mascotDesigns =
+                remoteConfigService.getJson<Map<String, String>>("mascot_full_body_designs")
+                    ?: emptyMap()
 
             return content.pages.mapIndexed { index, page ->
                 val isLastPage = index == content.pages.size - 1
+                val mascotUrl =
+                    when (type) {
+                        OnboardingType.APP_INTRO -> {
+                            if (index == 0) mascotDesigns["default"] else null
+                        }
 
+                        OnboardingType.GAMEPLAY_GUIDE -> {
+                            if (index == 0) {
+                                mascotDesigns[
+                                    saga?.genre?.name?.lowercase()
+                                        ?: "default",
+                                ]
+                            } else {
+                                null
+                            }
+                        }
+
+                        else -> {
+                            null
+                        }
+                    }
                 val background: @Composable () -> Unit =
                     when (type) {
                         OnboardingType.APP_INTRO -> {
                             when (index) {
                                 0 -> {
-                                    { SparkBackground() }
+                                    { OnboardingMascotContent(mascotUrl) }
                                 }
 
                                 1 -> {
@@ -112,11 +135,17 @@ class OnboardingStateMapper
                                     ?.ifEmpty { holographicGradient } ?: holographicGradient
                             when (index) {
                                 0 -> {
-                                    { FluidGradient(colors = colors) }
+                                    {
+                                        OnboardingMascotContent(
+                                            mascotUrl,
+                                            saga?.genre,
+                                            genreConfig?.primaryColor?.hexToColor(),
+                                        )
+                                    }
                                 }
 
                                 1 -> {
-                                    { StarfieldBackground() }
+                                    { FluidGradient(colors = colors) }
                                 }
 
                                 else -> {
@@ -226,7 +255,9 @@ class OnboardingStateMapper
 
                 OnboardingUiPage(
                     background = background,
-                    content = { OnboardingStandardContent(page) },
+                    content = {
+                        OnboardingStandardContent(page)
+                    },
                     primaryButton = primaryButton,
                     secondaryButton = secondaryButton,
                 )

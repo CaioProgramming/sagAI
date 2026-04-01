@@ -3,45 +3,38 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 
 data class ConversationalSagaReplyArgs(
+    val companionPersona: String,
+    val conversationalStyle: String,
     val currentSagaDraft: String,
     val conversationHistory: String,
     val userInput: String,
     val availableVariations: String,
-    val companionConversationalStyle: String,
 )
 
 data class GenerateProcessArgs(
     val companionPersona: String,
-    val interludeStyle: String,
+    val conversationalStyle: String,
+    val sagaDraft: String,
+    val characterInfo: String,
     val processName: String,
-    val sagaDescription: String,
-    val characterDescription: String,
     val processSpecificInstruction: String,
 )
 
 data class CreateSagaArgs(
     val companionPersona: String,
-    val sagaForm: String,
+    val conversationalStyle: String,
+    val sagaDraft: String,
     val miniChatContent: String,
     val availableVariations: String,
-)
-
-data class CharacterSavedArgs(
-    val companionPersona: String,
-    val characterName: String,
-    val characterBackstory: String,
-    val sagaTitle: String,
-    val sagaDescription: String,
 )
 
 data class IntroPromptArgs(
@@ -52,17 +45,20 @@ data class IntroPromptArgs(
 
 data class GenreAdaptationArgs(
     val companionPersona: String,
+    val conversationalStyle: String,
     val genreName: String,
     val currentDraft: String,
 )
 
 data class GenreSuggestionsArgs(
     val companionPersona: String,
+    val conversationalStyle: String,
     val genreName: String,
 )
 
 data class NewSagaRefineDraftArgs(
     val companionPersona: String,
+    val conversationalStyle: String,
     val rawInput: String,
     val genreName: String,
 )
@@ -79,7 +75,6 @@ data class CreationAssistArgs(
 
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
-    const val CHARACTER_SAVED_BLUEPRINT = "character_saved_blueprint"
     const val CONVERSATIONAL_SAGA_REPLY_BLUEPRINT = "conversational_saga_reply_blueprint"
     const val CREATION_FLOW_ASSIST_BLUEPRINT = "creation_flow_assist_blueprint"
     const val CREATION_INTRO_BLUEPRINT = "creation_intro_blueprint"
@@ -104,6 +99,8 @@ object NewSagaPrompts {
 
         val args =
             ConversationalSagaReplyArgs(
+                companionPersona = identity,
+                conversationalStyle = identity,
                 currentSagaDraft = currentSagaDraft.toAINormalize(),
                 conversationHistory =
                     conversationHistory.takeLast(10).joinToString("\n") { msg ->
@@ -111,7 +108,6 @@ object NewSagaPrompts {
                     },
                 userInput = userInput,
                 availableVariations = variationsBlock,
-                companionConversationalStyle = identity,
             )
 
         return promptService.buildRemotePrompt(CONVERSATIONAL_SAGA_REPLY_BLUEPRINT, args)
@@ -120,27 +116,19 @@ object NewSagaPrompts {
     suspend fun generateProcessPrompt(
         promptService: PromptService,
         process: SagaProcess,
-        saga: String,
-        character: String,
+        saga: SagaForm,
+        character: CharacterInfo,
         identity: String = "",
+        instruction: String = "",
     ): String {
-        val processSpecificInstruction =
-            when (process) {
-                SagaProcess.LISTENING -> "Generate a message about listening to the user's input. Playful tone."
-                SagaProcess.CREATING_SAGA -> "Generate a message about building a universe from scratch. Pressure joke."
-                SagaProcess.CREATING_CHARACTER -> "Generate a message about crafting a hero. Dramatic or cliché fun."
-                SagaProcess.FINALIZING -> "Generate a message about final touches. Impatient or dramatic."
-                SagaProcess.SUCCESS -> "Generate a triumphant (and slightly smug) message that the saga is ready."
-            }
-
         val args =
             GenerateProcessArgs(
                 companionPersona = identity,
-                interludeStyle = identity,
+                conversationalStyle = identity,
                 processName = process.name,
-                sagaDescription = saga,
-                characterDescription = character,
-                processSpecificInstruction = processSpecificInstruction,
+                processSpecificInstruction = instruction,
+                sagaDraft = saga.toAINormalize(),
+                characterInfo = character.toAINormalize(),
             )
 
         return promptService.buildRemotePrompt(SAGA_PROCESS_INTERLUDE_BLUEPRINT, args)
@@ -161,30 +149,13 @@ object NewSagaPrompts {
         val args =
             CreateSagaArgs(
                 companionPersona = identity,
-                sagaForm = sagaForm.toAINormalize(),
+                conversationalStyle = identity,
+                sagaDraft = sagaForm.toAINormalize(),
                 miniChatContent = miniChatContent.joinToString("\n") { "${it.sender.name}: ${it.text}" },
                 availableVariations = variationsBlock,
             )
 
         return promptService.buildRemotePrompt(INITIAL_SAGA_KICKOFF_BLUEPRINT, args)
-    }
-
-    suspend fun characterSavedPrompt(
-        promptService: PromptService,
-        character: Character,
-        saga: Saga,
-        identity: String = "",
-    ): String {
-        val args =
-            CharacterSavedArgs(
-                companionPersona = identity,
-                characterName = character.name,
-                characterBackstory = character.backstory,
-                sagaTitle = saga.title,
-                sagaDescription = saga.description,
-            )
-
-        return promptService.buildRemotePrompt(CHARACTER_SAVED_BLUEPRINT, args)
     }
 
     suspend fun introPrompt(
@@ -209,6 +180,7 @@ object NewSagaPrompts {
         val args =
             GenreAdaptationArgs(
                 companionPersona = identity,
+                conversationalStyle = identity,
                 genreName = currentDraft.genre.name,
                 currentDraft = currentDraft.toAINormalize(),
             )
@@ -224,6 +196,7 @@ object NewSagaPrompts {
         val args =
             GenreSuggestionsArgs(
                 companionPersona = identity,
+                conversationalStyle = identity,
                 genreName = genre.name,
             )
 
@@ -239,6 +212,7 @@ object NewSagaPrompts {
         val args =
             NewSagaRefineDraftArgs(
                 companionPersona = identity,
+                conversationalStyle = identity,
                 rawInput = rawInput,
                 genreName = genre.name,
             )
@@ -253,11 +227,12 @@ object NewSagaPrompts {
         characterInfo: CharacterInfo?,
         genreConfig: GenreConfig?,
         flowSpecificObjectives: String,
+        identity: String = "",
     ): String {
         val args =
             CreationAssistArgs(
-                companionPersona = "",
-                conversationalStyle = "",
+                companionPersona = identity,
+                conversationalStyle = identity,
                 flowPageName = flow.name,
                 genreName = sagaDraft?.genre?.name ?: "N/A",
                 sagaDraft = sagaDraft?.toAINormalize() ?: "",

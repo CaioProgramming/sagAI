@@ -185,7 +185,7 @@ class SagaContentManagerImpl
                         }
                         managerScope.launch {
                             isOnboardingVisible.collect { isVisible ->
-                                if (!isVisible && content.value != null) {
+                                if (!isVisible) {
                                     checkNarrativeProgression(content.value)
                                 }
                             }

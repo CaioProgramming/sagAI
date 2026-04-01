@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -39,6 +40,8 @@ class NewSagaUseCaseImpl
             executeRequest {
                 sagaRepository.updateChat(saga)
             }
+
+        override suspend fun deleteSaga(saga: Saga): RequestResult<Unit> = sagaRepository.deleteChat(saga).asSuccess()
 
         override suspend fun generateSaga(
             sagaForm: SagaDraft,
@@ -128,37 +131,27 @@ class NewSagaUseCaseImpl
                 )!!
             }
 
-        override suspend fun generateCharacterSavedMark(
-            character: Character,
-            saga: Saga,
-        ): RequestResult<String> =
-            executeRequest {
-                val identity = genreConfigService.conversationBlueprint(saga.genre)
-                gemmaClient.generate(
-                    NewSagaPrompts.characterSavedPrompt(
-                        promptService,
-                        character,
-                        saga,
-                        identity,
-                    ),
-                )!!
-            }
+
 
         override suspend fun generateProcessMessage(
             process: SagaProcess,
-            sagaDescription: String,
-            characterDescription: String,
+            saga: SagaForm,
+            character: CharacterInfo,
             genre: Genre?,
         ): RequestResult<String> =
             executeRequest {
                 val identity = genre?.let { genreConfigService.conversationBlueprint(it) } ?: ""
+                val processConfig =
+                    remoteConfigService.getJson<Map<String, String>>("process_config") ?: emptyMap()
+                val instruction = processConfig[process.name] ?: ""
                 gemmaClient.generate(
                     NewSagaPrompts.generateProcessPrompt(
                         promptService,
                         process,
-                        sagaDescription,
-                        characterDescription,
+                        saga,
+                        character,
                         identity,
+                        instruction,
                     ),
                     filterOutputFields =
                         listOf(
@@ -167,8 +160,8 @@ class NewSagaUseCaseImpl
                             "emojified",
                             "hexColor",
                             "voice",
-                    ),
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        ),
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -222,7 +215,9 @@ class NewSagaUseCaseImpl
                 val config = sagaDraft?.genre?.let { genreConfigService.getGenreConfig(it) }
                 val objectives =
                     remoteConfigService.getJson<Map<String, String>>("creation_flow_objectives")!!
-                val flowSpecificObjectives = objectives[flow.name]!!
+                val flowSpecificObjectives = objectives[flow.name] ?: ""
+                val identity =
+                    sagaDraft?.genre?.let { genreConfigService.conversationBlueprint(it) } ?: ""
                 gemmaClient.generate(
                     NewSagaPrompts.creationAssistPrompt(
                         promptService,
@@ -231,6 +226,7 @@ class NewSagaUseCaseImpl
                         characterInfo,
                         config,
                         flowSpecificObjectives,
+                        identity,
                     ),
                     requireTranslation = true,
                 )!!
