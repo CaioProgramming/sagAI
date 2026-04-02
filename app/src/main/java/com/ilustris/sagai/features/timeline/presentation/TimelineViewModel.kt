@@ -3,27 +3,54 @@ package com.ilustris.sagai.features.timeline.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.home.data.model.findTimeline
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.domain.TimelineMapper
+import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
+import com.ilustris.sagai.features.timeline.domain.TimelineViewContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+sealed class TimelineAction {
+    data class ReviewTimeline(
+        val saga: SagaContent,
+        val timeline: Timeline,
+    ) : TimelineAction()
+}
+
 @HiltViewModel
 class TimelineViewModel
     @Inject
     constructor(
-        private val sagaHistoryUseCase: SagaHistoryUseCase,
+        private val timelineUseCase: TimelineUseCase,
+        private val timelineMapper: TimelineMapper,
     ) : ViewModel() {
-        val saga = MutableStateFlow<SagaContent?>(null)
+        val timelineView = MutableStateFlow<TimelineViewContent?>(null)
 
-        fun getSaga(sagaId: String?) {
-            val sagaKey = sagaId ?: return
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaHistoryUseCase.getSagaById(sagaKey.toInt()).collect {
-                    this@TimelineViewModel.saga.value = it
+        fun handleAction(timelineAction: TimelineAction) {
+            viewModelScope.launch {
+                when (timelineAction) {
+                    is TimelineAction.ReviewTimeline -> {
+                        val timelineContent =
+                            timelineAction.saga.findTimeline(timelineAction.timeline.id)
+                        timelineContent?.let {
+                            timelineUseCase.generateTimelineContent(
+                                timelineAction.saga,
+                                it,
+                            )
+                        }
+                    }
                 }
+            }
+        }
+
+        fun buildTimeline(sagaContent: SagaContent) {
+            viewModelScope.launch(Dispatchers.IO) {
+                timelineView.emit(null)
+                timelineView.emit(timelineMapper.buildTimelines(sagaContent))
             }
         }
     }

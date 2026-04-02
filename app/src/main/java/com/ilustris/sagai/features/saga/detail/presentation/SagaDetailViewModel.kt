@@ -17,6 +17,9 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,9 +39,9 @@ class SagaDetailViewModel
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val remoteConfig: RemoteConfigService,
-        private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val visualConfigService: GenreVisualConfigService,
+        private val sagaDetailUIMapper: SagaDetailUIMapper,
     ) : ViewModel() {
         private val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         private val _state = MutableStateFlow<State>(State.Loading)
@@ -61,6 +64,7 @@ class SagaDetailViewModel
         val isSummarizingSaga = MutableStateFlow(false)
         val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
         val narrativeRules = MutableStateFlow<NarrativeRules?>(null)
+        val actualSection = MutableStateFlow<DetailSection?>(null)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -72,6 +76,18 @@ class SagaDetailViewModel
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
+
+        fun handleDetailAction(detailAction: DetailAction) {
+            viewModelScope.launch {
+                val saga = saga.value ?: return@launch
+                sagaDetailUIMapper
+                    .buildSection(
+                        saga,
+                        detailAction,
+                    ).onSuccess { }
+                    .onFailure { }
+        }
+    }
 
         fun fetchSagaDetails(sagaId: String) {
             showIntro.value = true

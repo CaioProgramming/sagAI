@@ -12,7 +12,6 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipC
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class TimelineContent(
@@ -70,12 +69,15 @@ data class TimelineContent(
             updatedRelationshipDetails.isEmpty() ||
             updatedWikis.isEmpty()
 
-    fun emotionalRanking(mainCharacter: Character?) =
+    fun emotionalRanking() =
         messages
-            .filter {
-                it.message.senderType == SenderType.USER || it.message.characterId == mainCharacter?.id
-            }.groupBy { it.message.emotionalTone.toString() }
-            .mapValues { entry -> entry.value.size }
+            .filter { it.message.emotionalTone != null }
+            .groupBy { it.message.emotionalTone }
+            .mapNotNull {
+                it.key to it.value.size
+            }.sortedBy {
+                it.second
+            }
 
     fun statsSummary() =
         buildList {

@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -64,8 +63,8 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOver
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
@@ -227,10 +226,12 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }.background(
+                        }
+                        .background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        ).padding(4.dp)
+                        )
+                        .padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,
@@ -244,6 +245,7 @@ fun MilestoneBadge(
 fun NewEventContent(
     saga: SagaContent,
     timelineId: Int,
+    emotionMascot: String?,
 ) {
     val genre = saga.data.genre
     val brush =
@@ -258,8 +260,8 @@ fun NewEventContent(
         val topTone = event.messages.rankEmotionalTone().first()
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             MascotEmotionFace(
+                emotionMascot,
                 topTone.first,
-                genre = genre,
                 modifier = Modifier.size(64.dp),
             )
 

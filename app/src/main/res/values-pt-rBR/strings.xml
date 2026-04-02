@@ -131,7 +131,7 @@
     <string name="saga_drawer_act_prefix">Ato %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
     <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
-    <string name="saga_detail_progress_title">Progresso</string>
+    <string name="saga_detail_progress_title">Sua jornada</string>
     <string name="saga_detail_section_title_characters">Personagens</string>
     <string name="saga_detail_section_subtitle_characters">%d personagens</string>
     <string name="saga_detail_section_title_timeline">Eventos</string>

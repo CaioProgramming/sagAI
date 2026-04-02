@@ -11,6 +11,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -108,7 +109,6 @@ fun CharacterDetailsView(
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
-    val character by viewModel.character.collectAsStateWithLifecycle()
 
     LaunchedEffect(saga) {
         if (saga == null) {
@@ -116,7 +116,9 @@ fun CharacterDetailsView(
         }
     }
 
-    AnimatedContent(saga) {
+    AnimatedContent(saga, transitionSpec = {
+        slideInVertically { -it } togetherWith fadeOut()
+    }) {
         if (it != null) {
             CharacterDetailsContent(
                 it,
@@ -168,7 +170,7 @@ fun CharacterDetailsContent(
     AnimatedContent(
         targetState = currentCharacter,
         transitionSpec = {
-            fadeIn(tween(3600)) togetherWith fadeOut(tween(200))
+            fadeIn(tween(600)) togetherWith fadeOut(tween(200))
         },
         modifier = Modifier.blur(blurEffect),
     ) { character ->
@@ -454,8 +456,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -582,8 +583,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }
