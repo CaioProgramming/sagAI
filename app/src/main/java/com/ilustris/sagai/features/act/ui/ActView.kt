@@ -10,10 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -50,8 +47,9 @@ fun ActComponent(
         ) {
             items(chapters) {
                 ChapterCardView(
-                    content,
+                    content.data.genre,
                     it.data,
+                    chapters.indexOf(it),
                     Modifier
                         .padding(12.dp)
                         .clip(genre.shape())

@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
@@ -57,11 +58,36 @@ data class SagaResumeArgs(
     val conversationDirective: String,
 )
 
+data class CharacterInsightArgs(
+    val sagaTitle: String,
+    val charactersBlock: String,
+    val relationshipsBlock: String,
+    val recentHistory: String,
+    val conversationDirective: String,
+)
+
+data class WikiInsightArgs(
+    val sagaTitle: String,
+    val wikiContext: String,
+    val recentHistory: String,
+    val conversationDirective: String,
+)
+
+data class TimelineInsightArgs(
+    val sagaTitle: String,
+    val currentActHistory: String,
+    val currentChapterContext: String,
+    val conversationDirective: String,
+)
+
 object SagaPrompts {
     const val REVIEW_GENERATION_BLUEPRINT = "review_generation_blueprint"
     const val SAGA_END_CREDITS_BLUEPRINT = "saga_end_credits_blueprint"
     const val SAGA_RESUME_BLUEPRINT = "saga_resume_blueprint"
     const val STORY_BRIEFING_BLUEPRINT = "story_briefing_blueprint"
+    const val CHARACTER_INSIGHT_BLUEPRINT = "character_insight_blueprint"
+    const val WIKI_INSIGHT_BLUEPRINT = "wiki_insight_blueprint"
+    const val TIMELINE_INSIGHT_BLUEPRINT = "timeline_insight_blueprint"
 
     fun mainContext(
         saga: SagaContent,
@@ -180,6 +206,69 @@ object SagaPrompts {
             )
 
         return promptService.buildRemotePrompt(SAGA_RESUME_BLUEPRINT, args)
+    }
+
+    suspend fun charactersInsight(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            CharacterInsightArgs(
+                sagaTitle = saga.data.title,
+                charactersBlock =
+                    saga.characters
+                        .map { it.data }
+                        .normalizetoAIItems(ChatPrompts.characterExclusions),
+                relationshipsBlock =
+                    saga.mainCharacter?.summarizeRelationships()
+                        ?: "No significant relationships yet.",
+                recentHistory =
+                    saga.acts.lastOrNull()?.actSummary(false)
+                        ?: "The journey is just beginning.",
+                conversationDirective = conversationDirective,
+            )
+
+        return promptService.buildRemotePrompt(CHARACTER_INSIGHT_BLUEPRINT, args)
+    }
+
+    suspend fun wikiInsight(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            WikiInsightArgs(
+                sagaTitle = saga.data.title,
+                wikiContext = saga.wikis.joinToString("\n") { "- ${it.title}: ${it.content}" },
+                recentHistory =
+                    saga.acts.lastOrNull()?.actSummary(false)
+                        ?: "The world mystery is still unfolding.",
+                conversationDirective = conversationDirective,
+            )
+
+        return promptService.buildRemotePrompt(WIKI_INSIGHT_BLUEPRINT, args)
+    }
+
+    suspend fun timelineInsight(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            TimelineInsightArgs(
+                sagaTitle = saga.data.title,
+                currentActHistory = saga.acts.joinToString("\n") { it.actSummary(false) },
+                currentChapterContext =
+                    saga
+                        .flatChapters()
+                        .lastOrNull()
+                        ?.data
+                        ?.introduction ?: "Starting point.",
+                conversationDirective = conversationDirective,
+            )
+
+        return promptService.buildRemotePrompt(TIMELINE_INSIGHT_BLUEPRINT, args)
     }
 
     fun charactersSummary(saga: SagaContent): String =

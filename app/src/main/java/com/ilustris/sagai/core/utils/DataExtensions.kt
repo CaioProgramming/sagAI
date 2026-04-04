@@ -17,6 +17,12 @@ fun toFirebaseSchema(
     properties = clazz.toSchemaMap(excludeFields),
 )
 
+fun Long.formatDuration(): String {
+    val minutes = this / 60000
+    val hours = minutes / 60
+    return if (hours > 0) "${hours}h ${minutes % 60}m" else "${minutes}m"
+}
+
 fun Class<*>.toSchema(
     nullable: Boolean,
     excludeFields: List<String>,

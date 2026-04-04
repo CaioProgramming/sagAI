@@ -26,9 +26,4 @@ interface ActUseCase {
         saga: SagaContent,
         act: Act,
     ): RequestResult<Act>
-
-    suspend fun generateEmotionalProfile(
-        saga: SagaContent,
-        act: ActContent,
-    ): RequestResult<Act>
 }

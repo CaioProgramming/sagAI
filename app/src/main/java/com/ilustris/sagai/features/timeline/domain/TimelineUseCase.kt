@@ -22,11 +22,6 @@ interface TimelineUseCase {
 
     suspend fun deleteTimeline(timeline: Timeline)
 
-    suspend fun generateEmotionalReview(
-        saga: SagaContent,
-        timeline: TimelineContent,
-    ): RequestResult<Timeline>
-
     suspend fun getTimelineObjective(
         saga: SagaContent,
         timelineContent: Timeline,

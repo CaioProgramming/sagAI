@@ -29,9 +29,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -47,12 +44,12 @@ import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
 fun ChapterCardView(
-    saga: SagaContent,
+    genre: Genre,
     chapter: Chapter,
+    chapterIndex: Int,
     modifier: Modifier,
     showTitle: Boolean = true,
 ) {
-    val genre = saga.data.genre
     val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -84,7 +81,7 @@ fun ChapterCardView(
             )
 
             Text(
-                saga.chapterNumber(chapter).toRoman(),
+                chapterIndex.toRoman(),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         fontFamily = genre.headerFont(),
@@ -158,12 +155,8 @@ fun ChapterCardViewPreview() {
             items(chapters.size) { index ->
                 ChapterCardView(
                     chapter = chapters[index],
-                    saga =
-                        SagaContent(
-                            Saga(
-                                genre = Genre.FANTASY,
-                            ),
-                        ),
+                    genre = Genre.FANTASY,
+                    chapterIndex = index + 1,
                     modifier = Modifier.aspectRatio(1f),
                 )
             }

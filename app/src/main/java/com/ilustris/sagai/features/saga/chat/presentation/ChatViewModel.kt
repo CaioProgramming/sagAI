@@ -1,14 +1,12 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
 import MessageStatus
-import ai.atick.material.MaterialColor
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import android.util.LruCache
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -20,25 +18,19 @@ import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SagaPlaybackService
-import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.newsaga.data.model.parseColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
@@ -84,6 +76,7 @@ class ChatViewModel
         private val scheduledNotificationService: ScheduledNotificationService,
         private val visualConfigService: GenreVisualConfigService,
         private val remoteConfigService: RemoteConfigService,
+        private val mapper: SagaContentUIMapper,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -589,7 +582,7 @@ class ChatViewModel
                         val messagesChanged = currentMessageCount != lastMessageCount
 
                         val messages =
-                            SagaContentUIMapper.mapToActDisplayData(sagaContent.acts, rules)
+                            mapper.mapToActDisplayData(sagaContent, rules)
 
                         // Only re-sort characters when message count changes (expensive operation)
                         val characters =

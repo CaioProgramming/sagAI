@@ -29,6 +29,7 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -991,7 +992,14 @@ class SagaContentManagerImpl
                             ),
                         )
 
-                        emitMilestone(SagaMilestone.NewEvent(timeline))
+                        val mascotIcon =
+                            emotionalUseCase
+                                .getEmotionalMascot(
+                                    saga,
+                                    saga.findTimeline(timeline.id)!!,
+                                ).getSuccess()
+
+                        emitMilestone(SagaMilestone.NewEvent(timeline, mascotIcon))
                         endTimeline(saga.currentActInfo?.currentChapterInfo)
                     }
                 }

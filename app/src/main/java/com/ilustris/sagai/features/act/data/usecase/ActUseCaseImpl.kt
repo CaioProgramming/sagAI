@@ -3,15 +3,16 @@ package com.ilustris.sagai.features.act.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -20,9 +21,8 @@ class ActUseCaseImpl
     constructor(
         private val actRepository: ActRepository,
         private val gemmaClient: GemmaClient,
-        private val emotionalUseCase: EmotionalUseCase,
-        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: RemoteConfigService,
+        private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
@@ -101,19 +101,5 @@ class ActUseCaseImpl
             val intro = gemmaClient.generate<String>(prompt, useCore = true)!!
             actRepository
                 .updateAct(act.copy(introduction = intro))
-        }
-
-        override suspend fun generateEmotionalProfile(
-            saga: SagaContent,
-            act: ActContent,
-        ) = executeRequest {
-            val profile =
-                emotionalUseCase
-                    .generateEmotionalProfile(
-                        saga,
-                        act.emotionalSummary(),
-                    ).getSuccess()!!
-
-            actRepository.updateAct(act.data.copy(emotionalReview = profile))
         }
     }

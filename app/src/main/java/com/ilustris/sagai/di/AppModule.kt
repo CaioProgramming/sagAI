@@ -46,6 +46,7 @@ import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
+import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
@@ -98,14 +99,20 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.saga.datasource.ReactionRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
+import com.ilustris.sagai.features.saga.detail.review.domain.SagaReviewUseCase
+import com.ilustris.sagai.features.saga.detail.review.domain.SagaReviewUseCaseImpl
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCaseImpl
+import com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCaseImpl
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import com.ilustris.sagai.features.share.domain.SharePlayUseCaseImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
+import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
+import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -116,7 +123,6 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -236,6 +242,54 @@ object AppModule {
     fun bindsFileCacheService(
         @ApplicationContext context: Context,
     ) = FileCacheService(context)
+
+    @Provides
+    fun bindsWikiMapper(stringResourceHelper: StringResourceHelper) =
+        WikiMapper(
+            stringResourceHelper = stringResourceHelper,
+        )
+
+    @Provides
+    fun bindsTimelineMapper(
+        mascotEmotionService: MascotEmotionService,
+        stringResourceHelper: StringResourceHelper,
+        genreVisualConfigService: GenreVisualConfigService,
+        remoteConfigService: RemoteConfigService,
+    ) = TimelineMapper(
+        mascotEmotionService,
+        stringResourceHelper,
+        genreVisualConfigService,
+        remoteConfigService,
+    )
+
+    @Provides
+    fun bindsSagaDetailUIMapper(
+        stringResourceHelper: StringResourceHelper,
+        remoteConfigService: RemoteConfigService,
+        imageSegmentationHelper: ImageSegmentationHelper,
+        sagaDetailUseCase: SagaDetailUseCase,
+        timelineMapper: TimelineMapper,
+        wikiMapper: WikiMapper,
+        emotionalUseCase: EmotionalUseCase,
+    ) = SagaDetailUIMapper(
+        stringResourceHelper,
+        remoteConfigService,
+        imageSegmentationHelper,
+        sagaDetailUseCase,
+        timelineMapper,
+        wikiMapper,
+        emotionalUseCase,
+    )
+
+    @Provides
+    @Singleton
+    fun providesLoadingService(
+        gemmaClient: GemmaClient,
+        promptService: PromptService,
+    ) = LoadingService(
+        gemmaClient,
+        promptService,
+    )
 
     @Provides
     @Singleton
@@ -382,6 +436,9 @@ object AppModule {
 @Module
 abstract class UseCaseModule {
     @Binds
+    abstract fun providesReviewUseCase(reviewUseCaseImpl: SagaReviewUseCaseImpl): SagaReviewUseCase
+
+    @Binds
     abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 
     @Binds
@@ -442,7 +499,7 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesAIAuditLogUseCase(
-        aiAuditLogUseCaseImpl: com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCaseImpl,
+        aiAuditLogUseCaseImpl: AIAuditLogUseCaseImpl,
     ): com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCase
 }
 
@@ -489,4 +546,3 @@ abstract class RepositoryModule {
         aiAuditLogRepositoryImpl: com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepositoryImpl,
     ): com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepository
 }
-

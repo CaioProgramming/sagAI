@@ -22,6 +22,7 @@ import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -110,24 +112,18 @@ class GemmaClient
         ): T? =
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
-                    Log.w(
-                        javaClass.simpleName,
-                        "Applying reactive delay due to high token count in last request.",
-                    )
+                    Timber.w("Applying reactive delay due to high token count in last request.")
                     retryDelay = 5
                     delay((retryDelay ?: 5).seconds)
                 }
                 val model = modelName(requirement)
                 if (useCore.not()) {
                     retryDelay?.let {
-                        Log.e(
-                            javaClass.simpleName,
-                            "generate: Trying delay $retryDelay seconds to avoid rate limit.",
-                        )
+                        Timber.e("generate: Trying delay $retryDelay seconds to avoid rate limit.")
                         delay(it.seconds)
                     }
                 } else {
-                    Log.i(javaClass.simpleName, "generate: Core calls don't require delay.")
+                    Timber.i("generate: Core calls don't require delay.")
                 }
 
                 val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
@@ -182,10 +178,7 @@ class GemmaClient
                                     references.filterNotNull().sumOf {
                                         it.description.length
                                     }
-                            Log.i(
-                                this@GemmaClient::class.java.simpleName,
-                                "Requesting $model\nPrompt with $promptLength chars.",
-                            )
+                            Timber.i("Requesting $model\nPrompt with $promptLength chars.")
 
                             if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
                                 throw IllegalArgumentException("Prompt is too long. verify your prompt and try again.")
@@ -225,10 +218,7 @@ class GemmaClient
 
                             // Check for API error
                             response.error?.let { error ->
-                                Log.e(
-                                    javaClass.simpleName,
-                                    "Gemini API error: ${error.code} - ${error.message}",
-                                )
+                                Timber.e("Gemini API error: ${error.code} - ${error.message}")
                                 throw Exception("Gemini API error: ${error.message}")
                             }
 
@@ -238,16 +228,20 @@ class GemmaClient
                                 lastTokenCount = 0
                             }
 
-                            val responseText =
+                            val responseContent =
                                 response.candidates
                                     ?.firstOrNull()
                                     ?.content
                                     ?.parts
-                                    ?.firstOrNull()
-                                    ?.text ?: ""
 
-                            Log.d(
-                                javaClass.simpleName,
+                            val requiredText =
+                                if (requirement == ModelRequirement.LOW) {
+                                    responseContent?.firstOrNull()?.text
+                                } else {
+                                    responseContent?.lastOrNull()?.text
+                                }
+
+                            Timber.d(
                                 "Input JSON: ${
                                     geminiRequest.toJsonFormatExcludingFields(
                                         AI_EXCLUDED_FIELDS,
@@ -255,15 +249,12 @@ class GemmaClient
                                 }",
                             )
 
-                            Log.d(javaClass.simpleName, "Prompt requested:\n$fullPrompt")
+                            Timber.d("Prompt requested:\n$fullPrompt")
 
-                            Log.i(
-                                javaClass.simpleName,
-                                "Generated content: $responseText",
-                            )
+                            Timber.i("API Response: ${response.toJsonFormat()}")
 
                             val cleanedJsonString =
-                                responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)
+                                requiredText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             val aiGeneration =
                                 Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
@@ -275,7 +266,7 @@ class GemmaClient
                                         dataType = T::class.java.simpleName,
                                         status = "SUCCESS",
                                         reasoning = aiGeneration?.reasoning,
-                                        rawResponse = responseText,
+                                        rawResponse = requiredText,
                                     ),
                                 )
                             }

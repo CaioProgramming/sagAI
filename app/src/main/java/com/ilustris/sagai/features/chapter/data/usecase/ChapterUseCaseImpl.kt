@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import timber.log.Timber
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
@@ -11,7 +10,6 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
-import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
@@ -21,10 +19,9 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
-import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import timber.log.Timber
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -32,12 +29,10 @@ class ChapterUseCaseImpl
     constructor(
         private val chapterRepository: ChapterRepository,
         private val timelineRepository: TimelineRepository,
-        private val emotionalUseCase: EmotionalUseCase,
         private val wikiUseCase: WikiUseCase,
         private val gemmaClient: GemmaClient,
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
-        private val genreReferenceHelper: GenreReferenceHelper,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val remoteConfigService: RemoteConfigService,
@@ -89,81 +84,20 @@ class ChapterUseCaseImpl
             )
         }
 
-        override suspend fun generateEmotionalReview(
-            saga: SagaContent,
-            chapterContent: ChapterContent,
-        ) = executeRequest {
-            val rules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
-            val emotionalReview =
-                emotionalUseCase
-                    .generateEmotionalReview(
-                        saga,
-                        buildString {
-                            appendLine(
-                                chapterContent.data.toAINormalize(
-                                    listOf(
-                                        "id",
-                                        "sagaId",
-                                        "currentEventId",
-                                        "coverImage",
-                                        "createdAt",
-                                        "actId",
-                                        "featuredCharacters",
-                                    ),
-                                ),
-                            )
-                            appendLine(
-                                chapterContent.events
-                                    .filter { it.isComplete(rules) }
-                                    .map { it.data }
-                                    .toAINormalize(
-                                        listOf(
-                                            "id",
-                                            "chapterId",
-                                            "createdAt",
-                                            "currentEventId",
-                                        ),
-                                    ),
-                            )
-                        },
-                    ).getSuccess()!!
-
-            val newData = chapterContent.data.copy(emotionalReview = emotionalReview)
-            updateChapter(newData)
-        }
-
         override suspend fun reviewChapter(
             saga: SagaContent,
             chapterContent: ChapterContent,
         ) = executeRequest {
             cleanUpEmptyTimeLines(chapterContent)
             val chapterWikis = chapterContent.events.map { it.updatedWikis }.flatten()
-            if (chapterWikis.size > 15) {
+            if (chapterWikis.size > 10) {
                 wikiUseCase.mergeWikis(saga, chapterWikis)
             }
-            var chapterUpdates = chapterContent.data
-            if (chapterContent.data.emotionalReview.isNullOrEmpty()) {
-                generateEmotionalReview(saga, chapterContent).onSuccess {
-                    chapterUpdates =
-                        chapterUpdates.copy(
-                            emotionalReview = it.emotionalReview,
-                        )
-                }
-            }
-            if (chapterContent.data.introduction.isEmpty()) {
-                generateChapterIntroduction(
-                    saga,
-                    chapterContent.data,
-                    saga.findChapterAct(chapterContent.data)!!,
-                ).onSuccess {
-                    chapterUpdates =
-                        it.copy(
-                            introduction = it.introduction,
-                        )
-                }
-            }
 
-            chapterUpdates
+            generateChapter(
+                saga = saga,
+                chapterContent = chapterContent,
+            ).getSuccess()!!
         }
 
         private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {

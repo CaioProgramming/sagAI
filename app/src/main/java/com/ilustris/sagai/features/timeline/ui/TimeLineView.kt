@@ -59,6 +59,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -90,6 +91,7 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.presentation.TimelineAction
@@ -120,7 +122,9 @@ import kotlin.time.DurationUnit
 @Composable
 fun TimeLineContent(
     saga: SagaContent,
-    animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
+    insight: String?,
+    title: String,
+    subtitle: String,
     onBackClick: () -> Unit = {},
     titleModifier: Modifier = Modifier,
 ) {
@@ -135,41 +139,41 @@ fun TimeLineContent(
 
     AnimatedContent(timelineView) {
         it?.let { viewContent ->
-            with(animationScopes.first) {
-                LazyColumn(
-                    state = lazyListState,
-                    modifier =
-                        Modifier.fillMaxSize(),
-                ) {
-                    stickyHeader(key = "timeline-content-header") {
-                        SharedTransitionLayout {
-                            AnimatedContent(
-                                lazyListState.canScrollBackward,
-                                modifier = titleModifier,
-                            ) {
-                                if (it) {
-                                    SagaTopBar(
-                                        viewContent.title,
-                                        viewContent.subtitle,
-                                        genre,
-                                        onBackClick = { onBackClick() },
-                                        actionContent = { Box(Modifier.size(24.dp)) },
-                                        modifier =
-                                            Modifier
-                                                .sharedBounds(
-                                                    rememberSharedContentState(
-                                                        "timeline-content-header",
-                                                    ),
-                                                    this,
-                                                ).background(MaterialTheme.colorScheme.background)
-                                                .fillMaxWidth()
-                                                .statusBarsPadding()
-                                                .padding(horizontal = 16.dp),
-                                    )
-                                } else {
+            LazyColumn(
+                state = lazyListState,
+                modifier =
+                    Modifier.fillMaxSize(),
+            ) {
+                stickyHeader(key = "timeline-content-header") {
+                    SharedTransitionLayout {
+                        AnimatedContent(
+                            lazyListState.canScrollBackward,
+                            modifier = titleModifier,
+                        ) {
+                            if (it) {
+                                SagaTopBar(
+                                    title,
+                                    subtitle,
+                                    genre,
+                                    onBackClick = { onBackClick() },
+                                    actionContent = { Box(Modifier.size(24.dp)) },
+                                    modifier =
+                                        Modifier
+                                            .sharedBounds(
+                                                rememberSharedContentState(
+                                                    "timeline-content-header",
+                                                ),
+                                                this,
+                                            ).background(MaterialTheme.colorScheme.background)
+                                            .fillMaxWidth()
+                                            .statusBarsPadding()
+                                            .padding(horizontal = 16.dp),
+                                )
+                            } else {
+                                Column {
                                     LargeHorizontalHeader(
-                                        viewContent.title,
-                                        viewContent.subtitle,
+                                        title,
+                                        subtitle,
                                         titleStyle =
                                             MaterialTheme.typography.displaySmall.copy(
                                                 fontFamily = genre.headerFont(),
@@ -184,48 +188,65 @@ fun TimeLineContent(
                                                     rememberSharedContentState(
                                                         "timeline-content-header",
                                                     ),
-                                                    this,
+                                                    this@AnimatedContent,
                                                 ).padding(16.dp)
                                                 .fillMaxWidth(),
                                     )
+
+                                    insight?.let {
+                                        Text(
+                                            it,
+                                            style =
+                                                MaterialTheme.typography.bodyMedium.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    textAlign = TextAlign.Center,
+                                                    fontStyle = FontStyle.Italic,
+                                                ),
+                                            modifier =
+                                                Modifier
+                                                    .padding(16.dp)
+                                                    .fillMaxWidth()
+                                                    .alpha(.7f),
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                    viewContent.groups.forEachIndexed { index, group ->
-                        item("timeline-group-$index") {
-                            Text(
-                                group.title,
-                                style =
-                                    MaterialTheme.typography.displaySmall.copy(
-                                        fontFamily = genre.headerFont(),
-                                        brush = genre.gradient(true),
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            MaterialTheme.colorScheme.background,
-                                        ).padding(16.dp),
-                            )
-                        }
+                }
+                viewContent.groups.forEachIndexed { index, group ->
+                    item("timeline-group-$index") {
+                        Text(
+                            group.title,
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontFamily = genre.headerFont(),
+                                    brush = genre.gradient(true),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.background,
+                                    ).padding(16.dp),
+                        )
+                    }
 
-                        items(group.events, { "event-${it.timelineContent.data.id}" }) { event ->
-                            TimelineContentViewCard(
-                                saga = saga,
-                                eventCard = event,
-                                modifier = Modifier.fillMaxWidth(),
-                                onAction = {
-                                    timelineViewModel.handleAction(
-                                        TimelineAction.ReviewTimeline(
-                                            saga,
-                                            event.timelineContent.data,
-                                        ),
-                                    )
-                                },
-                            )
-                        }
+                    items(group.events, { "event-${it.timelineContent.data.id}" }) { event ->
+                        TimelineContentViewCard(
+                            saga = saga,
+                            eventCard = event,
+                            modifier = Modifier.fillMaxWidth(),
+                            onAction = {
+                                timelineViewModel.handleAction(
+                                    TimelineAction.ReviewTimeline(
+                                        saga,
+                                        event.timelineContent.data,
+                                    ),
+                                )
+                            },
+                        )
                     }
                 }
             }
@@ -639,7 +660,8 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        ).padding(16.dp),
+                                        )
+                                        .padding(16.dp),
                                 true,
                             )
                         }
@@ -684,7 +706,8 @@ fun TimeLineSimpleCard(
             .background(
                 MaterialTheme.colorScheme.background,
                 shape,
-            ).padding(16.dp)
+            )
+            .padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -770,7 +793,8 @@ fun TimeLineSimpleCard(
                         .clip(shape)
                         .clickable {
                             requestReview(eventContent)
-                        }.gradientFill(genre.gradient())
+                        }
+                        .gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -1008,7 +1032,8 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }.alpha(.4f),
+                                }
+                                .alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(
@@ -1205,28 +1230,6 @@ fun TimelineCharacterAttachment(
                     )
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TimeLineContentPreview() {
-    val content =
-        SagaContent(
-            data =
-                Saga(
-                    title = "My Awesome Saga",
-                    description = "A saga about adventure and stuff.",
-                    genre = Genre.FANTASY,
-                ),
-        )
-    SharedTransitionLayout {
-        AnimatedContent(content) {
-            TimeLineContent(
-                it,
-                animationScopes = this@SharedTransitionLayout to this,
-            )
         }
     }
 }

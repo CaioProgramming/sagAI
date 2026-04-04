@@ -4,12 +4,15 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.MascotEmotionService
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findChapter
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
@@ -17,17 +20,12 @@ class TimelineMapper(
     private val mascotEmotionService: MascotEmotionService,
     private val stringResourceHelper: StringResourceHelper,
     private val genreVisualConfigService: GenreVisualConfigService,
+    private val remoteConfigService: RemoteConfigService,
 ) {
     suspend fun buildTimelines(sagaContent: SagaContent) =
         TimelineViewContent(
             saga = sagaContent,
             visualConfig = genreVisualConfigService.getVisualConfig(sagaContent.data.genre),
-            title = stringResourceHelper.getString(R.string.saga_detail_section_title_timeline),
-            subtitle =
-                stringResourceHelper.getString(
-                    R.string.saga_detail_section_subtitle_timeline,
-                    sagaContent.eventsSize(),
-                ),
             groups =
                 sagaContent.acts.map {
                     val chapters = it.chapters
@@ -42,39 +40,41 @@ class TimelineMapper(
                         events =
                             chapters
                                 .flatMap { chapterContent -> chapterContent.events }
-                                .mapIndexed { index, content ->
-                                    val chapterNumber =
-                                        if (index == 0) {
-                                            sagaContent
-                                                .chapterNumber(sagaContent.findChapter(content.data.chapterId)?.data)
-                                                .toRoman()
-                                        } else {
-                                            null
-                                        }
-
-                                    val topEmotion =
-                                        content.emotionalRanking().first().first
-                                            ?: EmotionalTone.NEUTRAL
-
-                                    TimelineCardContent(
-                                        content,
-                                        topEmotion to
-                                            mascotEmotionService.getEmotionUrl(
-                                                sagaContent.data.genre,
-                                                topEmotion,
-                                            ),
-                                        chapterNumber,
+                                .mapNotNull {
+                                    buildTimeline(
+                                        sagaContent,
+                                        it,
                                     )
                                 },
                     )
                 },
         )
+
+    suspend fun buildTimeline(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    ): TimelineCardContent {
+        val narrativeRules = remoteConfigService.getNarrativeRules()
+        val genre = saga.data.genre
+        val chapter = saga.findChapter(timelineContent.data.id)
+        val chapterNumber = saga.chapterNumber(chapter?.data).toRoman()
+        val topEmotion = timelineContent.emotionalRanking().first().first ?: EmotionalTone.NEUTRAL
+        val mascotEmotion =
+            mascotEmotionService.getEmotionUrl(
+                genre,
+                topEmotion,
+            )
+        return TimelineCardContent(
+            timelineContent,
+            topEmotion to mascotEmotion,
+            chapterNumber,
+            timelineContent.isComplete(narrativeRules),
+        )
+    }
 }
 
 data class TimelineViewContent(
     val saga: SagaContent,
-    val title: String,
-    val subtitle: String,
     val groups: List<TimelineGroup>,
     val visualConfig: GenreVisualConfig?,
 )
@@ -88,4 +88,5 @@ data class TimelineCardContent(
     val timelineContent: TimelineContent,
     val mascotEmotion: Pair<EmotionalTone, String?>?,
     val chapterNumber: String?,
+    val canShowData: Boolean,
 )

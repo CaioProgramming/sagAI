@@ -14,7 +14,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.ui.components.SnackBarState
 
 sealed class ChatState {
@@ -84,5 +84,5 @@ data class ChapterDisplayData(
 
 data class TimelineDisplayData(
     val isComplete: Boolean,
-    val timeline: TimelineContent,
+    val timeline: TimelineCardContent,
 )

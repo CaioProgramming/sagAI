@@ -636,7 +636,6 @@ fun JourneyCollage(
                 .aspectRatio(1.2f),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Top row: 2 large ones
         Row(
             modifier = Modifier.weight(1.5f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -650,10 +649,11 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga = saga,
+                        genre = saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
+                        chapterIndex = chapters.indexOf(it),
                     )
                 }
             }
@@ -666,10 +666,11 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga = saga,
+                        genre = saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
+                        chapterIndex = chapters.indexOf(it),
                     )
                 }
             }
@@ -689,10 +690,11 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga = saga,
+                        genre = saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
+                        chapterIndex = chapters.indexOf(it),
                     )
                 }
             }
@@ -705,10 +707,11 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga = saga,
+                        saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
+                        chapterIndex = chapters.indexOf(it),
                     )
                 }
             }
@@ -721,10 +724,11 @@ fun JourneyCollage(
                             .fillMaxHeight(),
                 ) {
                     ChapterCardView(
-                        saga = saga,
+                        saga.data.genre,
                         chapter = it,
                         showTitle = false,
                         modifier = Modifier.fillMaxSize(),
+                        chapterIndex = chapters.indexOf(it),
                     )
                 }
             }

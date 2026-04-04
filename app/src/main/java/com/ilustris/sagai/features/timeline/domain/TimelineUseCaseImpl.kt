@@ -20,6 +20,7 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.delay
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -62,7 +63,7 @@ class TimelineUseCaseImpl
                                 "createdAt",
                                 "currentObjective",
                             ),
-                            useCore = true,
+                        useCore = true,
                     )!!
 
             updateTimeline(
@@ -70,39 +71,6 @@ class TimelineUseCaseImpl
                     title = newLore.title,
                     content = newLore.content,
                     emotionalReview = newLore.emotionalReview,
-                ),
-            )
-        }
-
-        override suspend fun generateEmotionalReview(
-            saga: SagaContent,
-            content: TimelineContent,
-        ) = executeRequest {
-            val review =
-                emotionalUseCase.generateEmotionalReview(
-                    saga,
-                    buildString {
-                        appendLine("Emotional tone ranking:")
-                        appendLine(content.emotionalRanking(saga.mainCharacter?.data))
-                        appendLine("Current messages:")
-                        appendLine("Consider player interaction with the world and NPCs")
-                        appendLine(
-                            content.messages.map { it.message }.normalizetoAIItems(
-                                listOf(
-                                    "id",
-                                    "timelineId",
-                                    "characterId",
-                                    "timestamp",
-                                    "status",
-                                ),
-                            ),
-                        )
-                    },
-                )
-
-            updateTimeline(
-                content.data.copy(
-                    emotionalReview = review.getSuccess(),
                 ),
             )
         }
@@ -148,28 +116,13 @@ class TimelineUseCaseImpl
             timelineContent: TimelineContent,
         ): RequestResult<Unit> =
             executeRequest {
-                if (timelineContent.data.emotionalReview.isNullOrEmpty()) {
-                    generateEmotionalReview(
-                        saga,
-                        timelineContent,
-                    )
-                    delay(5.seconds)
-                } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateTimelineContent: Emotional Review Already created",
-                    )
-                }
                 if (timelineContent.characterEventDetails.isEmpty() ||
                     timelineContent.updatedRelationshipDetails.isEmpty()
                 ) {
                     updateCharacters(timelineContent.data, saga)
                     delay(5.seconds)
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateTimelineContent: Characters already updated on this event",
-                    )
+                    Timber.w("generateTimelineContent: Characters already updated on this event")
                 }
 
                 if (timelineContent.updatedWikis.isEmpty()) {
@@ -178,10 +131,7 @@ class TimelineUseCaseImpl
                         saga,
                     )
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateTimelineContent: Wikis already updated on this event",
-                    )
+                    Timber.w("generateTimelineContent: Wikis already updated on this event")
                 }
             }
 

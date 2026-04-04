@@ -18,7 +18,8 @@ sealed class ReviewState {
     ) : ReviewState()
 
     data class Error(
-        val message: String) : ReviewState()
+        val message: String,
+    ) : ReviewState()
 }
 
 interface SagaDetailUseCase {
@@ -27,8 +28,6 @@ interface SagaDetailUseCase {
     suspend fun fetchSaga(sagaId: Int): Flow<SagaContent?>
 
     suspend fun deleteSaga(saga: Saga)
-
-    suspend fun createReview(content: SagaContent): Flow<ReviewState>
 
     suspend fun resetReview(content: SagaContent)
 
@@ -49,4 +48,10 @@ interface SagaDetailUseCase {
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
 
     suspend fun generateSagaResume(saga: SagaContent): RequestResult<String>
+
+    suspend fun generateCharactersInsight(saga: SagaContent): RequestResult<String>
+
+    suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String>
+
+    suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String>
 }

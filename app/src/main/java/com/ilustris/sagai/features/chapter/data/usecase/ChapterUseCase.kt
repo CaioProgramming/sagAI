@@ -33,11 +33,6 @@ interface ChapterUseCase {
         chapterContent: ChapterContent,
     ): RequestResult<Chapter>
 
-    suspend fun generateEmotionalReview(
-        saga: SagaContent,
-        chapterContent: ChapterContent,
-    ): RequestResult<Chapter>
-
     suspend fun reviewChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,

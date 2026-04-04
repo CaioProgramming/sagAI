@@ -26,10 +26,11 @@ sealed class SagaMilestone(
 ) {
     data class NewEvent(
         val timeline: Timeline,
+        val emotionalMascot: String?,
     ) : SagaMilestone(
             R.string.new_event_milestone_title,
             timeline.title,
-            extraContent = { NewEventContent(it, timeline.id) },
+            extraContent = { NewEventContent(it, timeline.id, emotionalMascot) },
         )
 
     data class ChapterFinished(
