@@ -4,18 +4,21 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -37,9 +40,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -63,9 +69,13 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 
@@ -130,16 +140,29 @@ fun SagaDetailView(
                 }
             },
             modifier = Modifier.fillMaxSize(),
-            visualConfig = visualConfig,
         )
 
-        if (isGenerating || state == State.Loading) {
+        AnimatedVisibility(isGenerating || state == State.Loading) {
             StarryLoader(
                 isLoading = true,
                 loadingMessage = loadingMessage ?: emptyString(),
                 textStyle = MaterialTheme.typography.labelMedium,
                 brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
             )
+
+            saga?.let {
+                val genre = it.data.genre
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Image(
+                        painterResource(genre.icon),
+                        null,
+                        Modifier
+                            .size(50.dp)
+                            .gradientFill(genre.gradient())
+                            .genreVfx(genre),
+                    )
+                }
+            }
         }
 
         if (showPremiumSheet) {
@@ -235,7 +258,6 @@ fun SagaDetailContentView(
     drawer: TimelineDrawer?,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
-    visualConfig: GenreVisualConfig? = null,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -249,13 +271,14 @@ fun SagaDetailContentView(
                     drawerState = drawerState,
                     drawerContent = {
                         val genre = sagaContent.data.genre
-                        val brush = genre.resolveColor().gradientFade()
-                        val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
+                        val brush = Brush.verticalGradient(genre.resolveColor().darkerPalette())
+                        val shape = genre.shape()
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                             ModalDrawerSheet(
                                 modifier =
                                     Modifier
                                         .statusBarsPadding()
+                                        .fillMaxWidth(.8f)
                                         .padding(16.dp)
                                         .dropShadow(shape, {
                                             this.brush = brush

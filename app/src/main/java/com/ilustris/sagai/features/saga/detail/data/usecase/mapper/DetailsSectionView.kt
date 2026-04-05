@@ -26,6 +26,7 @@ sealed class DetailSectionView(
         val relationships: List<RelationshipContent>,
         val lastEvent: TimelineCardContent?,
         val chapters: List<ChapterContent>,
+        val acts: List<ActContent>,
         val endMessage: String?,
         val readyToReview: Boolean,
     ) : DetailSectionView(

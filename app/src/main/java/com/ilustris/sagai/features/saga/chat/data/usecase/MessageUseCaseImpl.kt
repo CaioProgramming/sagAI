@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import MessageStatus
-import android.util.Log
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.model.AudioConfig
@@ -31,6 +30,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 class MessageUseCaseImpl
@@ -51,7 +51,7 @@ class MessageUseCaseImpl
 
         override fun setDebugMode(enabled: Boolean) {
             isDebugModeEnabled = enabled
-            Log.i("MessageUseCaseImpl", "Debug mode set to: $enabled")
+            Timber.i("Debug mode set to: $enabled")
         }
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
@@ -76,7 +76,7 @@ class MessageUseCaseImpl
                     ),
                     blueprintKey = ChatPrompts.CHAT_WRITING_PAL_BLUEPRINT,
                     requireTranslation = true,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
             }
 
@@ -128,7 +128,7 @@ class MessageUseCaseImpl
                         prompt,
                         blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                     )?.trim()
                     ?.uppercase()
             EmotionalTone.getTone(raw)
@@ -147,10 +147,7 @@ class MessageUseCaseImpl
         ): RequestResult<Message> =
             executeRequest {
                 if (isDebugModeEnabled) {
-                    Log.d(
-                        "MessageUseCaseImpl",
-                        "[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}",
-                    )
+                    Timber.d("[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}")
                     val fakeReply =
                         Message(
                             text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
@@ -183,13 +180,11 @@ class MessageUseCaseImpl
                         blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
                         filterOutputFields =
                             ChatPrompts.messageExclusions,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                         useCore = true,
                     )
 
-                Log.i(
-                    "MessageUseCaseImpl",
-                    "AI Reasoning for message generation: ${genText?.reasoning}",
-                )
+                Timber.i("AI Reasoning for message generation: ${genText?.reasoning}")
                 genText!!
             }
 
@@ -234,12 +229,9 @@ class MessageUseCaseImpl
                 gemmaClient.generate<ReactionGen>(
                     prompt,
                     blueprintKey = ChatPrompts.CHAT_REACTION_BLUEPRINT,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
-            Log.d(
-                javaClass.simpleName,
-                "generateReaction: ${reaction.reactions.size} reactions generated.",
-            )
+            Timber.d("generateReaction: ${reaction.reactions.size} reactions generated.")
             reaction.reactions.distinctBy { it.character }.forEach { reaction ->
                 val reactingCharacter = saga.findCharacter(reaction.character)
                 if (reactingCharacter != null) {
@@ -252,21 +244,12 @@ class MessageUseCaseImpl
                                 thought = reaction.thought,
                             ),
                         )
-                        Log.d(
-                            javaClass.simpleName,
-                            "Saving reaction from ${reactingCharacter.data.name} at message ${message.id}",
-                        )
+                        Timber.d("Saving reaction from ${reactingCharacter.data.name} at message ${message.id}")
                     } else {
-                        Log.w(
-                            javaClass.simpleName,
-                            "generateReaction: Character can't react to itself.",
-                        )
+                        Timber.w("generateReaction: Character can't react to itself.")
                     }
                 } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateReaction: Character '${reaction.character}' not in scene, skipping reaction.",
-                    )
+                    Timber.w("generateReaction: Character '${reaction.character}' not in scene, skipping reaction.")
                 }
             }
         }
@@ -279,7 +262,7 @@ class MessageUseCaseImpl
             executeRequest {
                 val isNarrator = savedMessage.senderType == SenderType.NARRATOR
                 val speaker = characterReference?.let { "Character: ${it.data.name}" } ?: "Narrator"
-                Log.i(javaClass.simpleName, "🎙️ Starting audio generation for $speaker")
+                Timber.i("🎙️ Starting audio generation for $speaker")
 
                 val voice =
                     Voice.findByName(
@@ -300,7 +283,7 @@ class MessageUseCaseImpl
                         ),
                         blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
                 val finalConfig =
@@ -320,10 +303,7 @@ class MessageUseCaseImpl
                                 voice = finalConfig.voice.id,
                             ),
                         )
-                        Log.i(
-                            "MessageUseCaseImpl",
-                            "✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}",
-                        )
+                        Timber.i("✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}")
                     }
                 }
 

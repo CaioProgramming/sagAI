@@ -18,6 +18,7 @@ fun MascotEmotionFace(
     imageUrl: String?,
     emotionalTone: EmotionalTone,
     modifier: Modifier,
+    animate: Boolean = true,
 ) {
     AnimatedContent(imageUrl, label = "mascotIconAnimation") { url ->
         if (url != null) {
@@ -26,7 +27,14 @@ fun MascotEmotionFace(
                 contentDescription = emotionalTone.name,
                 modifier =
                     modifier
-                        .levitate(duration = 5.seconds, yOffset = 10f)
+                        .then(
+                            if (animate) {
+                                Modifier.levitate(
+                                    duration = 5.seconds,
+                                    yOffset = 10f,
+                                )
+                            } else Modifier
+                        )
                         .animateEnterExit(
                             enter = scaleIn(tween(600, easing = EaseInBounce)),
                         ),

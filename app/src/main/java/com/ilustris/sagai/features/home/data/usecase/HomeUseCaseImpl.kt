@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.home.data.usecase
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.BuildConfig
-import timber.log.Timber
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -21,6 +20,7 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import javax.inject.Inject
 
 class HomeUseCaseImpl
@@ -50,6 +50,7 @@ class HomeUseCaseImpl
                         blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
                         temperatureRandomness = .5f,
                         requireTranslation = true,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                     )
                 result!!
             }

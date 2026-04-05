@@ -39,15 +39,15 @@ class SagaContentUIMapper
                                                     timelineContent =
                                                         it.copy(
                                                             messages =
-                                                                it.messages.sortedBy {
+                                                                it.messages.sortedByDescending {
                                                                     it.message.timestamp
                                                                 },
                                                         ),
-                                            ),
-                                    )
-                                },
-                        )
-                    },
-            )
-        }
-}
+                                                ),
+                                        )
+                                    },
+                            )
+                        },
+                )
+            }
+    }

@@ -58,7 +58,8 @@ class TimelineMapper(
         val genre = saga.data.genre
         val chapter = saga.findChapter(timelineContent.data.id)
         val chapterNumber = saga.chapterNumber(chapter?.data).toRoman()
-        val topEmotion = timelineContent.emotionalRanking().first().first ?: EmotionalTone.NEUTRAL
+        val topEmotion =
+            timelineContent.emotionalRanking().firstOrNull()?.first ?: EmotionalTone.NEUTRAL
         val mascotEmotion =
             mascotEmotionService.getEmotionUrl(
                 genre,

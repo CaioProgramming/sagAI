@@ -576,7 +576,6 @@ class ChatViewModel
                                 return@collectLatest
                             }
 
-                        // Cache flatMessages to avoid multiple traversals
                         val flatMessages = sagaContent.flatMessages()
                         val currentMessageCount = flatMessages.size
                         val messagesChanged = currentMessageCount != lastMessageCount
@@ -584,7 +583,6 @@ class ChatViewModel
                         val messages =
                             mapper.mapToActDisplayData(sagaContent, rules)
 
-                        // Only re-sort characters when message count changes (expensive operation)
                         val characters =
                             if (messagesChanged || uiState.value.characters.isEmpty()) {
                                 sortCharactersByMessageCount(
@@ -1027,6 +1025,7 @@ class ChatViewModel
                         resetSuggestions()
                         stateManager.updateInput(TextFieldValue())
 
+                        stateManager.updateLoading(true)
                         viewModelScope.launch(Dispatchers.IO) {
                             val sceneSummaryData =
                                 if (isFromUser) {
@@ -1198,11 +1197,11 @@ class ChatViewModel
                                 ),
                             )
                         }
-                        updateLoading(false)
                         sceneSummary?.let {
                             launch(Dispatchers.IO) {
                                 generateSuggestions(sceneSummary)
                                 sagaContentManager.getCurrentObjective(sceneSummary)
+                                updateLoading(false)
                             }
                         }
                     }.onFailureAsync {
@@ -1213,7 +1212,6 @@ class ChatViewModel
                         )
                         updateLoading(false)
                         sagaContentManager.setProcessing(false)
-                        stateManager.updateLoading(false)
                         updateSnackBar(
                             snackBar(
                                 context.getString(R.string.message_reply_error),
@@ -1223,6 +1221,7 @@ class ChatViewModel
                                 }
                             },
                         )
+                        stateManager.updateLoading(false)
                     }
             }
         }

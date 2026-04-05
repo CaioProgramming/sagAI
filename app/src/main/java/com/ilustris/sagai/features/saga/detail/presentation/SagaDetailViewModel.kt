@@ -108,10 +108,10 @@ class SagaDetailViewModel
                     DetailAction.Delete -> deleteSaga(saga.value?.data)
                     is DetailAction.OpenSection -> loadSection(detailAction.section)
                     DetailAction.RegenerateIcon -> regenerateIcon()
-                else -> doNothing()
+                    else -> doNothing()
+                }
             }
         }
-    }
 
         fun fetchSagaDetails(sagaId: String) {
             showIntro.value = true
@@ -123,7 +123,7 @@ class SagaDetailViewModel
                         visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
 
                         loadSection(RequestSection.START)
-                        sagaDetailUIMapper.buildDrawer(saga)
+                        detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
                         launchIntroSequence()
                     }
                 }
@@ -185,4 +185,4 @@ class SagaDetailViewModel
                 _loadingMessage.value = null
             }
         }
-}
+    }

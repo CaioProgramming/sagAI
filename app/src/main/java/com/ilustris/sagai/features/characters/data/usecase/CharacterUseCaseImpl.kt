@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.characters.data.usecase
 import android.content.Context
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
-import timber.log.Timber
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -43,6 +42,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -334,11 +334,11 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<String> =
             executeRequest {
-                if (character.events.isEmpty()) {
+                if (character.events.size < 2) {
                     return@executeRequest character.data.backstory
                 }
                 val config =
-                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)!!
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
                 val prompt =
                     CharacterPrompts.characterResume(
                         promptService,

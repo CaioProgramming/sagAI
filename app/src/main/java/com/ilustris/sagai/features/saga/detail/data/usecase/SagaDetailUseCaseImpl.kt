@@ -8,6 +8,8 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -40,6 +42,7 @@ class SagaDetailUseCaseImpl
         private val backupService: BackupService,
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
+        private val remoteConfigService: RemoteConfigService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
             val topCharacters = listOf(saga.mainCharacter!!.data)
@@ -122,7 +125,9 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateSagaResume(saga: SagaContent): RequestResult<String> =
             executeRequest {
-                if (saga.chaptersSize() < 1) {
+                val narrativeRules = remoteConfigService.getNarrativeRules()
+
+                if (saga.completedChapters(narrativeRules) < 1) {
                     return@executeRequest saga.data.description
                 }
                 val prompt =
@@ -153,6 +158,7 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String> =
             executeRequest {
+                if (saga.wikis.isEmpty()) return@executeRequest ""
                 val prompt =
                     SagaPrompts.wikiInsight(
                         promptService,
@@ -167,6 +173,8 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String> =
             executeRequest {
+                val narrativeRules = remoteConfigService.getNarrativeRules()
+                if (saga.completedEvents(narrativeRules) > 3) return@executeRequest ""
                 val prompt =
                     SagaPrompts.timelineInsight(
                         promptService,
@@ -174,8 +182,8 @@ class SagaDetailUseCaseImpl
                         genreConfigService.conversationBlueprint(saga.data.genre),
                     )
                 textGenClient.generate<String>(
-                prompt,
-                requirement = GemmaClient.ModelRequirement.MEDIUM,
-            ) ?: ""
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                ) ?: ""
             }
     }

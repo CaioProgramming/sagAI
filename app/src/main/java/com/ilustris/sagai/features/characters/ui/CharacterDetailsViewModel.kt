@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
@@ -74,7 +75,7 @@ class CharacterDetailsViewModel
             sagaContent: SagaContent,
             characterContent: CharacterContent,
         ) {
-            if (characterResume.value != null) return
+            characterResume.value = characterContent.data.backstory
             viewModelScope.launch(Dispatchers.IO) {
                 isSummarizing.value = true
                 characterUseCase
@@ -112,13 +113,17 @@ class CharacterDetailsViewModel
         }
 
         fun init(
-            characterContent: CharacterContent?,
+            characterId: Int?,
             sagaContent: SagaContent,
         ) {
-            characterResume.value = null
+            val characterContent = sagaContent.findCharacter(characterId)
+            val canGenerateResume = character.value != characterContent
             viewModelScope.launch(Dispatchers.IO) {
+                character.value = characterContent
                 characterContent?.let {
-                    generateResume(sagaContent, it)
+                    if (canGenerateResume) {
+                        generateResume(sagaContent, it)
+                    }
                     if (it.data.image.isNotEmpty()) {
                         val palette = paletteUseCase.extractPalette(it.data.image)
                         Log.d(javaClass.simpleName, "Extracted palette: ${palette.toAINormalize()}")

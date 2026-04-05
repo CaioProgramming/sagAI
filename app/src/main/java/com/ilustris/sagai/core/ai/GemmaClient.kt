@@ -107,7 +107,7 @@ class GemmaClient
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
-            requirement: ModelRequirement = ModelRequirement.HIGH,
+            requirement: ModelRequirement = ModelRequirement.LOW,
             blueprintKey: String? = null,
         ): T? =
             withContext(Dispatchers.IO) {

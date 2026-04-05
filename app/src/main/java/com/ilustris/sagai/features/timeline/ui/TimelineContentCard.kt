@@ -6,12 +6,14 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -60,6 +62,9 @@ import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
@@ -77,195 +82,124 @@ fun TimelineContentViewCard(
     val event = remember { eventCard.timelineContent }
     val emotionalMascot = remember { eventCard.mascotEmotion }
 
-    Box(
+    Column(
         modifier =
             modifier
+                .padding(16.dp)
                 .fillMaxWidth()
-                .border(1.dp, genre.resolveColor())
+                .border(1.dp, genre.resolveColor().gradientFade(), genre.shape())
                 .clip(genre.shape())
+                .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
                 .clickable {
                     expanded = true
-                },
+                }.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         eventCard.chapterNumber?.let {
             Text(
                 it,
                 style =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.resolveColor(),
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = genre.gradient(),
                         textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.align(Alignment.TopCenter),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
 
-        Column(
-            modifier =
-                Modifier
-                    .border(1.dp, genre.resolveColor())
-                    .clip(genre.shape())
-                    .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            AvatarTimelineIcon(
+                icon = saga.data.icon,
+                showSpark = true,
+                genre = saga.data.genre,
+                placeHolderChar =
+                    saga.data.title
+                        .first()
+                        .uppercase(),
+                borderWidth = 1.dp,
+                borderColor = genre.resolveColor(),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .effectForGenre(genre)
+                        .selectiveColorHighlight(saga.data.genre),
+            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                AvatarTimelineIcon(
-                    icon = saga.data.icon,
-                    showSpark = true,
-                    genre = saga.data.genre,
-                    placeHolderChar =
-                        saga.data.title
-                            .first()
-                            .uppercase(),
-                    borderWidth = 1.dp,
-                    borderColor = genre.resolveColor(),
-                    modifier =
-                        Modifier
-                            .size(32.dp)
-                            .effectForGenre(genre)
-                            .selectiveColorHighlight(saga.data.genre),
+                Text(
+                    event.data.title,
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = genre.headerFont(),
+                            color = genre.resolveColor(),
+                            fontWeight = FontWeight.Bold,
+                        ),
                 )
 
                 Text(
-                    event.data.title,
-                    modifier =
-                        Modifier.weight(1f),
+                    event.data.content,
                     style =
-                        MaterialTheme.typography.titleSmall.copy(
+                        MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.resolveColor(),
+                            fontWeight = FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         ),
                 )
-            }
 
-            Text(
-                event.data.content,
-                modifier =
-                    Modifier
-                        .padding(horizontal = 16.dp),
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .8f),
-                    ),
-            )
-
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (event.updatedWikis.isNotEmpty()) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 8.dp)
-                                .clip(genre.shape())
-                                .clickable {
-                                    expanded = true
-                                },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Image(
-                            painterResource(R.drawable.ic_note),
-                            null,
-                            colorFilter = ColorFilter.tint(genre.resolveColor()),
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(24.dp),
-                        )
-
-                        Text(
-                            event.updatedWikis.size.toString(),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (event.updatedWikis.isNotEmpty()) {
+                        TimelineActionItem(
+                            icon = R.drawable.ic_note,
+                            count = event.updatedWikis.size,
+                            color = genre.resolveColor(),
+                            genre = genre,
                         )
                     }
-                }
 
-                if (event.updatedRelationshipDetails.isNotEmpty()) {
-                    Row(
-                        Modifier
-                            .padding(horizontal = 8.dp)
-                            .clip(genre.shape())
-                            .clickable {
-                                expanded = true
-                            },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Image(
-                            painterResource(R.drawable.ic_relationship),
-                            null,
-                            colorFilter = ColorFilter.tint(genre.resolveColor()),
-                            contentScale = ContentScale.Fit,
-                            modifier =
-                                Modifier
-                                    .size(24.dp)
-                                    .padding(4.dp),
-                        )
-
-                        Text(
-                            event
-                                .updatedRelationshipDetails
-                                .size
-                                .toString(),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
+                    if (event.updatedRelationshipDetails.isNotEmpty()) {
+                        TimelineActionItem(
+                            icon = R.drawable.ic_relationship,
+                            count = event.updatedRelationshipDetails.size,
+                            color = genre.resolveColor(),
+                            genre = genre,
                         )
                     }
-                }
 
-                if (event.newlyAppearedCharacters.isNotEmpty()) {
-                    Row(
-                        Modifier
-                            .padding(horizontal = 8.dp)
-                            .clip(genre.shape())
-                            .clickable {
-                                expanded = true
-                            },
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Image(
-                            painterResource(R.drawable.ic_eye_mask),
-                            null,
-                            colorFilter = ColorFilter.tint(genre.resolveColor()),
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.size(24.dp),
+                    if (event.newlyAppearedCharacters.isNotEmpty()) {
+                        TimelineActionItem(
+                            icon = R.drawable.ic_eye_mask,
+                            count = event.newlyAppearedCharacters.size,
+                            color = genre.resolveColor(),
+                            genre = genre,
                         )
+                    }
 
-                        Text(
-                            event.newlyAppearedCharacters.size.toString(),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    emotionalMascot?.let {
+                        MascotEmotionFace(
+                            imageUrl = it.second,
+                            emotionalTone = it.first,
+                            animate = false,
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 }
             }
-        }
-
-        emotionalMascot?.let {
-            MascotEmotionFace(
-                imageUrl = it.second,
-                emotionalTone = it.first,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .size(32.dp),
-            )
         }
     }
 
@@ -280,9 +214,39 @@ fun TimelineContentViewCard(
 }
 
 @Composable
+fun TimelineActionItem(
+    icon: Int,
+    count: Int,
+    color: androidx.compose.ui.graphics.Color,
+    genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            painterResource(icon),
+            null,
+            tint = color,
+            modifier = Modifier.size(16.dp),
+        )
+
+        Text(
+            count.toString(),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = genre.bodyFont(),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                ),
+        )
+    }
+}
+
+@Composable
 fun ExpandedTimeline(
     saga: SagaContent,
     eventCard: TimelineCardContent,
+    onAction: (DetailAction) -> Unit = {},
 ) {
     val genre = remember { saga.data.genre }
     val event = remember { eventCard.timelineContent }
@@ -294,32 +258,6 @@ fun ExpandedTimeline(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .clip(genre.shape())
-                    .align(Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(
-                painterResource(R.drawable.ic_full_spark),
-                null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(24.dp),
-            )
-
-            Text(
-                stringResource(R.string.review_event_label),
-                style =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = genre.headerFont(),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Start,
-                    ),
-            )
-        }
-
         Text(
             event.data.createdAt.formatDate(DateFormatOption.FULL_DAY_MONTH_YEAR),
             style =
@@ -363,14 +301,15 @@ fun ExpandedTimeline(
 
         event.data.emotionalReview?.let {
             emotionalMascot?.let {
-                MascotEmotionFace(
-                    imageUrl = it.second,
-                    emotionalTone = it.first,
-                    modifier =
-                        Modifier
-                            .size(100.dp)
-                            .align(Alignment.CenterHorizontally),
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    MascotEmotionFace(
+                        imageUrl = it.second,
+                        emotionalTone = it.first,
+                        modifier =
+                            Modifier
+                                .size(100.dp),
+                    )
+                }
             }
 
             Text(
@@ -390,8 +329,8 @@ fun ExpandedTimeline(
                 stringResource(R.string.new_characters_label),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
-                        fontWeight = FontWeight.Bold,
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),
             )
@@ -412,8 +351,8 @@ fun ExpandedTimeline(
                 stringResource(R.string.saga_detail_section_title_wiki),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
-                        fontWeight = FontWeight.Bold,
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),
             )
@@ -429,7 +368,8 @@ fun ExpandedTimeline(
                                     1.dp,
                                     genre.resolveColor(),
                                     genre.shape(),
-                                ).requiredWidthIn(max = 200.dp),
+                                )
+                                .requiredWidthIn(max = 200.dp),
                         true,
                     )
                 }
@@ -441,8 +381,8 @@ fun ExpandedTimeline(
                 stringResource(R.string.saga_detail_relationships_section_title),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
-                        fontWeight = FontWeight.Bold,
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),
             )
@@ -459,6 +399,38 @@ fun ExpandedTimeline(
                     )
                 }
             }
+
+            Row(
+                modifier =
+                    Modifier
+                        .gradientFill(
+                            genre.gradient(),
+                        ).clip(genre.shape())
+                        .clickable {
+                            onAction(DetailAction.ReviewEvent(event))
+                        }.align(Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_full_spark),
+                    null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(24.dp),
+                )
+
+                Text(
+                    stringResource(R.string.review_event_label),
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = genre.headerFont(),
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Start,
+                        ),
+                )
+            }
+
+            Spacer(modifier = Modifier.size(32.dp))
         }
     }
 }

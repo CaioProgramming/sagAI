@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
+import ai.atick.material.MaterialColor
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
@@ -15,12 +16,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +52,7 @@ import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
@@ -94,7 +99,7 @@ fun SagaDetailInitialContent(
             Box(Modifier.fillMaxSize()) {
                 val genreHighlight = genre.selectiveHighlight()
                 val chapters = section.chapters ?: emptyList()
-                val eventsCount = chapters.sumOf { it.events.size }
+                val eventsCount = saga.characters.size
                 val messagesCount = chapters.sumOf { it.events.sumOf { it.messages.size } }
 
                 LazyVerticalGrid(
@@ -177,7 +182,8 @@ fun SagaDetailInitialContent(
                                             .size(100.dp)
                                             .clickable {
                                                 onAction(DetailAction.RegenerateIcon)
-                                            }.gradientFill(genre.gradient()),
+                                            }
+                                            .gradientFill(genre.gradient()),
                                 )
 
                                 genre.stylisedText(
@@ -220,7 +226,7 @@ fun SagaDetailInitialContent(
                                     Text(
                                         messagesCount.toString(),
                                         style =
-                                            MaterialTheme.typography.headlineLarge.copy(
+                                            MaterialTheme.typography.titleMedium.copy(
                                                 fontFamily = genre.headerFont(),
                                                 fontWeight = FontWeight.Normal,
                                                 textAlign = TextAlign.Center,
@@ -246,7 +252,15 @@ fun SagaDetailInitialContent(
                             item {
                                 VerticalLabel(
                                     eventsCount.toString(),
-                                    stringResource(R.string.events_count),
+                                    stringResource(R.string.saga_detail_section_title_characters),
+                                    genre,
+                                )
+                            }
+
+                            item {
+                                VerticalLabel(
+                                    saga.data.playTimeMs.toPlaytimeFormat(),
+                                    stringResource(R.string.playtime_title),
                                     genre,
                                 )
                             }
@@ -362,99 +376,31 @@ fun SagaDetailInitialContent(
                         }
                     }
 
-                    if (section.characters.isNotEmpty()) {
+                    RequestSection.entries.forEach {
                         item(span = { GridItemSpan(columnCount) }) {
-                            RowHeader(
-                                stringResource(R.string.saga_detail_section_title_characters),
-                                textStyle =
-                                    MaterialTheme.typography.headlineMedium.copy(
-                                        fontFamily = genre.headerFont(),
-                                        textAlign = TextAlign.Start,
-                                    ),
-                            ) {
-                                onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
-                            }
-                        }
-
-                        item(span = { GridItemSpan(columnCount) }) {
-                            LazyRow(Modifier.fillMaxWidth()) {
-                                items(section.characters.size) { index ->
-                                    val character = section.characters[index]
-                                    CharacterAvatar(
-                                        character.data,
-                                        genre = genre,
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .size(100.dp)
-                                                .clickable {
-                                                    onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
-                                                },
-                                    )
-                                }
-                            }
+                            section.miniSection(it, saga, onAction)
                         }
                     }
 
-                    if (section.relationships.isNotEmpty()) {
-                        item(span = { GridItemSpan(columnCount) }) {
-                            RowHeader(
-                                stringResource(R.string.saga_detail_relationships_section_title),
-                                textStyle =
-                                    MaterialTheme.typography.headlineMedium.copy(
-                                        fontFamily = genre.headerFont(),
-                                        textAlign = TextAlign.Start,
-                                    ),
-                            ) {
-                                onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
-                            }
-                        }
-
-                        item(span = { GridItemSpan(columnCount) }) {
-                            LazyRow(Modifier.fillMaxWidth()) {
-                                items(section.relationships.size) { index ->
-                                    val relationship = section.relationships[index]
-                                    RelationShipCard(
-                                        saga = saga,
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .size(150.dp)
-                                                .clickable {
-                                                    onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
-                                                },
-                                        content = relationship,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    section.lastEvent?.let {
-                        item(span = { GridItemSpan(columnCount) }) {
+                    item(span = {
+                        GridItemSpan(columnCount)
+                    }) {
+                        Button(
+                            onClick = {
+                                onAction(DetailAction.Delete)
+                            },
+                            colors =
+                                ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialColor.Red400,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                        ) {
                             Text(
-                                stringResource(R.string.saga_drawer_events_since_last_chapter),
-                                style =
-                                    MaterialTheme.typography.displaySmall.copy(
-                                        fontFamily = genre.headerFont(),
-                                        textAlign = TextAlign.Start,
-                                    ),
-                                modifier = Modifier.padding(16.dp),
-                            )
-                        }
-
-                        item(span = { GridItemSpan(columnCount) }) {
-                            TimelineContentViewCard(
-                                saga,
-                                it,
-                                onAction = onAction,
-                                modifier =
-                                    Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onAction(DetailAction.OpenSection(RequestSection.EVENTS))
-                                        },
+                                stringResource(R.string.saga_detail_delete_saga_button),
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }

@@ -26,12 +26,13 @@ import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 
 enum class RequestSection {
-    START,
+    EVENTS,
+
     CHARACTERS,
     WIKI,
-    EVENTS,
     CHAPTERS,
     ACTS,
+    START,
 }
 
 class SagaDetailUIMapper(
@@ -43,36 +44,35 @@ class SagaDetailUIMapper(
     private val wikiMapper: WikiMapper,
     private val emotionalUseCase: EmotionalUseCase,
 ) {
-    suspend fun buildDrawer(saga: SagaContent): List<TimelineDrawer> {
+    suspend fun buildDrawer(saga: SagaContent): TimelineDrawer {
         val narrativeRules = remoteConfigService.getNarrativeRules()
-
-        return saga.acts.map {
-            val actProgress =
-                it.chapters.filter { it.isComplete(narrativeRules) }.size - narrativeRules.actUpdateLimit / 100f
-
-            TimelineDrawer(
-                it.data.title.ifEmpty { saga.actNumber(it.data).toRoman() },
-                it.chapters.map {
-                    val chapterProgress =
-                        it.events.filter { it.isComplete(narrativeRules) }.size - narrativeRules.chapterUpdateLimit / 100f
-                    TimelineDrawerGroup(
-                        it.data.title.ifEmpty {
-                            saga.chapterNumber(it.data).toRoman()
+        val actProgress =
+            (saga.completedActs(narrativeRules) - narrativeRules.actUpdateLimit) / 100f
+        return TimelineDrawer(
+            stringResourceHelper.getString(R.string.recap_your_journey),
+            saga.flatChapters().map {
+                val chapterProgress =
+                    (it.events.filter { it.isComplete(narrativeRules) }.size - narrativeRules.chapterUpdateLimit) / 100f
+                TimelineDrawerGroup(
+                    it.data.title.ifEmpty {
+                        stringResourceHelper.getString(
+                            R.string.chapter_number_label,
+                            saga.chapterNumber(it.data).toRoman(),
+                        )
+                    },
+                    progress = chapterProgress,
+                    items =
+                        it.events.map {
+                            TimelineDrawerItem(
+                                it.data.title,
+                                it.data.createdAt.formatDate(),
+                                it.isComplete(narrativeRules),
+                            )
                         },
-                        progress = chapterProgress,
-                        items =
-                            it.events.map {
-                                TimelineDrawerItem(
-                                    it.data.title,
-                                    it.data.createdAt.formatDate(),
-                                    it.isComplete(narrativeRules),
-                                )
-                            },
-                    )
-                },
-                actProgress,
-            )
-        }
+                )
+            },
+            progress = actProgress,
+        )
     }
 
     suspend fun buildSection(
@@ -140,7 +140,8 @@ class SagaDetailUIMapper(
             characters = topCharacters,
             relationships = saga.relationships,
             lastEvent = timelineCard,
-            chapters = saga.flatChapters(),
+            acts = saga.acts.filter { it.isComplete(narrativeRules) },
+            chapters = saga.flatChapters().filter { it.isComplete(narrativeRules) },
             endMessage = saga.data.endMessage,
             readyToReview = saga.isComplete(narrativeRules),
         )

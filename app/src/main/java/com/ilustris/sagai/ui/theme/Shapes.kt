@@ -34,6 +34,7 @@ import androidx.graphics.shapes.toPath
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -164,7 +165,11 @@ fun DrawShape(
                     // 1. Get the full path from your Morph object based on current progress
                     // (Your Morph object seems to handle its own internal animation/state for morphing)
                     // For a simple stroke animation of a static path, this would just be setting a fixed path.
-                    androidPath = morph.toPath(progress.value, androidPath) // Assuming morph.toPath can take progress for morphing
+                    androidPath =
+                        morph.toPath(
+                            progress.value,
+                            androidPath,
+                        ) // Assuming morph.toPath can take progress for morphing
                     morphPath = androidPath.asComposePath()
 
                     // Optional: Scale the path to fit the Box (as in your code)
@@ -211,7 +216,9 @@ fun Genre?.cornerSize(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.
 }
 
 @Composable
-fun Genre?.shape(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current) = RoundedCornerShape(this.cornerSize(visualConfig))
+fun Genre?.shape(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current) =
+    this?.bubble(isNarrator = true)
+        ?: RoundedCornerShape(visualConfig?.cornerSizeDp?.dp ?: 0.dp)
 
 fun Morph.toComposePath(
     progress: Float,

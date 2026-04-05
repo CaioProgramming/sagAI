@@ -124,18 +124,14 @@ class NotificationGenerationWorker
                                     conversationDirective = conversationDirective,
                                 )
 
-                            delay(3.seconds)
-
                             val message =
                                 gemmaClient.generate<String>(prompt, useCore = true) ?: emptyString()
 
                             selectedCharacter to message
                         } ?: run {
-                            // Fallback: usar primeiro personagem
                             sagaContent.characters.first() to emptyString()
                         }
 
-                    // Criar notificação agendada
                     val currentTime = System.currentTimeMillis()
                     val scheduledTime = currentTime + getNotificationDelay()
 
@@ -155,13 +151,11 @@ class NotificationGenerationWorker
                             generationTimestamp = currentTime,
                         )
 
-                    // Salvar no DataStore
                     dataStore.setString(
                         ScheduledNotificationServiceImpl.SCHEDULED_NOTIFICATION_JSON_KEY,
                         notification.toJsonFormat(),
                     )
 
-                    // Agendar via AlarmManager
                     val alarmManager =
                         applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                     val intent =

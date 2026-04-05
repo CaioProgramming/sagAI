@@ -152,19 +152,13 @@ fun CharacterDetailsContent(
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
     var shareCharacter by remember { mutableStateOf(false) }
 
-    var currentCharacter by remember { mutableStateOf<CharacterContent?>(null) }
+    val currentCharacter by viewModel.character.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
 
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
     LaunchedEffect(characterId) {
-        currentCharacter = sagaContent.findCharacter(characterId)
-    }
-
-    LaunchedEffect(currentCharacter) {
-        currentCharacter?.let {
-            viewModel.init(it, sagaContent)
-        }
+        viewModel.init(characterId, sagaContent)
     }
 
     AnimatedContent(
@@ -261,61 +255,6 @@ private fun CharacterDetailsLoaded(
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
     val characterRelations = remember { characterContent.sortRelationsByTimeline(timelineEvents) }
 
-    val smartZoom = characterContent.data.smartZoom
-    val needsZoom = smartZoom?.needsZoom ?: false
-
-    var titleAlpha by remember {
-        mutableFloatStateOf(if (needsZoom) 0f else 1f)
-    }
-
-    var scale by remember {
-        mutableFloatStateOf(smartZoom?.scale ?: 1f)
-    }
-
-    var imageTranslationX by remember {
-        mutableFloatStateOf(smartZoom?.translationX ?: 0f)
-    }
-
-    var imageTranslationY by remember {
-        mutableFloatStateOf((smartZoom?.translationY ?: 0f) * 1000f + 200f)
-    }
-
-    val animatedScale by animateFloatAsState(
-        targetValue = scale,
-        animationSpec = tween(durationMillis = 2500, easing = EaseIn),
-    )
-    val animatedTranslationX by animateFloatAsState(
-        targetValue = imageTranslationX,
-        animationSpec = tween(durationMillis = 1000 * 3, easing = FastOutSlowInEasing),
-    )
-    val animatedTranslationY by animateFloatAsState(
-        targetValue = imageTranslationY,
-        animationSpec = tween(durationMillis = 1000 * 3, easing = FastOutSlowInEasing),
-    )
-
-    val titleAnimation by animateFloatAsState(
-        targetValue = titleAlpha,
-        animationSpec = tween(durationMillis = 1500),
-    )
-
-    LaunchedEffect(characterContent) {
-        if (needsZoom.not()) {
-            titleAlpha = 1f
-            scale = 1f
-            imageTranslationX = 0f
-            imageTranslationY = 0f
-            return@LaunchedEffect
-        } else {
-            titleAlpha = 0f
-            delay(2.seconds)
-            scale = 1f
-            imageTranslationX = 0f
-            imageTranslationY = 0f
-            delay(1.seconds)
-            titleAlpha = 1f
-        }
-    }
-
     AnimatedContent(
         characterContent.data,
         transitionSpec = {
@@ -361,15 +300,12 @@ private fun CharacterDetailsLoaded(
                                         },
                                 imageModifier =
                                     Modifier
+                                        .clipToBounds()
                                         .fillMaxSize()
-                                        .graphicsLayer(
-                                            scaleX = animatedScale,
-                                            scaleY = animatedScale,
-                                            translationX = animatedTranslationX,
-                                            translationY = animatedTranslationY,
-                                            transformOrigin = TransformOrigin.Center,
-                                        ).effectForGenre(
+                                        .effectForGenre(
                                             genre,
+                                        ).graphicsLayer(
+                                            translationY = -10f,
                                         ),
                             ) {
                                 Box(
@@ -378,13 +314,12 @@ private fun CharacterDetailsLoaded(
                                         .background(fadeGradientTop(adaptiveColor))
                                         .fillMaxWidth()
                                         .clipToBounds()
-                                        .padding(8.dp),
+                                        .padding(16.dp),
                                 ) {
                                     genre.stylisedText(
                                         text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                         modifier =
                                             Modifier
-                                                .alpha(titleAnimation)
                                                 .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
                                                 .reactiveShimmer(true, characterColor.shimmerize())
                                                 .padding(16.dp)
@@ -456,7 +391,8 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -583,7 +519,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }
