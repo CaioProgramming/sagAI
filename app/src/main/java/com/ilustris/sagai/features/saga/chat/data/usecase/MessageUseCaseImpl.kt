@@ -91,7 +91,7 @@ class MessageUseCaseImpl
                         ),
                     blueprintKey = ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT,
                     temperatureRandomness = 0.2f,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )
             }
 
@@ -283,7 +283,7 @@ class MessageUseCaseImpl
                         ),
                         blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )!!
 
                 val finalConfig =

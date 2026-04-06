@@ -2292,8 +2292,8 @@ fun Modifier.genreVfx(
         Genre.FANTASY -> {
             this
                 .levitate()
-                .divineAura(auraColor = finalPrimary.lighter(0.4f).copy(alpha = 0.5f))
-                .chromaticAberration(intensity = 4f, blurRadius = 5f)
+                .divineAura(auraColor = finalPrimary.lighter(0.4f))
+                .chromaticAberration(intensity = 5f, blurRadius = 10f)
         }
 
         Genre.CYBERPUNK -> {

@@ -128,8 +128,7 @@ class SagaContentManagerImpl
 
         private var progressionCounter = 0
 
-        private suspend fun setNarrativeProcessingStatus(isProcessing: Boolean) {
-            delay(500)
+        private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
             isProcessingNarrative.set(isProcessing)
             _narrativeProcessingUiState.value = isProcessing
         }

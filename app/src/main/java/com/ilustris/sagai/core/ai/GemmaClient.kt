@@ -64,21 +64,22 @@ class GemmaClient
             const val RETRY_DELAY = 20
         }
 
-        enum class ModelRequirement(
-            val flag: String,
-            val defaultModel: String,
-        ) {
-            LOW("gemma_low_tier", "models/gemma-3-1b-it"),
-            MEDIUM("gemma_medium_tier", "models/gemma-3-12b-it"),
-            HIGH("gemma_high_tier", "models/gemma-3-27b-it"),
+        enum class ModelRequirement {
+            LOW,
+            MEDIUM,
+            HIGH,
         }
 
-        suspend fun modelName(requirement: ModelRequirement) =
-            remoteConfigService.getString(requirement.flag)?.let {
-                it.ifEmpty {
-                    requirement.defaultModel
-                }
-            } ?: requirement.defaultModel
+        suspend fun modelName(requirement: ModelRequirement): String {
+            val tierConfig =
+                remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
+            val modelName = tierConfig[requirement.name]
+            return modelName ?: when (requirement) {
+                ModelRequirement.LOW -> "models/gemma-3-1b-it"
+                ModelRequirement.MEDIUM -> "models/gemma-3-12b-it"
+                ModelRequirement.HIGH -> "models/gemma-3-27b-it"
+        }
+    }
 
         suspend fun coreKey() =
             remoteConfigService.getString(CORE_FLAG, false)?.let {
@@ -209,9 +210,10 @@ class GemmaClient
                                         ),
                                 )
 
+                            val formattedModel = model.replace("models/", "")
                             val response =
                                 geminiApiService.generateContent(
-                                    model = model,
+                                    model = formattedModel,
                                     apiKey = apiConfig(useCore),
                                     request = geminiRequest,
                                 )

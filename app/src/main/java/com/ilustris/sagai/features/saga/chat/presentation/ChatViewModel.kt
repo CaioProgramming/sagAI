@@ -599,7 +599,7 @@ class ChatViewModel
                                 messages = messages,
                                 characters = characters,
                                 chatState = ChatState.Success,
-                                isLoading = false,
+                                isLoading = if (loadFinished) it.isLoading else false,
                             )
                         }
 
@@ -1197,12 +1197,12 @@ class ChatViewModel
                                 ),
                             )
                         }
-                        sceneSummary?.let {
-                            launch(Dispatchers.IO) {
-                                generateSuggestions(sceneSummary)
-                                sagaContentManager.getCurrentObjective(sceneSummary)
-                                updateLoading(false)
+                        viewModelScope.launch(Dispatchers.IO) {
+                            sceneSummary?.let {
+                                generateSuggestions(it)
+                                sagaContentManager.getCurrentObjective(it)
                             }
+                            updateLoading(false)
                         }
                     }.onFailureAsync {
                         messageUseCase.updateMessage(

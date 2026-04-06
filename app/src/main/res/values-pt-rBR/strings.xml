@@ -541,6 +541,7 @@
     <string name="onboarding_creation_guide_finish">Começar a criar</string>
     <string name="onboarding_gameplay_guide_finish">Começar saga</string>
     <string name="onboarding_app_intro_fallback_title">Bem-vindo ao sagas</string>
+    <string name="thinking_message">Gemma está pensando...</string>
 </resources>
 
 

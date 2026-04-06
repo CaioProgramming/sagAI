@@ -451,9 +451,13 @@ fun ChatView(
 
             AnimatedVisibility(
                 uiState.isGenerating || uiState.isLoading,
-                enter = fadeIn(tween(500, easing = FastOutLinearInEasing)),
+                enter = fadeIn(tween(1500, easing = FastOutLinearInEasing)),
                 exit = fadeOut(animationSpec = tween(700)),
-            ) {
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .zIndex(-1f),
+                    ) {
                 val shimmerColors =
                     uiState.sagaContent
                         ?.data
@@ -463,6 +467,7 @@ fun ChatView(
                     modifier =
                         Modifier
                             .fillMaxSize()
+                            .alpha(0.3f)
                             .reactiveShimmer(true, shimmerColors),
                 )
             }
