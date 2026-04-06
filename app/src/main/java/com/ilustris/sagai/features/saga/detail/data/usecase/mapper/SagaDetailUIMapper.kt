@@ -1,18 +1,14 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase.mapper
 
-import coil3.Bitmap
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.StringResourceHelper
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.toRoman
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
@@ -20,7 +16,6 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
-import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -133,7 +128,7 @@ class SagaDetailUIMapper(
             title = saga.data.title,
             subtitle = subtitle,
             saga = saga,
-            sagaResume = sagaResume ?: emptyString(),
+            sagaResume = sagaResume ?: saga.data.description,
             segmentedImage = segmentedImage,
             emotionalCard = emotionalCard,
             starring = saga.mainCharacter,

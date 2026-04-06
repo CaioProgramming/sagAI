@@ -196,8 +196,6 @@ class MessageUseCaseImpl
             if (sceneSummary == null) error("Can't define reactions without context.")
             if (sceneSummary.charactersPresent.isEmpty()) error("generateReaction: No characters related to react")
 
-            if (message.senderType == SenderType.THOUGHT) error("generateReaction: Thought message cannot be reacted")
-
             val charactersInScene =
                 sceneSummary.charactersPresent.mapNotNull { characterName ->
                     saga.findCharacter(characterName)

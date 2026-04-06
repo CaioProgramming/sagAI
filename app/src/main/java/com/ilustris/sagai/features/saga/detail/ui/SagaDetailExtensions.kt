@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,9 +16,7 @@ import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +25,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shadow
@@ -54,7 +52,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
-import com.ilustris.sagai.features.saga.detail.ui.DetailAction.*
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction.OpenSection
 import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
@@ -87,7 +85,7 @@ fun DetailSectionView.RenderSection(
                 section = this,
                 animationScopes = animationScopes,
                 onOpenEvent = {
-                    onAction(DetailAction.OpenSection(RequestSection.EVENTS))
+                    onAction(OpenSection(RequestSection.EVENTS))
                 },
             )
         }
@@ -100,7 +98,7 @@ fun DetailSectionView.RenderSection(
                 saga,
                 groups = wikiGroup,
                 onBackClick = {
-                    onAction(DetailAction.OpenSection(RequestSection.START))
+                    onAction(OpenSection(RequestSection.START))
                 },
                 reviewWiki = {
                     onAction(DetailAction.ReviewWiki(it))
@@ -115,7 +113,7 @@ fun DetailSectionView.RenderSection(
                 this.title,
                 this.subtitle,
                 onBackClick = {
-                    onAction(DetailAction.OpenSection(RequestSection.START))
+                    onAction(OpenSection(RequestSection.START))
                 },
             )
         }
@@ -124,7 +122,7 @@ fun DetailSectionView.RenderSection(
             ChaptersGalleryContent(
                 section = this,
                 onBackClick = {
-                    onAction(DetailAction.OpenSection(RequestSection.START))
+                    onAction(OpenSection(RequestSection.START))
                 },
             )
         }
@@ -133,7 +131,7 @@ fun DetailSectionView.RenderSection(
             ActsGalleryContent(
                 section = this,
                 onBackClick = {
-                    onAction(DetailAction.OpenSection(RequestSection.START))
+                    onAction(OpenSection(RequestSection.START))
                 },
             )
         }
@@ -151,14 +149,13 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                 .padding(16.dp)
                 .fillMaxSize()
                 .padding(8.dp),
-            ) {
+    ) {
         item {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                        .fillMaxWidth(),
             ) {
                 Text(
                     title,
@@ -179,8 +176,7 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                                     progress,
                                 ),
                                 genre.shape(),
-                            )
-                            .padding(8.dp),
+                            ).padding(8.dp),
                 )
             }
         }
@@ -188,6 +184,13 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier.gradientFill(
+                            progressiveBrush(
+                                genre.resolveColor(),
+                                it.progress,
+                            ),
+                        ),
                 ) {
                     Icon(
                         painterResource(genre.icon),
@@ -197,22 +200,14 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                             Modifier
                                 .padding(
                                     end = 8.dp,
-                                ).size(48.dp)
-                                .gradientFill(progressiveBrush(genre.resolveColor(), it.progress)),
+                                ).size(48.dp),
                     )
 
                     Text(
                         it.title,
                         style =
-                            MaterialTheme.typography.titleLarge.copy(
+                            MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = genre.bodyFont(),
-                            ),
-                        modifier =
-                            Modifier.gradientFill(
-                                progressiveBrush(
-                                    genre.resolveColor(),
-                                    it.progress,
-                                ),
                             ),
                     )
                 }
@@ -525,7 +520,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                 textAlign = TextAlign.Start,
                             ),
                     ) {
-                        onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
+                        onAction(OpenSection(RequestSection.CHARACTERS))
                     }
 
                     LazyRow(Modifier.fillMaxWidth()) {

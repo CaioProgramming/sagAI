@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -259,7 +260,7 @@ fun StarryLoader(
 fun WarpSpeedStarField(
     modifier: Modifier = Modifier,
     starColor: Color = MaterialTheme.colorScheme.onBackground,
-    starCount: Int = 200, // More stars for density since they are smaller
+    starCount: Int = Genre.entries.size * 50,
 ) {
     val stars = remember { mutableStateListOf<WarpStar>() }
     var lastFrameTime by remember { mutableLongStateOf(0L) }
@@ -295,6 +296,7 @@ fun WarpSpeedStarField(
     }
 
     Canvas(modifier = modifier) {
+        lastFrameTime // Observe lastFrameTime to trigger redraws continuously
         val centerX = size.width / 2
         val centerY = size.height / 2
 

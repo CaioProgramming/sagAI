@@ -227,7 +227,7 @@ class CharacterUseCaseImpl
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
                         prompt,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                         temperatureRandomness = .3f,
                     )!!
 
@@ -294,7 +294,7 @@ class CharacterUseCaseImpl
                         gemmaClient
                             .generate<NickNameGen>(
                                 prompt,
-                                requirement = GemmaClient.ModelRequirement.MEDIUM,
+                                requirement = GemmaClient.ModelRequirement.LOW,
                             )!!
                             .suggestions
 
@@ -349,7 +349,7 @@ class CharacterUseCaseImpl
                     )
                 gemmaClient.generate<String>(
                     prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
             }
 
@@ -366,7 +366,7 @@ class CharacterUseCaseImpl
                 val result =
                     gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                     )
 
                 if (result?.updates?.isNotEmpty() == true) {

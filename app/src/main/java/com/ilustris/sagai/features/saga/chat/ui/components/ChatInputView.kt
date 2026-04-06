@@ -127,6 +127,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -340,12 +341,9 @@ fun ChatInputView(
     val backgroundColor by animateColorAsState(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
     )
+
     val inputShape =
-        content.data.genre.bubble(
-            BubbleTailAlignment.BottomLeft,
-            tailWidth = 0.dp,
-            tailHeight = 0.dp,
-        )
+        content.data.genre.shape()
 
     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
     val rotation by infiniteTransition.animateFloat(
@@ -476,10 +474,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                sweepGradient(
-                                                    palette,
-                                                ) as ShaderBrush
-                                            ).createShader(size)
+                                                    sweepGradient(
+                                                        palette,
+                                                    ) as ShaderBrush
+                                                    ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -502,9 +500,11 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }.dropShadow(inputShape, {
+                    }
+                    .dropShadow(inputShape, {
                         brush = inputBrush
                         radius = glowRadius
+                        spread = 5f
                     })
                     .border(1.dp, inputBrush, inputShape)
                     .background(backgroundColor, inputShape)
@@ -550,12 +550,12 @@ fun ChatInputView(
                                         radius = 5.dp,
                                         resolvedColor,
                                     ),
-                                ).border(1.dp, resolvedColor.gradientFade(), shape)
+                                )
+                                .border(1.dp, resolvedColor.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
-                                )
-                                .clip(shape)
+                                ).clip(shape)
                                 .padding(8.dp),
                     ) {
                         item(span = { GridItemSpan(4) }) {
@@ -581,7 +581,8 @@ fun ChatInputView(
                                             coroutineScope.launch {
                                                 characterToolTipState.dismiss()
                                             }
-                                        }.size(36.dp),
+                                        }
+                                        .size(36.dp),
                                 textStyle =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -823,7 +824,8 @@ fun ChatInputView(
                                                             .background(
                                                                 backColor,
                                                                 inputShape,
-                                                            ).clickable(enabled = currentTagInside == null) {
+                                                            )
+                                                            .clickable(enabled = currentTagInside == null) {
                                                                 it.tag?.let { tag ->
                                                                     val newValue =
                                                                         insertExpressiveTag(
@@ -832,8 +834,7 @@ fun ChatInputView(
                                                                         )
                                                                     onUpdateInput(newValue)
                                                                 }
-                                                            }
-                                                            .padding(8.dp)
+                                                            }.padding(8.dp)
                                                             .animateContentSize(),
                                                 ) {
                                                     val weight =

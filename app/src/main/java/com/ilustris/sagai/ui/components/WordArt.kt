@@ -305,7 +305,7 @@ fun Genre.stylisedText(
                         brush = Brush.verticalGradient(colorPalette()),
                         shadow =
                             Shadow(
-                                resolvedColor.copy(alpha = 0.5f), // Golden shadow
+                                colorPalette().last().darker(),
                                 blurRadius = 15f,
                                 offset = Offset(0f, 2f),
                             ),

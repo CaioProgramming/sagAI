@@ -61,7 +61,7 @@ fun ChapterCardView(
                 .weight(1f),
         ) {
             var textAlpha by remember {
-                mutableFloatStateOf(0f)
+                mutableFloatStateOf(1f)
             }
             AsyncImage(
                 chapter.coverImage,
@@ -83,7 +83,7 @@ fun ChapterCardView(
             Text(
                 chapterIndex.toRoman(),
                 style =
-                    MaterialTheme.typography.titleMedium.copy(
+                    MaterialTheme.typography.headlineMedium.copy(
                         fontFamily = genre.headerFont(),
                         textAlign = TextAlign.Center,
                         brush = genre.gradient(),

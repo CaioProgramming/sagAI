@@ -2,10 +2,6 @@
 
 package com.ilustris.sagai.features.timeline.ui
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,8 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -55,7 +49,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
-import com.ilustris.sagai.features.timeline.presentation.TimelineAction
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
@@ -301,7 +294,7 @@ fun ExpandedTimeline(
 
         event.data.emotionalReview?.let {
             emotionalMascot?.let {
-                Box(contentAlignment = Alignment.Center) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                     MascotEmotionFace(
                         imageUrl = it.second,
                         emotionalTone = it.first,
@@ -314,12 +307,16 @@ fun ExpandedTimeline(
 
             Text(
                 it,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .alpha(.7f),
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = genre.bodyFont(),
                         textAlign = TextAlign.Center,
                         fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Light,
                     ),
             )
         }
@@ -368,8 +365,7 @@ fun ExpandedTimeline(
                                     1.dp,
                                     genre.resolveColor(),
                                     genre.shape(),
-                                )
-                                .requiredWidthIn(max = 200.dp),
+                                ).requiredWidthIn(max = 200.dp),
                         true,
                     )
                 }

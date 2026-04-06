@@ -47,6 +47,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -83,7 +84,7 @@ fun ChapterContentView(
 
         if (chapter.data.coverImage.isEmpty()) {
             Image(
-                painterResource(R.drawable.ic_spark),
+                painterResource(genre.icon),
                 null,
                 Modifier
                     .clickable {
@@ -91,8 +92,7 @@ fun ChapterContentView(
                             content,
                             chapter,
                         )
-                    }
-                    .size(100.dp)
+                    }.size(100.dp)
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
@@ -103,7 +103,8 @@ fun ChapterContentView(
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
-                        .reactiveShimmer(isLast),
+                        .reactiveShimmer(isLast)
+                        .genreVfx(genre),
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = genre.headerFont(),
@@ -219,7 +220,8 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient())
                     .clickable {
                         requestReview(chapter)
-                    }.padding(4.dp),
+                    }
+                    .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

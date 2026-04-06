@@ -44,6 +44,6 @@ class GenreConfigService
         suspend fun conversationBlueprint(genre: Genre): String =
             promptService.buildRemotePrompt(
                 "${genre.name.lowercase()}_conversation_blueprint",
-                emptyMap<String, String>(),
+                emptyMap(),
             )
     }

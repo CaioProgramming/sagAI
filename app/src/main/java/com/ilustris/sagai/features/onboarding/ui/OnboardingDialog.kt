@@ -85,7 +85,6 @@ import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -126,21 +125,23 @@ fun OnboardingDialog(
         }
     }
 
-    AnimatedVisibility(uiState is OnboardingUiState.Loading) {
+    AnimatedVisibility(
+        uiState is OnboardingUiState.Loading,
+        enter = slideInVertically { -it },
+        exit = fadeOut(),
+    ) {
         Box(
             Modifier
-                .padding(32.dp)
                 .fillMaxSize(),
         ) {
             Box(
                 Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
                     .background(
-                        fadeGradientTop(
+                        fadeGradientBottom(
                             MaterialTheme.colorScheme.primary,
                         ),
-                    ),
+                    ).fillMaxWidth()
+                    .align(Alignment.BottomCenter),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -590,8 +591,7 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }
-                    .graphicsLayer {
+                    }.graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -604,8 +604,7 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }
-                    .zoomAnimation(),
+                    }.zoomAnimation(),
         )
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.theme.levitate
@@ -487,7 +488,8 @@ fun Modifier.vhs(isPlaying: Boolean = true): Modifier =
 
                 // 3. Main content on top
                 drawContent()
-            }.graphicsLayer {
+            }
+            .graphicsLayer {
                 // Wavy scale/rotation from Horror for that unstable feeling
                 val time = ticker * 2 * kotlin.math.PI.toFloat()
                 scaleX = 1f + kotlin.math.sin(time * 2f).toFloat() * 0.02f
@@ -750,9 +752,9 @@ fun Modifier.livingTorch(
                             val y = baseY - (sparkProgress * 220f)
                             val xDrift =
                                 (
-                                    kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
-                                        kotlin.math.sin(time * 5f + seed * 8f) * 10f
-                                ).toFloat() * sparkProgress
+                                        kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
+                                                kotlin.math.sin(time * 5f + seed * 8f) * 10f
+                                        ).toFloat() * sparkProgress
 
                             val sparkWidth = (2.5f + seed * 3f) * invProgress
                             val sparkHeight = sparkWidth * (1.5f + sparkProgress * 2f)
@@ -2292,8 +2294,7 @@ fun Modifier.genreVfx(
         Genre.FANTASY -> {
             this
                 .levitate()
-                .divineAura(auraColor = finalPrimary.lighter(0.4f))
-                .chromaticAberration(intensity = 5f, blurRadius = 10f)
+                .divineAura(auraColor = genre.colorPalette().last().lighter(.4f))
         }
 
         Genre.CYBERPUNK -> {
