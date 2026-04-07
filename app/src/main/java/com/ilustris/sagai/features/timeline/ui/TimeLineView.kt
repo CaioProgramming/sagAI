@@ -3,11 +3,9 @@
 package com.ilustris.sagai.features.timeline.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
@@ -63,7 +61,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -83,7 +80,6 @@ import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDe
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -91,7 +87,6 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
-import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.presentation.TimelineAction
@@ -660,8 +655,7 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        )
-                                        .padding(16.dp),
+                                        ).padding(16.dp),
                                 true,
                             )
                         }
@@ -706,8 +700,7 @@ fun TimeLineSimpleCard(
             .background(
                 MaterialTheme.colorScheme.background,
                 shape,
-            )
-            .padding(16.dp)
+            ).padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -793,8 +786,7 @@ fun TimeLineSimpleCard(
                         .clip(shape)
                         .clickable {
                             requestReview(eventContent)
-                        }
-                        .gradientFill(genre.gradient())
+                        }.gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -836,7 +828,7 @@ fun AvatarTimelineIcon(
     val border =
         borderColor?.solidGradient() ?: resolvedColor.solidGradient()
     val background =
-        backgroundColor?.gradientFade() ?: resolvedColor.gradientFade()
+        Brush.verticalGradient((backgroundColor ?: resolvedColor).darkerPalette(factor = .2f))
     Box(
         modifier
             .border(borderWidth, border, CircleShape)
@@ -1032,8 +1024,7 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }
-                                .alpha(.4f),
+                                }.alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(

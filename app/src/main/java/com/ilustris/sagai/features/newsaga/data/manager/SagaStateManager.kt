@@ -1,8 +1,6 @@
 package com.ilustris.sagai.features.newsaga.data.manager
 
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
@@ -29,8 +27,6 @@ interface SagaStateManager {
     fun getSagaForm(): SagaDraft
 
     fun reset()
-
-    suspend fun prepareSagaData(): RequestResult<Saga>
 
     suspend fun adaptToGenre()
 

@@ -1,7 +1,6 @@
 package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
-import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -27,6 +26,7 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import timber.log.Timber
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
@@ -78,7 +78,7 @@ class ImagenClientImpl
                         }
                     }
                 }
-            Log.i(TAG, logData)
+            Timber.tag(TAG).i(logData)
             return billingService.runPremiumRequest {
                 val imageModel =
                     Firebase.ai().generativeModel(
@@ -102,9 +102,10 @@ class ImagenClientImpl
                     }
 
                 val content = imageModel.generateContent(promptBuilder)
-                Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
-                Log.d(
-                    TAG,
+                Timber
+                    .tag(TAG)
+                    .d("generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+                Timber.tag(TAG).d(
                     "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}",
                 )
 
@@ -126,8 +127,7 @@ class ImagenClientImpl
         ): RequestResult<Bitmap> =
             executeRequest {
                 billingService.runPremiumRequest(bypass = true) {
-                    Log.d(
-                        TAG,
+                    Timber.tag(TAG).d(
                         "🚀 Starting integrated image generation flow for: ${imageType.name} | Genre: ${genre.name} | Variation: $variationId",
                     )
 
@@ -144,7 +144,7 @@ class ImagenClientImpl
                             imageConfig,
                             imageType,
                         ).getSuccess()
-                    Log.d(TAG, "📸 Visual Direction extracted: $visualDirection")
+                    Timber.tag(TAG).d("📸 Visual Direction extracted: $visualDirection")
 
                     // 2. ARTISTIC DESCRIPTION
                     val artisticPrompt =
@@ -170,9 +170,9 @@ class ImagenClientImpl
                         ).getSuccess()
 
                     reviewedResult?.let {
-                        Log.d(TAG, "⚖️ Final prompt reviewed.")
+                        Timber.tag(TAG).d("⚖️ Final prompt reviewed.")
                     } ?: run {
-                        Log.e(TAG, "generateIntegratedImage: Failed to review")
+                        Timber.tag(TAG).e("generateIntegratedImage: Failed to review")
                     }
                     val typeConfig = imageConfig.typeConfigs[imageType.name]
                     val finalAspectRatio =
@@ -196,8 +196,7 @@ class ImagenClientImpl
                             appendLine(genreConfig.renderingInstructions)
                             appendLine("Aspect Ratio: $finalAspectRatio")
                         }
-                    Log.d(
-                        TAG,
+                    Timber.tag(TAG).d(
                         buildString {
                             appendLine("Image generation pipeline execution: ")
                             appendLine("context: $context")
@@ -220,9 +219,9 @@ class ImagenClientImpl
                         )
 
                     if (generatedImage == null) {
-                        Log.e(TAG, "Failed to generate image")
+                        Timber.tag(TAG).e("Failed to generate image")
                     } else {
-                        Log.i(TAG, "✅ Image successfully generated.")
+                        Timber.tag(TAG).i("✅ Image successfully generated.")
                     }
 
                     generatedImage!!
@@ -247,7 +246,7 @@ class ImagenClientImpl
                 temperatureRandomness = .5f,
                 references = emptyList(),
                 requireTranslation = false,
-                requirement = GemmaClient.ModelRequirement.HIGH,
+                requirement = GemmaClient.ModelRequirement.LOW,
             )!!
         }
 
@@ -274,7 +273,7 @@ class ImagenClientImpl
                     prompt,
                     references = emptyList(),
                     requireTranslation = false,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                     temperatureRandomness = 1f,
                 )!!
             }
@@ -299,8 +298,7 @@ class ImagenClientImpl
                     context,
                 )
 
-            Log.d(
-                TAG,
+            Timber.tag(TAG).d(
                 "reviewAndCorrectPrompt: Starting review with ${(genreConfig.reviewerStrictness ?: ReviewerStrictness.STRICT).name} strictness",
             )
             val review =
@@ -311,10 +309,9 @@ class ImagenClientImpl
                     useCore = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
-            Log.i(TAG, "✏️Prompt was modified by reviewer: ")
-            Log.i(TAG, review.toAINormalize())
-            Log.d(
-                TAG,
+            Timber.tag(TAG).i("✏️Prompt was modified by reviewer: ")
+            Timber.tag(TAG).i(review.toAINormalize())
+            Timber.tag(TAG).d(
                 buildString {
                     appendLine("Suggestions: ")
                     appendLine("Artist Suggestion: ${review.artistImprovementSuggestions}")

@@ -2,12 +2,9 @@ package com.ilustris.sagai.features.newsaga.data.manager
 
 import android.util.Log
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
@@ -177,15 +174,6 @@ class SagaStateManagerImpl
             _formState.value = null
         }
 
-        override suspend fun prepareSagaData(): RequestResult<Saga> =
-            executeRequest {
-                val chatMessages: List<ChatMessage> = _formState.value?.messages ?: emptyList()
-                val generatedSaga =
-                    newSagaUseCase.generateSaga(getSagaForm(), chatMessages).getSuccess()!!
-                val savedSaga = sagaRepository.saveChat(generatedSaga)
-                savedSaga
-            }
-
         private fun updateGeneratedContent(
             hint: String,
             suggestions: List<CreationSuggestion>,
@@ -273,7 +261,7 @@ class SagaStateManagerImpl
                     handleGeneratedContent(gen)
                 }.onFailure { e ->
                     Log.e(javaClass.simpleName, "refineDraft: Error", e)
-            }
-        updateLoading(false)
-    }
+                }
+            updateLoading(false)
+        }
     }

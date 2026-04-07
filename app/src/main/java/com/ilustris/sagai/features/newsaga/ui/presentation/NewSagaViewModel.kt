@@ -6,18 +6,21 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.manager.CharacterStateManager
 import com.ilustris.sagai.features.newsaga.data.manager.SagaStateManager
+import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.CreationAssist
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.model.isSagaBlank
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
-import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
+import com.ilustris.sagai.features.newsaga.data.usecase.SagaCreationState
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +56,7 @@ class NewSagaViewModel
         val sagaFormState = sagaStateManager.formState
         val characterState = characterStateManager.characterState
 
+        private val messages = ArrayList<ChatMessage>()
         private val _isReadyToSave = MutableStateFlow(false)
         val isReadyToSave: StateFlow<Boolean> = _isReadyToSave.asStateFlow()
 
@@ -90,11 +94,26 @@ class NewSagaViewModel
                     Log.d(javaClass.simpleName, "sagaForm state: $saga ")
                     Log.d(javaClass.simpleName, "character state: $character ")
                     (saga?.isReady == true) && (character?.isReady == true)
+                    messages.add(
+                        ChatMessage(
+                            text = "Data updated -> \n${getSagaForm().toAINormalize()}",
+                            sender = Sender.AI,
+                        ),
+                    )
                 }.collect { ready ->
                     _isReadyToSave.value = ready
                 }
             }
             preFetchVisualConfigs()
+            observeUpdates()
+        }
+
+        private fun observeUpdates() {
+            viewModelScope.launch(Dispatchers.IO) {
+                combine(sagaFormState, characterState) { saga, character ->
+                    getSagaForm()
+                }
+            }
         }
 
         private fun preFetchVisualConfigs() {
@@ -144,6 +163,7 @@ class NewSagaViewModel
         }
 
         fun sendSagaMessage(userInput: String) {
+            messages.add(ChatMessage(text = userInput, sender = Sender.USER))
             viewModelScope.launch(Dispatchers.IO) {
                 if (userInput.isEmpty()) return@launch
                 sagaStateManager.refineDraft(userInput)
@@ -151,6 +171,7 @@ class NewSagaViewModel
         }
 
         fun sendCharacterMessage(userInput: String) {
+            messages.add(ChatMessage(text = userInput, sender = Sender.USER))
             viewModelScope.launch(Dispatchers.IO) {
                 if (userInput.isEmpty()) return@launch
                 val sagaForm = sagaStateManager.getSagaForm()
@@ -159,12 +180,7 @@ class NewSagaViewModel
         }
 
         fun updateGenre(genre: Genre) {
-            val previousGenre = sagaStateManager.getSagaForm().genre
             sagaStateManager.updateGenre(genre)
-
-            if (previousGenre != genre) {
-                // Assist reset and regeneration removed as per instruction
-            }
 
             viewModelScope.launch(Dispatchers.IO) {
                 if (getSagaForm().isSagaBlank().not()) {
@@ -191,71 +207,44 @@ class NewSagaViewModel
             characterStateManager.updateCharacter(info)
         }
 
-        fun enhanceSagaDescription(
-            currentInput: String,
-            onEnhanced: (String) -> Unit,
-        ) {
-            viewModelScope.launch(Dispatchers.IO) {
-                // Implement AI enhancement call here
-                // For now we'll just refine it via the current state manager if needed,
-                // but the user wants to "Enhance" the description to update the input field.
-                // We'll need a specific prompt for "Enhancement"
-            }
-        }
-
         fun saveSaga() {
             _isSaving.value = true
             _savingError.value = null
 
             viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    // Step 1: Create saga
-                    generateProcessMessage(SagaProcess.CREATING_SAGA)
-                    val sagaResult = sagaStateManager.prepareSagaData()
-                    val saga = sagaResult.getSuccess() ?: throw Exception("Failed to create saga")
-
-                    savedContent.emit(saga to null)
-                    // Step 2: Create character
-                    generateProcessMessage(SagaProcess.CREATING_CHARACTER)
-                    val characterResult = characterStateManager.prepareCharacterData(saga)
-
-                    val character =
-                        characterResult.getSuccess() ?: run {
-                            sagaResult.getSuccess()?.let {
-                                newSagaUseCase.deleteSaga(it)
+                newSagaUseCase
+                    .createCompleteSagaFlow(
+                        sagaDraft = sagaStateManager.getSagaForm(),
+                        characterInfo = characterStateManager.getCharacterInfo(),
+                        sagaMessages = messages,
+                    ).collect { state ->
+                        when (state) {
+                            is SagaCreationState.Loading -> {
+                                _loadingMessage.value = state.message
                             }
-                            throw Exception("Failed to create character")
+
+                            is SagaCreationState.Success -> {
+                                savedContent.emit(state.saga to state.character)
+                                _isSaving.value = false
+                                _loadingMessage.value = null
+                                delay(3.seconds)
+                                reset()
+                                navigateToSaga(state.saga)
+                            }
+
+                            is SagaCreationState.Error -> {
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "saveSaga: Error saving saga",
+                                    state.error,
+                                )
+                                _savingError.value =
+                                    state.error.message ?: "Unknown error occurred while saving"
+                                _isSaving.value = false
+                                _loadingMessage.value = null
+                            }
                         }
-
-                    savedContent.emit(saga to character)
-                    generateProcessMessage(SagaProcess.SAVED_CHARACTER)
-
-                    // Step 3: Update saga with character ID
-                    val updatedSaga = saga.copy(mainCharacterId = character.id)
-                    newSagaUseCase.updateSaga(updatedSaga).getSuccess()
-                        ?: throw Exception("Failed to update saga with character")
-
-                    // Step 4: Generate icon
-                    generateProcessMessage(SagaProcess.FINALIZING)
-                    newSagaUseCase.generateSagaIcon(updatedSaga, character)
-
-                    // Step 5: Success
-                    generateProcessMessage(SagaProcess.SUCCESS)
-
-                    _isSaving.value = false
-                    _loadingMessage.value = null
-
-                    delay(3.seconds)
-
-                    // Reset and navigate
-                    reset()
-                    navigateToSaga(updatedSaga)
-                } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "saveSaga: Error saving saga", e)
-                    _savingError.value = e.message ?: "Unknown error occurred while saving"
-                    _isSaving.value = false
-                    _loadingMessage.value = null
-                }
+                    }
             }
         }
 
@@ -278,22 +267,6 @@ class NewSagaViewModel
                 saga = sagaStateManager.getSagaForm(),
                 character = characterStateManager.getCharacterInfo(),
             )
-
-        private fun generateProcessMessage(process: SagaProcess) {
-            viewModelScope.launch(Dispatchers.IO) {
-                val sagaForm = getSagaForm()
-                val characterInfo = characterStateManager.getCharacterInfo()
-                newSagaUseCase
-                    .generateProcessMessage(
-                        process = process,
-                        saga = sagaForm,
-                        character = characterInfo,
-                        genre = sagaForm.saga.genre,
-                    ).onSuccess { message ->
-                        _loadingMessage.value = message
-                    }
-            }
-        }
 
         private fun navigateToSaga(saga: Saga) {
             effect.value =

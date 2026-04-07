@@ -32,7 +32,7 @@ data class GenerateProcessArgs(
 data class CreateSagaArgs(
     val companionPersona: String,
     val conversationalStyle: String,
-    val sagaDraft: String,
+    val sagaForm: String,
     val miniChatContent: String,
     val availableVariations: String,
 )
@@ -139,7 +139,7 @@ object NewSagaPrompts {
         sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
-        identity: String = "",
+        identity: String,
     ): String {
         val variationsBlock =
             availableVariations.entries.joinToString("\n") { (id, config) ->
@@ -150,7 +150,7 @@ object NewSagaPrompts {
             CreateSagaArgs(
                 companionPersona = identity,
                 conversationalStyle = identity,
-                sagaDraft = sagaForm.toAINormalize(),
+                sagaForm = sagaForm.toAINormalize(),
                 miniChatContent = miniChatContent.joinToString("\n") { "${it.sender.name}: ${it.text}" },
                 availableVariations = variationsBlock,
             )
@@ -225,7 +225,6 @@ object NewSagaPrompts {
         flow: FlowPages,
         sagaDraft: SagaDraft?,
         characterInfo: CharacterInfo?,
-        genreConfig: GenreConfig?,
         flowSpecificObjectives: String,
         identity: String = "",
     ): String {

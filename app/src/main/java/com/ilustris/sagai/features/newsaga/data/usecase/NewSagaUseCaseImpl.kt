@@ -9,9 +9,12 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.CreationAssist
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -20,6 +23,8 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class NewSagaUseCaseImpl
@@ -30,7 +35,100 @@ class NewSagaUseCaseImpl
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
+        private val characterUseCase: CharacterUseCase,
     ) : NewSagaUseCase {
+        override fun createCompleteSagaFlow(
+            sagaDraft: SagaDraft,
+            characterInfo: CharacterInfo,
+            sagaMessages: List<ChatMessage>,
+        ): Flow<SagaCreationState> =
+            flow {
+                try {
+                    val sagaForm = SagaForm(sagaDraft, characterInfo)
+
+                    // Step 1: Create saga
+                    var processMessage =
+                        generateProcessMessage(
+                            SagaProcess.CREATING_SAGA,
+                            sagaForm,
+                            characterInfo,
+                            sagaDraft.genre,
+                        ).getSuccess()
+                            ?: "Creating saga..."
+                    emit(SagaCreationState.Loading(processMessage))
+
+                    val generatedSaga =
+                        generateSaga(sagaDraft, sagaMessages).getSuccess()
+                            ?: throw Exception("Failed to create saga")
+                    val saga =
+                        createSaga(generatedSaga).getSuccess() ?: throw Exception("Failed to save saga")
+
+                    // Step 2: Create character
+                    processMessage =
+                        generateProcessMessage(
+                            SagaProcess.CREATING_CHARACTER,
+                            sagaForm,
+                            characterInfo,
+                            sagaDraft.genre,
+                        ).getSuccess()
+                            ?: "Creating character..."
+                    emit(SagaCreationState.Loading(processMessage))
+
+                    val characterResult =
+                        characterUseCase
+                            .generateCharacter(
+                                SagaContent(saga),
+                                characterInfo.toAINormalize(),
+                            ).getSuccess()
+
+                    val character =
+                        characterResult ?: run {
+                            deleteSaga(saga)
+                            throw Exception("Failed to create character")
+                        }
+
+                    processMessage = generateProcessMessage(
+                        SagaProcess.SAVED_CHARACTER,
+                        sagaForm,
+                        characterInfo,
+                        sagaDraft.genre,
+                    ).getSuccess() ?: "Character saved..."
+                    emit(SagaCreationState.Loading(processMessage))
+
+                    // Step 3: Update saga
+                    val updatedSaga = saga.copy(mainCharacterId = character.id)
+                    updateSaga(updatedSaga).getSuccess()
+                        ?: throw Exception("Failed to update saga with character")
+
+                    // Step 4: Generate icon
+                    processMessage =
+                        generateProcessMessage(
+                            SagaProcess.FINALIZING,
+                            sagaForm,
+                            characterInfo,
+                            sagaDraft.genre,
+                        ).getSuccess()
+                            ?: "Finalizing..."
+                    emit(SagaCreationState.Loading(processMessage))
+
+                    generateSagaIcon(updatedSaga, character)
+
+                    // Step 5: Success
+                    processMessage =
+                        generateProcessMessage(
+                            SagaProcess.SUCCESS,
+                            sagaForm,
+                            characterInfo,
+                            sagaDraft.genre,
+                    ).getSuccess() ?: "Success!"
+                emit(SagaCreationState.Loading(processMessage))
+
+                emit(SagaCreationState.Success(updatedSaga, character))
+            } catch (e: Exception) {
+                emit(SagaCreationState.Error(e))
+            }
+        }
+
         override suspend fun createSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
                 sagaRepository.saveChat(saga)
@@ -58,6 +156,7 @@ class NewSagaUseCaseImpl
                         config.variations ?: mapOf(),
                         identity,
                     ),
+                    requirement = GemmaClient.ModelRequirement.HIGH,
                     filterOutputFields =
                         listOf(
                             "id",
@@ -131,8 +230,6 @@ class NewSagaUseCaseImpl
                 )!!
             }
 
-
-
         override suspend fun generateProcessMessage(
             process: SagaProcess,
             saga: SagaForm,
@@ -161,7 +258,6 @@ class NewSagaUseCaseImpl
                             "hexColor",
                             "voice",
                         ),
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -203,6 +299,7 @@ class NewSagaUseCaseImpl
                         identity,
                     ),
                     requireTranslation = true,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -212,7 +309,6 @@ class NewSagaUseCaseImpl
             characterInfo: CharacterInfo?,
         ): RequestResult<CreationAssist> =
             executeRequest {
-                val config = sagaDraft?.genre?.let { genreConfigService.getGenreConfig(it) }
                 val objectives =
                     remoteConfigService.getJson<Map<String, String>>("creation_flow_objectives")!!
                 val flowSpecificObjectives = objectives[flow.name] ?: ""
@@ -224,7 +320,6 @@ class NewSagaUseCaseImpl
                         flow,
                         sagaDraft,
                         characterInfo,
-                        config,
                         flowSpecificObjectives,
                         identity,
                     ),

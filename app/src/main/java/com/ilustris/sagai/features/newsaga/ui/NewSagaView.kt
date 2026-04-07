@@ -96,7 +96,6 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.ui.components.CardFace
 import com.ilustris.sagai.features.newsaga.ui.components.FlipCard
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
@@ -106,6 +105,7 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
@@ -808,7 +808,7 @@ fun NewSagaView(
             StarryLoader(
                 isLoading = isSaving,
                 loadingMessage = loadingMessage,
-                brushColors = genre?.shimmerColors() ?: holographicGradient,
+                brushColors = genre?.colorPalette() ?: holographicGradient,
                 textStyle =
                     MaterialTheme.typography.labelMedium.copy(
                         textAlign = TextAlign.Center,
@@ -1251,7 +1251,8 @@ private fun FlipCardForm(
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
-                                            .padding(16.dp),
+                                            .padding(16.dp)
+                                            .genreVfx(genre),
                                     cursorBrush = SolidColor(genre.resolveIconColor()),
                                     decorationBox = { innerTextField ->
                                         Box(contentAlignment = Alignment.Center) {
@@ -1332,7 +1333,8 @@ private fun FlipCardForm(
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
-                                            .padding(16.dp),
+                                            .padding(16.dp)
+                                            .genreVfx(genre),
                                     cursorBrush =
                                         SolidColor(
                                             genre?.resolveIconColor()

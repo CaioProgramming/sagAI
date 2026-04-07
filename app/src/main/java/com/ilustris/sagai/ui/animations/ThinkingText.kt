@@ -104,7 +104,7 @@ fun ThinkingText(
                                 onRevealed()
                             },
                     starColor = genre.resolveIconColor().copy(alpha = .4f),
-                    starCount = 50,
+                    starCount = text.length * 5,
                 )
             }
         }

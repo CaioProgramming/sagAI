@@ -115,12 +115,13 @@ class SagaDetailUIMapper(
                 .rankTopCharacters(saga.characters.map { it.data })
                 .mapNotNull { saga.findCharacter(it.first.id) }
 
-        val lastEvent = saga.flatEvents().last()
+        val lastEvent = saga.flatEvents().lastOrNull()
 
         val timelineCard =
-            if (lastEvent.isComplete(narrativeRules)) {
+            lastEvent?.let {
+                if (it.isComplete(narrativeRules).not()) return@let null
                 timelineMapper.buildTimeline(saga, lastEvent)
-            } else {
+            } ?: run {
                 null
             }
 

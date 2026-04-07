@@ -259,7 +259,7 @@ fun StarryLoader(
 @Composable
 fun WarpSpeedStarField(
     modifier: Modifier = Modifier,
-    starColor: Color = MaterialTheme.colorScheme.onBackground,
+    starColor: Color = Color.White,
     starCount: Int = Genre.entries.size * 50,
 ) {
     val stars = remember { mutableStateListOf<WarpStar>() }

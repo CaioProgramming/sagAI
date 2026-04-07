@@ -2,14 +2,9 @@ package com.ilustris.sagai.features.newsaga.data.manager
 
 import android.util.Log
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.StringResourceHelper
-import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.CharacterCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
@@ -156,13 +151,6 @@ class CharacterStateManagerImpl
         override fun reset() {
             _characterState.value = null
         }
-
-        override suspend fun prepareCharacterData(saga: Saga): RequestResult<Character> =
-            characterUseCase
-                .generateCharacter(
-                    SagaContent(saga),
-                    _characterState.value?.characterInfo.toAINormalize(),
-                )
 
         private fun updateGeneratedContent(
             hint: String,

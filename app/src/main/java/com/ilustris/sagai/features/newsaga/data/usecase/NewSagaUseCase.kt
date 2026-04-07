@@ -11,6 +11,21 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
+import kotlinx.coroutines.flow.Flow
+
+sealed class SagaCreationState {
+    data class Loading(
+        val message: String,
+    ) : SagaCreationState()
+
+    data class Success(
+        val saga: Saga,
+        val character: Character,
+    ) : SagaCreationState()
+
+    data class Error(
+        val error: Throwable) : SagaCreationState()
+}
 
 enum class SagaProcess {
     CREATING_SAGA,
@@ -22,6 +37,12 @@ enum class SagaProcess {
 }
 
 interface NewSagaUseCase {
+    fun createCompleteSagaFlow(
+        sagaDraft: SagaDraft,
+        characterInfo: CharacterInfo,
+        sagaMessages: List<ChatMessage>
+    ): Flow<SagaCreationState>
+
     suspend fun createSaga(saga: Saga): RequestResult<Saga>
 
     suspend fun updateSaga(saga: Saga): RequestResult<Saga>

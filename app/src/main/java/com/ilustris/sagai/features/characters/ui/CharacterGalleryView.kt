@@ -24,7 +24,9 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
@@ -85,6 +88,7 @@ fun CharactersGalleryContent(
     var showCharacter by remember {
         mutableStateOf<Int?>(null)
     }
+    val selectedCharacter = section.saga.findCharacter(showCharacter)
     val genre = section.saga.data.genre
 
     with(animationScopes.first) {
@@ -154,6 +158,24 @@ fun CharactersGalleryContent(
                     )
                 }
             }
+        }
+    }
+
+    if (selectedCharacter != null) {
+        val bottomSheetState =
+            rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showCharacter = null },
+            sheetState = bottomSheetState,
+            containerColor = Color.Transparent,
+            dragHandle = null,
+        ) {
+            CharacterDetailsContent(
+                section.saga,
+                showCharacter,
+                openEvent = {
+                },
+            )
         }
     }
 }

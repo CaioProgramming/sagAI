@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -21,7 +22,7 @@ import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
 
 @Composable
-fun Genre.bubble(
+fun Genre?.bubble(
     tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
     tailWidth: Dp = 8.dp,
     tailHeight: Dp = 8.dp,
@@ -31,6 +32,7 @@ fun Genre.bubble(
     val cornerSize = cornerSize(visualConfig)
     val tailW = if (isNarrator) 0.dp else tailWidth
     val tailH = if (isNarrator) 0.dp else tailHeight
+    if (this == null) return MaterialTheme.shapes.medium
     return when (this) {
         Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
