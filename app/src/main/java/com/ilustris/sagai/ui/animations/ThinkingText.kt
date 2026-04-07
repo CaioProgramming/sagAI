@@ -55,7 +55,7 @@ fun ThinkingText(
         )
 
     if (animate) {
-        var starAlpha by remember { mutableFloatStateOf(1f) }
+        var starAlpha by remember { mutableFloatStateOf(.5f) }
         var textAlpha by remember { mutableFloatStateOf(0f) }
 
         val alphaAnimation by animateFloatAsState(
@@ -102,8 +102,8 @@ fun ThinkingText(
                                 textAlpha = 1f
                                 onRevealed()
                             },
-                    starColor = genre.resolveIconColor().copy(alpha = .4f),
-                    starCount = text.length * 2,
+                    starColor = genre.resolveIconColor(),
+                    starCount = text.length,
                 )
             }
         }
