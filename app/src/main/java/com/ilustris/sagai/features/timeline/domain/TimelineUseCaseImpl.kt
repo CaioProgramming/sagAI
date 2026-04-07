@@ -10,7 +10,6 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
-import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -19,10 +18,7 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.delay
-import timber.log.Timber
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class TimelineUseCaseImpl
     @Inject
@@ -31,6 +27,7 @@ class TimelineUseCaseImpl
         private val emotionalUseCase: EmotionalUseCase,
         private val wikiUseCase: WikiUseCase,
         private val characterUseCase: CharacterUseCase,
+        private val characterRelationUseCase: com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
@@ -39,6 +36,86 @@ class TimelineUseCaseImpl
         override suspend fun getAllTimelines() = timelineRepository.getAllTimelines()
 
         override suspend fun getTimeline(id: String) = timelineRepository.getTimeline(id)
+
+        override suspend fun generateFullLoreUpdate(
+            saga: SagaContent,
+            timelineContent: TimelineContent,
+        ) = executeRequest {
+            val narrativeRules =
+                remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+            val prompt =
+                TimelinePrompts.generateUnifiedLorePrompt(
+                    promptService = promptService,
+                    narrativeRules = narrativeRules,
+                    sagaContent = saga,
+                    currentTimeline = timelineContent,
+                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                )
+
+            val unifiedLore =
+                gemmaClient.generate<com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate>(
+                    prompt = prompt,
+                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                )!!
+
+            // 1. Update Timeline Details
+            updateTimeline(
+                timelineContent.data.copy(
+                    title = unifiedLore.title,
+                    content = unifiedLore.content,
+                    emotionalReview = unifiedLore.emotionalReview,
+                ),
+            )
+
+            // 2. Save Wiki Updates
+            unifiedLore.wikiUpdates.forEach { wikiUpdate ->
+                val existingWiki = saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                val wikiToSave =
+                    com.ilustris.sagai.features.wiki.data.model.Wiki(
+                        id = existingWiki?.id ?: 0,
+                        title = wikiUpdate.title,
+                        content = wikiUpdate.content,
+                        type = wikiUpdate.type,
+                        emojiTag = wikiUpdate.emojiTag,
+                        sagaId = saga.data.id,
+                        timelineId = timelineContent.data.id,
+                    )
+                if (existingWiki != null) {
+                    wikiUseCase.updateWiki(wikiToSave)
+                } else {
+                    wikiUseCase.saveWiki(wikiToSave)
+                }
+            }
+
+            // 3. Save Character Events
+            unifiedLore.characterEvents.forEach { charEvent ->
+                val character =
+                    saga.characters.find { it.data.name.equals(charEvent.characterName, true) }?.data
+                character?.let {
+                    characterUseCase.insertCharacterEvent(
+                        com.ilustris.sagai.features.characters.events.data.model.CharacterEvent(
+                            characterId = it.id,
+                            gameTimelineId = timelineContent.data.id,
+                            title = charEvent.title,
+                            summary = charEvent.summary,
+                        ),
+                    )
+                }
+            }
+
+            // 4. Save Relationship Updates
+            unifiedLore.relationshipUpdates.forEach { relUpdate ->
+                characterRelationUseCase.updateRelation(
+                    saga = saga,
+                    timelineId = timelineContent.data.id,
+                    firstCharacterName = relUpdate.characterOne,
+                    secondCharacterName = relUpdate.characterTwo,
+                    title = relUpdate.title,
+                    description = relUpdate.description,
+                    emoji = relUpdate.emoji,
+                )
+            }
+        }
 
         override suspend fun generateTimeline(
             saga: SagaContent,
@@ -116,23 +193,7 @@ class TimelineUseCaseImpl
             timelineContent: TimelineContent,
         ): RequestResult<Unit> =
             executeRequest {
-                if (timelineContent.characterEventDetails.isEmpty() ||
-                    timelineContent.updatedRelationshipDetails.isEmpty()
-                ) {
-                    updateCharacters(timelineContent.data, saga)
-                    delay(5.seconds)
-                } else {
-                    Timber.w("generateTimelineContent: Characters already updated on this event")
-                }
-
-                if (timelineContent.updatedWikis.isEmpty()) {
-                    updateWikis(
-                        timelineContent.data,
-                        saga,
-                    )
-                } else {
-                    Timber.w("generateTimelineContent: Wikis already updated on this event")
-                }
+                generateFullLoreUpdate(saga, timelineContent).getSuccess()!!
             }
 
         private suspend fun updateWikis(

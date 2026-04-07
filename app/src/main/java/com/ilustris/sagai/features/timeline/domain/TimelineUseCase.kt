@@ -11,6 +11,11 @@ interface TimelineUseCase {
 
     suspend fun getTimeline(id: String): Flow<Timeline>
 
+    suspend fun generateFullLoreUpdate(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    ): RequestResult<Unit>
+
     suspend fun generateTimeline(
         saga: SagaContent,
         currentTimeline: TimelineContent,

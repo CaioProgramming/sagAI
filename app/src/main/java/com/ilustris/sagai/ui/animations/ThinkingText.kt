@@ -90,7 +90,6 @@ fun ThinkingText(
                         .alpha(textAlphaAnimation),
             )
 
-            // Stars overlay (clickable to reveal)
             if (starAlpha > 0.01f) {
                 StarryTextPlaceholder(
                     modifier =
@@ -104,7 +103,7 @@ fun ThinkingText(
                                 onRevealed()
                             },
                     starColor = genre.resolveIconColor().copy(alpha = .4f),
-                    starCount = text.length * 5,
+                    starCount = text.length * 2,
                 )
             }
         }

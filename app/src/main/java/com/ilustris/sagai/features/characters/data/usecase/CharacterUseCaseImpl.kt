@@ -401,4 +401,10 @@ class CharacterUseCaseImpl
                     )
                 }
             }
+
+        override suspend fun insertCharacterEvent(characterEvent: CharacterEvent): CharacterEvent =
+            eventsRepository.insertCharacterEvent(characterEvent)
+
+        override suspend fun insertCharacterEvents(characterEvents: List<CharacterEvent>) =
+            eventsRepository.insertCharacterEvents(characterEvents)
     }

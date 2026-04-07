@@ -19,9 +19,12 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.theme.lighter
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shimmerize
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -50,7 +53,7 @@ fun LoadingMilestoneOverlay(
             Image(
                 painterResource(genre.icon),
                 null,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                colorFilter = ColorFilter.tint(genre.resolveColor()),
                 modifier =
                     sparkModifier
                         .padding(8.dp)
@@ -58,10 +61,11 @@ fun LoadingMilestoneOverlay(
                             32.dp,
                         ).reactiveShimmer(
                             true,
-                            genre.shimmerColors(),
+                            genre.resolveColor().lighter(.3f).shimmerize(),
                             duration = 4.seconds,
+                            targetValue = 150f,
                             repeatMode = RepeatMode.Restart,
-                        ),
+                        ).genreVfx(genre),
             )
 
             genre.stylisedText(

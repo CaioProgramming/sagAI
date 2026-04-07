@@ -9,4 +9,14 @@ interface CharacterRelationUseCase {
         timeline: Timeline,
         saga: SagaContent,
     ): RequestResult<Unit>
+
+    suspend fun updateRelation(
+        saga: SagaContent,
+        timelineId: Int,
+        firstCharacterName: String,
+        secondCharacterName: String,
+        title: String,
+        description: String,
+        emoji: String,
+    ): RequestResult<Unit>
 }

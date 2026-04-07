@@ -37,6 +37,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -90,7 +91,9 @@ fun DefaultOverlay(
             Image(
                 painterResource(genre.icon),
                 null,
-                sparkModifier.size(80.dp),
+                sparkModifier
+                    .size(32.dp)
+                    .genreVfx(genre),
                 colorFilter = ColorFilter.tint(genre.resolveColor()),
             )
         }
