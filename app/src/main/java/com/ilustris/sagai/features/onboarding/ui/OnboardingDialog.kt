@@ -129,6 +129,7 @@ fun OnboardingDialog(
         uiState is OnboardingUiState.Loading,
         enter = slideInVertically { -it },
         exit = fadeOut(),
+        modifier = Modifier.fillMaxSize(),
     ) {
         Box(
             Modifier

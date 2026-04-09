@@ -238,6 +238,14 @@ class ChatViewModel
                         sagaContentManager.showObjective()
                     }
                 }
+
+                is ChatUiAction.AdvanceNarrative -> {
+                    val pending = uiState.value.pendingAdvance ?: return
+                    viewModelScope.launch(Dispatchers.IO) {
+                        stateManager.updatePendingAdvance(null)
+                        sagaContentManager.advanceNarrative(pending)
+                    }
+                }
             }
         }
 
@@ -593,6 +601,8 @@ class ChatViewModel
                                 uiState.value.characters
                             }
 
+                        val pendingAdvance = mapper.computePendingAdvance(sagaContent, rules)
+
                         stateManager.updateState {
                             it.copy(
                                 sagaContent = sagaContent,
@@ -600,6 +610,7 @@ class ChatViewModel
                                 characters = characters,
                                 chatState = ChatState.Success,
                                 isLoading = if (loadFinished) it.isLoading else false,
+                                pendingAdvance = pendingAdvance,
                             )
                         }
 
@@ -618,13 +629,13 @@ class ChatViewModel
 
                         loadFinished = true
 
-                        if (sagaContent.acts.isEmpty() &&
+                        if (sagaContent.flatMessages().isEmpty() &&
                             settingsUseCase
                                 .getShowTutorials()
                                 .first()
                         ) {
-                            sagaContentManager.isOnboardingVisible.value = true
                             stateManager.updateOnboardingType(OnboardingType.GAMEPLAY_GUIDE)
+                            sagaContentManager.isOnboardingVisible.value = true
                         }
 
                         // Only validate message status when messages changed

@@ -78,8 +78,7 @@ class NewCharacterUseCaseImpl
                         genreConfigService
                             .getGenreConfig(
                                 it.genre,
-                                it.variationId ?: "",
-                            )?.appearanceGuidelines
+                            ).appearanceGuidelines
                     } ?: ""
                 gemmaClient.generate(
                     CharacterPrompts.refineCharacterDraftPrompt(

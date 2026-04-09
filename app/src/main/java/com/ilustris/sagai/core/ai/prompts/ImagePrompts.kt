@@ -81,7 +81,6 @@ object ImagePrompts {
                 PromptKeys.VALIDATION_RULES to
                     config.getValidationRules(
                         genre.name,
-                        config.colorPalette,
                     ),
                 PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
                 PromptKeys.VISUAL_DIRECTION to (visualDirection ?: ""),

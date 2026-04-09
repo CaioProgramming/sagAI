@@ -203,15 +203,23 @@ fun genresGradient(): List<Color> =
         .plus(holographicGradient)
 
 @Composable
-fun Genre.gradient(
+fun Genre?.gradient(
     animated: Boolean = false,
     duration: Duration = 3.seconds,
     targetValue: Float = 500f,
     gradientType: GradientType = GradientType.LINEAR,
 ) = if (animated) {
-    gradientAnimation(this.colorPalette(), duration, targetValue, gradientType)
+    gradientAnimation(
+        this?.colorPalette() ?: holographicGradient,
+        duration,
+        targetValue,
+        gradientType,
+    )
 } else {
-    gradientType.toBrush(colors = this.colorPalette(), offsetAnimationValue = targetValue)
+    gradientType.toBrush(
+        colors = this?.colorPalette() ?: holographicGradient,
+        offsetAnimationValue = targetValue,
+    )
 }
 
 fun Color.solidGradient() = SolidColor(this)

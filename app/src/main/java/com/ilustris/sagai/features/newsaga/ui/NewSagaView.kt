@@ -122,7 +122,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shimmerize
+import com.ilustris.sagai.ui.theme.shape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -853,6 +853,7 @@ fun NewSagaView(
 
 @Composable
 private fun SuggestionsContent(
+    genre: Genre?,
     suggestions: List<CreationSuggestion>,
     modifier: Modifier = Modifier,
     onSelect: (CreationSuggestion) -> Unit = {},
@@ -862,9 +863,8 @@ private fun SuggestionsContent(
         modifier = modifier,
     ) {
         items(suggestions) {
-            val genre = it.genre
-            val shape = genre.bubble(tailHeight = 0.dp, tailWidth = 0.dp, isNarrator = true)
-            val itemGradient = it.genre.gradient(true)
+            val shape = genre.shape()
+            val itemGradient = genre.gradient(true)
             Column(
                 modifier =
                     Modifier
@@ -884,25 +884,22 @@ private fun SuggestionsContent(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    AsyncImage(
-                        model =
-                            ImageRequest
-                                .Builder(LocalContext.current)
-                                .data(genre.resolveBackground())
-                                .crossfade(true)
-                                .build(),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(genre.resolveIconColor()),
-                        modifier = Modifier.size(12.dp),
-                    )
+                    genre?.icon?.let {
+                        Icon(
+                            painterResource(it),
+                            null,
+                            modifier = Modifier.size(12.dp),
+                            tint = genre.resolveIconColor().copy(alpha = 0.4f),
+                        )
+                    }
                     Text(
                         it.title,
                         style =
                             MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = genre?.bodyFont(),
                                 color = genre.resolveIconColor(),
                                 textAlign = TextAlign.Start,
                                 fontWeight = FontWeight.Bold,
@@ -914,7 +911,7 @@ private fun SuggestionsContent(
                     it.description.ifEmpty { it.text },
                     style =
                         MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = genre?.bodyFont(),
                             color = genre.resolveIconColor().copy(alpha = 0.8f),
                             textAlign = TextAlign.Start,
                         ),
@@ -945,7 +942,7 @@ private fun TopBarContent(
             Icon(
                 painterResource(R.drawable.ic_back_left),
                 null,
-                tint = genre?.resolveIconColor() ?: MaterialTheme.colorScheme.onBackground,
+                tint = genre.resolveIconColor(),
                 modifier =
                     Modifier
                         .size(24.dp)
@@ -1087,25 +1084,17 @@ private fun FlipCardForm(
                         .fillMaxSize()
                         .reactiveShimmer(true),
                 ) {
-                    val icon = genre?.resolveBackground() ?: R.drawable.ic_spark
-                    AsyncImage(
-                        model =
-                            ImageRequest
-                                .Builder(LocalContext.current)
-                                .data(icon)
-                                .crossfade(true)
-                                .build(),
-                        null,
-                        modifier =
-                            Modifier
-                                .size(64.dp)
-                                .align(Alignment.Center)
-                                .reactiveShimmer(isLoading, primaryColor.shimmerize()),
-                        colorFilter =
-                            ColorFilter.tint(
-                                contentColor.copy(alpha = .4f),
-                            ),
-                    )
+                    genre?.icon?.let {
+                        Icon(
+                            painterResource(it),
+                            null,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .size(64.dp),
+                            tint = contentColor.copy(alpha = .4f),
+                        )
+                    }
                 }
             } else {
                 Column(
@@ -1178,7 +1167,6 @@ private fun FlipCardForm(
                         },
                     )
 
-                    // Suggestions Section
                     if (suggestions.isNotEmpty()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
@@ -1203,6 +1191,7 @@ private fun FlipCardForm(
                             }
 
                             SuggestionsContent(
+                                genre = genre,
                                 suggestions = suggestions,
                                 modifier = Modifier.reactiveShimmer(isLoading),
                                 onSelect = {

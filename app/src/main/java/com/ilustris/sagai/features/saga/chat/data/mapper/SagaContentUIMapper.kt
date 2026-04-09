@@ -1,13 +1,14 @@
 package com.ilustris.sagai.features.saga.chat.data.mapper
 
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.TimelineDisplayData
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
-import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import javax.inject.Inject
 
 class SagaContentUIMapper
@@ -15,6 +16,46 @@ class SagaContentUIMapper
     constructor(
         private val timelineMapper: TimelineMapper,
     ) {
+        fun computePendingAdvance(
+            saga: SagaContent,
+            rules: NarrativeRules,
+        ): PendingAdvance? =
+            when (val step = NarrativeCheck.validateProgression(saga, rules)) {
+                is NarrativeStep.GenerateTimeLine -> {
+                    PendingAdvance.NewEvent(step.timeline)
+                }
+
+                is NarrativeStep.GenerateChapter -> {
+                    PendingAdvance.NewChapter(step.chapter)
+                }
+
+                is NarrativeStep.GenerateAct -> {
+                    PendingAdvance.NewAct(step.act)
+                }
+
+                is NarrativeStep.GenerateActIntroduction -> {
+                    PendingAdvance.NewActIntroduction(step.act)
+                }
+
+                is NarrativeStep.GenerateChapterIntroduction -> {
+                    PendingAdvance.NewChapterIntroduction(
+                        step.chapter,
+                    )
+                }
+
+                is NarrativeStep.StartTimeline -> {
+                    PendingAdvance.StartStory(step.chapter)
+                }
+
+                is NarrativeStep.GenerateSagaEnding -> {
+                    PendingAdvance.SagaEnding(step.saga)
+                }
+
+                else -> {
+                    null
+                }
+            }
+
         suspend fun mapToActDisplayData(
             saga: SagaContent,
             rules: NarrativeRules,

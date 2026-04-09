@@ -3,8 +3,6 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -36,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,7 +45,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -97,7 +93,6 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.shimmerize
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -186,8 +181,8 @@ fun CharacterDetailsContent(
                     tint = genre.color,
                     modifier =
                         Modifier
-                            .size(64.dp)
-                            .genreVfx(genre),
+                            .genreVfx(genre)
+                            .size(64.dp),
                 )
             }
         }
@@ -304,7 +299,8 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        ).graphicsLayer(
+                                        )
+                                        .graphicsLayer(
                                             translationY = -10f,
                                         ),
                             ) {
@@ -320,10 +316,10 @@ private fun CharacterDetailsLoaded(
                                         text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                         modifier =
                                             Modifier
-                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
-                                                .reactiveShimmer(true, characterColor.shimmerize())
                                                 .padding(16.dp)
-                                                .align(Alignment.TopCenter),
+                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
+                                                .align(Alignment.TopCenter)
+                                                .reactiveShimmer(true, characterColor.shimmerize()),
                                     )
                                 }
                             }
@@ -391,8 +387,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -519,8 +514,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }

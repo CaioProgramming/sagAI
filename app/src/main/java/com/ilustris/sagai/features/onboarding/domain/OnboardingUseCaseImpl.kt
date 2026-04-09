@@ -23,7 +23,10 @@ class OnboardingUseCaseImpl
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
     ) : OnboardingUseCase {
-        override suspend fun shouldShow(type: OnboardingType): Boolean = dataStore.getBooleanNow(type.preferenceKey, false).not()
+        override suspend fun shouldShow(type: OnboardingType): Boolean =
+            dataStore
+                .getBooleanNow(type.preferenceKey, false)
+                .not()
 
         override suspend fun getContent(
             type: OnboardingType,

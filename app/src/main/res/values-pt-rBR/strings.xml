@@ -319,7 +319,7 @@
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
     <string name="character_details_aka">vulgo: %s</string>
-    <string name="read_more">Ler mais...</string>
+    <string name="read_more">...</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
     <string name="smart_fix_button">Refinar</string>
     <string name="message_effects">Efeitos de Mensagem</string>
@@ -401,7 +401,22 @@
     <!-- Settings Help Center -->
     <string name="settings_help_center_title">Ajuda e feedback</string>
     <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
-    <string name="new_event_milestone_title">Novo evento</string>
+
+    <!-- Marcos de Narrativa -->
+    <string name="advance_new_event">Novo Evento</string>
+    <string name="releasing_event">Canalizando o próximo evento...</string>
+    <string name="advance_new_chapter">Novo Capítulo</string>
+    <string name="releasing_chapter">Forjando o próximo capítulo...</string>
+    <string name="advance_new_chapter_introduction">Entrar no Capítulo</string>
+    <string name="releasing_chapter_introduction">Virando a página...</string>
+    <string name="advance_new_act">Novo Ato</string>
+    <string name="releasing_act">Iniciando o próximo Ato...</string>
+    <string name="advance_new_act_introduction">Iniciar Ato</string>
+    <string name="releasing_act_introduction">As cortinas estão subindo...</string>
+    <string name="advance_start_story">Iniciar História</string>
+    <string name="releasing_start_story">Iniciando a jornada...</string>
+    <string name="advance_saga_ending">O Fim</string>
+    <string name="releasing_ending">Encerrando esta Saga...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>

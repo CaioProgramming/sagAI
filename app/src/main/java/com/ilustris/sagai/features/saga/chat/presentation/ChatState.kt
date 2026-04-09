@@ -2,16 +2,19 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import android.graphics.Bitmap
 import androidx.compose.ui.text.input.TextFieldValue
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
@@ -58,10 +61,11 @@ data class ChatUiState(
     val isAudioInput: Boolean = false,
     val sceneSummary: SceneSummary? = null,
     val milestone: SagaMilestone? = null,
-    val editingMessage: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
-    val showMessageOptions: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
-    val visualConfig: com.ilustris.sagai.core.ai.model.GenreVisualConfig? = null,
+    val editingMessage: Message? = null,
+    val showMessageOptions: Message? = null,
+    val visualConfig: GenreVisualConfig? = null,
     val onboardingType: OnboardingType? = null,
+    val pendingAdvance: PendingAdvance? = null,
 )
 
 data class MessageSelectionState(

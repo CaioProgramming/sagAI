@@ -752,9 +752,9 @@ fun Modifier.livingTorch(
                             val y = baseY - (sparkProgress * 220f)
                             val xDrift =
                                 (
-                                        kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
-                                                kotlin.math.sin(time * 5f + seed * 8f) * 10f
-                                        ).toFloat() * sparkProgress
+                                    kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
+                                        kotlin.math.sin(time * 5f + seed * 8f) * 10f
+                                ).toFloat() * sparkProgress
 
                             val sparkWidth = (2.5f + seed * 3f) * invProgress
                             val sparkHeight = sparkWidth * (1.5f + sparkProgress * 2f)
@@ -1779,12 +1779,6 @@ fun Modifier.lightningStorm(
             label = "lightningProgress",
         )
 
-        // --- Phases ---
-        // 0.0 -> 0.2: Strike (Grow from 0 to Length)
-        // 0.2 -> 0.4: Hold (Full length visible)
-        // 0.4 -> 0.7: Discharge (Start catches up to Length)
-        // 0.7 -> 1.0: Off
-
         val strikeDuration = 0.2f
         val holdDuration = 0.2f
         val dischargeDuration = 0.3f
@@ -1793,7 +1787,6 @@ fun Modifier.lightningStorm(
         val holdEnd = strikeEnd + holdDuration
         val dischargeEnd = holdEnd + dischargeDuration
 
-        // Seed logic: Updates only when the cycle resets
         val seed = remember { mutableIntStateOf(0) }
         val lastCycle = remember { mutableLongStateOf(0L) }
 
@@ -1820,9 +1813,6 @@ fun Modifier.lightningStorm(
                 val joints = mutableListOf<Offset>()
                 val branches = mutableListOf<androidx.compose.ui.graphics.Path>()
 
-                // Pick a Zone: 0=Left, 1=Center, 2=Right
-                // Weighted: Center has slightly higher chance? Or equal?
-                // Let's do equal: 0, 1, 2
                 val zone = random.nextInt(3)
 
                 val startX: Float
@@ -2075,15 +2065,15 @@ fun Modifier.lightningStorm(
                         val glowPaint =
                             android.graphics.Paint().apply {
                                 color = lightningColor.toArgb()
-                                alpha = 120 // Lower alpha for atmosphere
+                                alpha = 100 // Lower alpha for atmosphere
                                 style = android.graphics.Paint.Style.STROKE
                                 strokeWidth = 50f
                                 strokeCap = android.graphics.Paint.Cap.ROUND
                                 strokeJoin = android.graphics.Paint.Join.ROUND
                                 maskFilter =
                                     android.graphics.BlurMaskFilter(
-                                        30f,
-                                        android.graphics.BlurMaskFilter.Blur.NORMAL,
+                                        20f,
+                                        android.graphics.BlurMaskFilter.Blur.OUTER,
                                     )
                             }
                         nativeCanvas.drawPath(visiblePath, glowPaint)
@@ -2324,7 +2314,8 @@ fun Modifier.genreVfx(
 
         Genre.HEROES -> {
             this
-                .levitate()
+                .levitate(yOffset = 10f)
+                .divineAura(auraColor = genre.resolveColor().lighter(.3f))
                 .lightningStorm(lightningColor = finalPrimary.lighter(0.6f))
         }
 

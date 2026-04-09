@@ -4,7 +4,6 @@ data class CreationSuggestion(
     val text: String = "",
     val title: String = "",
     val description: String = "",
-    val genre: Genre = Genre.FANTASY,
 )
 
 data class SagaCreationGen(

@@ -161,7 +161,11 @@ class SagaDetailUIMapper(
 
         return DetailSectionView.CharacterSection(
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_characters),
-            subtitle = stringResourceHelper.getString(R.string.saga_detail_section_subtitle_characters),
+            subtitle =
+                stringResourceHelper.getString(
+                    R.string.saga_detail_section_subtitle_characters,
+                    sagaContent.characters.size,
+                ),
             saga = sagaContent,
             insight = insight,
             characters = characterRanking,
@@ -174,7 +178,11 @@ class SagaDetailUIMapper(
         return DetailSectionView.WikiSection(
             saga = sagaContent,
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_wiki),
-            subtitle = stringResourceHelper.getString(R.string.saga_detail_section_subtitle_wiki),
+            subtitle =
+                stringResourceHelper.getString(
+                    R.string.saga_detail_section_subtitle_wiki,
+                    sagaContent.wikis.size,
+                ),
             insight = insight,
             wikiGroup = wikiMapper.buildWikiGroups(sagaContent),
         )

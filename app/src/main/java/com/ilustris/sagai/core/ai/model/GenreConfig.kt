@@ -55,14 +55,11 @@ data class GenreConfig(
         val criticalRules: String? = null,
     )
 
-    fun getValidationRules(
-        genreName: String,
-        palette: String,
-    ): String =
+    fun getValidationRules(genreName: String): String =
         buildString {
             appendLine("**$genreName GENRE SOUL (Reviewer Mandate):**")
             appendLine("- Narrative Essence: $artStyle")
-            appendLine("- Mandatory Palette: $palette")
+            appendLine("- Mandatory Palette: $colorPalette")
             appendLine()
             appendLine("**RENDERING INSTRUCTIONS (The Technical Goal):**")
             appendLine(renderingInstructions)

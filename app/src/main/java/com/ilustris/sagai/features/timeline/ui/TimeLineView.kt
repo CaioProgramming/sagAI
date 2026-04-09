@@ -100,6 +100,7 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
@@ -224,7 +225,8 @@ fun TimeLineContent(
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    ).padding(16.dp),
+                                    )
+                                    .padding(16.dp),
                         )
                     }
 
@@ -655,7 +657,8 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        ).padding(16.dp),
+                                        )
+                                        .padding(16.dp),
                                 true,
                             )
                         }
@@ -700,7 +703,8 @@ fun TimeLineSimpleCard(
             .background(
                 MaterialTheme.colorScheme.background,
                 shape,
-            ).padding(16.dp)
+            )
+            .padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -786,7 +790,8 @@ fun TimeLineSimpleCard(
                         .clip(shape)
                         .clickable {
                             requestReview(eventContent)
-                        }.gradientFill(genre.gradient())
+                        }
+                        .gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -827,8 +832,7 @@ fun AvatarTimelineIcon(
     val resolvedColor = genre.resolveColor()
     val border =
         borderColor?.solidGradient() ?: resolvedColor.solidGradient()
-    val background =
-        Brush.verticalGradient((backgroundColor ?: resolvedColor).darkerPalette(factor = .2f))
+    val background = resolvedColor.darker(.7f).solidGradient()
     Box(
         modifier
             .border(borderWidth, border, CircleShape)
@@ -1024,7 +1028,8 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }.alpha(.4f),
+                                }
+                                .alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(

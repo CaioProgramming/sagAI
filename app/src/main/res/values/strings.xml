@@ -354,7 +354,7 @@
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
     <string name="character_details_aka">aka: %s</string>
-    <string name="read_more">Read more...</string>
+    <string name="read_more">...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
     <string name="character_events">Character events</string>
     <!-- BackupViewModel: Status and Error Messages -->
@@ -435,7 +435,21 @@
     <!-- Settings Help Center -->
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
-    <string name="new_event_milestone_title">New event</string>
+    <!-- Narrative Milestones -->
+    <string name="advance_new_event">New Event</string>
+    <string name="releasing_event">Channeling the next event...</string>
+    <string name="advance_new_chapter">New Chapter</string>
+    <string name="releasing_chapter">Forging the next chapter...</string>
+    <string name="advance_new_chapter_introduction">Enter Chapter</string>
+    <string name="releasing_chapter_introduction">Turning the page...</string>
+    <string name="advance_new_act">New Act</string>
+    <string name="releasing_act">Opening the next Act...</string>
+    <string name="advance_new_act_introduction">Start Act</string>
+    <string name="releasing_act_introduction">The curtains are rising...</string>
+    <string name="advance_start_story">Start Story</string>
+    <string name="releasing_start_story">Setting the stage...</string>
+    <string name="advance_saga_ending">The End</string>
+    <string name="releasing_ending">Closing this Saga...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>

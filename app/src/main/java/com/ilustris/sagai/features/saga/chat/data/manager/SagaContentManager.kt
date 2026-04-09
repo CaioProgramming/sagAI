@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -27,6 +28,8 @@ interface SagaContentManager {
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
     val isOnboardingVisible: MutableStateFlow<Boolean>
+
+    suspend fun advanceNarrative(pendingAdvance: PendingAdvance)
 
     suspend fun loadSaga(sagaId: String)
 

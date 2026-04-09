@@ -56,6 +56,7 @@ fun LoadingMilestoneOverlay(
                 colorFilter = ColorFilter.tint(genre.resolveColor()),
                 modifier =
                     sparkModifier
+                        .genreVfx(genre)
                         .padding(8.dp)
                         .size(
                             32.dp,
@@ -65,7 +66,7 @@ fun LoadingMilestoneOverlay(
                             duration = 4.seconds,
                             targetValue = 150f,
                             repeatMode = RepeatMode.Restart,
-                        ).genreVfx(genre),
+                        ),
             )
 
             genre.stylisedText(

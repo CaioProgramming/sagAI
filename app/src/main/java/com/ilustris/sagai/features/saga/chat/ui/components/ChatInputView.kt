@@ -474,10 +474,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                    sweepGradient(
-                                                        palette,
-                                                    ) as ShaderBrush
-                                                    ).createShader(size)
+                                                sweepGradient(
+                                                    palette,
+                                                ) as ShaderBrush
+                                            ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -500,8 +500,7 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }
-                    .dropShadow(inputShape, {
+                    }.dropShadow(inputShape, {
                         brush = inputBrush
                         radius = glowRadius
                         spread = 5f
@@ -550,8 +549,7 @@ fun ChatInputView(
                                         radius = 5.dp,
                                         resolvedColor,
                                     ),
-                                )
-                                .border(1.dp, resolvedColor.gradientFade(), shape)
+                                ).border(1.dp, resolvedColor.gradientFade(), shape)
                                 .background(
                                     MaterialTheme.colorScheme.background,
                                     shape,
@@ -581,8 +579,7 @@ fun ChatInputView(
                                             coroutineScope.launch {
                                                 characterToolTipState.dismiss()
                                             }
-                                        }
-                                        .size(36.dp),
+                                        }.size(36.dp),
                                 textStyle =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -962,14 +959,13 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .reactiveShimmer(
                                     isGenerating,
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     ) { loading ->
                         val icon =
                             if (isEditing) {
                                 R.drawable.ic_check_circle
                             } else if (loading) {
-                                if (isSendingPending) R.drawable.ic_stop else R.drawable.ic_spark
+                                if (isSendingPending) R.drawable.ic_stop else genre.icon
                             } else if (inputField.text.isEmpty()) {
                                 R.drawable.ic_mic
                             } else {
@@ -1021,8 +1017,7 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     inputShape,
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

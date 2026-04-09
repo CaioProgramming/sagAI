@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.newsaga.data.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.ilustris.sagai.R
@@ -33,14 +34,14 @@ Genre(
 
     HORROR(
         title = R.string.genre_horror,
-        color = Color(0xFF1C2541),
+        color = Color(0xff515e8c),
         iconColor = Color.White,
         icon = R.drawable.horror,
     ),
 
     HEROES(
         title = R.string.genre_heroes,
-        color = Color(0xFF003F88),
+        color = Color(0xff0057bd),
         iconColor = Color.White,
         icon = R.drawable.hero,
     ),
@@ -246,7 +247,12 @@ fun Genre.resolveColor(): Color = resolveColor(LocalGenreVisualConfig.current)
 fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color = visualConfig?.iconColor?.parseColor() ?: this.iconColor
 
 @Composable
-fun Genre.resolveIconColor(): Color = resolveIconColor(LocalGenreVisualConfig.current)
+fun Genre?.resolveIconColor(): Color =
+    if (this == null) {
+        MaterialTheme.colorScheme.onBackground
+    } else {
+        resolveIconColor(LocalGenreVisualConfig.current)
+    }
 
 /** Resolve the image for the genre. Falls back to default header image. */
 fun Genre.resolveImageUrl(visualConfig: GenreVisualConfig?): String? = visualConfig?.imageUrl
@@ -255,7 +261,7 @@ fun Genre.resolveImageUrl(visualConfig: GenreVisualConfig?): String? = visualCon
 fun Genre.resolveImageUrl(): String? = resolveImageUrl(LocalGenreVisualConfig.current)
 
 /** Resolve the background image for the genre. Falls back to enum property. */
-fun Genre.resolveBackground(visualConfig: GenreVisualConfig?): Any = visualConfig?.backgroundUrl?.takeIf { it.isNotBlank() } ?: this.icon
+fun Genre.resolveBackground(visualConfig: GenreVisualConfig?): Any = this.icon
 
 @Composable
 fun Genre.resolveBackground(): Any = resolveBackground(LocalGenreVisualConfig.current)

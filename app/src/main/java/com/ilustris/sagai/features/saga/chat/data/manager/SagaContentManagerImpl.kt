@@ -42,6 +42,7 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -145,6 +146,100 @@ class SagaContentManagerImpl
         }
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
+
+        override suspend fun advanceNarrative(pendingAdvance: PendingAdvance) {
+            val currentSaga = content.value ?: return
+            Log.d(
+                javaClass.simpleName,
+                "Manually advancing narrative: ${pendingAdvance.javaClass.simpleName}",
+            )
+
+            var action: RequestResult<Any>? = null
+            startProcessing {
+                action =
+                    when (pendingAdvance) {
+                        is PendingAdvance.NewEvent -> {
+                            updateTimeline(
+                                currentSaga,
+                                pendingAdvance.timeline,
+                            )
+                        }
+
+                        is PendingAdvance.NewChapter -> {
+                            updateChapter(
+                                currentSaga,
+                                pendingAdvance.chapter,
+                            )
+                        }
+
+                        is PendingAdvance.NewAct -> {
+                            updateAct(pendingAdvance.act)
+                        }
+
+                        is PendingAdvance.NewActIntroduction -> {
+                            emitMilestone(SagaMilestone.Loading)
+                            generateActIntroduction(pendingAdvance.act)
+                        }
+
+                        is PendingAdvance.NewChapterIntroduction -> {
+                            emitMilestone(SagaMilestone.Loading)
+                            generateChapterIntroduction(pendingAdvance.chapter)
+                        }
+
+                        is PendingAdvance.StartStory -> {
+                            startTimeline(pendingAdvance.chapter)
+                        }
+
+                        is PendingAdvance.SagaEnding -> {
+                            generateEnding(currentSaga)
+                        }
+                    }
+            }
+
+            action
+                ?.onSuccessAsync {
+                    val step =
+                        when (pendingAdvance) {
+                            is PendingAdvance.NewEvent -> {
+                                NarrativeStep.GenerateTimeLine(pendingAdvance.timeline)
+                            }
+
+                            is PendingAdvance.NewChapter -> {
+                                NarrativeStep.GenerateChapter(pendingAdvance.chapter)
+                            }
+
+                            is PendingAdvance.NewAct -> {
+                                NarrativeStep.GenerateAct(pendingAdvance.act)
+                            }
+
+                            is PendingAdvance.NewActIntroduction -> {
+                                NarrativeStep.GenerateActIntroduction(
+                                    pendingAdvance.act,
+                                )
+                            }
+
+                            is PendingAdvance.NewChapterIntroduction -> {
+                                NarrativeStep.GenerateChapterIntroduction(
+                                    pendingAdvance.chapter,
+                                )
+                            }
+
+                            is PendingAdvance.StartStory -> {
+                                NarrativeStep.StartTimeline(pendingAdvance.chapter)
+                            }
+
+                            is PendingAdvance.SagaEnding -> {
+                                NarrativeStep.GenerateSagaEnding(
+                                    pendingAdvance.saga,
+                            )
+                        }
+                    }
+                validatePostAction(currentSaga, step, action.success)
+            }?.onFailureAsync {
+                Log.e(javaClass.simpleName, "Failed to advance narrative: ${it.message}")
+                emitMilestone(null)
+            }
+    }
 
         override suspend fun updatePlaytime(
             sagaId: Int,
@@ -268,12 +363,14 @@ class SagaContentManagerImpl
                                 validateCharacters(saga)
 
                                 val rules = fetchNarrativeRules()
+                                val narrativeStep = NarrativeCheck.validateProgression(saga, rules)
                                 if (previousSaga == null) {
                                     emitMilestone(null)
                                     if (saga.data.isEnded.not() && saga
                                             .flatEvents()
                                             .filter { it.isComplete(rules) }
-                                            .size > 1
+                                            .size > 1 &&
+                                        narrativeStep == NarrativeStep.NoActionNeeded
                                     ) {
                                         saga.currentActInfo?.currentChapterInfo?.let { chapter ->
                                             emitMilestone(SagaMilestone.Loading)
@@ -706,48 +803,24 @@ class SagaContentManagerImpl
                                     createAct(currentSaga)
                                 }
 
-                                is NarrativeStep.GenerateSagaEnding -> {
-                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
-                                    generateEnding(currentSaga)
-                                }
-
-                                is NarrativeStep.GenerateAct -> {
-                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
-                                    updateAct(narrativeStep.act)
-                                }
-
-                                is NarrativeStep.GenerateActIntroduction -> {
-                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
-                                    generateActIntroduction(narrativeStep.act)
+                                is NarrativeStep.GenerateTimeLine,
+                                is NarrativeStep.GenerateChapter,
+                                is NarrativeStep.GenerateAct,
+                                is NarrativeStep.GenerateSagaEnding,
+                                is NarrativeStep.GenerateActIntroduction,
+                                is NarrativeStep.GenerateChapterIntroduction,
+                                is NarrativeStep.StartTimeline,
+                                -> {
+                                    Log.i(
+                                        javaClass.simpleName,
+                                        "checkNarrativeProgression: Milestone ${narrativeStep.javaClass.simpleName} detected. Waiting for user interaction.",
+                                    )
+                                    setProcessing(false)
+                                    return@startProcessing
                                 }
 
                                 is NarrativeStep.StartChapter -> {
                                     startChapter(narrativeStep.act)
-                                }
-
-                                is NarrativeStep.GenerateChapter -> {
-                                    updateChapter(
-                                        currentSaga,
-                                        narrativeStep.chapter,
-                                    )
-                                }
-
-                                is NarrativeStep.GenerateChapterIntroduction -> {
-                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
-                                    generateChapterIntroduction(narrativeStep.chapter)
-                                }
-
-                                is NarrativeStep.StartTimeline -> {
-                                    startTimeline(narrativeStep.chapter)
-                                }
-
-                                is NarrativeStep.GenerateTimeLine -> {
-                                    emitMilestone(saga?.data?.let { SagaMilestone.Loading })
-
-                                    updateTimeline(
-                                        currentSaga,
-                                        narrativeStep.timeline,
-                                    )
                                 }
 
                                 is NarrativeStep.EndTimeLine -> {

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -127,5 +128,9 @@ class ChatStateManager {
 
     fun updateOnboardingType(type: com.ilustris.sagai.features.onboarding.data.OnboardingType?) {
         _uiState.update { it.copy(onboardingType = type) }
+    }
+
+    fun updatePendingAdvance(pendingAdvance: PendingAdvance?) {
+        _uiState.update { it.copy(pendingAdvance = pendingAdvance) }
     }
 }

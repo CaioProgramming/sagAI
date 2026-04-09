@@ -28,7 +28,7 @@ sealed class SagaMilestone(
         val timeline: Timeline,
         val emotionalMascot: String?,
     ) : SagaMilestone(
-            R.string.new_event_milestone_title,
+            R.string.advance_new_event,
             timeline.title,
             extraContent = { NewEventContent(it, timeline.id, emotionalMascot) },
         )

@@ -152,6 +152,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvanceTrigger
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -499,16 +500,17 @@ fun ChatView(
                         )
                     }
                 }
-            }
 
-            uiState.onboardingType?.let {
-                OnboardingDialog(
-                    type = it,
-                    genre = content?.data?.genre,
-                    onDismiss = {
-                        viewModel.onOnboardingDismissed()
-                    },
-                )
+                uiState.onboardingType?.let {
+                    OnboardingDialog(
+                        saga = content.data,
+                        type = it,
+                        genre = content.data.genre,
+                        onDismiss = {
+                            viewModel.onOnboardingDismissed()
+                        },
+                    )
+                }
             }
         } else {
             if (uiState.isGenerating.not() && uiState.isLoading.not()) {
@@ -620,7 +622,8 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            ).fillMaxSize(),
+                            )
+                            .fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -694,10 +697,8 @@ fun ChatContent(
                             audioPlaybackState = uiState.audioPlaybackState,
                         )
 
-                        AnimatedVisibility(
-                            uiState.chatState !is ChatState.Loading &&
-                                saga.isDebug.not() && saga.isEnded.not() &&
-                                !uiState.selectionState.isSelectionMode,
+                        AnimatedContent(
+                            targetState = uiState.pendingAdvance,
                             modifier =
                                 Modifier
                                     .constrainAs(chatInput) {
@@ -705,66 +706,85 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(vertical = padding.calculateBottomPadding())
-                                    .animateContentSize(),
-                            enter = slideInVertically(),
-                            exit = slideOutVertically { it },
-                        ) {
-                            ChatInputView(
-                                content = content,
-                                isGenerating = uiState.isGenerating || uiState.isLoading,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .wrapContentHeight(),
-                                selectedCharacter = uiState.selectedCharacter,
-                                typoFix = uiState.typoFixMessage,
-                                inputField = uiState.inputValue,
-                                sendType = uiState.senderType,
-                                isSendingPending = uiState.isSendingPending,
-                                sendingProgress = uiState.sendingProgress,
-                                onSendMessage = { userConfirmed ->
-                                    if (uiState.editingMessage != null) {
-                                        onAction(ChatUiAction.SaveEdit)
-                                    } else {
-                                        onAction(
-                                            ChatUiAction.SendInput(
-                                                userConfirmed,
-                                                false,
-                                            ),
-                                        )
                                     }
-                                },
-                                onUpdateInput = { value ->
-                                    onAction(
-                                        ChatUiAction.UpdateInput(
-                                            value,
-                                        ),
+                                    .padding(vertical = padding.calculateBottomPadding())
+                                    .animateContentSize(),
+                            transitionSpec = {
+                                slideInVertically { it } + fadeIn() togetherWith
+                                    slideOutVertically { it } + fadeOut()
+                            },
+                        ) { pending ->
+                            if (pending != null && !uiState.selectionState.isSelectionMode) {
+                                AdvanceTrigger(
+                                    pendingAdvance = pending,
+                                    genre = saga.genre,
+                                    onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
+                                )
+                            } else {
+                                AnimatedVisibility(
+                                    uiState.chatState !is ChatState.Loading &&
+                                        saga.isDebug.not() && saga.isEnded.not() &&
+                                        !uiState.selectionState.isSelectionMode,
+                                    enter = slideInVertically(),
+                                    exit = slideOutVertically { it },
+                                ) {
+                                    ChatInputView(
+                                        content = content,
+                                        isGenerating = uiState.isGenerating || uiState.isLoading,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight(),
+                                        selectedCharacter = uiState.selectedCharacter,
+                                        typoFix = uiState.typoFixMessage,
+                                        inputField = uiState.inputValue,
+                                        sendType = uiState.senderType,
+                                        isSendingPending = uiState.isSendingPending,
+                                        sendingProgress = uiState.sendingProgress,
+                                        onSendMessage = { userConfirmed ->
+                                            if (uiState.editingMessage != null) {
+                                                onAction(ChatUiAction.SaveEdit)
+                                            } else {
+                                                onAction(
+                                                    ChatUiAction.SendInput(
+                                                        userConfirmed,
+                                                        false,
+                                                    ),
+                                                )
+                                            }
+                                        },
+                                        onUpdateInput = { value ->
+                                            onAction(
+                                                ChatUiAction.UpdateInput(
+                                                    value,
+                                                ),
+                                            )
+                                        },
+                                        onUpdateSender = { type ->
+                                            onAction(
+                                                ChatUiAction.UpdateSenderType(
+                                                    type,
+                                                ),
+                                            )
+                                        },
+                                        suggestions = uiState.suggestions,
+                                        onSelectCharacter = { character ->
+                                            onAction(
+                                                ChatUiAction.UpdateCharacter(
+                                                    character,
+                                                ),
+                                            )
+                                        },
+                                        onRequestAudio = {
+                                            onAction(
+                                                ChatUiAction.RequestAudioTranscript(true),
+                                            )
+                                        },
+                                        isEditing = uiState.editingMessage != null,
+                                        onCancelEdit = { onAction(ChatUiAction.CancelEdit) },
                                     )
-                                },
-                                onUpdateSender = { type ->
-                                    onAction(
-                                        ChatUiAction.UpdateSenderType(
-                                            type,
-                                        ),
-                                    )
-                                },
-                                suggestions = uiState.suggestions,
-                                onSelectCharacter = { character ->
-                                    onAction(
-                                        ChatUiAction.UpdateCharacter(
-                                            character,
-                                        ),
-                                    )
-                                },
-                                onRequestAudio = {
-                                    onAction(
-                                        ChatUiAction.RequestAudioTranscript(true),
-                                    )
-                                },
-                                isEditing = uiState.editingMessage != null,
-                                onCancelEdit = { onAction(ChatUiAction.CancelEdit) },
-                            )
+                                }
+                            }
                         }
 
                         AnimatedVisibility(
@@ -776,7 +796,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(
+                                    }
+                                    .padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -874,7 +895,8 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    ).wrapContentSize(),
+                                    )
+                                    .wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -906,22 +928,25 @@ fun ChatContent(
                                                 ),
                                             modifier =
                                                 Modifier
-                                                    .size(32.dp)
+                                                    .genreVfx(
+                                                        saga.genre,
+                                                        isPlaying = uiState.isGenerating || uiState.isLoading,
+                                                    ).size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }.gradientFill(
+                                                    }
+                                                    .gradientFill(
                                                         progressiveBrush(
                                                             resolvedColor,
                                                             progress,
                                                         ),
-                                                    ).reactiveShimmer(
+                                                    )
+                                                    .reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
                                                         shimmerColors = saga.genre.shimmerColors(),
-                                                    ).genreVfx(
-                                                        saga.genre,
-                                                        isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    ).sharedElement(
+                                                    )
+                                                    .sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga_${saga.id}_spark",
                                                         ),
@@ -963,7 +988,8 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }.fillMaxWidth()
+                                        }
+                                        .fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.sharedElement(
@@ -1052,7 +1078,8 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            ).fillMaxWidth(),
+                                            )
+                                            .fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1071,7 +1098,8 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1249,7 +1277,8 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 
@@ -1292,7 +1321,8 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }.animateContentSize(),
+                    }
+                    .animateContentSize(),
         )
     }
 }
@@ -1596,7 +1626,8 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        ).graphicsLayer(
+                        )
+                        .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
                         ).clip(CircleShape)
                         .size(24.dp)

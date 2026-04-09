@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -206,7 +205,7 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                     Text(
                         it.title,
                         style =
-                            MaterialTheme.typography.titleMedium.copy(
+                            MaterialTheme.typography.titleSmall.copy(
                                 fontFamily = genre.bodyFont(),
                             ),
                     )
@@ -266,7 +265,7 @@ fun DetailSectionView.InitialSection.miniSection(
 ) {
     val genre = saga.data.genre
     val sectionStyle =
-        MaterialTheme.typography.titleMedium.copy(
+        MaterialTheme.typography.titleSmall.copy(
             fontWeight = FontWeight.SemiBold,
             fontFamily = genre.bodyFont(),
         )
@@ -290,7 +289,7 @@ fun DetailSectionView.InitialSection.miniSection(
                 Text(
                     text,
                     style =
-                        MaterialTheme.typography.headlineLarge.copy(
+                        MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.bodyFont(),
                             shadow =
                                 Shadow(
@@ -314,34 +313,11 @@ fun DetailSectionView.InitialSection.miniSection(
                     .padding(16.dp)
                     .fillMaxWidth(),
             ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                RowHeader(
+                    stringResource(R.string.saga_detail_section_title_chapters),
+                    sectionStyle,
                 ) {
-                    Text(
-                        stringResource(R.string.saga_detail_section_title_chapters),
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = genre.bodyFont(),
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .weight(1f),
-                    )
-
-                    IconButton(onClick = {
-                        onAction(
-                            OpenSection(RequestSection.CHAPTERS),
-                        )
-                    }, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            painterResource(R.drawable.round_arrow_forward_ios_24),
-                            contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
-                        )
-                    }
+                    onAction(OpenSection(RequestSection.CHAPTERS))
                 }
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -384,34 +360,11 @@ fun DetailSectionView.InitialSection.miniSection(
                     .padding(16.dp)
                     .fillMaxWidth(),
             ) {
-                Row(
-                    Modifier
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                RowHeader(
+                    stringResource(R.string.saga_detail_section_title_wiki),
+                    sectionStyle,
                 ) {
-                    Text(
-                        stringResource(R.string.saga_detail_section_title_wiki),
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = genre.bodyFont(),
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .weight(1f),
-                    )
-
-                    IconButton(onClick = {
-                        onAction(
-                            OpenSection(RequestSection.WIKI),
-                        )
-                    }, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            painterResource(R.drawable.round_arrow_forward_ios_24),
-                            contentDescription = null,
-                        )
-                    }
+                    onAction(OpenSection(RequestSection.WIKI))
                 }
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -442,31 +395,12 @@ fun DetailSectionView.InitialSection.miniSection(
                 return
             }
             Column {
-                Row(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                RowHeader(
+                    stringResource(R.string.saga_detail_section_title_characters),
+                    textStyle =
+                    sectionStyle,
                 ) {
-                    Text(
-                        stringResource(R.string.saga_detail_section_title_characters),
-                        style = sectionStyle,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .weight(1f),
-                    )
-
-                    IconButton(onClick = {
-                        onAction(
-                            OpenSection(RequestSection.CHARACTERS),
-                        )
-                    }, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            painterResource(R.drawable.round_arrow_forward_ios_24),
-                            contentDescription = stringResource(R.string.saga_detail_view_characters_action),
-                        )
-                    }
+                    onAction(OpenSection(RequestSection.CHARACTERS))
                 }
                 LazyRow {
                     items(
@@ -515,10 +449,7 @@ fun DetailSectionView.InitialSection.miniSection(
                     RowHeader(
                         stringResource(R.string.saga_detail_relationships_section_title),
                         textStyle =
-                            MaterialTheme.typography.headlineMedium.copy(
-                                fontFamily = genre.headerFont(),
-                                textAlign = TextAlign.Start,
-                            ),
+                        sectionStyle,
                     ) {
                         onAction(OpenSection(RequestSection.CHARACTERS))
                     }
@@ -547,73 +478,27 @@ fun DetailSectionView.InitialSection.miniSection(
                         .padding(16.dp)
                         .fillMaxWidth(),
                 ) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    RowHeader(
+                        stringResource(R.string.saga_detail_timeline_section_title),
+                        sectionStyle,
                     ) {
-                        Text(
-                            stringResource(R.string.saga_detail_timeline_section_title),
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontFamily = genre.bodyFont(),
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .weight(1f),
-                        )
-
-                        IconButton(onClick = {
-                            onAction(
-                                OpenSection(RequestSection.EVENTS),
-                            )
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                painterResource(R.drawable.round_arrow_forward_ios_24),
-                                contentDescription = null,
-                            )
-                        }
+                        onAction(OpenSection(RequestSection.EVENTS))
                     }
 
-                    lastEvent?.let {
-                        TimelineContentViewCard(
-                            saga,
-                            it,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onAction(
-                                            OpenSection(
-                                                RequestSection.EVENTS,
-                                            ),
-                                        )
-                                    },
-                        )
-                    }
-
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(saga.wikis) { wiki ->
-                            val shape = genre.shape()
-
-                            WikiCard(
-                                wiki,
-                                genre,
-                                Modifier
-                                    .size(250.dp)
-                                    .clip(shape)
-                                    .clickable {
-                                        onAction(
-                                            OpenSection(
-                                                RequestSection.WIKI,
-                                            ),
-                                        )
-                                    },
-                            )
-                        }
-                    }
+                    TimelineContentViewCard(
+                        saga,
+                        it,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onAction(
+                                        OpenSection(
+                                            RequestSection.EVENTS,
+                                        ),
+                                    )
+                                },
+                    )
                 }
             }
         }

@@ -137,7 +137,9 @@ fun TimelineContentViewCard(
                 )
 
                 Text(
-                    event.data.content,
+                    event.data.content
+                        .take(200)
+                        .plus(stringResource(id = R.string.read_more)),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),

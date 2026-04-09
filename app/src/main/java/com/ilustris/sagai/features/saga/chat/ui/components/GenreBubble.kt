@@ -14,7 +14,6 @@ import com.ilustris.sagai.ui.theme.components.chat.CowboysChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.PunkRockChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
@@ -44,11 +43,29 @@ fun Genre?.bubble(
         }
 
         Genre.HEROES -> {
-            HeroesChatBubbleShape(
-                tailAlignment = tailAlignment,
-                tailWidth = tailW,
-                tailHeight = tailH,
-            )
+            if (isNarrator) {
+                RoundedCornerShape(cornerSize)
+            } else {
+                when (tailAlignment) {
+                    BubbleTailAlignment.BottomLeft -> {
+                        RoundedCornerShape(
+                            topStart = cornerSize.plus(5.dp),
+                            topEnd = cornerSize.plus(5.dp),
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp,
+                        )
+                    }
+
+                    BubbleTailAlignment.BottomRight -> {
+                        RoundedCornerShape(
+                            topStart = cornerSize.plus(5.dp),
+                            topEnd = cornerSize.plus(5.dp),
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp,
+                        )
+                    }
+                }
+            }
         }
 
         Genre.SHINOBI -> {

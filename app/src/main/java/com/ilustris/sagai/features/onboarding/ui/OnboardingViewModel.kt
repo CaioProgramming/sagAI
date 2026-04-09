@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.onboarding.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.billingclient.api.ProductDetails
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
@@ -139,6 +140,10 @@ class OnboardingViewModel
             action: OnboardingAction,
             activity: MainActivity? = null,
         ) {
+            if (currentType == OnboardingType.PREMIUM_GUIDE && BuildConfig.DEBUG) {
+                currentType = null
+                handleAction(OnboardingAction.Dismiss)
+            }
             viewModelScope.launch {
                 when (action) {
                     is OnboardingAction.Subscribe -> {
