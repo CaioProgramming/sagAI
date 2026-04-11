@@ -558,6 +558,7 @@ private fun SharedTransitionScope.ChatList(
                 loadingStoryId = loadingStoryId,
                 onStoryClicked = onStoryClicked,
                 listState.canScrollBackward.not(),
+                visualConfigs = visualConfigs,
             )
         }
 

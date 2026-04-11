@@ -11,9 +11,8 @@ class LoadingService(
 ) {
     suspend fun generateLoadingMessage(
         loadingType: LoadingType,
-        conversationStyle: String?,
+        conversationStyle: String? = null,
     ): String? {
-        val loadingTask = promptService.buildRemotePrompt(loadingType.taskKey)
         val conversation =
             conversationStyle
                 ?: promptService.buildRemotePrompt(OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT)
@@ -21,17 +20,17 @@ class LoadingService(
             promptService.buildRemotePrompt(
                 LOADING_BLUEPRINT,
                 LoadingPrompts.LoadingArgs(
-                    loadingTask,
+                    loadingType.task,
                     conversation,
                 ),
             )
 
-        return gemmaClient.generate<String>(loadingBlueprint)
+        return gemmaClient.generate<String>(loadingBlueprint, temperatureRandomness = 1f)
     }
 }
 
 class LoadingType(
-    val taskKey: String,
+    val task: String,
 )
 
 private const val LOADING_BLUEPRINT = "loading_blueprint"

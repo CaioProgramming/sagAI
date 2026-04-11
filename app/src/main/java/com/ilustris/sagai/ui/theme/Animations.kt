@@ -156,15 +156,17 @@ fun SimpleTypewriterText(
         label = "typewriterAnimation",
     )
 
-    LaunchedEffect(Unit) {
-        if (textTarget == 0 && isAnimated) {
+    LaunchedEffect(text) {
+        textTarget = 0
+        if (isAnimated) {
             textTarget = text.length
         } else {
             textTarget = text.length
             onTextUpdate(text)
         }
     }
-    val currentText = if (isAnimated) text.substring(0, charIndex) else text
+    val currentText =
+        if (isAnimated) text.substring(0, charIndex.coerceAtMost(text.length)) else text
 
     LaunchedEffect(charIndex) {
         onTextUpdate(text.substring(0, charIndex))

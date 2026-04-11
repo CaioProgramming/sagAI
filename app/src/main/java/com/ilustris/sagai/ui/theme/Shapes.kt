@@ -217,7 +217,7 @@ fun Genre?.cornerSize(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.
 
 @Composable
 fun Genre?.shape(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current) =
-    this?.bubble(isNarrator = true)
+    this?.bubble(isNarrator = true, visualConfig = visualConfig)
         ?: MaterialTheme.shapes.medium
 
 fun Morph.toComposePath(

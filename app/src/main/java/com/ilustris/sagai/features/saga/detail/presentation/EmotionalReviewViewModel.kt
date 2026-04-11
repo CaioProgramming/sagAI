@@ -3,8 +3,10 @@ package com.ilustris.sagai.features.saga.detail.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.LoadingType
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -24,6 +26,7 @@ class EmotionalReviewViewModel
         private val loadingService: LoadingService,
         private val genreConfigService: GenreConfigService,
         private val sagaRepository: SagaRepository,
+        private val promptService: PromptService,
     ) : ViewModel() {
         private val _isGenerating = MutableStateFlow(false)
         val isGenerating: StateFlow<Boolean> = _isGenerating.asStateFlow()
@@ -41,9 +44,10 @@ class EmotionalReviewViewModel
                 }
                 _isGenerating.value = true
                 val genreConfig = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                val emotionalTask = promptService.buildPrompt("emotional_loading", emptyMap())
                 _loadingMessage.value =
                     loadingService.generateLoadingMessage(
-                        LoadingType("emotional_loading"),
+                        LoadingType(emotionalTask),
                         genreConfig.conversationDirective,
                     )
 

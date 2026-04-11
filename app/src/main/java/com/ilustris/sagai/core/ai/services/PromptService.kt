@@ -65,20 +65,40 @@ class PromptServiceImpl
             variables: Map<String, String>,
             logEnabled: Boolean,
         ): String {
-            var result = template
             if (logEnabled) {
-                Log.d(javaClass.simpleName, "buildPrompt: Received args ->\n$variables")
+                Log.i("PromptService", "buildPrompt: Received vars ->\n$variables")
             }
-            variables.forEach { (key, value) ->
-                if (result.contains("{$key}")) {
+
+            val placeholders =
+                Regex("\\{(\\w+)\\}").findAll(template).map { it.groupValues[1] }.toList()
+            val uniquePlaceholders = placeholders.distinct()
+
+            if (logEnabled) {
+                Log.i(
+                    "PromptService",
+                    "buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
+                )
+            }
+
+            var result = template
+
+            uniquePlaceholders.forEach { key ->
+                val value = variables[key]
+                if (value != null) {
+                    result = result.replace("{$key}", value)
                     if (logEnabled) {
                         Log.d("PromptService", "buildPrompt: Replaced {$key}")
                     }
-                    result = result.replace("{$key}", value)
+                } else {
+                    Log.e(
+                        "PromptService",
+                        "buildPrompt: CRITICAL - Variable '{$key}' not found in provided args!",
+                    )
                 }
             }
+
             if (logEnabled) {
-                Log.d("PromptService", "buildPrompt: New Prompt ->\n$result")
+                Log.d("PromptService", "buildPrompt: Final Prompt Construction Complete.")
             }
             return result
         }

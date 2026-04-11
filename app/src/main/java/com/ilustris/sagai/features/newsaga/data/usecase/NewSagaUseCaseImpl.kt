@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.LoadingType
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -21,6 +22,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.service.CharacterIdeationService
+import com.ilustris.sagai.features.newsaga.data.service.SagaIdeationService
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +39,9 @@ class NewSagaUseCaseImpl
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
         private val characterUseCase: CharacterUseCase,
+        private val sagaIdeationService: SagaIdeationService,
+        private val characterIdeationService: CharacterIdeationService,
+        private val loadingService: com.ilustris.sagai.core.services.LoadingService,
     ) : NewSagaUseCase {
         override fun createCompleteSagaFlow(
             sagaDraft: SagaDraft,
@@ -120,14 +126,14 @@ class NewSagaUseCaseImpl
                             sagaForm,
                             characterInfo,
                             sagaDraft.genre,
-                    ).getSuccess() ?: "Success!"
-                emit(SagaCreationState.Loading(processMessage))
+                        ).getSuccess() ?: "Success!"
+                    emit(SagaCreationState.Loading(processMessage))
 
-                emit(SagaCreationState.Success(updatedSaga, character))
-            } catch (e: Exception) {
-                emit(SagaCreationState.Error(e))
+                    emit(SagaCreationState.Success(updatedSaga, character))
+                } catch (e: Exception) {
+                    emit(SagaCreationState.Error(e))
+                }
             }
-        }
 
         override suspend fun createSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
@@ -326,4 +332,75 @@ class NewSagaUseCaseImpl
                     requireTranslation = true,
                 )!!
             }
+
+        override fun executePrompt(
+            prompt: String,
+            lockedSaga: SagaDraft?,
+            lockedCharacter: CharacterInfo?,
+        ): Flow<AgenticFlowResponse> =
+            flow {
+                try {
+                    if (lockedSaga == null) {
+                        // 1. Dynamic Loading Message for Saga Ideation
+                        val loadingMessage =
+                            loadingService.generateLoadingMessage(
+                                LoadingType(NewSagaPrompts.suggestingSagas(promptService)),
+                            )
+                        loadingMessage?.let {
+                            emit(AgenticFlowResponse.Log(loadingMessage))
+                        }
+
+                        // 2. Identify Saga Concepts
+                        val response = sagaIdeationService.suggestSagas(prompt).getSuccess()
+                        emit(
+                            AgenticFlowResponse.SagaPitches(
+                                ideas = response?.ideas ?: emptyList(),
+                                message = response?.message,
+                            ),
+                        )
+                    } else if (lockedCharacter == null) {
+                        // 1. Dynamic Loading Message for Character Ideation with Story Context
+                        val loadingMessage =
+                            loadingService.generateLoadingMessage(
+                                LoadingType(
+                                    NewSagaPrompts.suggestingCharacters(
+                                        lockedSaga,
+                                        promptService,
+                                    ),
+                                ),
+                                lockedSaga.genre.let { genreConfigService.conversationBlueprint(it) },
+                            )
+                        loadingMessage?.let {
+                            emit(AgenticFlowResponse.Log(it))
+                        }
+
+                        // 3. Identify Character Personas
+                        val response =
+                            characterIdeationService
+                                .suggestCharacters(lockedSaga, prompt)
+                                .getSuccess()
+
+                        emit(
+                            AgenticFlowResponse.CharacterPitches(
+                                personas = response?.ideas ?: emptyList(),
+                                message = response?.message,
+                            ),
+                        )
+                    } else {
+                        // Both locked? Maybe we refine or update
+                        emit(
+                            AgenticFlowResponse.RefinedDraft(
+                                lockedSaga,
+                                lockedCharacter,
+                            ),
+                        )
+                    }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emit(
+                    AgenticFlowResponse
+                        .Error(e),
+                )
+            }
+        }
     }

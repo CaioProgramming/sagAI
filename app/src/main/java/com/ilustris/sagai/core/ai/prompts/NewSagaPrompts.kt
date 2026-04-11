@@ -22,9 +22,9 @@ data class ConversationalSagaReplyArgs(
 
 data class GenerateProcessArgs(
     val companionPersona: String,
-    val conversationalStyle: String,
-    val sagaDraft: String,
-    val characterInfo: String,
+    val conversationDirective: String,
+    val sagaBrief: String,
+    val characterBrief: String,
     val processName: String,
     val processSpecificInstruction: String,
 )
@@ -73,6 +73,22 @@ data class CreationAssistArgs(
     val flowSpecificObjectives: String,
 )
 
+data class AgenticWelcomeArgs(
+    val availableGenres: String,
+)
+
+data class SagaIdeationArgs(
+    val userPrompt: String,
+    val themes: String,
+)
+
+data class CharacterIdeationArgs(
+    val sagaName: String,
+    val sagaDescription: String,
+    val userPrompt: String,
+    val themeStyle: String,
+)
+
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
     const val CONVERSATIONAL_SAGA_REPLY_BLUEPRINT = "conversational_saga_reply_blueprint"
@@ -83,6 +99,13 @@ object NewSagaPrompts {
     const val INITIAL_SAGA_KICKOFF_BLUEPRINT = "initial_saga_kickoff_blueprint"
     const val REFINE_SAGA_DRAFT_BLUEPRINT = "refine_saga_draft_blueprint"
     const val SAGA_PROCESS_INTERLUDE_BLUEPRINT = "saga_process_interlude_blueprint"
+
+    // Agentic Flow Blueprints
+    const val AGENTIC_WELCOME_BLUEPRINT = "agentic_welcome_blueprint"
+    const val SAGA_IDEATION_BLUEPRINT = "saga_ideation_blueprint"
+    const val CHARACTER_IDEATION_BLUEPRINT = "character_ideation_blueprint"
+    const val CHARACTER_IDEATION_PROCESS = "character_task"
+    const val SAAGA_IDEATION_PROCESS = "ideation_task"
 
     suspend fun conversationalSagaReply(
         promptService: PromptService,
@@ -117,22 +140,36 @@ object NewSagaPrompts {
         promptService: PromptService,
         process: SagaProcess,
         saga: SagaForm,
-        character: CharacterInfo,
+        character: CharacterInfo?,
         identity: String = "",
         instruction: String = "",
     ): String {
         val args =
             GenerateProcessArgs(
                 companionPersona = identity,
-                conversationalStyle = identity,
+                conversationDirective = identity,
                 processName = process.name,
                 processSpecificInstruction = instruction,
-                sagaDraft = saga.toAINormalize(),
-                characterInfo = character.toAINormalize(),
+                sagaBrief = saga.toAINormalize(),
+                characterBrief = character.toAINormalize(),
             )
 
         return promptService.buildRemotePrompt(SAGA_PROCESS_INTERLUDE_BLUEPRINT, args)
     }
+
+    suspend fun suggestingCharacters(
+        sagaDraft: SagaDraft?,
+        promptService: PromptService,
+    ): String {
+        val args =
+            mapOf(
+                "context" to sagaDraft.toAINormalize(),
+            )
+
+        return promptService.buildRemotePrompt(CHARACTER_IDEATION_PROCESS, args)
+    }
+
+    suspend fun suggestingSagas(promptService: PromptService): String = promptService.buildRemotePrompt(SAGA_IDEATION_BLUEPRINT)
 
     suspend fun createSagaPrompt(
         promptService: PromptService,

@@ -36,7 +36,7 @@ class SagaReviewUseCaseImpl
                         ReviewSteps.entries.associateWith {
                             val loadingMessage =
                                 loadingService.generateLoadingMessage(
-                                    LoadingType(it.loadingKey),
+                                    LoadingType("Revisiting user journey..."),
                                     conversationStyle = config.conversationDirective,
                                 ) ?: emptyString()
                             emit(ReviewState.Loading(loadingMessage))

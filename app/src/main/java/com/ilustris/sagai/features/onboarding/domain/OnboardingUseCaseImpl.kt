@@ -49,7 +49,7 @@ class OnboardingUseCaseImpl
                 val content =
                     gemmaClient.generate<OnboardingContent>(
                         prompt = prompt,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                         blueprintKey = OnboardingPrompts.ONBOARDING_BLUEPRINT,
                     )
 

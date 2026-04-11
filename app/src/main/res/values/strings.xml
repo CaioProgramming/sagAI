@@ -593,4 +593,5 @@
     <string name="settings_music_description">Play atmospheric music tailored to your saga genre for a more immersive experience.</string>
     <string name="select_character">Selecionar personagem</string>
     <string name="thinking_message">Gemma is thinking...</string>
+    <string name="edit">edit</string>
 </resources>

@@ -42,7 +42,7 @@ private data class Star(
 fun StarryTextPlaceholder(
     modifier: Modifier = Modifier,
     starColor: Color = Color.White,
-    starCount: Int = Genre.entries.size * 10,
+    starCount: Int = Genre.entries.size * 5,
     twinkleDurationMillis: Int = 1500,
 ) {
     val stars = remember { mutableStateListOf<Star>() }

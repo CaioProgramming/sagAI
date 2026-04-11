@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -50,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -260,10 +260,18 @@ fun StarryLoader(
 fun WarpSpeedStarField(
     modifier: Modifier = Modifier,
     starColor: Color = Color.White,
-    starCount: Int = Genre.entries.size * 50,
+    starCount: Int = 100,
 ) {
     val stars = remember { mutableStateListOf<WarpStar>() }
     var lastFrameTime by remember { mutableLongStateOf(0L) }
+
+    val glowPaint =
+        remember {
+            android.graphics.Paint().apply {
+                isAntiAlias = true
+                style = android.graphics.Paint.Style.FILL
+            }
+        }
 
     // Animation constants - slower and smoother
     val speed = 300f // Reduced speed for organic feel
@@ -344,7 +352,7 @@ fun WarpSpeedStarField(
                             center = Offset(px, py),
                             size = starSize,
                             color = color,
-                            glow = true,
+                            glowPaint = glowPaint,
                         )
                     }
                 }
@@ -357,26 +365,15 @@ private fun DrawScope.draw4PointStar(
     center: Offset,
     size: Float,
     color: Color,
-    glow: Boolean = false,
+    glowPaint: android.graphics.Paint? = null,
 ) {
-    // Draw Glow - True Neon Bloom using BlurMaskFilter
-    if (glow) {
+    // Draw Glow - True Neon Bloom using cached framework paint if provided
+    if (glowPaint != null) {
         drawIntoCanvas { canvas ->
-            val glowPaint =
-                Paint().apply {
-                    this.color = color
-                    // Use a brighter alpha for the glow core logic, but let the mask filter spread it
-                    this.alpha = (color.alpha * 0.8f).coerceIn(0f, 1f)
-                    asFrameworkPaint().apply {
-                        isAntiAlias = true
-                        style = android.graphics.Paint.Style.FILL
-                        // The blur radius determines the spread of the glow
-                        maskFilter = BlurMaskFilter(size * 1.5f, BlurMaskFilter.Blur.NORMAL)
-                    }
-                }
-
-            // Draw a circle for the glow base
-            canvas.drawCircle(center, size * 1.2f, glowPaint)
+            glowPaint.color = color.toArgb()
+            glowPaint.alpha = (color.alpha * 0.8f * 255).toInt().coerceIn(0, 255)
+            glowPaint.maskFilter = BlurMaskFilter(size * 1.5f, BlurMaskFilter.Blur.NORMAL)
+            canvas.nativeCanvas.drawCircle(center.x, center.y, size * 1.2f, glowPaint)
         }
     }
 
@@ -398,3 +395,9 @@ private fun DrawScope.draw4PointStar(
     // Draw core with full opacity (or close to it) to simulate the hot light source
     drawPath(sharpPath, color.copy(alpha = (color.alpha + 0.2f).coerceIn(0f, 1f)))
 }
+
+fun Color.toArgb(): Int =
+    (alpha * 255.0f + 0.5f).toInt() shl 24 or
+        ((red * 255.0f + 0.5f).toInt() shl 16) or
+        ((green * 255.0f + 0.5f).toInt() shl 8) or
+        (blue * 255.0f + 0.5f).toInt()

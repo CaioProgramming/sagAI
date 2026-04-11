@@ -69,12 +69,7 @@ fun Genre?.bubble(
         }
 
         Genre.SHINOBI -> {
-            ShinobiChatBubbleShape(
-                cornerRadius = cornerSize,
-                tailAlignment = tailAlignment,
-                tailWidth = tailW,
-                tailHeight = tailH,
-            )
+            RoundedCornerShape(cornerSize)
         }
 
         Genre.HORROR -> {
