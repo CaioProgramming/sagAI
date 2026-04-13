@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.prompts.CharacterIdeationArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import javax.inject.Inject
@@ -20,7 +19,7 @@ class CharacterIdeationService
         suspend fun suggestCharacters(
             sagaDraft: SagaDraft,
             userPrompt: String,
-        ) = executeRequest {
+        ): kotlinx.coroutines.flow.Flow<com.ilustris.sagai.core.ai.StreamingState<CharacterIdeas>> {
             val blueprint =
                 promptService.buildRemotePrompt(
                     NewSagaPrompts.CHARACTER_IDEATION_BLUEPRINT,
@@ -31,7 +30,7 @@ class CharacterIdeationService
                         themeStyle = genreConfigService.conversationBlueprint(sagaDraft.genre),
                     ),
                 )
-            gemmaClient.generate<CharacterIdeas>(
+            return gemmaClient.generateStreaming<CharacterIdeas>(
                 blueprint,
                 requirement = GemmaClient.ModelRequirement.MEDIUM,
             )

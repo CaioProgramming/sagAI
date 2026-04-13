@@ -28,7 +28,7 @@ interface MessageUseCase {
         saga: SagaContent,
         message: MessageContent,
         sceneSummary: SceneSummary?,
-    ): RequestResult<Message>
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<Message>>
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
 

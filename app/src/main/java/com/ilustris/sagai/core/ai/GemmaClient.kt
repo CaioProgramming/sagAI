@@ -15,6 +15,7 @@ import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
+import com.ilustris.sagai.core.ai.model.GeminiResponse
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.database.model.AIAuditLog
@@ -27,6 +28,9 @@ import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -47,7 +51,7 @@ class GemmaClient
         @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
     ) : AIClient() {
         @PublishedApi
-        internal val requestMutex = Mutex()
+        internal val requestMutexes = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
 
         @PublishedApi
         @Volatile
@@ -65,6 +69,7 @@ class GemmaClient
         }
 
         enum class ModelRequirement {
+            TINY,
             LOW,
             MEDIUM,
             HIGH,
@@ -75,11 +80,12 @@ class GemmaClient
                 remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
             val modelName = tierConfig[requirement.name]
             return modelName ?: when (requirement) {
-                ModelRequirement.LOW -> "models/gemma-3-1b-it"
-                ModelRequirement.MEDIUM -> "models/gemma-3-12b-it"
-                ModelRequirement.HIGH -> "models/gemma-3-27b-it"
+                ModelRequirement.TINY -> "models/gemma-3-12b-it"
+                ModelRequirement.LOW -> "models/gemma-3-27b-it"
+                ModelRequirement.MEDIUM -> "models/gemma-4-26b-a4b-it"
+                ModelRequirement.HIGH -> "models/gemma-4-31b-it"
+            }
         }
-    }
 
         suspend fun coreKey() =
             remoteConfigService.getString(CORE_FLAG, false)?.let {
@@ -110,28 +116,29 @@ class GemmaClient
             useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.LOW,
             blueprintKey: String? = null,
+            logEnabled: Boolean = true,
         ): T? =
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
-                    Timber.w("Applying reactive delay due to high token count in last request.")
+                    if (logEnabled) Timber.w("Applying reactive delay due to high token count in last request.")
                     retryDelay = 5
                     delay((retryDelay ?: 5).seconds)
                 }
                 val model = modelName(requirement)
                 if (useCore.not()) {
                     retryDelay?.let {
-                        Timber.e("generate: Trying delay $retryDelay seconds to avoid rate limit.")
+                        if (logEnabled) Timber.e("generate: Trying delay $retryDelay seconds to avoid rate limit.")
                         delay(it.seconds)
                     }
                 } else {
-                    Timber.i("generate: Core calls don't require delay.")
+                    if (logEnabled) Timber.i("generate: Core calls don't require delay.")
                 }
 
                 val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
 
                 for (currentAttempt in 1..maxAttempts) {
                     try {
-                        return@withContext requestMutex.withLock {
+                        return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
                             val structure =
                                 if (describeOutput) {
                                     val dataStructure =
@@ -179,7 +186,7 @@ class GemmaClient
                                     references.filterNotNull().sumOf {
                                         it.description.length
                                     }
-                            Timber.i("Requesting $model\nPrompt with $promptLength chars.")
+                            if (logEnabled) Timber.i("Requesting $model\nPrompt with $promptLength chars.")
 
                             if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
                                 throw IllegalArgumentException("Prompt is too long. verify your prompt and try again.")
@@ -220,7 +227,7 @@ class GemmaClient
 
                             // Check for API error
                             response.error?.let { error ->
-                                Timber.e("Gemini API error: ${error.code} - ${error.message}")
+                                if (logEnabled) Timber.e("Gemini API error: ${error.code} - ${error.message}")
                                 throw Exception("Gemini API error: ${error.message}")
                             }
 
@@ -243,24 +250,26 @@ class GemmaClient
                                     responseContent?.lastOrNull()?.text
                                 }
 
-                            Timber.d(
-                                "Input JSON: ${
-                                    geminiRequest.toJsonFormatExcludingFields(
-                                        AI_EXCLUDED_FIELDS,
-                                    )
-                                }",
-                            )
+                            if (logEnabled) {
+                                Timber.d(
+                                    "Input JSON: ${
+                                        geminiRequest.toJsonFormatExcludingFields(
+                                            AI_EXCLUDED_FIELDS,
+                                        )
+                                    }",
+                                )
 
-                            Timber.d("Prompt requested:\n$fullPrompt")
+                                Timber.d("Prompt requested:\n$fullPrompt")
 
-                            Timber.i("API Response: ${response.toJsonFormat()}")
+                                Timber.i("API Response: ${response.toJsonFormat()}")
+                            }
 
                             val cleanedJsonString =
                                 requiredText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             val aiGeneration =
                                 Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
-                            if (BuildConfig.DEBUG) {
+                            if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
@@ -273,11 +282,11 @@ class GemmaClient
                                 )
                             }
                             val data = aiGeneration.data
-                            Log.d(javaClass.simpleName, "AI data ->\n$data\n")
+                            if (logEnabled) Log.d(javaClass.simpleName, "AI data ->\n$data\n")
                             data
                         }
                     } catch (e: Exception) {
-                        if (BuildConfig.DEBUG) {
+                        if (BuildConfig.DEBUG && logEnabled) {
                             try {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
@@ -295,10 +304,12 @@ class GemmaClient
                                 )
                             }
                         }
-                        Log.e(
-                            this@GemmaClient::class.java.simpleName,
-                            "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
-                        )
+                        if (logEnabled) {
+                            Log.e(
+                                this@GemmaClient::class.java.simpleName,
+                                "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                            )
+                        }
 
                         // Check if it's a parsing error (no delay needed) or network error (delay recommended)
                         val isParsingError =
@@ -307,10 +318,12 @@ class GemmaClient
 
                         if (e is HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
-                            Log.e(
-                                this@GemmaClient::class.java.simpleName,
-                                "HTTP Error ($model): $errorBody",
-                            )
+                            if (logEnabled) {
+                                Log.e(
+                                    this@GemmaClient::class.java.simpleName,
+                                    "HTTP Error ($model): $errorBody",
+                                )
+                            }
 
                             try {
                                 val errorResponse =
@@ -385,6 +398,277 @@ class GemmaClient
                 }
                 return@withContext null
             }
+
+        /**
+         * Streams the generation of T, emitting chunks of reasoning as they arrive,
+         * and finally emitting Success with the data, or Error if it fails.
+         */
+        suspend inline fun <reified T> generateStreaming(
+            prompt: String,
+            references: List<ImageReference?> = emptyList(),
+            temperatureRandomness: Float = .5f,
+            requireTranslation: Boolean = true,
+            describeOutput: Boolean = true,
+            filterOutputFields: List<String> = emptyList(),
+            useCore: Boolean = false,
+            requirement: ModelRequirement = ModelRequirement.LOW,
+            blueprintKey: String? = null,
+            logEnabled: Boolean = true,
+        ): Flow<StreamingState<T>> =
+            flow {
+                try {
+                    if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
+                        Timber.w("Applying reactive delay due to high token count in last request.")
+                        retryDelay = 5
+                        delay((retryDelay ?: 5).seconds)
+                    }
+                    val model = modelName(requirement)
+                    if (!useCore) {
+                        retryDelay?.let {
+                            if (logEnabled) Timber.e("generateStreaming: Trying delay $retryDelay seconds to avoid rate limit.")
+                            delay(it.seconds)
+                        }
+                    } else {
+                        if (logEnabled) Timber.i("generateStreaming: Core calls don't require delay.")
+                    }
+
+                    val maxAttempts =
+                        if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+
+                    for (currentAttempt in 1..maxAttempts) {
+                        try {
+                            val structure =
+                                if (describeOutput) {
+                                    val dataStructure =
+                                        if (T::class == String::class) {
+                                            "\"string\""
+                                        } else {
+                                            toJsonMap(
+                                                T::class.java,
+                                                filteredFields = filterOutputFields,
+                                            )
+                                        }
+                                    toJsonMap(
+                                        AIGeneration::class.java,
+                                        fieldCustomDescriptions = listOf("data" to dataStructure),
+                                    )
+                                } else {
+                                    T::class.java.simpleName
+                                }
+
+                            val formattingRule =
+                                "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
+
+                            val corePrompt =
+                                promptService.buildRemotePrompt(
+                                    remoteConfigKey = "core_blueprint",
+                                    variables =
+                                        mapOf(
+                                            "language" to getLanguage(requireTranslation),
+                                            "type" to T::class.java.simpleName,
+                                            "structure" to structure,
+                                            "formattingRule" to formattingRule,
+                                        ),
+                                    logEnabled = false,
+                                )
+
+                            val fullPrompt =
+                                buildString {
+                                    appendLine(prompt)
+                                    appendLine()
+                                    appendLine(corePrompt)
+                                }
+
+                            val parts = mutableListOf<GeminiPart>()
+                            parts.add(GeminiPart(text = fullPrompt))
+
+                            references.filterNotNull().forEach { reference ->
+                                parts.add(
+                                    GeminiPart(
+                                        inlineData =
+                                            GeminiInlineData(
+                                                mimeType = "image/jpeg",
+                                                data = reference.bitmap.toBase64(),
+                                            ),
+                                    ),
+                                )
+                                parts.add(GeminiPart(text = reference.description))
+                            }
+
+                            val geminiRequest =
+                                GeminiRequest(
+                                    contents = listOf(GeminiContent(parts = parts)),
+                                    generationConfig = GeminiGenerationConfig(temperature = temperatureRandomness),
+                                )
+
+                            val formattedModel = model.replace("models/", "")
+
+                            val responseBody =
+                                geminiApiService.streamGenerateContent(
+                                    model = formattedModel,
+                                    apiKey = apiConfig(useCore),
+                                    request = geminiRequest,
+                                )
+
+                            val accumulatedText = StringBuilder()
+
+                            responseBody.byteStream().bufferedReader().useLines { lines ->
+                                for (line in lines) {
+                                    var trimmed = line.trim()
+                                    if (trimmed.isEmpty()) continue
+
+                                    if (trimmed.startsWith("data:")) {
+                                        trimmed = trimmed.removePrefix("data:").trim()
+                                    }
+
+                                    if (trimmed.isEmpty()) continue
+                                    val jsonStr = trimmed
+
+                                    try {
+                                        if (logEnabled) {
+                                            Log.i(
+                                                javaClass.simpleName,
+                                                "generateStreaming: Trying to parse $jsonStr",
+                                            )
+                                        }
+                                        val partialResponse =
+                                            Gson().fromJson(
+                                                jsonStr,
+                                                GeminiResponse::class.java,
+                                            )
+                                        val partialPart =
+                                            partialResponse.candidates
+                                                ?.firstOrNull()
+                                                ?.content
+                                                ?.parts
+                                                ?.firstOrNull()
+
+                                        if (partialPart != null && partialPart.text != null) {
+                                            accumulatedText.append(partialPart.text)
+                                            emit(StreamingState.Reasoning(accumulatedText.toString()))
+                                        }
+                                    } catch (e: Exception) {
+                                        Timber.w("Failed to parse stream chunk: $jsonStr => ${e.message}")
+                                    }
+                                }
+                            }
+
+                            val fullText = accumulatedText.toString()
+                            val cleanedJsonString =
+                                fullText.sanitizeAndExtractJsonString(AIGeneration::class.java)
+                            val typeToken = object : TypeToken<AIGeneration<T>>() {}
+                            val aiGeneration =
+                                Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+
+                            if (BuildConfig.DEBUG && logEnabled) {
+                                aiAuditLogDao.insertLog(
+                                    AIAuditLog(
+                                        model = model,
+                                        blueprintKey = blueprintKey,
+                                        dataType = T::class.java.simpleName,
+                                        status = "SUCCESS",
+                                        reasoning = aiGeneration?.reasoning,
+                                        rawResponse = fullText,
+                                    ),
+                                )
+                            }
+
+                            emit(StreamingState.Success(aiGeneration.data))
+                            retryDelay = null
+                            return@flow // Success! Break out.
+                        } catch (e: Exception) {
+                            if (logEnabled) {
+                                Log.e(
+                                    this@GemmaClient::class.java.simpleName,
+                                    "Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                                )
+                            }
+
+                            val isParsingError =
+                                e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
+                            var extractedDelay: Long? = null
+
+                            if (e is HttpException) {
+                                val errorBody = e.response()?.errorBody()?.string()
+                                try {
+                                    val errorResponse =
+                                        Gson().fromJson(errorBody, GeminiErrorResponse::class.java)
+                                    val retryInfo =
+                                        errorResponse.error?.details?.find {
+                                            it.type ==
+                                                "type.googleapis.com/google.rpc.RetryInfo"
+                                        }
+                                    extractedDelay =
+                                        retryInfo
+                                            ?.retryDelay
+                                            ?.removeSuffix("s")
+                                            ?.toDoubleOrNull()
+                                            ?.toLong()
+                                } catch (parseEx: Exception) {
+                                }
+                            }
+
+                            if (currentAttempt < maxAttempts) {
+                                val delayToApply =
+                                    if (isParsingError) {
+                                        0L
+                                    } else {
+                                        (
+                                            extractedDelay
+                                                ?: RETRY_DELAY.toLong()
+                                        )
+                                    }
+                                if (delayToApply > 0) delay(delayToApply.seconds)
+                            } else {
+                                if (!isParsingError) {
+                                    retryDelay = extractedDelay?.toInt()
+                                        ?: retryDelay?.let { if (it > 30) it / 2 else it + it } ?: 2
+                                }
+                                emit(StreamingState.Error(e.message ?: "Unknown error"))
+                                return@flow
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                }
+            }.flowOn(Dispatchers.IO)
+
+        suspend fun generateText(
+            prompt: String,
+            requirement: ModelRequirement = ModelRequirement.LOW,
+            temperatureRandomness: Float = 0.5f,
+            logEnabled: Boolean = true,
+        ): String? {
+            val model = modelName(requirement)
+            val parts = listOf(GeminiPart(text = prompt))
+            val geminiRequest =
+                GeminiRequest(
+                    contents = listOf(GeminiContent(parts = parts)),
+                    generationConfig = GeminiGenerationConfig(temperature = temperatureRandomness),
+                )
+            val formattedModel = model.replace("models/", "")
+            return requestMutexes.getOrPut(model) { Mutex() }.withLock {
+                try {
+                    val response =
+                        geminiApiService.generateContent(
+                            model = formattedModel,
+                            apiKey = apiConfig(false),
+                            request = geminiRequest,
+                        )
+                    response.error?.let { throw Exception(it.message) }
+                    response.candidates
+                        ?.firstOrNull()
+                        ?.content
+                        ?.parts
+                        ?.firstOrNull()
+                        ?.text
+                } catch (e: Exception) {
+                    Timber.w("generateText failed: ${e.message}")
+                    null
+                }
+            }
+        }
 
         /**
          * Recursively checks if a class or any of its nested classes contain String fields.

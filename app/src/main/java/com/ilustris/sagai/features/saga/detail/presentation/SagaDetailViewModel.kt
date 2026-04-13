@@ -1,19 +1,13 @@
 package com.ilustris.sagai.features.saga.detail.presentation
 
 import android.graphics.Bitmap
-import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
-import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.services.getNarrativeRules
-import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -135,7 +129,9 @@ class SagaDetailViewModel
                 if (saga == null) {
                     return@launch
                 }
+                _state.value = State.Loading
                 sagaDetailUseCase.deleteSaga(saga)
+                _state.value = State.Deleted
             }
         }
 

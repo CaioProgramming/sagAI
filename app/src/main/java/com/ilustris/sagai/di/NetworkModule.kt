@@ -27,15 +27,22 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideLoggingInterceptor(): HttpLoggingInterceptor =
-        HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-            redactHeader("x-goog-api-key")
+    fun provideLoggingInterceptor(): okhttp3.Interceptor =
+        okhttp3.Interceptor { chain ->
+            val request = chain.request()
+            val isStreaming = request.url.encodedPath.contains("streamGenerateContent")
+            val logger =
+                HttpLoggingInterceptor().apply {
+                    level =
+                        if (isStreaming) HttpLoggingInterceptor.Level.HEADERS else HttpLoggingInterceptor.Level.BODY
+                    redactHeader("x-goog-api-key")
+        }
+        logger.intercept(chain)
         }
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
+    fun provideOkHttpClient(loggingInterceptor: okhttp3.Interceptor): OkHttpClient =
         OkHttpClient
             .Builder()
             .addInterceptor(loggingInterceptor)

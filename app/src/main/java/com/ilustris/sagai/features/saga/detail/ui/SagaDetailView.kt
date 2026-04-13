@@ -53,7 +53,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
@@ -63,7 +62,6 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
@@ -71,10 +69,9 @@ import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
@@ -89,7 +86,6 @@ fun SagaDetailView(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val saga by viewModel.saga.collectAsStateWithLifecycle()
-    val showIntro by viewModel.showIntro.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
     val actualSection by viewModel.actualSection.collectAsStateWithLifecycle()
 
@@ -119,6 +115,12 @@ fun SagaDetailView(
         }
     }
 
+    LaunchedEffect(state) {
+        if (state == State.Deleted) {
+            navHostController.popBackStack(Routes.HOME.name, inclusive = false)
+        }
+    }
+
     CompositionLocalProvider(LocalGenreVisualConfig provides visualConfig) {
         SagaDetailContentView(
             state = state,
@@ -132,6 +134,10 @@ fun SagaDetailView(
 
                     DetailAction.OpenEmotionalReview -> {
                         showEmotionalReview = true
+                    }
+
+                    DetailAction.Delete -> {
+                        sagaToDelete = saga?.data
                     }
 
                     else -> {
@@ -182,7 +188,7 @@ fun SagaDetailView(
                 confirmButton = {
                     Button(
                         onClick = {
-                            navHostController.popBackStack()
+                            viewModel.deleteSaga(it)
                         },
                         shape = genre.shape(),
                         colors =

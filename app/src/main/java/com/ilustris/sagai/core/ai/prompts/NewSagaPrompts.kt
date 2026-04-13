@@ -89,6 +89,19 @@ data class CharacterIdeationArgs(
     val themeStyle: String,
 )
 
+data class SacredBindingArgs(
+    val companionPersona: String,
+    val sagaDraft: String,
+    val characterInfo: String,
+    val genreName: String,
+    val themeStyle: String,
+)
+
+data class CosmicLibraryArgs(
+    val userPrompt: String,
+    val themes: String,
+)
+
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
     const val CONVERSATIONAL_SAGA_REPLY_BLUEPRINT = "conversational_saga_reply_blueprint"
@@ -102,10 +115,12 @@ object NewSagaPrompts {
 
     // Agentic Flow Blueprints
     const val AGENTIC_WELCOME_BLUEPRINT = "agentic_welcome_blueprint"
-    const val SAGA_IDEATION_BLUEPRINT = "saga_ideation_blueprint"
     const val CHARACTER_IDEATION_BLUEPRINT = "character_ideation_blueprint"
     const val CHARACTER_IDEATION_PROCESS = "character_task"
     const val SAAGA_IDEATION_PROCESS = "ideation_task"
+    const val COSMIC_LIBRARY_BLUEPRINT = "cosmic_library_blueprint"
+    const val UNIVERSE_ECHOES_BLUEPRINT = "universe_echoes_blueprint"
+    const val SACRED_BINDING_BLUEPRINT = "sacred_binding_blueprint"
 
     suspend fun conversationalSagaReply(
         promptService: PromptService,
@@ -169,7 +184,7 @@ object NewSagaPrompts {
         return promptService.buildRemotePrompt(CHARACTER_IDEATION_PROCESS, args)
     }
 
-    suspend fun suggestingSagas(promptService: PromptService): String = promptService.buildRemotePrompt(SAGA_IDEATION_BLUEPRINT)
+    suspend fun suggestingSagas(promptService: PromptService): String = promptService.buildRemotePrompt(UNIVERSE_ECHOES_BLUEPRINT)
 
     suspend fun createSagaPrompt(
         promptService: PromptService,
@@ -277,5 +292,22 @@ object NewSagaPrompts {
             )
 
         return promptService.buildRemotePrompt(CREATION_FLOW_ASSIST_BLUEPRINT, args)
+    }
+
+    suspend fun sacredBindingPrompt(
+        promptService: PromptService,
+        sagaDraft: SagaDraft,
+        characterInfo: CharacterInfo,
+        identity: String,
+    ): String {
+        val args =
+            SacredBindingArgs(
+                companionPersona = identity,
+                sagaDraft = sagaDraft.toAINormalize(),
+                characterInfo = characterInfo.toAINormalize(),
+                genreName = sagaDraft.genre.name,
+                themeStyle = identity,
+            )
+        return promptService.buildRemotePrompt(SACRED_BINDING_BLUEPRINT, args)
     }
 }

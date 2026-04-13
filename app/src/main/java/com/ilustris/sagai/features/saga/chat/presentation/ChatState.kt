@@ -66,6 +66,7 @@ data class ChatUiState(
     val visualConfig: GenreVisualConfig? = null,
     val onboardingType: OnboardingType? = null,
     val pendingAdvance: PendingAdvance? = null,
+    val reasoningChunk: String? = null,
 )
 
 data class MessageSelectionState(

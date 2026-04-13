@@ -1,14 +1,18 @@
 package com.ilustris.sagai.features.newsaga.data.service
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
-import com.ilustris.sagai.core.ai.prompts.SagaIdeationArgs
-import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
+import com.ilustris.sagai.features.newsaga.data.model.SacredContract
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.model.UniverseSuggestions
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class SagaIdeationService
@@ -16,32 +20,62 @@ class SagaIdeationService
     constructor(
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
-        private val genreConfigService: GenreConfigService,
     ) {
-        suspend fun suggestSagas(userPrompt: String) =
+        suspend fun generateCosmicLibrary(userPrompt: String): Flow<StreamingState<LibraryPitchesResponse>> {
+            val themes = Genre.entries.joinToString(", ") { it.name }
+            val blueprint =
+                promptService.buildRemotePrompt(
+                    NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
+                    CosmicLibraryArgs(userPrompt = userPrompt, themes = themes),
+                )
+            return gemmaClient.generateStreaming<LibraryPitchesResponse>(
+                blueprint,
+                requirement = GemmaClient.ModelRequirement.HIGH,
+                temperatureRandomness = 1f,
+                filterOutputFields = listOf("id", "variationId"),
+            )
+        }
+
+        suspend fun suggestUniverseEchoes() =
             executeRequest {
-                val genreMaps =
-                    Genre.entries.map {
-                        mapOf(
-                            "theme" to it.name,
-                            "themeAesthetic" to genreConfigService.conversationBlueprint(it),
-                        )
-                    }
+                val themes = Genre.entries.joinToString(", ") { it.name }
                 val blueprint =
                     promptService.buildRemotePrompt(
-                        NewSagaPrompts.SAGA_IDEATION_BLUEPRINT,
-                        SagaIdeationArgs(userPrompt = userPrompt, themes = genreMaps.toJsonFormat()),
+                        NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
+                        mapOf("themes" to themes),
                     )
-                gemmaClient.generate<SagaIdeas>(
+                gemmaClient.generate<UniverseSuggestions>(
                     blueprint,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                     temperatureRandomness = 1f,
-                    filterOutputFields = listOf("id", "variationId"),
-                )
+                    blueprintKey = NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
+                )!!
             }
-    }
 
-data class SagaIdeas(
-    val ideas: List<SagaDraft>,
-    val message: String = "",
-)
+        suspend fun sealSacredContract(
+            sagaDraft: SagaDraft,
+            characterInfo: CharacterInfo,
+            identity: String,
+        ): Flow<StreamingState<SacredContract>> {
+            val blueprint =
+                NewSagaPrompts.sacredBindingPrompt(promptService, sagaDraft, characterInfo, identity)
+            return gemmaClient.generateStreaming<SacredContract>(
+                blueprint,
+                requirement = GemmaClient.ModelRequirement.HIGH,
+                filterOutputFields =
+                    listOf(
+                        "id",
+                        "sagaId",
+                        "createdAt",
+                        "joinedAt",
+                        "mainCharacterId",
+                        "emotionalReview",
+                        "playTimeMs",
+                        "characterEvents",
+                        "voice",
+                        "narratorVoice",
+                        "timelineId",
+                    ),
+            )
+        }
+    }

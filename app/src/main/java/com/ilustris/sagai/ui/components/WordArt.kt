@@ -48,6 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
@@ -121,7 +122,8 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }.drawBehind {
+                }
+                .drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -283,10 +285,11 @@ fun Genre.stylisedText(
     text: String,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
+    visualConfig: GenreVisualConfig? = null,
 ) {
-    val resolvedColor = resolveColor()
-    val resolvedIconColor = resolveIconColor()
-    val palette = colorPalette()
+    val resolvedColor = resolveColor(visualConfig)
+    val resolvedIconColor = resolveIconColor(visualConfig)
+    val palette = colorPalette(visualConfig)
     val style =
         MaterialTheme.typography.displaySmall.copy(
             textAlign = TextAlign.Center,
@@ -302,10 +305,10 @@ fun Genre.stylisedText(
                         .genreVfx(this, resolvedColor, resolvedIconColor),
                 style =
                     style.copy(
-                        brush = Brush.verticalGradient(colorPalette()),
+                        brush = Brush.verticalGradient(palette),
                         shadow =
                             Shadow(
-                                colorPalette().last().darker(),
+                                palette.last().darker(),
                                 blurRadius = 15f,
                                 offset = Offset(0f, 2f),
                             ),
@@ -314,7 +317,6 @@ fun Genre.stylisedText(
         }
 
         Genre.CYBERPUNK -> {
-            val palette = this.colorPalette()
             AutoResizeText(
                 text = text,
                 modifier = modifier.genreVfx(this),
@@ -342,7 +344,7 @@ fun Genre.stylisedText(
                         brush = Brush.verticalGradient(colorPalette()),
                         shadow =
                             Shadow(
-                                color,
+                                resolvedColor,
                                 blurRadius = 10f,
                                 offset = Offset(x = 0f, y = 2f),
                             ),
@@ -351,7 +353,6 @@ fun Genre.stylisedText(
         }
 
         Genre.COWBOY -> {
-            val palette = this.colorPalette()
             AutoResizeText(
                 text = text,
                 modifier =
@@ -364,7 +365,7 @@ fun Genre.stylisedText(
                         fontSize = fontSize,
                         shadow =
                             Shadow(
-                                color.copy(alpha = 0.6f),
+                                resolvedColor.copy(alpha = 0.6f),
                                 blurRadius = 15f,
                             ),
                     ),
@@ -379,7 +380,7 @@ fun Genre.stylisedText(
                         .genreVfx(this, resolvedColor),
                 style =
                     style.copy(
-                        brush = Brush.verticalGradient(this.colorPalette()),
+                        brush = Brush.verticalGradient(palette),
                         shadow =
                             Shadow(
                                 color = resolvedColor.copy(alpha = 0.8f),
@@ -391,8 +392,6 @@ fun Genre.stylisedText(
         }
 
         Genre.HEROES -> {
-            // Sync with lightningStorm 2500ms cycle
-            // Lightning: Strike (0-10%), Hold (10-50%), Discharge (50-100%)
             val infiniteTransition = rememberInfiniteTransition(label = "heroShadow")
             val glowRadius by infiniteTransition.animateFloat(
                 initialValue = 0f,
@@ -485,7 +484,6 @@ fun Genre.stylisedText(
 
         else -> {
             // Default fallback using palette
-            val palette = this.colorPalette()
             WordArtText(
                 text = text,
                 modifier = modifier,

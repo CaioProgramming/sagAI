@@ -11,8 +11,15 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
+import com.ilustris.sagai.features.newsaga.data.model.UniverseSuggestions
 import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import kotlinx.coroutines.flow.Flow
+
+data class SagaBook(
+    val draft: SagaDraft = SagaDraft(),
+    val characters: List<CharacterInfo> = emptyList(),
+)
 
 sealed class AgenticFlowResponse {
     data class Log(
@@ -26,6 +33,16 @@ sealed class AgenticFlowResponse {
 
     data class CharacterPitches(
         val personas: List<CharacterInfo>,
+        val message: String? = null,
+    ) : AgenticFlowResponse()
+
+    data class LibraryPitches(
+        val books: List<SagaBook>,
+        val message: String? = null,
+    ) : AgenticFlowResponse()
+
+    data class UniverseSuggestions(
+        val suggestions: List<UniverseEcho>,
         val message: String? = null,
     ) : AgenticFlowResponse()
 
@@ -48,6 +65,10 @@ sealed class AgenticUIComponent {
         val ideas: List<Pair<SagaDraft, GenreVisualConfig>>,
     ) : AgenticUIComponent()
 
+    data class LibraryComponent(
+        val books: List<Pair<SagaBook, GenreVisualConfig>>,
+    ) : AgenticUIComponent()
+
     data class ExpandedSaga(
         val draft: SagaDraft,
         val visualConfig: GenreVisualConfig?,
@@ -61,6 +82,15 @@ sealed class AgenticUIComponent {
     data class ExpandedCharacter(
         val persona: CharacterInfo,
         val visuals: Pair<Genre, GenreVisualConfig?>,
+    ) : AgenticUIComponent()
+
+    data class UniverseEchoes(
+        val echoes: List<Pair<UniverseEcho, GenreVisualConfig>>,
+    ) : AgenticUIComponent()
+
+    data class ErrorComponent(
+        val message: String,
+        val canRetry: Boolean = true,
     ) : AgenticUIComponent()
 }
 
@@ -152,4 +182,11 @@ interface NewSagaUseCase {
         lockedSaga: SagaDraft? = null,
         lockedCharacter: CharacterInfo? = null,
     ): Flow<AgenticFlowResponse>
+
+    suspend fun provideInitialEchoes(): RequestResult<UniverseSuggestions>
+
+    fun sealSacredContract(
+        sagaDraft: SagaDraft,
+        characterInfo: CharacterInfo,
+    ): Flow<SagaCreationState>
 }

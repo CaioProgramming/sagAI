@@ -30,6 +30,8 @@ import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -46,6 +48,7 @@ class MessageUseCaseImpl
         private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
+        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -144,48 +147,64 @@ class MessageUseCaseImpl
             saga: SagaContent,
             message: MessageContent,
             sceneSummary: SceneSummary?,
-        ): RequestResult<Message> =
-            executeRequest {
-                if (isDebugModeEnabled) {
-                    Timber.d("[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}")
-                    val fakeReply =
-                        Message(
-                            text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
-                            senderType = SenderType.CHARACTER,
-                            sagaId = saga.data.id,
-                            timelineId = saga.getCurrentTimeLine()!!.data.id,
+        ): Flow<com.ilustris.sagai.core.ai.StreamingState<Message>> =
+            flow {
+                try {
+                    if (isDebugModeEnabled) {
+                        Timber.d("[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}")
+                        val fakeReply =
+                            Message(
+                                text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
+                                senderType = SenderType.CHARACTER,
+                                sagaId = saga.data.id,
+                                timelineId = saga.getCurrentTimeLine()!!.data.id,
+                            )
+                        emit(
+                            com.ilustris.sagai.core.ai.StreamingState
+                                .Success(fakeReply),
                         )
-                    return@executeRequest fakeReply
-                }
+                        return@flow
+                    }
 
-                sceneSummary?.charactersPresent?.mapNotNull { characterName ->
-                    saga.findCharacter(characterName)
-                } ?: emptyList()
+                    sceneSummary?.charactersPresent?.mapNotNull { characterName ->
+                        saga.findCharacter(characterName)
+                    } ?: emptyList()
 
-                genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                val conversationDirective =
-                    genreConfigService.conversationBlueprint(saga.data.genre)
-                val narrativeRules = fetchNarrativeRules()
-                val genText =
-                    gemmaClient.generate<Message>(
-                        prompt =
-                            ChatPrompts.replyMessagePrompt(
-                                promptService = promptService,
-                                saga = saga,
-                                message = message.message,
-                                sceneSummary = sceneSummary!!,
-                                conversationDirective = conversationDirective,
-                                updateLimit = narrativeRules.loreUpdateLimit,
-                            ),
-                        blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
-                        filterOutputFields =
-                            ChatPrompts.messageExclusions,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                        useCore = true,
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val narrativeRules = fetchNarrativeRules()
+
+                    val generateStream =
+                        gemmaClient.generateStreaming<Message>(
+                            prompt =
+                                ChatPrompts.replyMessagePrompt(
+                                    promptService = promptService,
+                                    saga = saga,
+                                    message = message.message,
+                                    sceneSummary = sceneSummary!!,
+                                    conversationDirective = conversationDirective,
+                                    updateLimit = narrativeRules.loreUpdateLimit,
+                                ),
+                            blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
+                            filterOutputFields = ChatPrompts.messageExclusions,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            useCore = true,
+                        )
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateStream,
+                            "Generating a chat reply",
+                            conversationStyle = conversationDirective,
+                        ).collect { state ->
+                            emit(state)
+                        }
+                } catch (e: Exception) {
+                    emit(
+                        com.ilustris.sagai.core.ai.StreamingState
+                            .Error(e.message ?: "Unknown error"),
                     )
-
-                Timber.i("AI Reasoning for message generation: ${genText?.reasoning}")
-                genText!!
+                }
             }
 
         override suspend fun generateReaction(

@@ -27,4 +27,12 @@ interface GeminiApiService {
         @Header("x-goog-api-key") apiKey: String,
         @Body request: GeminiRequest,
     ): GeminiResponse
+
+    @retrofit2.http.Streaming
+    @POST("models/{model}:streamGenerateContent?alt=sse")
+    suspend fun streamGenerateContent(
+        @Path("model") model: String,
+        @Header("x-goog-api-key") apiKey: String,
+        @Body request: GeminiRequest,
+    ): okhttp3.ResponseBody
 }

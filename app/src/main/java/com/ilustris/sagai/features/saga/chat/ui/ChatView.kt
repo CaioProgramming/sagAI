@@ -96,6 +96,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -457,7 +458,7 @@ fun ChatView(
 
             uiState.sagaContent?.let {
                 AnimatedVisibility(
-                    uiState.isLoading || uiState.isGenerating,
+                    (uiState.isLoading || uiState.isGenerating),
                     enter = fadeIn(),
                     exit = fadeOut(),
                     modifier = Modifier.fillMaxSize(),
@@ -469,7 +470,8 @@ fun ChatView(
                                     true,
                                     it.data.genre.shimmerColors(),
                                     duration = 2.seconds,
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 
@@ -611,10 +613,12 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).sharedElement(
+                                )
+                                .sharedElement(
                                     rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                ).fillMaxSize(.5f)
+                                )
+                                .fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -622,8 +626,7 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -632,6 +635,7 @@ fun ChatContent(
                             saga = content,
                             actList = uiState.messages,
                             listState = listState,
+                            reasoningChunk = uiState.reasoningChunk,
                             modifier =
                                 Modifier
                                     .constrainAs(messages) {
@@ -706,8 +710,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(vertical = padding.calculateBottomPadding())
+                                    }.padding(vertical = padding.calculateBottomPadding())
                                     .animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
@@ -796,8 +799,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(
+                                    }.padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -931,12 +933,12 @@ fun ChatContent(
                                                     .genreVfx(
                                                         saga.genre,
                                                         isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }
-                                                    .gradientFill(
+                                                    }.gradientFill(
                                                         progressiveBrush(
                                                             resolvedColor,
                                                             progress,
@@ -1341,6 +1343,7 @@ fun ChatList(
     isSelectionMode: Boolean = false,
     selectedMessageIds: Set<Int> = emptySet(),
     audioPlaybackState: AudioPlaybackState? = null,
+    reasoningChunk: String? = null,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val genre = saga.data.genre
@@ -1361,6 +1364,32 @@ fun ChatList(
         item {
             Spacer(Modifier.height(64.dp))
         }
+
+        item(key = "reasoning") {
+            AnimatedContent(
+                reasoningChunk,
+                transitionSpec = {
+                    fadeIn(tween(1200)) + slideInVertically { it } togetherWith
+                        fadeOut(tween(1500)) + slideOutVertically { it }
+                },
+            ) {
+                Text(
+                    text = it.orEmpty(),
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                        ),
+                    overflow = TextOverflow.Ellipsis,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .reactiveShimmer(true, genre.shimmerColors()),
+                )
+            }
+        }
+
         if (saga.data.isEnded && saga.data.endMessage.isNotEmpty()) {
             item {
                 RecapHeroCard(

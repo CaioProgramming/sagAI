@@ -65,3 +65,9 @@ class RemoteConfigService {
 }
 
 suspend fun RemoteConfigService.getNarrativeRules() = getJson<NarrativeRules>("narrative_rules", false)!!
+
+suspend fun RemoteConfigService.getGenderPlaceholders() =
+    getJson<Map<String, com.ilustris.sagai.features.newsaga.data.model.GenderPlaceholders>>(
+        "gender_placeholders",
+        false,
+    ) ?: emptyMap()

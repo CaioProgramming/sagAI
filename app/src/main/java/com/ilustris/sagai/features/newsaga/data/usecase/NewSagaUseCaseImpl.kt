@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -8,7 +9,6 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.services.LoadingType
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.util.UUID
 import javax.inject.Inject
 
 class NewSagaUseCaseImpl
@@ -42,6 +43,7 @@ class NewSagaUseCaseImpl
         private val sagaIdeationService: SagaIdeationService,
         private val characterIdeationService: CharacterIdeationService,
         private val loadingService: com.ilustris.sagai.core.services.LoadingService,
+        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
     ) : NewSagaUseCase {
         override fun createCompleteSagaFlow(
             sagaDraft: SagaDraft,
@@ -340,54 +342,84 @@ class NewSagaUseCaseImpl
         ): Flow<AgenticFlowResponse> =
             flow {
                 try {
+                    val targetLanguage = getSessionLanguage()
                     if (lockedSaga == null) {
-                        // 1. Dynamic Loading Message for Saga Ideation
-                        val loadingMessage =
-                            loadingService.generateLoadingMessage(
-                                LoadingType(NewSagaPrompts.suggestingSagas(promptService)),
-                            )
-                        loadingMessage?.let {
-                            emit(AgenticFlowResponse.Log(loadingMessage))
-                        }
+                        reasoningSynthesizerService
+                            .synthesizeReasoning(
+                                sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt),
+                                context = "Curating your cosmic library",
+                                targetLanguage = targetLanguage,
+                            ).collect { streamingState ->
+                                when (streamingState) {
+                                    is StreamingState.Reasoning -> {
+                                        emit(AgenticFlowResponse.Log(streamingState.chunk))
+                                    }
 
-                        // 2. Identify Saga Concepts
-                        val response = sagaIdeationService.suggestSagas(prompt).getSuccess()
-                        emit(
-                            AgenticFlowResponse.SagaPitches(
-                                ideas = response?.ideas ?: emptyList(),
-                                message = response?.message,
-                            ),
-                        )
+                                    is StreamingState.Success -> {
+                                        emit(
+                                            AgenticFlowResponse.LibraryPitches(
+                                                books =
+                                                    streamingState.data.books.map {
+                                                        it.copy(
+                                                            draft =
+                                                                it.draft.copy(
+                                                                    id = UUID.randomUUID().toString(),
+                                                                ),
+                                                            characters =
+                                                                it.characters.map {
+                                                                    it.copy(
+                                                                        id =
+                                                                            UUID
+                                                                                .randomUUID()
+                                                                                .toString(),
+                                                                    )
+                                                                },
+                                                        )
+                                                    },
+                                                message = streamingState.data.welcomeMessage,
+                                            ),
+                                        )
+                                    }
+
+                                    is StreamingState.Error -> {
+                                        emit(AgenticFlowResponse.Error(Exception(streamingState.message)))
+                                    }
+                                }
+                            }
                     } else if (lockedCharacter == null) {
-                        // 1. Dynamic Loading Message for Character Ideation with Story Context
-                        val loadingMessage =
-                            loadingService.generateLoadingMessage(
-                                LoadingType(
-                                    NewSagaPrompts.suggestingCharacters(
+                        val conversationStyle =
+                            genreConfigService.conversationBlueprint(lockedSaga.genre)
+                        reasoningSynthesizerService
+                            .synthesizeReasoning(
+                                sourceFlow =
+                                    characterIdeationService.suggestCharacters(
                                         lockedSaga,
-                                        promptService,
+                                        prompt,
                                     ),
-                                ),
-                                lockedSaga.genre.let { genreConfigService.conversationBlueprint(it) },
-                            )
-                        loadingMessage?.let {
-                            emit(AgenticFlowResponse.Log(it))
-                        }
+                                context = "Creating characters for the saga",
+                                conversationStyle = conversationStyle,
+                                targetLanguage = targetLanguage,
+                            ).collect { streamingState ->
+                                when (streamingState) {
+                                    is StreamingState.Reasoning -> {
+                                        emit(AgenticFlowResponse.Log(streamingState.chunk))
+                                    }
 
-                        // 3. Identify Character Personas
-                        val response =
-                            characterIdeationService
-                                .suggestCharacters(lockedSaga, prompt)
-                                .getSuccess()
+                                    is StreamingState.Success -> {
+                                        emit(
+                                            AgenticFlowResponse.CharacterPitches(
+                                                personas = streamingState.data.ideas,
+                                                message = streamingState.data.message,
+                                            ),
+                                        )
+                                    }
 
-                        emit(
-                            AgenticFlowResponse.CharacterPitches(
-                                personas = response?.ideas ?: emptyList(),
-                                message = response?.message,
-                            ),
-                        )
+                                    is StreamingState.Error -> {
+                                        emit(AgenticFlowResponse.Error(Exception(streamingState.message)))
+                                    }
+                                }
+                            }
                     } else {
-                        // Both locked? Maybe we refine or update
                         emit(
                             AgenticFlowResponse.RefinedDraft(
                                 lockedSaga,
@@ -395,12 +427,82 @@ class NewSagaUseCaseImpl
                             ),
                         )
                     }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                emit(
-                    AgenticFlowResponse
-                        .Error(e),
-                )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emit(
+                        AgenticFlowResponse
+                            .Error(e),
+                    )
+                }
             }
-        }
+
+        override suspend fun provideInitialEchoes() = sagaIdeationService.suggestUniverseEchoes()
+
+        override fun sealSacredContract(
+            sagaDraft: SagaDraft,
+            characterInfo: CharacterInfo,
+        ): Flow<SagaCreationState> =
+            flow {
+                try {
+                    val identity = genreConfigService.conversationBlueprint(sagaDraft.genre)
+                    val targetLanguage = getSessionLanguage()
+
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            sourceFlow =
+                                sagaIdeationService.sealSacredContract(
+                                    sagaDraft,
+                                    characterInfo,
+                                    identity,
+                                ),
+                            context = "Sealing the Sacred Contract for ${sagaDraft.title}",
+                            conversationStyle = identity,
+                            targetLanguage = targetLanguage,
+                        ).collect { streamingState ->
+                            when (streamingState) {
+                                is StreamingState.Reasoning -> {
+                                    emit(SagaCreationState.Loading(streamingState.chunk))
+                                }
+
+                                is StreamingState.Success -> {
+                                    val contract = streamingState.data
+                                    // Step 1: Save Saga
+                                    val savedSagaResult = createSaga(contract.saga)
+                                    val savedSaga =
+                                        savedSagaResult.getSuccess()
+                                            ?: throw Exception("Failed to save saga")
+
+                                    // Step 2: Save Character
+                                    val characterToSave = contract.character.copy(sagaId = savedSaga.id)
+                                    val savedCharacter =
+                                        characterUseCase.insertCharacter(characterToSave)
+
+                                    // Step 3: Update Saga with character reference
+                                    val finalizedSaga =
+                                        savedSaga.copy(mainCharacterId = savedCharacter.id)
+                                    updateSaga(finalizedSaga)
+
+                                    // Step 4: Generate Icon (Fire and forget or wait?)
+                                    sagaRepository.generateSagaIcon(
+                                        finalizedSaga,
+                                        listOf(savedCharacter),
+                                    )
+
+                                    emit(SagaCreationState.Success(finalizedSaga, savedCharacter))
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(SagaCreationState.Error(Exception(streamingState.message)))
+                                }
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(SagaCreationState.Error(e))
+                }
+            }
+
+        private fun getSessionLanguage(): String =
+            java.util.Locale
+                .getDefault()
+                .displayLanguage
     }
