@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.chat.repository
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.executeRequest
@@ -61,33 +62,7 @@ class SagaRepositoryImpl
             saga: Saga,
             characters: List<Character>,
         ) = executeRequest {
-            val context =
-                buildString {
-                    appendLine("### MANDATORY CHARACTER ICON")
-                    appendLine("The following character are ESSENTIAL to this icon:")
-                    appendLine(characters.joinToString { it.name })
-                    appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
-                    appendLine()
-                    appendLine("#### SUBJECTS DETAILS:")
-                    appendLine(
-                        characters.toAINormalize(
-                            listOf(
-                                "image",
-                                "sagaId",
-                                "joinedAt",
-                                "id",
-                                "emojified",
-                                "smartZoom",
-                            ),
-                        ),
-                    )
-                    appendLine()
-                    appendLine("Story context: ")
-                    appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
-                    appendLine(
-                        "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
-                    )
-                }
+            val context = generateIconContext(saga, characters)
             val newIcon =
                 imagenClient
                     .generateIntegratedImage(
@@ -111,6 +86,78 @@ class SagaRepositoryImpl
 
             updateChat(saga.copy(icon = file!!.absolutePath))
         }
+
+        override fun generateSagaIconStream(
+            saga: Saga,
+            characters: List<Character>,
+        ): Flow<StreamingState<Saga>> =
+            kotlinx.coroutines.flow.flow {
+                try {
+                    val context = generateIconContext(saga, characters)
+                    imagenClient
+                        .generateIntegratedImageStream(
+                            genre = saga.genre,
+                            imageReference = null,
+                            context = context,
+                            imageType = ImageType.COVER,
+                            variationId = saga.variationId,
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Reasoning -> {
+                                    emit(StreamingState.Reasoning(state.chunk))
+                                }
+
+                                is StreamingState.Success -> {
+                                    val file =
+                                        fileHelper.saveFile(
+                                            fileName = saga.title,
+                                            data = state.data.data,
+                                            path = "${saga.id}",
+                                        )
+                                    val updatedSaga = updateChat(saga.copy(icon = file!!.absolutePath))
+                                    emit(StreamingState.Success(updatedSaga))
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(StreamingState.Error(state.message, state.throwable))
+                                }
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Failed to generate saga icon stream", e))
+                }
+            }
+
+        private fun generateIconContext(
+            saga: Saga,
+            characters: List<Character>,
+        ): String =
+            buildString {
+                appendLine("### MANDATORY CHARACTER ICON")
+                appendLine("The following character are ESSENTIAL to this icon:")
+                appendLine(characters.joinToString { it.name })
+                appendLine("This icon represents the saga. You MUST integrate ALL provided characters into the composition.")
+                appendLine()
+                appendLine("#### SUBJECTS DETAILS:")
+                appendLine(
+                    characters.toAINormalize(
+                        listOf(
+                            "image",
+                            "sagaId",
+                            "joinedAt",
+                            "id",
+                            "emojified",
+                            "smartZoom",
+                        ),
+                    ),
+                )
+                appendLine()
+                appendLine("Story context: ")
+                appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
+                appendLine(
+                    "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
+                )
+            }
 
         override suspend fun backupSaga(sagaContent: SagaContent) = backupService.backupSaga(sagaContent)
     }

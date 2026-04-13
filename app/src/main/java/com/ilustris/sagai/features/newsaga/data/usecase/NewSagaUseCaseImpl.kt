@@ -480,15 +480,83 @@ class NewSagaUseCaseImpl
                                     // Step 3: Update Saga with character reference
                                     val finalizedSaga =
                                         savedSaga.copy(mainCharacterId = savedCharacter.id)
-                                    updateSaga(finalizedSaga)
+                                    val updatedSaga =
+                                        updateSaga(finalizedSaga).getSuccess() ?: finalizedSaga
 
-                                    // Step 4: Generate Icon (Fire and forget or wait?)
-                                    sagaRepository.generateSagaIcon(
-                                        finalizedSaga,
-                                        listOf(savedCharacter),
-                                    )
+                                    // Step 4: Stream Character Icon Manifestation
+                                    characterUseCase
+                                        .generateCharacterImageStream(savedCharacter, updatedSaga)
+                                        .collect { charIconState ->
+                                            when (charIconState) {
+                                                is StreamingState.Reasoning -> {
+                                                    emit(SagaCreationState.Loading(charIconState.chunk))
+                                                }
 
-                                    emit(SagaCreationState.Success(finalizedSaga, savedCharacter))
+                                                is StreamingState.Success -> {
+                                                    val finalCharacter =
+                                                        charIconState.data.data.first
+                                                    // Step 5: Stream Saga Icon Manifestation
+                                                    sagaRepository
+                                                        .generateSagaIconStream(
+                                                            updatedSaga,
+                                                            listOf(finalCharacter),
+                                                        ).collect { sagaIconState ->
+                                                            when (sagaIconState) {
+                                                                is StreamingState.Reasoning -> {
+                                                                    emit(
+                                                                        SagaCreationState.Loading(
+                                                                            sagaIconState.chunk,
+                                                                        ),
+                                                                    )
+                                                                }
+
+                                                                is StreamingState.Success -> {
+                                                                    emit(
+                                                                        SagaCreationState.Success(
+                                                                            sagaIconState.data,
+                                                                            finalCharacter,
+                                                                        ),
+                                                                    )
+                                                                }
+
+                                                                is StreamingState.Error -> {
+                                                                    emit(
+                                                                        SagaCreationState.Success(
+                                                                            updatedSaga,
+                                                                            finalCharacter,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                }
+
+                                                is StreamingState.Error -> {
+                                                    // Fallback to Saga Icon even if character icon fails
+                                                    sagaRepository
+                                                        .generateSagaIconStream(
+                                                            updatedSaga,
+                                                            listOf(savedCharacter),
+                                                        ).collect { sagaIconState ->
+                                                            if (sagaIconState is StreamingState.Success) {
+                                                                emit(
+                                                                    SagaCreationState.Success(
+                                                                        sagaIconState.data,
+                                                                        savedCharacter,
+                                                                    ),
+                                                                )
+                                                            } else if (sagaIconState is StreamingState.Error) {
+                                                                emit(
+                                                                    SagaCreationState.Success(
+                                                                        updatedSaga,
+                                                                        savedCharacter,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        }
+                                                }
+                                            }
+                                        }
                                 }
 
                                 is StreamingState.Error -> {

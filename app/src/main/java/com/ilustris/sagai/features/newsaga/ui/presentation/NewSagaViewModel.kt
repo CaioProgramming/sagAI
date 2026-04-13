@@ -436,6 +436,8 @@ class NewSagaViewModel
             _universeEchoes.value = emptyList()
             _libraryBooks.value = emptyList()
             _selectedBook.value = null
+            _lockedCharacter.value = null
+            _lockedSaga.value = null
             newSagaUseCase
                 .executePrompt(prompt, _lockedSaga.value, _lockedCharacter.value)
                 .onStart { _isAgentLoading.value = true }
