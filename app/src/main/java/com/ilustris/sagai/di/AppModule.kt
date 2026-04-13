@@ -338,6 +338,8 @@ object AppModule {
         analyticsService: AnalyticsService,
         imageConfigService: ImageConfigService,
         gemmaClient: GemmaClient,
+        promptService: PromptService,
+        reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
     ): ImagenClient =
         ImagenClientImpl(
             billingService,
@@ -346,6 +348,8 @@ object AppModule {
             imageConfigService,
             gemmaClient,
             analyticsService,
+            promptService,
+            reasoningSynthesizerService,
         )
 
     @Provides

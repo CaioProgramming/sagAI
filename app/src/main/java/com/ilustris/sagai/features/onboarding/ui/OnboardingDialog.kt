@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -60,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -87,6 +89,7 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -104,19 +107,19 @@ fun OnboardingDialog(
     onDismiss: () -> Unit = {},
 ) {
     val viewModel: OnboardingViewModel = hiltViewModel()
-    val state by viewModel.onboardingState.collectAsStateWithLifecycle()
+    val uiState by viewModel.onboardingState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.checkOnboarding(type, genre, saga, force)
     }
 
-    val uiState = state
     if (uiState is OnboardingUiState.Content && uiState.type == type) {
         OnboardingContentSheet(
-            state = uiState,
+            state = uiState as OnboardingUiState.Content,
             onDismiss = {
                 viewModel.markAsSeen(type)
                 onDismiss()
+                viewModel.clearState()
             },
         )
     } else if (uiState is OnboardingUiState.Error && uiState.type == type) {
@@ -127,7 +130,13 @@ fun OnboardingDialog(
 
     AnimatedVisibility(
         uiState is OnboardingUiState.Loading,
-        enter = slideInVertically { -it },
+        enter =
+            fadeIn(
+                tween(
+                    durationMillis = 800,
+                    delayMillis = 500,
+                ),
+            ),
         exit = fadeOut(),
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -137,12 +146,15 @@ fun OnboardingDialog(
         ) {
             Box(
                 Modifier
+                    .reactiveShimmer(true)
                     .background(
                         fadeGradientBottom(
                             MaterialTheme.colorScheme.primary,
                         ),
-                    ).fillMaxWidth()
-                    .align(Alignment.BottomCenter),
+                    )
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -152,7 +164,7 @@ fun OnboardingDialog(
                     modifier =
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .size(24.dp)
+                            .size(50.dp)
                             .levitate()
                             .reactiveShimmer(
                                 true,
@@ -168,6 +180,7 @@ fun OnboardingDialog(
 @Composable
 private fun OnboardingContentSheet(
     state: OnboardingUiState.Content,
+    genre: Genre? = null,
     onDismiss: () -> Unit,
 ) {
     val viewModel: OnboardingViewModel = hiltViewModel()
@@ -234,12 +247,12 @@ private fun OnboardingContentSheet(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         var currentIcon by remember {
-                            mutableStateOf(Genre.entries.random().icon)
+                            mutableStateOf(genre?.icon ?: Genre.entries.random().icon)
                         }
 
                         LaunchedEffect(pagerState.currentPage) {
-                            currentIcon =
-                                Genre.entries
+                            currentIcon = genre?.icon
+                                ?: Genre.entries
                                     .filter {
                                         it.icon != currentIcon
                                     }.random()
@@ -465,8 +478,7 @@ fun OnboardingMascotContent(
                     Modifier
                         .padding(16.dp)
                         .size(240.dp)
-                        .levitate(true)
-                        .effectForGenre(genre),
+                        .levitate(true),
                 contentScale = ContentScale.Fit,
             )
         }
@@ -487,13 +499,23 @@ fun CinematicBackground(config: GenreVisualConfig?) {
 }
 
 @Composable
-fun SparkBackground() {
-    Box(Modifier.fillMaxSize()) {
+fun SparkBackground(
+    colors: List<Color> = emptyList(),
+    customIcon: Int? = null,
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .reactiveShimmer(true, colors, repeatMode = RepeatMode.Restart, targetValue = 700f),
+    ) {
         StarryTextPlaceholder(
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .gradientFill(Brush.verticalGradient(colors)),
         )
         Icon(
-            painter = painterResource(R.drawable.ic_spark),
+            painter = painterResource(customIcon ?: R.drawable.ic_spark),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier =
@@ -501,8 +523,7 @@ fun SparkBackground() {
                     .size(120.dp)
                     .align(Alignment.Center)
                     .levitate(true)
-                    .chromaticAberration(true)
-                    .reactiveShimmer(true),
+                    .chromaticAberration(true),
         )
     }
 }
@@ -592,7 +613,8 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }.graphicsLayer {
+                    }
+                    .graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -605,7 +627,8 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }.zoomAnimation(),
+                    }
+                    .zoomAnimation(),
         )
     }
 }

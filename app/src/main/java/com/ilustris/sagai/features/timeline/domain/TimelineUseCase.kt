@@ -16,10 +16,20 @@ interface TimelineUseCase {
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
 
+    fun generateFullLoreUpdateStream(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Unit>>>
+
     suspend fun generateTimeline(
         saga: SagaContent,
         currentTimeline: TimelineContent,
     ): RequestResult<Timeline>
+
+    fun generateTimelineStream(
+        saga: SagaContent,
+        currentTimeline: TimelineContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>>>
 
     suspend fun saveTimeline(timeline: Timeline): Timeline
 

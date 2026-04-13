@@ -25,10 +25,20 @@ interface CharacterUseCase {
         saga: Saga,
     ): RequestResult<Pair<Character, String>>
 
+    suspend fun generateCharacterImageStream(
+        character: Character,
+        saga: Saga,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Pair<Character, String>>>>
+
     suspend fun generateCharacter(
         sagaContent: SagaContent,
         description: String,
     ): RequestResult<Character>
+
+    suspend fun generateCharacterStream(
+        sagaContent: SagaContent,
+        description: String,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>>
 
     suspend fun createSmartZoom(character: Character): RequestResult<Unit>
 

@@ -139,16 +139,16 @@ private fun toJsonMapObject(
     visited: MutableSet<Class<*>>,
 ): Any {
     when {
-        clazz.isEnum -> return clazz.enumConstants?.joinToString(" | ") ?: "string"
-        clazz == String::class.java -> return "string"
-        clazz == Int::class.java || clazz == Integer::class.java -> return 0
+        clazz.isEnum -> return clazz.enumConstants?.joinToString(" | ") ?: "PLACEHOLDER_ENUM"
+        clazz == String::class.java -> return "PLACEHOLDER_STRING"
+        clazz == Int::class.java || clazz == Integer::class.java -> return 999
         clazz == Boolean::class.java -> return false
         clazz == Double::class.java -> return 0.0
         clazz == Float::class.java -> return 0.0
-        clazz == Long::class.java -> return 0
+        clazz == Long::class.java -> return 999
         clazz == Byte::class.java -> return 0
         clazz == Short::class.java -> return 0
-        clazz == Char::class.java -> return "string"
+        clazz == Char::class.java -> return "PLACEHOLDER_CHAR"
     }
 
     if (visited.contains(clazz)) return "circular_reference_detected"
@@ -300,88 +300,61 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     // 2. Trim leading/trailing whitespace
     cleanedJsonString = cleanedJsonString.trim()
 
-    // 3. If not starting with a JSON char, find the start (basic heuristic)
-    val firstJsonCharIndex = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
-    if (firstJsonCharIndex > 0) {
-        cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
-    } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
-        Timber.tag(logTag).e("No JSON start character '{' or '[' found in response: $cleanedJsonString")
-        throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
-    }
+    // 3. Find all potential JSON start positions and find the last one that forms a complete block
+    val allStarts =
+        cleanedJsonString.indices.filter { cleanedJsonString[it] == '{' || cleanedJsonString[it] == '[' }
+    var bestJson: String? = null
 
-    // Helper: find the matching closing bracket index for the JSON starting char
-    fun findMatchingClosingIndex(
-        s: String,
-        start: Int,
-    ): Int {
-        if (start >= s.length) return -1
-        val open = s[start]
-        val close =
-            when (open) {
-                '{' -> '}'
-                '[' -> ']'
-                else -> return -1
-            }
+    for (startIndex in allStarts.reversed()) {
+        val potentialSubstring = cleanedJsonString.substring(startIndex)
+        val endIndex = findMatchingClosingIndex(potentialSubstring, 0)
+        if (endIndex != -1) {
+            val extracted = potentialSubstring.substring(0, endIndex + 1)
+            val hasPlaceholder =
+                extracted.contains(": \"PLACEHOLDER_") || extracted.contains(": 999")
 
-        var depth = 1
-        var inString = false
-        var escaped = false
-
-        var i = start + 1
-        while (i < s.length) {
-            val c = s[i]
-            if (escaped) {
-                // previous char was a backslash, this char is escaped; skip special handling
-                escaped = false
+            if (bestJson == null) {
+                bestJson = extracted
             } else {
-                when (c) {
-                    '\\' -> {
-                        escaped = true
-                    }
+                val currentBestHasPlaceholder =
+                    bestJson!!.contains(": \"PLACEHOLDER_") || bestJson!!.contains(": 999")
 
-                    '"' -> {
-                        inString = !inString
-                    }
-
-                    else -> {
-                        if (!inString) {
-                            if (c == open) {
-                                depth++
-                            } else if (c == close) {
-                                depth--
-                                if (depth == 0) return i
-                            }
-                        }
+                if (currentBestHasPlaceholder && !hasPlaceholder) {
+                    // The new block is a real result, while the previous one was a template. Replace.
+                    bestJson = extracted
+                } else if (currentBestHasPlaceholder == hasPlaceholder) {
+                    // Both are of the same "quality" (both results or both templates).
+                    // Prefer the longer one, as it's likely the parent/outermost object.
+                    if (extracted.length > bestJson!!.length) {
+                        bestJson = extracted
                     }
                 }
+                // If the new one has a placeholder but the current best doesn't, we keep the better one.
             }
-            i++
         }
-        return -1
     }
 
-    // 4. Compute precise end index using bracket matching (handles nested structures & strings)
+    if (bestJson != null) {
+        cleanedJsonString = bestJson!!
+    } else {
+        // Fallback to first one if it's the only one found
+        val firstJsonCharIndex = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
+        if (firstJsonCharIndex > 0) {
+            cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
+        } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
+            Timber
+                .tag(logTag)
+                .e("No JSON start character '{' or '[' found in response: $cleanedJsonString")
+            throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
+        }
+    }
+
+    // 4. Precise end index is already handled by the new extraction logic above.
+    // We just ensure we have a valid start.
     if (cleanedJsonString.isNotEmpty()) {
         val startChar = cleanedJsonString.first()
-        if (startChar == '{' || startChar == '[') {
-            val endIndex = findMatchingClosingIndex(cleanedJsonString, 0)
-            if (endIndex != -1) {
-                cleanedJsonString = cleanedJsonString.substring(0, endIndex + 1)
-            } else {
-                // Fallback: Check if the string ends with the expected closing bracket
-                // This handles cases where internal malformation (like missing quotes) breaks the strict parser
-                val expectedClose = if (startChar == '{') '}' else ']'
-                if (cleanedJsonString.trim().lastOrNull() == expectedClose) {
-                    Timber.tag(logTag).w(
-                        "Strict JSON parsing failed (likely due to malformed content), but found closing bracket '$expectedClose'. Proceeding with full string.",
-                    )
-                } else {
-                    Timber.tag(logTag).e(
-                        "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
-                    )
-                    throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
-                }
-            }
+        if (startChar != '{' && startChar != '[') {
+            Timber.tag(logTag).e("Cleaned string does not start with { or [: $cleanedJsonString")
         }
     }
 
@@ -725,6 +698,56 @@ private fun getRecursiveFields(
         }
     }
     return fields
+}
+
+private fun findMatchingClosingIndex(
+    s: String,
+    start: Int,
+): Int {
+    if (start >= s.length) return -1
+    val open = s[start]
+    val close =
+        when (open) {
+            '{' -> '}'
+            '[' -> ']'
+            else -> return -1
+        }
+
+    var depth = 1
+    var inString = false
+    var escaped = false
+
+    var i = start + 1
+    while (i < s.length) {
+        val c = s[i]
+        if (escaped) {
+            // previous char was a backslash, this char is escaped; skip special handling
+            escaped = false
+        } else {
+            when (c) {
+                '\\' -> {
+                    escaped = true
+                }
+
+                '"' -> {
+                    inString = !inString
+                }
+
+                else -> {
+                    if (!inString) {
+                        if (c == open) {
+                            depth++
+                        } else if (c == close) {
+                            depth--
+                            if (depth == 0) return i
+                        }
+                    }
+                }
+            }
+        }
+        i++
+    }
+    return -1
 }
 
 fun Int.toRoman(): String {

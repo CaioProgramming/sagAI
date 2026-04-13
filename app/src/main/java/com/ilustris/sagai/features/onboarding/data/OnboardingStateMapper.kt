@@ -121,7 +121,7 @@ class OnboardingStateMapper
                                 }
 
                                 else -> {
-                                    { SparkBackground() }
+                                    { SparkBackground(holographicGradient) }
                                 }
                             }
                         }
@@ -149,7 +149,9 @@ class OnboardingStateMapper
                                 }
 
                                 else -> {
-                                    { SparkBackground() }
+                                    {
+                                        SparkBackground(colors, saga?.genre?.icon)
+                                    }
                                 }
                             }
                         }

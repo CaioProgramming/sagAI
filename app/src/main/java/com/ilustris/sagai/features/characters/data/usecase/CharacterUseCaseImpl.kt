@@ -135,6 +135,86 @@ class CharacterUseCaseImpl
                 newCharacter to ""
             }
 
+        override suspend fun generateCharacterImageStream(
+            character: Character,
+            saga: Saga,
+        ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Pair<Character, String>>>> =
+            kotlinx.coroutines.flow.flow {
+                try {
+                    val contextString =
+                        buildString {
+                            appendLine(
+                                character.toAINormalize(
+                                    listOf(
+                                        "id",
+                                        "image",
+                                        "sagaId",
+                                        "joinedAt",
+                                        "smartZoom",
+                                        "knowledge",
+                                        "firstSceneId",
+                                        "emojified",
+                                        "hexColor",
+                                    ),
+                                ),
+                            )
+                        }
+
+                    imagenClient
+                        .generateIntegratedImageStream(
+                            genre = saga.genre,
+                            imageReference = null,
+                            context = contextString,
+                            imageType = ImageType.ICON,
+                            variationId = saga.variationId,
+                        ).collect { state ->
+                            when (state) {
+                                is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                    emit(
+                                        com.ilustris.sagai.core.ai.StreamingState
+                                            .Reasoning(state.chunk),
+                                    )
+                                }
+
+                                is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                    val bitmap = state.data.data
+                                    val file =
+                                        fileHelper.saveFile(
+                                            character.name,
+                                            bitmap,
+                                            path = "${saga.id}/characters/",
+                                        ) ?: error("Failed to save generated image")
+
+                                    val newCharacter = character.copy(image = file.path)
+                                    repository.updateCharacter(newCharacter)
+
+                                    emit(
+                                        com.ilustris.sagai.core.ai.StreamingState.Success(
+                                            com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                                newCharacter to state.data.finalMessage.orEmpty(),
+                                                state.data.finalMessage,
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                    emit(
+                                        com.ilustris.sagai.core.ai.StreamingState
+                                            .Error(state.message),
+                                    )
+                                }
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Error(
+                            e.message ?: "Unknown error generating character image stream",
+                        ),
+                    )
+                }
+            }
+
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
             executeRequest {
                 Timber.i("createSmartZoom: creating zoom for ${character.name}")
@@ -211,6 +291,92 @@ class CharacterUseCaseImpl
                     )
                 }
                 characterTransaction
+            }
+
+        override suspend fun generateCharacterStream(
+            sagaContent: SagaContent,
+            description: String,
+        ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>> =
+            kotlinx.coroutines.flow.flow {
+                try {
+                    val bannedNames = repository.getAllCharacterNames()
+                    val themeColor = getRandomColorHex()
+                    val config =
+                        genreConfigService.getGenreConfig(
+                            sagaContent.data.genre,
+                            sagaContent.data.variationId,
+                        )
+                    val prompt =
+                        CharacterPrompts.characterGeneration(
+                            promptService,
+                            sagaContent,
+                            config,
+                            description,
+                            bannedNames,
+                            themeColor,
+                        )
+
+                    gemmaClient
+                        .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>(
+                            prompt,
+                            useCore = true,
+                            filterOutputFields =
+                                listOf(
+                                    "id",
+                                    "image",
+                                    "joinedAt",
+                                    "sagaId",
+                                    "smartZoom",
+                                    "voice",
+                                    "hexColor",
+                                    "firstSceneId",
+                                ),
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                        ).collect { state ->
+                            if (state is com.ilustris.sagai.core.ai.StreamingState.Success) {
+                                val newCharacter = state.data.data
+                                val character = sagaContent.findCharacter(newCharacter.name)
+                                if (character?.data?.fullName() == newCharacter.fullName()) {
+                                    emit(
+                                        com.ilustris.sagai.core.ai.StreamingState
+                                            .Error("Character already exists"),
+                                    )
+                                    return@collect
+                                }
+                                val characterTransaction =
+                                    insertCharacter(
+                                        newCharacter.copy(
+                                            id = 0,
+                                            sagaId = sagaContent.data.id,
+                                            firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
+                                            joinedAt = System.currentTimeMillis(),
+                                            image = emptyString(),
+                                            hexColor = themeColor,
+                                            smartZoom = null,
+                                        ),
+                                    )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    generateCharacterImage(characterTransaction, sagaContent.data)
+                                }
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            characterTransaction,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                emit(state)
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Error(
+                            e.message ?: "Unknown error generating character",
+                        ),
+                    )
+                }
             }
 
         override suspend fun generateCharactersUpdate(

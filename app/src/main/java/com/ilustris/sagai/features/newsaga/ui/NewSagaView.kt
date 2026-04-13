@@ -322,7 +322,9 @@ fun NewSagaView(
                                 } else {
                                     PromptBar(
                                         value = userInput,
-                                        onValueChange = { userInput = it },
+                                        onValueChange = { newValue: String ->
+                                            userInput = newValue
+                                        },
                                         onSend = {
                                             viewModel.onAgenticAction(
                                                 AgenticAction.SubmitPrompt(

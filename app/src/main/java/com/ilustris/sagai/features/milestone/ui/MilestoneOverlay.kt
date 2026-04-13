@@ -77,6 +77,7 @@ fun MilestoneOverlay(
     milestone: SagaMilestone,
     saga: SagaContent,
     isLoading: Boolean = false,
+    reasoningChunk: String? = null,
     onDismiss: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -129,6 +130,7 @@ fun MilestoneOverlay(
                         saga.data,
                         sparkModifier,
                         titleModifier,
+                        contentReasoning = reasoningChunk,
                     )
                 }
 
@@ -136,10 +138,10 @@ fun MilestoneOverlay(
                     DefaultOverlay(
                         stringResource(it.title),
                         it.subtitle,
-                        congratsMessage,
+                        it.message ?: congratsMessage,
                         genre,
                         sparkModifier,
-                        extraContent = { milestone.extraContent(saga) },
+                        extraContent = { it.extraContent(saga) },
                         onDismiss = onDismiss,
                     )
                 }

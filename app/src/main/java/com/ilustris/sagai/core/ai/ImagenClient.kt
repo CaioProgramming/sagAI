@@ -38,6 +38,14 @@ interface ImagenClient {
         imageType: ImageType,
         variationId: String? = null,
     ): RequestResult<Bitmap>
+
+    suspend fun generateIntegratedImageStream(
+        genre: Genre,
+        imageReference: Pair<Bitmap, String>?,
+        context: String,
+        imageType: ImageType,
+        variationId: String? = null,
+    ): kotlinx.coroutines.flow.Flow<StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Bitmap>>>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -50,6 +58,8 @@ class ImagenClientImpl
         private val imageConfigService: ImageConfigService,
         private val gemmaClient: GemmaClient,
         private val analyticsService: AnalyticsService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -117,6 +127,111 @@ class ImagenClientImpl
                     ?.asImageOrNull()
             }
         }
+
+        override suspend fun generateIntegratedImageStream(
+            genre: Genre,
+            imageReference: Pair<Bitmap, String>?,
+            context: String,
+            imageType: ImageType,
+            variationId: String?,
+        ): kotlinx.coroutines.flow.Flow<StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Bitmap>>> =
+            kotlinx.coroutines.flow.flow {
+                try {
+                    billingService.runPremiumRequest(bypass = true) {
+                        val genreConfig = genreConfigService.getGenreConfig(genre, variationId)
+                        val imageConfig = imageConfigService.getImageConfig()
+
+                        val prompt =
+                            ImagePrompts.buildUnifiedImagePrompt(
+                                promptService,
+                                genre,
+                                genreConfig,
+                                imageConfig,
+                                imageType,
+                                context,
+                            )
+
+                        var finalStringPrompt: String? = null
+                        val sourceStream =
+                            gemmaClient.generateStreaming<String>(
+                                prompt = prompt,
+                                useCore = false,
+                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requireTranslation = false,
+                            )
+
+                        reasoningSynthesizerService
+                            .synthesizeReasoning(
+                                sourceFlow = sourceStream,
+                                context = context,
+                                conversationStyle = genreConfig.conversationDirective,
+                            ).collect { state ->
+                                when (state) {
+                                    is StreamingState.Reasoning -> {
+                                        emit(StreamingState.Reasoning(state.chunk))
+                                    }
+
+                                    is StreamingState.Success -> {
+                                        finalStringPrompt = state.data
+                                    }
+
+                                    is StreamingState.Error -> {
+                                        emit(StreamingState.Error(state.message, state.throwable))
+                                    }
+                                }
+                            }
+
+                        if (finalStringPrompt != null) {
+                            val typeConfig = imageConfig.typeConfigs[imageType.name]
+
+                            val finalAspectRatio =
+                                when (imageType) {
+                                    ImageType.ICON -> {
+                                        genreConfig.iconAspectRatio
+                                            ?: typeConfig?.aspectRatio
+                                    }
+
+                                    ImageType.COVER -> {
+                                        genreConfig.coverAspectRatio
+                                            ?: typeConfig?.aspectRatio
+                                    }
+                                } ?: ""
+
+                            val referenceList =
+                                imageReference?.let { listOf(ImageReference(it.first, it.second)) }
+                                    ?: emptyList()
+
+                            emit(StreamingState.Reasoning("\nRendering scene..."))
+                            val generatedImage =
+                                generateImage(
+                                    prompt = finalStringPrompt!!,
+                                    references = referenceList,
+                                    aspectRatio = finalAspectRatio,
+                                )
+
+                            if (generatedImage != null) {
+                                emit(
+                                    StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model
+                                            .GeneratedContent(
+                                                generatedImage,
+                                                "Image generation complete!",
+                                            ),
+                                    ),
+                                )
+                            } else {
+                                emit(StreamingState.Error("Failed to generate final image bitmap"))
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emit(
+                        StreamingState
+                            .Error(e.message ?: "Unknown error in streaming image generation", e),
+                    )
+                }
+            }
 
         override suspend fun generateIntegratedImage(
             genre: Genre,

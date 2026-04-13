@@ -25,6 +25,7 @@ object PromptKeys {
     const val VISUAL_DIRECTION = "visualDirection"
     const val FINAL_PROMPT = "finalPrompt"
     const val ASPECT_RATIO = "aspectRatio"
+    const val RENDERING_INSTRUCTIONS = "renderingInstructions"
 }
 
 object AgentIds {
@@ -85,6 +86,7 @@ object ImagePrompts {
                 PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
                 PromptKeys.VISUAL_DIRECTION to (visualDirection ?: ""),
                 PromptKeys.FINAL_PROMPT to (finalPrompt ?: ""),
+                PromptKeys.RENDERING_INSTRUCTIONS to config.renderingInstructions,
                 PromptKeys.ASPECT_RATIO to (
                     when (imageType) {
                         ImageType.ICON -> {
@@ -147,4 +149,57 @@ object ImagePrompts {
         visualDirection,
         finalPrompt,
     )
+
+    suspend fun buildUnifiedImagePrompt(
+        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        genre: Genre,
+        config: GenreConfig,
+        imageConfig: ImageConfig,
+        imageType: ImageType,
+        context: String,
+    ): String {
+        val variables =
+            mapOf(
+                PromptKeys.GENRE to genre.name,
+                PromptKeys.CONTEXT to context,
+                PromptKeys.IMAGE_TYPE to imageType.name.replace("_", " "),
+                PromptKeys.ART_STYLE to config.artStyle,
+                PromptKeys.CONVERSATION_DIRECTIVE to config.conversationDirective,
+                PromptKeys.APPEARANCE_GUIDELINES to config.appearanceGuidelines,
+                PromptKeys.COLOR_PALETTE to config.colorPalette,
+                PromptKeys.CRITICAL_VALIDATION to (
+                    config.criticalValidation.takeIf { it.isNotBlank() }
+                        ?: ""
+                ),
+                PromptKeys.REVIEWER_STRICTNESS to
+                    (
+                        config.reviewerStrictness
+                            ?: ReviewerStrictness.STRICT
+                    ).description,
+                PromptKeys.VALIDATION_RULES to config.getValidationRules(genre.name),
+                PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
+                PromptKeys.RENDERING_INSTRUCTIONS to config.renderingInstructions,
+                PromptKeys.ASPECT_RATIO to (
+                    when (imageType) {
+                        ImageType.ICON -> {
+                            config.iconAspectRatio
+                                ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
+                        }
+
+                        ImageType.COVER -> {
+                            config.coverAspectRatio
+                                ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
+                        }
+                    }
+                ),
+            )
+
+        val remoteConfigKey =
+            when (imageType) {
+            ImageType.ICON -> "unified_icon_blueprint"
+            ImageType.COVER -> "unified_cover_blueprint"
+        }
+
+        return promptService.buildRemotePrompt(remoteConfigKey, variables)
+    }
 }

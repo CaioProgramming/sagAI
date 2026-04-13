@@ -53,6 +53,12 @@ class OnboardingViewModel
             }
         }
 
+        fun clearState() {
+            if (onboardingState.value != OnboardingUiState.Idle && onboardingState.value != OnboardingUiState.Loading) {
+                _onboardingState.value = OnboardingUiState.Idle
+            }
+        }
+
         private suspend fun loadAllConfigs() {
             val configs = mutableMapOf<Genre, GenreVisualConfig>()
             Genre.entries.forEach { genre ->
@@ -69,12 +75,10 @@ class OnboardingViewModel
             saga: Saga? = null,
             force: Boolean = false,
         ) {
+            clearState()
             val cacheKey = "${type.name}_${genre?.name ?: "default"}"
-            if (_onboardingState.value is OnboardingUiState.Loading) {
-                if (_onboardingState.value.type == type) return
-            }
 
-            if (!force && cachedContent.containsKey(cacheKey)) {
+            if (cachedContent.containsKey(cacheKey)) {
                 viewModelScope.launch {
                     val content = cachedContent[cacheKey]!!
                     _onboardingState.emit(

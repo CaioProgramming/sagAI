@@ -84,6 +84,76 @@ class ChapterUseCaseImpl
             )
         }
 
+        override fun generateChapterStream(
+            saga: SagaContent,
+            chapterContent: ChapterContent,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>(
+                        prompt =
+                            generateChapterPrompt(
+                                saga = saga,
+                                currentChapter = chapterContent,
+                            ),
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "currentEventId",
+                                "coverImage",
+                                "createdAt",
+                                "actId",
+                            ),
+                        requireTranslation = true,
+                        useCore = true,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                val genChapter = state.data.data
+                                val updatedChapter =
+                                    updateChapter(
+                                        chapterContent.data.copy(
+                                            title = genChapter.title,
+                                            overview = genChapter.overview,
+                                            introduction = genChapter.introduction,
+                                            featuredCharacters = genChapter.featuredCharacters.take(3),
+                                            emotionalReview = genChapter.emotionalReview,
+                                            currentEventId = null,
+                                        ),
+                                    )
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            updatedChapter,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Error(
+                            state.message,
+                        ),
+                    )
+                    }
+
+                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                        emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                            state.chunk,
+                        ),
+                    )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
+
         override suspend fun reviewChapter(
             saga: SagaContent,
             chapterContent: ChapterContent,

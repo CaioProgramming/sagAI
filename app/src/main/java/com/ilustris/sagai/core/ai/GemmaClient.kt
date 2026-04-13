@@ -624,13 +624,13 @@ class GemmaClient
                                     retryDelay = extractedDelay?.toInt()
                                         ?: retryDelay?.let { if (it > 30) it / 2 else it + it } ?: 2
                                 }
-                                emit(StreamingState.Error(e.message ?: "Unknown error"))
+                                emit(StreamingState.Error(e.message ?: "Unknown error", e))
                                 return@flow
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                    emit(StreamingState.Error(e.message ?: "Unknown error", e))
                 }
             }.flowOn(Dispatchers.IO)
 

@@ -117,6 +117,128 @@ class TimelineUseCaseImpl
             }
         }
 
+        override fun generateFullLoreUpdateStream(
+            saga: SagaContent,
+            timelineContent: TimelineContent,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
+                val narrativeRules =
+                    remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                val prompt =
+                    TimelinePrompts.generateUnifiedLorePrompt(
+                        promptService = promptService,
+                        narrativeRules = narrativeRules,
+                        sagaContent = saga,
+                        currentTimeline = timelineContent,
+                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
+
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate>>(
+                        prompt = prompt,
+                        blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                val unifiedLore = state.data.data
+
+                                // 1. Update Timeline Details
+                                updateTimeline(
+                                    timelineContent.data.copy(
+                                        title = unifiedLore.title,
+                                        content = unifiedLore.content,
+                                        emotionalReview = unifiedLore.emotionalReview,
+                                    ),
+                                )
+
+                                // 2. Save Wiki Updates
+                                unifiedLore.wikiUpdates.forEach { wikiUpdate ->
+                                    val existingWiki =
+                                        saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                                    val wikiToSave =
+                                        com.ilustris.sagai.features.wiki.data.model.Wiki(
+                                            id = existingWiki?.id ?: 0,
+                                            title = wikiUpdate.title,
+                                            content = wikiUpdate.content,
+                                            type = wikiUpdate.type,
+                                            emojiTag = wikiUpdate.emojiTag,
+                                            sagaId = saga.data.id,
+                                            timelineId = timelineContent.data.id,
+                                        )
+                                    if (existingWiki != null) {
+                                        wikiUseCase.updateWiki(wikiToSave)
+                                    } else {
+                                        wikiUseCase.saveWiki(wikiToSave)
+                                    }
+                                }
+
+                                // 3. Save Character Events
+                                unifiedLore.characterEvents.forEach { charEvent ->
+                                    val character =
+                                        saga.characters
+                                            .find {
+                                                it.data.name.equals(
+                                                    charEvent.characterName,
+                                                    true,
+                                                )
+                                            }?.data
+                                    character?.let {
+                                        characterUseCase.insertCharacterEvent(
+                                            com.ilustris.sagai.features.characters.events.data.model.CharacterEvent(
+                                                characterId = it.id,
+                                                gameTimelineId = timelineContent.data.id,
+                                                title = charEvent.title,
+                                                summary = charEvent.summary,
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                // 4. Save Relationship Updates
+                                unifiedLore.relationshipUpdates.forEach { relUpdate ->
+                                    characterRelationUseCase.updateRelation(
+                                        saga = saga,
+                                        timelineId = timelineContent.data.id,
+                                        firstCharacterName = relUpdate.characterOne,
+                                        secondCharacterName = relUpdate.characterTwo,
+                                        title = relUpdate.title,
+                                        description = relUpdate.description,
+                                        emoji = relUpdate.emoji,
+                                    )
+                                }
+
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            Unit,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                        )
+                    }
+
+                    is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                        emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Error(
+                            state.message,
+                        ),
+                    )
+                    }
+
+                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                        emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                            state.chunk,
+                        ),
+                    )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
+
         override suspend fun generateTimeline(
             saga: SagaContent,
             currentTimeline: TimelineContent,
@@ -151,6 +273,71 @@ class TimelineUseCaseImpl
                 ),
             )
         }
+
+        override fun generateTimelineStream(
+            saga: SagaContent,
+            currentTimeline: TimelineContent,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
+                val narrativeRules =
+                    remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>>(
+                        prompt =
+                            TimelinePrompts.generateTimelinePrompt(
+                                promptService = promptService,
+                                narrativeRules = narrativeRules,
+                                sagaContent = saga,
+                                currentTimeline = currentTimeline,
+                                conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                            ),
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "chapterId",
+                                "createdAt",
+                                "currentObjective",
+                            ),
+                        useCore = true,
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                val newLore = state.data.data
+                                val updatedTimeline =
+                                    updateTimeline(
+                                        currentTimeline.data.copy(
+                                            title = newLore.title,
+                                            content = newLore.content,
+                                            emotionalReview = newLore.emotionalReview,
+                                        ),
+                                    )
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                    com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        updatedTimeline,
+                                        state.data.finalMessage
+                                    )
+                                )
+                            )
+                        }
+
+                        is com.ilustris.sagai.core.ai.StreamingState.Error -> emit(
+                            com.ilustris.sagai.core.ai.StreamingState.Error(
+                                state.message
+                            )
+                        )
+
+                        is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> emit(
+                            com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                                state.chunk
+                            )
+                        )
+                    }
+                }
+        } catch (e: Exception) {
+            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
 
         override suspend fun saveTimeline(timeline: Timeline) = timelineRepository.saveTimeline(timeline)
 

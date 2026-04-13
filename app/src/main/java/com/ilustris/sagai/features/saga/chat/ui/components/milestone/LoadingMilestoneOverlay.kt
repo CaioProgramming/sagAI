@@ -32,6 +32,7 @@ fun LoadingMilestoneOverlay(
     saga: Saga,
     sparkModifier: Modifier,
     titleModifier: Modifier,
+    contentReasoning: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val genre = remember { saga.genre }
@@ -60,7 +61,8 @@ fun LoadingMilestoneOverlay(
                         .padding(8.dp)
                         .size(
                             32.dp,
-                        ).reactiveShimmer(
+                        )
+                        .reactiveShimmer(
                             true,
                             genre.resolveColor().lighter(.3f).shimmerize(),
                             duration = 4.seconds,
@@ -69,8 +71,10 @@ fun LoadingMilestoneOverlay(
                         ),
             )
 
+            val textToShow = contentReasoning ?: saga.title
+
             genre.stylisedText(
-                saga.title,
+                textToShow,
                 modifier = titleModifier.fillMaxWidth(),
             )
         }

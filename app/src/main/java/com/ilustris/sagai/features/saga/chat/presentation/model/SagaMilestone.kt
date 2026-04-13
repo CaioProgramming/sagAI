@@ -20,6 +20,7 @@ enum class IntroductionType { ACT, CHAPTER, RESUME }
 sealed class SagaMilestone(
     val title: Int,
     val subtitle: String,
+    val message: String? = null,
     val delay: Duration = 7.seconds,
     val isIntrusive: Boolean = true,
     val extraContent: @Composable (saga: SagaContent) -> Unit = {},
@@ -27,32 +28,40 @@ sealed class SagaMilestone(
     data class NewEvent(
         val timeline: Timeline,
         val emotionalMascot: String?,
+        val messageText: String? = null,
     ) : SagaMilestone(
             R.string.advance_new_event,
             timeline.title,
+            messageText,
             extraContent = { NewEventContent(it, timeline.id, emotionalMascot) },
         )
 
     data class ChapterFinished(
         val chapter: Chapter,
+        val messageText: String? = null,
     ) : SagaMilestone(
             R.string.notification_new_chapter,
             chapter.title,
+            messageText,
             extraContent = { NewChapterContent(it, chapter.id) },
         )
 
     data class ActFinished(
         val act: Act,
+        val messageText: String? = null,
     ) : SagaMilestone(
             R.string.notification_new_act,
             act.title,
+            messageText,
         )
 
     data class NewCharacter(
         val character: Character,
+        val messageText: String? = null,
     ) : SagaMilestone(
             R.string.notification_new_character,
             "${character.name} ${character.lastName ?: emptyString()}",
+            messageText,
             delay = 2.seconds,
             extraContent = { NewCharacterContent(it, character.id) },
         )

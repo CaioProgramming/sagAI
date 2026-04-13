@@ -24,9 +24,17 @@ class OnboardingUseCaseImpl
         private val genreConfigService: GenreConfigService,
     ) : OnboardingUseCase {
         override suspend fun shouldShow(type: OnboardingType): Boolean =
-            dataStore
-                .getBooleanNow(type.preferenceKey, false)
-                .not()
+            when (type) {
+                OnboardingType.GAMEPLAY_GUIDE -> {
+                    dataStore.getBooleanNow(type.preferenceKey)
+                }
+
+                else -> {
+                    dataStore
+                        .getBooleanNow(type.preferenceKey, false)
+                        .not()
+                }
+            }
 
         override suspend fun getContent(
             type: OnboardingType,
@@ -57,6 +65,7 @@ class OnboardingUseCaseImpl
             }
 
         override suspend fun markSeen(type: OnboardingType) {
+            if (type == OnboardingType.GAMEPLAY_GUIDE) return
             dataStore.setBoolean(type.preferenceKey, true)
         }
     }

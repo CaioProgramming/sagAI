@@ -69,6 +69,69 @@ class ActUseCaseImpl
                 )
             }
 
+        override fun generateActStream(
+            saga: SagaContent,
+            actContent: ActContent,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
+                val titlePrompt = generateActPrompt(saga)
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>(
+                        prompt = titlePrompt,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "sagaId",
+                                "currentChapterId",
+                                "introduction",
+                            ),
+                        useCore = true,
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                val newAct = state.data.data
+                                val updatedAct =
+                                    updateAct(
+                                        actContent.data.copy(
+                                            sagaId = saga.data.id,
+                                            currentChapterId = null,
+                                            title = newAct.title,
+                                            content = newAct.content,
+                                            emotionalReview = newAct.emotionalReview,
+                                        ),
+                                    )
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            updatedAct,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Error(
+                                        state.message,
+                                    ),
+                    )
+                    }
+
+                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                        emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                            state.chunk,
+                        ),
+                    )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
+
         private suspend fun generateActPrompt(saga: SagaContent): String {
             val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
 

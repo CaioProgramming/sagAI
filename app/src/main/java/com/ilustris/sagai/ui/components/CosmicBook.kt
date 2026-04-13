@@ -1,14 +1,11 @@
 package com.ilustris.sagai.ui.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,10 +25,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,9 +39,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,16 +70,16 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveUrl
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.ui.LocalGenderPlaceholders
+import com.ilustris.sagai.features.newsaga.ui.LocalSharedTransitionScope
 import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.shimmerize
+import kotlinx.coroutines.launch
 
 @Composable
 fun CosmicBook(
@@ -107,12 +108,19 @@ fun CosmicBook(
     val shape =
         RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 16.dp, bottomEnd = 16.dp)
     val color = genre.resolveColor(visualConfig)
-    var currentPage by remember { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState(pageCount = { 2 })
     var showEditor by remember { mutableStateOf(false) }
+    var isCharacterExpanded by remember { mutableStateOf(lockedCharacter != null) }
+
+    LaunchedEffect(lockedCharacter) {
+        if (lockedCharacter != null) {
+            isCharacterExpanded = true
+        }
+    }
 
     LaunchedEffect(isOpened) {
         if (!isOpened) {
-            currentPage = 0
+            pagerState.scrollToPage(0)
             showEditor = false
         }
     }
@@ -141,184 +149,45 @@ fun CosmicBook(
                     .border(1.dp, Color.LightGray.copy(alpha = 0.2f), shape)
                     .reactiveShimmer(isLoading, color.shimmerize()),
         ) {
-            AnimatedContent(
-                targetState = currentPage,
-                transitionSpec = {
-                    (fadeIn() + scaleIn(initialScale = 0.95f)).togetherWith(
-                        fadeOut() +
-                            scaleOut(
-                                targetScale = 1.05f,
-                            ),
-                    )
-                },
-                label = "BookPageContent",
+            val scope = rememberCoroutineScope()
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = isOpened && !isCharacterExpanded,
             ) { page ->
-                when (page) {
-                    0 -> {
-                        // Page 0: Synopsis
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                IconButton(
-                                    onClick = { showEditor = true },
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .size(24.dp)
-                                            .align(Alignment.End),
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_edit),
-                                        contentDescription = "Edit",
-                                        tint = genre.resolveIconColor(),
-                                        modifier = Modifier.size(12.dp),
-                                    )
-                                }
+                val pageOffset =
+                    (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
 
-                                Text(
-                                    text = book.draft.title,
-                                    style =
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            fontFamily = genre.headerFont(),
-                                            fontSize = 20.sp,
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                    modifier = Modifier.fillMaxWidth().genreVfx(genre),
-                                )
-
-                                HorizontalDivider(modifier = Modifier.alpha(0.2f))
-
-                                Text(
-                                    text = book.draft.description,
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            lineHeight = 20.sp,
-                                            fontFamily = genre.bodyFont(),
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .weight(1f)
-                                            .verticalScroll(rememberScrollState()),
-                                )
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    IconButton(
-                                        onClick = { onAction(AgenticAction.EnhanceSaga(book.draft)) },
-                                        modifier =
-                                            Modifier
-                                                .size(24.dp),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_full_spark),
-                                            contentDescription = "Enhance",
-                                            tint = genre.resolveIconColor(),
-                                            modifier =
-                                                Modifier.size(24.dp).gradientFill(
-                                                    Brush.linearGradient(holographicGradient),
-                                                ),
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.weight(1f))
-
-                                    IconButton(
-                                        onClick = onToggle,
-                                        modifier =
-                                            Modifier
-                                                .size(24.dp),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.round_close_24),
-                                            contentDescription = "Close",
-                                            tint = genre.resolveIconColor(),
-                                            modifier = Modifier.size(24.dp),
-                                        )
-                                    }
-                                }
-
-                                Row(
-                                    modifier =
-                                        Modifier
-                                            .clip(genre.shape())
-                                            .clickable {
-                                                currentPage = 1
-                                            }.padding(4.dp)
-                                            .align(Alignment.End)
-                                            .alpha(.5f),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        "See protagonists",
-                                        style =
-                                            MaterialTheme.typography.labelMedium.copy(
-                                                fontWeight = FontWeight.SemiBold,
-                                                textAlign = TextAlign.End,
-                                                color = genre.resolveIconColor(),
-                                            ),
-                                    )
-
-                                    Icon(
-                                        painterResource(R.drawable.round_arrow_forward_ios_24),
-                                        null,
-                                        tint = genre.resolveIconColor(),
-                                        modifier = Modifier.size(12.dp),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    else -> {
-                        // Page 1: Characters
-                        AnimatedContent(
-                            targetState = lockedCharacter,
-                            label = "CharacterPageContent",
-                        ) { selected ->
-                            if (selected != null && book.characters.any { it.id == selected.id }) {
-                                ExpandedCharacterPage(
-                                    character = selected,
-                                    genre = genre,
-                                    visualConfig = visualConfig,
-                                    onBack = { onAction(AgenticAction.UnlockCharacter) },
-                                    onAction = onAction,
-                                )
-                            } else {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                // Subtle page transition effect
+                                val pageScale = 1f - (kotlin.math.abs(pageOffset) * 0.05f)
+                                scaleX = pageScale
+                                scaleY = pageScale
+                                alpha = 1f - kotlin.math.abs(pageOffset)
+                            },
+                ) {
+                    when (page) {
+                        0 -> {
+                            // Page 0: Synopsis
+                            Box(modifier = Modifier.fillMaxSize()) {
                                 Column(
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
                                             .padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text(
-                                            text = "THE LEGENDS",
-                                            style =
-                                                MaterialTheme.typography.labelMedium.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    letterSpacing = 2.sp,
-                                                ),
-                                            modifier = Modifier.alpha(0.6f),
-                                        )
-
+                                    Row(modifier = Modifier.fillMaxWidth()) {
                                         IconButton(
                                             onClick = onToggle,
-                                            modifier = Modifier.size(24.dp),
+                                            modifier =
+                                                Modifier
+                                                    .size(24.dp),
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.round_close_24),
@@ -327,40 +196,75 @@ fun CosmicBook(
                                                 modifier = Modifier.size(24.dp),
                                             )
                                         }
-                                    }
-                                    Spacer(Modifier.height(12.dp))
 
-                                    LazyColumn(
-                                        modifier = Modifier.weight(1f),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                                        contentPadding = PaddingValues(bottom = 12.dp),
-                                    ) {
-                                        items(book.characters) { char ->
-                                            CharacterPageEntry(char, genre, onSelect = {
-                                                onAction(AgenticAction.SelectCharacter(char))
-                                            })
+                                        Spacer(modifier = Modifier.weight(1f))
+
+                                        Button(
+                                            {
+                                                showEditor = true
+                                            },
+                                            shape = MaterialTheme.shapes.extraLarge,
+                                            colors =
+                                                ButtonDefaults.buttonColors(
+                                                    contentColor =
+                                                        genre.resolveIconColor(
+                                                            visualConfig,
+                                                        ),
+                                                    containerColor = color,
+                                                ),
+                                            contentPadding = PaddingValues(8.dp),
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.edit),
+                                                style = MaterialTheme.typography.labelMedium,
+                                            )
                                         }
                                     }
+
+                                    Text(
+                                        text = book.draft.title,
+                                        style =
+                                            MaterialTheme.typography.titleMedium.copy(
+                                                fontFamily = genre.headerFont(),
+                                                fontSize = 20.sp,
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .genreVfx(genre),
+                                    )
+
+                                    Text(
+                                        text = book.draft.description,
+                                        style =
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                lineHeight = 20.sp,
+                                                fontFamily = genre.bodyFont(),
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .weight(1f)
+                                                .verticalScroll(rememberScrollState()),
+                                    )
 
                                     Row(
                                         modifier =
                                             Modifier
                                                 .clip(genre.shape())
                                                 .clickable {
-                                                    currentPage = 0
+                                                    scope.launch {
+                                                        pagerState.animateScrollToPage(1)
+                                                    }
                                                 }.padding(4.dp)
                                                 .align(Alignment.End)
                                                 .alpha(.5f),
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Icon(
-                                            painterResource(R.drawable.ic_back_left),
-                                            null,
-                                            tint = genre.resolveIconColor(),
-                                            modifier = Modifier.size(12.dp),
-                                        )
-
                                         Text(
-                                            "See story",
+                                            "See protagonists",
                                             style =
                                                 MaterialTheme.typography.labelMedium.copy(
                                                     fontWeight = FontWeight.SemiBold,
@@ -368,6 +272,133 @@ fun CosmicBook(
                                                     color = genre.resolveIconColor(),
                                                 ),
                                         )
+
+                                        Icon(
+                                            painterResource(R.drawable.round_arrow_forward_ios_24),
+                                            null,
+                                            tint = genre.resolveIconColor(),
+                                            modifier = Modifier.size(12.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        else -> {
+                            // Page 1: Characters
+                            SharedTransitionLayout {
+                                AnimatedContent(
+                                    targetState = lockedCharacter,
+                                    label = "CharacterPageContent",
+                                ) { selected ->
+                                    if (isCharacterExpanded && selected != null && book.characters.any { it.id == selected.id }) {
+                                        ExpandedCharacterPage(
+                                            character = selected,
+                                            genre = genre,
+                                            visualConfig = visualConfig,
+                                            onBack = { isCharacterExpanded = false },
+                                            onAction = onAction,
+                                            modifier =
+                                                Modifier.sharedBounds(
+                                                    rememberSharedContentState(key = "char_${selected.id}"),
+                                                    animatedVisibilityScope = this,
+                                                ),
+                                        )
+                                    } else {
+                                        Column(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Text(
+                                                    text = "THE LEGENDS",
+                                                    style =
+                                                        MaterialTheme.typography.labelMedium.copy(
+                                                            fontWeight = FontWeight.Bold,
+                                                            letterSpacing = 2.sp,
+                                                        ),
+                                                    modifier = Modifier.alpha(0.6f),
+                                                )
+
+                                                IconButton(
+                                                    onClick = onToggle,
+                                                    modifier = Modifier.size(24.dp),
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.round_close_24),
+                                                        contentDescription = "Close",
+                                                        tint = genre.resolveIconColor(),
+                                                        modifier = Modifier.size(24.dp),
+                                                    )
+                                                }
+                                            }
+                                            Spacer(Modifier.height(12.dp))
+
+                                            LazyColumn(
+                                                modifier = Modifier.weight(1f),
+                                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                                contentPadding = PaddingValues(bottom = 12.dp),
+                                            ) {
+                                                items(book.characters) { char ->
+                                                    CharacterPageEntry(
+                                                        character = char,
+                                                        genre = genre,
+                                                        isSelected = char.id == lockedCharacter?.id,
+                                                        onSelect = {
+                                                            onAction(
+                                                                AgenticAction.SelectCharacter(
+                                                                    char,
+                                                                ),
+                                                            )
+                                                            isCharacterExpanded = true
+                                                        },
+                                                        modifier =
+                                                            Modifier.sharedBounds(
+                                                                rememberSharedContentState(key = "char_${char.id}"),
+                                                                animatedVisibilityScope = this@AnimatedContent,
+                                                            ),
+                                                    )
+                                                }
+                                            }
+
+                                            Row(
+                                                modifier =
+                                                    Modifier
+                                                        .clip(genre.shape())
+                                                        .clickable {
+                                                            scope.launch {
+                                                                pagerState.animateScrollToPage(0)
+                                                            }
+                                                        }.padding(4.dp)
+                                                        .align(Alignment.End)
+                                                        .alpha(.5f),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                Icon(
+                                                    painterResource(R.drawable.ic_back_left),
+                                                    null,
+                                                    tint = genre.resolveIconColor(),
+                                                    modifier = Modifier.size(12.dp),
+                                                )
+
+                                                Text(
+                                                    "See story",
+                                                    style =
+                                                        MaterialTheme.typography.labelMedium.copy(
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            textAlign = TextAlign.End,
+                                                            color = genre.resolveIconColor(),
+                                                        ),
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -425,7 +456,10 @@ fun CosmicBook(
                     painter = painterResource(id = genre.icon),
                     contentDescription = null,
                     tint = genre.resolveColor(visualConfig),
-                    modifier = Modifier.size(48.dp).genreVfx(genre),
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .genreVfx(genre),
                 )
                 Spacer(Modifier.height(16.dp))
                 genre.stylisedText(
@@ -480,21 +514,28 @@ fun CosmicBook(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun CharacterPageEntry(
     character: CharacterInfo,
     genre: Genre,
+    isSelected: Boolean = false,
+    modifier: Modifier = Modifier,
     onSelect: () -> Unit,
 ) {
     val placeholders = LocalGenderPlaceholders.current
     val silhouetteUrl = placeholders.resolveUrl(genre, character.gender)
+    val color = genre.resolveColor()
+    val borderColor = if (isSelected) color else color.copy(alpha = 0.1f)
+    val borderStroke = if (isSelected) 2.dp else 1.dp
 
     Row(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .background(genre.color.copy(alpha = 0.05f))
+                .background(if (isSelected) color.copy(alpha = 0.1f) else genre.color.copy(alpha = 0.05f))
+                .border(borderStroke, borderColor, MaterialTheme.shapes.medium)
                 .clickable { onSelect() }
                 .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -515,7 +556,10 @@ private fun CharacterPageEntry(
                 AsyncImage(
                     model = silhouetteUrl,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(4.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(4.dp),
                     contentScale = ContentScale.Fit,
                 )
             } else {
@@ -552,20 +596,23 @@ private fun CharacterPageEntry(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun ExpandedCharacterPage(
     character: CharacterInfo,
     genre: Genre,
     visualConfig: GenreVisualConfig,
+    modifier: Modifier,
     onBack: () -> Unit,
     onAction: (AgenticAction) -> Unit,
 ) {
     val placeholders = LocalGenderPlaceholders.current
+    LocalSharedTransitionScope.current
     val silhouetteUrl = placeholders.resolveUrl(genre, character.gender)
     val color = genre.resolveColor(visualConfig)
     var showEditor by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
         Column(
             modifier =
                 Modifier
@@ -586,14 +633,20 @@ private fun ExpandedCharacterPage(
                     AsyncImage(
                         model = silhouetteUrl,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize().alpha(0.8f),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .alpha(0.8f),
                         contentScale = ContentScale.Fit,
                     )
                 } else {
                     Icon(
                         painterResource(genre.icon),
                         null,
-                        modifier = Modifier.size(60.dp).align(Alignment.Center),
+                        modifier =
+                            Modifier
+                                .size(60.dp)
+                                .align(Alignment.Center),
                         tint = color.copy(alpha = 0.2f),
                     )
                 }
@@ -606,8 +659,12 @@ private fun ExpandedCharacterPage(
                         fontFamily = genre.headerFont(),
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.fillMaxWidth().genreVfx(genre),
+                modifier =
+                    Modifier
+                        .genreVfx(genre)
+                        .align(Alignment.CenterHorizontally),
             )
 
             Text(
@@ -628,12 +685,18 @@ private fun ExpandedCharacterPage(
                         fontFamily = genre.bodyFont(),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                     ),
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             )
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
@@ -650,16 +713,19 @@ private fun ExpandedCharacterPage(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            IconButton(
-                onClick = { showEditor = true },
-                modifier = Modifier.size(24.dp).padding(8.dp),
+            Button(
+                {
+                    showEditor = true
+                },
+                shape = MaterialTheme.shapes.extraLarge,
+                colors =
+                    ButtonDefaults.buttonColors(
+                        contentColor = genre.resolveIconColor(visualConfig),
+                        containerColor = color,
+                    ),
+                contentPadding = PaddingValues(8.dp),
             ) {
-                Icon(
-                    painterResource(R.drawable.ic_edit),
-                    null,
-                    modifier = Modifier.fillMaxSize(),
-                    tint = genre.resolveIconColor(visualConfig),
-                )
+                Text(stringResource(R.string.edit), style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -671,12 +737,6 @@ private fun ExpandedCharacterPage(
             fields =
                 listOf(
                     CosmicInputField("name", "Nome", character.name, hint = "Como ele é chamado?"),
-                    CosmicInputField(
-                        "gender",
-                        "Identidade",
-                        character.gender.name,
-                        hint = "Gênero ou Origem",
-                    ),
                     CosmicInputField(
                         "description",
                         "Biografia",
@@ -690,7 +750,6 @@ private fun ExpandedCharacterPage(
                     AgenticAction.UpdateCharacter(
                         character.id,
                         it["name"] ?: character.name,
-                        it["gender"] ?: character.gender.name,
                         it["description"] ?: character.description,
                     ),
                 )

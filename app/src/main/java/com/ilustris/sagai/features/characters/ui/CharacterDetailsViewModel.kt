@@ -37,6 +37,7 @@ class CharacterDetailsViewModel
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
+        val imageReasoning = MutableStateFlow<String?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
         val isSummarizing = MutableStateFlow(false)
@@ -97,18 +98,35 @@ class CharacterDetailsViewModel
         ) {
             isGenerating.value = true
             loadingMessage.value = "Gerando ${selectedCharacter.name}..."
+            imageReasoning.value = null
+
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase
-                    .generateCharacterImage(
+                    .generateCharacterImageStream(
                         selectedCharacter,
                         sagaContent.data,
-                    ).onFailure {
-                        if (it is BillingService.PremiumException) {
-                            showPremiumSheet.value = true
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                imageReasoning.value = state.chunk
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                isGenerating.value = false
+                                loadingMessage.value = null
+                                imageReasoning.value = null
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                isGenerating.value = false
+                                loadingMessage.value = null
+                                imageReasoning.value = null
+                                if (state.throwable is BillingService.PremiumException) {
+                                    showPremiumSheet.value = true
+                                }
+                            }
                         }
                     }
-                isGenerating.value = false
-                loadingMessage.emit(null)
             }
         }
 

@@ -11,5 +11,6 @@ sealed class StreamingState<out T> {
 
     data class Error(
         val message: String,
+        val throwable: Throwable? = null,
     ) : StreamingState<Nothing>()
 }

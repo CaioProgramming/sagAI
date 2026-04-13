@@ -149,6 +149,7 @@ fun CharacterDetailsContent(
 
     val currentCharacter by viewModel.character.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
+    val imageReasoning by viewModel.imageReasoning.collectAsStateWithLifecycle()
 
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
@@ -189,8 +190,9 @@ fun CharacterDetailsContent(
     }
 
     StarryLoader(
-        isGenerating,
+        isLoading = isGenerating,
         loadingMessage = loadingMessage,
+        subtitle = imageReasoning,
         textStyle =
             MaterialTheme.typography.labelLarge.copy(
                 resolvedColor,
@@ -387,7 +389,8 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -514,7 +517,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

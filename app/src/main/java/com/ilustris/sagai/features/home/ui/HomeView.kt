@@ -183,7 +183,8 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).reactiveShimmer(
+                                )
+                                .reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -325,9 +326,7 @@ fun HomeView(
         loadingMessage,
     )
 
-    if (!isLoading.not()) {
-        OnboardingDialog(type = OnboardingType.APP_INTRO)
-    }
+    OnboardingDialog(type = OnboardingType.APP_INTRO)
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -386,7 +385,8 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -429,7 +429,8 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -477,10 +478,13 @@ private fun SharedTransitionScope.ChatList(
                         .reactiveShimmer(
                             true,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                            targetValue = 700f,
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }.fillMaxWidth(),
+                        }
+                        .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
@@ -661,7 +665,8 @@ fun ChatCard(
                                 color = genreColor
                                 brush = genreBrush
                                 spread = 5f
-                            }.size(50.dp)
+                            }
+                            .size(50.dp)
                             .selectiveColorHighlight(saga.data.genre),
                 )
 

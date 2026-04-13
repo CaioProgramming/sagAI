@@ -34,7 +34,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -351,14 +351,12 @@ private fun LockedSagaCard(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                IconButton(
-                    onClick = { showEditor = true },
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_edit),
-                        null,
-                        tint = iconColor,
-                        modifier = Modifier.size(24.dp),
+                Button({
+                    showEditor = true
+                }, shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(8.dp)) {
+                    Text(
+                        stringResource(R.string.edit),
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
@@ -412,6 +410,7 @@ private fun LockedSagaCard(
             onSave = {
                 onAction(
                     AgenticAction.UpdateSaga(
+                        draft.id,
                         it["title"] ?: draft.title,
                         it["description"] ?: draft.description,
                     ),
@@ -670,17 +669,14 @@ private fun LockedCharacterCard(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                Icon(
-                    painterResource(R.drawable.ic_edit),
-                    null,
-                    tint = iconColor,
-                    modifier =
-                        Modifier
-                            .size(32.dp)
-                            .clickable {
-                                showEditor = true
-                            },
-                )
+                Button({
+                    showEditor = true
+                }, shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(8.dp)) {
+                    Text(
+                        stringResource(R.string.edit),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
             }
 
             Text(
@@ -733,8 +729,8 @@ private fun LockedCharacterCard(
             onSave = {
                 onAction(
                     AgenticAction.UpdateCharacter(
+                        persona.id,
                         it["name"] ?: persona.name,
-                        it["gender"] ?: persona.gender.name,
                         it["description"] ?: persona.description,
                     ),
                 )

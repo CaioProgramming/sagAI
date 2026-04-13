@@ -56,7 +56,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -103,6 +102,7 @@ class ChatViewModel
         private var mediaObserverJob: kotlinx.coroutines.Job? = null
         private var processingObserverJob: kotlinx.coroutines.Job? = null
         private var sceneSummaryObserverJob: kotlinx.coroutines.Job? = null
+        private var reasoningObserverJob: kotlinx.coroutines.Job? = null
 
         fun handleAction(action: ChatUiAction) {
             when (action) {
@@ -323,6 +323,9 @@ class ChatViewModel
             sceneSummaryObserverJob?.cancel()
             sceneSummaryObserverJob = observeSceneSummary()
 
+            reasoningObserverJob?.cancel()
+            reasoningObserverJob = observeReasoning()
+
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
@@ -346,6 +349,13 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.sceneSummary.collect { summary ->
                     stateManager.updateState { it.copy(sceneSummary = summary) }
+                }
+            }
+
+        private fun observeReasoning() =
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.contentReasoning.collect { reasoning ->
+                    stateManager.updateState { it.copy(reasoningChunk = reasoning) }
                 }
             }
 
@@ -630,18 +640,13 @@ class ChatViewModel
 
                         loadFinished = true
 
-                        if (sagaContent.flatMessages().isEmpty() &&
-                            settingsUseCase
-                                .getShowTutorials()
-                                .first()
-                        ) {
-                            stateManager.updateOnboardingType(OnboardingType.GAMEPLAY_GUIDE)
-                            sagaContentManager.isOnboardingVisible.value = true
-                        }
-
-                        // Only validate message status when messages changed
                         if (messagesChanged) {
                             validateMessageStatus(sagaContent)
+                        }
+
+                        if (sagaContent.flatMessages().isEmpty()) {
+                            stateManager.updateOnboardingType(OnboardingType.GAMEPLAY_GUIDE)
+                            sagaContentManager.isOnboardingVisible.value = true
                         }
                     }
             }

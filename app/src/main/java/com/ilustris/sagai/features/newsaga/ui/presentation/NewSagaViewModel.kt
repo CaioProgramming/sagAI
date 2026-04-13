@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getGenderPlaceholders
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -78,7 +79,6 @@ sealed class AgenticAction {
     data class UpdateCharacter(
         val id: String,
         val nameInput: String,
-        val genderInput: String,
         val descriptionInput: String,
     ) : AgenticAction()
 
@@ -245,6 +245,12 @@ class NewSagaViewModel
 
                     is AgenticAction.UpdateSaga -> {
                         _lockedSaga.value?.let { current ->
+
+                            Log.d(
+                                javaClass.simpleName,
+                                "Updating character from ${current.toJsonFormat()} ",
+                            )
+                            Log.d(javaClass.simpleName, "Trying to edit ${action.toJsonFormat()}")
                             if (current.id == action.id) {
                                 val updated =
                                     current.copy(
@@ -253,7 +259,24 @@ class NewSagaViewModel
                                     )
                                 _lockedSaga.value = updated
                                 _selectedBook.value = _selectedBook.value?.copy(draft = updated)
+                                _libraryBooks.value =
+                                    _libraryBooks.value.map {
+                                        if (it.first.draft.id == updated.id) {
+                                            it.copy(first = it.first.copy(draft = updated))
+                                        } else {
+                                            it
+                                        }
+                                    }
                                 updateFeedWithSaga(updated)
+                                Log.i(
+                                    javaClass.simpleName,
+                                    "onAgenticAction: Updated to ${updated.toJsonFormat()}",
+                                )
+                            } else {
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "Saga ID mismatch: ${current.id} != ${action.id}",
+                                )
                             }
                         }
                     }
@@ -266,6 +289,12 @@ class NewSagaViewModel
 
                     is AgenticAction.UpdateCharacter -> {
                         _selectedBook.value?.let { book ->
+                            Log.d(
+                                javaClass.simpleName,
+                                "Updating character from ${book.toJsonFormat()} ",
+                            )
+                            Log.d(javaClass.simpleName, ": Trying to edit ${action.toJsonFormat()}")
+
                             val updatedCharacters =
                                 book.characters.map {
                                     if (it.id == action.id) {
@@ -279,12 +308,21 @@ class NewSagaViewModel
                                 }
                             val updatedBook = book.copy(characters = updatedCharacters)
                             _selectedBook.value = updatedBook
+                            _libraryBooks.value =
+                                _libraryBooks.value.map {
+                                    if (it.first.draft.id == updatedBook.draft.id) {
+                                        it.copy(first = updatedBook)
+                                    } else {
+                                        it
+                                    }
+                                }
                             _lockedCharacter.value?.let { current ->
                                 if (current.id == action.id) {
-                                    _lockedCharacter.value = current.copy(
-                                        name = action.nameInput,
-                                        description = action.descriptionInput
-                                    )
+                                    _lockedCharacter.value =
+                                        current.copy(
+                                            name = action.nameInput,
+                                            description = action.descriptionInput,
+                                        )
                                 }
                             }
                             updateFeedWithBook(updatedBook)
@@ -324,7 +362,7 @@ class NewSagaViewModel
                             AgenticUIComponent.LibraryComponent(updatedBooks)
                         }
 
-                        is AgenticUIComponent.IdeaPitches -> {
+                        is IdeaPitches -> {
                             val updatedIdeas =
                                 component.ideas.map { idea ->
                                     if (idea.first.id == updatedSaga.id) {
@@ -333,7 +371,7 @@ class NewSagaViewModel
                                         idea
                                     }
                                 }
-                            AgenticUIComponent.IdeaPitches(updatedIdeas)
+                            IdeaPitches(updatedIdeas)
                         }
 
                         is AgenticUIComponent.ExpandedSaga -> {
@@ -371,6 +409,16 @@ class NewSagaViewModel
                             // Also update persona pitches if they are visible for this saga
                             if (updatedBook.draft.id == _lockedSaga.value?.id) {
                                 component.copy(personas = updatedBook.characters)
+                            } else {
+                                component
+                            }
+                        }
+
+                        is AgenticUIComponent.ExpandedCharacter -> {
+                            val matchingPersona =
+                                updatedBook.characters.find { it.id == component.persona.id }
+                            if (matchingPersona != null) {
+                                component.copy(persona = matchingPersona)
                             } else {
                                 component
                             }

@@ -33,6 +33,11 @@ interface ChapterUseCase {
         chapterContent: ChapterContent,
     ): RequestResult<Chapter>
 
+    fun generateChapterStream(
+        saga: SagaContent,
+        chapterContent: ChapterContent,
+    ): kotlinx.coroutines.flow.Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>>
+
     suspend fun reviewChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
