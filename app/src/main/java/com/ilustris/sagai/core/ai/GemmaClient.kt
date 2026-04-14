@@ -557,6 +557,9 @@ class GemmaClient
                             val cleanedJsonString =
                                 fullText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             val typeToken = object : TypeToken<AIGeneration<T>>() {}
+                            if (cleanedJsonString.isEmpty()) {
+                                error("Failed to parse JSON")
+                            }
                             val aiGeneration =
                                 Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
 
@@ -573,9 +576,13 @@ class GemmaClient
                                 )
                             }
 
+                            Log.d(
+                                javaClass.simpleName,
+                                "generateStreaming: final state on streaming:/n${aiGeneration.toJsonFormat()}",
+                            )
                             emit(StreamingState.Success(aiGeneration.data))
                             retryDelay = null
-                            return@flow // Success! Break out.
+                            return@flow
                         } catch (e: Exception) {
                             if (logEnabled) {
                                 Log.e(

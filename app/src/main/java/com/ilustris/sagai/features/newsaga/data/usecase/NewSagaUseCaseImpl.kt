@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
@@ -473,7 +474,11 @@ class NewSagaUseCaseImpl
                                             ?: throw Exception("Failed to save saga")
 
                                     // Step 2: Save Character
-                                    val characterToSave = contract.character.copy(sagaId = savedSaga.id)
+                                    val characterToSave =
+                                        contract.character.copy(
+                                            sagaId = savedSaga.id,
+                                            image = emptyString(),
+                                        )
                                     val savedCharacter =
                                         characterUseCase.insertCharacter(characterToSave)
 

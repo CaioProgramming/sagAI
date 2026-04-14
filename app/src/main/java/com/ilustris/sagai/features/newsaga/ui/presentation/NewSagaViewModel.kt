@@ -547,7 +547,6 @@ class NewSagaViewModel
         fun saveSaga() {
             val sagaDraft = _lockedSaga.value ?: return
             val characterInfo = _lockedCharacter.value ?: return
-
             _isSaving.value = true
             _savingError.value = null
 
@@ -558,7 +557,7 @@ class NewSagaViewModel
                 ).onEach { state: SagaCreationState ->
                     when (state) {
                         is SagaCreationState.Loading -> {
-                            _loadingMessage.value = state.message
+                            _currentAgentMessage.value = state.message
                         }
 
                         is SagaCreationState.Success -> {

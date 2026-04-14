@@ -75,6 +75,16 @@ class SagaIdeationService
                         "voice",
                         "narratorVoice",
                         "timelineId",
+                        "currentActId",
+                        "endMessage",
+                        "endedAt",
+                        "icon",
+                        "isDebug",
+                        "isEnded",
+                        "review",
+                        "variationId",
+                        "image",
+                        "emojified",
                     ),
             )
         }

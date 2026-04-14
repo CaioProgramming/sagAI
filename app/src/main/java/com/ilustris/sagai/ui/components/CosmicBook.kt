@@ -131,7 +131,8 @@ fun CosmicBook(
                 .graphicsLayer {
                     this.scaleX = scale
                     this.scaleY = scale
-                }.aspectRatio(3f / 4f)
+                }
+                .aspectRatio(3f / 4f)
                 .dropShadow(shape) {
                     this.color = color.copy(alpha = 0.5f)
                     this.radius = 20f
@@ -258,7 +259,8 @@ fun CosmicBook(
                                                     scope.launch {
                                                         pagerState.animateScrollToPage(1)
                                                     }
-                                                }.padding(4.dp)
+                                                }
+                                                .padding(4.dp)
                                                 .align(Alignment.End)
                                                 .alpha(.5f),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -376,7 +378,8 @@ fun CosmicBook(
                                                             scope.launch {
                                                                 pagerState.animateScrollToPage(0)
                                                             }
-                                                        }.padding(4.dp)
+                                                        }
+                                                        .padding(4.dp)
                                                         .align(Alignment.End)
                                                         .alpha(.5f),
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -431,7 +434,8 @@ fun CosmicBook(
                         this.rotationY = rotation
                         this.transformOrigin = TransformOrigin(0f, 0.5f)
                         this.cameraDistance = 12f * density
-                    }.clip(shape)
+                    }
+                    .clip(shape)
                     .background(Brush.verticalGradient(color.darkerPalette(factor = .35f)))
                     .clickable { onToggle() },
         ) {
@@ -458,13 +462,13 @@ fun CosmicBook(
                     tint = genre.resolveColor(visualConfig),
                     modifier =
                         Modifier
-                            .size(48.dp)
+                            .size(50.dp)
                             .genreVfx(genre),
                 )
                 Spacer(Modifier.height(16.dp))
                 genre.stylisedText(
                     book.draft.title,
-                    fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                    fontSize = MaterialTheme.typography.titleSmall.fontSize,
                 )
             }
 
@@ -668,27 +672,15 @@ private fun ExpandedCharacterPage(
             )
 
             Text(
-                character.gender.name.lowercase(),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                    ),
-                color = color,
-                modifier = Modifier.alpha(0.8f),
-            )
-
-            Text(
                 text = character.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        lineHeight = 20.sp,
                         fontFamily = genre.bodyFont(),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                     ),
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                        .fillMaxWidth(),
             )
         }
 

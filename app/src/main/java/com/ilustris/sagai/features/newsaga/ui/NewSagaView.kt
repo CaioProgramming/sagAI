@@ -6,10 +6,13 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -74,7 +77,9 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
+import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
@@ -194,7 +199,7 @@ fun NewSagaView(
                             )
                         }
 
-                        AnimatedVisibility(libraryBooks.isNotEmpty() || (isSaving && lockedSaga != null)) {
+                        AnimatedVisibility(libraryBooks.isNotEmpty() && isSaving.not()) {
                             val filteredBooks =
                                 if (isSaving) {
                                     libraryBooks.filter { it.first.draft.id == lockedSaga?.id }
@@ -208,6 +213,39 @@ fun NewSagaView(
                                 isAgentLoading = isAgentLoading || isSaving,
                                 onAction = viewModel::onAgenticAction,
                             )
+                        }
+
+                        AnimatedVisibility(
+                            isSaving,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            enter =
+                                fadeIn(tween(800)) +
+                                    scaleIn(
+                                        tween(
+                                            400,
+                                            easing = FastOutLinearInEasing,
+                                        ),
+                                    ),
+                            exit = scaleOut(),
+                        ) {
+                            val actualBook =
+                                libraryBooks.firstOrNull { it.first.draft.id == lockedSaga?.id }
+                            actualBook?.let {
+                                CosmicBook(
+                                    book = it.first,
+                                    visualConfig = it.second,
+                                    isOpened = false,
+                                    isLoading = true,
+                                    onToggle = {},
+                                    onAction = {},
+                                    modifier =
+                                        Modifier
+                                            .padding(50.dp)
+                                            .levitate()
+                                            .divineAura()
+                                            .chromaticAberration(),
+                                )
+                            }
                         }
 
                         AnimatedVisibility(

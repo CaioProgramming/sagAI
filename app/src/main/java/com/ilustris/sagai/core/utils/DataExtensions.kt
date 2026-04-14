@@ -294,13 +294,22 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     var cleanedJsonString = this!!
     Timber.tag(logTag).i("Sanitizing raw string: $cleanedJsonString")
 
-    // 1. Remove common markdown code block delimiters (e.g., ```json, ```text, ```)
-    cleanedJsonString = cleanedJsonString.replace(Regex("```[a-zA-Z]*"), "").replace("```", "")
+    // 1. Try to extract JSON from ```json ... ``` fenced blocks first (most reliable signal)
+    val fencedJsonPattern = Regex("```json\\s*\\n?(.*?)\\n?\\s*```", RegexOption.DOT_MATCHES_ALL)
+    val fencedMatch = fencedJsonPattern.findAll(cleanedJsonString).lastOrNull()
 
-    // 2. Trim leading/trailing whitespace
-    cleanedJsonString = cleanedJsonString.trim()
+    if (fencedMatch != null) {
+        cleanedJsonString = fencedMatch.groupValues[1].trim()
+        Timber.tag(logTag).i("Extracted JSON from fenced block")
+        // No need for heuristic if we have a fenced block; just ensure it's closed and return
+        return finalizeSanitization(cleanedJsonString, expectedClass, logTag)
+    }
 
-    // 3. Find all potential JSON start positions and find the last one that forms a complete block
+    // Fallback: Remove any stray markdown delimiters and proceed with heuristic extraction
+    cleanedJsonString =
+        cleanedJsonString.replace(Regex("```[a-zA-Z]*"), "").replace("```", "").trim()
+
+    // 2. Find all potential JSON start positions and find the last one that forms a complete block
     val allStarts =
         cleanedJsonString.indices.filter { cleanedJsonString[it] == '{' || cleanedJsonString[it] == '[' }
     var bestJson: String? = null
@@ -320,34 +329,34 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
                     bestJson!!.contains(": \"PLACEHOLDER_") || bestJson!!.contains(": 999")
 
                 if (currentBestHasPlaceholder && !hasPlaceholder) {
-                    // The new block is a real result, while the previous one was a template. Replace.
                     bestJson = extracted
-                } else if (currentBestHasPlaceholder == hasPlaceholder) {
-                    // Both are of the same "quality" (both results or both templates).
-                    // Prefer the longer one, as it's likely the parent/outermost object.
+                } else if (!currentBestHasPlaceholder && !hasPlaceholder) {
+                    bestJson = extracted
+                } else if (currentBestHasPlaceholder && hasPlaceholder) {
                     if (extracted.length > bestJson!!.length) {
                         bestJson = extracted
                     }
                 }
-                // If the new one has a placeholder but the current best doesn't, we keep the better one.
             }
         }
     }
 
     if (bestJson != null) {
         cleanedJsonString = bestJson!!
-    } else {
-        // Fallback to first one if it's the only one found
-        val firstJsonCharIndex = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
-        if (firstJsonCharIndex > 0) {
-            cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
-        } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
-            Timber
-                .tag(logTag)
-                .e("No JSON start character '{' or '[' found in response: $cleanedJsonString")
-            throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
-        }
     }
+
+    return finalizeSanitization(cleanedJsonString, expectedClass, logTag)
+}
+
+private fun finalizeSanitization(
+    json: String,
+    expectedClass: Class<*>?,
+    logTag: String,
+): String {
+    var cleanedJsonString = json
+
+    // Ensure balanced braces for incomplete streams
+    cleanedJsonString = autoCloseJson(cleanedJsonString)
 
     // 4. Precise end index is already handled by the new extraction logic above.
     // We just ensure we have a valid start.
@@ -852,4 +861,45 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                 "${field.name}$itemsSize: $valueString"
             }
         }.joinToString("\n")
+}
+
+private fun autoCloseJson(json: String): String {
+    val stack = mutableListOf<Char>()
+    var inString = false
+    var escaped = false
+
+    for (c in json) {
+        if (escaped) {
+            escaped = false
+            continue
+        }
+        if (c == '\\') {
+            escaped = true
+            continue
+        }
+        if (c == '"') {
+            inString = !inString
+            continue
+        }
+        if (!inString) {
+            if (c == '{' || c == '[') {
+                stack.add(if (c == '{') '}' else ']')
+            } else if (c == '}' || c == ']') {
+                if (stack.isNotEmpty() && stack.last() == c) {
+                    stack.removeAt(stack.size - 1)
+                }
+            }
+        }
+    }
+
+    val sb = StringBuilder(json)
+    if (inString) {
+        sb.append('"')
+    }
+
+    for (i in stack.size - 1 downTo 0) {
+        sb.append(stack[i])
+    }
+
+    return sb.toString()
 }
