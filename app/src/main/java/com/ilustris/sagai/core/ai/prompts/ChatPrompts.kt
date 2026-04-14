@@ -47,6 +47,7 @@ data class ReplyMessageArgs(
     val conversationDirective: String,
     val latestMessageContent: String,
     val genreConversationSoul: String,
+    val reactionProtocol: String,
 )
 
 data class SceneSummaryArgs(
@@ -176,6 +177,21 @@ object ChatPrompts {
                 "conversationDirective" to conversationDirective,
                 "latestMessage" to message.toAINormalize(messageExclusions),
                 "genreConversationSoul" to conversationDirective,
+                "reactionProtocol" to
+                    buildString {
+                        appendLine("### 🎭 EMOTIONAL REACTION PROTOCOL 🎭")
+                        appendLine(
+                            "Along with the message, you MUST generate emotional reactions for ALL other characters present in the scene.",
+                        )
+                        if (charactersInScene.isNullOrEmpty().not()) {
+                            appendLine("Characters present to react: ${charactersInScene.joinToString { it.data.name }}")
+                            appendLine("Each character reaction must contain their NAME, an Emoji, and a hidden Thought.")
+                        } else {
+                            appendLine(
+                                "No specific characters present to react, but you can still generate reactions for the narrator if applicable.",
+                            )
+                        }
+                        },
             )
 
         return promptService.buildRemotePrompt(REPLY_GENERATION_BLUEPRINT, argsMap)

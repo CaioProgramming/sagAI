@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 import MessageStatus
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.Voice
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
@@ -18,6 +19,8 @@ import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
+import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -147,28 +150,24 @@ class MessageUseCaseImpl
             saga: SagaContent,
             message: MessageContent,
             sceneSummary: SceneSummary?,
-        ): Flow<com.ilustris.sagai.core.ai.StreamingState<Message>> =
+        ): Flow<StreamingState<AIReply>> =
             flow {
                 try {
                     if (isDebugModeEnabled) {
                         Timber.d("[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}")
                         val fakeReply =
-                            Message(
-                                text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
-                                senderType = SenderType.CHARACTER,
-                                sagaId = saga.data.id,
-                                timelineId = saga.getCurrentTimeLine()!!.data.id,
+                            AIReply(
+                                message =
+                                    Message(
+                                        text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
+                                        senderType = SenderType.CHARACTER,
+                                        sagaId = saga.data.id,
+                                        timelineId = saga.getCurrentTimeLine()!!.data.id,
+                                    ),
                             )
-                        emit(
-                            com.ilustris.sagai.core.ai.StreamingState
-                                .Success(fakeReply),
-                        )
+                        emit(StreamingState.Success(fakeReply))
                         return@flow
                     }
-
-                    sceneSummary?.charactersPresent?.mapNotNull { characterName ->
-                        saga.findCharacter(characterName)
-                    } ?: emptyList()
 
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
                     val conversationDirective =
@@ -176,7 +175,7 @@ class MessageUseCaseImpl
                     val narrativeRules = fetchNarrativeRules()
 
                     val generateStream =
-                        gemmaClient.generateStreaming<Message>(
+                        gemmaClient.generateStreaming<AIReply>(
                             prompt =
                                 ChatPrompts.replyMessagePrompt(
                                     promptService = promptService,
@@ -194,18 +193,55 @@ class MessageUseCaseImpl
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             generateStream,
-                            "Generating a chat reply",
+                            "Generating a deep narrative reply",
                             conversationStyle = conversationDirective,
                         ).collect { state ->
-                            emit(state)
+                            if (state is StreamingState.Success) {
+                                val reply = state.data
+                                val savedMessage =
+                                    messageRepository.saveMessage(
+                                        reply.message.copy(
+                                            sagaId = saga.data.id,
+                                            timelineId = saga.getCurrentTimeLine()!!.data.id,
+                                            characterId = saga.findCharacter(reply.message.speakerName)?.data?.id,
+                                            status = MessageStatus.OK,
+                                            timestamp = System.currentTimeMillis(),
+                                        ),
+                                    )
+                                handleAIReplyReactions(saga, savedMessage, reply.reactions)
+                                emit(StreamingState.Success(reply.copy(message = savedMessage)))
+                            } else {
+                                emit(state)
+                            }
                         }
                 } catch (e: Exception) {
+                    e.printStackTrace()
                     emit(
-                        com.ilustris.sagai.core.ai.StreamingState
+                        StreamingState
                             .Error(e.message ?: "Unknown error"),
                     )
                 }
             }
+
+        private suspend fun handleAIReplyReactions(
+            saga: SagaContent,
+            message: Message,
+            reactions: List<AIReaction>,
+        ) {
+            reactions.forEach { aiReaction ->
+                val character = saga.findCharacter(aiReaction.character)
+                if (character != null && character.data.id != message.characterId) {
+                    reactionRepository.saveReaction(
+                        Reaction(
+                            messageId = message.id,
+                            characterId = character.data.id,
+                            emoji = aiReaction.reaction,
+                            thought = aiReaction.thought,
+                        ),
+                )
+            }
+        }
+    }
 
         override suspend fun generateReaction(
             saga: SagaContent,
@@ -236,8 +272,8 @@ class MessageUseCaseImpl
             val prompt =
                 ChatPrompts.generateReactionPrompt(
                     promptService = promptService,
-                    saga = saga,
                     summary = sceneSummary,
+                    saga = saga,
                     messageToReact = message,
                     conversationDirective = conversationDirective,
                 )
@@ -364,7 +400,9 @@ class MessageUseCaseImpl
             if (tone != null) {
                 updateMessage(message.copy(emotionalTone = tone))
             }
-            generateReaction(saga, message, sceneSummary)
+            if (isFromUser) {
+                generateReaction(saga, message, sceneSummary)
+            }
             if (generateAudio) {
                 generateAudio(saga, message, characterReference)
             }

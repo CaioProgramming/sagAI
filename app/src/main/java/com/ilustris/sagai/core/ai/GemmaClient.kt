@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.database.model.AIAuditLog
@@ -37,6 +38,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
+import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -141,9 +143,23 @@ class GemmaClient
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
                             val structure =
                                 if (describeOutput) {
+                                    val dataType = object : TypeToken<T>() {}.type
                                     val dataStructure =
                                         if (T::class == String::class) {
                                             "\"string\""
+                                        } else if (dataType is ParameterizedType && dataType.rawType == GeneratedContent::class.java) {
+                                            val innerType =
+                                                dataType.actualTypeArguments[0] as Class<*>
+                                            val innerStructure =
+                                                toJsonMap(
+                                                    innerType,
+                                                    filteredFields = filterOutputFields,
+                                                )
+                                            toJsonMap(
+                                                GeneratedContent::class.java,
+                                                fieldCustomDescriptions = listOf("data" to innerStructure),
+                                                filteredFields = filterOutputFields,
+                                            )
                                         } else {
                                             toJsonMap(
                                                 T::class.java,
@@ -439,9 +455,23 @@ class GemmaClient
                         try {
                             val structure =
                                 if (describeOutput) {
+                                    val dataType = object : TypeToken<T>() {}.type
                                     val dataStructure =
                                         if (T::class == String::class) {
                                             "\"string\""
+                                        } else if (dataType is ParameterizedType && dataType.rawType == GeneratedContent::class.java) {
+                                            val innerType =
+                                                dataType.actualTypeArguments[0] as Class<*>
+                                            val innerStructure =
+                                                toJsonMap(
+                                                    innerType,
+                                                    filteredFields = filterOutputFields,
+                                                )
+                                            toJsonMap(
+                                                GeneratedContent::class.java,
+                                                fieldCustomDescriptions = listOf("data" to innerStructure),
+                                                filteredFields = filterOutputFields,
+                                            )
                                         } else {
                                             toJsonMap(
                                                 T::class.java,
@@ -503,6 +533,17 @@ class GemmaClient
 
                             val formattedModel = model.replace("models/", "")
 
+                            if (logEnabled) {
+                                Timber.d(
+                                    "Input JSON: ${
+                                        geminiRequest.toJsonFormatExcludingFields(
+                                            AI_EXCLUDED_FIELDS,
+                                        )
+                                    }",
+                                )
+
+                                Timber.d("Prompt requested:\n$fullPrompt")
+                            }
                             val responseBody =
                                 geminiApiService.streamGenerateContent(
                                     model = formattedModel,
@@ -578,7 +619,7 @@ class GemmaClient
 
                             Log.d(
                                 javaClass.simpleName,
-                                "generateStreaming: final state on streaming:/n${aiGeneration.toJsonFormat()}",
+                                "generateStreaming: final state on streaming:\n${aiGeneration.toJsonFormat()}",
                             )
                             emit(StreamingState.Success(aiGeneration.data))
                             retryDelay = null

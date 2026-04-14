@@ -4,7 +4,9 @@ import android.content.Context
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -41,6 +43,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.Calendar
@@ -138,8 +141,8 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacterImageStream(
             character: Character,
             saga: Saga,
-        ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Pair<Character, String>>>> =
-            kotlinx.coroutines.flow.flow {
+        ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
+            flow {
                 try {
                     val contextString =
                         buildString {
@@ -169,14 +172,14 @@ class CharacterUseCaseImpl
                             variationId = saga.variationId,
                         ).collect { state ->
                             when (state) {
-                                is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                is StreamingState.Reasoning -> {
                                     emit(
-                                        com.ilustris.sagai.core.ai.StreamingState
+                                        StreamingState
                                             .Reasoning(state.chunk),
                                     )
                                 }
 
-                                is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                is StreamingState.Success -> {
                                     val bitmap = state.data.data
                                     val file =
                                         fileHelper.saveFile(
@@ -189,8 +192,8 @@ class CharacterUseCaseImpl
                                     repository.updateCharacter(newCharacter)
 
                                     emit(
-                                        com.ilustris.sagai.core.ai.StreamingState.Success(
-                                            com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        StreamingState.Success(
+                                            GeneratedContent(
                                                 newCharacter to state.data.finalMessage.orEmpty(),
                                                 state.data.finalMessage,
                                             ),
@@ -198,9 +201,9 @@ class CharacterUseCaseImpl
                                     )
                                 }
 
-                                is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                is StreamingState.Error -> {
                                     emit(
-                                        com.ilustris.sagai.core.ai.StreamingState
+                                        StreamingState
                                             .Error(state.message),
                                     )
                                 }
@@ -208,7 +211,7 @@ class CharacterUseCaseImpl
                         }
                 } catch (e: Exception) {
                     emit(
-                        com.ilustris.sagai.core.ai.StreamingState.Error(
+                        StreamingState.Error(
                             e.message ?: "Unknown error generating character image stream",
                         ),
                     )
@@ -227,6 +230,7 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacter(
             sagaContent: SagaContent,
             description: String,
+            sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
         ): RequestResult<Character> =
             executeRequest {
                 val bannedNames = repository.getAllCharacterNames()
@@ -245,6 +249,7 @@ class CharacterUseCaseImpl
                         description,
                         bannedNames,
                         themeColor,
+                        sceneSummary,
                     )
                 Timber.d(
                     "generateCharacter: Starting character generation with theme color $themeColor...",
@@ -296,8 +301,9 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacterStream(
             sagaContent: SagaContent,
             description: String,
-        ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>> =
-            kotlinx.coroutines.flow.flow {
+            sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
+        ): Flow<StreamingState<GeneratedContent<Character>>> =
+            flow {
                 try {
                     val bannedNames = repository.getAllCharacterNames()
                     val themeColor = getRandomColorHex()
@@ -314,10 +320,11 @@ class CharacterUseCaseImpl
                             description,
                             bannedNames,
                             themeColor,
+                            sceneSummary,
                         )
 
                     gemmaClient
-                        .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>(
+                        .generateStreaming<GeneratedContent<Character>>(
                             prompt,
                             useCore = true,
                             filterOutputFields =
@@ -333,12 +340,12 @@ class CharacterUseCaseImpl
                                 ),
                             requirement = GemmaClient.ModelRequirement.HIGH,
                         ).collect { state ->
-                            if (state is com.ilustris.sagai.core.ai.StreamingState.Success) {
+                            if (state is StreamingState.Success) {
                                 val newCharacter = state.data.data
                                 val character = sagaContent.findCharacter(newCharacter.name)
                                 if (character?.data?.fullName() == newCharacter.fullName()) {
                                     emit(
-                                        com.ilustris.sagai.core.ai.StreamingState
+                                        StreamingState
                                             .Error("Character already exists"),
                                     )
                                     return@collect
@@ -359,8 +366,8 @@ class CharacterUseCaseImpl
                                     generateCharacterImage(characterTransaction, sagaContent.data)
                                 }
                                 emit(
-                                    com.ilustris.sagai.core.ai.StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                    StreamingState.Success(
+                                        GeneratedContent(
                                             characterTransaction,
                                             state.data.finalMessage,
                                         ),
@@ -372,7 +379,7 @@ class CharacterUseCaseImpl
                         }
                 } catch (e: Exception) {
                     emit(
-                        com.ilustris.sagai.core.ai.StreamingState.Error(
+                        StreamingState.Error(
                             e.message ?: "Unknown error generating character",
                         ),
                     )

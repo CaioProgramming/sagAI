@@ -1160,69 +1160,51 @@ class ChatViewModel
 
                             is StreamingState.Success -> {
                                 stateManager.updateState { it.copy(reasoningChunk = null) }
-                                val generatedMessage = streamingState.data
+                                val generatedMessage = streamingState.data.message
                                 val speakerName = generatedMessage.speakerName
                                 val characterExists =
                                     saga.findCharacter(
                                         speakerName ?: generatedMessage.speakerName,
                                     ) != null
 
-                                val newCharacter =
-                                    if (speakerName != null &&
-                                        !characterExists &&
-                                        generatedMessage.senderType != SenderType.NARRATOR
-                                    ) {
-                                        val contextDescription =
-                                            buildString {
-                                                appendLine("Character name: $speakerName")
-                                                appendLine("Character context on story:")
-                                                appendLine("The user said: ${message.text}")
-                                                appendLine("And the new character replied: ${generatedMessage.text}")
-                                            }
-                                        val character =
-                                            sagaContentManager
-                                                .generateCharacter(
-                                                    contextDescription,
-                                                )
-                                        character.onFailureAsync {
-                                            updateSnackBar(
-                                                snackBar(
-                                                    message = "Ocorreu um erro ao criar o personagem",
-                                                ) {
-                                                    action {
-                                                        retryCharacter(contextDescription)
-                                                    }
-                                                },
-                                            )
+                                if (speakerName != null &&
+                                    !characterExists &&
+                                    generatedMessage.senderType != SenderType.NARRATOR
+                                ) {
+                                    val contextDescription =
+                                        buildString {
+                                            appendLine("Character name: $speakerName")
+                                            appendLine("Character context on story:")
+                                            appendLine("The user said: ${message.text}")
+                                            appendLine("And the new character replied: ${generatedMessage.text}")
                                         }
-
-                                        character.getSuccess()
-                                    } else {
-                                        null
+                                    val character =
+                                        sagaContentManager
+                                            .generateCharacter(
+                                                contextDescription,
+                                                sceneSummary = sceneSummary,
+                                            )
+                                    character.onFailureAsync {
+                                        updateSnackBar(
+                                            snackBar(
+                                                message = "Ocorreu um erro ao criar o personagem",
+                                            ) {
+                                                action {
+                                                    retryCharacter(contextDescription)
+                                                }
+                                            },
+                                        )
                                     }
 
-                                sendMessage(
-                                    message =
-                                        generatedMessage.copy(
-                                            timelineId = timeline.data.id,
-                                            id = 0,
-                                            status = MessageStatus.OK,
-                                            audible = isAudio,
-                                            speakerName = newCharacter?.name ?: speakerName,
-                                            characterId = null,
-                                        ),
-                                    isFromUser = false,
-                                    sceneSummary = sceneSummary,
-                                    isAudio = isAudio,
+                                    character.getSuccess()
+                                }
+
+                                messageUseCase.updateMessage(
+                                    message.copy(
+                                        status = MessageStatus.OK,
+                                    ),
                                 )
 
-                                if (newMessage.message.status != MessageStatus.OK) {
-                                    messageUseCase.updateMessage(
-                                        message.copy(
-                                            status = MessageStatus.OK,
-                                        ),
-                                    )
-                                }
                                 viewModelScope.launch(Dispatchers.IO) {
                                     sceneSummary?.let {
                                         generateSuggestions(it)

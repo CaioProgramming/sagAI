@@ -40,6 +40,7 @@ data class CharacterGenerationArgs(
     val bannedNamesContext: String,
     val conversationHistory: String,
     val appearanceGuidelines: String,
+    val sceneContext: String = "",
 )
 
 data class CharacterLoreArgs(
@@ -176,6 +177,7 @@ object CharacterPrompts {
         description: String,
         bannedNames: List<String> = emptyList(),
         themeColor: String? = null,
+        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
     ): String {
         val themeColorContext =
             themeColor?.let {
@@ -204,9 +206,32 @@ object CharacterPrompts {
 
         val args =
             CharacterGenerationArgs(
-                sagaMainContext = SagaPrompts.mainContext(saga, ommitCharacter = true),
+                sagaMainContext =
+                    buildString {
+                        appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+                        if (sceneSummary != null) {
+                            appendLine()
+                            appendLine("## 🎭 CURRENT NARRATIVE STATE (CRITICAL CONTEXT) 🎭")
+                            appendLine("The character is appearing IN THIS EXACT MOMENT:")
+                            appendLine("Location: ${sceneSummary.currentLocation}")
+                            appendLine("Mood: ${sceneSummary.mood}")
+                            appendLine("Current Conflict: ${sceneSummary.currentConflict}")
+                            appendLine("Tension Level: ${sceneSummary.tensionLevel}/10")
+                            if (!sceneSummary.spatialContext.isNullOrBlank()) {
+                                appendLine("Atmosphere: ${sceneSummary.spatialContext}")
+                            }
+                        }
+                    },
                 themeColorContext = themeColorContext,
-                discoverySeed = description,
+                discoverySeed =
+                    buildString {
+                        appendLine("### 🆔 IDENTITY PROTOCOL 🆔")
+                        appendLine("The character MUST have a distinct, personal name AND a separate role/job.")
+                        appendLine(
+                            "STRICTLY FORBIDDEN: Using a role as a name (e.g., Avoid naming someone 'Inquisitor' or 'Black Knight').",
+                        )
+                        appendLine("User Original Intent: $description")
+                    },
                 bannedNamesContext = bannedNamesContext,
                 conversationHistory =
                     saga
@@ -216,6 +241,17 @@ object CharacterPrompts {
                         .map { it.message }
                         .normalizetoAIItems(excludingFields = messageExclusions),
                 appearanceGuidelines = config.appearanceGuidelines,
+                sceneContext =
+                    sceneSummary?.let {
+                        buildString {
+                            appendLine("## 🎭 CURRENT SCENE CONTEXT 🎭")
+                            appendLine("Location: ${it.currentLocation}")
+                            appendLine("Mood: ${it.mood}")
+                            appendLine("Conflict: ${it.currentConflict}")
+                            appendLine("Tension Level: ${it.tensionLevel}/10")
+                            appendLine("Spatial Context: ${it.spatialContext}")
+                        }
+                    } ?: "",
             )
 
         return promptService.buildRemotePrompt(CHARACTER_GENERATION_BLUEPRINT, args)

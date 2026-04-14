@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
@@ -233,15 +234,15 @@ class SagaContentManagerImpl
                             is PendingAdvance.SagaEnding -> {
                                 NarrativeStep.GenerateSagaEnding(
                                     pendingAdvance.saga,
-                            )
+                                )
+                            }
                         }
-                    }
-                validatePostAction(currentSaga, step, action.success)
-            }?.onFailureAsync {
-                Log.e(javaClass.simpleName, "Failed to advance narrative: ${it.message}")
-                emitMilestone(null)
-            }
-    }
+                    validatePostAction(currentSaga, step, action.success)
+                }?.onFailureAsync {
+                    Log.e(javaClass.simpleName, "Failed to advance narrative: ${it.message}")
+                    emitMilestone(null)
+                }
+        }
 
         override suspend fun updatePlaytime(
             sagaId: Int,
@@ -508,7 +509,7 @@ class SagaContentManagerImpl
             chapter: ChapterContent,
         ) = executeRequest {
             emitMilestone(SagaMilestone.Loading)
-            var generated: com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>? = null
+            var generated: GeneratedContent<Chapter>? = null
             val contextString = "Synthesizing chapter progression and weaving plot threads..."
             val style = genreConfigService.conversationBlueprint(saga.data.genre)
 
@@ -663,7 +664,7 @@ class SagaContentManagerImpl
                 error("Timeline already completed")
             } else {
                 emitMilestone(SagaMilestone.Loading)
-                var generated: com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>? = null
+                var generated: GeneratedContent<Timeline>? = null
                 val contextString = "Evaluating actions and shaping consequences..."
                 val style = genreConfigService.conversationBlueprint(saga.data.genre)
 
@@ -686,9 +687,9 @@ class SagaContentManagerImpl
                             is com.ilustris.sagai.core.ai.StreamingState.Error -> {
                                 contentReasoning.value = null
                                 error(state.message) // Throws wrapped in RequestResult.Failure
+                            }
                         }
                     }
-                }
 
                 generated ?: error("Failed to generate timeline")
             }
@@ -723,7 +724,7 @@ class SagaContentManagerImpl
                         javaClass.simpleName,
                         "[DEBUG MODE] Generating fake act update data for saga ${saga.data.id}",
                     )
-                    com.ilustris.sagai.core.ai.model.GeneratedContent(
+                    GeneratedContent(
                         Act(
                             id = currentAct.data.id,
                             title = "Updated Act ${saga.acts.size}",
@@ -734,7 +735,7 @@ class SagaContentManagerImpl
                     )
                 } else {
                     emitMilestone(SagaMilestone.Loading)
-                    var generated: com.ilustris.sagai.core.ai.model.GeneratedContent<Act>? = null
+                    var generated: GeneratedContent<Act>? = null
                     val contextString = "Judging the player's choices and concluding the act..."
                     val style = genreConfigService.conversationBlueprint(saga.data.genre)
 
@@ -756,10 +757,10 @@ class SagaContentManagerImpl
 
                                 is com.ilustris.sagai.core.ai.StreamingState.Error -> {
                                     contentReasoning.value = null
-                                error(state.message)
+                                    error(state.message)
+                                }
                             }
                         }
-                    }
 
                     generated ?: error("Failed to generate act")
                 }
@@ -1130,7 +1131,7 @@ class SagaContentManagerImpl
 
                 is NarrativeStep.GenerateTimeLine -> {
                     val generatedContent =
-                        result.value as? com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>
+                        result.value as? GeneratedContent<Timeline>
                     val timeline = generatedContent?.data ?: result.value as? Timeline
                     val message = generatedContent?.finalMessage
                     timeline?.let { t ->
@@ -1158,7 +1159,7 @@ class SagaContentManagerImpl
 
                 is NarrativeStep.GenerateChapter -> {
                     val generatedContent =
-                        result.value as? com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>
+                        result.value as? GeneratedContent<Chapter>
                     val chapter = generatedContent?.data ?: result.value as? Chapter
                     val message = generatedContent?.finalMessage
                     chapter?.let { c ->
@@ -1168,7 +1169,7 @@ class SagaContentManagerImpl
 
                 is NarrativeStep.GenerateAct -> {
                     val generatedContent =
-                        result.value as? com.ilustris.sagai.core.ai.model.GeneratedContent<Act>
+                        result.value as? GeneratedContent<Act>
                     val act = generatedContent?.data ?: result.value as? Act
                     val message = generatedContent?.finalMessage
                     act?.let { a ->
@@ -1315,7 +1316,10 @@ class SagaContentManagerImpl
                     )
             }
 
-        override suspend fun generateCharacter(description: String): RequestResult<Character> =
+        override suspend fun generateCharacter(
+            description: String,
+            sceneSummary: SceneSummary?,
+        ): RequestResult<Character> =
 
             executeRequest {
                 setProcessing(true)
@@ -1339,7 +1343,7 @@ class SagaContentManagerImpl
                         emitMilestone(SagaMilestone.NewCharacter(fakeCharacter))
                         fakeCharacter
                     } else {
-                        var generated: com.ilustris.sagai.core.ai.model.GeneratedContent<Character>? =
+                        var generated: GeneratedContent<Character>? =
                             null
                         val contextString = "Evaluating potential characters for the story..."
                         val style = genreConfigService.conversationBlueprint(currentSaga.data.genre)
@@ -1350,6 +1354,7 @@ class SagaContentManagerImpl
                                     characterUseCase.generateCharacterStream(
                                         currentSaga,
                                         description,
+                                        sceneSummary ?: _sceneSummary.value,
                                     ),
                                 context = contextString,
                                 conversationStyle = style,
@@ -1365,11 +1370,11 @@ class SagaContentManagerImpl
                                     }
 
                                     is com.ilustris.sagai.core.ai.StreamingState.Error -> {
-                                    contentReasoning.value = null
-                                    error(state.message)
+                                        contentReasoning.value = null
+                                        error(state.message)
+                                    }
                                 }
                             }
-                        }
 
                         val generatedCharacter =
                             generated?.data ?: error("Failed to generate character")
@@ -1386,8 +1391,8 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewCharacter(
                                 generatedCharacter,
-                                generated?.finalMessage
-                            )
+                                generated?.finalMessage,
+                            ),
                         )
 
                         generatedCharacter

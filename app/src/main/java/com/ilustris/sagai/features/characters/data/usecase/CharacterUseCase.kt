@@ -33,11 +33,13 @@ interface CharacterUseCase {
     suspend fun generateCharacter(
         sagaContent: SagaContent,
         description: String,
+        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
     ): RequestResult<Character>
 
     suspend fun generateCharacterStream(
         sagaContent: SagaContent,
         description: String,
+        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
     ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>>
 
     suspend fun createSmartZoom(character: Character): RequestResult<Unit>

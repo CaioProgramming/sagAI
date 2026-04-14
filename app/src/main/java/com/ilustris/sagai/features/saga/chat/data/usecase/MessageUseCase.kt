@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -28,7 +30,7 @@ interface MessageUseCase {
         saga: SagaContent,
         message: MessageContent,
         sceneSummary: SceneSummary?,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<Message>>
+    ): Flow<StreamingState<AIReply>>
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
 

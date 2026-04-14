@@ -34,7 +34,10 @@ interface SagaContentManager {
 
     suspend fun loadSaga(sagaId: String)
 
-    suspend fun generateCharacter(description: String): RequestResult<Character>
+    suspend fun generateCharacter(
+        description: String,
+        sceneSummary: SceneSummary? = null,
+    ): RequestResult<Character>
 
     suspend fun generateCharacterImage(character: Character): RequestResult<Character>
 
