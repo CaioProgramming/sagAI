@@ -173,6 +173,16 @@ own dedicated folder containing detailed tasks and implementation plans.
   contexts: App Intro (first launch), Creation Guide (first saga), Gameplay Guide (first chat).
   Phased rollout starting with App Intro. Component designed for future reuse in PremiumView.
 
+### 20. Dynamic Creation Flow (Digital Grimoire) 📓
+
+* **Status**: Completed ✅
+* **Folder**: `dynamic_creation_flow/`
+* **Plan**: `dynamic_creation_flow/plan.md`
+* **Description**: Transformed the saga creation experience into a high-fidelity "Digital Grimoire".
+  Includes a gesture-based HorizontalPager for seamless navigation between lore and protagonists,
+  localized Shared Element Transitions for character reveals, and a "Creative Co-Pilot" AI
+  integration for grounded story pitches.
+
 ---
 ## Usage
 
