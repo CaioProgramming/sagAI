@@ -752,9 +752,9 @@ fun Modifier.livingTorch(
                             val y = baseY - (sparkProgress * 220f)
                             val xDrift =
                                 (
-                                    kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
-                                        kotlin.math.sin(time * 5f + seed * 8f) * 10f
-                                ).toFloat() * sparkProgress
+                                        kotlin.math.sin(time * 2.5f + seed * 12f) * 35f +
+                                                kotlin.math.sin(time * 5f + seed * 8f) * 10f
+                                        ).toFloat() * sparkProgress
 
                             val sparkWidth = (2.5f + seed * 3f) * invProgress
                             val sparkHeight = sparkWidth * (1.5f + sparkProgress * 2f)
@@ -2292,7 +2292,7 @@ fun Modifier.genreVfx(
 
         Genre.CYBERPUNK -> {
             this
-                .chromaticAberration(intensity = 4f)
+                .chromaticAberration(intensity = 10f, blurRadius = 10f)
                 .glitch()
         }
 

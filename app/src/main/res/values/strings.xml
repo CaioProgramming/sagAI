@@ -591,7 +591,11 @@
     <string name="onboarding_dont_show_again">Don\'t show again</string>
     <string name="settings_music_title">Background Music</string>
     <string name="settings_music_description">Play atmospheric music tailored to your saga genre for a more immersive experience.</string>
-    <string name="select_character">Selecionar personagem</string>
+    <string name="select_character">Select character</string>
     <string name="thinking_message">Gemma is thinking...</string>
     <string name="edit">edit</string>
+
+    <string name="message_save_error">An error occurred while saving the message.</string>
+    <string name="character_create_error">An error occurred while creating the character.</string>
+    <string name="the_legends">THE LEGENDS</string>
 </resources>

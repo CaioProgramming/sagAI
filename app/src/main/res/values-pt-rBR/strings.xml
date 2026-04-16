@@ -45,7 +45,7 @@
     <string name="sender_type_default_hint">Digite sua mensagem…</string>
 
     <!-- Expressive Tags -->
-    <string name="tag_inside_hint">Modo &lt;%1$s&gt;</string>
+    <string name="tag_inside_hint">Modo %1$s</string>
     <string name="tag_exit_instruction">Pressione ↵ para sair</string>
 
     <!-- CharacterForm: Image Content Description -->
@@ -558,6 +558,46 @@
     <string name="onboarding_app_intro_fallback_title">Bem-vindo ao sagas</string>
     <string name="thinking_message">Gemma está pensando...</string>
     <string name="edit">editar</string>
+
+    <string name="message_save_error">Ocorreu um erro ao salvar a mensagem</string>
+    <string name="character_create_error">Ocorreu um erro ao criar o personagem</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_dont_show_again">Não mostrar novamente</string>
+    <string name="onboarding_app_intro_fallback_description">Sagas é seu co-autor e Diretor de Arte com IA. Mergulhe em histórias que evoluem em diferentes gêneros, onde suas escolhas moldam o mundo.</string>
+    <string name="onboarding_creation_guide_fallback_title">Guia de Criação</string>
+    <string name="onboarding_creation_guide_fallback_description">Quanto mais você descrever, mais única e pessoal a saga se torna. Não se preocupe, você sempre pode editar os detalhes depois.</string>
+    <string name="onboarding_gameplay_guide_fallback_title">Guia de Jogo</string>
+    <string name="onboarding_gameplay_guide_fallback_description">Interação por turnos: escreva sua ação e a IA continua a narrativa. Cada decisão importa!</string>
+    <string name="onboarding_premium_guide_fallback_title">Sagas Pro</string>
+    <string name="onboarding_premium_guide_fallback_description">Desbloqueie o poder total da IA com o Sagas Pro. Imagens em alta resolução, narrativas mais complexas e aventuras ilimitadas esperam por você.</string>
+
+    <!-- Settings -->
+    <string name="settings_music_title">Música de Fundo</string>
+    <string name="settings_music_description">Toque músicas atmosféricas adaptadas ao gênero da sua saga para uma experiência mais imersiva.</string>
+    <string name="story_guides">Guias de História</string>
+    <string name="story_guides_description">Mostrar guias introdutórios ao iniciar um novo universo de saga.</string>
+    <string name="select_character">Selecionar personagem</string>
+
+    <!-- Loading Quotes -->
+    <string-array name="loading_quotes">
+        <item>Forjando runas ancestrais...</item>
+        <item>Consultando dragões sábios...</item>
+        <item>Coletando poeira de estrelas...</item>
+        <item>Decifrando pergaminhos antigos...</item>
+        <item>Aquecendo a imaginação da IA...</item>
+        <item>Planejando aventuras épicas...</item>
+    </string-array>
+
+    <string-array name="loading_quotes_fantasy">
+        <item>Afiando lâmidas lendárias...</item>
+        <item>Preparando elixires potentes...</item>
+        <item>Invocando criaturas míticas...</item>
+    </string-array>
+
+    <string-array name="loading_quotes_scifi">
+        <item>Calibrando motores de dobra...</item>
+        <item>Ativando aprimoramentos cibernéticos...</item>
+        <item>Navegando por campos de asteroides...</item>
+    </string-array>
 </resources>
-
-

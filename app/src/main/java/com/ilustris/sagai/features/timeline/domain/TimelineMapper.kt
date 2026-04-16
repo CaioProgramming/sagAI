@@ -12,7 +12,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findChapter
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
@@ -40,7 +39,7 @@ class TimelineMapper(
                         events =
                             chapters
                                 .flatMap { chapterContent -> chapterContent.events }
-                                .mapNotNull {
+                                .map {
                                     buildTimeline(
                                         sagaContent,
                                         it,

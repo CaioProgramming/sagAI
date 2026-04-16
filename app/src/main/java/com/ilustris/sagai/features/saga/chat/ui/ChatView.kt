@@ -170,7 +170,6 @@ import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -470,8 +469,7 @@ fun ChatView(
                                     true,
                                     it.data.genre.shimmerColors(),
                                     duration = 2.seconds,
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     )
                 }
 
@@ -614,12 +612,10 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                )
-                                .sharedElement(
+                                ).sharedElement(
                                     rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                )
-                                .fillMaxSize(.5f)
+                                ).fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -627,8 +623,7 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -712,8 +707,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(vertical = padding.calculateBottomPadding())
+                                    }.padding(vertical = padding.calculateBottomPadding())
                                     .animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
@@ -725,6 +719,8 @@ fun ChatContent(
                                     pendingAdvance = pending,
                                     genre = saga.genre,
                                     onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
+                                    Modifier.fillMaxWidth(),
+                                    uiState.isGenerating,
                                 )
                             } else {
                                 AnimatedVisibility(
@@ -788,6 +784,7 @@ fun ChatContent(
                                         },
                                         isEditing = uiState.editingMessage != null,
                                         onCancelEdit = { onAction(ChatUiAction.CancelEdit) },
+                                        maxContentLength = uiState.maxContentLength,
                                     )
                                 }
                             }
@@ -802,8 +799,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(
+                                    }.padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -901,8 +897,7 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    )
-                                    .wrapContentSize(),
+                                    ).wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -937,23 +932,19 @@ fun ChatContent(
                                                     .genreVfx(
                                                         saga.genre,
                                                         isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }
-                                                    .gradientFill(
+                                                    }.gradientFill(
                                                         progressiveBrush(
                                                             resolvedColor,
                                                             progress,
                                                         ),
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
                                                         shimmerColors = saga.genre.shimmerColors(),
-                                                    )
-                                                    .sharedElement(
+                                                    ).sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga_${saga.id}_spark",
                                                         ),
@@ -995,8 +986,7 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }
-                                        .fillMaxWidth()
+                                        }.fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.sharedElement(
@@ -1038,11 +1028,8 @@ fun ChatContent(
 
                         if (isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
                             var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
-                            val blurRadius by animateFloatAsState(
-                                if (uiState.isGenerating || uiState.isLoading) 40f else 0f,
-                            )
                             val shape = RoundedCornerShape(content.data.genre.cornerSize())
-                            BlurredGlowContainer(
+                            Box(
                                 Modifier
                                     .padding(16.dp)
                                     .constrainAs(debugControls) {
@@ -1052,9 +1039,6 @@ fun ChatContent(
                                         width = Dimension.fillToConstraints
                                         height = Dimension.wrapContent
                                     },
-                                content.data.genre.gradient(uiState.isLoading),
-                                shape = shape,
-                                blurSigma = blurRadius,
                             ) {
                                 val textStyle =
                                     MaterialTheme.typography.bodyMedium.copy(
@@ -1085,8 +1069,7 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            )
-                                            .fillMaxWidth(),
+                                            ).fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1105,8 +1088,7 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1284,8 +1266,7 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     )
                 }
 
@@ -1328,8 +1309,7 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }
-                    .animateContentSize(),
+                    }.animateContentSize(),
         )
     }
 }
@@ -1390,7 +1370,7 @@ fun ChatList(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(horizontal = 16.dp, vertical = 24.dp)
                             .reactiveShimmer(true, genre.shimmerColors()),
                 )
             }
@@ -1500,7 +1480,7 @@ fun ChatList(
                         )
                     }
 
-                    timeline?.let {
+                    timeline.let {
                         item(key = "timeline-${it.timelineContent.data.id}-spark") {
                             Box(
                                 Modifier
@@ -1509,7 +1489,7 @@ fun ChatList(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Image(
-                                    painterResource(R.drawable.ic_spark),
+                                    painterResource(genre.icon),
                                     null,
                                     colorFilter = ColorFilter.tint(resolvedColor),
                                     modifier =
@@ -1661,11 +1641,9 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        )
-                        .graphicsLayer(
+                        ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

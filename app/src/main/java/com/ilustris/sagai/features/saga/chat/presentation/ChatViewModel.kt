@@ -328,6 +328,8 @@ class ChatViewModel
 
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
+                val limit = remoteConfigService.getLong("chat_input_limit") ?: 2000L
+                stateManager.updateState { it.copy(maxContentLength = limit.toInt()) }
             }
         }
 
@@ -1196,7 +1198,7 @@ class ChatViewModel
                                         )
                                     }
 
-                                    character.getSuccess()
+                                    character
                                 }
 
                                 messageUseCase.updateMessage(

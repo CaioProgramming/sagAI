@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -131,8 +132,7 @@ fun CosmicBook(
                 .graphicsLayer {
                     this.scaleX = scale
                     this.scaleY = scale
-                }
-                .aspectRatio(3f / 4f)
+                }.aspectRatio(3f / 4f)
                 .dropShadow(shape) {
                     this.color = color.copy(alpha = 0.5f)
                     this.radius = 20f
@@ -259,8 +259,7 @@ fun CosmicBook(
                                                     scope.launch {
                                                         pagerState.animateScrollToPage(1)
                                                     }
-                                                }
-                                                .padding(4.dp)
+                                                }.padding(4.dp)
                                                 .align(Alignment.End)
                                                 .alpha(.5f),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -320,7 +319,7 @@ fun CosmicBook(
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 Text(
-                                                    text = "THE LEGENDS",
+                                                    text = stringResource(R.string.the_legends),
                                                     style =
                                                         MaterialTheme.typography.labelMedium.copy(
                                                             fontWeight = FontWeight.Bold,
@@ -378,8 +377,7 @@ fun CosmicBook(
                                                             scope.launch {
                                                                 pagerState.animateScrollToPage(0)
                                                             }
-                                                        }
-                                                        .padding(4.dp)
+                                                        }.padding(4.dp)
                                                         .align(Alignment.End)
                                                         .alpha(.5f),
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -551,7 +549,7 @@ private fun CharacterPageEntry(
                     .size(50.dp)
                     .clip(MaterialTheme.shapes.medium)
                     .background(
-                        genre.color.copy(alpha = 0.1f),
+                        genre.color.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.medium,
                     ),
             contentAlignment = Alignment.Center,
@@ -563,8 +561,9 @@ private fun CharacterPageEntry(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .padding(4.dp),
-                    contentScale = ContentScale.Fit,
+                            .alpha(.4f),
+                    contentScale = ContentScale.Crop,
+                    colorFilter = ColorFilter.tint(genre.color.copy(alpha = 0.1f)),
                 )
             } else {
                 Icon(
@@ -641,7 +640,8 @@ private fun ExpandedCharacterPage(
                             Modifier
                                 .fillMaxSize()
                                 .alpha(0.8f),
-                        contentScale = ContentScale.Fit,
+                        contentScale = ContentScale.Crop,
+                        colorFilter = ColorFilter.tint(color),
                     )
                 } else {
                     Icon(

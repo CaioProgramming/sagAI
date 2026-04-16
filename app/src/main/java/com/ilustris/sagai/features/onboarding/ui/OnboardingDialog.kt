@@ -52,7 +52,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -79,6 +78,7 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.onboarding.data.OnboardingPage
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -149,16 +149,15 @@ fun OnboardingDialog(
                     .reactiveShimmer(true)
                     .background(
                         fadeGradientBottom(
-                            MaterialTheme.colorScheme.primary,
+                            genre?.resolveColor() ?: MaterialTheme.colorScheme.primary,
                         ),
-                    )
-                    .fillMaxWidth()
+                    ).fillMaxWidth()
                     .align(Alignment.BottomCenter)
                     .padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painterResource(R.drawable.ic_spark),
+                    painterResource(genre?.icon ?: R.drawable.ic_spark),
                     null,
                     tint = MaterialTheme.colorScheme.onBackground,
                     modifier =
@@ -247,16 +246,11 @@ private fun OnboardingContentSheet(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         var currentIcon by remember {
-                            mutableStateOf(genre?.icon ?: Genre.entries.random().icon)
+                            mutableIntStateOf(genre?.icon ?: Genre.entries.random().icon)
                         }
 
                         LaunchedEffect(pagerState.currentPage) {
-                            currentIcon = genre?.icon
-                                ?: Genre.entries
-                                    .filter {
-                                        it.icon != currentIcon
-                                    }.random()
-                                    .icon
+                            currentIcon = genre?.icon ?: Genre.entries.random().icon
                         }
 
                         repeat(state.pages.size) { iteration ->
@@ -506,7 +500,7 @@ fun SparkBackground(
     Box(
         Modifier
             .fillMaxSize()
-            .reactiveShimmer(true, colors, repeatMode = RepeatMode.Restart, targetValue = 700f),
+            .reactiveShimmer(true, colors, repeatMode = RepeatMode.Restart, targetValue = 1000f),
     ) {
         StarryTextPlaceholder(
             modifier =
@@ -517,7 +511,7 @@ fun SparkBackground(
         Icon(
             painter = painterResource(customIcon ?: R.drawable.ic_spark),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = colors.first(),
             modifier =
                 Modifier
                     .size(120.dp)
@@ -613,8 +607,7 @@ fun MorphingGenresBackground(
                         if (wipeProgress.value > 0) {
                             drawContent()
                         }
-                    }
-                    .graphicsLayer {
+                    }.graphicsLayer {
                         clip = true
                         shape =
                             GenericShape { size, _ ->
@@ -627,8 +620,7 @@ fun MorphingGenresBackground(
                                     ),
                                 )
                             }
-                    }
-                    .zoomAnimation(),
+                    }.zoomAnimation(),
         )
     }
 }
