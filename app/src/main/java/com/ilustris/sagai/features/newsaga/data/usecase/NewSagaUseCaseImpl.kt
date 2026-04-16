@@ -6,9 +6,11 @@ import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -43,8 +45,8 @@ class NewSagaUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val sagaIdeationService: SagaIdeationService,
         private val characterIdeationService: CharacterIdeationService,
-        private val loadingService: com.ilustris.sagai.core.services.LoadingService,
-        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
+        private val loadingService: LoadingService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : NewSagaUseCase {
         override fun createCompleteSagaFlow(
             sagaDraft: SagaDraft,

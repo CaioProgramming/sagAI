@@ -238,10 +238,10 @@ class MessageUseCaseImpl
                             emoji = aiReaction.reaction,
                             thought = aiReaction.thought,
                         ),
-                )
+                    )
+                }
             }
         }
-    }
 
         override suspend fun generateReaction(
             saga: SagaContent,

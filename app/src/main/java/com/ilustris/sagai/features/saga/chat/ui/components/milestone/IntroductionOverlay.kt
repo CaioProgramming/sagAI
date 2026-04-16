@@ -42,11 +42,11 @@ import kotlin.time.Duration.Companion.seconds
 fun IntroductionOverlay(
     introduction: SagaMilestone.Introduction,
     saga: SagaContent,
-    message: String?,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     onComplete: () -> Unit,
 ) {
+    val message = introduction.introduction
     val genre = saga.data.genre
     var showContent by remember { mutableStateOf(false) }
     var showTypewriter by remember { mutableStateOf(false) }

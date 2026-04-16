@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
@@ -53,7 +54,7 @@ class TimelineUseCaseImpl
                 )
 
             val unifiedLore =
-                gemmaClient.generate<com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate>(
+                gemmaClient.generate<UnifiedLoreUpdate>(
                     prompt = prompt,
                     blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
                 )!!
@@ -134,7 +135,7 @@ class TimelineUseCaseImpl
                     )
 
                 gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate>>(
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<UnifiedLoreUpdate>>(
                         prompt = prompt,
                         blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
                     ).collect { state ->
@@ -214,30 +215,33 @@ class TimelineUseCaseImpl
                                             state.data.finalMessage,
                                         ),
                                     ),
-                        )
-                    }
+                                )
+                            }
 
-                    is com.ilustris.sagai.core.ai.StreamingState.Error -> {
-                        emit(
-                        com.ilustris.sagai.core.ai.StreamingState.Error(
-                            state.message,
-                        ),
-                    )
-                    }
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Error(
+                                        state.message,
+                                    ),
+                                )
+                            }
 
-                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
-                        emit(
-                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
-                            state.chunk,
-                        ),
-                    )
+                            is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                                        state.chunk,
+                                    ),
+                                )
+                            }
+                        }
                     }
-                }
+            } catch (e: Exception) {
+                emit(
+                    com.ilustris.sagai.core.ai.StreamingState
+                        .Error(e.message ?: "Unknown error"),
+                )
             }
-        } catch (e: Exception) {
-            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
         }
-    }
 
         override suspend fun generateTimeline(
             saga: SagaContent,
@@ -313,31 +317,38 @@ class TimelineUseCaseImpl
                                     )
                                 emit(
                                     com.ilustris.sagai.core.ai.StreamingState.Success(
-                                    com.ilustris.sagai.core.ai.model.GeneratedContent(
-                                        updatedTimeline,
-                                        state.data.finalMessage
-                                    )
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            updatedTimeline,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
                                 )
-                            )
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Error(
+                                        state.message,
+                                    ),
+                                )
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                                        state.chunk,
+                                    ),
+                                )
+                            }
                         }
-
-                        is com.ilustris.sagai.core.ai.StreamingState.Error -> emit(
-                            com.ilustris.sagai.core.ai.StreamingState.Error(
-                                state.message
-                            )
-                        )
-
-                        is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> emit(
-                            com.ilustris.sagai.core.ai.StreamingState.Reasoning(
-                                state.chunk
-                            )
-                        )
                     }
-                }
-        } catch (e: Exception) {
-            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
+            } catch (e: Exception) {
+                emit(
+                    com.ilustris.sagai.core.ai.StreamingState
+                        .Error(e.message ?: "Unknown error"),
+                )
+            }
         }
-    }
 
         override suspend fun saveTimeline(timeline: Timeline) = timelineRepository.saveTimeline(timeline)
 

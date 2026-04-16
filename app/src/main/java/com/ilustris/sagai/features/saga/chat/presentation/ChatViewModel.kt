@@ -1162,6 +1162,7 @@ class ChatViewModel
 
                             is StreamingState.Success -> {
                                 stateManager.updateState { it.copy(reasoningChunk = null) }
+                                messageUseCase.updateMessage(newMessage.message.copy(status = MessageStatus.OK))
                                 val generatedMessage = streamingState.data.message
                                 val speakerName = generatedMessage.speakerName
                                 val characterExists =

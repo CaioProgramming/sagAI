@@ -384,6 +384,15 @@ class SagaContentManagerImpl
                                                             .getSceneContext(saga)
                                                             .getSuccess()
                                                 sceneContext?.let { summary ->
+                                                    saga.getCurrentTimeLine()?.data?.let {
+                                                        if (it.currentObjective.isNullOrEmpty()) {
+                                                            timelineUseCase.updateTimeline(
+                                                                it.copy(
+                                                                    currentObjective = summary.immediateObjective,
+                                                                ),
+                                                            )
+                                                        }
+                                                    }
                                                     emitMilestone(
                                                         SagaMilestone.Introduction(
                                                             type = IntroductionType.RESUME,

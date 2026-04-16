@@ -276,6 +276,9 @@ private fun CharacterDetailsLoaded(
             ) {
                 item {
                     if (character.image.isNotBlank()) {
+                        // iOS lock screen depth effect: character name sits between background
+                        // and foreground subject layers so the artwork overlaps the text naturally.
+                        // A top gradient fade + translationY offset create readable room for the name.
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier =
@@ -295,43 +298,49 @@ private fun CharacterDetailsLoaded(
                                                 character,
                                             )
                                         },
+                                // Push the image down so the name text at the top has breathing room.
+                                // Both background and foreground layers share the same downward shift
+                                // so the segmentation mask stays aligned.
                                 imageModifier =
                                     Modifier
                                         .clipToBounds()
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        )
-                                        .graphicsLayer(
-                                            translationY = -10f,
+                                        ).graphicsLayer(
+                                            translationY = 120f,
                                         ),
                             ) {
+                                // This content block is drawn BETWEEN the background and the
+                                // segmented foreground — the iOS lock screen trick.
+                                // The scrim fills the full parent height so the gradient has
+                                // plenty of room to melt from opaque into fully transparent,
+                                // with no hard cut-off line.
                                 Box(
                                     Modifier
                                         .align(Alignment.TopCenter)
-                                        .background(fadeGradientTop(adaptiveColor))
-                                        .fillMaxWidth()
-                                        .clipToBounds()
-                                        .padding(16.dp),
+                                        .fillMaxSize()
+                                        .background(fadeGradientTop(adaptiveColor)),
                                 ) {
                                     genre.stylisedText(
                                         text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                         modifier =
                                             Modifier
-                                                .padding(16.dp)
-                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
                                                 .align(Alignment.TopCenter)
+                                                .statusBarsPadding()
+                                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
                                                 .reactiveShimmer(true, characterColor.shimmerize()),
                                     )
                                 }
                             }
 
+                            // Bottom gradient fade with share button — stays on top of everything.
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier =
                                     Modifier
                                         .background(fadeGradientBottom(adaptiveColor))
-                                        .padding(16.dp)
                                         .fillMaxWidth()
                                         .align(Alignment.BottomCenter),
                             ) {
@@ -340,6 +349,7 @@ private fun CharacterDetailsLoaded(
                                     stringResource(id = R.string.share_character_cd),
                                     modifier =
                                         Modifier
+                                            .padding(top = 16.dp)
                                             .size(24.dp)
                                             .clip(CircleShape)
                                             .clickable {
@@ -347,33 +357,43 @@ private fun CharacterDetailsLoaded(
                                             },
                                     colorFilter = ColorFilter.tint(characterColor),
                                 )
+                            }
+                        }
 
-                                Text(
-                                    character.profile.occupation,
-                                    style =
-                                        MaterialTheme.typography.titleSmall.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            color = adaptiveTextColor,
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
+                        // Occupation and nicknames sit cleanly below the depth hero image
+                        // so they are never obscured by the artwork.
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Text(
+                                character.profile.occupation,
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        color = adaptiveTextColor,
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
 
-                                character.nicknames?.let {
-                                    if (it.isNotEmpty()) {
-                                        Text(
-                                            text =
-                                                stringResource(
-                                                    id = R.string.character_details_aka,
-                                                    it.joinToString(", "),
-                                                ),
-                                            style =
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    color = adaptiveTextColor,
-                                                    textAlign = TextAlign.Center,
-                                                ),
-                                        )
-                                    }
+                            character.nicknames?.let {
+                                if (it.isNotEmpty()) {
+                                    Text(
+                                        text =
+                                            stringResource(
+                                                id = R.string.character_details_aka,
+                                                it.joinToString(", "),
+                                            ),
+                                        style =
+                                            MaterialTheme.typography.titleMedium.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color = adaptiveTextColor,
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                    )
                                 }
                             }
                         }
@@ -389,8 +409,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -517,8 +536,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }
@@ -648,7 +666,7 @@ private fun CharacterDetailsLoaded(
                 animationSpec = tween(1500),
             )
             Text(
-                character.name,
+                "${character.name} ${character.lastName ?: emptyString()}",
                 style =
                     MaterialTheme.typography.titleLarge.copy(
                         fontFamily = genre.headerFont(),

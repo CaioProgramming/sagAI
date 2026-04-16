@@ -32,6 +32,8 @@ import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -65,7 +67,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawOutline
@@ -78,6 +79,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -262,6 +264,7 @@ fun ChatInputView(
             ) {
                 items(suggestions) {
                     Button(
+                        modifier = Modifier.fillParentMaxWidth(.6f),
                         onClick = {
                             onUpdateInput(
                                 TextFieldValue(
@@ -278,13 +281,14 @@ fun ChatInputView(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                             ),
                     ) {
-                        it.type.icon()?.let { icon ->
-                            Icon(
-                                painterResource(icon),
-                                null,
-                                modifier = Modifier.size(12.dp),
-                            )
-                        }
+                        Icon(
+                            painterResource(genre.icon),
+                            null,
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .size(12.dp),
+                        )
                         Text(
                             remember(it.text) { buildSuggestionAnnotatedString(it.text) },
                             style = MaterialTheme.typography.labelSmall,
@@ -483,6 +487,10 @@ fun ChatInputView(
                                 onUpdateInput(escapeCursorFromTagAndClean(inputField))
                             }
                         }),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f, false),
                 )
                 Row(
                     Modifier
@@ -527,11 +535,15 @@ fun ChatInputView(
                                             stringResource(R.string.select_character),
                                             style = MaterialTheme.typography.titleMedium,
                                             fontFamily = genre.bodyFont(),
-                                            modifier = Modifier.padding(bottom = 16.dp),
+                                            textAlign = TextAlign.Center,
+                                            modifier =
+                                                Modifier
+                                                    .padding(16.dp)
+                                                    .fillMaxWidth(),
                                         )
-                                        androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                                        LazyVerticalGrid(
                                             columns =
-                                                androidx.compose.foundation.lazy.grid.GridCells.Adaptive(
+                                                GridCells.Adaptive(
                                                     100.dp,
                                                 ),
                                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -563,7 +575,7 @@ fun ChatInputView(
                                                     Text(
                                                         character.data.name,
                                                         style = MaterialTheme.typography.labelSmall,
-                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                        textAlign = TextAlign.Center,
                                                         fontFamily = genre.bodyFont(),
                                                         modifier = Modifier.padding(top = 8.dp),
                                                     )
@@ -624,7 +636,7 @@ fun ChatInputView(
                         }
                         DropdownMenu(menu, { menu = false }) {
                             DropdownMenuItem(
-                                { Text(stringResource(R.string.select_character)) },
+                                { Text("Mencionar personagem") },
                                 {
                                     menu = false
                                     onUpdateInput(
@@ -634,10 +646,17 @@ fun ChatInputView(
                                         ),
                                     )
                                 },
-                                leadingIcon = { Text("@", color = resolvedColor) },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(R.drawable.ic_mail),
+                                        null,
+                                        tint = resolvedColor,
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                },
                             )
                             DropdownMenuItem(
-                                { Text("Wiki") },
+                                { Text("Mencionar wiki Wiki") },
                                 {
                                     menu = false
                                     onUpdateInput(
@@ -647,10 +666,17 @@ fun ChatInputView(
                                         ),
                                     )
                                 },
-                                leadingIcon = { Text("/", color = resolvedColor) },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(R.drawable.ic_slash),
+                                        null,
+                                        tint = resolvedColor,
+                                        modifier = Modifier.size(24.dp),
+                                    )
+                                },
                             )
                             DropdownMenuItem(
-                                { Text("Foco") },
+                                { Text("Expandir") },
                                 {
                                     menu = false
                                     focusModeEnabled = true
@@ -668,24 +694,25 @@ fun ChatInputView(
                     }
                     Spacer(Modifier.weight(1f))
                     Box(contentAlignment = Alignment.Center) {
-                        if (isSendingPending) {
-                            CircularProgressIndicator(
-                                color = resolvedColor,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(32.dp),
-                            )
-                        }
+                        val isLoading = isSendingPending || isGenerating
                         val cleanLength = getCleanTextLength(inputField.text)
                         val progress = cleanLength.toFloat() / maxContentLength
 
-                        if (inputField.text.isNotEmpty()) {
-                            CircularProgressIndicator(
-                                progress = { progress.coerceIn(0f, 1f) },
-                                modifier = Modifier.size(36.dp), // Snug border around 32dp button
-                                color = MaterialTheme.colorScheme.onBackground,
-                                strokeWidth = 2.dp,
-                                trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                            )
+                        if (isLoading || inputField.text.isNotEmpty()) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = resolvedColor,
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                CircularProgressIndicator(
+                                    progress = { progress.coerceIn(0f, 1f) },
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    strokeWidth = 2.dp,
+                                )
+                            }
                         }
                         IconButton(
                             {
@@ -697,22 +724,18 @@ fun ChatInputView(
                                     containerColor = iconBg,
                                     contentColor = tint,
                                 ),
-                            modifier = Modifier.size(32.dp),
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .size(32.dp)
+                                    .padding(4.dp),
                         ) {
-                            AnimatedContent(isGenerating || isSendingPending) { loading ->
+                            AnimatedContent(isLoading) { loading ->
                                 val icon =
                                     if (loading) {
-                                        (if (isSendingPending) R.drawable.ic_stop else genre.icon)
+                                        R.drawable.ic_stop
                                     } else {
-                                        (
-                                            if (inputField.text
-                                                    .isNotEmpty()
-                                            ) {
-                                                R.drawable.ic_send
-                                            } else {
-                                                null
-                                            }
-                                        )
+                                        if (inputField.text.isNotEmpty()) R.drawable.ic_send else null
                                     }
                                 icon?.let {
                                     Icon(

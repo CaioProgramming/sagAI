@@ -81,12 +81,7 @@ class GemmaClient
             val tierConfig =
                 remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
             val modelName = tierConfig[requirement.name]
-            return modelName ?: when (requirement) {
-                ModelRequirement.TINY -> "models/gemma-3-12b-it"
-                ModelRequirement.LOW -> "models/gemma-3-27b-it"
-                ModelRequirement.MEDIUM -> "models/gemma-4-26b-a4b-it"
-                ModelRequirement.HIGH -> "models/gemma-4-31b-it"
-            }
+            return modelName!!
         }
 
         suspend fun coreKey() =
@@ -137,6 +132,7 @@ class GemmaClient
                 }
 
                 val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+                val startTime = System.currentTimeMillis()
 
                 for (currentAttempt in 1..maxAttempts) {
                     try {
@@ -177,18 +173,34 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
+                            val tier = requirement.name.lowercase()
+                            val coreRemoteKey = "core_${tier}_blueprint"
                             val corePrompt =
-                                promptService.buildRemotePrompt(
-                                    remoteConfigKey = "core_blueprint",
-                                    variables =
-                                        mapOf(
-                                            "language" to getLanguage(requireTranslation),
-                                            "type" to T::class.java.simpleName,
-                                            "structure" to structure,
-                                            "formattingRule" to formattingRule,
-                                        ),
-                                    logEnabled = false,
-                                )
+                                try {
+                                    promptService.buildRemotePrompt(
+                                        remoteConfigKey = coreRemoteKey,
+                                        variables =
+                                            mapOf(
+                                                "language" to getLanguage(requireTranslation),
+                                                "type" to T::class.java.simpleName,
+                                                "structure" to structure,
+                                                "formattingRule" to formattingRule,
+                                            ),
+                                        logEnabled = false,
+                                    )
+                                } catch (e: Exception) {
+                                    promptService.buildRemotePrompt(
+                                        remoteConfigKey = "core_blueprint",
+                                        variables =
+                                            mapOf(
+                                                "language" to getLanguage(requireTranslation),
+                                                "type" to T::class.java.simpleName,
+                                                "structure" to structure,
+                                                "formattingRule" to formattingRule,
+                                            ),
+                                        logEnabled = false,
+                                    )
+                                }
 
                             val fullPrompt =
                                 buildString {
@@ -229,7 +241,14 @@ class GemmaClient
                                     contents = listOf(GeminiContent(parts = parts)),
                                     generationConfig =
                                         GeminiGenerationConfig(
-                                            temperature = temperatureRandomness,
+                                            temperature =
+                                                if (requirement == ModelRequirement.TINY ||
+                                                    requirement == ModelRequirement.LOW
+                                                ) {
+                                                    0.1f
+                                                } else {
+                                                    temperatureRandomness
+                                                },
                                         ),
                                 )
 
@@ -259,12 +278,7 @@ class GemmaClient
                                     ?.content
                                     ?.parts
 
-                            val requiredText =
-                                if (requirement == ModelRequirement.LOW) {
-                                    responseContent?.firstOrNull()?.text
-                                } else {
-                                    responseContent?.lastOrNull()?.text
-                                }
+                            val requiredText = responseContent?.lastOrNull()?.text
 
                             if (logEnabled) {
                                 Timber.d(
@@ -285,6 +299,7 @@ class GemmaClient
                             val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             val aiGeneration =
                                 Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+                            val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
@@ -294,8 +309,10 @@ class GemmaClient
                                         status = "SUCCESS",
                                         reasoning = aiGeneration?.reasoning,
                                         rawResponse = requiredText,
+                                        responseTime = duration,
                                     ),
                                 )
+                                Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
                             }
                             val data = aiGeneration.data
                             if (logEnabled) Log.d(javaClass.simpleName, "AI data ->\n$data\n")
@@ -304,6 +321,7 @@ class GemmaClient
                     } catch (e: Exception) {
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
+                                val duration = System.currentTimeMillis() - startTime
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
@@ -311,6 +329,7 @@ class GemmaClient
                                         dataType = T::class.java.simpleName,
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                        responseTime = duration,
                                     ),
                                 )
                             } catch (logEx: Exception) {
@@ -450,6 +469,7 @@ class GemmaClient
 
                     val maxAttempts =
                         if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+                    val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
                         try {
@@ -489,18 +509,34 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
+                            val tier = requirement.name.lowercase()
+                            val coreRemoteKey = "core_${tier}_blueprint"
                             val corePrompt =
-                                promptService.buildRemotePrompt(
-                                    remoteConfigKey = "core_blueprint",
-                                    variables =
-                                        mapOf(
-                                            "language" to getLanguage(requireTranslation),
-                                            "type" to T::class.java.simpleName,
-                                            "structure" to structure,
-                                            "formattingRule" to formattingRule,
-                                        ),
-                                    logEnabled = false,
-                                )
+                                try {
+                                    promptService.buildRemotePrompt(
+                                        remoteConfigKey = coreRemoteKey,
+                                        variables =
+                                            mapOf(
+                                                "language" to getLanguage(requireTranslation),
+                                                "type" to T::class.java.simpleName,
+                                                "structure" to structure,
+                                                "formattingRule" to formattingRule,
+                                            ),
+                                        logEnabled = false,
+                                    )
+                                } catch (e: Exception) {
+                                    promptService.buildRemotePrompt(
+                                        remoteConfigKey = "core_blueprint",
+                                        variables =
+                                            mapOf(
+                                                "language" to getLanguage(requireTranslation),
+                                                "type" to T::class.java.simpleName,
+                                                "structure" to structure,
+                                                "formattingRule" to formattingRule,
+                                            ),
+                                        logEnabled = false,
+                                    )
+                                }
 
                             val fullPrompt =
                                 buildString {
@@ -528,7 +564,17 @@ class GemmaClient
                             val geminiRequest =
                                 GeminiRequest(
                                     contents = listOf(GeminiContent(parts = parts)),
-                                    generationConfig = GeminiGenerationConfig(temperature = temperatureRandomness),
+                                    generationConfig =
+                                        GeminiGenerationConfig(
+                                            temperature =
+                                                if (requirement == ModelRequirement.TINY ||
+                                                    requirement == ModelRequirement.LOW
+                                                ) {
+                                                    0.1f
+                                                } else {
+                                                    temperatureRandomness
+                                                },
+                                        ),
                                 )
 
                             val formattedModel = model.replace("models/", "")
@@ -604,6 +650,7 @@ class GemmaClient
                             val aiGeneration =
                                 Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
 
+                            val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
@@ -613,8 +660,10 @@ class GemmaClient
                                         status = "SUCCESS",
                                         reasoning = aiGeneration?.reasoning,
                                         rawResponse = fullText,
+                                        responseTime = duration,
                                     ),
                                 )
+                                Timber.i("Generation Streaming Bench: $model took ${duration}ms")
                             }
 
                             Log.d(

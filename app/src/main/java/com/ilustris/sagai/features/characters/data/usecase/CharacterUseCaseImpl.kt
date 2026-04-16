@@ -204,7 +204,7 @@ class CharacterUseCaseImpl
                                 is StreamingState.Error -> {
                                     emit(
                                         StreamingState
-                                            .Error(state.message),
+                                            .Error(state.message, state.throwable),
                                     )
                                 }
                             }
@@ -213,6 +213,7 @@ class CharacterUseCaseImpl
                     emit(
                         StreamingState.Error(
                             e.message ?: "Unknown error generating character image stream",
+                            e,
                         ),
                     )
                 }
@@ -381,6 +382,7 @@ class CharacterUseCaseImpl
                     emit(
                         StreamingState.Error(
                             e.message ?: "Unknown error generating character",
+                            e,
                         ),
                     )
                 }

@@ -357,6 +357,12 @@ fun AuditLogItem(
     var expanded by remember { mutableStateOf(false) }
 
     val statusColor = if (log.status == "SUCCESS") Color(0xFF4CAF50) else Color(0xFFE53935)
+    val responseTimeColor =
+        when {
+            log.responseTime < 5000 -> Color(0xFF4CAF50)
+            log.responseTime < 10000 -> Color(0xFFFFC107)
+            else -> Color(0xFFE53935)
+        }
     val dateFormat = SimpleDateFormat("MMM dd, HH:mm:ss", Locale.getDefault())
 
     Column(
@@ -429,6 +435,15 @@ fun AuditLogItem(
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
                         modifier = Modifier.alpha(.7f),
                     )
+
+                    Text(
+                        text = "• ${String.format("%.1fs", log.responseTime / 1000.0)}",
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = responseTimeColor,
+                            ),
+                            )
                 }
             }
 

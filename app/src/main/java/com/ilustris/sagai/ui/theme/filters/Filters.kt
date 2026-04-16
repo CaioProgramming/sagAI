@@ -4,8 +4,6 @@ import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import timber.log.Timber
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -29,6 +27,7 @@ import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.vignette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.InputStreamReader
 
 @Composable
@@ -258,26 +257,30 @@ fun Modifier.fallbackEffect(
     val vignetteStrength = shaderParams.vignetteStrength
     val vignetteSoftness = shaderParams.vignetteSoftness
     val softFocusRadius = shaderParams.softFocusRadius
-
+    val fallbackReduction = .5f
     var modifier: Modifier = this
 
     if (saturation != 1.0f) {
-        modifier = modifier.grayScale(saturation)
+        modifier = modifier.grayScale(saturation * fallbackReduction)
     }
     if (brightnessValue != 0f) {
-        modifier = modifier.brightness(brightnessValue)
+        modifier = modifier.brightness(brightnessValue * fallbackReduction)
     }
     if (contrastValue != 1.0f) {
-        modifier = modifier.contrast(contrastValue)
+        modifier = modifier.contrast(contrastValue * fallbackReduction)
     }
     if (colorTemperature != 0f) {
-        modifier = modifier.colorTemperature(colorTemperature)
+        modifier = modifier.colorTemperature(colorTemperature * fallbackReduction)
     }
     if (vignetteStrength > 0f) {
-        modifier = modifier.vignette(vignetteStrength, vignetteSoftness)
+        modifier =
+            modifier.vignette(
+                vignetteStrength * fallbackReduction,
+                vignetteSoftness * fallbackReduction,
+            )
     }
     if (softFocusRadius > 0f) {
-        modifier = modifier.blur(softFocusRadius.dp)
+        modifier = modifier.blur((softFocusRadius * fallbackReduction).dp)
     }
     return modifier
 }

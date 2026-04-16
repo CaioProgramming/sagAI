@@ -86,10 +86,6 @@ fun MilestoneOverlay(
     val congratsMessage by viewModel.congratsMessage.collectAsState()
     val genre = saga.data.genre
 
-    LaunchedEffect(milestone) {
-        viewModel.generateCongratsMessage(milestone, saga)
-    }
-
     with(sharedTransitionScope) {
         AnimatedContent(milestone, transitionSpec = {
             fadeIn(tween(500)) togetherWith fadeOut(tween(200))
@@ -117,7 +113,6 @@ fun MilestoneOverlay(
                     IntroductionOverlay(
                         it,
                         saga,
-                        message = congratsMessage,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = this,
                     ) {
@@ -232,8 +227,7 @@ fun MilestoneBadge(
                         .background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        )
-                        .padding(4.dp)
+                        ).padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,

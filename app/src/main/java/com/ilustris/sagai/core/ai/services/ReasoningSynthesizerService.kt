@@ -35,52 +35,16 @@ class ReasoningSynthesizerService
                         is StreamingState.Reasoning -> {
                             lastReasoning = state.chunk
                             if (showReasoning) {
-                                // Only start a translation if not currently running and we accumulated at least 80 characters for better context
-                                if (synthesisJob?.isActive != true && lastReasoning.length > 80) {
+                                if (synthesisJob?.isActive != true && lastReasoning.length > 50) {
                                     synthesisJob =
                                         launch {
-                                            try {
-                                                val style =
-                                                    conversationStyle
-                                                        ?: promptService.buildRemotePrompt(
-                                                            com.ilustris.sagai.features.onboarding.data.OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                                                            logEnabled = false,
-                                                        )
-
-                                                val sanitizedReasoning =
-                                                    sanitizeReasoning(lastReasoning).takeLast(600)
-
-                                                val variables =
-                                                    mapOf(
-                                                        "context" to context,
-                                                        "thoughtStream" to sanitizedReasoning,
-                                                        "conversationStyle" to style,
-                                                        "language" to targetLanguage,
-                                                    )
-
-                                                val prompt =
-                                                    promptService.buildRemotePrompt(
-                                                        REASONING_SYNTHESIZER_BLUEPRINT,
-                                                        variables,
-                                                        logEnabled = false,
-                                                    )
-
-                                                val translation =
-                                                    gemmaClient.generateText(
-                                                        prompt = prompt,
-                                                        requirement = GemmaClient.ModelRequirement.TINY,
-                                                        logEnabled = false,
-                                                    )
-                                                if (translation != null) {
-                                                    send(
-                                                        StreamingState.Reasoning(
-                                                            translation.trim().removeSurrounding("\""),
-                                                        ),
-                                                    )
-                                                }
-                                            } catch (e: Exception) {
-                                                Timber.w("Failed to synthesize reasoning: ${e.message}")
-                                            }
+                                            synthesizeNow(
+                                                lastReasoning,
+                                                context,
+                                                conversationStyle,
+                                                targetLanguage,
+                                                this@channelFlow,
+                                            )
                                         }
                                 }
                             } else {
@@ -89,45 +53,14 @@ class ReasoningSynthesizerService
                         }
 
                         is StreamingState.Success -> {
-                            // Ensure one last synthesis if there is reasoning left
                             if (showReasoning && lastReasoning.isNotBlank()) {
-                                try {
-                                    val style =
-                                        conversationStyle ?: promptService.buildRemotePrompt(
-                                            com.ilustris.sagai.features.onboarding.data.OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                                            logEnabled = false,
-                                        )
-                                    val sanitizedReasoning =
-                                        sanitizeReasoning(lastReasoning).takeLast(600)
-                                    val variables =
-                                        mapOf(
-                                            "context" to context,
-                                            "thoughtStream" to sanitizedReasoning,
-                                            "conversationStyle" to style,
-                                            "language" to targetLanguage,
-                                        )
-                                    val prompt =
-                                        promptService.buildRemotePrompt(
-                                            REASONING_SYNTHESIZER_BLUEPRINT,
-                                            variables,
-                                            logEnabled = false,
-                                        )
-                                    val translation =
-                                        gemmaClient.generateText(
-                                            prompt = prompt,
-                                            requirement = GemmaClient.ModelRequirement.TINY,
-                                            logEnabled = false,
-                                        )
-                                    if (translation != null) {
-                                        send(
-                                            StreamingState.Reasoning(
-                                                translation.trim().removeSurrounding("\""),
-                                            ),
-                                        )
-                                    }
-                                } catch (e: Exception) {
-                                    Timber.w("Final synthesis failed: ${e.message}")
-                                }
+                                synthesizeNow(
+                                    lastReasoning,
+                                    context,
+                                    conversationStyle,
+                                    targetLanguage,
+                                    this,
+                                )
                             }
                             synthesisJob?.cancel()
                             send(state)
@@ -140,6 +73,58 @@ class ReasoningSynthesizerService
                     }
                 }
             }
+
+        @PublishedApi
+        internal suspend fun <T> synthesizeNow(
+            reasoning: String,
+            context: String,
+            conversationStyle: String?,
+            targetLanguage: String,
+            scope: kotlinx.coroutines.channels.ProducerScope<StreamingState<T>>,
+        ) {
+            try {
+                val style =
+                    conversationStyle
+                        ?: promptService.buildRemotePrompt(
+                            com.ilustris.sagai.features.onboarding.data.OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
+                            logEnabled = false,
+                        )
+
+                val sanitizedReasoning = sanitizeReasoning(reasoning).takeLast(400)
+
+                val variables =
+                    mapOf(
+                        "context" to context,
+                        "thoughtStream" to sanitizedReasoning,
+                        "conversationStyle" to style,
+                        "language" to targetLanguage,
+                    )
+
+                val prompt =
+                    promptService.buildRemotePrompt(
+                        REASONING_SYNTHESIZER_BLUEPRINT,
+                        variables,
+                        logEnabled = false,
+                    )
+
+                val translation =
+                    gemmaClient.generateText(
+                        prompt = prompt,
+                        requirement = GemmaClient.ModelRequirement.TINY,
+                        logEnabled = false,
+                    )
+
+                if (translation != null) {
+                    scope.send(
+                        StreamingState.Reasoning(
+                            translation.trim().removeSurrounding("\""),
+                        ),
+                    )
+            }
+        } catch (e: Exception) {
+            Timber.w("Failed to synthesize reasoning: ${e.message}")
+        }
+    }
 
         fun sanitizeReasoning(text: String): String {
             // Remove JSON-like structures (braces and brackets content) which are often technical noise

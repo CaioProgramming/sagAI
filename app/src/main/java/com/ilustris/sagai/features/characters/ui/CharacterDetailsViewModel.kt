@@ -87,6 +87,9 @@ class CharacterDetailsViewModel
                     }.onFailure {
                         isSummarizing.value = false
                         characterResume.value = characterContent.data.backstory
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
                         Timber.e("Error generating character resume: ${it.message}")
                     }
             }

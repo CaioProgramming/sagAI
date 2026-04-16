@@ -4,6 +4,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
@@ -31,9 +32,9 @@ class HomeUseCaseImpl
         private val backupService: BackupService,
         private val sagaBackupService: SagaBackupService,
         private val remoteConfig: FirebaseRemoteConfig,
+        private val promptService: PromptService,
         private val sagaDetailUseCase: SagaDetailUseCase,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        billingService: BillingService,
+        private val billingService: BillingService,
     ) : HomeUseCase {
         override val billingState = billingService.state
 
@@ -42,15 +43,13 @@ class HomeUseCaseImpl
         override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
             executeRequest {
                 Timber.d("Fetching new dynamic saga texts...")
-                val prompt = HomePrompts.dynamicSagaCreationPrompt(promptService)
-
                 val result =
                     gemmaClient.generate<DynamicSagaPrompt>(
-                        prompt,
+                        prompt = HomePrompts.dynamicSagaCreationPrompt(promptService),
                         blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
-                        temperatureRandomness = .5f,
+                        temperatureRandomness = .1f,
                         requireTranslation = true,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        requirement = GemmaClient.ModelRequirement.TINY,
                     )
                 result!!
             }

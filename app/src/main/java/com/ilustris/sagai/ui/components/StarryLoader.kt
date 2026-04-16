@@ -12,7 +12,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -172,33 +172,45 @@ fun StarryLoader(
                         onDraw = borderDraw,
                     )
 
-                    AnimatedContent(
-                        loadingMessage,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
                                 .padding(32.dp),
-                        transitionSpec = {
-                            fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
-                                slideOutVertically(
-                                    animationSpec = tween(800, easing = EaseInOutQuad),
-                                ) { it }
-                        },
                     ) {
-                        it?.let { message ->
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        AnimatedContent(
+                            loadingMessage,
+                            transitionSpec = {
+                                fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
+                                    fadeOut(
+                                        animationSpec = tween(800, easing = EaseInOutQuad),
+                                    )
+                            },
+                        ) { message ->
+                            message?.let {
                                 Text(
-                                    message,
+                                    it,
                                     style = textStyle,
                                     modifier = Modifier.alpha(.6f),
                                 )
-                                subtitle?.let {
-                                    Text(
-                                        it,
-                                        style = subtitleStyle,
-                                        modifier = Modifier.padding(top = 8.dp),
+                            }
+                        }
+                        AnimatedContent(
+                            subtitle,
+                            transitionSpec = {
+                                fadeIn(tween(1000, easing = EaseInOutQuad)) togetherWith
+                                    fadeOut(
+                                        animationSpec = tween(500, easing = EaseInOutQuad),
                                     )
-                                }
+                            },
+                        ) { sub ->
+                            sub?.let {
+                                Text(
+                                    it,
+                                    style = subtitleStyle,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
                             }
                         }
                     }
@@ -225,29 +237,41 @@ fun StarryLoader(
                     onDraw = borderDraw,
                 )
 
-                AnimatedContent(
-                    loadingMessage,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.align(Alignment.Center),
-                    transitionSpec = {
-                        fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
-                            slideOutVertically(
-                                animationSpec = tween(800, easing = EaseInOutQuad),
-                            ) { it }
-                    },
                 ) {
-                    it?.let { message ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AnimatedContent(
+                        loadingMessage,
+                        transitionSpec = {
+                            fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
+                                fadeOut(
+                                    animationSpec = tween(800, easing = EaseInOutQuad),
+                                )
+                        },
+                    ) { message ->
+                        message?.let {
                             Text(
-                                message,
+                                it,
                                 style = textStyle,
                             )
-                            subtitle?.let {
-                                Text(
-                                    it,
-                                    style = subtitleStyle,
-                                    modifier = Modifier.padding(top = 8.dp),
+                        }
+                    }
+                    AnimatedContent(
+                        subtitle,
+                        transitionSpec = {
+                            fadeIn(tween(1000, easing = EaseInOutQuad)) togetherWith
+                                fadeOut(
+                                    animationSpec = tween(500, easing = EaseInOutQuad),
                                 )
-                            }
+                        },
+                    ) { sub ->
+                        sub?.let {
+                            Text(
+                                it,
+                                style = subtitleStyle,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
                         }
                     }
                 }
