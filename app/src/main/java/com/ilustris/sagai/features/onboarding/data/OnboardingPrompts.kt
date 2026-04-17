@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.onboarding.data
 
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingConfig
 
 data class OnboardingArgs(
     val config: String,

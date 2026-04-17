@@ -10,8 +10,8 @@ import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.onboarding.data.OnboardingContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
