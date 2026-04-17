@@ -225,6 +225,7 @@ sealed class SnackAction(
 
     data class RetryCharacter(
         val description: String,
+        val message: Message,
     ) : SnackAction(R.string.try_again)
 
     data object RevaluateSaga : SnackAction(R.string.try_again)

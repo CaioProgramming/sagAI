@@ -2,7 +2,6 @@
     <string name="saga">Saga</string>
     <string name="start_saga">Pronto para iniciar sua saga?</string>
     <string name="start_saga_subtitle">Comece com o nome da sua história.</string>
-    <string name="saga_title_hint">Um nome épico que combine com você</string>
     <string name="saga_genre">Qual o tema da sua Saga?</string>
     <string name="saga_genre_subtitle">Em qual universo vai se passar sua saga?</string>
     <string name="saga_genre_hint">Escolha um tema para sua história</string>
@@ -319,7 +318,6 @@
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
     <string name="character_details_aka">vulgo: %s</string>
-    <string name="read_more">...</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
     <string name="smart_fix_button">Refinar</string>
     <string name="message_effects">Efeitos de Mensagem</string>
@@ -602,6 +600,7 @@
     </string-array>
 
     <!-- Chat Input Actions -->
+    <string name="the_legends">As lendas</string>
     <string name="chat_input_mention_character">Mencionar Personagem</string>
     <string name="chat_input_mention_wiki">Mencionar Wiki</string>
     <string name="chat_input_expand">Expandir</string>
@@ -618,7 +617,6 @@
     <string name="saga_title_label">Título da Saga</string>
     <string name="saga_title_hint">Dê um nome épico</string>
     <string name="description_label">Descrição</string>
-    <string name="saga_description_hint">O que move essa lenda?</string>
     <string name="agentic_edit_character_title">Editar Herói</string>
     <string name="character_name_label">Nome do Personagem</string>
     <string name="character_name_hint">Como ele é conhecido?</string>

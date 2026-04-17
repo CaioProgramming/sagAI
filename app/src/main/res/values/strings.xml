@@ -2,7 +2,6 @@
 
     <string name="app_name" translatable="false">Sagas</string>
     <string name="saga">Saga</string>
-    <string name="saga_title_hint">An epic name that suits you</string>
     <string name="start_saga">Ready to start your saga?</string>
     <string name="start_saga_subtitle">Start with your story\'s name.</string>
     <string name="saga_genre">What is the theme of your saga?</string>
@@ -354,7 +353,7 @@
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
     <string name="character_details_aka">aka: %s</string>
-    <string name="read_more">...</string>
+    <string name="read_more" translatable="false">...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
     <string name="character_events">Character events</string>
     <!-- BackupViewModel: Status and Error Messages -->
@@ -616,7 +615,6 @@
     <string name="saga_title_label">Saga Title</string>
     <string name="saga_title_hint">Give it an epic name</string>
     <string name="description_label">Description</string>
-    <string name="saga_description_hint">What drives this legend?</string>
     <string name="agentic_edit_character_title">Edit Hero</string>
     <string name="character_name_label">Character Name</string>
     <string name="character_name_hint">How are they known?</string>

@@ -57,9 +57,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
-import timber.log.Timber
 
 @OptIn(PublicPreviewAPI::class)
 @HiltViewModel
@@ -147,7 +147,7 @@ class ChatViewModel
                 }
 
                 is ChatUiAction.RequestNewCharacter -> {
-                    requestNewCharacter(action.name)
+                    requestNewCharacter(action.name, action.message)
                 }
 
                 is ChatUiAction.ReviewEvent -> {
@@ -440,6 +440,7 @@ class ChatViewModel
         fun onOnboardingDismissed() {
             sagaContentManager.isOnboardingVisible.value = false
             stateManager.updateOnboardingType(null)
+            sagaContentManager.checkNarrativeProgression(uiState.value.sagaContent)
         }
 
         fun retryAiResponse(message: Message?) {
@@ -457,7 +458,10 @@ class ChatViewModel
             }
         }
 
-        fun requestNewCharacter(name: String) {
+        fun requestNewCharacter(
+            name: String,
+            message: Message,
+        ) {
             val saga = uiState.value.sagaContent ?: return
             val mentions =
                 saga.flatMessages().filter {
@@ -470,6 +474,7 @@ class ChatViewModel
                     appendLine("Character context on story:")
                     appendLine(mentions.takeLast(5).joinToString(";\n") { it.message.text })
                 },
+                message,
             )
         }
 
@@ -713,7 +718,10 @@ class ChatViewModel
                     musicFile
                 }.collectLatest { musicFile ->
                     if (musicFile != null && musicFile.exists()) {
-                        Timber.tag("ChatViewModel").d("Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}")
+                        Timber
+                            .tag(
+                                "ChatViewModel",
+                            ).d("Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}")
                         val musicIntent =
                             Intent(context, SagaPlaybackService::class.java).apply {
                                 action = SagaPlaybackService.ACTION_START
@@ -1221,7 +1229,10 @@ class ChatViewModel
             }
         }
 
-        fun createCharacter(contextDescription: String) {
+    fun createCharacter(
+            contextDescription: String,
+            message: Message,
+        ) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager
                     .generateCharacter(
@@ -1235,6 +1246,13 @@ class ChatViewModel
                                     retryCharacter(contextDescription)
                                 }
                             },
+                        )
+                    }.onSuccessAsync {
+                        messageUseCase.updateMessage(
+                            message.copy(
+                                characterId = it.id,
+                                speakerName = it.name,
+                            ),
                         )
                     }
             }

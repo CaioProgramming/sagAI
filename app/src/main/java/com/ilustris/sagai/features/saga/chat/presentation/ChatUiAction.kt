@@ -35,6 +35,7 @@ sealed class ChatUiAction {
 
     data class RequestNewCharacter(
         val name: String,
+        val message: Message,
     ) : ChatUiAction()
 
     data class ReviewEvent(
