@@ -1,10 +1,10 @@
 package com.ilustris.sagai.core.services
 
-import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import timber.log.Timber
 
 class RemoteConfigService {
     private val firebaseRemoteConfig by lazy {
@@ -37,7 +37,7 @@ class RemoteConfigService {
             try {
                 Gson().fromJson<T>(jsonString, typeToken.type)
             } catch (e: Exception) {
-                Log.e("RemoteConfigService", "Error parsing json for $key: ${e.message}")
+                Timber.tag("RemoteConfigService").e("Error parsing json for $key: ${e.message}")
                 null
             }
         } else {
@@ -54,11 +54,11 @@ class RemoteConfigService {
         try {
             block().also {
                 if (logEnabled) {
-                    Log.d("RemoteConfigService", "\n$method($key) -> $it\n")
+                    Timber.tag("RemoteConfigService").d("\n$method($key) -> $it\n")
                 }
             }
         } catch (e: Exception) {
-            Log.e("RemoteConfigService", "Error on $method($key): ${e.message}")
+            Timber.tag("RemoteConfigService").e("Error on $method($key): ${e.message}")
             e.printStackTrace()
             null
         }

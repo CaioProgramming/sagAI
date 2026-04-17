@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.wiki.data.usecase
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.WikiPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -13,6 +12,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGen
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import javax.inject.Inject
+import timber.log.Timber
 
 class WikiUseCaseImpl
     @Inject
@@ -76,10 +76,7 @@ class WikiUseCaseImpl
                     mergedWikis.filter { mergedItem ->
                         // Skip items with no merge candidate (secondItem is null or empty)
                         if (mergedItem.secondItem.isNullOrBlank()) {
-                            Log.d(
-                                javaClass.simpleName,
-                                "Skipping item with no merge candidate: ${mergedItem.firstItem}",
-                            )
+                            Timber.d("Skipping item with no merge candidate: ${mergedItem.firstItem}")
                             return@filter false
                         }
 
@@ -116,6 +113,6 @@ class WikiUseCaseImpl
                     }
                 }
 
-                Log.d(javaClass.simpleName, "mergeWikis: Updated ${validItems.size} items")
+                Timber.d("mergeWikis: Updated ${validItems.size} items")
             }
     }

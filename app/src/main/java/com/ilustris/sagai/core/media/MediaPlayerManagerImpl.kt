@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.media
 
 import android.content.Context
 import android.media.MediaPlayer
-import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,9 +55,9 @@ class MediaPlayerManagerImpl
                 }
 
                 mediaPlayer?.apply {
-                    Log.d(javaClass.simpleName, "Resetting MediaPlayer.")
+                    Timber.d("Resetting MediaPlayer.")
                     reset()
-                    Log.d(javaClass.simpleName, "Setting data source: ${file.absolutePath}")
+                    Timber.d("Setting data source: ${file.absolutePath}")
                     setDataSource(file.absolutePath)
                     isLooping = looping
                     setOnPreparedListener {
@@ -84,7 +83,7 @@ class MediaPlayerManagerImpl
                         release()
                         mediaPlayer = null
                     }
-                    Log.d(javaClass.simpleName, "Calling prepareAsync.")
+                    Timber.d("Calling prepareAsync.")
                     prepareAsync()
                 }
             } catch (e: Exception) {

@@ -1,11 +1,11 @@
 package com.ilustris.sagai.core.ai.services
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toPromptVariables
 import javax.inject.Inject
+import timber.log.Timber
 
 interface PromptService {
     /**
@@ -66,7 +66,7 @@ class PromptServiceImpl
             logEnabled: Boolean,
         ): String {
             if (logEnabled) {
-                Log.i("PromptService", "buildPrompt: Received vars ->\n$variables")
+                Timber.tag("PromptService").i("buildPrompt: Received vars ->\n$variables")
             }
 
             val placeholders =
@@ -74,10 +74,7 @@ class PromptServiceImpl
             val uniquePlaceholders = placeholders.distinct()
 
             if (logEnabled) {
-                Log.i(
-                    "PromptService",
-                    "buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
-                )
+                Timber.tag("PromptService").i("buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders")
             }
 
             var result = template
@@ -87,18 +84,15 @@ class PromptServiceImpl
                 if (value != null) {
                     result = result.replace("{$key}", value)
                     if (logEnabled) {
-                        Log.d("PromptService", "buildPrompt: Replaced {$key}")
+                        Timber.tag("PromptService").d("buildPrompt: Replaced {$key}")
                     }
                 } else {
-                    Log.e(
-                        "PromptService",
-                        "buildPrompt: CRITICAL - Variable '{$key}' not found in provided args!",
-                    )
+                    Timber.tag("PromptService").e("buildPrompt: CRITICAL - Variable '{$key}' not found in provided args!")
                 }
             }
 
             if (logEnabled) {
-                Log.d("PromptService", "buildPrompt: Final Prompt Construction Complete.")
+                Timber.tag("PromptService").d("buildPrompt: Final Prompt Construction Complete.")
             }
             return result
         }
@@ -109,10 +103,7 @@ class PromptServiceImpl
             logEnabled: Boolean,
         ): String {
             val stringMap = variablesDataClass.toPromptVariables()
-            Log.d(
-                "PromptService",
-                "buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys",
-            )
+            Timber.tag("PromptService").d("buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys")
             return buildPrompt(template, stringMap, logEnabled)
         }
 
@@ -125,7 +116,7 @@ class PromptServiceImpl
                 remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
 
             if (logEnabled) {
-                Log.d("PromptService", "buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
+                Timber.tag("PromptService").d("buildRemotePrompt: Found Blueprint for '$remoteConfigKey'")
             }
             if (blueprint.template.isBlank()) {
                 throw IllegalStateException(

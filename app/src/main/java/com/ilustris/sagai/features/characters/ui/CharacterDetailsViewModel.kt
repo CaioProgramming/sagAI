@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.characters.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
@@ -147,7 +146,7 @@ class CharacterDetailsViewModel
                     }
                     if (it.data.image.isNotEmpty()) {
                         val palette = paletteUseCase.extractPalette(it.data.image)
-                        Log.d(javaClass.simpleName, "Extracted palette: ${palette.toAINormalize()}")
+                        Timber.d("Extracted palette: ${palette.toAINormalize()}")
                         imagePalette.value = palette.getSuccess()
                     } else {
                         imagePalette.value = null

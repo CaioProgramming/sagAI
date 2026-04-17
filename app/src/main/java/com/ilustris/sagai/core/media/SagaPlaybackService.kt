@@ -8,7 +8,6 @@ import android.content.IntentFilter
 import android.media.AudioManager
 import android.os.Binder
 import android.os.IBinder
-import android.util.Log
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +16,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import timber.log.Timber
 
 @AndroidEntryPoint
 class SagaPlaybackService : Service() {
@@ -42,7 +42,7 @@ class SagaPlaybackService : Service() {
                 intent: Intent?,
             ) {
                 if (intent?.action == AudioManager.RINGER_MODE_CHANGED_ACTION) {
-                    Log.d(TAG, "Ringer mode changed, updating playback")
+                    Timber.d("Ringer mode changed, updating playback")
                     updatePlayback()
                 }
             }
@@ -56,7 +56,7 @@ class SagaPlaybackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.i(TAG, "SagaPlaybackService created")
+        Timber.i("SagaPlaybackService created")
         registerReceiver(ringerModeReceiver, IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION))
         observeMusicSettings()
     }
@@ -66,7 +66,7 @@ class SagaPlaybackService : Service() {
         musicObserverJob =
             serviceScope.launch {
                 settingsUseCase.getMusicEnabled().collectLatest { enabled ->
-                    Log.d(TAG, "Music setting changed: enabled=$enabled")
+                    Timber.d("Music setting changed: enabled=$enabled")
                     musicEnabledBySettings = enabled
                     updatePlayback()
                 }
@@ -78,14 +78,11 @@ class SagaPlaybackService : Service() {
         val isSilent = isSilentMode()
         val shouldPlay = musicEnabledBySettings && !isSilent
 
-        Log.d(
-            TAG,
-            "updatePlayback: shouldPlay=$shouldPlay (settings=$musicEnabledBySettings, silent=$isSilent)",
-        )
+        Timber.d("updatePlayback: shouldPlay=$shouldPlay (settings=$musicEnabledBySettings, silent=$isSilent)")
 
         if (shouldPlay) {
             if (!mediaPlayerManager.isPlaying.value) {
-                Log.i(TAG, "Starting/Resuming music: $path")
+                Timber.i("Starting/Resuming music: $path")
                 mediaPlayerManager.prepareDataSource(
                     path,
                     looping = true,
@@ -96,7 +93,7 @@ class SagaPlaybackService : Service() {
             }
         } else {
             if (mediaPlayerManager.isPlaying.value) {
-                Log.i(TAG, "Stopping music due to silence/settings")
+                Timber.i("Stopping music due to silence/settings")
                 mediaPlayerManager.stop()
             }
         }
@@ -109,18 +106,18 @@ class SagaPlaybackService : Service() {
     }
 
     fun stopMusic() {
-        Log.i(TAG, "Stopping music playback")
+        Timber.i("Stopping music playback")
         mediaPlayerManager.stop()
         currentMusicPath = null
     }
 
     fun pauseMusic() {
-        Log.i(TAG, "Pausing music playback")
+        Timber.i("Pausing music playback")
         mediaPlayerManager.pause()
     }
 
     fun resumeMusic() {
-        Log.i(TAG, "Resume requested")
+        Timber.i("Resume requested")
         updatePlayback()
     }
 
@@ -130,10 +127,7 @@ class SagaPlaybackService : Service() {
         val notificationVolume = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION)
 
         val isMuted = ringerMode != AudioManager.RINGER_MODE_NORMAL || notificationVolume == 0
-        Log.d(
-            TAG,
-            "isSilentMode: ringerMode=$ringerMode, notificationVolume=$notificationVolume -> $isMuted",
-        )
+        Timber.d("isSilentMode: ringerMode=$ringerMode, notificationVolume=$notificationVolume -> $isMuted")
         return isMuted
     }
 
@@ -145,7 +139,7 @@ class SagaPlaybackService : Service() {
         val action = intent?.action
         val path = intent?.getStringExtra(EXTRA_MUSIC_PATH)
 
-        Log.d(TAG, "onStartCommand: action=$action")
+        Timber.d("onStartCommand: action=$action")
 
         when (action) {
             ACTION_START -> path?.let { startMusic(it) }
@@ -162,7 +156,7 @@ class SagaPlaybackService : Service() {
         unregisterReceiver(ringerModeReceiver)
         stopMusic()
         serviceJob.cancel()
-        Log.i(TAG, "SagaPlaybackService destroyed")
+        Timber.i("SagaPlaybackService destroyed")
     }
 
     companion object {

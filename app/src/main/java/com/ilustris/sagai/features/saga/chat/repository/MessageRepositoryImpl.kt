@@ -1,11 +1,11 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
-import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import javax.inject.Inject
+import timber.log.Timber
 
 class MessageRepositoryImpl
     @Inject
@@ -19,7 +19,7 @@ class MessageRepositoryImpl
         override suspend fun getMessages(sagaId: Int) = messageDao.getMessages(sagaId)
 
         override suspend fun saveMessage(message: Message): Message {
-            Log.d(javaClass.simpleName, "saveMessage: Saving\n${message.toJsonFormat()}")
+            Timber.d("saveMessage: Saving\n${message.toJsonFormat()}")
             return message.copy(
                 id =
                     messageDao

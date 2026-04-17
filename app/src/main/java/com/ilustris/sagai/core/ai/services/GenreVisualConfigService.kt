@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.ai.services
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import timber.log.Timber
 
 /**
  * Fetches and caches [GenreVisualConfig] from Firebase Remote Config.
@@ -20,28 +20,25 @@ class GenreVisualConfigService(
     private val cache = mutableMapOf<Genre, GenreVisualConfig?>()
 
     suspend fun getVisualConfig(genre: Genre): GenreVisualConfig? {
-        Log.d("GenreVisualConfigService", "Requesting config for $genre")
+        Timber.tag("GenreVisualConfigService").d("Requesting config for $genre")
         if (cache.containsKey(genre) && cache[genre] != null) {
-            Log.d("GenreVisualConfigService", "Returning cached config for $genre")
+            Timber.tag("GenreVisualConfigService").d("Returning cached config for $genre")
             return cache[genre]
         }
 
         val key = "${genre.name.lowercase()}_visual_config"
-        Log.d("GenreVisualConfigService", "Fetching from remote config with key: $key")
+        Timber.tag("GenreVisualConfigService").d("Fetching from remote config with key: $key")
         val config =
             try {
                 remoteConfigService.getJson<GenreVisualConfig>(key)
             } catch (e: Exception) {
-                Log.e(
-                    "GenreVisualConfigService",
-                    "Failed to fetch visual config for $genre: ${e.message}",
-                )
+                Timber.tag("GenreVisualConfigService").e("Failed to fetch visual config for $genre: ${e.message}")
                 null
             }
         if (config != null) {
             cache[genre] = config
         } else {
-            Log.w("GenreVisualConfigService", "Config for $genre is null/empty in Remote Config")
+            Timber.tag("GenreVisualConfigService").w("Config for $genre is null/empty in Remote Config")
         }
         return config
     }
