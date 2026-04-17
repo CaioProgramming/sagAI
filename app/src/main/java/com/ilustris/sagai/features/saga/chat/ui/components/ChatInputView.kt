@@ -210,6 +210,12 @@ fun ChatInputView(
     maxContentLength: Int = 2000,
 ) {
     var focusModeEnabled by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(inputField.text) {
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
+
     val actualCharacter = content.findCharacter(selectedCharacter?.data?.id)
     val genre = content.data.genre
     val resolvedColor = genre.resolveColor()
@@ -342,7 +348,8 @@ fun ChatInputView(
                         } else {
                             drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
                         }
-                    }.border(1.dp, inputBrush, inputShape)
+                    }
+                    .border(1.dp, inputBrush, inputShape)
                     .background(bubbleColor, inputShape),
         ) {
             AnimatedVisibility(currentTagInside != null) {
@@ -396,7 +403,8 @@ fun ChatInputView(
                                                     inputField,
                                                 ),
                                             )
-                                        }.padding(vertical = 4.dp, horizontal = 12.dp),
+                                        }
+                                        .padding(vertical = 4.dp, horizontal = 12.dp),
                             )
                         }
                     }
@@ -410,7 +418,8 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    ).fillMaxWidth()
+                    )
+                    .fillMaxWidth()
                     .padding(8.dp),
             ) {
                 val textStyle =
@@ -467,7 +476,7 @@ fun ChatInputView(
                             Column(
                                 Modifier
                                     .alpha(alpha)
-                                    .verticalScroll(rememberScrollState()),
+                                    .verticalScroll(scrollState),
                             ) {
                                 Box {
                                     inner()
@@ -565,7 +574,8 @@ fun ChatInputView(
                                                             .clickable {
                                                                 onSelectCharacter(character)
                                                                 characterMenu = false
-                                                            }.padding(8.dp),
+                                                            }
+                                                            .padding(8.dp),
                                                 ) {
                                                     CharacterAvatar(
                                                         character.data,
@@ -620,7 +630,8 @@ fun ChatInputView(
                                         1.dp,
                                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                                         CircleShape,
-                                    ).padding(8.dp),
+                                    )
+                                    .padding(8.dp),
                         ) { type.icon()?.let { Icon(painterResource(it), null, tint = col) } }
                     }
                     Box {
@@ -744,7 +755,9 @@ fun ChatInputView(
                                     Icon(
                                         painterResource(it),
                                         null,
-                                        modifier = Modifier.padding(4.dp).fillMaxSize(),
+                                        modifier = Modifier
+                                            .padding(4.dp)
+                                            .fillMaxSize(),
                                     )
                                 }
                             }
@@ -776,7 +789,8 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -807,17 +821,20 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            ).clip(CircleShape)
+                                            )
+                                            .clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
