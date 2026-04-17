@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.newsaga.data.model.CharacterIdeas
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import javax.inject.Inject
 
@@ -36,8 +37,3 @@ class CharacterIdeationService
             )
         }
     }
-
-data class CharacterIdeas(
-    val ideas: List<CharacterInfo>,
-    val message: String = "",
-)

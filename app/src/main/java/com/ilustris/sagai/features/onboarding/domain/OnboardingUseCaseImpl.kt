@@ -8,10 +8,10 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.onboarding.data.OnboardingConfig
-import com.ilustris.sagai.features.onboarding.data.OnboardingContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingConfig
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
 import javax.inject.Inject
 
 class OnboardingUseCaseImpl
