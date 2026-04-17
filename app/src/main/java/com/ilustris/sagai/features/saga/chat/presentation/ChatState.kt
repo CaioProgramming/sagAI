@@ -2,17 +2,22 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import android.graphics.Bitmap
 import androidx.compose.ui.text.input.TextFieldValue
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.ui.components.SnackBarState
 
 sealed class ChatState {
@@ -32,7 +37,6 @@ data class ChatUiState(
     val characters: List<Character> = emptyList(),
     val isGenerating: Boolean = false,
     val isLoading: Boolean = false,
-    val showTitle: Boolean = true,
     val isPlaying: Boolean = false,
     val audioPlaybackState: AudioPlaybackState? = null,
     val snackBarMessage: SnackBarState? = null,
@@ -55,9 +59,15 @@ data class ChatUiState(
     val isSendingPending: Boolean = false,
     val sendingProgress: Float = 0f,
     val isAudioInput: Boolean = false,
+    val sceneSummary: SceneSummary? = null,
     val milestone: SagaMilestone? = null,
-    val editingMessage: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
-    val showMessageOptions: com.ilustris.sagai.features.saga.chat.data.model.Message? = null,
+    val editingMessage: Message? = null,
+    val showMessageOptions: Message? = null,
+    val visualConfig: GenreVisualConfig? = null,
+    val onboardingType: OnboardingType? = null,
+    val pendingAdvance: PendingAdvance? = null,
+    val reasoningChunk: String? = null,
+    val maxContentLength: Int = 2000,
 )
 
 data class MessageSelectionState(
@@ -75,5 +85,10 @@ data class ActDisplayData(
 data class ChapterDisplayData(
     val chapter: ChapterContent,
     val isComplete: Boolean,
-    val timelineSummaries: List<TimelineContent>,
+    val timelineSummaries: List<TimelineDisplayData>,
+)
+
+data class TimelineDisplayData(
+    val isComplete: Boolean,
+    val timeline: TimelineCardContent,
 )

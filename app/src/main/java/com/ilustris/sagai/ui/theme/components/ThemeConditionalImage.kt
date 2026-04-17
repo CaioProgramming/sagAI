@@ -99,10 +99,13 @@ fun ConditionalImagePreview() {
                 Text(
                     it.first,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(4.dp),
+                    modifier =
+                        Modifier
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(4.dp),
                 )
                 ConditionalImage(
-                    testGenre.background,
+                    testGenre.icon,
                     testGenre.gradient(),
                     customBlendMode = it.second,
                     Modifier

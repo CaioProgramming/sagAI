@@ -3,9 +3,10 @@ package com.ilustris.sagai.ui.theme.filters
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import timber.log.Timber
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -15,7 +16,9 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
-import loadShaderFromAssetsOnce
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import timber.log.Timber
 
 private const val DEFAULT_TOLERANCE = 0.20f
 private const val DEFAULT_SATURATION_THRESHOLD = 0.02f
@@ -66,20 +69,22 @@ data class SelectiveColorParams(
 
 @Composable
 fun Modifier.selectiveColorHighlight(
-    params: SelectiveColorParams,
+    params: SelectiveColorParams?,
     shaderAssetFileName: String = "selective_color_highlight.agsl",
 ): Modifier {
+    LaunchedEffect(Unit) {
+        Log.d(
+            "SelectiveColor",
+            "selectiveColorHighlight modifier called with params present: ${params != null}",
+        )
+    }
+    if (params == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Timber.w("Shader effects not supported on this API level.")
         return this // Or a fallback using ColorMatrix if desired
     }
 
-    val agslShaderSource = loadShaderFromAssetsOnce(shaderAssetFileName) // From your Filters.kt
-
-    if (agslShaderSource == null) {
-        // Log.w("SelectiveColor", "AGSL Shader source '$shaderAssetFileName' is null.")
-        return this
-    }
+    val agslShaderSource = loadShaderFromAssetsOnce(shaderAssetFileName) ?: return this
 
     val runtimeShader =
         remember(agslShaderSource) {
@@ -136,3 +141,6 @@ fun Modifier.selectiveColorHighlight(
             }
         }
 }
+
+@Composable
+fun Modifier.selectiveColorHighlight(genre: Genre?): Modifier = selectiveColorHighlight(genre?.selectiveHighlight())

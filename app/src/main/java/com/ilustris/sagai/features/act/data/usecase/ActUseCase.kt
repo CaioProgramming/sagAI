@@ -22,13 +22,13 @@ interface ActUseCase {
         actContent: ActContent,
     ): RequestResult<Act>
 
+    fun generateActStream(
+        saga: SagaContent,
+        actContent: ActContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
+
     suspend fun generateActIntroduction(
         saga: SagaContent,
         act: Act,
-    ): RequestResult<Act>
-
-    suspend fun generateEmotionalProfile(
-        saga: SagaContent,
-        act: ActContent,
     ): RequestResult<Act>
 }

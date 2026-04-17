@@ -1,13 +1,17 @@
 package com.ilustris.sagai.features.characters.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.services.BillingService
-import timber.log.Timber
+import com.ilustris.sagai.core.usecase.PaletteUseCase
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
@@ -15,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,19 +29,27 @@ class CharacterDetailsViewModel
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val characterUseCase: CharacterUseCase,
         private val billingService: BillingService,
+        private val paletteUseCase: PaletteUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
         val character = MutableStateFlow<CharacterContent?>(null)
+        val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
+        val imageReasoning = MutableStateFlow<String?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
         val isSummarizing = MutableStateFlow(false)
+        val showPremiumSheet = MutableStateFlow(false)
+
+        fun togglePremiumSheet() {
+            showPremiumSheet.value = !showPremiumSheet.value
+        }
 
         fun loadSagaAndCharacter(
             sagaId: String?,
-            characterId: String?,
+            characterId: Int?,
         ) {
             if (sagaId == null) return
             if (characterId == null) return
@@ -63,7 +76,7 @@ class CharacterDetailsViewModel
             sagaContent: SagaContent,
             characterContent: CharacterContent,
         ) {
-            if (characterResume.value != null) return
+            characterResume.value = characterContent.data.backstory
             viewModelScope.launch(Dispatchers.IO) {
                 isSummarizing.value = true
                 characterUseCase
@@ -74,6 +87,9 @@ class CharacterDetailsViewModel
                     }.onFailure {
                         isSummarizing.value = false
                         characterResume.value = characterContent.data.backstory
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
                         Timber.e("Error generating character resume: ${it.message}")
                     }
             }
@@ -85,23 +101,58 @@ class CharacterDetailsViewModel
         ) {
             isGenerating.value = true
             loadingMessage.value = "Gerando ${selectedCharacter.name}..."
+            imageReasoning.value = null
+
             viewModelScope.launch(Dispatchers.IO) {
-                characterUseCase.generateCharacterImage(
-                    selectedCharacter,
-                    sagaContent.data,
-                )
-                isGenerating.value = false
-                loadingMessage.emit(null)
+                characterUseCase
+                    .generateCharacterImageStream(
+                        selectedCharacter,
+                        sagaContent.data,
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                imageReasoning.value = state.chunk
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                isGenerating.value = false
+                                loadingMessage.value = null
+                                imageReasoning.value = null
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                isGenerating.value = false
+                                loadingMessage.value = null
+                                imageReasoning.value = null
+                                if (state.throwable is BillingService.PremiumException) {
+                                    showPremiumSheet.value = true
+                                }
+                            }
+                        }
+                    }
             }
         }
 
         fun init(
-            characterContent: CharacterContent?,
+            characterId: Int?,
             sagaContent: SagaContent,
         ) {
-            characterResume.value = null
+            val characterContent = sagaContent.findCharacter(characterId)
+            val canGenerateResume = character.value != characterContent
             viewModelScope.launch(Dispatchers.IO) {
-                characterContent?.let { generateResume(sagaContent, it) }
+                character.value = characterContent
+                characterContent?.let {
+                    if (canGenerateResume) {
+                        generateResume(sagaContent, it)
+                    }
+                    if (it.data.image.isNotEmpty()) {
+                        val palette = paletteUseCase.extractPalette(it.data.image)
+                        Log.d(javaClass.simpleName, "Extracted palette: ${palette.toAINormalize()}")
+                        imagePalette.value = palette.getSuccess()
+                    } else {
+                        imagePalette.value = null
+                    }
+                }
             }
         }
     }

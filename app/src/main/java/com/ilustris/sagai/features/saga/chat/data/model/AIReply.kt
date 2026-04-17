@@ -5,6 +5,6 @@ package com.ilustris.sagai.features.saga.chat.data.model
  * This is used for debugging and ensuring the AI follows the Character Resolution Hierarchy.
  */
 data class AIReply(
-    val reasoning: String,
     val message: Message,
+    val reactions: List<AIReaction> = emptyList(),
 )

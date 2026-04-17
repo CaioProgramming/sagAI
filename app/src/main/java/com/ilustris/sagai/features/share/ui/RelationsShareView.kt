@@ -49,16 +49,18 @@ import com.ilustris.sagai.core.utils.sortCharactersContentByMessageCount
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -71,7 +73,9 @@ fun RelationsShareView(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val genre = remember { sagaContent.data.genre }
+    val genre = sagaContent.data.genre
+    val resolvedColor = genre.resolveColor()
+    genre.resolveIconColor()
     val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val graphicsLayer = rememberGraphicsLayer()
@@ -139,7 +143,7 @@ fun RelationsShareView(
                                     fontFamily = genre.headerFont(),
                                     brush = genre.gradient(),
                                     textAlign = TextAlign.Center,
-                                    shadow = Shadow(genre.color, Offset(2f, 0f), 10f),
+                                    shadow = Shadow(resolvedColor, Offset(2f, 0f), 10f),
                                 ),
                             modifier =
                                 Modifier
@@ -182,7 +186,7 @@ fun RelationsShareView(
                                     ColorFilter.tint(
                                         (
                                             it.data.hexColor.hexToColor()
-                                                ?: genre.color
+                                                ?: resolvedColor
                                         ).copy(alpha = .2f),
                                         blendMode = BlendMode.SrcOver,
                                     ),
@@ -208,7 +212,7 @@ fun RelationsShareView(
                                 style =
                                     MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily = genre.bodyFont(),
-                                        shadow = Shadow(genre.color, Offset(5f, 0f), 2f),
+                                        shadow = Shadow(resolvedColor, Offset(5f, 0f), 2f),
                                         fontStyle = FontStyle.Italic,
                                         textAlign = TextAlign.Center,
                                     ),

@@ -88,7 +88,7 @@ fun HistoryShareView(
             }
         }
 
-        StarryLoader(isLoading, brushColors = saga.data.genre.colorPalette())
+        StarryLoader(isLoading, brushColors = genre.colorPalette())
     }
 
     LaunchedEffect(Unit) {

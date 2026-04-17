@@ -1,8 +1,9 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
 data class CreationSuggestion(
-    val text: String,
-    val genre: Genre,
+    val text: String = "",
+    val title: String = "",
+    val description: String = "",
 )
 
 data class SagaCreationGen(
@@ -34,4 +35,12 @@ data class ChatMessage(
     val sender: Sender,
     val callback: CallBackAction? = null,
     val audioFile: java.io.File? = null,
+)
+
+data class CreationAssist(
+    val title: String = "",
+    val subtitle: String = "",
+    val message: String = "",
+    val suggestions: List<CreationSuggestion> = emptyList(),
+    val inputHint: String = "",
 )

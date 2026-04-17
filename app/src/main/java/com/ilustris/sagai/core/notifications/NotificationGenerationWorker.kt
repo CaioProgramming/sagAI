@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -11,9 +12,11 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
@@ -25,7 +28,6 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
-import timber.log.Timber
 import kotlin.time.Duration.Companion.seconds
 
 @HiltWorker
@@ -37,52 +39,68 @@ class NotificationGenerationWorker
         private val gemmaClient: GemmaClient,
         private val sagaRepository: SagaDatabase,
         private val dataStore: DataStorePreferences,
+        private val genreConfigService: GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
             return try {
-                withTimeout(20.seconds) {
-                    Timber.d("Generating notification...")
+                withTimeout(60.seconds) {
+                    Log.d(javaClass.simpleName, "Generating notification...")
                     val sagaId = inputData.getInt(KEY_SAGA_ID, -1)
                     if (sagaId == -1) {
-                        Timber.e("Invalid saga ID provided")
+                        Log.e(TAG, "Invalid saga ID provided")
                         return@withTimeout Result.failure()
                     }
 
-                    Timber.d("Starting notification generation for saga: $sagaId")
+                    if (androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(
+                            androidx.lifecycle.Lifecycle.State.STARTED,
+                        )
+                    ) {
+                        Log.w(TAG, "App is in foreground, aborting notification generation")
+                        return@withTimeout Result.success()
+                    }
+
+                    Log.d(TAG, "Starting notification generation for saga: $sagaId")
 
                     val sagaContent = sagaRepository.sagaDao().getSagaContent(sagaId).first()
                     if (sagaContent == null) {
-                        Timber.e("Saga not found: $sagaId")
+                        Log.e(TAG, "Saga not found: $sagaId")
                         return@withTimeout Result.failure()
                     }
 
                     if (sagaContent.data.isEnded) {
-                        Timber.w("Saga has ended, skipping notification: $sagaId")
+                        Log.w(TAG, "Saga has ended, skipping notification: $sagaId")
                         return@withTimeout Result.success()
                     }
 
-                    // Verificar se tem personagens
                     if (sagaContent.characters.isEmpty()) {
-                        Timber.e("No characters found for saga: $sagaId")
+                        Log.e(TAG, "No characters found for saga: $sagaId")
                         return@withTimeout Result.failure()
                     }
 
                     if (sagaContent.flatMessages().isEmpty()) {
-                        Timber.e("No messages found for saga: $sagaId")
+                        Log.e(TAG, "No messages found for saga: $sagaId")
                         return@withTimeout Result.failure()
                     }
 
-                    // Gerar resumo da cena
+                    val rules =
+                        remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
+                            Log.e(TAG, "Failed to fetch narrative rules")
+                            return@withTimeout Result.failure()
+                        }
+
                     val sceneSummary =
                         executeRequest {
                             gemmaClient.generate<SceneSummary>(
                                 ChatPrompts.sceneSummarizationPrompt(
+                                    promptService = promptService,
                                     saga = sagaContent,
+                                    rules,
                                 ),
                             )
                         }.getSuccess()
 
-                    // Gerar mensagem smart
                     val (character, generatedMessage) =
                         sceneSummary?.let {
                             val selectedCharacter =
@@ -93,25 +111,27 @@ class NotificationGenerationWorker
                                         }
                                     }.randomOrNull() ?: sagaContent.characters.first()
 
+                            genreConfigService.getGenreConfig(sagaContent.data.genre)
+                            val conversationDirective =
+                                genreConfigService.conversationBlueprint(sagaContent.data.genre)
+
                             val prompt =
                                 ChatPrompts.scheduledNotificationPrompt(
+                                    promptService = promptService,
                                     saga = sagaContent,
                                     selectedCharacter = selectedCharacter,
                                     sceneSummary = sceneSummary,
+                                    conversationDirective = conversationDirective,
                                 )
-
-                            delay(3.seconds)
 
                             val message =
                                 gemmaClient.generate<String>(prompt, useCore = true) ?: emptyString()
 
                             selectedCharacter to message
                         } ?: run {
-                            // Fallback: usar primeiro personagem
                             sagaContent.characters.first() to emptyString()
                         }
 
-                    // Criar notificação agendada
                     val currentTime = System.currentTimeMillis()
                     val scheduledTime = currentTime + getNotificationDelay()
 
@@ -131,13 +151,11 @@ class NotificationGenerationWorker
                             generationTimestamp = currentTime,
                         )
 
-                    // Salvar no DataStore
                     dataStore.setString(
                         ScheduledNotificationServiceImpl.SCHEDULED_NOTIFICATION_JSON_KEY,
                         notification.toJsonFormat(),
                     )
 
-                    // Agendar via AlarmManager
                     val alarmManager =
                         applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                     val intent =
@@ -158,19 +176,20 @@ class NotificationGenerationWorker
                         pendingIntent,
                     )
 
-                    Timber.d(
+                    Log.d(
+                        TAG,
                         "Notification scheduled at: ${
                             notification.scheduledTimestamp.formatDate(
                                 DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR,
                             )
                         }",
                     )
-                    Timber.i("Generated notification: $notification")
+                    Log.i(TAG, "Generated notification: $notification")
 
                     Result.success()
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to generate notification")
+                Log.e(TAG, "Failed to generate notification", e)
                 Result.retry()
             }
         }
@@ -182,6 +201,7 @@ class NotificationGenerationWorker
             }
 
         companion object {
+            const val TAG = "NotificationWorker"
             const val KEY_SAGA_ID = "saga_id"
             const val WORK_TAG_PREFIX = "notification_"
 

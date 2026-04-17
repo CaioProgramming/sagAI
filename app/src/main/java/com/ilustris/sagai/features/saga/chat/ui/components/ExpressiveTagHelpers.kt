@@ -54,13 +54,14 @@ fun insertExpressiveTag(
             selection = TextRange(newCursorPosition),
         )
     } else {
-        // No selection - insert tags with cursor between them
+        // No selection - insert tags with cursor between them with a breathing space
+        // The space tricks the OS keyboard into allowing smart-space/predictions
         val opening = tag.openingTag()
         val closing = tag.closingTag()
         val insertPosition = selection.start
         val newText =
             currentText.substring(0, insertPosition) +
-                opening + closing +
+                opening + " " + closing +
                 currentText.substring(insertPosition)
         val newCursorPosition = insertPosition + opening.length
 
@@ -364,5 +365,50 @@ private fun handleEmptyTagDeletion(
     return TextFieldValue(
         text = newText,
         selection = TextRange(openTagIndex),
+    )
+}
+
+/**
+ * Strips the current tag entirely from the text, retaining its inner content.
+ * Useful when the user wants to cancel the tag mode without losing typed text.
+ *
+ * @param currentValue Current text field value
+ * @return Updated text field value with the tag removed
+ */
+fun stripTag(currentValue: TextFieldValue): TextFieldValue {
+    val text = currentValue.text
+    val cursorPosition = currentValue.selection.start
+    val tag = getCursorInsideTag(text, cursorPosition) ?: return currentValue
+
+    val openTag = tag.openingTag()
+    val closeTag = tag.closingTag()
+
+    // Find the opening tag
+    val textBeforeCursor = text.substring(0, cursorPosition)
+    val openTagIndex = textBeforeCursor.lastIndexOf(openTag)
+
+    if (openTagIndex == -1) return currentValue
+
+    // Find the closing tag
+    val textAfterOpenTag = text.substring(openTagIndex + openTag.length)
+    val closeIndexRelative = textAfterOpenTag.indexOf(closeTag)
+
+    if (closeIndexRelative == -1) return currentValue
+
+    val contentStart = openTagIndex + openTag.length
+    val contentEnd = openTagIndex + openTag.length + closeIndexRelative
+
+    val beforeTag = text.substring(0, openTagIndex)
+    val content = text.substring(contentStart, contentEnd)
+    val afterTag = text.substring(contentEnd + closeTag.length)
+
+    val newText = beforeTag + content + afterTag
+
+    // Adjust cursor position: shift by openTag.length backwards
+    val newCursorPosition = maxOf(0, cursorPosition - openTag.length)
+
+    return TextFieldValue(
+        text = newText,
+        selection = TextRange(newCursorPosition),
     )
 }

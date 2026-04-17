@@ -32,6 +32,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
@@ -95,8 +96,7 @@ class ReviewExpressivenessPage(
                 Modifier
                     .animateContentSize(
                         tween(1200, easing = LinearOutSlowInEasing),
-                    )
-                    .fillMaxWidth(),
+                    ).fillMaxWidth(),
         ) {
             VibeShapeDrawing(
                 emotionalTone = emotionalTone.first,
@@ -109,7 +109,7 @@ class ReviewExpressivenessPage(
                             true,
                             shimmerColors = emotionalTone.first.color.shimmerize(),
                         ),
-                color = genre.color,
+                color = genre.resolveColor(),
                 onFinishDraw = {
                     coroutineScope.launch {
                         delay(1500)
@@ -175,7 +175,7 @@ class ReviewExpressivenessPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.color,
+                            contentColor = genre.resolveColor(),
                         ),
                 ) {
                     Text(stringResource(R.string.share))

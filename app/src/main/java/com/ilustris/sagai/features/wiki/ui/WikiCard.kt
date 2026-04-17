@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.wiki.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -22,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
@@ -37,16 +43,21 @@ fun WikiCard(
     modifier: Modifier,
     expanded: Boolean = false,
 ) {
+    var expanded by remember {
+        mutableStateOf(expanded)
+    }
     val shape = genre.bubble(isNarrator = true, tailWidth = 0.dp, tailHeight = 0.dp)
     Column(
         modifier =
             modifier
                 .border(
                     width = 1.dp,
-                    brush = genre.color.gradientFade(),
+                    brush = genre.resolveColor().gradientFade(),
                     shape = shape,
                 ).clip(shape)
-                .padding(8.dp),
+                .clickable {
+                    expanded = !expanded
+                }.padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         val tag = wiki.emojiTag ?: emptyString()

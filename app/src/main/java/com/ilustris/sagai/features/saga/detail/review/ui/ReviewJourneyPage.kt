@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
@@ -134,7 +135,7 @@ class ReviewJourneyPage(
                         colors =
                             ButtonDefaults.elevatedButtonColors().copy(
                                 containerColor = MaterialTheme.colorScheme.onBackground,
-                                contentColor = genre.color,
+                                contentColor = genre.resolveColor(),
                             ),
                     ) {
                         Text(stringResource(R.string.share))

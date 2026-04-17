@@ -12,7 +12,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -171,33 +172,45 @@ fun StarryLoader(
                         onDraw = borderDraw,
                     )
 
-                    AnimatedContent(
-                        loadingMessage,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
                                 .padding(32.dp),
-                        transitionSpec = {
-                            fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
-                                slideOutVertically(
-                                    animationSpec = tween(800, easing = EaseInOutQuad),
-                                ) { it }
-                        },
                     ) {
-                        it?.let { message ->
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        AnimatedContent(
+                            loadingMessage,
+                            transitionSpec = {
+                                fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
+                                    fadeOut(
+                                        animationSpec = tween(800, easing = EaseInOutQuad),
+                                    )
+                            },
+                        ) { message ->
+                            message?.let {
                                 Text(
-                                    message,
+                                    it,
                                     style = textStyle,
                                     modifier = Modifier.alpha(.6f),
                                 )
-                                subtitle?.let {
-                                    Text(
-                                        it,
-                                        style = subtitleStyle,
-                                        modifier = Modifier.padding(top = 8.dp),
+                            }
+                        }
+                        AnimatedContent(
+                            subtitle,
+                            transitionSpec = {
+                                fadeIn(tween(1000, easing = EaseInOutQuad)) togetherWith
+                                    fadeOut(
+                                        animationSpec = tween(500, easing = EaseInOutQuad),
                                     )
-                                }
+                            },
+                        ) { sub ->
+                            sub?.let {
+                                Text(
+                                    it,
+                                    style = subtitleStyle,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
                             }
                         }
                     }
@@ -216,7 +229,7 @@ fun StarryLoader(
                             .alpha(starsAlpha)
                             .fillMaxSize()
                             .gradientFill(Brush.verticalGradient(brushColors)),
-                    starColor = brushColors.firstOrNull() ?: Color.White,
+                    starColor = Color.White,
                 )
 
                 Canvas(
@@ -224,29 +237,41 @@ fun StarryLoader(
                     onDraw = borderDraw,
                 )
 
-                AnimatedContent(
-                    loadingMessage,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.align(Alignment.Center),
-                    transitionSpec = {
-                        fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
-                            slideOutVertically(
-                                animationSpec = tween(800, easing = EaseInOutQuad),
-                            ) { it }
-                    },
                 ) {
-                    it?.let { message ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AnimatedContent(
+                        loadingMessage,
+                        transitionSpec = {
+                            fadeIn(tween(800, easing = EaseInOutQuad)) togetherWith
+                                fadeOut(
+                                    animationSpec = tween(800, easing = EaseInOutQuad),
+                                )
+                        },
+                    ) { message ->
+                        message?.let {
                             Text(
-                                message,
+                                it,
                                 style = textStyle,
                             )
-                            subtitle?.let {
-                                Text(
-                                    it,
-                                    style = subtitleStyle,
-                                    modifier = Modifier.padding(top = 8.dp),
+                        }
+                    }
+                    AnimatedContent(
+                        subtitle,
+                        transitionSpec = {
+                            fadeIn(tween(1000, easing = EaseInOutQuad)) togetherWith
+                                fadeOut(
+                                    animationSpec = tween(500, easing = EaseInOutQuad),
                                 )
-                            }
+                        },
+                    ) { sub ->
+                        sub?.let {
+                            Text(
+                                it,
+                                style = subtitleStyle,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
                         }
                     }
                 }
@@ -258,11 +283,19 @@ fun StarryLoader(
 @Composable
 fun WarpSpeedStarField(
     modifier: Modifier = Modifier,
-    starColor: Color = MaterialTheme.colorScheme.onBackground,
-    starCount: Int = 200, // More stars for density since they are smaller
+    starColor: Color = Color.White,
+    starCount: Int = 100,
 ) {
     val stars = remember { mutableStateListOf<WarpStar>() }
     var lastFrameTime by remember { mutableLongStateOf(0L) }
+
+    val glowPaint =
+        remember {
+            android.graphics.Paint().apply {
+                isAntiAlias = true
+                style = android.graphics.Paint.Style.FILL
+            }
+        }
 
     // Animation constants - slower and smoother
     val speed = 300f // Reduced speed for organic feel
@@ -295,6 +328,7 @@ fun WarpSpeedStarField(
     }
 
     Canvas(modifier = modifier) {
+        lastFrameTime // Observe lastFrameTime to trigger redraws continuously
         val centerX = size.width / 2
         val centerY = size.height / 2
 
@@ -342,7 +376,7 @@ fun WarpSpeedStarField(
                             center = Offset(px, py),
                             size = starSize,
                             color = color,
-                            glow = true,
+                            glowPaint = glowPaint,
                         )
                     }
                 }
@@ -355,26 +389,15 @@ private fun DrawScope.draw4PointStar(
     center: Offset,
     size: Float,
     color: Color,
-    glow: Boolean = false,
+    glowPaint: android.graphics.Paint? = null,
 ) {
-    // Draw Glow - True Neon Bloom using BlurMaskFilter
-    if (glow) {
+    // Draw Glow - True Neon Bloom using cached framework paint if provided
+    if (glowPaint != null) {
         drawIntoCanvas { canvas ->
-            val glowPaint =
-                Paint().apply {
-                    this.color = color
-                    // Use a brighter alpha for the glow core logic, but let the mask filter spread it
-                    this.alpha = (color.alpha * 0.8f).coerceIn(0f, 1f)
-                    asFrameworkPaint().apply {
-                        isAntiAlias = true
-                        style = android.graphics.Paint.Style.FILL
-                        // The blur radius determines the spread of the glow
-                        maskFilter = BlurMaskFilter(size * 1.5f, BlurMaskFilter.Blur.NORMAL)
-                    }
-                }
-
-            // Draw a circle for the glow base
-            canvas.drawCircle(center, size * 1.2f, glowPaint)
+            glowPaint.color = color.toArgb()
+            glowPaint.alpha = (color.alpha * 0.8f * 255).toInt().coerceIn(0, 255)
+            glowPaint.maskFilter = BlurMaskFilter(size * 1.5f, BlurMaskFilter.Blur.NORMAL)
+            canvas.nativeCanvas.drawCircle(center.x, center.y, size * 1.2f, glowPaint)
         }
     }
 
@@ -396,3 +419,9 @@ private fun DrawScope.draw4PointStar(
     // Draw core with full opacity (or close to it) to simulate the hot light source
     drawPath(sharpPath, color.copy(alpha = (color.alpha + 0.2f).coerceIn(0f, 1f)))
 }
+
+fun Color.toArgb(): Int =
+    (alpha * 255.0f + 0.5f).toInt() shl 24 or
+        ((red * 255.0f + 0.5f).toInt() shl 16) or
+        ((green * 255.0f + 0.5f).toInt() shl 8) or
+        (blue * 255.0f + 0.5f).toInt()

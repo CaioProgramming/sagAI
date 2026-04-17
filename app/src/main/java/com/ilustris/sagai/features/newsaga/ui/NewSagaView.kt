@@ -2,221 +2,116 @@
 
 package com.ilustris.sagai.features.newsaga.ui
 
-import CardFace
-import SagaFormCards
-import android.graphics.Matrix
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.ShaderBrush
-import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.features.newsaga.data.model.CreationSuggestion
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.isCharacterBlank
-import com.ilustris.sagai.features.newsaga.data.model.isReady
-import com.ilustris.sagai.features.newsaga.data.model.isSagaBlank
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.features.newsaga.ui.components.GenreAvatar
-import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
-import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.ui.animations.chromaticAberration
+import com.ilustris.sagai.ui.animations.divineAura
+import com.ilustris.sagai.ui.components.CosmicBook
+import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.FluidGradient
+import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.seconds
 
-private enum class FlowPages(
-    val icon: Int,
-) {
-    CREATE_SAGA(R.drawable.ic_spark),
-    CREATE_CHARACTER(R.drawable.ic_feather),
-    ;
-
-    fun isPageComplete(
-        sagaReady: Boolean,
-        characterReady: Boolean,
-    ) = when (this) {
-        CREATE_SAGA -> sagaReady
-        CREATE_CHARACTER -> characterReady
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun NewSagaView(
     navHostController: NavHostController,
     viewModel: NewSagaViewModel = hiltViewModel(),
 ) {
-    val sagaFormState by viewModel.sagaFormState.collectAsStateWithLifecycle()
-    val characterState by viewModel.characterState.collectAsStateWithLifecycle()
-
+    val isReadyToSave by viewModel.isReadyToSave.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    val savingError by viewModel.savingError.collectAsStateWithLifecycle()
     val effect by viewModel.effect.collectAsStateWithLifecycle()
-    var recordingAudio by remember { mutableStateOf(false) }
-    var showExitDialog by remember { mutableStateOf(false) }
-
-    var inputField by remember { mutableStateOf("") }
-    var flow by remember {
-        mutableStateOf(FlowPages.CREATE_SAGA)
-    }
-    val coroutineScope = rememberCoroutineScope()
-    rememberBottomSheetScaffoldState()
-    100.dp
-
-    val startingUp =
-        when (flow) {
-            FlowPages.CREATE_SAGA -> sagaFormState?.messages?.isEmpty() == true
-            FlowPages.CREATE_CHARACTER -> characterState?.message == null
-        }
-
-    val side =
-        when (flow) {
-            FlowPages.CREATE_SAGA -> CardFace.Front
-            FlowPages.CREATE_CHARACTER -> CardFace.Back
-        }
-
-    val message =
-        when (flow) {
-            FlowPages.CREATE_SAGA -> sagaFormState?.message
-            FlowPages.CREATE_CHARACTER -> characterState?.message
-        }
-
-    BackHandler(enabled = isSaving) {
-        showExitDialog = true
-    }
-
-    if (showExitDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text(text = stringResource(R.string.dialog_exit_title_new_saga)) },
-            text = { Text(text = stringResource(R.string.dialog_exit_message_new_saga)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showExitDialog = false
-                        navHostController.popBackStack()
-                    },
-                ) {
-                    Text(stringResource(R.string.dialog_exit_confirm_button_new_saga))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showExitDialog = false },
-                ) {
-                    Text(stringResource(R.string.dialog_exit_dismiss_button_new_saga))
-                }
-            },
-        )
-    }
+    val lockedSaga by viewModel.lockedSaga.collectAsStateWithLifecycle()
+    val lockedCharacter by viewModel.lockedCharacter.collectAsStateWithLifecycle()
+    val currentAgentMessage by viewModel.currentAgentMessage.collectAsStateWithLifecycle()
+    val isAgentLoading by viewModel.isAgentLoading.collectAsStateWithLifecycle()
+    val currentConfig by viewModel.currentConfig.collectAsStateWithLifecycle()
+    val genderPlaceholders by viewModel.genderPlaceholders.collectAsStateWithLifecycle()
+    val universeEchoes by viewModel.universeEchoes.collectAsStateWithLifecycle()
+    val isEchoLoading by viewModel.isEchoLoading.collectAsStateWithLifecycle()
+    var userInput by remember { mutableStateOf("") }
+    val genreConfigs by viewModel.genresVisuals.collectAsStateWithLifecycle()
+    val libraryBooks by viewModel.libraryBooks.collectAsStateWithLifecycle()
+    val uiError by viewModel.uiError.collectAsStateWithLifecycle()
 
     LaunchedEffect(effect) {
         when (effect) {
@@ -234,908 +129,393 @@ fun NewSagaView(
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.startSagaChat()
-    }
+    CompositionLocalProvider(
+        LocalGenreVisualConfig provides currentConfig,
+        LocalGenderPlaceholders provides genderPlaceholders,
+    ) {
+        val currentPalette = lockedSaga?.genre?.colorPalette() ?: holographicGradient
 
-    LaunchedEffect(flow) {
-        if (flow == FlowPages.CREATE_CHARACTER) {
-            viewModel.startCharacterCreation()
-        }
-    }
-
-    fun togglePage() {
-        coroutineScope.launch {
-            flow =
-                when (flow) {
-                    FlowPages.CREATE_SAGA -> FlowPages.CREATE_CHARACTER
-                    FlowPages.CREATE_CHARACTER -> FlowPages.CREATE_SAGA
-                }
-        }
-    }
-
-    fun sendMessage() {
-        when (flow) {
-            FlowPages.CREATE_SAGA -> {
-                viewModel.sendSagaMessage(inputField)
-            }
-
-            FlowPages.CREATE_CHARACTER -> {
-                viewModel.sendCharacterMessage(inputField)
-            }
-        }
-        inputField = emptyString()
-    }
-
-    SharedTransitionLayout {
-        AnimatedContent(startingUp, transitionSpec = {
-            fadeIn(tween(700)) togetherWith fadeOut(tween(500))
-        }) {
+        AnimatedContent(isEchoLoading) {
             if (it) {
-                Box(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Image(
                         painterResource(R.drawable.ic_spark),
-                        null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        contentDescription = "Loading",
                         modifier =
                             Modifier
-                                .align(
-                                    Alignment.Center,
-                                ).sharedElement(
-                                    rememberSharedContentState("spark_icon"),
-                                    this@AnimatedContent,
-                                ).size(64.dp)
-                                .reactiveShimmer(
-                                    true,
-                                    holographicGradient,
-                                    duration = 2.seconds,
-                                    repeatMode = RepeatMode.Restart,
-                                    targetValue = 200f,
-                                ),
+                                .size(100.dp)
+                                .gradientFill(Brush.verticalGradient(holographicGradient))
+                                .reactiveShimmer(true)
+                                .levitate()
+                                .divineAura(),
                     )
                 }
             } else {
-                val draft = sagaFormState?.draft
-                if (draft == null) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .size(50.dp)
-                                    .reactiveShimmer(
-                                        true,
-                                        holographicGradient,
-                                    ),
-                        )
-                    }
-                } else {
-                    val genre = draft.genre
-                    val suggestions =
-                        (
-                            if (flow == FlowPages.CREATE_SAGA) {
-                                sagaFormState?.suggestions
-                            } else {
-                                characterState?.suggestions
-                            }
-                        ) ?: emptyList()
-
-                    val isLoading =
-                        isSaving ||
-                            characterState?.isLoading == true ||
-                            sagaFormState?.isLoading == true
-
-                    val hint =
-                        when (flow) {
-                            FlowPages.CREATE_SAGA -> sagaFormState?.hint ?: emptyString()
-                            FlowPages.CREATE_CHARACTER -> characterState?.hint ?: emptyString()
-                        }
-
-                    var containerColor by remember {
-                        mutableStateOf(genre.color)
-                    }
-                    LaunchedEffect(flow) {
-                        containerColor = genre.colorPalette().random()
-                    }
-
-                    LaunchedEffect(genre) {
-                        containerColor = genre.colorPalette().random()
-                    }
-
-                    val backgroundColor by animateColorAsState(
-                        targetValue = containerColor,
-                        animationSpec = tween(600),
-                        label = "backgroundColor",
-                    )
-
-                    Box(Modifier.fillMaxSize()) {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                backgroundColor,
-                                                backgroundColor.copy(alpha = .5f),
-                                                MaterialTheme.colorScheme.background,
-                                                MaterialTheme.colorScheme.background,
-                                                MaterialTheme.colorScheme.background,
-                                            ),
-                                        ),
-                                    ).animateContentSize(),
-                        ) {
-                            TopBarContent(
-                                genre = genre,
-                                sagaReady = sagaFormState?.isReady == true,
-                                characterReady = characterState?.isReady == true,
-                                isLoading = isSaving,
-                                currentPage = flow,
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                                sharedTransitionScope = this@SharedTransitionLayout,
-                                animatedContentScope = this@AnimatedContent,
-                                navigateBack = {
-                                    navHostController.popBackStack()
-                                },
-                                onSelectGenre = { viewModel.updateGenre(it) },
-                                onTogglePage = ::togglePage,
-                            )
-                            val form =
-                                sagaFormState?.let {
-                                    SagaForm(it.draft, characterState?.characterInfo)
-                                }
-
-                            AnimatedContent(message) { m ->
-                                m?.let {
-                                    Text(
-                                        it,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontFamily = genre.bodyFont(),
-                                        textAlign = TextAlign.Center,
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(16.dp),
-                                    )
-                                }
-                            }
-
-                            AnimatedContent(form, modifier = Modifier.weight(1f)) { frm ->
-
-                                frm?.let {
-                                    val showOnlySuggestions =
-                                        when (side) {
-                                            CardFace.Front -> it.isSagaBlank()
-                                            CardFace.Back -> it.isCharacterBlank()
-                                        }
-                                    if (!showOnlySuggestions) {
-                                        SagaFormCards(
-                                            side,
-                                            it,
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxSize()
-                                                    .reactiveShimmer(
-                                                        isLoading || isSaving,
-                                                        repeatMode = RepeatMode.Restart,
-                                                        targetValue = 1000f,
-                                                    ),
-                                        ) {
-                                            togglePage()
-                                        }
-                                    } else {
-                                        SuggestionsContent(
-                                            suggestions,
-                                            Modifier.padding(8.dp),
-                                        ) {
-                                            inputField = it
-                                        }
-                                    }
-                                }
-                            }
-
-                            val stateReady =
-                                when (side) {
-                                    CardFace.Front -> sagaFormState?.isReady
-                                    CardFace.Back -> characterState?.isReady
-                                }
-
-                            AnimatedContent(stateReady == true) {
-                                if (it) {
-                                    Button(
-                                        onClick = {},
-                                        colors = ButtonDefaults.textButtonColors(),
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth()
-                                                .animateContentSize(),
-                                    ) {
-                                        val text =
-                                            when (flow) {
-                                                FlowPages.CREATE_SAGA -> stringResource(R.string.create_character)
-                                                FlowPages.CREATE_CHARACTER -> stringResource(R.string.continue_to_saga)
-                                            }
-
-                                        Text(
-                                            text,
-                                            style =
-                                                MaterialTheme.typography.titleSmall.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                ),
-                                        )
-                                    }
-                                } else {
-                                    Text(
-                                        "Voce ainda pode refinar sua história deixando ela mais impactante.",
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontFamily = genre.bodyFont(),
-                                                textAlign = TextAlign.Center,
-                                                fontWeight = FontWeight.Light,
-                                                color =
-                                                    MaterialTheme.colorScheme.onBackground.copy(
-                                                        alpha = .5f,
-                                                    ),
-                                            ),
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth(),
-                                    )
-                                }
-                            }
-
-                            AnimatedVisibility(form?.isReady() == true) {
-                                val shape =
-                                    genre.bubble(
-                                        isNarrator = false,
-                                        tailWidth = 0.dp,
-                                        tailHeight = 0.dp,
-                                    )
-                                Button(
-                                    enabled = isLoading.not() && isSaving.not(),
-                                    onClick = {
-                                        viewModel.saveSaga()
-                                    },
-                                    colors =
-                                        ButtonDefaults.buttonColors().copy(
-                                            containerColor = genre.color,
-                                            contentColor = genre.iconColor,
-                                        ),
-                                    shape = shape,
-                                    border = BorderStroke(1.dp, genre.gradient(true)),
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth(),
-                                ) {
-                                    Text(
-                                        stringResource(R.string.save_saga),
-                                        style = MaterialTheme.typography.titleSmall.copy(fontFamily = genre.bodyFont()),
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(100.dp))
-                        }
-
-                        BottomContent(
-                            genre = genre,
-                            inputField = inputField,
-                            isLoading = isLoading,
-                            hint = hint,
-                            suggestions = suggestions,
-                            onUpdateInput = { inputField = it },
-                            onSendMessage = { sendMessage() },
-                            onStartAudioRecording = { recordingAudio = true },
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .imePadding(),
-                        )
-                    }
-
-                    StarryLoader(
-                        isLoading = isSaving,
-                        loadingMessage = loadingMessage,
-                        brushColors = genre.shimmerColors(),
-                        textStyle =
-                            MaterialTheme.typography.labelMedium.copy(
-                                textAlign = TextAlign.Center,
-                                fontFamily = genre.bodyFont(),
-                                color = MaterialTheme.colorScheme.onBackground,
-                            ),
-                    )
-
-                    // Error dialog
-                    if (savingError != null) {
-                        AlertDialog(
-                            onDismissRequest = { /* Don't dismiss on outside click */ },
-                            title = { Text(text = stringResource(R.string.unexpected_error)) },
-                            text = { Text(text = savingError ?: "Unknown error") },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = { viewModel.retry() },
-                                ) {
-                                    Text(stringResource(R.string.try_again))
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(
-                                    onClick = {
-                                        viewModel.reset()
-                                        navHostController.popBackStack()
-                                    },
-                                ) {
-                                    Text(stringResource(R.string.cancel))
-                                }
-                            },
-                        )
-                    }
-
-                    if (recordingAudio) {
-                        AudioRecordingSheet(
-                            brush = genre.colorPalette(),
-                            onDismiss = {
-                                recordingAudio = false
-                            },
-                        ) {
-                            inputField = it
-                            sendMessage()
-                            recordingAudio = false
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SuggestionsContent(
-    suggestions: List<CreationSuggestion>,
-    modifier: Modifier = Modifier,
-    onSelect: (String) -> Unit = {},
-) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier,
-    ) {
-        items(suggestions) {
-            val genre = it.genre
-            val shape = genre.bubble(tailHeight = 0.dp, tailWidth = 0.dp, isNarrator = true)
-            Column(
-                modifier =
-                    Modifier
-                        .fillParentMaxWidth(.6f)
-                        .padding(8.dp)
-                        .clip(shape)
-                        .border(
-                            1.dp,
-                            it.genre.gradient(true),
-                            shape,
-                        ).background(
-                            it.genre.color,
-                            shape,
-                        ).clickable {
-                            onSelect(it.text)
-                        }.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Image(
-                    painterResource(genre.background),
-                    null,
-                    colorFilter = ColorFilter.tint(genre.iconColor),
-                    modifier = Modifier.size(24.dp),
-                )
-                Text(
-                    it.text,
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
-                            textAlign = TextAlign.Start,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TopBarContent(
-    genre: Genre,
-    sagaReady: Boolean,
-    characterReady: Boolean,
-    isLoading: Boolean,
-    currentPage: FlowPages,
-    modifier: Modifier = Modifier,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
-    onSelectGenre: (Genre) -> Unit,
-    onTogglePage: () -> Unit,
-    navigateBack: () -> Unit = {},
-) {
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(16.dp)
-                .animateContentSize(),
-    ) {
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        var showThemes by remember { mutableStateOf(false) }
-        val tooltipState = rememberTooltipState(isPersistent = true)
-        val tooltipPositionProvider =
-            rememberTooltipPositionProvider(
-                positioning = TooltipAnchorPosition.Below,
-                spacingBetweenTooltipAndAnchor = 4.dp,
-            )
-        val coroutineScope = rememberCoroutineScope()
-        val shape =
-            genre.bubble(
-                BubbleTailAlignment.BottomRight,
-                0.dp,
-                0.dp,
-                true,
-            )
-
-        Icon(
-            painterResource(R.drawable.ic_back_left),
-            null,
-            tint = genre.iconColor,
-            modifier =
-                Modifier
-                    .align(Alignment.CenterStart)
-                    .reactiveShimmer(isLoading, genre.shimmerColors())
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        navigateBack()
-                    },
-        )
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .animateContentSize(),
-        ) {
-            val size by animateDpAsState(if (isLoading) 50.dp else 40.dp)
-            with(sharedTransitionScope) {
-                IconButton(
-                    onClick = {
-                        onTogglePage()
-                    },
-                    modifier =
-                        Modifier
-                            .sharedElement(
-                                rememberSharedContentState("spark_icon"),
-                                animatedContentScope,
-                            ).reactiveShimmer(
-                                isLoading,
-                                shimmerColors = genre.shimmerColors(),
-                                repeatMode = RepeatMode.Restart,
-                            ).size(size)
-                            .clip(CircleShape)
-                            .padding(8.dp),
-                ) {
-                    AnimatedContent(currentPage, transitionSpec = {
-                        scaleIn() togetherWith scaleOut()
-                    }) {
-                        Icon(
-                            painter =
-                                painterResource(
-                                    it.icon,
-                                ),
-                            contentDescription = "Toggle page",
-                            tint = genre.iconColor,
-                        )
-                    }
-                }
-            }
-
-            val showBadge = currentPage.isPageComplete(sagaReady, characterReady)
-
-            if (showBadge) {
                 Box(
                     modifier =
                         Modifier
-                            .size(4.dp)
-                            .background(genre.iconColor, CircleShape),
-                )
-            }
-        }
-
-        Box(
-            modifier =
-                Modifier
-                    .align(Alignment.CenterEnd)
-                    .animateContentSize(tween(400, easing = EaseIn)),
-        ) {
-            TooltipBox(
-                positionProvider = tooltipPositionProvider,
-                state = tooltipState,
-                tooltip = {
-                    Column(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .border(
-                                1.dp,
-                                genre.color.gradientFade(),
-                                shape,
-                            ).background(
-                                MaterialTheme.colorScheme.background,
-                                shape,
-                            ),
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(16.dp),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    stringResource(R.string.saga_genre),
-                                    style =
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            fontFamily = genre.bodyFont(),
-                                        ),
-                                    modifier = Modifier.weight(1f),
-                                )
-
-                                Text(
-                                    stringResource(R.string.see_more),
-                                    style =
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            color = genre.color,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .clickable {
-                                                coroutineScope.launch {
-                                                    tooltipState.dismiss()
-                                                }
-                                                showThemes = true
-                                            },
-                                )
-                            }
-
-                            LazyRow(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                items(Genre.entries) { g ->
-                                    GenreAvatar(
-                                        g,
-                                        true,
-                                        48.dp,
-                                        genre == g,
-                                        modifier = Modifier.padding(8.dp),
-                                    ) {
-                                        coroutineScope.launch {
-                                            tooltipState.dismiss()
-                                            onSelectGenre(g)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-            ) {
-                Row(
-                    Modifier
-                        .border(
-                            1.dp,
-                            genre.gradient(true),
-                            RoundedCornerShape(25.dp),
-                        ).clip(RoundedCornerShape(25.dp))
-                        .clickable {
-                            coroutineScope.launch {
-                                tooltipState.show()
-                            }
-                        }.background(
-                            genre.color,
-                            RoundedCornerShape(25.dp),
-                        ).padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                            .imePadding(),
                 ) {
-                    Text(
-                        stringResource(genre.title),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = genre.iconColor,
-                        fontFamily = genre.bodyFont(),
-                    )
-
-                    GenreAvatar(
-                        genre,
-                        false,
-                        24.dp,
-                        true,
-                        onClick = {
-                            coroutineScope.launch {
-                                tooltipState.show()
-                            }
+                    AnimatedContent(
+                        currentPalette,
+                        label = "GradientTransition",
+                        modifier = Modifier.fillMaxSize(),
+                        transitionSpec = {
+                            fadeIn(tween(1000, easing = EaseIn)) togetherWith
+                                fadeOut(
+                                    tween(
+                                        200,
+                                        easing = FastOutSlowInEasing,
+                                    ),
+                                )
                         },
-                    )
-                }
-            }
-        }
-
-        if (showThemes) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    coroutineScope.launch {
-                        showThemes = false
-                    }
-                },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.background,
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(
-                            stringResource(R.string.saga_genre),
-                            style =
-                                MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
+                    ) {
+                        FluidGradient(
+                            colors = it,
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
 
-                    items(Genre.entries) { genr ->
-                        GenreCard(
-                            genre = genr,
-                            isSelected = genr == genre,
+                    // 2. Gradient Overlay
+                    Box(
+                        modifier =
+                            Modifier
+                                .background(fadedGradientTopAndBottom())
+                                .fillMaxSize(),
+                    )
+
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .statusBarsPadding(),
+                    ) {
+                        AnimatedVisibility(!isSaving) {
+                            TopBarContent(
+                                modifier = Modifier.fillMaxWidth(),
+                                navigateBack = { navHostController.popBackStack() },
+                            )
+                        }
+
+                        AnimatedVisibility(libraryBooks.isNotEmpty() && isSaving.not()) {
+                            val filteredBooks =
+                                if (isSaving) {
+                                    libraryBooks.filter { it.first.draft.id == lockedSaga?.id }
+                                } else {
+                                    libraryBooks
+                                }
+                            LibraryPager(
+                                books = filteredBooks,
+                                lockedSaga = lockedSaga,
+                                lockedCharacter = lockedCharacter,
+                                isAgentLoading = isAgentLoading || isSaving,
+                                onAction = viewModel::onAgenticAction,
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            isSaving,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            enter =
+                                fadeIn(tween(800)) +
+                                    scaleIn(
+                                        tween(
+                                            400,
+                                            easing = FastOutLinearInEasing,
+                                        ),
+                                    ),
+                            exit = scaleOut(),
+                        ) {
+                            val actualBook =
+                                libraryBooks.firstOrNull { it.first.draft.id == lockedSaga?.id }
+                            actualBook?.let {
+                                CosmicBook(
+                                    book = it.first,
+                                    visualConfig = it.second,
+                                    isOpened = false,
+                                    isLoading = true,
+                                    onToggle = {},
+                                    onAction = {},
+                                    modifier =
+                                        Modifier
+                                            .padding(50.dp)
+                                            .levitate()
+                                            .divineAura()
+                                            .chromaticAberration(),
+                                )
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            isAgentLoading && libraryBooks.isEmpty(),
                             modifier =
                                 Modifier
-                                    .fillMaxSize()
-                                    .padding(4.dp)
-                                    .aspectRatio(.5f),
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(.6f),
                         ) {
-                            onSelectGenre(genr)
-                            showThemes = false
+                            GenreMemoriesLoader(
+                                isLoading = isAgentLoading,
+                                message = emptyString(),
+                                genresConfigs = genreConfigs ?: emptyList(),
+                            )
+                        }
+
+                        AnimatedContent(currentAgentMessage, transitionSpec = {
+                            fadeIn() + slideInVertically { it / 2 } togetherWith fadeOut() + slideOutVertically { -it / 2 }
+                        }, modifier = Modifier.fillMaxWidth()) { message ->
+                            message?.let {
+                                Text(
+                                    text = it,
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            shadow =
+                                                Shadow(
+                                                    Color.White,
+                                                    blurRadius = 10f,
+                                                ),
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth()
+                                            .levitate(isAgentLoading),
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+
+                        uiError?.let {
+                            Text(
+                                text = it,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(16.dp),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth(),
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            AnimatedVisibility(
+                                universeEchoes.isNotEmpty() && isAgentLoading.not(),
+                                enter = fadeIn(tween(800)) + slideInVertically { it },
+                                exit = fadeOut(tween(800)) + slideOutVertically { it },
+                            ) {
+                                UniverseEchoesSection(universeEchoes, {
+                                    userInput = it
+                                    viewModel.onAgenticAction(AgenticAction.SubmitPrompt(it))
+                                })
+                            }
+
+                            AnimatedContent(
+                                targetState = (isReadyToSave && lockedSaga != null && lockedCharacter != null) || isSaving,
+                                label = "BottomControl",
+                            ) { ready ->
+                                if (ready) {
+                                    AnimatedVisibility(isSaving.not()) {
+                                        val genre = lockedSaga?.genre
+                                        val buttonShape =
+                                            lockedSaga?.genre?.shape() ?: MaterialTheme.shapes.large
+                                        val color =
+                                            genre?.resolveColor()
+                                                ?: MaterialTheme.colorScheme.primary
+                                        val contentColor =
+                                            genre?.resolveIconColor()
+                                                ?: MaterialTheme.colorScheme.onPrimary
+                                        Button(
+                                            onClick = { viewModel.onAgenticAction(AgenticAction.SaveSaga) },
+                                            modifier =
+                                                Modifier
+                                                    .padding(32.dp)
+                                                    .dropShadow(
+                                                        buttonShape,
+                                                    ) {
+                                                        this.color = color
+                                                        this.radius = 5f
+                                                        this.spread = 5f
+                                                    }.fillMaxWidth(),
+                                            shape = buttonShape,
+                                            enabled = !isSaving,
+                                            colors =
+                                                ButtonDefaults.buttonColors(
+                                                    containerColor = color,
+                                                    contentColor = contentColor,
+                                                ),
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.save_saga),
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    PromptBar(
+                                        value = userInput,
+                                        onValueChange = { newValue: String ->
+                                            userInput = newValue
+                                        },
+                                        onSend = {
+                                            viewModel.onAgenticAction(
+                                                AgenticAction.SubmitPrompt(
+                                                    userInput,
+                                                ),
+                                            )
+                                            userInput = ""
+                                        },
+                                        isLoading = isAgentLoading || isSaving,
+                                        genre = lockedSaga?.genre,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+
+    OnboardingDialog(OnboardingType.CREATION_GUIDE)
 }
 
 @Composable
-private fun BottomContent(
-    genre: Genre,
-    inputField: String,
-    isLoading: Boolean,
-    hint: String,
-    suggestions: List<CreationSuggestion>,
+fun TopBarContent(
     modifier: Modifier = Modifier,
-    onUpdateInput: (String) -> Unit,
-    onSendMessage: () -> Unit,
-    onStartAudioRecording: () -> Unit,
+    navigateBack: () -> Unit,
 ) {
-    val shape =
-        genre.bubble(
-            BubbleTailAlignment.BottomRight,
-            0.dp,
-            0.dp,
-            true,
-        )
-
-    val glowRadius by animateDpAsState(
-        targetValue = if (isLoading) 10.dp else 5.dp,
-        label = "glowRadius",
-        animationSpec = tween(500),
-    )
-    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(3000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "rotation",
-    )
-
     Row(
         modifier =
             modifier
-                .animateContentSize()
-                .padding(16.dp)
-                .dropShadow(
-                    shape = shape,
-                    shadow =
-                        Shadow(
-                            radius = glowRadius,
-                            spread = 2.dp,
-                            color = genre.color,
-                            offset = DpOffset.Zero,
-                        ),
-                ).clip(shape)
-                .drawWithContent {
-                    drawContent()
-                    val outline = shape.createOutline(size, layoutDirection, this)
-                    if (isLoading) {
-                        val brush =
-                            object : ShaderBrush() {
-                                override fun createShader(size: Size): Shader {
-                                    val shader =
-                                        (
-                                            sweepGradient(
-                                                genre.colorPalette(),
-                                            ) as ShaderBrush
-                                        ).createShader(size)
-                                    val matrix = Matrix()
-                                    matrix.setRotate(
-                                        rotation,
-                                        size.width / 2,
-                                        size.height / 2,
-                                    )
-                                    shader.setLocalMatrix(matrix)
-                                    return shader
-                                }
-                            }
-                        drawOutline(
-                            outline = outline,
-                            brush = brush,
-                            style = Stroke(width = 1.dp.toPx()),
-                        )
-                    } else {
-                        drawOutline(
-                            outline = outline,
-                            brush = genre.iconColor.copy(alpha = .1f).solidGradient(),
-                            style = Stroke(width = 1.dp.toPx()),
-                        )
-                    }
-                }.background(MaterialTheme.colorScheme.surfaceContainer, shape)
-                .padding(8.dp)
-                .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicTextField(
-            value = inputField,
-            onValueChange = {
-                onUpdateInput(it)
-            },
-            enabled = isLoading.not(),
-            cursorBrush = genre.color.solidGradient(),
-            maxLines = if (isLoading) 1 else Int.MAX_VALUE,
-            textStyle =
-                MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                ),
+        IconButton(onClick = navigateBack) {
+            Icon(
+                painter = painterResource(R.drawable.ic_back_left),
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Text(
+            text = stringResource(R.string.new_saga_title),
+            style = MaterialTheme.typography.titleMedium,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(48.dp))
+    }
+}
+
+@Composable
+fun PromptBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSend: () -> Unit,
+    isLoading: Boolean,
+    genre: Genre?,
+) {
+    val shape = genre?.shape() ?: MaterialTheme.shapes.extraLarge
+    val themeBrush =
+        Brush.horizontalGradient(genre?.colorPalette() ?: holographicGradient)
+
+    val primaryColor = genre?.resolveColor() ?: MaterialTheme.colorScheme.primary
+    Row(
+        modifier =
+            Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .dropShadow(shape) {
+                    this.color = primaryColor
+                    this.radius = 10f
+                    this.spread = 5f
+                    this.brush = themeBrush
+                }.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
+                .background(MaterialTheme.colorScheme.background, shape)
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_spark),
+            contentDescription = "Prompt",
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier =
                 Modifier
-                    .weight(1f),
+                    .size(24.dp)
+                    .gradientFill(Brush.verticalGradient(holographicGradient)),
+        )
+
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1f),
+            textStyle =
+                MaterialTheme.typography.labelSmall.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Light,
+                ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            enabled = isLoading.not(),
             decorationBox = { innerTextField ->
-                Box(contentAlignment = Alignment.CenterStart) {
-                    if (inputField.isEmpty()) {
-                        Text(
-                            text = hint,
-                            style = MaterialTheme.typography.labelLarge,
-                            color =
-                                MaterialTheme.colorScheme.onSurface.copy(
-                                    alpha = 0.5f,
-                                ),
-                            fontFamily = genre.bodyFont(),
-                        )
-                    }
-                    innerTextField()
+                if (value.isEmpty()) {
+                    Text(
+                        stringResource(R.string.saga_description_hint),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    )
                 }
+                innerTextField()
             },
         )
 
-        val suggestionsTooltip = rememberTooltipState(isPersistent = true)
-        val coroutineScope = rememberCoroutineScope()
-        TooltipBox(
-            state = suggestionsTooltip,
-            positionProvider =
-                rememberTooltipPositionProvider(
-                    positioning = TooltipAnchorPosition.Above,
-                    spacingBetweenTooltipAndAnchor = 4.dp,
-                ),
-            tooltip = {
-                SuggestionsContent(
-                    suggestions,
-                    Modifier.padding(8.dp),
-                ) {
-                    onUpdateInput(it)
-                    coroutineScope.launch {
-                        suggestionsTooltip.dismiss()
-                    }
-                }
+        val iconBackgroundColor by animateColorAsState(
+            if (value.isNotBlank() && !isLoading) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                Color.Transparent
             },
-        ) {
-            IconButton(
-                onClick = {
-                    coroutineScope.launch {
-                        if (suggestionsTooltip.isVisible) {
-                            suggestionsTooltip.dismiss()
-                        } else {
-                            suggestionsTooltip.show()
-                        }
-                    }
-                },
-                modifier =
-                    Modifier
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.onBackground.copy(
-                                alpha = .1f,
-                            ),
-                            CircleShape,
-                        ).size(32.dp)
-                        .padding(8.dp),
-                colors = IconButtonDefaults.outlinedIconButtonColors(),
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_idea),
-                    null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxSize(),
+            label = "iconBackground",
+        )
+
+        val brush =
+            if (isLoading) {
+                Brush.verticalGradient(
+                    holographicGradient,
                 )
+            } else {
+                MaterialTheme.colorScheme.onBackground.solidGradient()
             }
-        }
 
         IconButton(
-            onClick = {
-                if (inputField.isEmpty()) {
-                    onStartAudioRecording()
-                } else {
-                    onSendMessage()
-                }
-            },
-            colors =
-                IconButtonDefaults.iconButtonColors(
-                    containerColor = genre.color,
-                    contentColor = genre.iconColor,
-                    disabledContentColor =
-                        MaterialTheme.colorScheme.onBackground.copy(
-                            alpha = .3f,
-                        ),
-                ),
+            onClick = onSend,
+            enabled = value.isNotBlank() && !isLoading,
             modifier =
                 Modifier
+                    .background(iconBackgroundColor, CircleShape)
+                    .size(32.dp)
                     .padding(8.dp)
-                    .size(32.dp),
+                    .gradientFill(brush),
         ) {
-            val icon =
-                if (inputField.isEmpty()) R.drawable.ic_mic else R.drawable.ic_send
-            AnimatedContent(icon) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            } else {
                 Icon(
-                    painter = painterResource(it),
-                    contentDescription = "Send message",
-                    modifier = Modifier.padding(8.dp),
+                    painter = painterResource(R.drawable.ic_send),
+                    contentDescription = "Send",
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }

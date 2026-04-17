@@ -1,7 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
-import android.icu.util.Calendar
+import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import javax.inject.Inject
@@ -17,19 +18,21 @@ class MessageRepositoryImpl
 
         override suspend fun getMessages(sagaId: Int) = messageDao.getMessages(sagaId)
 
-        override suspend fun saveMessage(message: Message) =
-            message.copy(
+        override suspend fun saveMessage(message: Message): Message {
+            Log.d(javaClass.simpleName, "saveMessage: Saving\n${message.toJsonFormat()}")
+            return message.copy(
                 id =
                     messageDao
                         .saveMessage(
                             message.copy(
                                 id = 0,
-                                timestamp = Calendar.getInstance().timeInMillis,
+                                timestamp = System.currentTimeMillis(),
                                 text = message.text.trimEnd(),
                             ),
                         )!!
                         .toInt(),
             )
+        }
 
         override suspend fun deleteMessage(messageId: Long) {
             messageDao.deleteMessage(messageId)

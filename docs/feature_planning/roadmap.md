@@ -86,17 +86,24 @@ own dedicated folder containing detailed tasks and implementation plans.
 
 ### 10. Stories Feature 📖
 
-* **Status**: Planning
+* **Status**: Completed ✅
 * **Folder**: `stories/`
 * **Plan**: `stories/plan.md`
 * **Description**: Add an engaging "Stories" row to HomeView displaying active sagas (not ended, > 1
   chapter). Tapping a story opens a full-screen bottom sheet with two pages: "Previously
   on [Saga Title]" (AI-generated summary) and "The history continues" (AI-generated hook). Uses
   GemmaClient for cost-effective single-shot generation of both summary and hook via
-  `StoryDailyBriefing` model. Generation triggered on-demand when user opens the story to avoid rate
-  limits and unnecessary API calls.
+  `StoryDailyBriefing` model.
 
-### 11. Global Notification System 🔔
+### 11. Interactive Progress Milestones ⚡
+
+* **Status**: Implementing 🛠️
+* **Folder**: `interactive_milestones/`
+* **Plan**: `interactive_milestones/plan.md`
+* **Description**: Replace the automatic narrative progression system with an interactive,
+  user-initiated flow using a long-press FAB with haptic feedback and visual "Aura" effects.
+
+### 12. Global Notification System 🔔
 
 * **Status**: Completed ✅
 * **Documentation**: `../../features/global_notification_system.md`
@@ -155,6 +162,26 @@ own dedicated folder containing detailed tasks and implementation plans.
 * **Documentation**: `../../features/punk_rock_theme.md`
 * **Archive**: `../../archive/feature_planning/punk_rock_theme_plan.md`
 * **Description**: Implementation of the "Punk Rock" genre with rebellious aesthetics, graffiti visuals, and specific AI rules.
+
+### 19. Onboarding System 🎓
+
+* **Status**: Planning
+* **Folder**: `onboarding/`
+* **Plan**: `onboarding/plan.md`
+* **Description**: AI-generated contextual onboarding using full-screen pager dialogs. RemoteConfig
+  provides context per onboarding type, GemmaClient generates casual slides dynamically. Three
+  contexts: App Intro (first launch), Creation Guide (first saga), Gameplay Guide (first chat).
+  Phased rollout starting with App Intro. Component designed for future reuse in PremiumView.
+
+### 20. Dynamic Creation Flow (Digital Grimoire) 📓
+
+* **Status**: Completed ✅
+* **Folder**: `dynamic_creation_flow/`
+* **Plan**: `dynamic_creation_flow/plan.md`
+* **Description**: Transformed the saga creation experience into a high-fidelity "Digital Grimoire".
+  Includes a gesture-based HorizontalPager for seamless navigation between lore and protagonists,
+  localized Shared Element Transitions for character reveals, and a "Creative Co-Pilot" AI
+  integration for grounded story pitches.
 
 ---
 ## Usage

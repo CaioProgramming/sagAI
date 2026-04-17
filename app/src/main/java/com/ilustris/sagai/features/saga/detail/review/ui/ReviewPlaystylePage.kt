@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -64,7 +65,7 @@ class ReviewPlaystylePage(
                             fontWeight = FontWeight.Bold,
                             shadow =
                                 Shadow(
-                                    genre.color,
+                                    genre.resolveColor(),
                                     blurRadius = 1f,
                                     offset = Offset(5f, 0f),
                                 ),

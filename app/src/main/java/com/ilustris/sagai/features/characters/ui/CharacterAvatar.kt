@@ -31,14 +31,16 @@ import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
 
 @Composable
 fun CharacterAvatar(
@@ -55,12 +57,14 @@ fun CharacterAvatar(
     grainRadius: Float? = null,
     pixelation: Float? = null,
 ) {
-    val characterColor = character.hexColor.hexToColor() ?: genre.color
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+    val characterColor = character.hexColor.hexToColor() ?: resolvedColor
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
             listOf(
                 characterColor,
-                genre.iconColor,
+                resolvedIconColor,
             ),
         )
 
@@ -86,8 +90,7 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 CircleShape,
-            )
-            .clip(CircleShape)
+            ).clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),
@@ -111,23 +114,20 @@ fun CharacterAvatar(
                     .background(
                         characterColor,
                         CircleShape,
-                    )
-                    .fillMaxSize()
+                    ).fillMaxSize()
                     .effectForGenre(
                         genre,
                         useFallBack = useFallback,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,
-                    )
-                    .graphicsLayer {
+                    ).graphicsLayer {
                         scaleX = animatedScale
                         scaleY = animatedScale
                         translationX = animatedTranslationX * size.width
                         translationY = animatedTranslationY * size.height
                         transformOrigin = TransformOrigin.Center
-                    }
-                    .clipToBounds(),
+                    }.clipToBounds(),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {

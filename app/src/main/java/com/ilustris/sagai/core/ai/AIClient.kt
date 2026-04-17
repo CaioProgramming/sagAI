@@ -7,9 +7,10 @@ import java.util.Locale
 abstract class AIClient {
     open suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel? = null
 
-    fun modelLanguage(): String {
-        val locale = Locale.getDefault()
-        return "All responses must be in ${locale.toLanguageTag()}."
+    fun getLanguage(requireTranslation: Boolean = true): String {
+        val locale = if (requireTranslation) Locale.getDefault() else Locale.US
+        val languageName = locale.getDisplayName(Locale.ENGLISH)
+        return languageName.ifBlank { locale.toLanguageTag() }
     }
 }
 

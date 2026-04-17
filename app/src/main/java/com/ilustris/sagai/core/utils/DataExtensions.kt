@@ -2,9 +2,9 @@ package com.ilustris.sagai.core.utils
 
 import com.google.firebase.ai.type.Schema
 import com.google.gson.ExclusionStrategy
-import timber.log.Timber
 import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
+import timber.log.Timber
 import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,6 +16,12 @@ fun toFirebaseSchema(
 ) = Schema.obj(
     properties = clazz.toSchemaMap(excludeFields),
 )
+
+fun Long.formatDuration(): String {
+    val minutes = this / 60000
+    val hours = minutes / 60
+    return if (hours > 0) "${hours}h ${minutes % 60}m" else "${minutes}m"
+}
 
 fun Class<*>.toSchema(
     nullable: Boolean,
@@ -121,95 +127,72 @@ fun toJsonMap(
     filteredFields: List<String> = emptyList(),
     fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
+    val obj = toJsonMapObject(clazz, filteredFields, fieldCustomDescriptions, mutableSetOf())
+    val gson = GsonBuilder().setPrettyPrinting().create()
+    return gson.toJson(obj)
+}
+
+private fun toJsonMapObject(
+    clazz: Class<*>,
+    filteredFields: List<String>,
+    fieldCustomDescriptions: List<Pair<String, String>>,
+    visited: MutableSet<Class<*>>,
+): Any {
     when {
-        clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
-        clazz == String::class.java -> return "\"string\""
-        clazz == Int::class.java || clazz == Integer::class.java -> return "0"
-        clazz == Boolean::class.java -> return "false | true"
-        clazz == Double::class.java -> return "0.0"
-        clazz == Float::class.java -> return "0.0"
-        clazz == Long::class.java -> return "0"
-        clazz == Byte::class.java -> return "0"
-        clazz == Short::class.java -> return "0"
-        clazz == Char::class.java -> return "\"string\""
+        clazz.isEnum -> return clazz.enumConstants?.joinToString(" | ") ?: "PLACEHOLDER_ENUM"
+        clazz == String::class.java -> return "PLACEHOLDER_STRING"
+        clazz == Int::class.java || clazz == Integer::class.java -> return 999
+        clazz == Boolean::class.java -> return false
+        clazz == Double::class.java -> return 0.0
+        clazz == Float::class.java -> return 0.0
+        clazz == Long::class.java -> return 999
+        clazz == Byte::class.java -> return 0
+        clazz == Short::class.java -> return 0
+        clazz == Char::class.java -> return "PLACEHOLDER_CHAR"
     }
 
-    val deniedFields =
-        filteredFields
-            .plus("\$stable")
-            .plus("companion")
-    val fields =
-        clazz
-            .declaredFields
-            .filter {
-                deniedFields.contains(it.name).not()
-            }.joinToString(separator = ",\n") { field ->
-                val fieldName = field.name
+    if (visited.contains(clazz)) return "circular_reference_detected"
+    visited.add(clazz)
+
+    val map = linkedMapOf<String, Any>()
+    val deniedFields = filteredFields + "\$stable" + "companion"
+
+    clazz.declaredFields
+        .filter { !deniedFields.contains(it.name) }
+        .sortedBy { it.name }
+        .forEach { field ->
+            val customDesc = fieldCustomDescriptions.find { it.first == field.name }
+            if (customDesc != null) {
+                try {
+                    map[field.name] =
+                        com.google.gson.JsonParser
+                            .parseString(customDesc.second)
+                } catch (e: Exception) {
+                    map[field.name] = customDesc.second
+                }
+            } else {
                 val fieldType = field.type
-                val fieldValue =
-                    when {
-                        fieldType.isEnum -> {
-                            "${fieldType.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
+                if (List::class.java.isAssignableFrom(fieldType) ||
+                    Array::class.java.isAssignableFrom(
+                        fieldType,
+                    )
+                ) {
+                    val genericType = field.genericType as? ParameterizedType
+                    val itemType = genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
+                    map[field.name] =
+                        if (itemType != null) {
+                            listOf(toJsonMapObject(itemType, filteredFields, emptyList(), visited))
+                        } else {
+                            emptyList<Any>()
                         }
-
-                        fieldType == String::class.java -> {
-                            "\"string\""
-                        }
-
-                        fieldType == Int::class.java || fieldType == Integer::class.java -> {
-                            "0"
-                        }
-
-                        fieldType == Boolean::class.java -> {
-                            "false"
-                        }
-
-                        fieldType == Double::class.java -> {
-                            "0.0"
-                        }
-
-                        fieldType == Float::class.java -> {
-                            "0.0"
-                        }
-
-                        fieldType == Long::class.java -> {
-                            "0"
-                        }
-
-                        List::class.java.isAssignableFrom(fieldType) ||
-                            Array::class.java.isAssignableFrom(
-                                fieldType,
-                            )
-                        -> {
-                            // Extract generic type parameter from List/Array
-                            val genericType = field.genericType as? ParameterizedType
-                            val itemType =
-                                genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
-
-                            if (itemType != null) {
-                                // Recursively get the structure - works for both primitives and complex objects
-                                val itemJson =
-                                    toJsonMap(itemType, filteredFields, fieldCustomDescriptions)
-                                "[ $itemJson ]"
-                            } else {
-                                // Unknown type - just show empty array
-                                "[]"
-                            }
-                        }
-
-                        else -> {
-                            toJsonMap(fieldType, filteredFields, fieldCustomDescriptions)
-                        }
-                    }
-                val customDescription =
-                    fieldCustomDescriptions.find { it.first == field.name }
-                if (customDescription != null) {
-                    "\"${customDescription.first}\": \"${customDescription.second}\""
                 } else {
-                    "\"$fieldName\": $fieldValue"
+                    map[field.name] =
+                        toJsonMapObject(fieldType, filteredFields, emptyList(), visited)
                 }
             }
-    return "{\n$fields\n}"
+        }
+    visited.remove(clazz)
+    return map
 }
 
 fun Any?.toJsonFormat(): String {
@@ -257,6 +240,21 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     return gson.toJson(this)
 }
 
+fun Any.toPromptVariables(): Map<String, String> {
+    val gson = GsonBuilder().create()
+    val json = gson.toJson(this)
+    val mapType = object : com.google.gson.reflect.TypeToken<Map<String, Any>>() {}.type
+    val rawMap: Map<String, Any> = gson.fromJson(json, mapType)
+
+    return rawMap.mapValues { (_, value) ->
+        if (value is Double && value % 1 == 0.0) {
+            value.toInt().toString()
+        } else {
+            value.toString()
+        }
+    }
+}
+
 fun doNothing() {
 }
 
@@ -286,6 +284,8 @@ fun Long.formatHours(): String {
     return format.format(date)
 }
 
+val jsonPattern = Regex("```json\\s*\\n?(.*?)\\n?\\s*```", RegexOption.DOT_MATCHES_ALL)
+
 fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
     if (this.isNullOrBlank()) {
@@ -296,94 +296,76 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     var cleanedJsonString = this!!
     Timber.tag(logTag).i("Sanitizing raw string: $cleanedJsonString")
 
-    // 1. Remove common markdown code block delimiters
-    cleanedJsonString = cleanedJsonString.replace("```json", "").replace("```", "")
+    // 1. Try to extract JSON from ```json ... ``` fenced blocks first (most reliable signal)
+    val fencedJsonPattern = jsonPattern
+    val fencedMatch = fencedJsonPattern.findAll(cleanedJsonString).lastOrNull()
 
-    // 2. Trim leading/trailing whitespace
-    cleanedJsonString = cleanedJsonString.trim()
-
-    // 3. If not starting with a JSON char, find the start (basic heuristic)
-    val firstJsonCharIndex = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
-    if (firstJsonCharIndex > 0) {
-        cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
-    } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
-        Timber.tag(logTag).e("No JSON start character '{' or '[' found in response: $cleanedJsonString")
-        throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
+    if (fencedMatch != null) {
+        cleanedJsonString = fencedMatch.groupValues[1].trim()
+        Timber.tag(logTag).i("Extracted JSON from fenced block")
+        // No need for heuristic if we have a fenced block; just ensure it's closed and return
+        return finalizeSanitization(cleanedJsonString, expectedClass, logTag)
     }
 
-    // Helper: find the matching closing bracket index for the JSON starting char
-    fun findMatchingClosingIndex(
-        s: String,
-        start: Int,
-    ): Int {
-        if (start >= s.length) return -1
-        val open = s[start]
-        val close =
-            when (open) {
-                '{' -> '}'
-                '[' -> ']'
-                else -> return -1
-            }
+    // Fallback: Remove any stray markdown delimiters and proceed with heuristic extraction
+    cleanedJsonString =
+        cleanedJsonString.replace(Regex("```[a-zA-Z]*"), "").replace("```", "").trim()
 
-        var depth = 1
-        var inString = false
-        var escaped = false
+    // 2. Find all potential JSON start positions and find the last one that forms a complete block
+    val allStarts =
+        cleanedJsonString.indices.filter { cleanedJsonString[it] == '{' || cleanedJsonString[it] == '[' }
+    var bestJson: String? = null
 
-        var i = start + 1
-        while (i < s.length) {
-            val c = s[i]
-            if (escaped) {
-                // previous char was a backslash, this char is escaped; skip special handling
-                escaped = false
+    for (startIndex in allStarts.reversed()) {
+        val potentialSubstring = cleanedJsonString.substring(startIndex)
+        val endIndex = findMatchingClosingIndex(potentialSubstring, 0)
+        if (endIndex != -1) {
+            val extracted = potentialSubstring.substring(0, endIndex + 1)
+            val hasPlaceholder =
+                extracted.contains(": \"PLACEHOLDER_") || extracted.contains(": 999")
+
+            if (bestJson == null) {
+                bestJson = extracted
             } else {
-                when (c) {
-                    '\\' -> {
-                        escaped = true
-                    }
+                val currentBestHasPlaceholder =
+                    bestJson!!.contains(": \"PLACEHOLDER_") || bestJson!!.contains(": 999")
 
-                    '"' -> {
-                        inString = !inString
-                    }
-
-                    else -> {
-                        if (!inString) {
-                            if (c == open) {
-                                depth++
-                            } else if (c == close) {
-                                depth--
-                                if (depth == 0) return i
-                            }
-                        }
+                if (currentBestHasPlaceholder && !hasPlaceholder) {
+                    bestJson = extracted
+                } else if (!currentBestHasPlaceholder && !hasPlaceholder) {
+                    bestJson = extracted
+                } else if (currentBestHasPlaceholder && hasPlaceholder) {
+                    if (extracted.length > bestJson!!.length) {
+                        bestJson = extracted
                     }
                 }
             }
-            i++
         }
-        return -1
     }
 
-    // 4. Compute precise end index using bracket matching (handles nested structures & strings)
+    if (bestJson != null) {
+        cleanedJsonString = bestJson!!
+    }
+
+    return finalizeSanitization(cleanedJsonString, expectedClass, logTag)
+}
+
+private fun finalizeSanitization(
+    json: String,
+    expectedClass: Class<*>?,
+    logTag: String,
+): String {
+    var cleanedJsonString = json
+
+    // Ensure balanced braces for incomplete streams
+    cleanedJsonString = autoCloseJson(cleanedJsonString)
+
+    // 4. Precise end index is already handled by the new extraction logic above.
+    // We just ensure we have a valid start.
     if (cleanedJsonString.isNotEmpty()) {
         val startChar = cleanedJsonString.first()
-        if (startChar == '{' || startChar == '[') {
-            val endIndex = findMatchingClosingIndex(cleanedJsonString, 0)
-            if (endIndex != -1) {
-                cleanedJsonString = cleanedJsonString.substring(0, endIndex + 1)
-            } else {
-                // Fallback: Check if the string ends with the expected closing bracket
-                // This handles cases where internal malformation (like missing quotes) breaks the strict parser
-                val expectedClose = if (startChar == '{') '}' else ']'
-                if (cleanedJsonString.trim().lastOrNull() == expectedClose) {
-                    Timber.tag(logTag).w(
-                        "Strict JSON parsing failed (likely due to malformed content), but found closing bracket '$expectedClose'. Proceeding with full string.",
-                    )
-                } else {
-                    Timber.tag(logTag).e(
-                        "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
-                    )
-                    throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
-                }
-            }
+        if (startChar != '{' && startChar != '[') {
+            Timber.tag(logTag).e("Cleaned string does not start with { or [: $cleanedJsonString")
         }
     }
 
@@ -729,6 +711,56 @@ private fun getRecursiveFields(
     return fields
 }
 
+private fun findMatchingClosingIndex(
+    s: String,
+    start: Int,
+): Int {
+    if (start >= s.length) return -1
+    val open = s[start]
+    val close =
+        when (open) {
+            '{' -> '}'
+            '[' -> ']'
+            else -> return -1
+        }
+
+    var depth = 1
+    var inString = false
+    var escaped = false
+
+    var i = start + 1
+    while (i < s.length) {
+        val c = s[i]
+        if (escaped) {
+            // previous char was a backslash, this char is escaped; skip special handling
+            escaped = false
+        } else {
+            when (c) {
+                '\\' -> {
+                    escaped = true
+                }
+
+                '"' -> {
+                    inString = !inString
+                }
+
+                else -> {
+                    if (!inString) {
+                        if (c == open) {
+                            depth++
+                        } else if (c == close) {
+                            depth--
+                            if (depth == 0) return i
+                        }
+                    }
+                }
+            }
+        }
+        i++
+    }
+    return -1
+}
+
 fun Int.toRoman(): String {
     val values = listOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
     val symbols = listOf("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I")
@@ -831,4 +863,45 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                 "${field.name}$itemsSize: $valueString"
             }
         }.joinToString("\n")
+}
+
+private fun autoCloseJson(json: String): String {
+    val stack = mutableListOf<Char>()
+    var inString = false
+    var escaped = false
+
+    for (c in json) {
+        if (escaped) {
+            escaped = false
+            continue
+        }
+        if (c == '\\') {
+            escaped = true
+            continue
+        }
+        if (c == '"') {
+            inString = !inString
+            continue
+        }
+        if (!inString) {
+            if (c == '{' || c == '[') {
+                stack.add(if (c == '{') '}' else ']')
+            } else if (c == '}' || c == ']') {
+                if (stack.isNotEmpty() && stack.last() == c) {
+                    stack.removeAt(stack.size - 1)
+                }
+            }
+        }
+    }
+
+    val sb = StringBuilder(json)
+    if (inString) {
+        sb.append('"')
+    }
+
+    for (i in stack.size - 1 downTo 0) {
+        sb.append(stack[i])
+    }
+
+    return sb.toString()
 }

@@ -2,17 +2,13 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
@@ -22,37 +18,39 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.chapterNumber
-import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.model.WikiGroup
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun WikiContent(
+    title: String,
+    subtitle: String,
+    insight: String?,
     saga: SagaContent,
+    groups: List<WikiGroup>,
     onBackClick: () -> Unit,
     titleModifier: Modifier = Modifier,
     reviewWiki: (List<Wiki>) -> Unit = {},
@@ -60,17 +58,7 @@ fun WikiContent(
 ) {
     Box {
         val gridState = rememberLazyGridState()
-        val titleAndSubtitle =
-            DetailAction.WIKI.titleAndSubtitle(saga)
-        val genre = remember { saga.data.genre }
-        val chapters =
-
-            saga.flatChapters().filter {
-                it.events
-                    .map { events -> events.updatedWikis }
-                    .flatten()
-                    .isNotEmpty()
-            }
+        val genre = saga.data.genre
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -80,31 +68,61 @@ fun WikiContent(
                     .padding(top = 80.dp)
                     .animateContentSize(),
         ) {
+            stickyHeader {
+                Column {
+                    Text(
+                        title,
+                        style =
+                            MaterialTheme.typography.headlineLarge.copy(
+                                fontFamily = genre.headerFont(),
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            titleModifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                }
+            }
+
             item(span = { GridItemSpan(2) }) {
                 Text(
-                    titleAndSubtitle.first,
+                    subtitle,
                     style =
-                        MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = genre.headerFont(),
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
                             textAlign = TextAlign.Center,
                         ),
                     modifier =
-                        titleModifier
+                        Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
                 )
             }
 
-            chapters.forEach { chapter ->
-                val wikis = chapter.fetchChapterWikis()
+            item(span = { GridItemSpan(2) }) {
+                insight?.let {
+                    Text(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Center,
+                                fontStyle = FontStyle.Italic,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 16.dp, vertical = 24.dp)
+                                .fillMaxWidth()
+                                .alpha(.7f),
+                    )
+                }
+            }
+
+            groups.forEach {
                 item(span = { GridItemSpan(2) }) {
                     Text(
-                        chapter.data.title.ifEmpty {
-                            stringResource(
-                                R.string.chapter_number_label,
-                                saga.chapterNumber(chapter.data).toRoman(),
-                            )
-                        },
+                        it.title,
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = genre.headerFont(),
@@ -117,74 +135,52 @@ fun WikiContent(
                     )
                 }
 
-                items(wikis) { wiki ->
-                    var isExpanded by remember { mutableStateOf(false) }
-
+                items(it.wikis) { wiki ->
                     WikiCard(
                         wiki = wiki,
-                        genre = saga.data.genre,
+                        genre = genre,
                         modifier =
                             Modifier
                                 .padding(8.dp)
                                 .animateItem()
-                                .combinedClickable(
-                                    onClick = {
-                                        isExpanded = !isExpanded
-                                    },
-                                    onLongClick = {
-                                        onHoldWiki(wiki)
-                                    },
-                                ).animateContentSize(
-                                    tween(600, easing = LinearOutSlowInEasing),
-                                ).fillMaxWidth(),
-                        expanded = isExpanded,
+                                .fillMaxWidth()
+                                .pointerInput("wiki-long-press") {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            onHoldWiki(wiki)
+                                        },
+                                    )
+                                },
                     )
                 }
 
-                if (chapter.isComplete()) {
+                if (it.canBeReviewed) {
                     item(span = { GridItemSpan(2) }) {
-                        Box(
-                            Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
+                        Button(
+                            onClick = {
+                                reviewWiki(it.wikis)
+                            },
+                            modifier = Modifier.padding(16.dp),
+                            shape = genre.shape(),
+                            colors =
+                                ButtonDefaults.elevatedButtonColors().copy(
+                                    containerColor = genre.resolveColor(),
+                                    contentColor = genre.resolveIconColor(),
+                                ),
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                            Icon(
+                                painterResource(R.drawable.ic_review),
+                                contentDescription = null,
                                 modifier =
                                     Modifier
-                                        .align(Alignment.Center)
-                                        .clip(genre.shape())
-                                        .padding(8.dp)
-                                        .clickable {
-                                            reviewWiki(wikis)
-                                        },
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_review),
-                                    null,
-                                    tint = genre.color,
-                                    modifier =
-                                        Modifier
-                                            .size(48.dp)
-                                            .padding(8.dp),
-                                )
-                                Text(
-                                    stringResource(R.string.review_items),
-                                    style =
-                                        MaterialTheme.typography.labelLarge.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            brush = genre.gradient(),
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
-                            }
+                                        .padding(4.dp)
+                                        .size(24.dp),
+                            )
+
+                            Text(stringResource(R.string.review_items))
                         }
                     }
                 }
-            }
-
-            item(span = { GridItemSpan(2) }) {
-                Spacer(Modifier.size(50.dp))
             }
         }
 
@@ -194,9 +190,9 @@ fun WikiContent(
             exit = fadeOut(tween(200)),
         ) {
             SagaTopBar(
-                titleAndSubtitle.first,
-                titleAndSubtitle.second,
-                saga.data.genre,
+                title,
+                subtitle,
+                genre,
                 onBackClick = { onBackClick() },
                 actionContent = { Box(Modifier.size(24.dp)) },
                 modifier =

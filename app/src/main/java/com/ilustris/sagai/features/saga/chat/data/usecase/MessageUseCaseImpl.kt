@@ -1,11 +1,9 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import MessageStatus
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.AudioGenClient
-import timber.log.Timber
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.Voice
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
@@ -14,13 +12,14 @@ import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.getDirective
+import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -34,6 +33,9 @@ import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import timber.log.Timber
 import javax.inject.Inject
 
 class MessageUseCaseImpl
@@ -43,10 +45,13 @@ class MessageUseCaseImpl
         private val reactionRepository: ReactionRepository,
         private val characterRepository: CharacterRepository,
         private val sagaRepository: SagaRepository,
-        private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val audioGenClient: AudioGenClient,
         private val fileHelper: FileHelper,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
+        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -57,19 +62,27 @@ class MessageUseCaseImpl
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
+        private suspend fun fetchNarrativeRules() = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+
         override suspend fun checkMessageTypo(
             saga: SagaContent,
             message: String,
         ): RequestResult<TypoFix?> =
             executeRequest {
+                val conversationDirective =
+                    genreConfigService.conversationBlueprint(saga.data.genre)
+                val narrativeRules = fetchNarrativeRules()
                 gemmaClient.generate<TypoFix>(
                     ChatPrompts.checkForTypo(
-                        saga,
-                        message,
-                        saga.flatMessages().lastOrNull()?.message,
+                        promptService = promptService,
+                        saga = saga,
+                        conversationDirective = conversationDirective,
+                        updateLimit = narrativeRules.loreUpdateLimit,
+                        message = message,
                     ),
+                    blueprintKey = ChatPrompts.CHAT_WRITING_PAL_BLUEPRINT,
                     requireTranslation = true,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
             }
 
@@ -78,10 +91,13 @@ class MessageUseCaseImpl
                 gemmaClient.generate<SceneSummary>(
                     prompt =
                         ChatPrompts.sceneSummarizationPrompt(
+                            promptService = promptService,
                             saga = saga,
+                            remoteConfigService.getNarrativeRules(),
                         ),
+                    blueprintKey = ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT,
                     temperatureRandomness = 0.2f,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )
             }
 
@@ -93,11 +109,10 @@ class MessageUseCaseImpl
             isFromUser: Boolean,
             sceneSummary: SceneSummary?,
         ) = executeRequest {
-            val tone = analyzeMessageTone(saga, message, isFromUser).getSuccess()
             messageRepository.saveMessage(
                 message.copy(
-                    emotionalTone = tone,
                     status = MessageStatus.OK,
+                    timestamp = System.currentTimeMillis(),
                 ),
             )
         }
@@ -107,11 +122,17 @@ class MessageUseCaseImpl
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
-            val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
+            val prompt =
+                EmotionalPrompt.emotionalToneExtraction(
+                    promptService,
+                    promptService.getPromptDirectives(),
+                    message.text,
+                )
             val raw =
                 gemmaClient
                     .generate<String>(
                         prompt,
+                        blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT,
                         requireTranslation = false,
                         requirement = GemmaClient.ModelRequirement.LOW,
                     )?.trim()
@@ -129,46 +150,98 @@ class MessageUseCaseImpl
             saga: SagaContent,
             message: MessageContent,
             sceneSummary: SceneSummary?,
-        ): RequestResult<Message> =
-            executeRequest {
-                if (isDebugModeEnabled) {
-                    Timber.d(
-                        "[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}",
-                    )
-                    val fakeReply =
-                        Message(
-                            text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
-                            senderType = SenderType.CHARACTER,
-                            sagaId = saga.data.id,
-                            timelineId = saga.getCurrentTimeLine()!!.data.id,
+        ): Flow<StreamingState<AIReply>> =
+            flow {
+                try {
+                    if (isDebugModeEnabled) {
+                        Timber.d("[DEBUG MODE] Generating fake reply for message: ${message.joinMessage().second}")
+                        val fakeReply =
+                            AIReply(
+                                message =
+                                    Message(
+                                        text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
+                                        senderType = SenderType.CHARACTER,
+                                        sagaId = saga.data.id,
+                                        timelineId = saga.getCurrentTimeLine()!!.data.id,
+                                    ),
+                            )
+                        emit(StreamingState.Success(fakeReply))
+                        return@flow
+                    }
+
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val narrativeRules = fetchNarrativeRules()
+
+                    val generateStream =
+                        gemmaClient.generateStreaming<AIReply>(
+                            prompt =
+                                ChatPrompts.replyMessagePrompt(
+                                    promptService = promptService,
+                                    saga = saga,
+                                    message = message.message,
+                                    sceneSummary = sceneSummary!!,
+                                    conversationDirective = conversationDirective,
+                                    updateLimit = narrativeRules.loreUpdateLimit,
+                                ),
+                            blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
+                            filterOutputFields = ChatPrompts.messageExclusions,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            useCore = true,
                         )
-                    return@executeRequest fakeReply
-                }
-
-                sceneSummary?.charactersPresent?.mapNotNull { characterName ->
-                    saga.findCharacter(characterName)
-                } ?: emptyList()
-
-                val genText =
-                    gemmaClient.generate<AIReply>(
-                        prompt =
-                            ChatPrompts.replyMessagePrompt(
-                                saga = saga,
-                                message = message.message,
-                                directive = saga.getDirective(),
-                                sceneSummary = sceneSummary!!,
-                            ),
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                        filterOutputFields =
-                            ChatPrompts.messageExclusions,
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            generateStream,
+                            "Generating a deep narrative reply",
+                            conversationStyle = conversationDirective,
+                        ).collect { state ->
+                            if (state is StreamingState.Success) {
+                                val reply = state.data
+                                val savedMessage =
+                                    messageRepository.saveMessage(
+                                        reply.message.copy(
+                                            sagaId = saga.data.id,
+                                            timelineId = saga.getCurrentTimeLine()!!.data.id,
+                                            characterId = saga.findCharacter(reply.message.speakerName)?.data?.id,
+                                            status = MessageStatus.OK,
+                                            timestamp = System.currentTimeMillis(),
+                                        ),
+                                    )
+                                handleAIReplyReactions(saga, savedMessage, reply.reactions)
+                                emit(StreamingState.Success(reply.copy(message = savedMessage)))
+                            } else {
+                                emit(state)
+                            }
+                        }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    emit(
+                        StreamingState
+                            .Error(e.message ?: "Unknown error"),
                     )
-
-                Timber.i(
-                    "AI Reasoning for message generation: ${genText?.reasoning}",
-                )
-                val reasoning = if (BuildConfig.DEBUG) genText?.reasoning else null
-                genText?.message!!.copy(reasoning = reasoning)
+                }
             }
+
+        private suspend fun handleAIReplyReactions(
+            saga: SagaContent,
+            message: Message,
+            reactions: List<AIReaction>,
+        ) {
+            reactions.forEach { aiReaction ->
+                val character = saga.findCharacter(aiReaction.character)
+                if (character != null && character.data.id != message.characterId) {
+                    reactionRepository.saveReaction(
+                        Reaction(
+                            messageId = message.id,
+                            characterId = character.data.id,
+                            emoji = aiReaction.reaction,
+                            thought = aiReaction.thought,
+                        ),
+                    )
+                }
+            }
+        }
 
         override suspend fun generateReaction(
             saga: SagaContent,
@@ -177,8 +250,6 @@ class MessageUseCaseImpl
         ) = executeRequest {
             if (sceneSummary == null) error("Can't define reactions without context.")
             if (sceneSummary.charactersPresent.isEmpty()) error("generateReaction: No characters related to react")
-
-            if (message.senderType == SenderType.THOUGHT) error("generateReaction: Thought message cannot be reacted")
 
             val charactersInScene =
                 sceneSummary.charactersPresent.mapNotNull { characterName ->
@@ -194,21 +265,26 @@ class MessageUseCaseImpl
                     it.characterTwo.id in charactersInScene.map { character -> character.data.id }
             }
 
+            genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+
+            val conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre)
+
             val prompt =
                 ChatPrompts.generateReactionPrompt(
-                    saga = saga,
+                    promptService = promptService,
                     summary = sceneSummary,
+                    saga = saga,
                     messageToReact = message,
+                    conversationDirective = conversationDirective,
                 )
 
             val reaction =
                 gemmaClient.generate<ReactionGen>(
                     prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    blueprintKey = ChatPrompts.CHAT_REACTION_BLUEPRINT,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
-            Timber.d(
-                "generateReaction: ${reaction.reactions.size} reactions generated.",
-            )
+            Timber.d("generateReaction: ${reaction.reactions.size} reactions generated.")
             reaction.reactions.distinctBy { it.character }.forEach { reaction ->
                 val reactingCharacter = saga.findCharacter(reaction.character)
                 if (reactingCharacter != null) {
@@ -221,18 +297,12 @@ class MessageUseCaseImpl
                                 thought = reaction.thought,
                             ),
                         )
-                        Timber.d(
-                            "Saving reaction from ${reactingCharacter.data.name} at message ${message.id}",
-                        )
+                        Timber.d("Saving reaction from ${reactingCharacter.data.name} at message ${message.id}")
                     } else {
-                        Timber.w(
-                            "generateReaction: Character can't react to itself.",
-                        )
+                        Timber.w("generateReaction: Character can't react to itself.")
                     }
                 } else {
-                    Timber.w(
-                        "generateReaction: Character '${reaction.character}' not in scene, skipping reaction.",
-                    )
+                    Timber.w("generateReaction: Character '${reaction.character}' not in scene, skipping reaction.")
                 }
             }
         }
@@ -259,10 +329,12 @@ class MessageUseCaseImpl
                 val audioConfig =
                     gemmaClient.generate<AudioConfig>(
                         AudioPrompts.audioConfigPrompt(
+                            promptService,
                             saga,
                             message = savedMessage,
                             character = characterReference,
                         ),
+                        blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
                         requireTranslation = false,
                         requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )!!
@@ -284,9 +356,7 @@ class MessageUseCaseImpl
                                 voice = finalConfig.voice.id,
                             ),
                         )
-                        Timber.i(
-                            "✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}",
-                        )
+                        Timber.i("✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}")
                     }
                 }
 
@@ -317,4 +387,24 @@ class MessageUseCaseImpl
             executeRequest {
                 messageRepository.updateMessage(message)
             }
+
+        override suspend fun generateExtraContent(
+            saga: SagaContent,
+            message: Message,
+            sceneSummary: SceneSummary?,
+            characterReference: CharacterContent?,
+            generateAudio: Boolean,
+            isFromUser: Boolean,
+        ) {
+            val tone = analyzeMessageTone(saga, message, isFromUser).getSuccess()
+            if (tone != null) {
+                updateMessage(message.copy(emotionalTone = tone))
+            }
+            if (isFromUser) {
+                generateReaction(saga, message, sceneSummary)
+            }
+            if (generateAudio) {
+                generateAudio(saga, message, characterReference)
+            }
+        }
     }

@@ -11,9 +11,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 class ShinobiChatBubbleShape(
-    private val cornerRadius: Dp = 12.dp,
+    private val cornerRadius: Dp = 16.dp,
     private val tailWidth: Dp = 12.dp,
-    private val tailHeight: Dp = 8.dp, // Increased slightly from 6dp to avoid crushing, but kept small
+    private val tailHeight: Dp = 12.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
 ) : Shape {
     override fun createOutline(
@@ -21,202 +21,93 @@ class ShinobiChatBubbleShape(
         layoutDirection: LayoutDirection,
         density: Density,
     ): Outline {
-        val cornerRadiusPx = with(density) { cornerRadius.toPx() }
-        val tailWidthPx = with(density) { tailWidth.toPx() }
-        val tailHeightPx = with(density) { tailHeight.toPx() }
-        val bumpHeightPx = with(density) { 6.dp.toPx() }
-
         val path = Path()
         val w = size.width
         val h = size.height
 
-        val topBodyY = bumpHeightPx
-        val bottomBodyY = h - tailHeightPx
+        // Define radius. For a pill look, we aim for h/2, capped to avoid overly massive arcs on tall bubbles.
+        val maxR = with(density) { 32.dp.toPx() }
+        val r = (h / 2f).coerceAtMost(maxR).coerceAtMost(w / 2f)
 
-        when (tailAlignment) {
-            BubbleTailAlignment.BottomRight -> {
-                // User Bubble (Right aligned)
+        val tw = with(density) { tailWidth.toPx() }
+        val th = with(density) { tailHeight.toPx() }
+        val hasTail = tw > 0f
 
-                path.moveTo(0f, topBodyY + cornerRadiusPx)
+        if (tailAlignment == BubbleTailAlignment.BottomRight) {
+            // Semicircle (or large curve) on the LEFT
+            path.moveTo(r, 0f)
 
-                // Top-Left
-                path.arcTo(
-                    rect = Rect(0f, topBodyY, 2 * cornerRadiusPx, topBodyY + 2 * cornerRadiusPx),
-                    startAngleDegrees = 180f,
-                    sweepAngleDegrees = 90f,
-                    forceMoveTo = false,
-                )
+            // Top Edge
+            path.lineTo(w - r, 0f)
 
-                // Top Bumps
-                val topEdgeWidth = w - 2 * cornerRadiusPx
-                val bumpWidth = topEdgeWidth / 3f
-                for (i in 0 until 3) {
-                    val startX = cornerRadiusPx + i * bumpWidth
-                    val endX = cornerRadiusPx + (i + 1) * bumpWidth
-                    val midX = (startX + endX) / 2f
-                    path.quadraticBezierTo(midX, topBodyY - bumpHeightPx, endX, topBodyY)
-                }
+            // Top-Right Corner
+            path.arcTo(Rect(w - 2 * r, 0f, w, 2 * r), 270f, 90f, false)
 
-                // Top-Right
-                path.arcTo(
-                    rect = Rect(w - 2 * cornerRadiusPx, topBodyY, w, topBodyY + 2 * cornerRadiusPx),
-                    startAngleDegrees = 270f,
-                    sweepAngleDegrees = 90f,
-                    forceMoveTo = false,
-                )
-
-                // Right Edge
-                // Start tail higher up to create a smoother, less crushed transition
-                val tailStartY = bottomBodyY - tailHeightPx
-                path.lineTo(w, tailStartY)
-
-                // --- INTEGRATED TAIL ---
-                // Curves from the side (tailStartY) down and out to the tip.
+            // Right Side and/or Tail
+            if (hasTail) {
+                // Line down to start of flick
+                path.lineTo(w, h - th)
+                // Flick out to tip
+                // Control points to create the "beak" from the image
                 path.cubicTo(
-                    w,
-                    bottomBodyY, // Control 1: Continue down the side
-                    w + tailWidthPx * 0.4f,
-                    h - tailHeightPx * 0.2f, // Control 2: Curve out gently
-                    w + tailWidthPx,
-                    h, // Tip
-                )
-
-                // Return to bottom
-                path.quadraticBezierTo(
-                    w + tailWidthPx * 0.2f,
+                    w + tw * 0.2f,
+                    h - th * 0.5f,
+                    w + tw,
+                    h - th * 0.2f,
+                    w + tw,
                     h,
-                    w - tailWidthPx * 0.5f,
-                    bottomBodyY,
                 )
-
-                // Bottom Bumps
-                val bottomEdgeStart = w - tailWidthPx * 0.5f
-                val bottomEdgeEnd = cornerRadiusPx
-                val bottomEdgeWidth = bottomEdgeStart - bottomEdgeEnd
-
-                if (bottomEdgeWidth > 0) {
-                    val bottomBumpWidth = bottomEdgeWidth / 3f
-                    for (i in 0 until 3) {
-                        val startX = bottomEdgeStart - i * bottomBumpWidth
-                        val endX = bottomEdgeStart - (i + 1) * bottomBumpWidth
-                        val midX = (startX + endX) / 2f
-                        path.quadraticBezierTo(midX, bottomBodyY + bumpHeightPx, endX, bottomBodyY)
-                    }
-                } else {
-                    path.lineTo(cornerRadiusPx, bottomBodyY)
-                }
-
-                // Bottom-Left
-                path.arcTo(
-                    rect =
-                        Rect(
-                            0f,
-                            bottomBodyY - 2 * cornerRadiusPx,
-                            2 * cornerRadiusPx,
-                            bottomBodyY,
-                        ),
-                    startAngleDegrees = 90f,
-                    sweepAngleDegrees = 90f,
-                    forceMoveTo = false,
-                )
-
-                // Left Edge
-                path.lineTo(0f, topBodyY + cornerRadiusPx)
-
-                path.close()
+                // Return to bottom edge
+                path.quadraticBezierTo(w, h, w - r, h)
+            } else {
+                path.arcTo(Rect(w - 2 * r, h - 2 * r, w, h), 0f, 90f, false)
             }
 
-            BubbleTailAlignment.BottomLeft -> {
-                // NPC Bubble (Left aligned)
+            // Bottom Edge
+            path.lineTo(r, h)
 
-                path.moveTo(0f, topBodyY + cornerRadiusPx)
+            // Left Side Semicircle (spanning top to bottom)
+            path.arcTo(Rect(0f, 0f, 2 * r, h), 90f, 180f, false)
 
-                // Top-Left
-                path.arcTo(
-                    rect = Rect(0f, topBodyY, 2 * cornerRadiusPx, topBodyY + 2 * cornerRadiusPx),
-                    startAngleDegrees = 180f,
-                    sweepAngleDegrees = 90f,
-                    forceMoveTo = false,
-                )
+            path.close()
+        } else {
+            // Semicircle on the RIGHT
+            path.moveTo(w - r, h)
 
-                // Top Bumps
-                val topEdgeWidth = w - 2 * cornerRadiusPx
-                val bumpWidth = topEdgeWidth / 3f
-                for (i in 0 until 3) {
-                    val startX = cornerRadiusPx + i * bumpWidth
-                    val endX = cornerRadiusPx + (i + 1) * bumpWidth
-                    val midX = (startX + endX) / 2f
-                    path.quadraticBezierTo(midX, topBodyY - bumpHeightPx, endX, topBodyY)
-                }
+            // Bottom Edge
+            path.lineTo(r, h)
 
-                // Top-Right
-                path.arcTo(
-                    rect = Rect(w - 2 * cornerRadiusPx, topBodyY, w, topBodyY + 2 * cornerRadiusPx),
-                    startAngleDegrees = 270f,
-                    sweepAngleDegrees = 90f,
-                    forceMoveTo = false,
-                )
-
-                // Right Edge
-                path.lineTo(w, bottomBodyY - cornerRadiusPx)
-
-                // Bottom-Right
-                path.arcTo(
-                    rect =
-                        Rect(
-                            w - 2 * cornerRadiusPx,
-                            bottomBodyY - 2 * cornerRadiusPx,
-                            w,
-                            bottomBodyY,
-                        ),
-                    startAngleDegrees = 0f,
-                    sweepAngleDegrees = 90f,
-                    forceMoveTo = false,
-                )
-
-                // Bottom Bumps
-                val bottomEdgeStart = w - cornerRadiusPx
-                val bottomEdgeEnd = tailWidthPx
-                val bottomEdgeWidth = bottomEdgeStart - bottomEdgeEnd
-
-                if (bottomEdgeWidth > 0) {
-                    val bottomBumpWidth = bottomEdgeWidth / 3f
-                    for (i in 0 until 3) {
-                        val startX = bottomEdgeStart - i * bottomBumpWidth
-                        val endX = bottomEdgeStart - (i + 1) * bottomBumpWidth
-                        val midX = (startX + endX) / 2f
-                        path.quadraticBezierTo(midX, bottomBodyY + bumpHeightPx, endX, bottomBodyY)
-                    }
-                } else {
-                    path.lineTo(tailWidthPx, bottomBodyY)
-                }
-
-                // --- INTEGRATED TAIL (Left) ---
-                // Return (Bottom of tail)
-                path.quadraticBezierTo(
-                    -tailWidthPx * 0.2f,
-                    h,
-                    -tailWidthPx,
-                    h,
-                )
-
-                // Top of tail (Tip to Side)
-                val tailStartY = bottomBodyY - tailHeightPx
+            // Left Side and/or Tail
+            if (hasTail) {
+                // Return to side (flick tip at -tw, h)
+                path.quadraticBezierTo(0f, h, -tw, h)
                 path.cubicTo(
-                    -tailWidthPx * 0.4f,
-                    h - tailHeightPx * 0.2f, // Control 2
+                    -tw,
+                    h - th * 0.2f,
+                    -tw * 0.2f,
+                    h - th * 0.5f,
                     0f,
-                    bottomBodyY, // Control 1
-                    0f,
-                    tailStartY, // End at side (higher up)
+                    h - th,
                 )
-
-                // Left Edge
-                path.lineTo(0f, topBodyY + cornerRadiusPx)
-
-                path.close()
+                // Line up to top-left corner start
+                path.lineTo(0f, r)
+            } else {
+                path.arcTo(Rect(0f, h - 2 * r, 2 * r, h), 90f, 90f, false)
+                path.lineTo(0f, r)
             }
+
+            // Top-Left Corner
+            path.arcTo(Rect(0f, 0f, 2 * r, 2 * r), 180f, 90f, false)
+
+            // Top Edge
+            path.lineTo(w - r, 0f)
+
+            // Right Side Semicircle
+            path.arcTo(Rect(w - 2 * r, 0f, w, h), 270f, 180f, false)
+
+            path.close()
         }
+
         return Outline.Generic(path)
     }
 }

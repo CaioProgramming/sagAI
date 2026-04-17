@@ -2,14 +2,17 @@ package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.narrative.ActPurpose
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -18,7 +21,9 @@ class ActUseCaseImpl
     constructor(
         private val actRepository: ActRepository,
         private val gemmaClient: GemmaClient,
-        private val emotionalUseCase: EmotionalUseCase,
+        private val remoteConfigService: RemoteConfigService,
+        private val promptService: PromptService,
+        private val genreConfigService: GenreConfigService,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -40,60 +45,124 @@ class ActUseCaseImpl
         ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                val newAct = gemmaClient.generate<Act>(titlePrompt, useCore = true)!!
+                val newAct =
+                    gemmaClient.generate<Act>(
+                        titlePrompt,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "sagaId",
+                                "currentChapterId",
+                                "introduction",
+                            ),
+                        useCore = true,
+                    )!!
 
-                val actUpdate =
-                    updateAct(
-                        actContent.data.copy(
-                            sagaId = saga.data.id,
-                            currentChapterId = null,
-                            title = newAct.title,
-                            content = newAct.content,
+                updateAct(
+                    actContent.data.copy(
+                        sagaId = saga.data.id,
+                        currentChapterId = null,
+                        title = newAct.title,
+                        content = newAct.content,
+                        emotionalReview = newAct.emotionalReview,
+                    ),
+                )
+            }
+
+        override fun generateActStream(
+            saga: SagaContent,
+            actContent: ActContent,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
+                val titlePrompt = generateActPrompt(saga)
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>(
+                        prompt = titlePrompt,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "sagaId",
+                                "currentChapterId",
+                                "introduction",
+                            ),
+                        useCore = true,
+                    ).collect { state ->
+                        when (state) {
+                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                val newAct = state.data.data
+                                val updatedAct =
+                                    updateAct(
+                                        actContent.data.copy(
+                                            sagaId = saga.data.id,
+                                            currentChapterId = null,
+                                            title = newAct.title,
+                                            content = newAct.content,
+                                            emotionalReview = newAct.emotionalReview,
+                                        ),
+                                    )
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            updatedAct,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                emit(
+                                    com.ilustris.sagai.core.ai.StreamingState.Error(
+                                        state.message,
+                                    ),
+                    )
+                    }
+
+                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                        emit(
+                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
+                            state.chunk,
                         ),
                     )
-
-                generateEmotionalProfile(saga, actContent.copy(data = actUpdate)).getSuccess()!!
+                    }
+                }
             }
+        } catch (e: Exception) {
+            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
 
-        private fun generateActPrompt(saga: SagaContent) =
-            ActPrompts.generateActConclusion(
+        private suspend fun generateActPrompt(saga: SagaContent): String {
+            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+
+            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
+            return ActPrompts.generateActConclusion(
+                promptService,
                 saga,
                 saga.currentActInfo!!,
-                getPurpose(saga.acts.size),
+                narrativeRules,
+                genreConfig,
             )
-
-        private fun getPurpose(actCount: Int) =
-            when (actCount) {
-                1 -> ActPurpose.FIRST_ACT_PURPOSE
-                2 -> ActPurpose.SECOND_ACT_PURPOSE
-                else -> ActPurpose.THIRD_ACT_PURPOSE
-            }
+        }
 
         override suspend fun generateActIntroduction(
             saga: SagaContent,
             act: Act,
         ) = executeRequest {
             val isFirst = saga.acts.isEmpty()
-            val previousAct = if (isFirst) null else saga.acts.last()
+            if (isFirst) null else saga.acts.last()
 
-            val prompt = ActPrompts.actIntroductionPrompt(saga, previousAct)
+            genreConfigService.getGenreConfig(saga.data.genre)
+            val prompt =
+                ActPrompts.actIntroductionPrompt(
+                    promptService = promptService,
+                    saga = saga,
+                    narrativeRules = remoteConfigService.getNarrativeRules(),
+                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                )
 
             val intro = gemmaClient.generate<String>(prompt, useCore = true)!!
             actRepository
                 .updateAct(act.copy(introduction = intro))
-        }
-
-        override suspend fun generateEmotionalProfile(
-            saga: SagaContent,
-            act: ActContent,
-        ) = executeRequest {
-            val profile =
-                emotionalUseCase
-                    .generateEmotionalProfile(
-                        saga,
-                        act.emotionalSummary(saga),
-                    ).getSuccess()!!
-
-            actRepository.updateAct(act.data.copy(emotionalReview = profile))
         }
     }

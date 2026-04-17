@@ -16,22 +16,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.hasMoreThanOneChapter
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
-import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 
@@ -41,6 +42,7 @@ fun StoriesRow(
     loadingStoryId: Int?,
     onStoryClicked: (SagaContent) -> Unit,
     isAtTop: Boolean,
+    visualConfigs: Map<Genre, GenreVisualConfig>,
 ) {
     val eligibleSagas = sagas.filter { it.data.isEnded.not() && it.hasMoreThanOneChapter() }
     if (eligibleSagas.isNotEmpty()) {
@@ -55,6 +57,7 @@ fun StoriesRow(
                         isLoading = loadingStoryId == saga.data.id,
                         onStoryClicked = onStoryClicked,
                         expanded = isAtTop,
+                        visualConfig = visualConfigs[saga.data.genre],
                     )
                 }
             }
@@ -68,71 +71,79 @@ fun StoryItem(
     isLoading: Boolean,
     onStoryClicked: (SagaContent) -> Unit,
     expanded: Boolean,
+    visualConfig: GenreVisualConfig?,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .animateContentSize()
-            .padding(4.dp)
+    CompositionLocalProvider(
+        LocalGenreVisualConfig provides visualConfig,
     ) {
-        val iconSize by animateDpAsState(
-            targetValue = if (expanded) 80.dp else 60.dp,
-            animationSpec = tween(600, easing = EaseIn),
-            label = "icon_size_animation"
-        )
-        Box(
-            contentAlignment = Alignment.Center, modifier = Modifier
-                .size(iconSize)
-                .clip(CircleShape)
-                .padding(4.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier =
+                Modifier
+                    .animateContentSize()
+                    .padding(4.dp),
         ) {
-
-
-            this@Column.AnimatedVisibility(
-                visible = isLoading, modifier = Modifier
-                    .fillMaxSize()
+            val iconSize by animateDpAsState(
+                targetValue = if (expanded) 80.dp else 64.dp,
+                animationSpec = tween(600, easing = EaseIn),
+                label = "icon_size_animation",
+            )
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier =
+                    Modifier
+                        .size(iconSize)
+                        .clip(CircleShape),
             ) {
-                StoryLoadingIndicator(
-                    brush = saga.data.genre.gradient(),
-                    modifier = Modifier
-                        .clipToBounds()
-                        .fillMaxSize()
-                        .gradientFill(saga.data.genre.gradient(true, targetValue = 100f))
+                this@Column.AnimatedVisibility(
+                    visible = isLoading,
+                    modifier =
+                        Modifier
+                            .fillMaxSize(),
+                ) {
+                    StoryLoadingIndicator(
+                        brush = saga.data.genre.gradient(),
+                        modifier =
+                            Modifier
+                                .clipToBounds()
+                                .fillMaxSize()
+                                .gradientFill(saga.data.genre.gradient(true, targetValue = 100f)),
+                    )
+                }
+
+                val padding by animateDpAsState(
+                    if (isLoading) 8.dp else 0.dp,
+                )
+
+                AvatarTimelineIcon(
+                    saga.data.icon,
+                    false,
+                    saga.data.genre,
+                    saga.data.title
+                        .first()
+                        .uppercase(),
+                    borderWidth = 1.dp,
+                    modifier =
+                        Modifier
+                            .padding(padding)
+                            .dropShadow(CircleShape) {
+                                radius =
+                                    if (isLoading) {
+                                        15f
+                                    } else {
+                                        5f
+                                    }
+                                color =
+                                    saga.data.genre.color
+                                        .darker()
+                                spread = 10f
+                            }.fillMaxSize()
+                            .clip(CircleShape)
+                            .clickable(enabled = !isLoading) { onStoryClicked(saga) }
+                            .effectForGenre(saga.data.genre),
                 )
             }
-
-
-
-            AvatarTimelineIcon(
-                saga.data.icon,
-                false,
-                saga.data.genre,
-                saga.data.title
-                    .first()
-                    .uppercase(),
-                borderWidth = 1.dp,
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxSize()
-                    .clip(CircleShape)
-                    .clickable(enabled = !isLoading) { onStoryClicked(saga) },
-            )
-
-
         }
-        AnimatedVisibility(expanded) {
-            Text(
-                text = saga.data.title,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = saga.data.genre.bodyFont(),
-                fontWeight = FontWeight.Light,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-
     }
 }

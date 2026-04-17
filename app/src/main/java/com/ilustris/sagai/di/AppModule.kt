@@ -15,10 +15,16 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.ai.services.ImageConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.PromptServiceImpl
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
 import com.ilustris.sagai.core.file.BackupService
@@ -31,8 +37,6 @@ import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
-import com.ilustris.sagai.core.media.notification.MediaNotificationManager
-import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
@@ -42,7 +46,12 @@ import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
+import com.ilustris.sagai.core.services.LoadingService
+import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.usecase.PaletteUseCase
+import com.ilustris.sagai.core.usecase.PaletteUseCaseImpl
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -67,6 +76,9 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
+import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
+import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
@@ -87,14 +99,20 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.saga.datasource.ReactionRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
+import com.ilustris.sagai.features.saga.detail.review.domain.SagaReviewUseCase
+import com.ilustris.sagai.features.saga.detail.review.domain.SagaReviewUseCaseImpl
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCaseImpl
+import com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCaseImpl
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import com.ilustris.sagai.features.share.domain.SharePlayUseCaseImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
+import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
+import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -105,7 +123,6 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -191,6 +208,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAIAuditLogDao(database: SagaDatabase): AIAuditLogDao = database.aiAuditLogDao()
+
+    @Provides
+    @Singleton
     fun provideDatabaseBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
@@ -203,7 +224,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesSummarizationClient(remoteConfigService: RemoteConfigService): GemmaClient = GemmaClient(remoteConfigService)
+    fun providesSummarizationClient(
+        remoteConfigService: RemoteConfigService,
+        geminiApiService: GeminiApiService,
+        promptService: PromptService,
+        aiAuditLogDao: AIAuditLogDao,
+    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService, promptService, aiAuditLogDao)
 
     @Provides
     @Singleton
@@ -216,6 +242,54 @@ object AppModule {
     fun bindsFileCacheService(
         @ApplicationContext context: Context,
     ) = FileCacheService(context)
+
+    @Provides
+    fun bindsWikiMapper(stringResourceHelper: StringResourceHelper) =
+        WikiMapper(
+            stringResourceHelper = stringResourceHelper,
+        )
+
+    @Provides
+    fun bindsTimelineMapper(
+        mascotEmotionService: MascotEmotionService,
+        stringResourceHelper: StringResourceHelper,
+        genreVisualConfigService: GenreVisualConfigService,
+        remoteConfigService: RemoteConfigService,
+    ) = TimelineMapper(
+        mascotEmotionService,
+        stringResourceHelper,
+        genreVisualConfigService,
+        remoteConfigService,
+    )
+
+    @Provides
+    fun bindsSagaDetailUIMapper(
+        stringResourceHelper: StringResourceHelper,
+        remoteConfigService: RemoteConfigService,
+        imageSegmentationHelper: ImageSegmentationHelper,
+        sagaDetailUseCase: SagaDetailUseCase,
+        timelineMapper: TimelineMapper,
+        wikiMapper: WikiMapper,
+        emotionalUseCase: EmotionalUseCase,
+    ) = SagaDetailUIMapper(
+        stringResourceHelper,
+        remoteConfigService,
+        imageSegmentationHelper,
+        sagaDetailUseCase,
+        timelineMapper,
+        wikiMapper,
+        emotionalUseCase,
+    )
+
+    @Provides
+    @Singleton
+    fun providesLoadingService(
+        gemmaClient: GemmaClient,
+        promptService: PromptService,
+    ) = LoadingService(
+        gemmaClient,
+        promptService,
+    )
 
     @Provides
     @Singleton
@@ -235,18 +309,48 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun providesGenreConfigService(
+        remoteConfigService: RemoteConfigService,
+        promptService: PromptService,
+    ): GenreConfigService = GenreConfigService(remoteConfigService, promptService)
+
+    @Provides
+    @Singleton
+    fun providesGenreVisualConfigService(remoteConfigService: RemoteConfigService): GenreVisualConfigService =
+        GenreVisualConfigService(remoteConfigService)
+
+    @Provides
+    @Singleton
     fun provideAnalyticsService(
         @ApplicationContext context: Context,
     ): AnalyticsService = AnalyticsService(context)
 
     @Provides
     @Singleton
+    fun providePromptService(remoteConfigService: RemoteConfigService): PromptService = PromptServiceImpl(remoteConfigService)
+
+    @Provides
+    @Singleton
     fun provideImagenClient(
         remoteConfigService: RemoteConfigService,
+        genreConfigService: GenreConfigService,
         billingService: BillingService,
         analyticsService: AnalyticsService,
+        imageConfigService: ImageConfigService,
         gemmaClient: GemmaClient,
-    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient, analyticsService)
+        promptService: PromptService,
+        reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
+    ): ImagenClient =
+        ImagenClientImpl(
+            billingService,
+            remoteConfigService,
+            genreConfigService,
+            imageConfigService,
+            gemmaClient,
+            analyticsService,
+            promptService,
+            reasoningSynthesizerService,
+        )
 
     @Provides
     @Singleton
@@ -310,11 +414,34 @@ object AppModule {
     fun providesWorkManagerScheduler(
         @ApplicationContext context: Context,
     ): WorkManagerScheduler = WorkManagerSchedulerImpl(context)
+
+    @Provides
+    @Singleton
+    fun providesOnboardingStateMapper(
+        billingService: BillingService,
+        stringResourceHelper: StringResourceHelper,
+        genreConfigService: GenreVisualConfigService,
+        remoteConfigService: RemoteConfigService,
+    ): OnboardingStateMapper =
+        OnboardingStateMapper(
+            billingService,
+            stringResourceHelper,
+            genreConfigService,
+            remoteConfigService,
+        )
+
+    @Provides
+    @Singleton
+    fun provideMascotEmotionService(remoteConfigService: RemoteConfigService): MascotEmotionService =
+        MascotEmotionService(remoteConfigService)
 }
 
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 abstract class UseCaseModule {
+    @Binds
+    abstract fun providesReviewUseCase(reviewUseCaseImpl: SagaReviewUseCaseImpl): SagaReviewUseCase
+
     @Binds
     abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 
@@ -367,9 +494,20 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesSagaBackupService(sagaBackupServiceImpl: SagaBackupServiceImpl): SagaBackupService
+
+    @Binds
+    abstract fun providesOnboardingUseCase(onboardingUseCaseImpl: OnboardingUseCaseImpl): OnboardingUseCase
+
+    @Binds
+    abstract fun providesPaletteUseCase(paletteUseCaseImpl: PaletteUseCaseImpl): PaletteUseCase
+
+    @Binds
+    abstract fun providesAIAuditLogUseCase(
+        aiAuditLogUseCaseImpl: AIAuditLogUseCaseImpl,
+    ): com.ilustris.sagai.features.settings.domain.audit.usecase.AIAuditLogUseCase
 }
 
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 @Module
 abstract class RepositoryModule {
     @Binds
@@ -406,12 +544,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsReactionRepository(reactionRepositoryImpl: ReactionRepositoryImpl): ReactionRepository
-}
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class NotificationModule {
     @Binds
-    @Singleton
-    abstract fun bindMediaNotificationManager(mediaNotificationManagerImpl: MediaNotificationManagerImpl): MediaNotificationManager
+    abstract fun bindsAIAuditLogRepository(
+        aiAuditLogRepositoryImpl: com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepositoryImpl,
+    ): com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepository
 }

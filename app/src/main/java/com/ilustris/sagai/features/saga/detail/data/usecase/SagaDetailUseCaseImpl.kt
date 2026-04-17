@@ -2,9 +2,14 @@ package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -13,13 +18,6 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import com.ilustris.sagai.features.saga.detail.data.model.Review
-import com.ilustris.sagai.features.saga.detail.review.generator.CharactersStep
-import com.ilustris.sagai.features.saga.detail.review.generator.ConclusionStep
-import com.ilustris.sagai.features.saga.detail.review.generator.ExpressivenessStep
-import com.ilustris.sagai.features.saga.detail.review.generator.IntroStep
-import com.ilustris.sagai.features.saga.detail.review.generator.JourneyStep
-import com.ilustris.sagai.features.saga.detail.review.generator.PlaystyleStep
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -27,7 +25,6 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -42,8 +39,10 @@ class SagaDetailUseCaseImpl
         private val chapterUseCase: ChapterUseCase,
         private val actUseCase: ActUseCase,
         private val wikiUseCase: WikiUseCase,
-        private val sagaBackupService: SagaBackupService,
-        private val backupService: com.ilustris.sagai.core.file.BackupService,
+        private val backupService: BackupService,
+        private val genreConfigService: GenreConfigService,
+        private val promptService: PromptService,
+        private val remoteConfigService: RemoteConfigService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
             val topCharacters = listOf(saga.mainCharacter!!.data)
@@ -56,30 +55,6 @@ class SagaDetailUseCaseImpl
             fileHelper.deletePath(saga.id)
             sagaRepository.deleteChat(saga)
         }
-
-        override suspend fun createReview(content: SagaContent) =
-            flow {
-                val steps =
-                    listOf(
-                        IntroStep(),
-                        ExpressivenessStep(),
-                        PlaystyleStep(),
-                        CharactersStep(),
-                        JourneyStep(),
-                        ConclusionStep(),
-                    )
-
-                var currentReview = Review()
-
-                steps.forEach { step ->
-                    emit(ReviewState.Loading(step.progressMessage))
-                    currentReview = step.generate(content, currentReview, textGenClient)
-                }
-
-                val finalSaga = content.data.copy(review = currentReview)
-                sagaRepository.updateChat(finalSaga)
-                emit(ReviewState.Success(finalSaga))
-            }
 
         override suspend fun resetReview(content: SagaContent) {
             sagaRepository.updateChat(
@@ -99,18 +74,15 @@ class SagaDetailUseCaseImpl
                     currentSaga.acts.filter { it.data.emotionalReview.isNullOrEmpty() }
 
                 unReviewedTimelines.forEach {
-                    delay(3.seconds)
-                    timelineUseCase.generateEmotionalReview(currentSaga, it)
+                    timelineUseCase.generateTimeline(currentSaga, it)
                 }
 
                 unReviewedChapters.forEach {
-                    delay(3.seconds)
-                    chapterUseCase.generateEmotionalReview(currentSaga, it)
+                    chapterUseCase.generateChapter(currentSaga, it)
                 }
 
                 unReviewedActs.forEach {
-                    delay(3.seconds)
-                    actUseCase.generateEmotionalProfile(currentSaga, it)
+                    actUseCase.generateAct(currentSaga, it)
                 }
 
                 delay(3.seconds)
@@ -142,19 +114,76 @@ class SagaDetailUseCaseImpl
 
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             executeRequest {
-                val prompt = SagaPrompts.generateStoryBriefing(saga)
+                val prompt =
+                    SagaPrompts.generateStoryBriefing(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
 
         override suspend fun generateSagaResume(saga: SagaContent): RequestResult<String> =
             executeRequest {
-                if (saga.chaptersSize() < 1) {
+                val narrativeRules = remoteConfigService.getNarrativeRules()
+
+                if (saga.completedChapters(narrativeRules) < 1) {
                     return@executeRequest saga.data.description
                 }
-                val prompt = SagaPrompts.sagaResume(saga)
+                val prompt =
+                    SagaPrompts.sagaResume(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
                 textGenClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,
-                )!!
+                ) ?: saga.data.description
+            }
+
+        override suspend fun generateCharactersInsight(saga: SagaContent): RequestResult<String> =
+            executeRequest {
+                val prompt =
+                    SagaPrompts.charactersInsight(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
+                textGenClient.generate<String>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                ) ?: ""
+            }
+
+        override suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String> =
+            executeRequest {
+                if (saga.wikis.isEmpty()) return@executeRequest ""
+                val prompt =
+                    SagaPrompts.wikiInsight(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
+                textGenClient.generate<String>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                ) ?: ""
+            }
+
+        override suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String> =
+            executeRequest {
+                val narrativeRules = remoteConfigService.getNarrativeRules()
+                if (saga.completedEvents(narrativeRules) > 3) return@executeRequest ""
+                val prompt =
+                    SagaPrompts.timelineInsight(
+                        promptService,
+                        saga,
+                        genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
+                textGenClient.generate<String>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                ) ?: ""
             }
     }

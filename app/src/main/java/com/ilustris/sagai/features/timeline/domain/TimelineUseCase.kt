@@ -11,21 +11,31 @@ interface TimelineUseCase {
 
     suspend fun getTimeline(id: String): Flow<Timeline>
 
+    suspend fun generateFullLoreUpdate(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    ): RequestResult<Unit>
+
+    fun generateFullLoreUpdateStream(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Unit>>>
+
     suspend fun generateTimeline(
         saga: SagaContent,
         currentTimeline: TimelineContent,
     ): RequestResult<Timeline>
+
+    fun generateTimelineStream(
+        saga: SagaContent,
+        currentTimeline: TimelineContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>>>
 
     suspend fun saveTimeline(timeline: Timeline): Timeline
 
     suspend fun updateTimeline(timeline: Timeline): Timeline
 
     suspend fun deleteTimeline(timeline: Timeline)
-
-    suspend fun generateEmotionalReview(
-        saga: SagaContent,
-        timeline: TimelineContent,
-    ): RequestResult<Timeline>
 
     suspend fun getTimelineObjective(
         saga: SagaContent,

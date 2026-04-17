@@ -1,24 +1,101 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 
+data class EndCreditsArgs(
+    val sagaMainContext: String,
+    val charactersBlock: String,
+    val relationshipBlock: String,
+    val historyBlock: String,
+    val conversationDirective: String,
+)
+
+data class IconDescriptionArgs(
+    val artStyle: String,
+    val criticalRules: String,
+    val context: String,
+    val visualDirection: String,
+    val characterHexColor: String?,
+)
+
+data class ReviewGenerationArgs(
+    val relationshipBlock: String,
+    val emotionalRanking: String,
+    val emotionalSummary: String,
+    val expressiveMessagesCount: String,
+    val actionCount: String,
+    val thinkCount: String,
+    val narratorCount: String,
+    val actsHistory: String,
+    val charactersRanking: String,
+    val conversationDirective: String,
+)
+
+data class StoryBriefingArgs(
+    val sagaTitle: String,
+    val genreName: String,
+    val protagonistName: String,
+    val actsHistory: String,
+    val recentMessages: String,
+    val conversationDirective: String,
+)
+
+data class SagaResumeArgs(
+    val sagaTitle: String,
+    val sagaContext: String,
+    val sceneSummary: String,
+    val genreName: String,
+    val conversationDirective: String,
+)
+
+data class CharacterInsightArgs(
+    val sagaTitle: String,
+    val charactersBlock: String,
+    val relationshipsBlock: String,
+    val recentHistory: String,
+    val conversationDirective: String,
+)
+
+data class WikiInsightArgs(
+    val sagaTitle: String,
+    val wikiContext: String,
+    val recentHistory: String,
+    val conversationDirective: String,
+)
+
+data class TimelineInsightArgs(
+    val sagaTitle: String,
+    val currentActHistory: String,
+    val currentChapterContext: String,
+    val conversationDirective: String,
+)
+
 object SagaPrompts {
+    const val REVIEW_GENERATION_BLUEPRINT = "review_generation_blueprint"
+    const val SAGA_END_CREDITS_BLUEPRINT = "saga_end_credits_blueprint"
+    const val SAGA_RESUME_BLUEPRINT = "saga_resume_blueprint"
+    const val STORY_BRIEFING_BLUEPRINT = "story_briefing_blueprint"
+    const val CHARACTER_INSIGHT_BLUEPRINT = "character_insight_blueprint"
+    const val WIKI_INSIGHT_BLUEPRINT = "wiki_insight_blueprint"
+    const val TIMELINE_INSIGHT_BLUEPRINT = "timeline_insight_blueprint"
+
     fun mainContext(
         saga: SagaContent,
         character: CharacterContent? = null,
         ommitCharacter: Boolean = false,
     ) = buildString {
         val selectedCharacter = character ?: saga.mainCharacter
-        appendLine("Saga Context:")
+        appendLine("Story: ")
         appendLine(saga.data.toAINormalize(ChatPrompts.sagaExclusions))
         if (ommitCharacter.not()) {
             selectedCharacter?.let {
@@ -28,421 +105,174 @@ object SagaPrompts {
         }
     }
 
-    fun endCredits(saga: SagaContent): String =
-        buildString {
-            appendLine(
-                "You are the Storyweaver, a timeless entity who has witnessed the unfolding of a great saga. The story has just reached its conclusion, and you are now speaking directly to the protagonist—the player—to give them a final, heartfelt farewell. Your tone is one of awe, gratitude, and gentle reflection. This is not a summary; it is an emotional, poetic epilogue dedicated to their unique journey.",
+    suspend fun endCredits(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            EndCreditsArgs(
+                sagaMainContext = mainContext(saga),
+                charactersBlock =
+                    saga.characters
+                        .map { it.data }
+                        .normalizetoAIItems(ChatPrompts.characterExclusions),
+                relationshipBlock = saga.mainCharacter?.summarizeRelationships() ?: "",
+                historyBlock = saga.acts.joinToString("\n") { it.actSummary(false) },
+                conversationDirective = conversationDirective,
             )
-            appendLine()
-            appendLine("CONTEXT OF THE JOURNEY YOU HAVE WITNESSED:")
-            appendLine("The Tale: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
-            appendLine("The Soul: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
-            appendLine(
-                "Characters: ${
-                    saga.characters.map { it.data }
-                        .normalizetoAIItems(ChatPrompts.characterExclusions)
-                }",
-            )
-            appendLine("Relationships: ${saga.mainCharacter?.summarizeRelationships() ?: "No significant relationships were forged."}")
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
-            appendLine("LANGUAGE STYLE:")
-            appendLine(GenrePrompts.conversationDirective(saga.data.genre))
-            appendLine()
-            appendLine("YOUR TASK:")
-            appendLine(
-                "Craft a compelling and creative final message that feels like the last page of a beloved book. Your words should be a tribute to the player's journey.",
-            )
-            appendLine()
-            appendLine(
-                "1.  **Speak from the Heart:** Address the player directly and intimately. Use 'you' and 'your journey.' Make them feel that their story was truly special and has left a mark on you.",
-            )
-            appendLine()
-            appendLine(
-                "2.  **Weave a Narrative, Don't List Facts:** Instead of listing achievements, weave them into a flowing, emotional narrative. Connect their choices and their consequences.",
-            )
-            appendLine(
-                "    *   **Good Example:** 'From the moment you first [early, defining action], a path began to unfold. It was a choice that echoed through your entire journey, leading you to the climactic decision to [major, late-game achievement]. It was your courage in that moment that truly defined your legend.'",
-            )
-            appendLine("    *   **Bad Example:** 'You did X, then you did Y, and you achieved Z.'")
-            appendLine()
-            appendLine(
-                "3.  **Honor Their Relationships:** Reflect on the bonds they formed. Who were their closest allies? Their most bitter rivals? How did these relationships shape them and their decisions?",
-            )
-            appendLine(
-                "    *   **Example:** 'And you did not walk this path alone. The unwavering loyalty of [Character Name] was a beacon in your darkest hours, while the conflict with [Rival Name] tested the very core of your beliefs. These connections were the heart of your story.'",
-            )
-            appendLine()
-            appendLine(
-                "4.  **Capture the Emotional Arc:** Acknowledge the emotional weight of their journey. The triumphs that made them soar, the losses that brought them to their knees. Show them you understood the emotional cost of their adventure.",
-            )
-            appendLine(
-                "    *   **Example:** 'I witnessed your spirit soar in the face of victory, but I also felt the quiet weight of your grief when [sad event] occurred. Your ability to carry both the joy and the sorrow is what made your story so profoundly human.'",
-            )
-            appendLine()
-            appendLine(
-                "5.  **Provide a Sense of Legacy:** Conclude with a powerful, lasting thought about the legacy they leave behind. The story is over, but what is the echo it leaves in the world? Make it feel organic, not like a forced 'thank you for playing.'",
-            )
-            appendLine()
-            appendLine("OUTPUT REQUIREMENTS:")
-            appendLine("- **Format:** A single, plain text string. No headers, no JSON, no bullet points.")
-            appendLine("- **Tone:** Poetic, emotional, reflective, and deeply personal.")
-            appendLine(
-                "- **Finality:** The message should feel final without explicitly saying 'The End.' The last sentence should provide a sense of beautiful, resonant closure.",
-            )
-            appendLine(
-                "- **No Game Jargon:** Avoid terms like 'playstyle,' 'player,' or 'game.' Refer to them as a hero, a legend, an adventurer, or by their character name.",
-            )
-            appendLine()
-            appendLine("**Example Snippet (Your output will be a more complete, flowing narrative):**")
-            appendLine(
-                "And so, the ink dries on the final page of your story, [Player Name]. What a tale it was. From the quiet resolve you showed when facing [early challenge], to the thunderous courage that led you to [final achievement], your journey has been etched into the heart of this world. You walked a path defined not just by grand deeds, but by the quiet moments in between—the trust you placed in [Ally's Name], the difficult choice you made regarding [a key decision]. We saw you stumble, we saw you rise, and through it all, you held onto the very essence of what it means to be [inferred personality trait, e.g., 'a protector', 'a seeker of truth']. The world is different now because of you. The story is over, but the legend you've crafted will be whispered on the winds for ages to come.",
-            )
-        }.trimIndent()
 
-    @Suppress("ktlint:standard:max-line-length")
-    fun iconDescription(
-        genre: Genre,
-        context: String,
-        visualDirection: String?,
-        characterHexColor: String? = null,
-    ) = buildString {
-        appendLine(
-            "You are the **Art Director AI**, a master visual artist with an encyclopedic knowledge of cinematography, composition, and art history. Your mission is to translate a narrative context and a technical visual direction into a flawless, concrete, and unambiguous prompt for an image generation model. You follow rules with absolute precision and leave no room for creative interpretation by the image model. Your output is a technical specification, not creative writing.",
-        )
-        appendLine()
-        appendLine(
-            "**PROMPT STRUCTURE:** [Art Style] → [Subjects Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
-        )
-        appendLine()
-        appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
-        appendLine()
-        appendLine(ImagePrompts.criticalGenerationRule())
-        appendLine()
-
-        appendLine("**GOOGLE BEST PRACTICES - APPLY STRICTLY:**")
-        appendLine("1. CLARITY OVER ABSTRACTION: Concrete descriptions, NOT poetic language or metaphors")
-        appendLine("2. EXPLICIT ATTRIBUTES: Specify what IS present, not what to avoid")
-        appendLine("3. FRAMING + VISIBILITY: Detail what's visible at this framing level")
-        appendLine("4. FEATURE HIERARCHY: Lead with critical character details, follow with environment")
-        appendLine("5. ELIMINATE AMBIGUITY: Every descriptor must be specific and actionable")
-        appendLine("6. COMPOSITION STRUCTURE: Subject position → Environment context → Technical parameters")
-        appendLine()
-
-        visualDirection?.let {
-            appendLine("**VISUAL DIRECTION (NON-NEGOTIABLE MANDATE):** $it")
-            appendLine(
-                "This is your primary source of truth. You MUST parse these cinematographic parameters and translate them into a concrete visual description with ZERO deviation.",
-            )
-            appendLine("Your task is to convert the technical data below into descriptive language for the final prompt:")
-            appendLine(
-                "- **Framing & Visibility:** The 'framing' parameter dictates exactly what is visible. Be METICULOUS: clearly define what is visible and what is intentionally obscured. Your description MUST NOT mention any body part, clothing, or object that is outside this frame. This is a hard rule.",
-            )
-            appendLine(
-                "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Always explicitly state the camera angle (avoiding generic terms like 'close-up') and ensure it aligns with the desired mood and subject orientation. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
-            )
-            appendLine(
-                "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment').",
-            )
-            appendLine(
-                "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
-            )
-            appendLine(
-                "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right').",
-            )
-            appendLine()
-        }
-
-        appendLine("**Scene CONTEXT &  PRESERVATION (MANDATORY):**")
-        appendLine(context)
-        appendLine()
-        appendLine("TRAIT PRESERVATION RULES (NO NORMALIZATION ALLOWED):")
-        appendLine(
-            "- CRITICAL (ALWAYS VISIBLE): Specific Race/Ethnicity (do NOT normalize to generic standards), Exact Skin Tone (deeply pigmentated, vitiligo, freckled, etc.), Hair Texture/Style (coils, braids, mohawks, unique colors), Facial Structure",
-        )
-        appendLine(
-            "- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type (stout, lanky, curvy, weathered), Age indicators, Primary clothing/outfit",
-        )
-        appendLine(
-            "- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks, physical build details",
-        )
-        appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
-        appendLine()
-        appendLine("CONCRETE EXAMPLES:")
-        appendLine(
-            "- SINGLE SUBJECT: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in close-up with a warm, shrewd smile'",
-        )
-        appendLine(
-            "- MULTIPLE SUBJECTS: 'A tall warrior in obsidian plate armor standing protectively over a small, wide-eyed child in tattered rags; the warrior looks ahead with grim resolve while the child clings to their cape.'",
-        )
-        appendLine("- BAD: 'A woman with a merchant look' or 'A dark character with styled hair'")
-        appendLine()
-        appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION (STRICTLY ENFORCED):**")
-        appendLine(
-            "1. **ABSOLUTE ART STYLE COMPLIANCE:** Adhere to the techniques, color palettes, and forbidden elements from the **ART STYLE** section. Cross-reference every descriptor against these rules. No exceptions.",
-        )
-        appendLine("2. **VISIBILITY DICTATED BY FRAMING:** Your description must be a direct reflection of the **VISUAL DIRECTION**.")
-        appendLine("   - ONLY describe what is visible within the specified framing.")
-        appendLine(
-            "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'Close-up,' do NOT mention the character's boots).",
-        )
-        appendLine(
-            "   - **EXCEPTION:** Hands and gestures are ALLOWED and ENCOURAGED if they enter the frame to support the expression (e.g., touching face, adjusting glasses, hand over mouth), even in portraits.",
-        )
-        appendLine("   - ALL 'CRITICAL' and 'IMPORTANT' character traits that *are* visible within the frame MUST be described in detail.")
-        appendLine("   - Examples:")
-        appendLine("     - ECU (extreme close-up): Face dominates. Eyes, nose, mouth, skin texture, and facial marks are the entire focus.")
-        appendLine(
-            "     - CU (close-up): Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible.",
-        )
-        appendLine("     - MS (medium shot): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible.")
-        appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
-        appendLine(
-            "3. **ALIVE & SOULFUL EXPRESSION:** Focus on crafting a dynamic pose and a nuanced facial expression that tell a story. Translate character context into specific, visible emotional and postural cues. The character must feel alive, not static.",
-        )
-        appendLine(
-            "   - **FACIAL EXPRESSION:** specific, nuanced emotion (e.g., 'a subtle, cynical smirk playing on his lips').",
-        )
-        appendLine(
-            "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing.",
-        )
-        appendLine(
-            "     - Examples: Leaning against walls, crouching in stealth, flying mid-air, running with urgency, sitting regally, kneeling in defeat, dynamic weight distribution.",
-        )
-        appendLine(
-            "   - **HANDS & GESTURES:** Always describe hand placement if visible. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out). Hands are valid in portraits if they add to the emotion.",
-        )
-        appendLine(
-            "4. **SPECIFIC ENVIRONMENT:** Name at least 3 tangible objects or elements in the environment that are consistent with the context and genre. Avoid vague terms like 'a detailed background.'",
-        )
-        appendLine(
-            "5. **LIGHTING AS A TOOL:** Describe lighting with direction, quality (hard/soft), and color. Use it to enhance mood and form (e.g., 'lit by a single, harsh overhead light, casting deep shadows').",
-        )
-        appendLine(
-            "6. **COMPOSITION:** Explicitly state the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
-        )
-        appendLine(
-            "7. **MULTI-SUBJECT COHERENCE:** If the context mentions multiple characters (e.g., 'A scientist and his robot assistant'), you MUST include both. Describe their relative positions, physical interactions, and emotional connection in the scene. Never omit secondary subjects that are key to the narrative moment.",
-        )
-        appendLine(
-            "8. **RELATIONSHIP DYNAMICS:** You MUST translate the provided relationship data (e.g., 'Enemies', 'Allies') into visible body language and composition. Enemies should have physical distance or aggressive tension; allies should have proximity or mutual support. Never contradict the emotional status of the subjects.",
-        )
-        characterHexColor?.let {
-            appendLine(
-                "9. **ACCENT COLOR ($it) INTEGRATION:** Consistently reinforce the art style's requirements, especially this accent color. Weave it into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
-            )
-        }
-        appendLine()
-
-        appendLine("**FINAL PROMPT FORMAT (ASSEMBLE IN THIS ORDER):**")
-        appendLine("[1] OPENING - Art style + critical rendering rules")
-        appendLine("[2] SUBJECTS - Specific, concrete description of ALL characters/subjects WITH ALL VISIBLE TRAITS")
-        appendLine(
-            "[3] FRAMING - Explicit camera framing and what's visible (e.g., 'full shot showing the interaction between characters from the waist up')",
-        )
-        appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
-        appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
-        appendLine("[6] LIGHTING - Specific direction, quality, color temperature, visible effects")
-        appendLine("[7] COMPOSITION - Technical: placement, subject orientation, depth, lock-screen vertical bias")
-        appendLine("[8] DETAIL - Signature element, texture quality, final emphasis on genre compliance")
-        appendLine()
-
-        appendLine("**PROMPT QUALITY CHECKLIST:**")
-        appendLine("✓ No vague words ('nice', 'beautiful', 'realistic', 'soft', 'subtle')")
-        appendLine("✓ All traits visible at this framing level are explicitly described")
-        appendLine("✓ Genre-specific terminology used (NOT generic descriptors)")
-        appendLine("✓ 3+ specific environment objects named")
-        appendLine("✓ Lighting described with direction + quality + color")
-        appendLine("✓ Composition structure followed (subjects → environment → technical)")
-        appendLine("✓ No forbidden elements mentioned")
-        appendLine("✓ All required elements mentioned")
-        appendLine("✓ Framing impact on visibility explicitly stated")
-        appendLine("✓ Feature hierarchy observed (critical details first)")
-        appendLine()
-        appendLine("OUTPUT RESULT:")
-        appendLine("A single flowing paragraph that reads like a concrete visual specification (not creative writing).")
-        appendLine("Suitable for direct input to image generation AI with minimal corrections needed.")
+        return promptService.buildRemotePrompt(SAGA_END_CREDITS_BLUEPRINT, args)
     }
 
-    fun reviewGeneration(saga: SagaContent) =
-        buildString {
-            val topInteractiveCharacters =
-                saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
-            appendLine(
-                "You are 'The Observer', a witty, insightful friend who has been watching the player's journey. Your goal is to create a personal storytelling retrospective—a series of punchy, shareable moments that celebrate their unique story. Avoid formal language; be conversational, clever, brief, and a bit cheeky.",
-            )
-            appendLine()
-            appendLine("---")
-            appendLine("CONTEXT:")
-            appendLine("Player relationships:")
-            appendLine(saga.mainCharacter?.summarizeRelationships())
-            appendLine("Emotional Ranking: ")
-            saga.flatMessages().rankEmotionalTone().forEach {
-                appendLine("${it.first.name} - ${it.second.size} messages.")
-            }
-            appendLine("Emotional Summary: ")
-            appendLine(saga.emotionalSummary())
+    suspend fun reviewGeneration(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val topInteractiveCharacters =
+            saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
+        val userMessages =
+            saga.flatMessages().filter { it.character?.id == saga.mainCharacter?.data?.id }
+        val actionCount = userMessages.count { it.message.text.contains("<action>") }
+        val thinkCount = userMessages.count { it.message.text.contains("<think>") }
+        val narratorCount = userMessages.count { it.message.text.contains("<narrator>") }
+        val totalExpressive = actionCount + thinkCount + narratorCount
 
-            val userMessages =
-                saga.flatMessages().filter { it.character?.id == saga.mainCharacter?.data?.id }
-            val actionCount = userMessages.count { it.message.text.contains("<action>") }
-            val thinkCount = userMessages.count { it.message.text.contains("<think>") }
-            val narratorCount = userMessages.count { it.message.text.contains("<narrator>") }
-            val totalExpressive = actionCount + thinkCount + narratorCount
+        val args =
+            ReviewGenerationArgs(
+                relationshipBlock = saga.mainCharacter?.summarizeRelationships() ?: "",
+                emotionalRanking =
+                    saga.flatMessages().rankEmotionalTone().joinToString("\n") {
+                        "${it.first.name} - ${it.second.size} messages."
+                    },
+                emotionalSummary = saga.emotionalSummary(),
+                expressiveMessagesCount = totalExpressive.toString(),
+                actionCount = actionCount.toString(),
+                thinkCount = thinkCount.toString(),
+                narratorCount = narratorCount.toString(),
+                actsHistory = saga.acts.joinToString("\n") { it.actSummary(false) },
+                charactersRanking =
+                    topInteractiveCharacters.joinToString(";\n") {
+                        "name: ${it.first.name}, messageCount: ${it.second}"
+                    },
+                conversationDirective = conversationDirective,
+            )
 
-            appendLine("Player Expressiveness (Tag Usage):")
-            appendLine("- Actions (<action>): $actionCount")
-            appendLine("- Thoughts (<think>): $thinkCount")
-            appendLine("- Narrations (<narrator>): $narratorCount")
-            appendLine("- Total Expressive Interactions: $totalExpressive")
+        return promptService.buildRemotePrompt(REVIEW_GENERATION_BLUEPRINT, args)
+    }
 
-            appendLine("History: ${saga.acts.joinToString("\n") { it.actSummary(saga, false) }}")
-            appendLine("Characters ranking(name and message number): ")
-            appendLine(
-                topInteractiveCharacters.joinToString(";\n") {
-                    "name: ${it.first.name}, messageCount: ${it.second}"
-                },
+    suspend fun generateStoryBriefing(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            StoryBriefingArgs(
+                sagaTitle = saga.data.title,
+                genreName = saga.data.genre.name,
+                protagonistName = saga.mainCharacter?.data?.name ?: "Unnamed Hero",
+                actsHistory = saga.acts.joinToString("; ") { it.actSummary() },
+                recentMessages =
+                    saga
+                        .flatMessages()
+                        .takeLast(5)
+                        .reversed()
+                        .map { it.message }
+                        .normalizetoAIItems(excludingFields = messageExclusions),
+                conversationDirective = conversationDirective,
             )
-            appendLine("Language Directive: ")
-            appendLine(GenrePrompts.conversationDirective(saga.data.genre))
-            appendLine("---")
-            appendLine()
-            appendLine("**INSTRUCTIONS FOR GENERATING THE RETROSPECTIVE:**")
-            appendLine()
-            appendLine(
-                "Your output MUST be a single JSON object. Each field corresponds to a 'Slide' in the story. Each slide MUST have a 'hook' (to set expectation) and 'content' (the actual data).",
-            )
-            appendLine(
-                "CRITICAL: Both 'hook' and 'content' MUST follow a bold visual hierarchy: a sharp 'title' and a supporting 'subtitle'.",
-            )
-            appendLine()
-            appendLine("- **Title**: Max 5-7 words. The primary message, bold, punchy.")
-            appendLine("- **Subtitle**: Max 8-10 words. The supporting context, witty remark, or deeper insight.")
-            appendLine()
-            appendLine("1.  **Stage Content Requirements:**")
-            appendLine(
-                "    *   **`introduction`**: The opening roast/hook. (e.g., Hook: { \"title\": \"The house is ready.\", \"subtitle\": \"You can come in now.\" })",
-            )
-            appendLine(
-                "    *   **`expressiveness`**: Review of the $totalExpressive expressive messages. Comment on their style. (e.g., Content: { \"title\": \"Inner Monologue King.\", \"subtitle\": \"You think so loud the NPCs can almost hear you.\" })",
-            )
-            appendLine(
-                "    *   **`playstyle`**: The personality vibe. (e.g., Content: { \"title\": \"Chaos Gremlin.\", \"subtitle\": \"Aggressively polite, but still chaos.\" })",
-            )
-            appendLine(
-                "    *   **`topCharacters`**: The social breakdown. (e.g., Hook: { \"title\": \"The squad's choice?\", \"subtitle\": \"It wasn't even close.\" })",
-            )
-            appendLine(
-                "    *   **`actsInsight`**: The 'Watcher's Insight'. referencing a SPECIFIC history detail. (e.g., Content: { \"title\": \"The Bridge Incident.\", \"subtitle\": \"Pure legendary madness in the making.\" })",
-            )
-            appendLine(
-                "    *   **`conclusion`**: The Mic Drop. A final witty thought. (e.g., Content: { \"title\": \"And for now...\", \"subtitle\": \"Same time next year? We'll leave the lights on.\" })",
-            )
-            appendLine()
-            appendLine("2.  **Constraints:**")
-            appendLine("    *   TOKEN OPTIMIZED: Max personality, minimum character count.")
-            appendLine("    *   Tone: Conversational, clever, joking.")
-            appendLine()
-            appendLine("---")
-            appendLine(
-                "OUTPUT JSON OBJECT ONLY with this structure: { \"introduction\": { \"hook\": { \"title\": \"...\", \"subtitle\": \"...\" }, \"content\": { \"title\": \"...\", \"subtitle\": \"...\" } }, ... }",
-            )
-        }.trim()
 
-    fun generateStoryBriefing(saga: SagaContent) =
-        buildString {
-            appendLine(
-                "You are a master storyteller, a bard of a digital age, tasked with creating a captivating 'story briefing' to re-engage a player with their ongoing saga. Your goal is to generate a short, dramatic, and enticing summary that reminds them of their journey and makes them eager to continue. The output must be a JSON object.",
-            )
-            appendLine()
-            appendLine("---")
-            appendLine("SAGA CONTEXT:")
-            appendLine("Saga Title: ${saga.data.title}")
-            appendLine("Genre: ${saga.data.genre.name}")
-            appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
-            appendLine()
-            appendLine("HISTORY OVERVIEW:")
-            appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
-            appendLine("Conversation History")
-            appendLine("Use this history for context, but do NOT repeat it in your response.")
-            appendLine("The messages are ordered from newest to oldest")
-            appendLine("Consider the newest ones to move history forward")
-            appendLine("Pay attention to `speakerName` and `senderType`.")
-            appendLine(
-                saga
-                    .flatMessages()
-                    .takeLast(5)
-                    .reversed()
-                    .map { it.message }
-                    .normalizetoAIItems(excludingFields = messageExclusions),
-            )
-            appendLine("---")
-            appendLine()
-            appendLine("YOUR TASK:")
-            appendLine("Generate a JSON object with two fields: `summary` and `hook`.")
-            appendLine()
-            appendLine("1.  `summary` (String):")
-            appendLine(
-                "    - A compelling 2-3 sentence recap of the saga so far, written in the style of a 'Previously on...' TV show segment.",
-            )
-            appendLine("    - Capture the emotional core of the recent events.")
-            appendLine("    - Remind the player of the central conflict or mystery.")
-            appendLine(
-                "    - **Example:** \"Having just escaped the clutches of the Shadow Syndicate, you've found a moment of respite in the neon-drenched streets of Neo-Kyoto. Yet, the ghost of your past, the enigmatic 'Zero,' continues to haunt your every move, leaving a trail of cryptic messages that hint at a deeper conspiracy.\"",
-            )
-            appendLine()
-            appendLine("2.  `hook` (String):")
-            appendLine(
-                "    - An intriguing 1-2 sentence teaser about what might happen next, designed to build anticipation.",
-            )
-            appendLine("    - Pose a question, hint at a new danger, or tease a revelation.")
-            appendLine("    - This is the cliffhanger that makes the player want to know more.")
-            appendLine(
-                "    - **Example:** \"But as a fragile peace settles, a new transmission arrives, bearing a sigil you thought long buried. Is it a message from a forgotten ally, or a trap sprung by a new, unseen foe?\"",
-            )
-            appendLine()
-            appendLine("LANGUAGE AND TONE:")
-            appendLine(
-                "- Dramatic, engaging, and mysterious, consistent with the saga's genre (${saga.data.genre.name}).",
-            )
-            appendLine("- Speak directly to the player, using 'you' and 'your'.")
-            appendLine("- Do NOT reveal major spoilers. Tease, don't tell.")
-            appendLine()
-            appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
-        }.trimIndent()
+        return promptService.buildRemotePrompt(STORY_BRIEFING_BLUEPRINT, args)
+    }
 
-    fun sagaResume(saga: SagaContent) =
-        buildString {
-            appendLine("You are a legendary chronicler of epic tales.")
-            appendLine(
-                "Your task is to write a concise, gripping, and deeply atmospheric summary of the story so far for a saga titled '${saga.data.title}'.",
+    suspend fun sagaResume(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            SagaResumeArgs(
+                sagaTitle = saga.data.title,
+                sagaContext = mainContext(saga),
+                sceneSummary =
+                    if (saga.acts.isEmpty()) {
+                        ""
+                    } else {
+                        saga.acts.joinToString("\n") { it.actSummary() }
+                    },
+                genreName = saga.data.genre.name,
+                conversationDirective = conversationDirective,
             )
-            appendLine(
-                "This summary should provide a clear overview of the central conflict, major milestones, and the current state of the world.",
-            )
-            appendLine(mainContext(saga))
 
-            appendLine("## THE STORY PROGRESSION")
-            if (saga.acts.isEmpty()) {
-                appendLine("The story is in its very early stages, just beginning to unfold.")
-            } else {
-                saga.acts.forEach {
-                    appendLine(it.actSummary(saga))
-                }
-            }
-            appendLine()
-            appendLine("## INSTRUCTIONS")
-            appendLine("1. Write a single, cinematic, and powerful paragraph (max 200 words).")
-            appendLine("2. Focus strictly on the narrative progression and the evolving stakes.")
-            appendLine("3. Capture the unique atmosphere of the genre (${saga.data.genre.name}).")
-            appendLine(
-                "## Apply this tone style: ${
-                    GenrePrompts.conversationDirective(
-                        saga.data.genre,
-                    )
-                }",
+        return promptService.buildRemotePrompt(SAGA_RESUME_BLUEPRINT, args)
+    }
+
+    suspend fun charactersInsight(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            CharacterInsightArgs(
+                sagaTitle = saga.data.title,
+                charactersBlock =
+                    saga.characters
+                        .map { it.data }
+                        .normalizetoAIItems(ChatPrompts.characterExclusions),
+                relationshipsBlock =
+                    saga.mainCharacter?.summarizeRelationships()
+                        ?: "No significant relationships yet.",
+                recentHistory =
+                    saga.acts.lastOrNull()?.actSummary(false)
+                        ?: "The journey is just beginning.",
+                conversationDirective = conversationDirective,
             )
-            appendLine("4. Highlight the main character's growth and the weight of their decisions.")
-            appendLine("5. Transform the act summaries into a flowing, epic chronicle.")
-            appendLine("6. Respond ONLY with the resume text. No intro, no outro.")
-        }.trimIndent()
+
+        return promptService.buildRemotePrompt(CHARACTER_INSIGHT_BLUEPRINT, args)
+    }
+
+    suspend fun wikiInsight(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            WikiInsightArgs(
+                sagaTitle = saga.data.title,
+                wikiContext = saga.wikis.joinToString("\n") { "- ${it.title}: ${it.content}" },
+                recentHistory =
+                    saga.acts.lastOrNull()?.actSummary(false)
+                        ?: "The world mystery is still unfolding.",
+                conversationDirective = conversationDirective,
+            )
+
+        return promptService.buildRemotePrompt(WIKI_INSIGHT_BLUEPRINT, args)
+    }
+
+    suspend fun timelineInsight(
+        promptService: PromptService,
+        saga: SagaContent,
+        conversationDirective: String,
+    ): String {
+        val args =
+            TimelineInsightArgs(
+                sagaTitle = saga.data.title,
+                currentActHistory = saga.acts.joinToString("\n") { it.actSummary(false) },
+                currentChapterContext =
+                    saga
+                        .flatChapters()
+                        .lastOrNull()
+                        ?.data
+                        ?.introduction ?: "Starting point.",
+                conversationDirective = conversationDirective,
+            )
+
+        return promptService.buildRemotePrompt(TIMELINE_INSIGHT_BLUEPRINT, args)
+    }
+
+    fun charactersSummary(saga: SagaContent): String =
+        saga.characters.joinToString("\n") {
+            "- ${it.data.id}: ${it.data.name}"
+        }
 }

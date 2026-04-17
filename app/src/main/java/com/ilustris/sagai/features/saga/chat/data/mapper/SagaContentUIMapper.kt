@@ -1,33 +1,94 @@
 package com.ilustris.sagai.features.saga.chat.data.mapper
 
-import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
+import com.ilustris.sagai.features.saga.chat.presentation.TimelineDisplayData
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
+import com.ilustris.sagai.features.timeline.domain.TimelineMapper
+import javax.inject.Inject
 
-object SagaContentUIMapper {
-    /**
-     * Maps domain acts to UI display data with pre-reversed lists.
-     * This avoids calling .reversed() in the UI layer during LazyColumn rendering,
-     * which would create new list copies on every recomposition.
-     */
-    fun mapToActDisplayData(domainActs: List<ActContent>): List<ActDisplayData> =
-        domainActs.asReversed().map { actContentDomain ->
-            ActDisplayData(
-                content = actContentDomain,
-                isComplete = actContentDomain.isComplete(),
-                chapters =
-                    actContentDomain.chapters.asReversed().map { chapterContentDomain ->
-                        ChapterDisplayData(
-                            chapter = chapterContentDomain,
-                            isComplete = chapterContentDomain.isComplete(),
-                            timelineSummaries =
-                                chapterContentDomain.events.asReversed().map {
-                                    it.copy(
-                                        messages = it.messages.sortedByDescending { m -> m.message.timestamp },
-                                    )
-                                },
-                        )
-                    },
-            )
-        }
-}
+class SagaContentUIMapper
+    @Inject
+    constructor(
+        private val timelineMapper: TimelineMapper,
+    ) {
+        fun computePendingAdvance(
+            saga: SagaContent,
+            rules: NarrativeRules,
+        ): PendingAdvance? =
+            when (val step = NarrativeCheck.validateProgression(saga, rules)) {
+                is NarrativeStep.GenerateTimeLine -> {
+                    PendingAdvance.NewEvent(step.timeline)
+                }
+
+                is NarrativeStep.GenerateChapter -> {
+                    PendingAdvance.NewChapter(step.chapter)
+                }
+
+                is NarrativeStep.GenerateAct -> {
+                    PendingAdvance.NewAct(step.act)
+                }
+
+                is NarrativeStep.GenerateActIntroduction -> {
+                    PendingAdvance.NewActIntroduction(step.act)
+                }
+
+                is NarrativeStep.GenerateChapterIntroduction -> {
+                    PendingAdvance.NewChapterIntroduction(
+                        step.chapter,
+                    )
+                }
+
+                is NarrativeStep.StartTimeline -> {
+                    PendingAdvance.StartStory(step.chapter)
+                }
+
+                is NarrativeStep.GenerateSagaEnding -> {
+                    PendingAdvance.SagaEnding(step.saga)
+                }
+
+                else -> {
+                    null
+                }
+            }
+
+        suspend fun mapToActDisplayData(
+            saga: SagaContent,
+            rules: NarrativeRules,
+        ): List<ActDisplayData> =
+            saga.acts.asReversed().map { actContentDomain ->
+
+                ActDisplayData(
+                    content = actContentDomain,
+                    isComplete = actContentDomain.isComplete(rules),
+                    chapters =
+                        actContentDomain.chapters.asReversed().map { chapterContentDomain ->
+                            ChapterDisplayData(
+                                chapter = chapterContentDomain,
+                                isComplete = chapterContentDomain.isComplete(rules),
+                                timelineSummaries =
+                                    chapterContentDomain.events.asReversed().map {
+                                        TimelineDisplayData(
+                                            isComplete = it.isComplete(rules),
+                                            timeline =
+                                                timelineMapper.buildTimeline(
+                                                    saga = saga,
+                                                    timelineContent =
+                                                        it.copy(
+                                                            messages =
+                                                                it.messages.sortedByDescending {
+                                                                    it.message.timestamp
+                                                                },
+                                                        ),
+                                                ),
+                                        )
+                                    },
+                            )
+                        },
+                )
+            }
+    }

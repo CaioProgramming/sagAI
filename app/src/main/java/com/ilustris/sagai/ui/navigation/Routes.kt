@@ -45,7 +45,6 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
-import com.ilustris.sagai.features.settings.ui.SettingsView
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
@@ -84,14 +83,6 @@ enum class Routes(
         showBottomNav = false,
     ),
     PROFILE,
-    SETTINGS(
-        title = R.string.settings_title,
-        showBottomNav = false,
-        view = { nav, padding, _, _ ->
-            SettingsView(nav)
-        },
-        topBarContent = { Box {} },
-    ),
     FAQ(
         showBottomNav = false,
         view = { nav, padding, _, _ ->
@@ -137,7 +128,7 @@ enum class Routes(
             CharacterDetailsView(
                 navHostController = nav,
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
-                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+                characterId = nav.currentBackStackEntry?.arguments?.getInt(CHARACTER_DETAIL.arguments[1]),
             )
         },
     ),
@@ -155,6 +146,14 @@ enum class Routes(
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(SAGA_CHAPTERS.arguments.first()),
             )
         },
+    ),
+    AUDIT_LOGS(
+        showBottomNav = false,
+        view = { nav, padding, _, _ ->
+            com.ilustris.sagai.features.settings.ui.audit
+                .AIAuditLogView(nav)
+        },
+        topBarContent = { Box {} },
     ),
 }
 

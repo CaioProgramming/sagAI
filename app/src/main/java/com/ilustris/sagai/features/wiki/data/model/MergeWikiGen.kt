@@ -6,6 +6,12 @@ data class MergeWikiGen(
 
 data class MergeWiki(
     val firstItem: String,
-    val secondItem: String?, // Nullable: empty string or null if no merge needed
+    val secondItem: String?,
     val mergedItem: Wiki,
+)
+
+data class WikiGroup(
+    val title: String,
+    val wikis: List<Wiki>,
+    val canBeReviewed: Boolean,
 )

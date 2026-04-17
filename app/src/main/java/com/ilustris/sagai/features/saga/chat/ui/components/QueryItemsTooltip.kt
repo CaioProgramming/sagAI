@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
@@ -51,9 +52,9 @@ fun QueryItemsTooltip(
                     shape,
                     Shadow(
                         radius = 5.dp,
-                        genre.color,
+                        genre.resolveColor(),
                     ),
-                ).border(1.dp, genre.color.gradientFade(), shape)
+                ).border(1.dp, genre.resolveColor().gradientFade(), shape)
                 .background(
                     MaterialTheme.colorScheme.background,
                     shape,
@@ -61,18 +62,34 @@ fun QueryItemsTooltip(
                 .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AnimatedContent(currentType.title) {
-            Text(
-                it,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                    ),
-                modifier =
-                    Modifier
-                        .padding(horizontal = 8.dp),
-            )
+    } { currentTitle ->
+        val title = when (currentType) {
+            is ItemsType.Characters -> {
+                if (currentType.query.isEmpty()) {
+                    stringResource(R.string.chat_input_mention_characters_title)
+                } else {
+                    stringResource(R.string.chat_input_search_query, currentType.query)
+                }
+            }
+            is ItemsType.Wikis -> {
+                if (currentType.query.isEmpty()) {
+                    stringResource(R.string.chat_input_mention_wiki_title)
+                } else {
+                    stringResource(R.string.chat_input_search_query, currentType.query)
+                }
+            }
         }
+        Text(
+            title,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                ),
+            modifier =
+                Modifier
+                    .padding(horizontal = 8.dp),
+        )
+    }
 
         AnimatedContent(currentType, transitionSpec = {
             slideInVertically { -it } + fadeIn(tween(300)) togetherWith fadeOut(tween(300))
@@ -86,7 +103,7 @@ fun QueryItemsTooltip(
 
                             Row(
                                 Modifier
-                                    .border(1.dp, genre.color.copy(alpha = .2f), shape)
+                                    .border(1.dp, genre.resolveColor().copy(alpha = .2f), shape)
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
                                         shape,
@@ -115,7 +132,7 @@ fun QueryItemsTooltip(
                                             fontFamily = genre.bodyFont(),
                                             color =
                                                 character.data.hexColor.hexToColor()
-                                                    ?: genre.color,
+                                                    ?: genre.resolveColor(),
                                         ),
                                 )
                             }
@@ -126,7 +143,7 @@ fun QueryItemsTooltip(
                         items(currentType.filteredWikis) { wiki ->
                             Row(
                                 Modifier
-                                    .border(1.dp, genre.color.copy(alpha = .2f), shape)
+                                    .border(1.dp, genre.resolveColor().copy(alpha = .2f), shape)
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
                                         shape,
@@ -159,18 +176,14 @@ fun QueryItemsTooltip(
     }
 }
 
-sealed class ItemsType(
-    val title: String,
-) {
+sealed class ItemsType {
     data class Characters(
         val filteredCharacters: List<CharacterContent>,
-        val charactersTitle: String,
-    ) : ItemsType(
-            charactersTitle,
-        )
+        val query: String = "",
+    ) : ItemsType()
 
     data class Wikis(
         val filteredWikis: List<Wiki>,
-        val wikiTitle: String,
-    ) : ItemsType(wikiTitle)
+        val query: String = "",
+    ) : ItemsType()
 }

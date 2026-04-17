@@ -42,6 +42,8 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
@@ -129,7 +131,8 @@ class ReviewCharactersPage(
                                 .fillMaxWidth()
                                 .animateContentSize(
                                     tween(1000, easing = EaseIn),
-                                ).animateEnterExit(
+                                )
+                                .animateEnterExit(
                                     enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
                                     exit = slideOutVertically { it },
                                 ),
@@ -145,15 +148,16 @@ class ReviewCharactersPage(
                                             MaterialTheme.typography.titleLarge.copy(
                                                 fontFamily = genre.bodyFont(),
                                                 fontWeight = FontWeight.Bold,
-                                                color = genre.iconColor,
+                                                color = genre.resolveIconColor(),
                                             ),
                                         modifier =
                                             Modifier
                                                 .padding(8.dp)
                                                 .background(
-                                                    genre.color,
+                                                    genre.resolveColor(),
                                                     shape = genre.bubble(isNarrator = true),
-                                                ).padding(8.dp),
+                                                )
+                                                .padding(8.dp),
                                     )
                                 }
                             }
@@ -223,7 +227,7 @@ class ReviewCharactersPage(
                                         colors =
                                             ButtonDefaults.elevatedButtonColors().copy(
                                                 containerColor = MaterialTheme.colorScheme.onBackground,
-                                                contentColor = genre.color,
+                                                contentColor = genre.resolveColor(),
                                             ),
                                         modifier = Modifier.padding(vertical = 16.dp),
                                     ) {

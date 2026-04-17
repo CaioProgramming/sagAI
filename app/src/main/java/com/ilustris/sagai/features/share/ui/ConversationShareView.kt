@@ -36,6 +36,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
@@ -56,13 +58,15 @@ import kotlinx.coroutines.launch
 fun ConversationShareView(
     sagaContent: SagaContent,
     messages: List<MessageContent>,
-    viewModel: SharePlayViewModel = hiltViewModel()
+    viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     val graphicsLayer = rememberGraphicsLayer()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val filePath = viewModel.savedFilePath.collectAsStateWithLifecycle().value
     val genre = sagaContent.data.genre
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
 
     LaunchedEffect(Unit) {
         coroutineScope.launch {
@@ -78,53 +82,54 @@ fun ConversationShareView(
         }
     }
 
-
-
     Box(
         Modifier
             .fillMaxSize()
-            .padding(16.dp), contentAlignment = Alignment.Center
+            .padding(16.dp),
+        contentAlignment = Alignment.Center,
     ) {
         LazyColumn(
-            modifier = Modifier
-                .clip(genre.shape())
-                .drawWithContent {
-                    graphicsLayer.record {
-                        this@drawWithContent.drawContent()
-                    }
-                    drawLayer(graphicsLayer)
-                }
-                .border(1.dp, genre.color.gradientFade(), genre.shape())
-                .background(
-                    Brush.verticalGradient(
-                        genre.color.darkerPalette(factor = .35f)
-                    ), shape = genre.shape()
-                )
-                .padding(8.dp)
-
+            modifier =
+                Modifier
+                    .clip(genre.shape())
+                    .drawWithContent {
+                        graphicsLayer.record {
+                            this@drawWithContent.drawContent()
+                        }
+                        drawLayer(graphicsLayer)
+                    }.border(1.dp, resolvedColor.gradientFade(), genre.shape())
+                    .background(
+                        Brush.verticalGradient(
+                            resolvedColor.darkerPalette(factor = .35f),
+                        ),
+                        shape = genre.shape(),
+                    ).padding(8.dp),
         ) {
             item {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     Image(
-                        painterResource(R.drawable.ic_spark), null,
-                        Modifier.size(32.dp), colorFilter = ColorFilter.tint(
-                            genre.iconColor
-                        )
+                        painterResource(R.drawable.ic_spark),
+                        null,
+                        Modifier.size(32.dp),
+                        colorFilter =
+                            ColorFilter.tint(
+                                resolvedIconColor,
+                            ),
                     )
 
                     Text(
                         text = sagaContent.data.title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = sagaContent.data.genre.headerFont(),
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = genre.iconColor
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = sagaContent.data.genre.headerFont(),
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = resolvedIconColor,
                     )
-
                 }
             }
 
@@ -133,38 +138,41 @@ fun ConversationShareView(
 
                 Row(
                     horizontalArrangement = if (isFromUser) Arrangement.End else Arrangement.Start,
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.Bottom,
                 ) {
-                    val shape = genre.bubble(
-                        tailAlignment = if (isFromUser) BubbleTailAlignment.BottomRight else BubbleTailAlignment.BottomLeft
-                    )
+                    val shape =
+                        genre.bubble(
+                            tailAlignment = if (isFromUser) BubbleTailAlignment.BottomRight else BubbleTailAlignment.BottomLeft,
+                        )
                     val backgroundColor = MaterialTheme.colorScheme.surfaceContainer
                     if (isFromUser) {
                         Text(
                             message.message.text,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onBackground
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 50.dp, end = 8.dp)
-                                .background(
-                                    backgroundColor,
-                                    shape
-                                )
-                                .padding(16.dp)
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .padding(start = 50.dp, end = 8.dp)
+                                    .background(
+                                        backgroundColor,
+                                        shape,
+                                    ).padding(16.dp),
                         )
 
                         message.character?.let {
                             CharacterAvatar(
                                 it,
                                 genre = genre,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .offset(y = (16).dp),
-                                borderColor = it.hexColor.hexToColor()
+                                modifier =
+                                    Modifier
+                                        .size(24.dp)
+                                        .offset(y = (16).dp),
+                                borderColor = it.hexColor.hexToColor(),
                             )
                         }
                     } else {
@@ -173,50 +181,47 @@ fun ConversationShareView(
                                 it,
                                 genre = genre,
                                 borderSize = 1.dp,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .offset(y = (16).dp),
-                                borderColor = it.hexColor.hexToColor()
+                                modifier =
+                                    Modifier
+                                        .size(24.dp)
+                                        .offset(y = (16).dp),
+                                borderColor = it.hexColor.hexToColor(),
                             )
                         }
 
                         Text(
                             message.message.text,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                                fontWeight = FontWeight.Normal,
-                                color = MaterialTheme.colorScheme.onBackground
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(end = 50.dp, start = 8.dp)
-                                .background(
-                                    backgroundColor.copy(alpha = .3f),
-                                    shape
-                                )
-                                .padding(16.dp)
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .padding(end = 50.dp, start = 8.dp)
+                                    .background(
+                                        backgroundColor.copy(alpha = .3f),
+                                        shape,
+                                    ).padding(16.dp),
                         )
-
                     }
                 }
             }
-
-
-
 
             item {
                 Box(Modifier.fillMaxWidth()) {
                     SagaTitle(
                         textStyle = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp)
-                            .gradientFill(genre.iconColor.solidGradient())
+                        modifier =
+                            Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                                .gradientFill(resolvedIconColor.solidGradient()),
                     )
                 }
             }
         }
-
     }
 }
-
