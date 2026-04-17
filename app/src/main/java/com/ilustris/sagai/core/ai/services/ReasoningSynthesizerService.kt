@@ -2,14 +2,18 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 @Singleton
 class ReasoningSynthesizerService
@@ -80,13 +84,13 @@ class ReasoningSynthesizerService
             context: String,
             conversationStyle: String?,
             targetLanguage: String,
-            scope: kotlinx.coroutines.channels.ProducerScope<StreamingState<T>>,
+            scope: ProducerScope<StreamingState<T>>,
         ) {
             try {
                 val style =
                     conversationStyle
                         ?: promptService.buildRemotePrompt(
-                            com.ilustris.sagai.features.onboarding.data.OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
+                            OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
                             logEnabled = false,
                         )
 
@@ -120,11 +124,12 @@ class ReasoningSynthesizerService
                             translation.trim().removeSurrounding("\""),
                         ),
                     )
+                    delay(3.seconds)
+                }
+            } catch (e: Exception) {
+                Timber.w("Failed to synthesize reasoning: ${e.message}")
             }
-        } catch (e: Exception) {
-            Timber.w("Failed to synthesize reasoning: ${e.message}")
         }
-    }
 
         fun sanitizeReasoning(text: String): String {
             // Remove JSON-like structures (braces and brackets content) which are often technical noise

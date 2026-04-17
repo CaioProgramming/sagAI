@@ -407,8 +407,10 @@ fun ChatInputView(
                 Modifier
                     .padding(4.dp)
                     .clip(inputShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f))
-                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
+                        inputShape,
+                    ).fillMaxWidth()
                     .padding(8.dp),
             ) {
                 val textStyle =
@@ -703,14 +705,16 @@ fun ChatInputView(
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(32.dp),
                                     color = resolvedColor,
-                                    strokeWidth = 2.dp,
+                                    trackColor = Color.Transparent,
+                                    strokeWidth = 1.dp,
                                 )
                             } else {
                                 CircularProgressIndicator(
                                     progress = { progress.coerceIn(0f, 1f) },
                                     modifier = Modifier.size(32.dp),
                                     color = MaterialTheme.colorScheme.onBackground,
-                                    strokeWidth = 2.dp,
+                                    trackColor = Color.Transparent,
+                                    strokeWidth = 1.dp,
                                 )
                             }
                         }
@@ -727,8 +731,7 @@ fun ChatInputView(
                             modifier =
                                 Modifier
                                     .padding(4.dp)
-                                    .size(32.dp)
-                                    .padding(4.dp),
+                                    .size(32.dp),
                         ) {
                             AnimatedContent(isLoading) { loading ->
                                 val icon =
@@ -741,6 +744,7 @@ fun ChatInputView(
                                     Icon(
                                         painterResource(it),
                                         null,
+                                        modifier = Modifier.padding(4.dp).fillMaxSize(),
                                     )
                                 }
                             }

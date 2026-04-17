@@ -284,6 +284,8 @@ fun Long.formatHours(): String {
     return format.format(date)
 }
 
+val jsonPattern = Regex("```json\\s*\\n?(.*?)\\n?\\s*```", RegexOption.DOT_MATCHES_ALL)
+
 fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
     if (this.isNullOrBlank()) {
@@ -295,7 +297,7 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     Timber.tag(logTag).i("Sanitizing raw string: $cleanedJsonString")
 
     // 1. Try to extract JSON from ```json ... ``` fenced blocks first (most reliable signal)
-    val fencedJsonPattern = Regex("```json\\s*\\n?(.*?)\\n?\\s*```", RegexOption.DOT_MATCHES_ALL)
+    val fencedJsonPattern = jsonPattern
     val fencedMatch = fencedJsonPattern.findAll(cleanedJsonString).lastOrNull()
 
     if (fencedMatch != null) {
