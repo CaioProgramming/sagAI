@@ -600,4 +600,32 @@
         <item>Ativando aprimoramentos cibernéticos...</item>
         <item>Navegando por campos de asteroides...</item>
     </string-array>
+
+    <!-- Chat Input Actions -->
+    <string name="chat_input_mention_character">Mencionar Personagem</string>
+    <string name="chat_input_mention_wiki">Mencionar Wiki</string>
+    <string name="chat_input_expand">Expandir</string>
+    <string name="chat_input_fix">Corrigir</string>
+    <string name="chat_input_send">Enviar</string>
+    <string name="chat_input_focus_title">Foco</string>
+    <string name="chat_input_mention_characters_title">Personagens</string>
+    <string name="chat_input_mention_wiki_title">Wiki</string>
+    <string name="chat_input_search_query">Buscando \"%s\"</string>
+
+    <!-- Agentic UI -->
+    <string name="content_description_close">Fechar</string>
+    <string name="agentic_edit_saga_title">Editar Crônica</string>
+    <string name="saga_title_label">Título da Saga</string>
+    <string name="saga_title_hint">Dê um nome épico</string>
+    <string name="description_label">Descrição</string>
+    <string name="saga_description_hint">O que move essa lenda?</string>
+    <string name="agentic_edit_character_title">Editar Herói</string>
+    <string name="character_name_label">Nome do Personagem</string>
+    <string name="character_name_hint">Como ele é conhecido?</string>
+    <string name="biography_label">Biografia</string>
+    <string name="character_bio_hint">Descreva a essência</string>
+
+    <!-- Errors -->
+    <string name="error_cosmic_interruption">Interrupção Cósmica</string>
+    <string name="error_retry_align">Tentar Alinhar Novamente</string>
 </resources>

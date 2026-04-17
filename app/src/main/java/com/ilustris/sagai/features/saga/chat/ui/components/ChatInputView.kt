@@ -127,7 +127,7 @@ private fun detectQueryType(
                 if (filtered.isNotEmpty()) {
                     ItemsType.Characters(
                         filtered,
-                        if (query.isEmpty()) "Personagens" else "Buscando \"$query\"",
+                        query,
                     )
                 } else {
                     null
@@ -144,7 +144,7 @@ private fun detectQueryType(
                 if (filtered.isNotEmpty()) {
                     ItemsType.Wikis(
                         filtered,
-                        if (query.isEmpty()) "Wiki" else "Buscando \"$query\"",
+                        query,
                     )
                 } else {
                     null
@@ -649,7 +649,7 @@ fun ChatInputView(
                         }
                         DropdownMenu(menu, { menu = false }) {
                             DropdownMenuItem(
-                                { Text("Mencionar personagem") },
+                                { Text(stringResource(R.string.chat_input_mention_character)) },
                                 {
                                     menu = false
                                     onUpdateInput(
@@ -669,7 +669,7 @@ fun ChatInputView(
                                 },
                             )
                             DropdownMenuItem(
-                                { Text("Mencionar wiki Wiki") },
+                                { Text(stringResource(R.string.chat_input_mention_wiki)) },
                                 {
                                     menu = false
                                     onUpdateInput(
@@ -689,7 +689,7 @@ fun ChatInputView(
                                 },
                             )
                             DropdownMenuItem(
-                                { Text("Expandir") },
+                                { Text(stringResource(R.string.chat_input_expand)) },
                                 {
                                     menu = false
                                     focusModeEnabled = true
@@ -887,7 +887,7 @@ fun ChatInputView(
                                 )
                             }
                             sendMessage(true)
-                        }) { Text("Fix") }
+                        }) { Text(stringResource(R.string.chat_input_fix)) }
                     }
                 }
             }
@@ -901,7 +901,7 @@ fun ChatInputView(
                 ) {
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                         Text(
-                            "Foco",
+                            stringResource(R.string.chat_input_focus_title),
                             style = MaterialTheme.typography.titleLarge,
                         )
                         IconButton({
@@ -922,7 +922,7 @@ fun ChatInputView(
                             focusModeEnabled = false
                         },
                         Modifier.align(Alignment.End),
-                    ) { Text("Send") }
+                    ) { Text(stringResource(R.string.chat_input_send)) }
                 }
             }
         }

@@ -598,4 +598,32 @@
     <string name="message_save_error">An error occurred while saving the message.</string>
     <string name="character_create_error">An error occurred while creating the character.</string>
     <string name="the_legends">THE LEGENDS</string>
+
+    <!-- Chat Input Actions -->
+    <string name="chat_input_mention_character">Mention Character</string>
+    <string name="chat_input_mention_wiki">Mention Wiki</string>
+    <string name="chat_input_expand">Expand</string>
+    <string name="chat_input_fix">Fix</string>
+    <string name="chat_input_send">Send</string>
+    <string name="chat_input_focus_title">Focus</string>
+    <string name="chat_input_mention_characters_title">Characters</string>
+    <string name="chat_input_mention_wiki_title">Wiki</string>
+    <string name="chat_input_search_query">Searching \"%s\"</string>
+
+    <!-- Agentic UI -->
+    <string name="content_description_close">Close</string>
+    <string name="agentic_edit_saga_title">Edit Saga</string>
+    <string name="saga_title_label">Saga Title</string>
+    <string name="saga_title_hint">Give it an epic name</string>
+    <string name="description_label">Description</string>
+    <string name="saga_description_hint">What drives this legend?</string>
+    <string name="agentic_edit_character_title">Edit Hero</string>
+    <string name="character_name_label">Character Name</string>
+    <string name="character_name_hint">How are they known?</string>
+    <string name="biography_label">Biography</string>
+    <string name="character_bio_hint">Describe their essence</string>
+
+    <!-- Errors -->
+    <string name="error_cosmic_interruption">Cosmic Interruption</string>
+    <string name="error_retry_align">Try Aligning Again</string>
 </resources>

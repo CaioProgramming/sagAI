@@ -62,18 +62,34 @@ fun QueryItemsTooltip(
                 .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AnimatedContent(currentType.title) {
-            Text(
-                it,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                    ),
-                modifier =
-                    Modifier
-                        .padding(horizontal = 8.dp),
-            )
+    } { currentTitle ->
+        val title = when (currentType) {
+            is ItemsType.Characters -> {
+                if (currentType.query.isEmpty()) {
+                    stringResource(R.string.chat_input_mention_characters_title)
+                } else {
+                    stringResource(R.string.chat_input_search_query, currentType.query)
+                }
+            }
+            is ItemsType.Wikis -> {
+                if (currentType.query.isEmpty()) {
+                    stringResource(R.string.chat_input_mention_wiki_title)
+                } else {
+                    stringResource(R.string.chat_input_search_query, currentType.query)
+                }
+            }
         }
+        Text(
+            title,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                ),
+            modifier =
+                Modifier
+                    .padding(horizontal = 8.dp),
+        )
+    }
 
         AnimatedContent(currentType, transitionSpec = {
             slideInVertically { -it } + fadeIn(tween(300)) togetherWith fadeOut(tween(300))
@@ -160,18 +176,14 @@ fun QueryItemsTooltip(
     }
 }
 
-sealed class ItemsType(
-    val title: String,
-) {
+sealed class ItemsType {
     data class Characters(
         val filteredCharacters: List<CharacterContent>,
-        val charactersTitle: String,
-    ) : ItemsType(
-            charactersTitle,
-        )
+        val query: String = "",
+    ) : ItemsType()
 
     data class Wikis(
         val filteredWikis: List<Wiki>,
-        val wikiTitle: String,
-    ) : ItemsType(wikiTitle)
+        val query: String = "",
+    ) : ItemsType()
 }

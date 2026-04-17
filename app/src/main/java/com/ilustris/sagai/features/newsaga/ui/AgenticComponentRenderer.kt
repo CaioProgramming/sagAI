@@ -340,7 +340,7 @@ private fun LockedSagaCard(
             ) {
                 Icon(
                     painterResource(R.drawable.round_close_24),
-                    "fechar",
+                    stringResource(R.string.content_description_close),
                     tint = iconColor,
                     modifier =
                         Modifier
@@ -389,22 +389,22 @@ private fun LockedSagaCard(
 
     if (showEditor) {
         CosmicEditorSheet(
-            title = "Editar Crônica",
+            title = stringResource(R.string.agentic_edit_saga_title),
             genre = genre,
             fields =
                 listOf(
                     CosmicInputField(
                         "title",
-                        "Título da Saga",
+                        stringResource(R.string.saga_title_label),
                         draft.title,
-                        hint = "Dê um nome épico",
+                        hint = stringResource(R.string.saga_title_hint),
                     ),
                     CosmicInputField(
                         "description",
-                        "Descrição",
+                        stringResource(R.string.description_label),
                         draft.description,
                         isMultiline = true,
-                        hint = "O que move essa lenda?",
+                        hint = stringResource(R.string.saga_description_hint),
                     ),
                 ),
             onSave = {
@@ -658,7 +658,7 @@ private fun LockedCharacterCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     painterResource(R.drawable.round_close_24),
-                    "fechar",
+                    stringResource(R.string.content_description_close),
                     tint = iconColor,
                     modifier =
                         Modifier
@@ -708,22 +708,22 @@ private fun LockedCharacterCard(
 
     if (showEditor) {
         CosmicEditorSheet(
-            title = "Editar Herói",
+            title = stringResource(R.string.agentic_edit_character_title),
             genre = genre,
             fields =
                 listOf(
                     CosmicInputField(
                         "name",
-                        "Nome do Personagem",
+                        stringResource(R.string.character_name_label),
                         persona.name,
-                        hint = "Como ele é conhecido?",
+                        hint = stringResource(R.string.character_name_hint),
                     ),
                     CosmicInputField(
                         "description",
-                        "Biografia",
+                        stringResource(R.string.biography_label),
                         persona.description,
                         isMultiline = true,
-                        hint = "Descreva a essência deste buscador",
+                        hint = stringResource(R.string.character_bio_hint),
                     ),
                 ),
             onSave = {
@@ -935,7 +935,7 @@ private fun ErrorCard(
             )
 
             Text(
-                text = "Cosmic Interruption",
+                text = stringResource(R.string.error_cosmic_interruption),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
@@ -966,7 +966,7 @@ private fun ErrorCard(
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Try Aligning Again")
+                    Text(stringResource(R.string.error_retry_align))
                 }
             }
         }
