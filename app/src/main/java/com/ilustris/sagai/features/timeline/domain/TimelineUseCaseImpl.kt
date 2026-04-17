@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.timeline.domain
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
@@ -20,6 +19,7 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import javax.inject.Inject
+import timber.log.Timber
 
 class TimelineUseCaseImpl
     @Inject
@@ -399,7 +399,7 @@ class TimelineUseCaseImpl
             saga: SagaContent,
         ) = executeRequest {
             val wikisToUpdateOrAdd = wikiUseCase.generateWiki(saga, timeline).getSuccess()!!
-            Log.d(javaClass.simpleName, "updateWikis: Updating wikis $wikisToUpdateOrAdd")
+            Timber.d("updateWikis: Updating wikis $wikisToUpdateOrAdd")
             wikisToUpdateOrAdd.forEach { generatedWiki ->
                 val existingWiki =
                     saga.wikis.find { wiki ->
@@ -412,10 +412,7 @@ class TimelineUseCaseImpl
                             )
                     }
                 if (existingWiki != null) {
-                    Log.d(
-                        javaClass.simpleName,
-                        "Updating existing wiki: ${existingWiki.title} (ID: ${existingWiki.id}) for saga ${saga.data.id}",
-                    )
+                    Timber.d("Updating existing wiki: ${existingWiki.title} (ID: ${existingWiki.id}) for saga ${saga.data.id}")
                     wikiUseCase.updateWiki(
                         generatedWiki.copy(
                             id = existingWiki.id,
@@ -424,10 +421,7 @@ class TimelineUseCaseImpl
                         ),
                     )
                 } else {
-                    Log.d(
-                        javaClass.simpleName,
-                        "Saving new wiki: ${generatedWiki.title} for saga ${saga.data.id}",
-                    )
+                    Timber.d("Saving new wiki: ${generatedWiki.title} for saga ${saga.data.id}")
                     wikiUseCase.saveWiki(
                         generatedWiki.copy(
                             sagaId = saga.data.id,
@@ -437,10 +431,7 @@ class TimelineUseCaseImpl
                 }
             }
             if (wikisToUpdateOrAdd.isEmpty()) {
-                Log.i(
-                    javaClass.simpleName,
-                    "updateWikis: No wiki updates generated for recnt events in saga ${saga.data.id}.",
-                )
+                Timber.i("updateWikis: No wiki updates generated for recnt events in saga ${saga.data.id}.")
             }
         }
 

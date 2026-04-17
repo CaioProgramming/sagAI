@@ -1,6 +1,5 @@
 package com.ilustris.sagai.ui.theme.components.mascot
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.tween
@@ -12,6 +11,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
 import com.ilustris.sagai.ui.theme.levitate
 import kotlin.time.Duration.Companion.seconds
+import timber.log.Timber
 
 @Composable
 fun MascotEmotionFace(
@@ -39,7 +39,7 @@ fun MascotEmotionFace(
                             enter = scaleIn(tween(600, easing = EaseInBounce)),
                         ),
                 onError = {
-                    Log.e("MascotSticker", "Error loading image $url")
+                    Timber.tag("MascotSticker").e("Error loading image $url")
                     it.result.throwable.printStackTrace()
                 },
             )

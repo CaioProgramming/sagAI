@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Log
 import android.util.LruCache
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -60,6 +59,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+import timber.log.Timber
 
 @OptIn(PublicPreviewAPI::class)
 @HiltViewModel
@@ -570,10 +570,7 @@ class ChatViewModel
                             old.relationships == new.relationships
                     }.collectLatest { sagaContent ->
 
-                        Log.d(
-                            "ChatViewModel",
-                            "observeSaga triggered for genre: ${sagaContent?.data?.genre}",
-                        )
+                        Timber.tag("ChatViewModel").d("observeSaga triggered for genre: ${sagaContent?.data?.genre}")
                         if (sagaContent == null) {
                             if (loadFinished) {
                                 updateLoading(false)
@@ -585,15 +582,12 @@ class ChatViewModel
                         // Fetch visual config for current genre
                         val visualConfig =
                             visualConfigService.getVisualConfig(sagaContent.data.genre)
-                        Log.d("ChatViewModel", "Fetched visual config: $visualConfig")
+                        Timber.tag("ChatViewModel").d("Fetched visual config: $visualConfig")
                         stateManager.updateVisualConfig(visualConfig)
 
                         val rules =
                             remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
-                                Log.e(
-                                    this@ChatViewModel.javaClass.simpleName,
-                                    "observeSaga: Couldn't fetch rules",
-                                )
+                                Timber.tag(this@ChatViewModel.javaClass.simpleName).e("observeSaga: Couldn't fetch rules")
                                 return@collectLatest
                             }
 
@@ -719,10 +713,7 @@ class ChatViewModel
                     musicFile
                 }.collectLatest { musicFile ->
                     if (musicFile != null && musicFile.exists()) {
-                        Log.d(
-                            "ChatViewModel",
-                            "Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}",
-                        )
+                        Timber.tag("ChatViewModel").d("Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}")
                         val musicIntent =
                             Intent(context, SagaPlaybackService::class.java).apply {
                                 action = SagaPlaybackService.ACTION_START
@@ -733,10 +724,7 @@ class ChatViewModel
                             }
                         context.startService(musicIntent)
                     } else {
-                        Log.d(
-                            "ChatViewModel",
-                            "Music file not available. Instructing SagaPlaybackService to stop.",
-                        )
+                        Timber.tag("ChatViewModel").d("Music file not available. Instructing SagaPlaybackService to stop.")
                         context.startService(
                             Intent(context, SagaPlaybackService::class.java).apply {
                                 action = SagaPlaybackService.ACTION_STOP
@@ -752,7 +740,7 @@ class ChatViewModel
             super.onResume(owner)
             startTime = System.currentTimeMillis()
             scheduledNotificationService.cancelScheduledNotifications()
-            Log.d("ChatViewModel", "Lifecycle: onResume. Informing service to resume.")
+            Timber.tag("ChatViewModel").d("Lifecycle: onResume. Informing service to resume.")
             context.startService(
                 Intent(context, SagaPlaybackService::class.java).apply {
                     action = SagaPlaybackService.ACTION_RESUME
@@ -777,7 +765,7 @@ class ChatViewModel
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
-            Log.d("ChatViewModel", "Lifecycle: onPause called. Informing service to pause.")
+            Timber.tag("ChatViewModel").d("Lifecycle: onPause called. Informing service to pause.")
             context.startService(
                 Intent(context, SagaPlaybackService::class.java).apply {
                     action = SagaPlaybackService.ACTION_PAUSE
@@ -790,10 +778,7 @@ class ChatViewModel
                     val duration = endTime - startTime
                     val currentSaga = uiState.value.sagaContent
                     if (currentSaga != null && duration > 0) {
-                        Log.d(
-                            "ChatViewModel",
-                            "Updating playtime for saga ${currentSaga.data.id}: +${duration}ms",
-                        )
+                        Timber.tag("ChatViewModel").d("Updating playtime for saga ${currentSaga.data.id}: +${duration}ms")
                         sagaContentManager.updatePlaytime(currentSaga.data.id, duration)
                     }
                     startTime = 0L
@@ -804,7 +789,7 @@ class ChatViewModel
 
         override fun onCleared() {
             super.onCleared()
-            Log.d("ChatViewModel", "onCleared called. Killing music service.")
+            Timber.tag("ChatViewModel").d("onCleared called. Killing music service.")
             context.startService(
                 Intent(context, SagaPlaybackService::class.java).apply {
                     action = SagaPlaybackService.ACTION_STOP
@@ -869,10 +854,7 @@ class ChatViewModel
                 return
             }
 
-            Log.d(
-                javaClass.simpleName,
-                "Smart Suggestions status: ${uiState.value.smartSuggestionsEnabled}",
-            )
+            Timber.d("Smart Suggestions status: ${uiState.value.smartSuggestionsEnabled}")
 
             viewModelScope.launch(Dispatchers.IO) {
                 if (userConfirmed || uiState.value.smartSuggestionsEnabled.not()) {
@@ -1104,10 +1086,7 @@ class ChatViewModel
 
                 delay(5.seconds)
 
-                Log.d(
-                    javaClass.simpleName,
-                    "generateSuggestions: checking if is generating -> ${uiState.value.isGenerating}",
-                )
+                Timber.d("generateSuggestions: checking if is generating -> ${uiState.value.isGenerating}")
                 if (uiState.value.isGenerating || uiState.value.isLoading) {
                     return@launch
                 }
@@ -1264,7 +1243,7 @@ class ChatViewModel
         private fun enableDebugMode(enabled: Boolean) {
             sagaContentManager.setDebugMode(enabled)
             messageUseCase.setDebugMode(enabled)
-            Log.i("ChatViewModel", "Debug mode set to: $enabled")
+            Timber.tag("ChatViewModel").i("Debug mode set to: $enabled")
         }
 
         fun sendFakeUserMessages(count: Int) {
@@ -1289,7 +1268,7 @@ class ChatViewModel
                     sendMessage(fakeUserMessage, false, null, false)
                     delay(100)
                 }
-                Log.d("ChatViewModel", "Finished enqueuing $count fake messages.")
+                Timber.tag("ChatViewModel").d("Finished enqueuing $count fake messages.")
             }
         }
 
@@ -1390,7 +1369,7 @@ class ChatViewModel
                     startProgressUpdates(messageId)
                 },
                 onError = { exception ->
-                    Log.e("ChatViewModel", "Audio playback error", exception)
+                    Timber.tag("ChatViewModel").e(exception, "Audio playback error")
                     viewModelScope.launch(Dispatchers.Main) {
                         stateManager.updateState { it.copy(audioPlaybackState = null) }
                     }

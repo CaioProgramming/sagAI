@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.newsaga.ui.presentation
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -35,6 +34,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import timber.log.Timber
 
 internal data class LoadingState(
     val message: String,
@@ -246,11 +246,8 @@ class NewSagaViewModel
                     is AgenticAction.UpdateSaga -> {
                         _lockedSaga.value?.let { current ->
 
-                            Log.d(
-                                javaClass.simpleName,
-                                "Updating character from ${current.toJsonFormat()} ",
-                            )
-                            Log.d(javaClass.simpleName, "Trying to edit ${action.toJsonFormat()}")
+                            Timber.d("Updating character from ${current.toJsonFormat()} ")
+                            Timber.d("Trying to edit ${action.toJsonFormat()}")
                             if (current.id == action.id) {
                                 val updated =
                                     current.copy(
@@ -268,15 +265,9 @@ class NewSagaViewModel
                                         }
                                     }
                                 updateFeedWithSaga(updated)
-                                Log.i(
-                                    javaClass.simpleName,
-                                    "onAgenticAction: Updated to ${updated.toJsonFormat()}",
-                                )
+                                Timber.i("onAgenticAction: Updated to ${updated.toJsonFormat()}")
                             } else {
-                                Log.e(
-                                    javaClass.simpleName,
-                                    "Saga ID mismatch: ${current.id} != ${action.id}",
-                                )
+                                Timber.e("Saga ID mismatch: ${current.id} != ${action.id}")
                             }
                         }
                     }
@@ -289,11 +280,8 @@ class NewSagaViewModel
 
                     is AgenticAction.UpdateCharacter -> {
                         _selectedBook.value?.let { book ->
-                            Log.d(
-                                javaClass.simpleName,
-                                "Updating character from ${book.toJsonFormat()} ",
-                            )
-                            Log.d(javaClass.simpleName, ": Trying to edit ${action.toJsonFormat()}")
+                            Timber.d("Updating character from ${book.toJsonFormat()} ")
+                            Timber.d(": Trying to edit ${action.toJsonFormat()}")
 
                             val updatedCharacters =
                                 book.characters.map {
@@ -576,11 +564,7 @@ class NewSagaViewModel
                         }
 
                         is SagaCreationState.Error -> {
-                            Log.e(
-                                javaClass.simpleName,
-                                "saveSaga: Error saving saga",
-                                state.error,
-                            )
+                            Timber.e(state.error, "saveSaga: Error saving saga")
                             _savingError.value =
                                 state.error.message ?: "Unknown error occurred while saving"
                             _isSaving.value = false

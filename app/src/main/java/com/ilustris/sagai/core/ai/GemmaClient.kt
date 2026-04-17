@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Base64
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
@@ -315,7 +314,7 @@ class GemmaClient
                                 Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
                             }
                             val data = aiGeneration.data
-                            if (logEnabled) Log.d(javaClass.simpleName, "AI data ->\n$data\n")
+                            if (logEnabled) Timber.d("AI data ->\n$data\n")
                             data
                         }
                     } catch (e: Exception) {
@@ -333,17 +332,11 @@ class GemmaClient
                                     ),
                                 )
                             } catch (logEx: Exception) {
-                                Log.e(
-                                    this@GemmaClient::class.java.simpleName,
-                                    "Error saving log: ${logEx.message}",
-                                )
+                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Error saving log: ${logEx.message}")
                             }
                         }
                         if (logEnabled) {
-                            Log.e(
-                                this@GemmaClient::class.java.simpleName,
-                                "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
-                            )
+                            Timber.tag(this@GemmaClient::class.java.simpleName).e("Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}")
                         }
 
                         // Check if it's a parsing error (no delay needed) or network error (delay recommended)
@@ -354,10 +347,7 @@ class GemmaClient
                         if (e is HttpException) {
                             val errorBody = e.response()?.errorBody()?.string()
                             if (logEnabled) {
-                                Log.e(
-                                    this@GemmaClient::class.java.simpleName,
-                                    "HTTP Error ($model): $errorBody",
-                                )
+                                Timber.tag(this@GemmaClient::class.java.simpleName).e("HTTP Error ($model): $errorBody")
                             }
 
                             try {
@@ -376,24 +366,15 @@ class GemmaClient
 
                                 errorResponse.error?.details?.forEach { detail ->
                                     detail.violations?.forEach { violation ->
-                                        Log.w(
-                                            this@GemmaClient::class.java.simpleName,
-                                            "Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})",
-                                        )
+                                        Timber.tag(this@GemmaClient::class.java.simpleName).w("Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})")
                                     }
                                 }
 
                                 if (extractedDelay != null) {
-                                    Log.i(
-                                        this@GemmaClient::class.java.simpleName,
-                                        "Extracted precise delay from error: $extractedDelay seconds",
-                                    )
+                                    Timber.tag(this@GemmaClient::class.java.simpleName).i("Extracted precise delay from error: $extractedDelay seconds")
                                 }
                             } catch (parseEx: Exception) {
-                                Log.e(
-                                    this@GemmaClient::class.java.simpleName,
-                                    "Failed to parse error body: ${parseEx.message}",
-                                )
+                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Failed to parse error body: ${parseEx.message}")
                             }
                         }
 
@@ -402,16 +383,10 @@ class GemmaClient
                                 if (isParsingError) 0L else (extractedDelay ?: RETRY_DELAY.toLong())
 
                             if (delayToApply > 0) {
-                                Log.w(
-                                    this@GemmaClient::class.java.simpleName,
-                                    "Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...",
-                                )
+                                Timber.tag(this@GemmaClient::class.java.simpleName).w("Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...")
                                 delay(delayToApply.seconds)
                             } else {
-                                Log.w(
-                                    this@GemmaClient::class.java.simpleName,
-                                    "Retrying immediately due to parsing error (${e.javaClass.simpleName})...",
-                                )
+                                Timber.tag(this@GemmaClient::class.java.simpleName).w("Retrying immediately due to parsing error (${e.javaClass.simpleName})...")
                             }
                         } else {
                             // Final failure
@@ -421,12 +396,9 @@ class GemmaClient
                                         if (it > 30) it / 2 else it + it
                                     } ?: 2
                             }
-                            Log.e(
-                                javaClass.simpleName,
-                                "Final failure after $maxAttempts attempts.",
-                            )
-                            Log.e(javaClass.simpleName, "generate: Failed prompt")
-                            Log.w(javaClass.simpleName, prompt)
+                            Timber.e("Final failure after $maxAttempts attempts.")
+                            Timber.e("generate: Failed prompt")
+                            Timber.w(prompt)
                             return@withContext null
                         }
                     }
@@ -613,10 +585,7 @@ class GemmaClient
 
                                     try {
                                         if (logEnabled) {
-                                            Log.i(
-                                                javaClass.simpleName,
-                                                "generateStreaming: Trying to parse $jsonStr",
-                                            )
+                                            Timber.i("generateStreaming: Trying to parse $jsonStr")
                                         }
                                         val partialResponse =
                                             Gson().fromJson(
@@ -666,19 +635,13 @@ class GemmaClient
                                 Timber.i("Generation Streaming Bench: $model took ${duration}ms")
                             }
 
-                            Log.d(
-                                javaClass.simpleName,
-                                "generateStreaming: final state on streaming:\n${aiGeneration.toJsonFormat()}",
-                            )
+                            Timber.d("generateStreaming: final state on streaming:\n${aiGeneration.toJsonFormat()}")
                             emit(StreamingState.Success(aiGeneration.data))
                             retryDelay = null
                             return@flow
                         } catch (e: Exception) {
                             if (logEnabled) {
-                                Log.e(
-                                    this@GemmaClient::class.java.simpleName,
-                                    "Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
-                                )
+                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}")
                             }
 
                             val isParsingError =

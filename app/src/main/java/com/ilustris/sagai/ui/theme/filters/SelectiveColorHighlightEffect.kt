@@ -3,7 +3,6 @@ package com.ilustris.sagai.ui.theme.filters
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,10 +72,7 @@ fun Modifier.selectiveColorHighlight(
     shaderAssetFileName: String = "selective_color_highlight.agsl",
 ): Modifier {
     LaunchedEffect(Unit) {
-        Log.d(
-            "SelectiveColor",
-            "selectiveColorHighlight modifier called with params present: ${params != null}",
-        )
+        Timber.tag("SelectiveColor").d("selectiveColorHighlight modifier called with params present: ${params != null}")
     }
     if (params == null) return this
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
