@@ -1180,7 +1180,10 @@ class ChatViewModel
                                                 message = "Ocorreu um erro ao criar o personagem",
                                             ) {
                                                 action {
-                                                    retryCharacter(contextDescription)
+                                                    retryCharacter(
+                                                        contextDescription,
+                                                        generatedMessage,
+                                                    )
                                                 }
                                             },
                                         )
@@ -1229,7 +1232,7 @@ class ChatViewModel
             }
         }
 
-    fun createCharacter(
+        fun createCharacter(
             contextDescription: String,
             message: Message,
         ) {
@@ -1243,7 +1246,7 @@ class ChatViewModel
                                 message = "Ocorreu um erro ao criar o personagem",
                             ) {
                                 action {
-                                    retryCharacter(contextDescription)
+                                    retryCharacter(contextDescription, message)
                                 }
                             },
                         )

@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.1"
+agp = "8.13.2"
 autoBackgroundRemover = "1.0.7"
 billingKtx = "8.0.0"
 composeCharts = "0.1.10"

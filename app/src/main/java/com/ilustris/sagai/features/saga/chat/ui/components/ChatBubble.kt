@@ -343,6 +343,7 @@ fun ChatBubble(
                                             onAction(
                                                 MessageAction.RequestNewCharacter(
                                                     message.speakerName ?: "",
+                                                    message,
                                                 ),
                                             )
                                         }.size(24.dp)

@@ -70,11 +70,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
-import timber.log.Timber
 
 class SagaContentManagerImpl
     @Inject
@@ -394,6 +394,8 @@ class SagaContentManagerImpl
                                                             sceneSummary = summary,
                                                         ),
                                                     )
+                                                } ?: run {
+                                                    emitMilestone(null)
                                                 }
                                             }
                                         }
@@ -851,7 +853,9 @@ class SagaContentManagerImpl
                                 is NarrativeStep.GenerateChapterIntroduction,
                                 is NarrativeStep.StartTimeline,
                                 -> {
-                                    Timber.i("checkNarrativeProgression: Milestone ${narrativeStep.javaClass.simpleName} detected. Waiting for user interaction.")
+                                    Timber.i(
+                                        "checkNarrativeProgression: Milestone ${narrativeStep.javaClass.simpleName} detected. Waiting for user interaction.",
+                                    )
                                     setProcessing(false)
                                     return@startProcessing
                                 }

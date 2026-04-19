@@ -606,7 +606,7 @@
     <string name="chat_input_expand">Expandir</string>
     <string name="chat_input_fix">Corrigir</string>
     <string name="chat_input_send">Enviar</string>
-    <string name="chat_input_focus_title">Foco</string>
+    <string name="chat_input_focus_title">Escrever mensagem</string>
     <string name="chat_input_mention_characters_title">Personagens</string>
     <string name="chat_input_mention_wiki_title">Wiki</string>
     <string name="chat_input_search_query">Buscando \"%s\"</string>

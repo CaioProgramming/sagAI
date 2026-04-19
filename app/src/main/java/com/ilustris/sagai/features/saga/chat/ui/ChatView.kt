@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -677,7 +676,12 @@ fun ChatContent(
                                     }
 
                                     is MessageAction.RequestNewCharacter -> {
-                                        onAction(ChatUiAction.RequestNewCharacter(action.name))
+                                        onAction(
+                                            ChatUiAction.RequestNewCharacter(
+                                                action.name,
+                                                action.message,
+                                            ),
+                                        )
                                     }
 
                                     is MessageAction.ToggleSelection -> {
@@ -1351,33 +1355,31 @@ fun ChatList(
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = true,
     ) {
-        item {
-            Spacer(Modifier.height(75.dp))
-        }
-
-        item(key = "reasoning") {
-            AnimatedContent(
-                reasoningChunk,
-                transitionSpec = {
-                    fadeIn(tween(1200)) + slideInVertically { it } togetherWith
-                        fadeOut(tween(1500)) + slideOutVertically { it }
-                },
-            ) {
-                Text(
-                    text = it.orEmpty(),
-                    style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                            textAlign = TextAlign.Center,
-                        ),
-                    overflow = TextOverflow.Ellipsis,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 24.dp)
-                            .reactiveShimmer(true, genre.shimmerColors()),
-                )
+        reasoningChunk?.let {
+            item(key = "reasoning") {
+                AnimatedContent(
+                    reasoningChunk,
+                    transitionSpec = {
+                        fadeIn(tween(1200)) + slideInVertically { it } togetherWith
+                            fadeOut(tween(1500)) + slideOutVertically { it }
+                    },
+                ) {
+                    Text(
+                        text = it.orEmpty(),
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                                textAlign = TextAlign.Center,
+                            ),
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 24.dp)
+                                .reactiveShimmer(true, genre.shimmerColors()),
+                    )
+                }
             }
         }
 

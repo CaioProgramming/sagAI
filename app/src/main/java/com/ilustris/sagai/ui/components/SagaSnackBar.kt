@@ -184,8 +184,11 @@ class SnackActionBuilder {
         action = SnackAction.OpenDetails(data)
     }
 
-    fun retryCharacter(description: String) {
-        action = SnackAction.RetryCharacter(description)
+    fun retryCharacter(
+        description: String,
+        message: Message,
+    ) {
+        action = SnackAction.RetryCharacter(description, message)
     }
 
     fun revaluateSaga() {
