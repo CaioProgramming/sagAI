@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -473,7 +474,8 @@ fun ChatView(
                                     true,
                                     it.data.genre.shimmerColors(),
                                     duration = 2.seconds,
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 
@@ -616,10 +618,12 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).sharedElement(
+                                )
+                                .sharedElement(
                                     rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                ).fillMaxSize(.5f)
+                                )
+                                .fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -627,7 +631,8 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            ).fillMaxSize(),
+                            )
+                            .fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar) = createRefs()
@@ -716,7 +721,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(vertical = padding.calculateBottomPadding())
+                                    }
+                                    .padding(vertical = padding.calculateBottomPadding())
                                     .animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
@@ -808,7 +814,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(
+                                    }
+                                    .padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -906,7 +913,8 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    ).wrapContentSize(),
+                                    )
+                                    .wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -941,19 +949,23 @@ fun ChatContent(
                                                     .genreVfx(
                                                         saga.genre,
                                                         isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }.gradientFill(
+                                                    }
+                                                    .gradientFill(
                                                         progressiveBrush(
                                                             resolvedColor,
                                                             progress,
                                                         ),
-                                                    ).reactiveShimmer(
+                                                    )
+                                                    .reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
                                                         shimmerColors = saga.genre.shimmerColors(),
-                                                    ).sharedElement(
+                                                    )
+                                                    .sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga_${saga.id}_spark",
                                                         ),
@@ -995,7 +1007,8 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }.fillMaxWidth()
+                                        }
+                                        .fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.sharedElement(
@@ -1078,7 +1091,8 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            ).fillMaxWidth(),
+                                            )
+                                            .fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1097,7 +1111,8 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1275,7 +1290,8 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 
@@ -1318,7 +1334,8 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }.animateContentSize(),
+                    }
+                    .animateContentSize(),
         )
     }
 }
@@ -1355,6 +1372,10 @@ fun ChatList(
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = true,
     ) {
+        item {
+            Spacer(Modifier.height(50.dp))
+        }
+
         reasoningChunk?.let {
             item(key = "reasoning") {
                 AnimatedContent(
@@ -1365,7 +1386,7 @@ fun ChatList(
                     },
                 ) {
                     Text(
-                        text = it.orEmpty(),
+                        text = it,
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontFamily = genre.bodyFont(),
@@ -1376,7 +1397,7 @@ fun ChatList(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 24.dp)
+                                .padding(16.dp)
                                 .reactiveShimmer(true, genre.shimmerColors()),
                     )
                 }
@@ -1648,9 +1669,11 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        ).graphicsLayer(
+                        )
+                        .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).clip(CircleShape)
+                        )
+                        .clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

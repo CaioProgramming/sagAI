@@ -73,7 +73,9 @@ Maintain alphabetical ordering and add grouping comments.
 ### 5. Refactor Source Files
 
 Replace hardcoded strings with resource references:
-
+!Important for non view classes(viewModel, useCase, Mappers and etc) use the stringResourceHelper as
+dependency injection, do not pass the context between the classes the stringResourceHelper is the
+source of mapping our strings
 **Kotlin (Compose):**
 
 ```kotlin

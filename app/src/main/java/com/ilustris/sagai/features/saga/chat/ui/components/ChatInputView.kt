@@ -28,9 +28,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -366,14 +366,14 @@ fun ChatInputView(
                         Row(
                             Modifier
                                 .alpha(.7f)
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                                .padding(8.dp)
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.weight(1f),
                             ) {
                                 senderType.icon()?.let {
                                     Icon(
@@ -393,7 +393,6 @@ fun ChatInputView(
                                         ),
                                 )
                             }
-
                             Text(
                                 stringResource(R.string.next),
                                 style =
@@ -427,12 +426,16 @@ fun ChatInputView(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
                     ).fillMaxWidth()
+                    .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false),
                 ) {
                     var characterMenu by remember { mutableStateOf(false) }
 
@@ -586,7 +589,6 @@ fun ChatInputView(
                         modifier =
                             Modifier
                                 .weight(1f)
-                                .requiredHeightIn(max = 300.dp)
                                 .verticalScroll(scrollState),
                     )
 
@@ -1057,8 +1059,6 @@ fun ChatInputView(
                                 Column(
                                     Modifier
                                         .fillMaxSize()
-                                        .verticalScroll(rememberScrollState())
-                                        .animateContentSize()
                                         .alpha(alpha)
                                         .padding(8.dp)
                                         .reactiveShimmer(isGenerating),
@@ -1200,130 +1200,121 @@ fun ChatInputView(
                             modifier =
                                 Modifier.fillMaxWidth(),
                         )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            // Expressive Tags Group
-                            Row(
-                                Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                                        CircleShape,
-                                    ).padding(4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                SenderType
-                                    .filterUserInputTypes()
-                                    .filter { it.icon() != null }
-                                    .forEach { type ->
-                                        val sel = currentTagInside == type.tag
-                                        val col by animateColorAsState(
-                                            if (sel) {
-                                                resolvedIconColor
-                                            } else {
-                                                resolvedIconColor.copy(
-                                                    alpha = 0.5f,
-                                                )
-                                            },
-                                        )
-                                        val bg by animateColorAsState(
-                                            if (sel) resolvedColor else Color.Transparent,
-                                        )
-
-                                        type.icon()?.let {
-                                            Icon(
-                                                painterResource(it),
-                                                null,
-                                                tint = col,
-                                                modifier =
-                                                    Modifier
-                                                        .clip(CircleShape)
-                                                        .background(bg)
-                                                        .size(32.dp)
-                                                        .clickable(enabled = currentTagInside == null) {
-                                                            type.tag?.let { tag ->
-                                                                onUpdateInput(
-                                                                    insertExpressiveTag(
-                                                                        inputField,
-                                                                        tag,
-                                                                    ),
-                                                                )
-                                                            }
-                                                        }.padding(6.dp),
+                            SenderType
+                                .filterUserInputTypes()
+                                .filter { it.icon() != null }
+                                .forEach { type ->
+                                    val sel = currentTagInside == type.tag
+                                    val col by animateColorAsState(
+                                        if (sel) {
+                                            resolvedIconColor
+                                        } else {
+                                            MaterialTheme.colorScheme.background.copy(
+                                                alpha = .5f,
                                             )
-                                        }
+                                        },
+                                    )
+
+                                    type.icon()?.let {
+                                        Icon(
+                                            painterResource(it),
+                                            null,
+                                            tint = col,
+                                            modifier =
+                                                Modifier
+                                                    .clip(CircleShape)
+                                                    .size(24.dp)
+                                                    .background(
+                                                        resolvedColor.copy(alpha = .3f),
+                                                        shape = MaterialTheme.shapes.extraLarge,
+                                                    ).padding(4.dp)
+                                                    .clickable(currentTagInside == null) {
+                                                        type.tag?.let {
+                                                            onUpdateInput(
+                                                                insertExpressiveTag(
+                                                                    inputField,
+                                                                    it,
+                                                                ),
+                                                            )
+                                                        }
+                                                    },
+                                        )
                                     }
-                            }
+                                }
 
-                            // Entities Group (@ and /)
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                val entityIconModifier =
+                            Icon(
+                                painterResource(R.drawable.ic_mail),
+                                null,
+                                tint = resolvedIconColor,
+                                modifier =
                                     Modifier
+                                        .size(24.dp)
                                         .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.3f))
-                                        .size(32.dp)
-                                        .padding(6.dp)
-
-                                Icon(
-                                    painterResource(R.drawable.ic_mail),
-                                    null,
-                                    tint = resolvedIconColor.copy(alpha = 0.7f),
-                                    modifier =
-                                        entityIconModifier.clickable {
+                                        .background(
+                                            resolvedColor.copy(alpha = .3f),
+                                            shape = MaterialTheme.shapes.extraLarge,
+                                        ).padding(4.dp)
+                                        .clickable {
                                             onUpdateInput(
                                                 TextFieldValue(
                                                     inputField.text + " @",
-                                                    TextRange(inputField.text.length + 2),
+                                                    TextRange(inputField.text.length + 1),
                                                 ),
                                             )
                                         },
-                                )
+                            )
 
-                                Icon(
-                                    painterResource(R.drawable.ic_slash),
-                                    null,
-                                    tint = resolvedIconColor.copy(alpha = 0.7f),
-                                    modifier =
-                                        entityIconModifier.clickable {
+                            Icon(
+                                painterResource(R.drawable.ic_slash),
+                                null,
+                                tint = resolvedIconColor,
+                                modifier =
+                                    Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            resolvedColor.copy(alpha = .3f),
+                                            shape = CircleShape,
+                                        ).padding(4.dp)
+                                        .clickable {
                                             onUpdateInput(
                                                 TextFieldValue(
-                                                    inputField.text + " /",
-                                                    TextRange(inputField.text.length + 2),
+                                                    inputField.text + "/",
+                                                    TextRange(inputField.text.length + 1),
                                                 ),
                                             )
                                         },
-                                )
-                            }
+                            )
+                        }
 
-                            Spacer(Modifier.weight(1f))
+                        Spacer(Modifier.weight(1f))
 
-                            Button(
-                                {
-                                    onSendMessage(false)
-                                    focusModeEnabled = false
-                                },
-                                colors =
-                                    ButtonDefaults.buttonColors().copy(
-                                        resolvedColor,
-                                        resolvedIconColor,
-                                    ),
-                                enabled = inputField.text.isNotEmpty() && isLoading.not(),
-                                modifier = Modifier.padding(16.dp),
-                            ) {
-                                Text(
-                                    stringResource(R.string.chat_input_send),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
-                                )
-                            }
+                        Button(
+                            {
+                                onSendMessage(false)
+                                focusModeEnabled = false
+                            },
+                            colors =
+                                ButtonDefaults.buttonColors().copy(
+                                    resolvedColor,
+                                    resolvedIconColor,
+                                ),
+                            enabled = inputField.text.isNotEmpty() && isLoading.not(),
+                            modifier = Modifier.padding(16.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.chat_input_send),
+                                style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
+                            )
                         }
                     }
                 }
