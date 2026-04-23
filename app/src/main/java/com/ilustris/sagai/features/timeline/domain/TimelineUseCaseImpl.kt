@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -18,8 +19,8 @@ import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import javax.inject.Inject
 import timber.log.Timber
+import javax.inject.Inject
 
 class TimelineUseCaseImpl
     @Inject
@@ -135,7 +136,7 @@ class TimelineUseCaseImpl
                     )
 
                 gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<UnifiedLoreUpdate>>(
+                    .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
                         prompt = prompt,
                         blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
                     ).collect { state ->
@@ -210,7 +211,7 @@ class TimelineUseCaseImpl
 
                                 emit(
                                     com.ilustris.sagai.core.ai.StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        GeneratedContent(
                                             Unit,
                                             state.data.finalMessage,
                                         ),
@@ -286,7 +287,7 @@ class TimelineUseCaseImpl
                 val narrativeRules =
                     remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
                 gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>>(
+                    .generateStreaming<GeneratedContent<Timeline>>(
                         prompt =
                             TimelinePrompts.generateTimelinePrompt(
                                 promptService = promptService,
@@ -317,7 +318,7 @@ class TimelineUseCaseImpl
                                     )
                                 emit(
                                     com.ilustris.sagai.core.ai.StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        GeneratedContent(
                                             updatedTimeline,
                                             state.data.finalMessage,
                                         ),

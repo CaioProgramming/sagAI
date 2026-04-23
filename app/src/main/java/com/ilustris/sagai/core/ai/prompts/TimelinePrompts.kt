@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -10,20 +9,20 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
-data class TimelineArgs(
-    val sagaContext: String,
+data class PageGenerationArgs(
+    val sagaMainContext: String,
     val storyContext: String,
-    val recentTimeline: String,
-    val newConversationBurst: String,
-    val genreName: String,
-    val variationId: String,
-    val characterName: String,
-    val loreUpdateLimit: String,
-    val narrativeStyle: String = "",
+    val recentPagesSummary: String,
+    val newDialogueBurst: String,
+    val genreInfo: String,
+    val activeCharacters: String,
+    val narrativeStyle: String,
+    val existingWikis: String,
+    val existingRelationships: String,
 )
 
 object TimelinePrompts {
-    const val LORE_GENERATION_BLUEPRINT = "lore_generation_blueprint"
+    const val PAGE_GENERATION_BLUEPRINT = "page_generation_blueprint"
     const val UNIFIED_LORE_GENERATION_BLUEPRINT = "unified_lore_generation_blueprint"
 
     val timelineExclusions = listOf("id", "chapterId", "createdAt", "emotionalReview")
@@ -43,7 +42,7 @@ object TimelinePrompts {
                 .takeLast(7)
 
         fun List<Timeline>.toBulletList(): String {
-            if (this.isEmpty()) return "No recent events recorded."
+            if (this.isEmpty()) return "No recent pages recorded."
             return this.joinToString(separator = "\n") { t ->
                 "- ${t.title}: ${t.content.take(150).replace('\n', ' ')}"
             }
@@ -51,12 +50,12 @@ object TimelinePrompts {
 
         val charactersList =
             sagaContent.characters.joinToString("\n") {
-                "- ${it.data.name} (ID: ${it.data.id}): ${it.data.backstory.take(100)}"
+                "- ${it.data.name}: ${it.data.backstory.take(100)}"
             }
 
         val args =
-            TimelineArgs(
-                sagaContext =
+            PageGenerationArgs(
+                sagaMainContext =
                     sagaContent.data.toAINormalize(
                         listOf(
                             "id",
@@ -66,16 +65,25 @@ object TimelinePrompts {
                         ),
                     ),
                 storyContext = LorePrompts.storyContext(sagaContent, narrativeRules),
-                recentTimeline = recentEvents.toBulletList(),
-                newConversationBurst =
+                recentPagesSummary = recentEvents.toBulletList(),
+                newDialogueBurst =
                     currentTimeline.messages
                         .map { it.message }
                         .normalizetoAIItems(ChatPrompts.messageExclusions),
-                genreName = sagaContent.data.genre.name,
-                variationId = sagaContent.data.variationId ?: emptyString(),
-                characterName = charactersList,
-                loreUpdateLimit = narrativeRules.loreUpdateLimit.toString(),
+                genreInfo = "${sagaContent.data.genre.name} (${sagaContent.data.variationId ?: "Original"})",
+                activeCharacters = charactersList,
                 narrativeStyle = conversationDirective,
+                existingWikis =
+                    sagaContent.wikis.joinToString("\n") {
+                        "- ${it.title} (${it.type?.name}): ${
+                            it.content.take(
+                                100,
+                            )
+                        }..."
+                    },
+                existingRelationships =
+                    sagaContent.mainCharacter?.summarizeRelationships()
+                        ?: "No established relationships.",
             )
 
         return promptService.buildRemotePrompt(UNIFIED_LORE_GENERATION_BLUEPRINT, args)
@@ -96,29 +104,31 @@ object TimelinePrompts {
                 .takeLast(5)
 
         fun List<Timeline>.toBulletList(): String {
-            if (this.isEmpty()) return "No recent events recorded."
+            if (this.isEmpty()) return "No recent pages recorded."
             return this.joinToString(separator = "\n") { t ->
                 "- ${t.title}: ${t.content.take(150).replace('\n', ' ')}"
             }
         }
 
         val args =
-            TimelineArgs(
-                sagaContext = SagaPrompts.mainContext(sagaContent),
+            PageGenerationArgs(
+                sagaMainContext = SagaPrompts.mainContext(sagaContent),
                 storyContext = LorePrompts.storyContext(sagaContent, narrativeRules),
-                recentTimeline = recentEvents.toBulletList(),
-                newConversationBurst =
+                recentPagesSummary = recentEvents.toBulletList(),
+                newDialogueBurst =
                     currentTimeline.messages
                         .map { it.message }
                         .take(narrativeRules.loreUpdateLimit)
                         .normalizetoAIItems(ChatPrompts.messageExclusions),
-                genreName = sagaContent.data.genre.name,
-                characterName = sagaContent.mainCharacter?.data?.name ?: "Unknown",
-                loreUpdateLimit = narrativeRules.loreUpdateLimit.toString(),
-                variationId = sagaContent.data.variationId ?: emptyString(),
+                genreInfo = "${sagaContent.data.genre.name} (${sagaContent.data.variationId ?: "Original"})",
+                activeCharacters = sagaContent.mainCharacter?.data?.name ?: "Unknown",
                 narrativeStyle = conversationDirective,
+                existingWikis = sagaContent.wikis.joinToString("\n") { "- ${it.title}" },
+                existingRelationships =
+                    sagaContent.mainCharacter?.summarizeRelationships()
+                        ?: "None.",
             )
 
-        return promptService.buildRemotePrompt(LORE_GENERATION_BLUEPRINT, args)
+        return promptService.buildRemotePrompt(PAGE_GENERATION_BLUEPRINT, args)
     }
 }

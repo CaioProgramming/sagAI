@@ -5,97 +5,99 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
-import com.ilustris.sagai.features.home.data.model.getPurposeKey
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 
+/**
+ * Arguments for the Act Conclusion prompt.
+ * Focuses on narrative continuity and thematic closure for a literary "Volume".
+ */
 data class ActConclusionArgs(
+    val sagaTitle: String,
+    val actTitle: String,
     val sagaMainContext: String,
-    val actPurposeRule: String,
-    val currentActData: String,
     val chaptersInCurrentAct: String,
-    val previousActContext: String,
-    val closureInstruction: String,
-    val expectedOutputFormat: String,
+    val actPurposeRule: String,
     val conversationDirective: String,
+    val previousActContext: String,
 )
 
-data class ActDirectiveArgs(
-    val directive: String,
+data class ActIntroductionArgs(
+    val sagaMainContext: String,
+    val lastStateContext: String,
+    val narrativeStyle: String,
 )
 
-data class ActOverviewArgs(
-    val actsSummary: String,
-)
-
-data class ActIntroArgs(
-    val context: String,
-    val pastEvents: String? = null,
-)
-
+/**
+ * Prompts for Act-level operations, such as creating conclusions for story volumes.
+ */
 object ActPrompts {
-    const val ACT_CLOSURE_INSTRUCTION_TEMPLATE = "act_closure_instruction_template"
+    /**
+     * The blueprint used to wrap the act conclusion logic.
+     */
     const val ACT_CONCLUSION_BLUEPRINT = "act_conclusion_blueprint"
+    const val ACT_INTRODUCTION_BLUEPRINT = "act_introduction_blueprint"
 
-    val ACT_EXCLUSIONS = listOf("id, sagaId, currentChapterId")
+    /**
+     * Fields to exclude when normalizing Act data for the AI.
+     */
+    val ACT_EXCLUSIONS =
+        listOf(
+            "id",
+            "sagaId",
+            "currentChapterId",
+            "isComplete",
+            "introduction",
+        )
 
-    @Suppress("ktlint:standard:max-line-length")
+    /**
+     * Generates a prompt to conclude an Act (Volume) of the saga.
+     *
+     * @param promptService The service used to build prompts from blueprints.
+     * @param sagaContent The full content of the saga.
+     * @param currentActContent The content of the act being concluded.
+     * @param narrativeRules The rules governing the narrative flow.
+     * @param genreConfig The configuration for the saga's genre.
+     */
     suspend fun generateActConclusion(
         promptService: PromptService,
         sagaContent: SagaContent,
         currentActContent: ActContent,
         narrativeRules: NarrativeRules,
-        config: GenreConfig,
+        genreConfig: GenreConfig,
     ): String {
-        val isFirstAct =
-            sagaContent.acts
-                .firstOrNull()
-                ?.data
-                ?.id == currentActContent.data.id
-
+        val isFirst = sagaContent.acts.indexOfFirst { it.data.id == currentActContent.data.id } == 0
         val previousAct =
-            if (isFirstAct) {
+            if (isFirst) {
                 null
             } else {
-                val currentIndex =
-                    sagaContent.acts.indexOfFirst { it.data.id == currentActContent.data.id }
-                if (currentIndex > 0) sagaContent.acts[currentIndex - 1] else null
+                sagaContent.acts[
+                    sagaContent.acts.indexOfFirst { it.data.id == currentActContent.data.id } -
+                        1,
+                ]
             }
 
-        val chapterSummariesInCurrentAct = currentActContent.chapters.map { it.data }
-
-        val closureInstruction =
+        val actPurposeRule =
             promptService.buildRemotePrompt(
-                ACT_CLOSURE_INSTRUCTION_TEMPLATE,
-                mapOf("actNumber" to sagaContent.actNumber(currentActContent.data)),
+                currentActContent.getDirectiveKey(sagaContent),
+                emptyMap(),
             )
 
         val args =
             ActConclusionArgs(
+                sagaTitle = sagaContent.data.title,
+                actTitle = currentActContent.data.title,
                 sagaMainContext = SagaPrompts.mainContext(sagaContent),
-                actPurposeRule =
-                    promptService.buildRemotePrompt(
-                        sagaContent.getPurposeKey(),
-                        emptyMap(),
-                    ),
-                currentActData = currentActContent.data.toAINormalize(ACT_EXCLUSIONS),
                 chaptersInCurrentAct =
-                    chapterSummariesInCurrentAct.normalizetoAIItems(
+                    currentActContent.chapters.map { it.data }.normalizetoAIItems(
                         ChapterPrompts.CHAPTER_EXCLUSIONS,
                     ),
+                actPurposeRule = actPurposeRule,
+                conversationDirective = genreConfig.conversationDirective,
                 previousActContext =
                     previousAct?.data?.toAINormalize(ACT_EXCLUSIONS)
-                        ?: "This is the first act, no previous context available.",
-                closureInstruction = closureInstruction,
-                expectedOutputFormat =
-                    toJsonMap(
-                        Act::class.java,
-                        filteredFields = listOf("id", "sagaId", "currentChapterId", "introduction"),
-                    ),
-                conversationDirective = "",
+                        ?: "Initial Volume: The saga begins here, with no prior history recorded.",
             )
 
         return promptService.buildRemotePrompt(ACT_CONCLUSION_BLUEPRINT, args)
@@ -107,25 +109,20 @@ object ActPrompts {
         narrativeRules: NarrativeRules,
         conversationDirective: String,
     ): String {
-        val blueprintKey =
-            if (saga.currentActInfo == saga.acts.first()) "act_1_intro_blueprint" else "transitional_act_intro_blueprint"
-
-        val isFirstAct = saga.currentActInfo == saga.acts.first()
-        val historyEvents = saga.acts.filter { it.isComplete(narrativeRules) }
+        val isFirst = saga.acts.isEmpty()
+        val lastState =
+            if (isFirst) {
+                "THE BEGINNING: The saga starts here. Ground your introduction in the following backstory: ${saga.data.description}"
+            } else {
+                "THE CONTINUATION: Bridge the story from the previous volume's conclusion: ${saga.acts.lastOrNull()?.data?.content}"
+            }
 
         val args =
-            ActIntroArgs(
-                context = SagaPrompts.mainContext(saga),
-                pastEvents =
-                    if (isFirstAct) {
-                        null
-                    } else {
-                        historyEvents.joinToString("\n") {
-                            it.actSummary(it == historyEvents.last())
-                        }
-                    },
+            ActIntroductionArgs(
+                sagaMainContext = SagaPrompts.mainContext(saga),
+                lastStateContext = lastState,
+                narrativeStyle = conversationDirective,
             )
-
-        return promptService.buildRemotePrompt(blueprintKey, args)
+        return promptService.buildRemotePrompt(ACT_INTRODUCTION_BLUEPRINT, args)
     }
 }

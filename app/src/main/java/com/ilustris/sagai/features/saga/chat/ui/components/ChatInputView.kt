@@ -624,24 +624,6 @@ fun ChatInputView(
                                 val cleanLength = getCleanTextLength(inputField.text)
                                 val progress = cleanLength.toFloat() / maxContentLength
 
-                                if (isLoading || inputField.text.isNotEmpty()) {
-                                    if (isLoading) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(32.dp),
-                                            color = resolvedColor,
-                                            trackColor = Color.Transparent,
-                                            strokeWidth = 1.dp,
-                                        )
-                                    } else {
-                                        CircularProgressIndicator(
-                                            progress = { progress.coerceIn(0f, 1f) },
-                                            modifier = Modifier.size(32.dp),
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                            trackColor = Color.Transparent,
-                                            strokeWidth = 1.dp,
-                                        )
-                                    }
-                                }
                                 IconButton(
                                     {
                                         if (isGenerating) return@IconButton
@@ -674,6 +656,25 @@ fun ChatInputView(
                                                         .fillMaxSize(),
                                             )
                                         }
+                                    }
+                                }
+
+                                if (isLoading || inputField.text.isNotEmpty()) {
+                                    if (isLoading) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(32.dp),
+                                            color = resolvedColor,
+                                            trackColor = Color.Transparent,
+                                            strokeWidth = 1.dp,
+                                        )
+                                    } else {
+                                        CircularProgressIndicator(
+                                            progress = { progress.coerceIn(0f, 1f) },
+                                            modifier = Modifier.size(32.dp),
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            trackColor = Color.Transparent,
+                                            strokeWidth = 1.dp,
+                                        )
                                     }
                                 }
                             }

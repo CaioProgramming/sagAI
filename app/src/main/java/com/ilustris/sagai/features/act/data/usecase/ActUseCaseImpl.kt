@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -88,7 +89,7 @@ class ActUseCaseImpl
                         useCore = true,
                     ).collect { state ->
                         when (state) {
-                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                            is StreamingState.Success -> {
                                 val newAct = state.data.data
                                 val updatedAct =
                                     updateAct(
@@ -101,7 +102,7 @@ class ActUseCaseImpl
                                         ),
                                     )
                                 emit(
-                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                    StreamingState.Success(
                                         com.ilustris.sagai.core.ai.model.GeneratedContent(
                                             updatedAct,
                                             state.data.finalMessage,
@@ -110,27 +111,27 @@ class ActUseCaseImpl
                                 )
                             }
 
-                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                            is StreamingState.Error -> {
                                 emit(
-                                    com.ilustris.sagai.core.ai.StreamingState.Error(
+                                    StreamingState.Error(
                                         state.message,
                                     ),
-                    )
-                    }
+                                )
+                            }
 
-                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
-                        emit(
-                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
-                            state.chunk,
-                        ),
-                    )
+                            is StreamingState.Reasoning -> {
+                                emit(
+                                    StreamingState.Reasoning(
+                                        state.chunk,
+                                    ),
+                                )
+                            }
+                        }
                     }
-                }
+            } catch (e: Exception) {
+                emit(StreamingState.Error(e.message ?: "Unknown error"))
             }
-        } catch (e: Exception) {
-            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
         }
-    }
 
         private suspend fun generateActPrompt(saga: SagaContent): String {
             val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
@@ -161,8 +162,61 @@ class ActUseCaseImpl
                     conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                 )
 
-            val intro = gemmaClient.generate<String>(prompt, useCore = true)!!
-            actRepository
-                .updateAct(act.copy(introduction = intro))
+            val intro =
+                gemmaClient.generate<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
+                    prompt,
+                    useCore = true,
+                )!!
+            val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
+            com.ilustris.sagai.core.ai.model
+                .GeneratedContent(updatedAct, intro.finalMessage)
         }
+
+        override fun generateActIntroductionStream(
+            saga: SagaContent,
+            act: Act,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
+                val prompt =
+                    ActPrompts.actIntroductionPrompt(
+                        promptService = promptService,
+                        saga = saga,
+                        narrativeRules = remoteConfigService.getNarrativeRules(),
+                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
+
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
+                        prompt = prompt,
+                        requireTranslation = true,
+                        useCore = true,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
+                    ).collect { state ->
+                        when (state) {
+                            is StreamingState.Success -> {
+                                val introContent = state.data
+                                val updatedAct = updateAct(act.copy(introduction = introContent.data))
+                                emit(
+                                    StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            updatedAct,
+                                            introContent.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is StreamingState.Error -> {
+                                emit(StreamingState.Error(state.message))
+                            }
+
+                            is StreamingState.Reasoning -> {
+                                emit(StreamingState.Reasoning(state.chunk))
+                            }
+                    }
+                }
+        } catch (e: Exception) {
+            emit(StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
     }

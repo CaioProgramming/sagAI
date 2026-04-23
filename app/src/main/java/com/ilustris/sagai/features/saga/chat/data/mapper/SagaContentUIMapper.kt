@@ -33,6 +33,10 @@ class SagaContentUIMapper
                     PendingAdvance.NewAct(step.act)
                 }
 
+                is NarrativeStep.StartAct -> {
+                    PendingAdvance.StartAct
+                }
+
                 is NarrativeStep.GenerateActIntroduction -> {
                     PendingAdvance.NewActIntroduction(step.act)
                 }
@@ -41,6 +45,10 @@ class SagaContentUIMapper
                     PendingAdvance.NewChapterIntroduction(
                         step.chapter,
                     )
+                }
+
+                is NarrativeStep.StartChapter -> {
+                    PendingAdvance.StartChapter(step.act)
                 }
 
                 is NarrativeStep.StartTimeline -> {

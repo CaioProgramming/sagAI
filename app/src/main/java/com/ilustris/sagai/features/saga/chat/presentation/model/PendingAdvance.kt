@@ -22,6 +22,8 @@ sealed class PendingAdvance(
         val act: ActContent,
     ) : PendingAdvance(R.string.advance_new_act, R.string.releasing_act)
 
+    data object StartAct : PendingAdvance(R.string.advance_new_act, R.string.releasing_act)
+
     data class NewActIntroduction(
         val act: ActContent,
     ) : PendingAdvance(R.string.advance_new_act_introduction, R.string.releasing_act_introduction)
@@ -32,6 +34,10 @@ sealed class PendingAdvance(
             R.string.advance_new_chapter_introduction,
             R.string.releasing_chapter_introduction,
         )
+
+    data class StartChapter(
+        val act: ActContent,
+    ) : PendingAdvance(R.string.advance_new_chapter, R.string.releasing_chapter)
 
     data class StartStory(
         val chapter: ChapterContent,

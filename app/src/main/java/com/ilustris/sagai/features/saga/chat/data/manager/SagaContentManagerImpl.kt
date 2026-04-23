@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 import android.content.Context
 import android.net.Uri
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
@@ -176,6 +177,10 @@ class SagaContentManagerImpl
                             updateAct(pendingAdvance.act)
                         }
 
+                        is PendingAdvance.StartAct -> {
+                            createAct(currentSaga)
+                        }
+
                         is PendingAdvance.NewActIntroduction -> {
                             emitMilestone(SagaMilestone.Loading)
                             generateActIntroduction(pendingAdvance.act)
@@ -184,6 +189,10 @@ class SagaContentManagerImpl
                         is PendingAdvance.NewChapterIntroduction -> {
                             emitMilestone(SagaMilestone.Loading)
                             generateChapterIntroduction(pendingAdvance.chapter)
+                        }
+
+                        is PendingAdvance.StartChapter -> {
+                            startChapter(pendingAdvance.act)
                         }
 
                         is PendingAdvance.StartStory -> {
@@ -212,6 +221,10 @@ class SagaContentManagerImpl
                                 NarrativeStep.GenerateAct(pendingAdvance.act)
                             }
 
+                            is PendingAdvance.StartAct -> {
+                                NarrativeStep.StartAct
+                            }
+
                             is PendingAdvance.NewActIntroduction -> {
                                 NarrativeStep.GenerateActIntroduction(
                                     pendingAdvance.act,
@@ -222,6 +235,10 @@ class SagaContentManagerImpl
                                 NarrativeStep.GenerateChapterIntroduction(
                                     pendingAdvance.chapter,
                                 )
+                            }
+
+                            is PendingAdvance.StartChapter -> {
+                                NarrativeStep.StartChapter(pendingAdvance.act)
                             }
 
                             is PendingAdvance.StartStory -> {
@@ -490,13 +507,16 @@ class SagaContentManagerImpl
         private suspend fun startChapter(act: ActContent) =
             executeRequest {
                 setNarrativeProcessingStatus(true)
+                val currentSaga = content.value
+                val latestAct =
+                    currentSaga?.acts?.find { it.data.id == act.data.id } ?: act
 
-                val lastChapter = act.chapters.lastOrNull()
+                val lastChapter = latestAct.chapters.lastOrNull()
                 if (lastChapter?.isComplete(fetchNarrativeRules())?.not() == true) {
-                    actUseCase.updateAct(act.data.copy(currentChapterId = lastChapter.data.id))
+                    actUseCase.updateAct(latestAct.data.copy(currentChapterId = lastChapter.data.id))
                     throw IllegalArgumentException("Chapter is already set at this act")
                 }
-                chapterUseCase.saveChapter(Chapter(actId = act.data.id))
+                chapterUseCase.saveChapter(Chapter(actId = latestAct.data.id))
             }
 
         private suspend fun updateChapter(
@@ -515,16 +535,16 @@ class SagaContentManagerImpl
                     conversationStyle = style,
                 ).collect { state ->
                     when (state) {
-                        is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                        is StreamingState.Reasoning -> {
                             contentReasoning.value = state.chunk
                         }
 
-                        is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                        is StreamingState.Success -> {
                             generated = state.data
                             contentReasoning.value = null
                         }
 
-                        is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                        is StreamingState.Error -> {
                             contentReasoning.value = null
                             error(state.message)
                         }
@@ -664,16 +684,16 @@ class SagaContentManagerImpl
                         conversationStyle = style,
                     ).collect { state ->
                         when (state) {
-                            is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                            is StreamingState.Reasoning -> {
                                 contentReasoning.value = state.chunk
                             }
 
-                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                            is StreamingState.Success -> {
                                 generated = state.data
                                 contentReasoning.value = null
                             }
 
-                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                            is StreamingState.Error -> {
                                 contentReasoning.value = null
                                 error(state.message) // Throws wrapped in RequestResult.Failure
                             }
@@ -686,17 +706,18 @@ class SagaContentManagerImpl
 
         private suspend fun createAct(currentSaga: SagaContent) =
             executeRequest {
-                val lastAct = currentSaga.acts.lastOrNull()
+                val latestSaga = content.value ?: currentSaga
+                val lastAct = latestSaga.acts.lastOrNull()
                 if (lastAct?.isComplete(fetchNarrativeRules())?.not() == true) {
                     sagaHistoryUseCase.updateSaga(
-                        currentSaga.data.copy(currentActId = lastAct.data.id),
+                        latestSaga.data.copy(currentActId = lastAct.data.id),
                     )
                     error("Act is already set at this saga")
                 }
                 actUseCase
                     .saveAct(
                         Act(
-                            sagaId = currentSaga.data.id,
+                            sagaId = latestSaga.data.id,
                         ),
                     )
             }
@@ -729,16 +750,16 @@ class SagaContentManagerImpl
                             conversationStyle = style,
                         ).collect { state ->
                             when (state) {
-                                is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                is StreamingState.Reasoning -> {
                                     contentReasoning.value = state.chunk
                                 }
 
-                                is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                is StreamingState.Success -> {
                                     generated = state.data
                                     contentReasoning.value = null
                                 }
 
-                                is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                is StreamingState.Error -> {
                                     contentReasoning.value = null
                                     error(state.message)
                                 }
@@ -757,16 +778,64 @@ class SagaContentManagerImpl
         private suspend fun generateActIntroduction(currentAct: ActContent) =
             executeRequest {
                 val saga = content.value!!
-                actUseCase.generateActIntroduction(saga, currentAct.data).getSuccess()!!
+                var finalAct: GeneratedContent<Act>? = null
+                actUseCase
+                    .generateActIntroductionStream(saga, currentAct.data)
+                    .let { flow ->
+                        reasoningSynthesizerService.synthesizeReasoning(
+                            sourceFlow = flow,
+                            context = "Generating act introduction for ${saga.data.title}",
+                            conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
+                        )
+                    }.collect { state ->
+                        when (state) {
+                            is StreamingState.Reasoning -> {
+                                contentReasoning.value = state.chunk
+                            }
+
+                            is StreamingState.Success -> {
+                                finalAct = state.data
+                            }
+
+                            is StreamingState.Error -> {
+                                throw Exception(state.message)
+                            }
+                        }
+                    }
+                contentReasoning.value = null
+                finalAct!!
             }
 
         private suspend fun generateChapterIntroduction(currentChapter: ChapterContent) =
             executeRequest {
                 val saga = content.value!!
                 val currentAct = saga.currentActInfo!!
+                var finalChapter: GeneratedContent<Chapter>? = null
                 chapterUseCase
-                    .generateChapterIntroduction(saga, currentChapter.data, currentAct)
-                    .getSuccess()!!
+                    .generateChapterIntroductionStream(saga, currentChapter.data, currentAct)
+                    .let { flow ->
+                        reasoningSynthesizerService.synthesizeReasoning(
+                            sourceFlow = flow,
+                            context = "Generating chapter introduction for ${currentChapter.data.title}",
+                            conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
+                        )
+                    }.collect { state ->
+                        when (state) {
+                            is StreamingState.Reasoning -> {
+                                contentReasoning.value = state.chunk
+                            }
+
+                            is StreamingState.Success -> {
+                                finalChapter = state.data
+                            }
+
+                            is StreamingState.Error -> {
+                                throw Exception(state.message)
+                            }
+                        }
+                    }
+                contentReasoning.value = null
+                finalChapter!!
             }
 
         private fun observeMilestone() =
@@ -841,10 +910,6 @@ class SagaContentManagerImpl
                     startProcessing {
                         action =
                             when (narrativeStep) {
-                                NarrativeStep.StartAct -> {
-                                    createAct(currentSaga)
-                                }
-
                                 is NarrativeStep.GenerateTimeLine,
                                 is NarrativeStep.GenerateChapter,
                                 is NarrativeStep.GenerateAct,
@@ -860,8 +925,14 @@ class SagaContentManagerImpl
                                     return@startProcessing
                                 }
 
-                                is NarrativeStep.StartChapter -> {
-                                    startChapter(narrativeStep.act)
+                                is NarrativeStep.StartAct,
+                                is NarrativeStep.StartChapter,
+                                -> {
+                                    Timber.i(
+                                        "checkNarrativeProgression: ${narrativeStep.javaClass.simpleName} detected. Waiting for user interaction.",
+                                    )
+                                    setProcessing(false)
+                                    return@startProcessing
                                 }
 
                                 is NarrativeStep.EndTimeLine -> {
@@ -1022,6 +1093,11 @@ class SagaContentManagerImpl
                 is NarrativeStep.StartAct -> {
                     (result.value as? Act)?.let { data ->
                         startProcessing {
+                            val currentSaga = content.value ?: saga
+                            if (currentSaga.data.currentActId != saga.data.currentActId && currentSaga.data.currentActId != null) {
+                                Timber.w("StartAct: Saga currentActId already updated. Skipping.")
+                                return@startProcessing
+                            }
                             sagaHistoryUseCase.updateSaga(
                                 saga.data.copy(currentActId = data.id),
                             )
@@ -1031,23 +1107,30 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeStep.GenerateActIntroduction -> {
-                    (result.value as? Act)?.let { act ->
+                    val generatedContent = result.value as? GeneratedContent<Act>
+                    val act = generatedContent?.data ?: result.value as? Act
+                    val message = generatedContent?.finalMessage
+                    act?.let { a ->
                         emitMilestone(
                             SagaMilestone.Introduction(
                                 type = IntroductionType.ACT,
-                                titleText = act.title,
-                                introduction = act.introduction,
-                                number = saga.actNumber(act).toRoman(),
+                                titleText = a.title,
+                                introduction = a.introduction,
+                                number = saga.actNumber(a).toRoman(),
+                                messageText = message,
                             ),
                         )
                     }
                 }
 
                 is NarrativeStep.StartChapter -> {
-                    val currentAct = saga.currentActInfo!!
+                    val currentAct = content.value?.currentActInfo ?: saga.currentActInfo!!
                     (result.value as? Chapter)?.let { chapter ->
                         startProcessing {
-                            if (currentAct.currentChapterInfo != null) error("Chapter already set")
+                            if (currentAct.currentChapterInfo != null && currentAct.currentChapterInfo!!.data.id != chapter.id) {
+                                Timber.w("Chapter already set and different from generated one. Skipping update.")
+                                return@startProcessing
+                            }
                             actUseCase.updateAct(
                                 currentAct.data.copy(currentChapterId = chapter.id),
                             )
@@ -1056,13 +1139,17 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeStep.GenerateChapterIntroduction -> {
-                    (result.value as? Chapter)?.let { chapterUpdate ->
+                    val generatedContent = result.value as? GeneratedContent<Chapter>
+                    val chapterUpdate = generatedContent?.data ?: result.value as? Chapter
+                    val message = generatedContent?.finalMessage
+                    chapterUpdate?.let { c ->
                         emitMilestone(
                             SagaMilestone.Introduction(
                                 type = IntroductionType.CHAPTER,
-                                titleText = chapterUpdate.title,
-                                introduction = chapterUpdate.introduction,
-                                number = saga.chapterNumber(chapterUpdate).toRoman(),
+                                titleText = c.title,
+                                introduction = c.introduction,
+                                number = saga.chapterNumber(c).toRoman(),
+                                messageText = message,
                             ),
                         )
                     }
@@ -1318,16 +1405,16 @@ class SagaContentManagerImpl
                                 conversationStyle = style,
                             ).collect { state ->
                                 when (state) {
-                                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
+                                    is StreamingState.Reasoning -> {
                                         contentReasoning.value = state.chunk
                                     }
 
-                                    is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                                    is StreamingState.Success -> {
                                         generated = state.data
                                         contentReasoning.value = null
                                     }
 
-                                    is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                                    is StreamingState.Error -> {
                                         contentReasoning.value = null
                                         error(state.message)
                                     }

@@ -80,10 +80,12 @@ sealed class SagaMilestone(
         val titleText: String,
         val introduction: String,
         val number: String,
+        val messageText: String? = null,
         val sceneSummary: SceneSummary? = null,
     ) : SagaMilestone(
             R.string.introduction_milestone,
             titleText,
+            messageText,
             delay = 0.seconds,
             isIntrusive = true,
         )

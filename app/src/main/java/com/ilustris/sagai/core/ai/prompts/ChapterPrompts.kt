@@ -4,27 +4,27 @@ import com.ilustris.sagai.core.ai.model.ChapterConclusionContext
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.findChapterAct
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.home.data.model.historySummary
 
 data class ChapterIntroductionArgs(
-    val context: String,
-    val conversationDirective: String,
-    val historyContext: String,
-    val purpose: String,
+    val sagaMainContext: String,
+    val narrativeStyle: String,
+    val storyHistory: String,
+    val volumeContext: String,
+    val lastStateContext: String,
 )
 
 data class ChapterGenerationArgs(
-    val combinedContextJson: String,
+    val chapterContext: String,
     val characterIndex: String,
-    val expectedOutputFormat: String,
-    val conversationDirective: String,
+    val narrativeStyle: String,
 )
 
 object ChapterPrompts {
@@ -40,17 +40,24 @@ object ChapterPrompts {
         currentChapter: Chapter,
         conversationDirective: String,
     ): String {
+        val lastEvent = sagaContent.flatEvents().lastOrNull()?.data
+        val lastState =
+            lastEvent?.let {
+                "The story last drew breath here: ${it.title} - ${it.content}"
+            } ?: "The chapter begins as a direct continuation of the volume's opening."
+
         val args =
             ChapterIntroductionArgs(
-                context = SagaPrompts.mainContext(sagaContent),
-                conversationDirective = conversationDirective,
-                historyContext = sagaContent.historySummary(),
-                purpose =
+                sagaMainContext = SagaPrompts.mainContext(sagaContent),
+                narrativeStyle = conversationDirective,
+                storyHistory = sagaContent.historySummary(),
+                volumeContext =
                     promptService.buildRemotePrompt(
                         sagaContent.getDirectiveKey(
                             sagaContent.findAct(currentChapter.actId)?.data,
                         ),
                     ),
+                lastStateContext = lastState,
             )
 
         return promptService.buildRemotePrompt(CHAPTER_INTRODUCTION_BLUEPRINT, args)
@@ -111,25 +118,13 @@ object ChapterPrompts {
                 "backstory",
             )
 
-        val combinedContextJson = promptDataContext.toJsonFormatIncludingFields(includedFields)
+        val chapterContext = promptDataContext.toJsonFormatIncludingFields(includedFields)
 
         val args =
             ChapterGenerationArgs(
-                combinedContextJson = combinedContextJson,
+                chapterContext = chapterContext,
                 characterIndex = SagaPrompts.charactersSummary(sagaContent),
-                expectedOutputFormat =
-                    toJsonMap(
-                        Chapter::class.java,
-                        filteredFields =
-                            listOf(
-                                "id",
-                                "currentEventId",
-                                "coverImage",
-                                "createdAt",
-                                "actId",
-                            ),
-                    ),
-                conversationDirective = conversationDirective,
+                narrativeStyle = conversationDirective,
             )
 
         return promptService.buildRemotePrompt(CHAPTER_GENERATION_BLUEPRINT, args)

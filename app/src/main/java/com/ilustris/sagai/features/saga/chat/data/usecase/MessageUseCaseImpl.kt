@@ -33,8 +33,10 @@ import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -208,7 +210,9 @@ class MessageUseCaseImpl
                                             timestamp = System.currentTimeMillis(),
                                         ),
                                     )
-                                handleAIReplyReactions(saga, savedMessage, reply.reactions)
+                                withContext(Dispatchers.IO) {
+                                    handleAIReplyReactions(saga, savedMessage, reply.reactions)
+                                }
                                 emit(StreamingState.Success(reply.copy(message = savedMessage)))
                             } else {
                                 emit(state)
@@ -226,9 +230,9 @@ class MessageUseCaseImpl
         private suspend fun handleAIReplyReactions(
             saga: SagaContent,
             message: Message,
-            reactions: List<AIReaction>,
+            reactions: List<AIReaction>?,
         ) {
-            reactions.forEach { aiReaction ->
+            reactions?.forEach { aiReaction ->
                 val character = saga.findCharacter(aiReaction.character)
                 if (character != null && character.data.id != message.characterId) {
                     reactionRepository.saveReaction(

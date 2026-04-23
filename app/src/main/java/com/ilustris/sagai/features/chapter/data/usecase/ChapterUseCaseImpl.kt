@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.chapter.data.usecase
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -109,7 +110,7 @@ class ChapterUseCaseImpl
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     ).collect { state ->
                         when (state) {
-                            is com.ilustris.sagai.core.ai.StreamingState.Success -> {
+                            is StreamingState.Success -> {
                                 val genChapter = state.data.data
                                 val updatedChapter =
                                     updateChapter(
@@ -123,7 +124,7 @@ class ChapterUseCaseImpl
                                         ),
                                     )
                                 emit(
-                                    com.ilustris.sagai.core.ai.StreamingState.Success(
+                                    StreamingState.Success(
                                         com.ilustris.sagai.core.ai.model.GeneratedContent(
                                             updatedChapter,
                                             state.data.finalMessage,
@@ -132,27 +133,27 @@ class ChapterUseCaseImpl
                                 )
                             }
 
-                            is com.ilustris.sagai.core.ai.StreamingState.Error -> {
+                            is StreamingState.Error -> {
                                 emit(
-                                    com.ilustris.sagai.core.ai.StreamingState.Error(
-                            state.message,
-                        ),
-                    )
-                    }
+                                    StreamingState.Error(
+                                        state.message,
+                                    ),
+                                )
+                            }
 
-                    is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
-                        emit(
-                        com.ilustris.sagai.core.ai.StreamingState.Reasoning(
-                            state.chunk,
-                        ),
-                    )
+                            is StreamingState.Reasoning -> {
+                                emit(
+                                    StreamingState.Reasoning(
+                                        state.chunk,
+                                    ),
+                                )
+                            }
+                        }
                     }
-                }
+            } catch (e: Exception) {
+                emit(StreamingState.Error(e.message ?: "Unknown error"))
             }
-        } catch (e: Exception) {
-            emit(com.ilustris.sagai.core.ai.StreamingState.Error(e.message ?: "Unknown error"))
         }
-    }
 
         override suspend fun reviewChapter(
             saga: SagaContent,
@@ -285,24 +286,75 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapter: Chapter,
             act: ActContent,
-        ): RequestResult<Chapter> =
-            executeRequest {
-                genreConfigService.getGenreConfig(saga.data.genre)
+        ) = executeRequest {
+            genreConfigService.getGenreConfig(saga.data.genre)
+            val prompt =
+                ChapterPrompts.chapterIntroductionPrompt(
+                    promptService = promptService,
+                    sagaContent = saga,
+                    currentChapter = chapter,
+                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                )
+            val intro =
+                gemmaClient.generate<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
+                    prompt,
+                    requireTranslation = true,
+                    useCore = true,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+                )!!
+            val updated = chapter.copy(introduction = intro.data)
+            val updatedChapter = chapterRepository.updateChapter(updated)
+            com.ilustris.sagai.core.ai.model
+                .GeneratedContent(updatedChapter, intro.finalMessage)
+        }
+
+        override fun generateChapterIntroductionStream(
+            saga: SagaContent,
+            chapterContent: Chapter,
+            act: ActContent,
+        ) = kotlinx.coroutines.flow.flow {
+            try {
                 val prompt =
                     ChapterPrompts.chapterIntroductionPrompt(
                         promptService = promptService,
                         sagaContent = saga,
-                        currentChapter = chapter,
+                        currentChapter = chapterContent,
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
-                val intro =
-                    gemmaClient.generate<String>(
-                        prompt,
+
+                gemmaClient
+                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
+                        prompt = prompt,
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    )!!
-                val updated = chapter.copy(introduction = intro)
-                chapterRepository.updateChapter(updated)
-            }
+                    ).collect { state ->
+                        when (state) {
+                            is StreamingState.Success -> {
+                                val introContent = state.data
+                                val updatedChapter =
+                                    updateChapter(chapterContent.copy(introduction = introContent.data))
+                                emit(
+                                    StreamingState.Success(
+                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                            updatedChapter,
+                                            introContent.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is StreamingState.Error -> {
+                                emit(StreamingState.Error(state.message))
+                            }
+
+                            is StreamingState.Reasoning -> {
+                                emit(StreamingState.Reasoning(state.chunk))
+                            }
+                        }
+                }
+        } catch (e: Exception) {
+            emit(StreamingState.Error(e.message ?: "Unknown error"))
+        }
+    }
     }

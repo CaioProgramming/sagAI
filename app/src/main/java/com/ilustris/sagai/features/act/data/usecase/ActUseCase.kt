@@ -30,5 +30,10 @@ interface ActUseCase {
     suspend fun generateActIntroduction(
         saga: SagaContent,
         act: Act,
-    ): RequestResult<Act>
+    ): RequestResult<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>
+
+    fun generateActIntroductionStream(
+        saga: SagaContent,
+        act: Act,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
 }
