@@ -72,7 +72,6 @@ import com.ilustris.sagai.core.utils.formatFileSize
 import com.ilustris.sagai.features.playthrough.PlaythroughSheet
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
-import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -88,6 +87,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 fun SettingsView(
     navController: NavHostController? = null,
     viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenPremiumOnboarding: () -> Unit = {},
 ) {
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle(false)
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
@@ -100,6 +100,8 @@ fun SettingsView(
     val hasSagasWithChapters by viewModel.hasSagasWithChapters.collectAsStateWithLifecycle(null)
 
     val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
+    val showTutorials by viewModel.showTutorials.collectAsStateWithLifecycle(true)
+    val musicEnabled by viewModel.musicEnabled.collectAsStateWithLifecycle(true)
 
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
@@ -109,7 +111,6 @@ fun SettingsView(
     var showClearDialog by remember { mutableStateOf(false) }
     val isWiping by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    var premiumSheetVisible by remember { mutableStateOf(false) }
     var requestedPermission by remember {
         mutableStateOf<String?>(null)
     }
@@ -195,17 +196,21 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).clickable {
+                        )
+                        .clickable {
                             showPlaythroughSheet = true
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -248,7 +253,8 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(12.dp),
+                        )
+                        .padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -289,9 +295,11 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).clickable {
+                            )
+                            .clickable {
                                 viewModel.clearCache()
-                            }.padding(16.dp),
+                            }
+                            .padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -339,7 +347,8 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -424,7 +433,8 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    ).padding(8.dp),
+                    )
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
@@ -550,6 +560,36 @@ fun SettingsView(
                         viewModel.setMessageEffectsEnabled(!it)
                     },
                 )
+
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.story_guides),
+                    stringResource(R.string.story_guides_description),
+                    isActivated = showTutorials,
+                    onClickSwitch = {
+                        viewModel.setShowTutorials(!it)
+                    },
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.settings_music_title),
+                    stringResource(R.string.settings_music_description),
+                    isActivated = musicEnabled,
+                    onClickSwitch = {
+                        viewModel.setMusicEnabled(!it)
+                    },
+                )
             }
         }
 
@@ -568,7 +608,7 @@ fun SettingsView(
             PremiumCard(
                 isUserPro = isUserPro,
                 onClick = {
-                    premiumSheetVisible = true
+                    onOpenPremiumOnboarding()
                 },
             )
         }
@@ -587,8 +627,41 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(8.dp),
+                        )
+                        .padding(8.dp),
             )
+        }
+
+        item {
+            Button(
+                onClick = { viewModel.clearPreferences() },
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                shape = RoundedCornerShape(15.dp),
+            ) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.clear_preferences),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        stringResource(R.string.clear_preferences_explanation),
+                        textAlign = TextAlign.Start,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.alpha(0.6f),
+                    )
+                }
+            }
         }
 
         item {
@@ -655,6 +728,30 @@ fun SettingsView(
             }
         }
 
+        if (com.ilustris.sagai.BuildConfig.DEBUG) {
+            item {
+                Button(
+                    onClick = { navController?.navigateToRoute(Routes.AUDIT_LOGS) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    shape = RoundedCornerShape(15.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.audit_logs_title),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Start,
+                    )
+                }
+            }
+        }
+
         item {
             Spacer(Modifier.size(50.dp))
         }
@@ -686,13 +783,6 @@ fun SettingsView(
     PermissionComponent(requestedPermission, {
         openAppSettings(context)
     }, { requestedPermission = null })
-
-    PremiumView(
-        isVisible = premiumSheetVisible,
-        onDismiss = {
-            premiumSheetVisible = false
-        },
-    )
 
     if (showBackupSheet) {
         BackupSheet(showBackups, onDismiss = {

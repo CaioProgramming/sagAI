@@ -47,6 +47,8 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -59,12 +61,12 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
 import ir.ehsannarmani.compose_charts.RowChart
@@ -83,6 +85,8 @@ import ir.ehsannarmani.compose_charts.models.PopupProperties
 @Composable
 fun ReviewDetails(saga: SagaContent) {
     val genre = saga.data.genre
+    genre.resolveColor()
+    genre.resolveIconColor()
     val brush = genre.gradient()
     val bodyFont = genre.bodyFont()
     val headerFont = genre.headerFont()
@@ -467,8 +471,11 @@ private fun CharactersChart(
     genre: Genre,
     modifier: Modifier,
 ) {
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
+
     val data =
-        remember {
+        remember(resolvedColor, resolvedIconColor) {
             listOf(
                 Bars(
                     label = "Ranking de personagens",
@@ -478,7 +485,7 @@ private fun CharactersChart(
                                 List(2) { index ->
                                     val color = (
                                         it.first.hexColor.hexToColor()
-                                            ?: genre.color
+                                            ?: resolvedColor
                                     )
                                     val colorEffect = if (index == 0) color else color.darker(.3f)
                                     val mentionsForCharacter =
@@ -501,6 +508,7 @@ private fun CharactersChart(
             )
         }
 
+    val cornerSize = genre.cornerSize()
     Box(modifier = modifier) {
         ColumnChart(
             modifier = Modifier.fillMaxSize(),
@@ -515,12 +523,12 @@ private fun CharactersChart(
                 ),
             popupProperties =
                 PopupProperties(
-                    containerColor = genre.color,
-                    cornerRadius = genre.cornerSize(),
+                    containerColor = resolvedColor,
+                    cornerRadius = cornerSize,
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
+                            color = resolvedIconColor,
                         ),
                     contentBuilder = { dataIndex, valueIndex, value ->
                         val suffix = if (valueIndex % 2 == 0) "messages" else "mentions"
@@ -552,8 +560,8 @@ private fun CharactersChart(
                 BarProperties(
                     cornerRadius =
                         Bars.Data.Radius.Rectangle(
-                            topRight = genre.cornerSize(),
-                            topLeft = genre.cornerSize(),
+                            topRight = cornerSize,
+                            topLeft = cornerSize,
                         ),
                     spacing = 8.dp,
                     thickness = 20.dp,
@@ -578,6 +586,9 @@ private fun MessagesRankChart(
         messagesRanking.map {
             it.first.title()
         }
+    val cornerSize = genre.cornerSize()
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     RowChart(
         modifier = modifier,
         data =
@@ -592,10 +603,10 @@ private fun MessagesRankChart(
                                     value = value.second.toDouble(),
                                     color =
                                         if (i == 0) {
-                                            genre.color.solidGradient()
+                                            resolvedColor.solidGradient()
                                         } else {
                                             Brush.verticalGradient(
-                                                genre.color.darkerPalette(i + 2),
+                                                resolvedColor.darkerPalette(i + 2),
                                             )
                                         },
                                 ),
@@ -627,12 +638,12 @@ private fun MessagesRankChart(
             ),
         popupProperties =
             PopupProperties(
-                containerColor = genre.color,
-                cornerRadius = genre.cornerSize(),
+                containerColor = resolvedColor,
+                cornerRadius = cornerSize,
                 textStyle =
                     MaterialTheme.typography.labelSmall.copy(
                         fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
+                        color = resolvedIconColor,
                     ),
             ),
         gridProperties =
@@ -645,8 +656,8 @@ private fun MessagesRankChart(
                 thickness = 24.dp,
                 cornerRadius =
                     Bars.Data.Radius.Rectangle(
-                        topRight = genre.cornerSize(),
-                        bottomRight = genre.cornerSize(),
+                        topRight = cornerSize,
+                        bottomRight = cornerSize,
                     ),
             ),
     )
@@ -662,27 +673,31 @@ private fun HourRankChart(
         MaterialTheme.typography.labelMedium.copy(
             fontFamily = genre.bodyFont(),
         )
+    val palette = genre.colorPalette()
+    val cornerSize = genre.cornerSize()
+    val resolvedColor = genre.resolveColor()
+    val resolvedIconColor = genre.resolveIconColor()
     LineChart(
         modifier = modifier,
         data =
-            remember {
+            remember(palette, cornerSize) {
                 listOf(
                     Line(
                         label = "Hora mais jogada",
                         values = hourRanking.map { it.value.size.toDouble() },
-                        color = Brush.verticalGradient(genre.colorPalette()),
-                        firstGradientFillColor = genre.color,
+                        color = Brush.verticalGradient(palette),
+                        firstGradientFillColor = resolvedColor,
                         secondGradientFillColor = Color.Transparent,
                         strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
                         gradientAnimationDelay = 1000,
                         drawStyle = DrawStyle.Stroke(width = 2.dp),
                         popupProperties =
                             PopupProperties(
-                                containerColor = genre.color,
-                                cornerRadius = genre.cornerSize(),
+                                containerColor = resolvedColor,
+                                cornerRadius = cornerSize,
                                 textStyle =
                                     label.copy(
-                                        color = genre.iconColor,
+                                        color = resolvedIconColor,
                                     ),
                                 contentBuilder = { dataIndex, valueIndex, value ->
                                     "${value.toInt()} messages"

@@ -28,7 +28,8 @@ class SettingsViewModel
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
         val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
-
+        val showTutorials = settingsUseCase.getShowTutorials()
+        val musicEnabled = settingsUseCase.getMusicEnabled()
         val backupEnabled = settingsUseCase.backupEnabled()
 
         private val _memoryUsage = MutableStateFlow<Long?>(null)
@@ -89,6 +90,18 @@ class SettingsViewModel
         fun setMessageEffectsEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 settingsUseCase.setMessageEffectsEnabled(enabled)
+            }
+        }
+
+        fun setShowTutorials(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setShowTutorials(enabled)
+            }
+        }
+
+        fun setMusicEnabled(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setMusicEnabled(enabled)
             }
     }
 
@@ -163,6 +176,12 @@ class SettingsViewModel
                 .map { sagas ->
                     sagas.sumOf { it.data.playTimeMs }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+
+        fun clearPreferences() {
+            viewModelScope.launch {
+                settingsUseCase.clearPreferences()
+            }
+    }
     }
 
 data class SagaStorageInfo(

@@ -8,12 +8,12 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionStatus
+import timber.log.Timber
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,9 +46,6 @@ class AudioService
         private val permissionService: PermissionService,
         private val gemmaClient: GemmaClient,
     ) {
-        companion object {
-            private const val TAG = "AudioService"
-        }
 
         fun transcribeAudio(
             prompt: String?,
@@ -96,11 +93,11 @@ class AudioService
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             putExtra(RecognizerIntent.EXTRA_ENABLE_FORMATTING, true)
                         }
-                        Log.d(TAG, "Speech recognition language set to: $languageTag")
+                        Timber.d("Speech recognition language set to: $languageTag")
                     }
 
                 onResult(TranscriptionState.Listening)
-                Log.d(TAG, "Listening started")
+                Timber.d("Listening started")
 
                 speechRecognizer.setRecognitionListener(
                     object : RecognitionListener {
@@ -115,7 +112,7 @@ class AudioService
                         override fun onEndOfSpeech() {}
 
                         override fun onError(error: Int) {
-                            Log.e(TAG, "Error: $error")
+                            Timber.e("Error: $error")
                             onResult(TranscriptionState.Error(Exception("Failed")))
                             speechRecognizer.destroy()
                         }
@@ -125,14 +122,14 @@ class AudioService
                                 results?.getStringArrayList(
                                     SpeechRecognizer.RESULTS_RECOGNITION,
                                 )
-                            Log.d(TAG, "onResults: Audio recognition results - $matches")
+                            Timber.d("onResults: Audio recognition results - $matches")
                             val text = matches?.firstOrNull()
 
                             if (!text.isNullOrBlank()) {
-                                Log.d(TAG, "Success: $text")
+                                Timber.d("Success: $text")
                                 onResult(TranscriptionState.Success(text))
                             } else {
-                                Log.w(TAG, "Empty transcription")
+                                Timber.w("Empty transcription")
                                 onResult(TranscriptionState.Error(Exception("Failed")))
                             }
                             speechRecognizer.destroy()

@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
 import android.net.Uri
-import android.util.Log
 import androidx.core.net.toUri
 import com.ilustris.sagai.core.data.RequestResult
+import timber.log.Timber
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
@@ -89,10 +89,10 @@ class SagaBackupServiceImpl
             sagaContent: SagaContent,
             imageResources: List<Pair<String, ByteArray>>,
         ) {
-            Log.d(javaClass.simpleName, "Recovering saga: ${sagaContent.data.title}")
+            Timber.d("Recovering saga: ${sagaContent.data.title}")
             val newSaga = sagaContent.copy(data = recoverSaga(sagaContent.data).second)
 
-            Log.d(javaClass.simpleName, "Recovering images[${imageResources.size}]...")
+            Timber.d("Recovering images[${imageResources.size}]...")
             val savedImages = backupService.saveExtractedImages(newSaga.data.id, imageResources)
 
             sagaRepository.updateChat(
@@ -201,7 +201,7 @@ class SagaBackupServiceImpl
                     appendLine("${relationsEventsPairs.size} relation events")
                 }
 
-            Log.i(javaClass.simpleName, "recoverOperation: Backup complete -> $backupLog")
+            Timber.i("recoverOperation: Backup complete -> $backupLog")
         }
 
         private suspend fun recoverCharactersRelations(

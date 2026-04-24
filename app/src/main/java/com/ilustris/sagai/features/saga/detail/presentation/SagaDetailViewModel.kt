@@ -1,22 +1,28 @@
 package com.ilustris.sagai.features.saga.detail.presentation
 
 import android.graphics.Bitmap
-import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,18 +37,15 @@ class SagaDetailViewModel
     @Inject
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
-        private val remoteConfig: FirebaseRemoteConfig,
-        private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
+        private val visualConfigService: GenreVisualConfigService,
+        private val sagaDetailUIMapper: SagaDetailUIMapper,
     ) : ViewModel() {
-        private val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
         val saga = MutableStateFlow<SagaContent?>(null)
         val isGenerating = MutableStateFlow(false)
-        val emotionalCardReference = MutableStateFlow<String>(emptyString())
         val showIntro = MutableStateFlow(false)
-        val showReview = MutableStateFlow(false)
         private val _loadingMessage = MutableStateFlow<String?>(null)
         val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
         val backupEnabled = sagaDetailUseCase.getBackupEnabled()
@@ -53,142 +56,100 @@ class SagaDetailViewModel
         val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
         val sagaResume = MutableStateFlow<String?>(null)
-        val isSummarizingSaga = MutableStateFlow(false)
+        val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
+        private val _actualSection = MutableStateFlow<DetailSectionView?>(null)
+        val actualSection = _actualSection.asStateFlow()
 
-        fun fetchEmotionalCardReference() {
-            viewModelScope.launch(Dispatchers.IO) {
-                remoteConfig.fetchAndActivate()
-                emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
-            }
-        }
+        val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
+
+        private val sectionCache = mutableMapOf<RequestSection, DetailSectionView>()
+        private var sectionJob: Job? = null
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
+        fun loadSection(requestSection: RequestSection) {
+            val currentSaga = saga.value ?: return
+
+            if (sectionCache.containsKey(requestSection)) {
+                _actualSection.value = sectionCache[requestSection]
+                return
+            }
+
+            sectionJob?.cancel()
+
+            sectionJob =
+                viewModelScope.launch {
+                    _state.value = State.Loading
+                    sagaDetailUIMapper
+                        .buildSection(
+                            currentSaga,
+                            requestSection,
+                        ).onSuccess { mappedSection ->
+                            sectionCache[requestSection] = mappedSection
+                            _actualSection.value = mappedSection
+                            _state.value = State.Success(currentSaga)
+                        }.onFailureAsync {
+                            _state.emit(State.Error(emptyString()))
+                        }
+                }
+        }
+
+        fun handleAction(detailAction: DetailAction) {
+            viewModelScope.launch {
+                when (detailAction) {
+                    DetailAction.Delete -> deleteSaga(saga.value?.data)
+                    is DetailAction.OpenSection -> loadSection(detailAction.section)
+                    DetailAction.RegenerateIcon -> regenerateIcon()
+                    else -> doNothing()
+                }
+            }
+        }
+
         fun fetchSagaDetails(sagaId: String) {
             showIntro.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
                 _state.value = State.Loading
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
                     saga?.let { data ->
-                        _state.value = State.Success(data)
                         this@SagaDetailViewModel.saga.value = data
-                        if (data.data.isEnded) {
-                            fetchEmotionalCardReference()
-                            if (data.data.emotionalReview.isNullOrEmpty()) {
-                                viewModelScope.launch(Dispatchers.Main) {
-                                    createSagaEmotionalReview()
-                                }
-                            }
-                        }
+                        visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
 
-                        // Generate saga resume if not already generated
-                        if (sagaResume.value == null && data.acts.isNotEmpty()) {
-                            generateSagaResume(data)
-                        }
-
+                        loadSection(RequestSection.START)
+                        detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
                         launchIntroSequence()
                     }
                 }
             }
         }
 
-        private fun generateSagaResume(sagaContent: SagaContent) {
-            viewModelScope.launch(Dispatchers.IO) {
-                isSummarizingSaga.value = true
-                sagaDetailUseCase
-                    .generateSagaResume(sagaContent)
-                    .onSuccessAsync {
-                        sagaResume.emit(it)
-                        isSummarizingSaga.value = false
-                    }.onFailure {
-                        isSummarizingSaga.value = false
-                        android.util.Log.e(
-                            "SagaDetailViewModel",
-                            "Error generating saga resume: ${it.message}",
-                        )
-                    }
-            }
-        }
-
-        fun deleteSaga(saga: Saga) {
+        fun deleteSaga(saga: Saga?) {
             viewModelScope.launch {
+                if (saga == null) {
+                    return@launch
+                }
+                _state.value = State.Loading
                 sagaDetailUseCase.deleteSaga(saga)
-            }
-        }
-
-        fun closeReview() {
-            showReview.value = false
-        }
-
-        fun createReview() {
-            if (isGenerating.value) {
-                return
-            }
-            val currentSaga = saga.value ?: return
-            if (currentSaga.data.isEnded.not()) {
-                isGenerating.value = false
-                return
-            }
-            if (currentSaga.data.review != null) {
-                isGenerating.value = false
-                showReview.value = true
-                return
-            }
-            isGenerating.value = true
-            _loadingMessage.value = "Generating your saga review..."
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaDetailUseCase
-                    .createReview(currentSaga)
-                    .collectLatest { state ->
-                        when (state) {
-                            is ReviewState.Loading -> {
-                                _loadingMessage.value = state.message
-                            }
-
-                            is ReviewState.Success -> {
-                                isGenerating.value = false
-                                _loadingMessage.value = null
-                                showReview.emit(true)
-                            }
-
-                            is ReviewState.Error -> {
-                                isGenerating.value = false
-                                _loadingMessage.value = null
-                                // TODO: Handle error
-                            }
-                        }
-                    }
+                _state.value = State.Deleted
             }
         }
 
         fun regenerateIcon() {
             val currentSaga = saga.value ?: return
-            val isPremium = billingService.isPremium()
-            if (isPremium.not()) {
-                showPremiumSheet.value = true
-            }
             isGenerating.value = true
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
-                resetReview()
-                sagaDetailUseCase.regenerateSagaIcon(
-                    currentSaga,
-                )
+                sagaDetailUseCase
+                    .regenerateSagaIcon(
+                        currentSaga,
+                    ).onFailure {
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
+                    }
                 isGenerating.value = false
                 _loadingMessage.value = null
-            }
-        }
-
-        fun resetReview() {
-            val currentSaga = saga.value ?: return
-
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaDetailUseCase.resetReview(currentSaga)
-                delay(500)
-                createReview()
             }
         }
 
@@ -198,17 +159,6 @@ class SagaDetailViewModel
                 isGenerating.value = true
                 _loadingMessage.value = "Generating timeline content..."
                 sagaDetailUseCase.generateTimelineContent(currentSaga, timelineContent)
-                isGenerating.value = false
-                _loadingMessage.value = null
-            }
-        }
-
-        fun createSagaEmotionalReview() {
-            val currentSaga = saga.value ?: return
-            viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.value = true
-                _loadingMessage.value = "Creating emotional review..."
-                sagaDetailUseCase.createEmotionalConclusion(currentSaga)
                 isGenerating.value = false
                 _loadingMessage.value = null
             }
@@ -231,20 +181,4 @@ class SagaDetailViewModel
                 _loadingMessage.value = null
             }
         }
-
-        fun segmentSagaCover(url: String) {
-            viewModelScope.launch(Dispatchers.IO) {
-                val cachedBitmap = segmentedImageCache.get(url)
-                if (cachedBitmap != null) {
-                    segmentedBitmap.emit(cachedBitmap)
-                    return@launch
-                }
-                imageSegmentationHelper.processImage(url).onSuccessAsync {
-                    segmentedBitmap.emit(it.second)
-                    originalBitmap.emit(it.first)
-                }
-            }
-        }
     }
-
-private const val EMOTIONAL_CARD_CONFIG = "mental_card_icon"

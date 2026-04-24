@@ -11,7 +11,7 @@ interface ChapterUseCase {
         saga: SagaContent,
         chapterContent: Chapter,
         act: ActContent,
-    ): RequestResult<Chapter>
+    ): RequestResult<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>
 
     suspend fun saveChapter(chapter: Chapter): Chapter
 
@@ -33,13 +33,19 @@ interface ChapterUseCase {
         chapterContent: ChapterContent,
     ): RequestResult<Chapter>
 
-    suspend fun generateEmotionalReview(
+    fun generateChapterStream(
         saga: SagaContent,
         chapterContent: ChapterContent,
-    ): RequestResult<Chapter>
+    ): kotlinx.coroutines.flow.Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>>
 
     suspend fun reviewChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
     ): RequestResult<Chapter>
+
+    fun generateChapterIntroductionStream(
+        saga: SagaContent,
+        chapterContent: Chapter,
+        act: ActContent,
+    ): kotlinx.coroutines.flow.Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>>
 }

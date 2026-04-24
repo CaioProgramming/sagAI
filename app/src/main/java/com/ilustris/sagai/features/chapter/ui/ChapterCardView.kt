@@ -29,41 +29,38 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
-import effectForGenre
+import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun ChapterCardView(
-    saga: SagaContent,
+    genre: Genre,
     chapter: Chapter,
+    chapterIndex: Int,
     modifier: Modifier,
     showTitle: Boolean = true,
 ) {
-    val genre = saga.data.genre
-    val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
+    val shape = genre.shape()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .clip(shape)
-                .border(1.dp, genre.color.gradientFade(), shape)
+                .border(1.dp, genre.resolveColor().gradientFade(), shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .fillMaxWidth()
                 .weight(1f),
         ) {
             var textAlpha by remember {
-                mutableFloatStateOf(0f)
+                mutableFloatStateOf(1f)
             }
             AsyncImage(
                 chapter.coverImage,
@@ -83,9 +80,9 @@ fun ChapterCardView(
             )
 
             Text(
-                saga.chapterNumber(chapter).toRoman(),
+                chapterIndex.toRoman(),
                 style =
-                    MaterialTheme.typography.titleMedium.copy(
+                    MaterialTheme.typography.headlineMedium.copy(
                         fontFamily = genre.headerFont(),
                         textAlign = TextAlign.Center,
                         brush = genre.gradient(),
@@ -157,12 +154,8 @@ fun ChapterCardViewPreview() {
             items(chapters.size) { index ->
                 ChapterCardView(
                     chapter = chapters[index],
-                    saga =
-                        SagaContent(
-                            Saga(
-                                genre = Genre.FANTASY,
-                            ),
-                        ),
+                    genre = Genre.FANTASY,
+                    chapterIndex = index + 1,
                     modifier = Modifier.aspectRatio(1f),
                 )
             }

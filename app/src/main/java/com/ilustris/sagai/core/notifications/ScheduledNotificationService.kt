@@ -4,9 +4,9 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.Dispatchers
+import timber.log.Timber
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -24,7 +24,7 @@ class ScheduledNotificationServiceImpl(
 ) : ScheduledNotificationService {
     override suspend fun scheduleNotification(sagaId: Int) {
         withContext(Dispatchers.IO) {
-            Log.d(javaClass.simpleName, "Scheduling notification for saga: $sagaId")
+            Timber.d("Scheduling notification for saga: $sagaId")
 
             workManagerScheduler.scheduleNotificationWork(sagaId)
         }
@@ -36,7 +36,7 @@ class ScheduledNotificationServiceImpl(
         runBlocking {
             dataStore.removeKey(SCHEDULED_NOTIFICATION_JSON_KEY)
         }
-        Log.i(javaClass.simpleName, "Canceled scheduled notifications")
+        Timber.i("Canceled scheduled notifications")
     }
 
     private fun getNotificationIntent(): PendingIntent {

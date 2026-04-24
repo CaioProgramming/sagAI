@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.chapter.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -18,10 +19,16 @@ class ChapterViewModel
     constructor(
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val chapterUseCase: ChapterUseCase,
+        private val billingService: BillingService,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
 
         val isGenerating = MutableStateFlow(false)
+        val showPremiumSheet = MutableStateFlow(false)
+
+        fun togglePremiumSheet() {
+            showPremiumSheet.value = !showPremiumSheet.value
+        }
 
         fun init(sagaContent: SagaContent?) {
             saga.value = sagaContent
@@ -51,10 +58,15 @@ class ChapterViewModel
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
-                chapterUseCase.generateChapterCover(
-                    chapter,
-                    content,
-                )
+                chapterUseCase
+                    .generateChapterCover(
+                        chapter,
+                        content,
+                    ).onFailure {
+                        if (it is BillingService.PremiumException) {
+                            showPremiumSheet.value = true
+                        }
+                    }
                 isGenerating.value = false
             }
         }

@@ -1,8 +1,8 @@
 package com.ilustris.sagai.core.ai
 
-import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.GenerativeModel
+import timber.log.Timber
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.Schema
@@ -57,18 +57,17 @@ class TextGenClient(
                 }
             val fullPrompt =
                 if (requireTranslation) {
-                    "$prompt ${modelLanguage()}"
+                    "$prompt ${getLanguage(requireTranslation)}"
                 } else {
                     prompt
                 }
             val content = model.generateContent(fullPrompt)
-            Log.i(javaClass.simpleName, "generating with model: $aiModel")
-            Log.d(
-                javaClass.simpleName,
+            Timber.i("generating with model: $aiModel")
+            Timber.d(
                 "content generation result: ${content.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}",
             )
 
-            Log.i(javaClass.simpleName, "prompt: $fullPrompt")
+            Timber.i("prompt: $fullPrompt")
 
             val contentData =
                 if (T::class.java == String::class.java) {

@@ -45,19 +45,22 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -81,7 +84,7 @@ fun ChapterContentView(
 
         if (chapter.data.coverImage.isEmpty()) {
             Image(
-                painterResource(R.drawable.ic_spark),
+                painterResource(genre.icon),
                 null,
                 Modifier
                     .clickable {
@@ -100,7 +103,8 @@ fun ChapterContentView(
                     Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
-                        .reactiveShimmer(isLast),
+                        .reactiveShimmer(isLast)
+                        .genreVfx(genre),
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = genre.headerFont(),
@@ -216,7 +220,8 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient())
                     .clickable {
                         requestReview(chapter)
-                    }.padding(4.dp),
+                    }
+                    .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -242,4 +247,13 @@ fun ChapterContentView(
     }
 
     StarryLoader(isGenerating, brushColors = content.data.genre.colorPalette())
+
+    val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
+    if (showPremiumSheet) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = { viewModel.togglePremiumSheet() },
+        )
+    }
 }

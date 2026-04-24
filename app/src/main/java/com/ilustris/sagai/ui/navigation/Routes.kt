@@ -2,7 +2,6 @@
 
 package com.ilustris.sagai.ui.navigation
 
-import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -37,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.navigation.navArgument
+import timber.log.Timber
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
@@ -45,7 +45,6 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
-import com.ilustris.sagai.features.settings.ui.SettingsView
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
@@ -84,14 +83,6 @@ enum class Routes(
         showBottomNav = false,
     ),
     PROFILE,
-    SETTINGS(
-        title = R.string.settings_title,
-        showBottomNav = false,
-        view = { nav, padding, _, _ ->
-            SettingsView(nav)
-        },
-        topBarContent = { Box {} },
-    ),
     FAQ(
         showBottomNav = false,
         view = { nav, padding, _, _ ->
@@ -137,7 +128,7 @@ enum class Routes(
             CharacterDetailsView(
                 navHostController = nav,
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
-                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+                characterId = nav.currentBackStackEntry?.arguments?.getInt(CHARACTER_DETAIL.arguments[1]),
             )
         },
     ),
@@ -155,6 +146,14 @@ enum class Routes(
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(SAGA_CHAPTERS.arguments.first()),
             )
         },
+    ),
+    AUDIT_LOGS(
+        showBottomNav = false,
+        view = { nav, padding, _, _ ->
+            com.ilustris.sagai.features.settings.ui.audit
+                .AIAuditLogView(nav)
+        },
+        topBarContent = { Box {} },
     ),
 }
 
@@ -253,7 +252,7 @@ fun NavHostController.navigateToRoute(
     }
     val newLink = link.replace("{", "").replace("}", "")
 
-    Log.d(javaClass.simpleName, "navigateToRoute: Navigating to $newLink")
+    Timber.d("navigateToRoute: Navigating to $newLink")
     if (popUpToRoute != null) {
         navigate(newLink) {
             popUpTo(popUpToRoute.deepLink ?: popUpToRoute.name) {
@@ -267,11 +266,10 @@ fun NavHostController.navigateToRoute(
 
 fun String.findRoute(): Routes? =
     Routes.entries.find {
-        Log.i("Route find:", "looking for route $this...")
+        Timber.i("looking for route $this...")
         val mappedDeepLink = it.deepLink?.sanitizeDeepLink()
         val mappedRoute = this.sanitizeDeepLink()
-        Log.d(
-            "Route find:",
+        Timber.d(
             "findRoute: trying to match(${it.name}) $mappedDeepLink with $mappedRoute",
         )
         it.name.equals(this, true) || mappedDeepLink == mappedRoute

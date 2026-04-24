@@ -2,7 +2,6 @@
 
     <string name="app_name" translatable="false">Sagas</string>
     <string name="saga">Saga</string>
-    <string name="saga_title_hint">An epic name that suits you</string>
     <string name="start_saga">Ready to start your saga?</string>
     <string name="start_saga_subtitle">Start with your story\'s name.</string>
     <string name="saga_genre">What is the theme of your saga?</string>
@@ -23,10 +22,12 @@
     <string name="back_button_description">Back</string>
     <string name="lets_create_saga">Let\'s create your saga</string>
     <string name="lets_create_saga_subtitle">AI will help you bring everything to life; don\'t be shy with the details of your journey.</string>
+    <string name="generate_saga">Generate ✨</string>
     <string name="regenerate">Regenerate</string>
     <string name="save_changes">Save changes</string>
     <string name="next">Continue</string>
     <string name="user_action_title">Speak</string>
+    <string name="sender_type_user_title">You</string>
     <string name="sender_type_narrator_title">Narrate</string>
     <string name="sender_type_thought_title">Think</string>
     <string name="sender_type_action_title">Action</string>
@@ -153,7 +154,7 @@
     <string name="saga_drawer_act_prefix">Act %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
     <string name="saga_drawer_events_since_last_chapter">%d events in chapter.</string>
-    <string name="saga_detail_progress_title">Progress</string>
+    <string name="saga_detail_progress_title">Your journey</string>
     <string name="saga_detail_section_title_characters">Characters</string>
     <string name="saga_detail_section_subtitle_characters">%d characters</string>
     <string name="saga_detail_section_title_timeline">Events</string>
@@ -252,6 +253,7 @@
     <string name="smart_fix" translatable="false">Smart Fix</string>
 
     <string name="smart_fix_description">Receive automatic AI correction suggestions based on your story and theme. The suggestions help to enrich the vocabulary and add depth to the narrative.</string>
+    <string name="smart_fix_button">Enhance ✨</string>
     <string name="message_effects">Message Effects</string>
     <string name="message_effects_description">Bring your story to life with dynamic animations that reflect the mood of each moment</string>
     <string name="clear_data_button">Clear Data</string>
@@ -260,6 +262,8 @@
     <string name="clear_data_dialog_confirm">Yes, wipe everything</string>
     <string name="clear_data_dialog_cancel">No, keep my data</string>
     <string name="clear_cache">Clear cache</string>
+    <string name="clear_preferences">Clear Preferences</string>
+    <string name="clear_preferences_explanation">Reset all your preferences and onboarding progress. Useful for testing or starting fresh.</string>
     <string name="restore_purchases">Restore purchases</string>
     <string name="not_premium_title_label">Join</string>
     <string name="premium_label_title">You are</string>
@@ -349,7 +353,7 @@
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
     <string name="character_details_aka">aka: %s</string>
-    <string name="read_more">Read more...</string>
+    <string name="read_more" translatable="false">...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
     <string name="character_events">Character events</string>
     <!-- BackupViewModel: Status and Error Messages -->
@@ -430,7 +434,21 @@
     <!-- Settings Help Center -->
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
-    <string name="new_event_milestone_title">New event</string>
+    <!-- Narrative Milestones -->
+    <string name="advance_new_event">New Event</string>
+    <string name="releasing_event">Channeling the next event...</string>
+    <string name="advance_new_chapter">New Chapter</string>
+    <string name="releasing_chapter">Forging the next chapter...</string>
+    <string name="advance_new_chapter_introduction">Enter Chapter</string>
+    <string name="releasing_chapter_introduction">Turning the page...</string>
+    <string name="advance_new_act">New Act</string>
+    <string name="releasing_act">Opening the next Act...</string>
+    <string name="advance_new_act_introduction">Start Act</string>
+    <string name="releasing_act_introduction">The curtains are rising...</string>
+    <string name="advance_start_story">Start Story</string>
+    <string name="releasing_start_story">Setting the stage...</string>
+    <string name="advance_saga_ending">The End</string>
+    <string name="releasing_ending">Closing this Saga...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
@@ -539,4 +557,71 @@
     <string name="review_stage_journey_subtitle_default">The path we took</string>
     <string name="review_stage_conclusion_title">The Legacy</string>
     <string name="review_stage_conclusion_subtitle_default">What remains</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Continue</string>
+    <string name="onboarding_finish">Got it</string>
+    <string name="onboarding_creation_guide_finish">Start Creation</string>
+    <string name="onboarding_gameplay_guide_finish">Start Saga</string>
+    <string name="onboarding_app_intro_fallback_title">Welcome to Sagas</string>
+    <string name="onboarding_app_intro_fallback_description">Sagas is your personal AI co-author and Art Director. Dive into evolving stories across different genres, where your choices shape the world.</string>
+    <string name="onboarding_creation_guide_fallback_title">Creation Guide</string>
+    <string name="onboarding_creation_guide_fallback_description">The more you describe, the more unique and personal the saga becomes. Don\'t worry, you can always edit details later.</string>
+    <string name="onboarding_gameplay_guide_fallback_title">Gameplay Guide</string>
+    <string name="onboarding_gameplay_guide_fallback_description">Turn-based interaction: write your action, and the AI continues the narrative. Every decision matters!</string>
+    <string name="onboarding_premium_guide_fallback_title">Sagas Pro</string>
+    <string name="onboarding_premium_guide_fallback_description">Unlock the full power of AI with Sagas Pro. Higher resolution images, more complex storytelling, and unlimited adventures await.</string>
+
+    <!-- AI Audit Logs -->
+    <string name="audit_logs_title">AI Audit Logs</string>
+    <string name="audit_logs_all">All</string>
+    <string name="audit_logs_success">Success</string>
+    <string name="audit_logs_error">Error</string>
+    <string name="audit_logs_empty">No logs recorded yet.</string>
+    <string name="audit_logs_clear_dialog_title">Clear Audit Logs</string>
+    <string name="audit_logs_clear_dialog_message">Are you sure you want to delete all AI Audit Logs? This action cannot be undone.</string>
+    <string name="audit_logs_clear_button">Clear</string>
+    <string name="audit_logs_reasoning">Reasoning (Chain-of-Thought):</string>
+    <string name="audit_logs_raw_response">Raw Response:</string>
+    <string name="audit_logs_error_label">Error:</string>
+    <string name="story_guides">Story Guides</string>
+    <string name="story_guides_description">Show introductory guides when starting a new saga universe.</string>
+    <string name="onboarding_dont_show_again">Don\'t show again</string>
+    <string name="settings_music_title">Background Music</string>
+    <string name="settings_music_description">Play atmospheric music tailored to your saga genre for a more immersive experience.</string>
+    <string name="select_character">Select character</string>
+    <string name="thinking_message">Gemma is thinking...</string>
+    <string name="edit">edit</string>
+
+    <string name="message_save_error">An error occurred while saving the message.</string>
+    <string name="character_create_error">An error occurred while creating the character.</string>
+    <string name="the_legends">THE LEGENDS</string>
+
+    <!-- Chat Input Actions -->
+    <string name="chat_input_mention_character">Mention Character</string>
+    <string name="chat_input_mention_wiki">Mention Wiki</string>
+    <string name="chat_input_expand">Expand</string>
+    <string name="chat_input_fix">Fix</string>
+    <string name="chat_input_send">Send</string>
+    <string name="chat_input_focus_title">Write message</string>
+    <string name="chat_input_mention_characters_title">Characters</string>
+    <string name="chat_input_mention_wiki_title">Wiki</string>
+    <string name="chat_input_search_query">Searching \"%s\"</string>
+
+    <!-- Agentic UI -->
+    <string name="content_description_close">Close</string>
+    <string name="agentic_edit_saga_title">Edit Saga</string>
+    <string name="saga_title_label">Saga Title</string>
+    <string name="saga_title_hint">Give it an epic name</string>
+    <string name="description_label">Description</string>
+    <string name="agentic_edit_character_title">Edit Hero</string>
+    <string name="character_name_label">Character Name</string>
+    <string name="character_name_hint">How are they known?</string>
+    <string name="biography_label">Biography</string>
+    <string name="character_bio_hint">Describe their essence</string>
+
+    <!-- Errors -->
+    <string name="error_cosmic_interruption">Cosmic Interruption</string>
+    <string name="error_retry_align">Try Aligning Again</string>
 </resources>

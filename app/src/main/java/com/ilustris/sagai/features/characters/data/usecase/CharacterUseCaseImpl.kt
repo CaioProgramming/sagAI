@@ -1,11 +1,12 @@
 package com.ilustris.sagai.features.characters.data.usecase
 
 import android.content.Context
-import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -42,8 +43,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -63,6 +65,9 @@ class CharacterUseCaseImpl
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
         @param:ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
@@ -96,7 +101,6 @@ class CharacterUseCaseImpl
                             imageReference = null,
                             context =
                                 buildString {
-                                    appendLine("Character Context:")
                                     appendLine(
                                         character.toAINormalize(
                                             listOf(
@@ -106,29 +110,118 @@ class CharacterUseCaseImpl
                                                 "joinedAt",
                                                 "smartZoom",
                                                 "knowledge",
+                                                "firstSceneId",
+                                                "emojified",
+                                                "hexColor",
                                             ),
                                         ),
                                     )
                                 },
-                            imageType = ImageType.CHARACTER,
-                        ).getSuccess()!!
+                            imageType = ImageType.ICON,
+                            variationId = saga.variationId,
+                        )
+
+                if (image.isFailure) {
+                    throw image.error.value
+                }
 
                 val file =
-                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")!!
+                    fileHelper.saveFile(
+                        character.name,
+                        image.getSuccess(),
+                        path = "${saga.id}/characters/",
+                    )!!
                 val newCharacter =
                     character.copy(image = file.path)
                 repository.updateCharacter(newCharacter)
-                image.recycle()
 
-                withContext(Dispatchers.IO) {
-                    createSmartZoom(newCharacter)
-                }
                 newCharacter to ""
+            }
+
+        override suspend fun generateCharacterImageStream(
+            character: Character,
+            saga: Saga,
+        ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>> =
+            flow {
+                try {
+                    val contextString =
+                        buildString {
+                            appendLine(
+                                character.toAINormalize(
+                                    listOf(
+                                        "id",
+                                        "image",
+                                        "sagaId",
+                                        "joinedAt",
+                                        "smartZoom",
+                                        "knowledge",
+                                        "firstSceneId",
+                                        "emojified",
+                                        "hexColor",
+                                    ),
+                                ),
+                            )
+                        }
+
+                    imagenClient
+                        .generateIntegratedImageStream(
+                            genre = saga.genre,
+                            imageReference = null,
+                            context = contextString,
+                            imageType = ImageType.ICON,
+                            variationId = saga.variationId,
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Reasoning -> {
+                                    emit(
+                                        StreamingState
+                                            .Reasoning(state.chunk),
+                                    )
+                                }
+
+                                is StreamingState.Success -> {
+                                    val bitmap = state.data.data
+                                    val file =
+                                        fileHelper.saveFile(
+                                            character.name,
+                                            bitmap,
+                                            path = "${saga.id}/characters/",
+                                        ) ?: error("Failed to save generated image")
+
+                                    val newCharacter = character.copy(image = file.path)
+                                    repository.updateCharacter(newCharacter)
+
+                                    emit(
+                                        StreamingState.Success(
+                                            GeneratedContent(
+                                                newCharacter to state.data.finalMessage.orEmpty(),
+                                                state.data.finalMessage,
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(
+                                        StreamingState
+                                            .Error(state.message, state.throwable),
+                                    )
+                                }
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(
+                        StreamingState.Error(
+                            e.message ?: "Unknown error generating character image stream",
+                            e,
+                        ),
+                    )
+                }
             }
 
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
             executeRequest {
-                Log.i(javaClass.simpleName, "createSmartZoom: creating zoom for ${character.name}")
+                Timber.i("createSmartZoom: creating zoom for ${character.name}")
                 val smartZoom = imageSegmentationHelper.calculateSmartZoom(character.image).getSuccess()
                 val newCharacter =
                     character.copy(smartZoom = smartZoom ?: SmartZoom(needsZoom = false))
@@ -138,20 +231,28 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacter(
             sagaContent: SagaContent,
             description: String,
+            sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
         ): RequestResult<Character> =
             executeRequest {
                 val bannedNames = repository.getAllCharacterNames()
                 // Generate theme color first to pass to AI for appearance guidance
                 val themeColor = getRandomColorHex()
+                val config =
+                    genreConfigService.getGenreConfig(
+                        sagaContent.data.genre,
+                        sagaContent.data.variationId,
+                    )
                 val prompt =
                     CharacterPrompts.characterGeneration(
+                        promptService,
                         sagaContent,
+                        config,
                         description,
                         bannedNames,
                         themeColor,
+                        sceneSummary,
                     )
-                Log.d(
-                    javaClass.simpleName,
+                Timber.d(
                     "generateCharacter: Starting character generation with theme color $themeColor...",
                 )
                 val newCharacter =
@@ -164,6 +265,10 @@ class CharacterUseCaseImpl
                                 "image",
                                 "joinedAt",
                                 "sagaId",
+                                "smartZoom",
+                                "voice",
+                                "hexColor",
+                                "firstSceneId",
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
@@ -194,16 +299,110 @@ class CharacterUseCaseImpl
                 characterTransaction
             }
 
+        override suspend fun generateCharacterStream(
+            sagaContent: SagaContent,
+            description: String,
+            sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
+        ): Flow<StreamingState<GeneratedContent<Character>>> =
+            flow {
+                try {
+                    val bannedNames = repository.getAllCharacterNames()
+                    val themeColor = getRandomColorHex()
+                    val config =
+                        genreConfigService.getGenreConfig(
+                            sagaContent.data.genre,
+                            sagaContent.data.variationId,
+                        )
+                    val prompt =
+                        CharacterPrompts.characterGeneration(
+                            promptService,
+                            sagaContent,
+                            config,
+                            description,
+                            bannedNames,
+                            themeColor,
+                            sceneSummary,
+                        )
+
+                    gemmaClient
+                        .generateStreaming<GeneratedContent<Character>>(
+                            prompt,
+                            useCore = true,
+                            filterOutputFields =
+                                listOf(
+                                    "id",
+                                    "image",
+                                    "joinedAt",
+                                    "sagaId",
+                                    "smartZoom",
+                                    "voice",
+                                    "hexColor",
+                                    "firstSceneId",
+                                ),
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                        ).collect { state ->
+                            if (state is StreamingState.Success) {
+                                val newCharacter = state.data.data
+                                val character = sagaContent.findCharacter(newCharacter.name)
+                                if (character?.data?.fullName() == newCharacter.fullName()) {
+                                    emit(
+                                        StreamingState
+                                            .Error("Character already exists"),
+                                    )
+                                    return@collect
+                                }
+                                val characterTransaction =
+                                    insertCharacter(
+                                        newCharacter.copy(
+                                            id = 0,
+                                            sagaId = sagaContent.data.id,
+                                            firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
+                                            joinedAt = System.currentTimeMillis(),
+                                            image = emptyString(),
+                                            hexColor = themeColor,
+                                            smartZoom = null,
+                                        ),
+                                    )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    generateCharacterImage(characterTransaction, sagaContent.data)
+                                }
+                                emit(
+                                    StreamingState.Success(
+                                        GeneratedContent(
+                                            characterTransaction,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                emit(state)
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(
+                        StreamingState.Error(
+                            e.message ?: "Unknown error generating character",
+                            e,
+                        ),
+                    )
+                }
+            }
+
         override suspend fun generateCharactersUpdate(
             timeline: Timeline,
             saga: SagaContent,
         ): RequestResult<Unit> =
             executeRequest {
-                val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
+                val prompt =
+                    CharacterPrompts.characterLoreGeneration(
+                        promptService,
+                        timeline,
+                        saga.getCharacters(),
+                    )
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
                         prompt,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                         temperatureRandomness = .3f,
                     )!!
 
@@ -219,16 +418,14 @@ class CharacterUseCaseImpl
                                     ?.find { it.character.id == character?.data?.id }
 
                             if (characterEventOnThisTimeline != null) {
-                                Log.e(
-                                    javaClass.simpleName,
+                                Timber.e(
                                     "Character event already exists for this timeline(${timeline.id})",
                                 )
                                 return@mapNotNull null
                             }
 
                             if (character == null) {
-                                Log.e(
-                                    javaClass.simpleName,
+                                Timber.e(
                                     "generateCharactersUpdate: Couldn't find character ${it.characterName} on saga.",
                                 )
                             }
@@ -243,7 +440,7 @@ class CharacterUseCaseImpl
                                 )
                             }
                         }
-                Log.d(javaClass.simpleName, "Updating ${updatedCharacters.size} characters events.")
+                Timber.d("Updating ${updatedCharacters.size} characters events.")
                 eventsRepository.insertCharacterEvents(updatedCharacters).asSuccess()
             }
 
@@ -261,6 +458,7 @@ class CharacterUseCaseImpl
                     val charactersList = saga.getCharacters()
                     val prompt =
                         CharacterPrompts.findNickNames(
+                            promptService,
                             charactersList,
                             timelineContent.messages.map { it.message },
                             timelineContent.data,
@@ -271,16 +469,16 @@ class CharacterUseCaseImpl
                         gemmaClient
                             .generate<NickNameGen>(
                                 prompt,
-                                requirement = GemmaClient.ModelRequirement.MEDIUM,
+                                requirement = GemmaClient.ModelRequirement.LOW,
                             )!!
                             .suggestions
 
                     if (suggestions.isEmpty()) {
-                        Log.i(javaClass.simpleName, "No new nicknames found.")
+                        Timber.i("No new nicknames found.")
                         return@executeRequest
                     }
 
-                    Log.i(javaClass.simpleName, "Found ${suggestions.size} nickname suggestions.")
+                    Timber.i("Found ${suggestions.size} nickname suggestions.")
 
                     suggestions.forEach { suggestion ->
                         saga.findCharacter(suggestion.characterName)?.let { characterContent ->
@@ -294,15 +492,14 @@ class CharacterUseCaseImpl
                                         nicknames = (newNicknames).distinct(),
                                     )
                                 updateCharacter(updatedCharacter)
-                                Log.i(
-                                    javaClass.simpleName,
+                                Timber.i(
                                     "Updated character ${updatedCharacter.name} with new nicknames: $newNicknames",
                                 )
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "Error suggesting nicknames: ${e.message}")
+                    Timber.e(e, "Error suggesting nicknames: ${e.message}")
                     e.printStackTrace()
                 }
             }
@@ -312,13 +509,22 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<String> =
             executeRequest {
-                if (character.events.isEmpty()) {
+                if (character.events.size < 2) {
                     return@executeRequest character.data.backstory
                 }
-                val prompt = CharacterPrompts.characterResume(character, saga)
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
+                val prompt =
+                    CharacterPrompts.characterResume(
+                        promptService,
+                        promptService.getPromptDirectives(),
+                        character,
+                        saga,
+                        config,
+                    )
                 gemmaClient.generate<String>(
                     prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
             }
 
@@ -330,16 +536,16 @@ class CharacterUseCaseImpl
                 val characters = saga.getCharacters()
                 if (characters.isEmpty()) return@executeRequest
 
-                val prompt = CharacterPrompts.knowledgeUpdatePrompt(timeline, characters)
+                val prompt =
+                    CharacterPrompts.knowledgeUpdatePrompt(promptService, timeline, characters)
                 val result =
                     gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                     )
 
                 if (result?.updates?.isNotEmpty() == true) {
-                    Log.i(
-                        javaClass.simpleName,
+                    Timber.i(
                         "Updating knowledge for ${result.updates.size} characters.",
                     )
                     result.updates.forEach { update ->
@@ -358,18 +564,22 @@ class CharacterUseCaseImpl
                                 val updatedChar =
                                     charContent.data.copy(knowledge = currentKnowledge)
                                 updateCharacter(updatedChar)
-                                Log.d(
-                                    javaClass.simpleName,
+                                Timber.d(
                                     "Added ${newFacts.size} facts to ${update.characterName}",
                                 )
                             }
                         }
                     }
                 } else {
-                    Log.d(
-                        javaClass.simpleName,
+                    Timber.d(
                         "No new knowledge extracted from this timeline event.",
                     )
                 }
             }
+
+        override suspend fun insertCharacterEvent(characterEvent: CharacterEvent): CharacterEvent =
+            eventsRepository.insertCharacterEvent(characterEvent)
+
+        override suspend fun insertCharacterEvents(characterEvents: List<CharacterEvent>) =
+            eventsRepository.insertCharacterEvents(characterEvents)
     }

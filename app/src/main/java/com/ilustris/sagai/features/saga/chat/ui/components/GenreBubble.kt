@@ -1,31 +1,37 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.chat.CowboysChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.PunkRockChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
 
-fun Genre.bubble(
+@Composable
+fun Genre?.bubble(
     tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
     tailWidth: Dp = 8.dp,
     tailHeight: Dp = 8.dp,
     isNarrator: Boolean = false,
+    visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
 ): Shape {
-    val cornerSize = cornerSize()
+    val cornerSize = cornerSize(visualConfig)
     val tailW = if (isNarrator) 0.dp else tailWidth
     val tailH = if (isNarrator) 0.dp else tailHeight
+    if (this == null) return MaterialTheme.shapes.medium
     return when (this) {
         Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
@@ -37,26 +43,40 @@ fun Genre.bubble(
         }
 
         Genre.HEROES -> {
-            HeroesChatBubbleShape(
-                tailAlignment = tailAlignment,
-                tailWidth = tailW,
-                tailHeight = tailH,
-            )
+            if (isNarrator) {
+                RoundedCornerShape(cornerSize)
+            } else {
+                when (tailAlignment) {
+                    BubbleTailAlignment.BottomLeft -> {
+                        RoundedCornerShape(
+                            topStart = cornerSize.plus(5.dp),
+                            topEnd = cornerSize.plus(5.dp),
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp,
+                        )
+                    }
+
+                    BubbleTailAlignment.BottomRight -> {
+                        RoundedCornerShape(
+                            topStart = cornerSize.plus(5.dp),
+                            topEnd = cornerSize.plus(5.dp),
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp,
+                        )
+                    }
+                }
+            }
         }
 
         Genre.SHINOBI -> {
-            ShinobiChatBubbleShape(
-                cornerRadius = cornerSize,
-                tailAlignment = tailAlignment,
-                tailWidth = tailW,
-                tailHeight = tailH,
-            )
+            RoundedCornerShape(cornerSize)
         }
 
         Genre.HORROR -> {
             HorrorChatBubbleShape(
                 pixelSize = cornerSize,
                 tailAlignment = tailAlignment,
+                drawTail = false,
             )
         }
 

@@ -1,23 +1,30 @@
 package com.ilustris.sagai.features.timeline.domain
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.LorePrompts
+import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import timber.log.Timber
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class TimelineUseCaseImpl
     @Inject
@@ -26,74 +33,326 @@ class TimelineUseCaseImpl
         private val emotionalUseCase: EmotionalUseCase,
         private val wikiUseCase: WikiUseCase,
         private val characterUseCase: CharacterUseCase,
+        private val characterRelationUseCase: com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase,
         private val gemmaClient: GemmaClient,
+        private val promptService: PromptService,
+        private val remoteConfigService: RemoteConfigService,
+        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
     ) : TimelineUseCase {
         override suspend fun getAllTimelines() = timelineRepository.getAllTimelines()
 
         override suspend fun getTimeline(id: String) = timelineRepository.getTimeline(id)
 
+        override suspend fun generateFullLoreUpdate(
+            saga: SagaContent,
+            timelineContent: TimelineContent,
+        ) = executeRequest {
+            val narrativeRules =
+                remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+            val prompt =
+                TimelinePrompts.generateUnifiedLorePrompt(
+                    promptService = promptService,
+                    narrativeRules = narrativeRules,
+                    sagaContent = saga,
+                    currentTimeline = timelineContent,
+                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                )
+
+            val unifiedLore =
+                gemmaClient.generate<UnifiedLoreUpdate>(
+                    prompt = prompt,
+                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                )!!
+
+            updateTimeline(
+                timelineContent.data.copy(
+                    title = unifiedLore.title,
+                    content = unifiedLore.content,
+                    emotionalReview = unifiedLore.emotionalReview,
+                ),
+            )
+
+            // 2. Save Wiki Updates
+            unifiedLore.wikiUpdates.forEach { wikiUpdate ->
+                val existingWiki = saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                val wikiToSave =
+                    Wiki(
+                        id = existingWiki?.id ?: 0,
+                        title = wikiUpdate.title,
+                        content = wikiUpdate.content,
+                        type = wikiUpdate.type,
+                        emojiTag = wikiUpdate.emojiTag,
+                        sagaId = saga.data.id,
+                        timelineId = timelineContent.data.id,
+                    )
+                if (existingWiki != null) {
+                    wikiUseCase.updateWiki(wikiToSave)
+                } else {
+                    wikiUseCase.saveWiki(wikiToSave)
+                }
+            }
+
+            // 3. Save Character Events
+            unifiedLore.characterEvents.forEach { charEvent ->
+                val character =
+                    saga.characters.find { it.data.name.equals(charEvent.characterName, true) }?.data
+                character?.let {
+                    characterUseCase.insertCharacterEvent(
+                        CharacterEvent(
+                            characterId = it.id,
+                            gameTimelineId = timelineContent.data.id,
+                            title = charEvent.title,
+                            summary = charEvent.summary,
+                        ),
+                    )
+                }
+            }
+
+            // 4. Save Relationship Updates
+            unifiedLore.relationshipUpdates.forEach { relUpdate ->
+                characterRelationUseCase.updateRelation(
+                    saga = saga,
+                    timelineId = timelineContent.data.id,
+                    firstCharacterName = relUpdate.characterOne,
+                    secondCharacterName = relUpdate.characterTwo,
+                    title = relUpdate.title,
+                    description = relUpdate.description,
+                    emoji = relUpdate.emoji,
+                )
+            }
+        }
+
+        override fun generateFullLoreUpdateStream(
+            saga: SagaContent,
+            timelineContent: TimelineContent,
+        ) = flow {
+            try {
+                val narrativeRules =
+                    remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                val prompt =
+                    TimelinePrompts.generateUnifiedLorePrompt(
+                        promptService = promptService,
+                        narrativeRules = narrativeRules,
+                        sagaContent = saga,
+                        currentTimeline = timelineContent,
+                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    )
+
+                gemmaClient
+                    .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
+                        prompt = prompt,
+                        blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                    ).collect { state ->
+                        when (state) {
+                            is StreamingState.Success -> {
+                                val unifiedLore = state.data.data
+
+                                // 1. Update Timeline Details
+                                val timelineUpdate =
+                                    updateTimeline(
+                                        timelineContent.data.copy(
+                                            title = unifiedLore.title,
+                                            content = unifiedLore.content,
+                                            emotionalReview = unifiedLore.emotionalReview,
+                                        ),
+                                    )
+
+                                // 2. Save Wiki Updates
+                                unifiedLore.wikiUpdates.forEach { wikiUpdate ->
+                                    val existingWiki =
+                                        saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                                    val wikiToSave =
+                                        Wiki(
+                                            id = existingWiki?.id ?: 0,
+                                            title = wikiUpdate.title,
+                                            content = wikiUpdate.content,
+                                            type = wikiUpdate.type,
+                                            emojiTag = wikiUpdate.emojiTag,
+                                            sagaId = saga.data.id,
+                                            timelineId = timelineContent.data.id,
+                                        )
+                                    if (existingWiki != null) {
+                                        wikiUseCase.updateWiki(wikiToSave)
+                                    } else {
+                                        wikiUseCase.saveWiki(wikiToSave)
+                                    }
+                                }
+
+                                // 3. Save Character Events
+                                unifiedLore.characterEvents.forEach { charEvent ->
+                                    val character =
+                                        saga.characters
+                                            .find {
+                                                it.data.name.equals(
+                                                    charEvent.characterName,
+                                                    true,
+                                                )
+                                            }?.data
+                                    character?.let {
+                                        characterUseCase.insertCharacterEvent(
+                                            CharacterEvent(
+                                                characterId = it.id,
+                                                gameTimelineId = timelineContent.data.id,
+                                                title = charEvent.title,
+                                                summary = charEvent.summary,
+                                            ),
+                                        )
+                                    }
+                                }
+
+                                // 4. Save Relationship Updates
+                                unifiedLore.relationshipUpdates.forEach { relUpdate ->
+                                    characterRelationUseCase.updateRelation(
+                                        saga = saga,
+                                        timelineId = timelineContent.data.id,
+                                        firstCharacterName = relUpdate.characterOne,
+                                        secondCharacterName = relUpdate.characterTwo,
+                                        title = relUpdate.title,
+                                        description = relUpdate.description,
+                                        emoji = relUpdate.emoji,
+                                    )
+                                }
+
+                                emit(
+                                    StreamingState.Success(
+                                        GeneratedContent(
+                                            timelineUpdate,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is StreamingState.Error -> {
+                                emit(
+                                    StreamingState.Error(
+                                        state.message,
+                                    ),
+                                )
+                            }
+
+                            is StreamingState.Reasoning -> {
+                                emit(
+                                    StreamingState.Reasoning(
+                                        state.chunk,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                emit(
+                    StreamingState
+                        .Error(e.message ?: "Unknown error"),
+                )
+            }
+        }
+
         override suspend fun generateTimeline(
             saga: SagaContent,
             currentTimeline: TimelineContent,
         ) = executeRequest {
+            val narrativeRules =
+                remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
             val newLore =
                 gemmaClient
                     .generate<Timeline>(
-                        LorePrompts.loreGeneration(
-                            saga,
-                            currentTimeline,
+                        TimelinePrompts.generateTimelinePrompt(
+                            promptService = promptService,
+                            narrativeRules = narrativeRules,
+                            sagaContent = saga,
+                            currentTimeline = currentTimeline,
+                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                         ),
-                        filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "chapterId",
+                                "createdAt",
+                                "currentObjective",
+                            ),
                         useCore = true,
                     )!!
 
-            val timelineUpdate =
-                updateTimeline(
-                    currentTimeline.data.copy(
-                        title = newLore.title,
-                        content = newLore.content,
-                    ),
-                )
-
-            generateEmotionalReview(
-                saga,
-                currentTimeline.copy(
-                    data = timelineUpdate,
-                ),
-            ).getSuccess()!!
-        }
-
-        override suspend fun generateEmotionalReview(
-            saga: SagaContent,
-            content: TimelineContent,
-        ) = executeRequest {
-            val review =
-                emotionalUseCase.generateEmotionalReview(
-                    saga,
-                    buildString {
-                        appendLine("Emotional tone ranking:")
-                        appendLine(content.emotionalRanking(saga.mainCharacter?.data))
-                        appendLine("Current messages:")
-                        appendLine("Consider player interaction with the world and NPCs")
-                        appendLine(
-                            content.messages.map { it.message }.normalizetoAIItems(
-                                listOf(
-                                    "id",
-                                    "timelineId",
-                                    "characterId",
-                                    "timestamp",
-                                    "status",
-                                ),
-                            ),
-                        )
-                    },
-                )
-
             updateTimeline(
-                content.data.copy(
-                    emotionalReview = review.getSuccess(),
+                currentTimeline.data.copy(
+                    title = newLore.title,
+                    content = newLore.content,
+                    emotionalReview = newLore.emotionalReview,
                 ),
             )
+        }
+
+        override fun generateTimelineStream(
+            saga: SagaContent,
+            currentTimeline: TimelineContent,
+        ) = flow {
+            try {
+                val narrativeRules =
+                    remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                gemmaClient
+                    .generateStreaming<GeneratedContent<Timeline>>(
+                        prompt =
+                            TimelinePrompts.generateTimelinePrompt(
+                                promptService = promptService,
+                                narrativeRules = narrativeRules,
+                                sagaContent = saga,
+                                currentTimeline = currentTimeline,
+                                conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                            ),
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "chapterId",
+                                "createdAt",
+                                "currentObjective",
+                            ),
+                        useCore = true,
+                    ).collect { state ->
+                        when (state) {
+                            is StreamingState.Success -> {
+                                val newLore = state.data.data
+                                val updatedTimeline =
+                                    updateTimeline(
+                                        currentTimeline.data.copy(
+                                            title = newLore.title,
+                                            content = newLore.content,
+                                            emotionalReview = newLore.emotionalReview,
+                                        ),
+                                    )
+                                emit(
+                                    StreamingState.Success(
+                                        GeneratedContent(
+                                            updatedTimeline,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            }
+
+                            is StreamingState.Error -> {
+                                emit(
+                                    StreamingState.Error(
+                                        state.message,
+                                    ),
+                                )
+                            }
+
+                            is StreamingState.Reasoning -> {
+                                emit(
+                                    StreamingState.Reasoning(
+                                        state.chunk,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                emit(
+                    StreamingState
+                        .Error(e.message ?: "Unknown error"),
+                )
+            }
         }
 
         override suspend fun saveTimeline(timeline: Timeline) = timelineRepository.saveTimeline(timeline)
@@ -113,7 +372,9 @@ class TimelineUseCaseImpl
         ) = executeRequest {
             val objectivePrompt =
                 ChatPrompts.sceneSummarizationPrompt(
-                    saga,
+                    promptService = promptService,
+                    saga = saga,
+                    remoteConfigService.getNarrativeRules(),
                 )
             val summary =
                 gemmaClient
@@ -135,41 +396,7 @@ class TimelineUseCaseImpl
             timelineContent: TimelineContent,
         ): RequestResult<Unit> =
             executeRequest {
-                if (timelineContent.data.emotionalReview.isNullOrEmpty()) {
-                    generateEmotionalReview(
-                        saga,
-                        timelineContent,
-                    )
-                    delay(5.seconds)
-                } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateTimelineContent: Emotional Review Already created",
-                    )
-                }
-                if (timelineContent.characterEventDetails.isEmpty() ||
-                    timelineContent.updatedRelationshipDetails.isEmpty()
-                ) {
-                    updateCharacters(timelineContent.data, saga)
-                    delay(5.seconds)
-                } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateTimelineContent: Characters already updated on this event",
-                    )
-                }
-
-                if (timelineContent.updatedWikis.isEmpty()) {
-                    updateWikis(
-                        timelineContent.data,
-                        saga,
-                    )
-                } else {
-                    Log.w(
-                        javaClass.simpleName,
-                        "generateTimelineContent: Wikis already updated on this event",
-                    )
-                }
+                generateFullLoreUpdate(saga, timelineContent).getSuccess()!!
             }
 
         private suspend fun updateWikis(
@@ -177,7 +404,7 @@ class TimelineUseCaseImpl
             saga: SagaContent,
         ) = executeRequest {
             val wikisToUpdateOrAdd = wikiUseCase.generateWiki(saga, timeline).getSuccess()!!
-            Log.d(javaClass.simpleName, "updateWikis: Updating wikis $wikisToUpdateOrAdd")
+            Timber.d("updateWikis: Updating wikis $wikisToUpdateOrAdd")
             wikisToUpdateOrAdd.forEach { generatedWiki ->
                 val existingWiki =
                     saga.wikis.find { wiki ->
@@ -190,10 +417,7 @@ class TimelineUseCaseImpl
                             )
                     }
                 if (existingWiki != null) {
-                    Log.d(
-                        javaClass.simpleName,
-                        "Updating existing wiki: ${existingWiki.title} (ID: ${existingWiki.id}) for saga ${saga.data.id}",
-                    )
+                    Timber.d("Updating existing wiki: ${existingWiki.title} (ID: ${existingWiki.id}) for saga ${saga.data.id}")
                     wikiUseCase.updateWiki(
                         generatedWiki.copy(
                             id = existingWiki.id,
@@ -202,10 +426,7 @@ class TimelineUseCaseImpl
                         ),
                     )
                 } else {
-                    Log.d(
-                        javaClass.simpleName,
-                        "Saving new wiki: ${generatedWiki.title} for saga ${saga.data.id}",
-                    )
+                    Timber.d("Saving new wiki: ${generatedWiki.title} for saga ${saga.data.id}")
                     wikiUseCase.saveWiki(
                         generatedWiki.copy(
                             sagaId = saga.data.id,
@@ -215,10 +436,7 @@ class TimelineUseCaseImpl
                 }
             }
             if (wikisToUpdateOrAdd.isEmpty()) {
-                Log.i(
-                    javaClass.simpleName,
-                    "updateWikis: No wiki updates generated for recnt events in saga ${saga.data.id}.",
-                )
+                Timber.i("updateWikis: No wiki updates generated for recnt events in saga ${saga.data.id}.")
             }
         }
 

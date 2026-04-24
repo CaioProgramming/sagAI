@@ -41,8 +41,7 @@ import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 fun EmotionalToneAnimationsPreview() {
     var globalAnimationTrigger by remember { mutableStateOf(false) }
     var selectedTone by remember { mutableStateOf<EmotionalTone?>(null) }
-    val bubbleShape =
-        remember { Genre.entries.random().bubble(BubbleTailAlignment.entries.random()) }
+    val bubbleShape = Genre.entries.random().bubble(BubbleTailAlignment.entries.random())
 
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
         val (grid, button) = createRefs()

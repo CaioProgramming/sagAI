@@ -22,13 +22,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
@@ -44,6 +46,8 @@ class ReviewSummaryPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
+        val resolvedColor = genre.resolveColor()
+        val resolvedIconColor = genre.resolveIconColor()
         val review = content.data.review ?: return
 
         val stageTypes =
@@ -145,8 +149,8 @@ class ReviewSummaryPage(
                                 MaterialTheme.colorScheme.onSurface,
                             ),
                             Triple(
-                                genre.color,
-                                genre.iconColor,
+                                resolvedColor,
+                                resolvedIconColor,
                                 MaterialTheme.colorScheme.background,
                             ),
                             Triple(
@@ -156,7 +160,7 @@ class ReviewSummaryPage(
                             ),
                             Triple(
                                 genre.colorPalette().last(),
-                                genre.iconColor,
+                                resolvedIconColor,
                                 MaterialTheme.colorScheme.onBackground,
                             ),
                         ).random()
@@ -186,8 +190,7 @@ class ReviewSummaryPage(
                                 .background(
                                     colorCombo.first,
                                     genre.bubble(isNarrator = true),
-                                )
-                                .clickable {
+                                ).clickable {
                                     onAction(ReviewAction.Navigate(stage))
                                 },
                     )
@@ -202,7 +205,7 @@ class ReviewSummaryPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.color,
+                            contentColor = resolvedColor,
                         ),
                 ) {
                     Text(stringResource(id = R.string.review_restart_button))

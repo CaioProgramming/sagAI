@@ -3,6 +3,7 @@ package com.ilustris.sagai.ui.theme
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -155,15 +156,17 @@ fun SimpleTypewriterText(
         label = "typewriterAnimation",
     )
 
-    LaunchedEffect(Unit) {
-        if (textTarget == 0 && isAnimated) {
+    LaunchedEffect(text) {
+        textTarget = 0
+        if (isAnimated) {
             textTarget = text.length
         } else {
             textTarget = text.length
             onTextUpdate(text)
         }
     }
-    val currentText = if (isAnimated) text.substring(0, charIndex) else text
+    val currentText =
+        if (isAnimated) text.substring(0, charIndex.coerceAtMost(text.length)) else text
 
     LaunchedEffect(charIndex) {
         onTextUpdate(text.substring(0, charIndex))
@@ -441,11 +444,64 @@ fun Modifier.zoomAnimation(): Modifier {
     )
 
     return this
+        .clipToBounds()
         .graphicsLayer(
             scaleX = scale,
             scaleY = scale,
             transformOrigin = TransformOrigin.Center,
-        ).clipToBounds()
+        )
+}
+
+@Composable
+fun Modifier.divineAura(
+    isPlaying: Boolean = true,
+    color: Color = Color(0xFFFFD700),
+    duration: Duration = 3.seconds,
+): Modifier {
+    if (!isPlaying) return this
+    val infiniteTransition = rememberInfiniteTransition(label = "divineAura")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.4f,
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    tween(
+                        duration.toInt(DurationUnit.MILLISECONDS),
+                        easing = FastOutSlowInEasing,
+                    ),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "divineAuraScale",
+    )
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.6f,
+        animationSpec =
+            infiniteRepeatable(
+                animation =
+                    tween(
+                        duration.toInt(DurationUnit.MILLISECONDS),
+                        easing = FastOutSlowInEasing,
+                    ),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "divineAuraAlpha",
+    )
+
+    return this.drawBehind {
+        drawCircle(
+            color = color.copy(alpha = alpha),
+            radius = (size.maxDimension / 2) * scale,
+            center = center,
+            style = Stroke(width = 4.dp.toPx()),
+        )
+        drawCircle(
+            color = color.copy(alpha = alpha / 2),
+            radius = (size.maxDimension / 2) * (scale + 0.2f),
+            center = center,
+        )
+    }
 }
 
 @Preview(showBackground = true)

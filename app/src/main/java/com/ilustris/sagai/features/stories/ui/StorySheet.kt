@@ -37,23 +37,25 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.ui.SagaBriefing
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 import kotlinx.coroutines.launch
 
-
 @OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalSharedTransitionApi::class
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalSharedTransitionApi::class,
 )
 @Composable
 fun StorySheet(
@@ -65,21 +67,23 @@ fun StorySheet(
     var scale by remember { mutableFloatStateOf(1f) }
     val coroutineScope = rememberCoroutineScope()
 
-
     sagaBriefing?.let {
         val sagaContent = sagaBriefing.saga
         val genre = sagaContent.data.genre
+        val resolvedColor = genre.resolveColor()
+        val resolvedIconColor = genre.resolveIconColor()
 
         ModalBottomSheet(
             onDismissRequest = { onDismiss() },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.background,
             dragHandle = { Box {} },
-            shape = genre.shape()
+            shape = genre.shape(),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
             ) {
                 val segmentationPair = sagaBriefing.segmentationPair
                 val deepEffectAvailable = segmentationPair != null
@@ -91,18 +95,20 @@ fun StorySheet(
                                     it.first,
                                     it.second,
                                     modifier = Modifier.fillMaxSize(),
-                                    imageModifier = Modifier
-                                        .selectiveColorHighlight(genre.selectiveHighlight())
-                                        .effectForGenre(genre)
+                                    imageModifier =
+                                        Modifier
+                                            .selectiveColorHighlight(genre.selectiveHighlight())
+                                            .effectForGenre(genre),
                                 ) {
                                     genre.stylisedText(
                                         sagaContent.data.title,
                                         fontSize = MaterialTheme.typography.displaySmall.fontSize,
-                                        modifier = Modifier
-                                            .align(Alignment.TopCenter)
-                                            .offset(y = 100.dp)
-                                            .reactiveShimmer(true)
-                                            .padding(4.dp)
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.TopCenter)
+                                                .offset(y = 100.dp)
+                                                .reactiveShimmer(true)
+                                                .padding(4.dp),
                                     )
                                 }
                             }
@@ -112,59 +118,65 @@ fun StorySheet(
                             model = sagaBriefing.saga.data.icon,
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale
-                                )
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer(
+                                        scaleX = scale,
+                                        scaleY = scale,
+                                    ),
                         )
                     }
                 }
 
-
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            fadedGradientTopAndBottom(genre.color)
-                        )
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                fadedGradientTopAndBottom(resolvedColor),
+                            ),
                 )
 
                 val pagerState = rememberPagerState { 2 }
                 Column(
                     modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     StoryIndicator(
                         pagerState = pagerState,
                         pageCount = 2,
                         sagaTitle = sagaContent.data.title,
                         genre = sagaContent.data.genre,
-                        modifier = Modifier.padding(top = 16.dp)
+                        modifier = Modifier.padding(top = 16.dp),
                     )
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
                     ) { page ->
                         when (page) {
-                            0 -> StoryPage(
-                                title = stringResource(
-                                    R.string.story_sheet_title_previously_on,
-                                    sagaContent.data.title
-                                ),
-                                content = sagaBriefing.briefing.summary,
-                                genre
-                            )
+                            0 -> {
+                                StoryPage(
+                                    title =
+                                        stringResource(
+                                            R.string.story_sheet_title_previously_on,
+                                            sagaContent.data.title,
+                                        ),
+                                    content = sagaBriefing.briefing.summary,
+                                    genre,
+                                )
+                            }
 
-                            1 -> StoryPage(
-                                title = stringResource(R.string.story_sheet_title_history_continues),
-                                content = sagaBriefing.briefing.hook,
-                                genre
-
-                            )
+                            1 -> {
+                                StoryPage(
+                                    title = stringResource(R.string.story_sheet_title_history_continues),
+                                    content = sagaBriefing.briefing.hook,
+                                    genre,
+                                )
+                            }
                         }
                     }
                     Button(
@@ -173,13 +185,15 @@ fun StorySheet(
                                 onContinue()
                             }
                         },
-                        modifier = Modifier
-                            .reactiveShimmer(true, genre.shimmerColors())
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = genre.iconColor
-                        )
+                        modifier =
+                            Modifier
+                                .reactiveShimmer(true, genre.shimmerColors())
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = resolvedIconColor,
+                            ),
                     ) {
                         Text(text = stringResource(R.string.story_sheet_button_continue_saga))
                     }
@@ -187,32 +201,37 @@ fun StorySheet(
             }
         }
     }
-
 }
 
 @Composable
-fun StoryPage(title: String, content: String, genre: Genre) {
+fun StoryPage(
+    title: String,
+    content: String,
+    genre: Genre,
+) {
+    val resolvedIconColor = genre.resolveIconColor()
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
             fontFamily = genre.headerFont(),
-            color = genre.iconColor,
+            color = resolvedIconColor,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
         )
         Text(
             text = content,
             style = MaterialTheme.typography.bodyLarge,
             fontFamily = genre.bodyFont(),
-            color = genre.iconColor,
-            textAlign = TextAlign.Start
+            color = resolvedIconColor,
+            textAlign = TextAlign.Start,
         )
     }
 }

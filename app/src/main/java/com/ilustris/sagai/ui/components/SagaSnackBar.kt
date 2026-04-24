@@ -184,8 +184,11 @@ class SnackActionBuilder {
         action = SnackAction.OpenDetails(data)
     }
 
-    fun retryCharacter(description: String) {
-        action = SnackAction.RetryCharacter(description)
+    fun retryCharacter(
+        description: String,
+        message: Message,
+    ) {
+        action = SnackAction.RetryCharacter(description, message)
     }
 
     fun revaluateSaga() {
@@ -225,6 +228,7 @@ sealed class SnackAction(
 
     data class RetryCharacter(
         val description: String,
+        val message: Message,
     ) : SnackAction(R.string.try_again)
 
     data object RevaluateSaga : SnackAction(R.string.try_again)

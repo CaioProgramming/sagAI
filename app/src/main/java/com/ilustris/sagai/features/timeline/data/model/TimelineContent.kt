@@ -1,19 +1,17 @@
 package com.ilustris.sagai.features.timeline.data.model
 
 import androidx.room.Embedded
-import androidx.room.Junction // Import Junction
+import androidx.room.Junction
 import androidx.room.Relation
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.features.characters.data.model.Character // Already imported
+import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
-// Import RelationshipContent and RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class TimelineContent(
@@ -56,10 +54,10 @@ data class TimelineContent(
     )
     val newlyAppearedCharacters: List<Character> = emptyList(),
 ) {
-    fun isFull(): Boolean = messages.size >= UpdateRules.LORE_UPDATE_LIMIT
+    fun isFull(loreLimit: Int): Boolean = messages.size >= loreLimit
 
-    fun isComplete(): Boolean =
-        isFull() &&
+    fun isComplete(narrativeRules: NarrativeRules): Boolean =
+        isFull(narrativeRules.loreUpdateLimit) &&
             data.title.isNotEmpty() &&
             data.content.isNotEmpty()
 
@@ -71,12 +69,15 @@ data class TimelineContent(
             updatedRelationshipDetails.isEmpty() ||
             updatedWikis.isEmpty()
 
-    fun emotionalRanking(mainCharacter: Character?) =
+    fun emotionalRanking() =
         messages
-            .filter {
-                it.message.senderType == SenderType.USER || it.message.characterId == mainCharacter?.id
-            }.groupBy { it.message.emotionalTone.toString() }
-            .mapValues { entry -> entry.value.size }
+            .filter { it.message.emotionalTone != null }
+            .groupBy { it.message.emotionalTone }
+            .mapNotNull {
+                it.key to it.value.size
+            }.sortedBy {
+                it.second
+            }
 
     fun statsSummary() =
         buildList {

@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.wiki.data.usecase
 
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.WikiPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -12,12 +12,15 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGen
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import javax.inject.Inject
+import timber.log.Timber
 
 class WikiUseCaseImpl
     @Inject
     constructor(
         private val wikiRepository: WikiRepository,
         private val gemmaClient: GemmaClient,
+        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        private val genreConfigService: GenreConfigService,
     ) : WikiUseCase {
         override suspend fun saveWiki(wiki: Wiki) = wikiRepository.insertWiki(wiki)
 
@@ -35,12 +38,15 @@ class WikiUseCaseImpl
             sagaContent: SagaContent,
             event: Timeline,
         ) = executeRequest {
+            val genreConfig = genreConfigService.getGenreConfig(sagaContent.data.genre)
             gemmaClient
                 .generate<WikiGen>(
                     prompt =
                         WikiPrompts.generateWiki(
+                            promptService = promptService,
                             saga = sagaContent,
                             event = event,
+                            config = genreConfig,
                         ),
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
@@ -54,7 +60,8 @@ class WikiUseCaseImpl
             executeRequest {
                 val prompt =
                     WikiPrompts.mergeWiki(
-                        wikiContents,
+                        promptService = promptService,
+                        wikis = wikiContents,
                     )
 
                 val mergedWikis =
@@ -69,10 +76,7 @@ class WikiUseCaseImpl
                     mergedWikis.filter { mergedItem ->
                         // Skip items with no merge candidate (secondItem is null or empty)
                         if (mergedItem.secondItem.isNullOrBlank()) {
-                            Log.d(
-                                javaClass.simpleName,
-                                "Skipping item with no merge candidate: ${mergedItem.firstItem}",
-                            )
+                            Timber.d("Skipping item with no merge candidate: ${mergedItem.firstItem}")
                             return@filter false
                         }
 
@@ -109,6 +113,6 @@ class WikiUseCaseImpl
                     }
                 }
 
-                Log.d(javaClass.simpleName, "mergeWikis: Updated ${validItems.size} items")
+                Timber.d("mergeWikis: Updated ${validItems.size} items")
             }
     }

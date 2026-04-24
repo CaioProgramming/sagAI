@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.chapter.data.repository
 
-import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.utils.toJsonFormat
+import timber.log.Timber
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import java.util.Calendar
@@ -24,7 +24,7 @@ class ChapterRepositoryImpl
             )
 
         override suspend fun updateChapter(chapter: Chapter): Chapter {
-            Log.i(javaClass.simpleName, "updateChapter: Updating to ->\n${chapter.toJsonFormat()}")
+            Timber.i("updateChapter: Updating to ->\n${chapter.toJsonFormat()}")
             chapterDao.updateChapter(chapter)
             return chapter
         }

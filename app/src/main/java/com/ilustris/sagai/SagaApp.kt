@@ -12,6 +12,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -26,9 +27,11 @@ class SagaApp :
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
         fetchRemoteConfig()
         NotificationUtils.createChatNotificationChannel(this)
-        NotificationUtils.createMediaNotificationChannel(this)
         CoroutineScope(Dispatchers.IO).launch {
             billingService.checkPurchases()
         }

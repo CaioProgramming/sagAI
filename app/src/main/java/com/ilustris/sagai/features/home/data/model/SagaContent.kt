@@ -1,11 +1,9 @@
 package com.ilustris.sagai.features.home.data.model
 
 import android.icu.util.Calendar
-import android.util.Log
 import androidx.room.Embedded
 import androidx.room.Relation
-import com.ilustris.sagai.core.narrative.ActDirectives
-import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -58,16 +56,27 @@ data class SagaContent(
     )
     val relationships: List<RelationshipContent> = emptyList(),
 ) {
-    fun isFull(): Boolean = acts.count { it.isComplete() } == UpdateRules.MAX_ACTS_LIMIT
+    fun isFull(rules: NarrativeRules): Boolean = acts.count { it.isComplete(rules) } == rules.actUpdateLimit
 
-    fun isComplete(): Boolean = isFull() && data.endMessage.isNotEmpty()
+    fun isComplete(rules: NarrativeRules): Boolean = isFull(rules) && data.endMessage.isNotEmpty()
 
     fun chaptersSize() = acts.sumOf { it.chapters.size }
 
     fun eventsSize() = acts.sumOf { it.chapters.sumOf { it.events.size } }
 
     fun messagesSize() = acts.sumOf { it.chapters.sumOf { it.events.sumOf { it.messages.size } } }
+
+    fun completedChapters(narrativeRules: NarrativeRules) = flatChapters().count { it.isComplete(narrativeRules) }
+
+    fun completedActs(narrativeRules: NarrativeRules) = acts.count { it.isComplete(narrativeRules) }
+
+    fun completedEvents(narrativeRules: NarrativeRules) = flatEvents().count { it.isComplete(narrativeRules) }
 }
+
+fun SagaContent.historySummary() =
+    acts.joinToString(";\n---\n") {
+        "${acts.indexOf(it) + 1} - ${it.actSummary(it == acts.last())}"
+    }
 
 fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
     if (filterMainCharacter) {
@@ -94,7 +103,7 @@ fun SagaContent.findChapter(chapterId: Int) = flatChapters().find { it.data.id =
 
 fun SagaContent.findAct(actId: Int) = acts.find { it.data.id == actId }
 
-fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
+fun SagaContent.findCharacter(characterId: Int?) = characters.find { it.data.id == characterId }
 
 fun SagaContent.findCharacter(name: String?): CharacterContent? {
     if (name == null) return null
@@ -176,17 +185,27 @@ fun SagaContent.actNumber(act: Act?): Int =
         1
     }
 
-fun SagaContent.getDirective(): String {
-    val actsCount = acts.size
-    Log.d(
-        javaClass.simpleName,
-        "Getting directive. Total acts count: $actsCount for saga(${this.data.id}) -> ${this.data.title}",
-    )
-    return when (actsCount) {
-        0, 1 -> ActDirectives.FIRST_ACT_DIRECTIVES
-        2 -> ActDirectives.SECOND_ACT_DIRECTIVES
-        3 -> ActDirectives.THIRD_ACT_DIRECTIVES
-        else -> ActDirectives.FIRST_ACT_DIRECTIVES
+fun SagaContent.getDirectiveKey(targetAct: Act? = null): String {
+    val act = targetAct ?: currentActInfo?.data
+    val actIndex = acts.indexOfFirst { it.data.id == act?.id }
+    return when (actIndex) {
+        0 -> "act_1_hook_blueprint"
+        1 -> "act_2_rising_action_blueprint"
+        2 -> "act_3_resolution_blueprint"
+        else -> "act_1_hook_blueprint"
+    }
+}
+
+fun SagaContent.getPurposeKey(): String = getDirectiveKey()
+
+fun ActContent.getDirectiveKey(saga: SagaContent): String {
+    val actIndex = saga.acts.indexOfFirst { it.data.id == this.data.id }
+    val actNumber = actIndex + 1
+    return when (actNumber) {
+        1 -> "act_1_hook_blueprint"
+        2 -> "act_2_rising_action_blueprint"
+        3 -> "act_3_resolution_blueprint"
+        else -> "act_1_hook_blueprint"
     }
 }
 
@@ -203,7 +222,7 @@ fun SagaContent.rankByHour() =
 fun SagaContent.emotionalSummary() =
     buildString {
         acts.forEach {
-            appendLine(it.emotionalSummary(this@emotionalSummary))
+            appendLine(it.emotionalSummary())
             appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
         }
     }

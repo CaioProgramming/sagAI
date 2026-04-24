@@ -25,10 +25,22 @@ interface CharacterUseCase {
         saga: Saga,
     ): RequestResult<Pair<Character, String>>
 
+    suspend fun generateCharacterImageStream(
+        character: Character,
+        saga: Saga,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Pair<Character, String>>>>
+
     suspend fun generateCharacter(
         sagaContent: SagaContent,
         description: String,
+        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
     ): RequestResult<Character>
+
+    suspend fun generateCharacterStream(
+        sagaContent: SagaContent,
+        description: String,
+        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>>
 
     suspend fun createSmartZoom(character: Character): RequestResult<Unit>
 
@@ -56,4 +68,10 @@ interface CharacterUseCase {
         timeline: Timeline,
         saga: SagaContent,
     ): RequestResult<Unit>
+
+    suspend fun insertCharacterEvent(
+        characterEvent: com.ilustris.sagai.features.characters.events.data.model.CharacterEvent,
+    ): com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
+
+    suspend fun insertCharacterEvents(characterEvents: List<com.ilustris.sagai.features.characters.events.data.model.CharacterEvent>)
 }

@@ -2,9 +2,9 @@ package com.ilustris.sagai.core.file
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import coil3.BitmapImage
 import coil3.ImageLoader
+import timber.log.Timber
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
@@ -25,9 +25,9 @@ class GenreReferenceHelper(
     suspend fun getIconReference(genre: Genre): RequestResult<Bitmap> =
         executeRequest {
             val flag = "${genre.name.lowercase()}$ICON_FLAG"
-            Log.d(javaClass.simpleName, "getIconReference: fetching flag from firebase $flag")
+            Timber.d("getIconReference: fetching flag from firebase $flag")
             val flagValue = firebaseRemoteConfig.getString(flag)
-            Log.d(javaClass.simpleName, "getIconReference: flag value is $flagValue")
+            Timber.d("getIconReference: flag value is $flagValue")
             flagValue
             val request =
                 imageLoader.execute(
@@ -38,16 +38,16 @@ class GenreReferenceHelper(
                         .build(),
                 )
 
-            Log.d(javaClass.simpleName, "getIconReference: Coil request is ${request.javaClass.simpleName}")
+            Timber.d("getIconReference: Coil request is ${request.javaClass.simpleName}")
             (request as SuccessResult).image.toBitmap()
         }
 
     suspend fun getCoverReference(genre: Genre): RequestResult<Bitmap> =
         try {
             val flag = "${genre.name.lowercase()}$COVER_FLAG"
-            Log.d(javaClass.simpleName, "getCoverReference: fetching flag from firebase $flag")
+            Timber.d("getCoverReference: fetching flag from firebase $flag")
             val flagValue = firebaseRemoteConfig.getString(flag)
-            Log.d(javaClass.simpleName, "getCoverReference: flag value is $flagValue")
+            Timber.d("getCoverReference: flag value is $flagValue")
             val coverUrl = flagValue
             val request =
                 imageLoader.execute(
@@ -57,12 +57,11 @@ class GenreReferenceHelper(
                         .build(),
                 )
 
-            Log.d(javaClass.simpleName, "getCoverReference: Coil request is ${request.javaClass.simpleName}")
+            Timber.d("getCoverReference: Coil request is ${request.javaClass.simpleName}")
 
             (request.image as BitmapImage).bitmap.asSuccess()
         } catch (e: Exception) {
-            Log.w(
-                javaClass.simpleName,
+            Timber.w(
                 "getCoverReference: failed, falling back to icon reference. Error: ${e.message}",
             )
             getIconReference(genre)
@@ -71,8 +70,7 @@ class GenreReferenceHelper(
     suspend fun getRandomCompositionReference(genre: Genre) =
         executeRequest {
             val multiFlag = "${genre.name}$COMPOSITION_REFERENCES".lowercase()
-            Log.d(
-                javaClass.simpleName,
+            Timber.d(
                 "Attempting to fetch unified composition references: $multiFlag",
             )
 
@@ -95,7 +93,7 @@ class GenreReferenceHelper(
     suspend fun getRandomPortraitReference() =
         executeRequest {
             val multiFlag = PORTRAIT_REFERENCES
-            Log.d(javaClass.simpleName, "Attempting to fetch multi-reference flag $multiFlag")
+            Timber.d("Attempting to fetch multi-reference flag $multiFlag")
 
             val flagValue =
                 firebaseRemoteConfig.getJson<ReferenceCollection>(multiFlag)
@@ -105,7 +103,7 @@ class GenreReferenceHelper(
                     PORTRAIT_REFERENCE,
                 )
 
-            Log.d(javaClass.simpleName, "Using reference ${referenceUrl!!}")
+            Timber.d("Using reference ${referenceUrl!!}")
 
             val request =
                 ImageRequest

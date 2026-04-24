@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.act.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -34,35 +33,88 @@ import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
-import effectForGenre
 
 @Composable
-fun ActReader(saga: SagaContent) {
-    val pagerState = rememberPagerState { saga.acts.size + 1 }
-    val genre = saga.data.genre
+fun ActsGalleryContent(
+    section: DetailSectionView.ActSection,
+    onBackClick: () -> Unit = {},
+) {
+    val saga = section.saga
+    val genre = section.saga.data.genre
+    val createdAt = section.saga.data.createdAt
+    val title = section.saga.data.title
+    val description = section.saga.data.description
+    ActReader(
+        acts = section.acts ?: emptyList(),
+        genre = genre,
+        createdAt = createdAt,
+        sagaTitle = title,
+        description = description,
+        endMessage = saga.data.endMessage,
+        emotionalReview = saga.data.emotionalReview,
+        insight = section.insight,
+    )
+}
 
+@Composable
+fun ActReader(
+    acts: List<ActContent>,
+    genre: Genre,
+    createdAt: Long,
+    sagaTitle: String,
+    description: String,
+    endMessage: String,
+    emotionalReview: String?,
+    insight: String? = null,
+) {
     LazyColumn {
         item {
             Spacer(Modifier.height(50.dp))
         }
-        item {
-            IntroductionPage(saga)
+
+        if (!insight.isNullOrBlank()) {
+            item {
+                Text(
+                    insight,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            textAlign = TextAlign.Center,
+                            fontStyle = FontStyle.Italic,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 24.dp)
+                            .fillMaxWidth()
+                            .alpha(.7f),
+                )
+            }
         }
 
-        saga.acts.forEach { act ->
+        item {
+            IntroductionPage(
+                genre = genre,
+                createdAt = createdAt,
+                title = sagaTitle,
+                description = description,
+            )
+        }
+
+        acts.forEach { act ->
             stickyHeader {
                 Text(
                     act.data.title,
@@ -70,7 +122,7 @@ fun ActReader(saga: SagaContent) {
                         MaterialTheme.typography.headlineSmall.copy(
                             fontFamily = genre.headerFont(),
                             textAlign = TextAlign.Center,
-                            brush = Brush.verticalGradient(genre.color.darkerPalette()),
+                            brush = Brush.verticalGradient(genre.resolveColor().darkerPalette()),
                         ),
                     modifier =
                         Modifier
@@ -91,7 +143,7 @@ fun ActReader(saga: SagaContent) {
                 )
             }
 
-            items(act.chapters) {
+            itemsIndexed(act.chapters) { index, chapter ->
                 val shape = RoundedCornerShape(genre.cornerSize())
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -99,8 +151,8 @@ fun ActReader(saga: SagaContent) {
                     modifier = Modifier.padding(16.dp),
                 ) {
                     AsyncImage(
-                        model = it.data.coverImage,
-                        contentDescription = it.data.title,
+                        model = chapter.data.coverImage,
+                        contentDescription = chapter.data.title,
                         contentScale = ContentScale.Crop,
                         modifier =
                             Modifier
@@ -112,7 +164,7 @@ fun ActReader(saga: SagaContent) {
                     )
 
                     Text(
-                        "${saga.chapterNumber(it.data).toRoman()} - ${it.data.title}",
+                        "${(index + 1).toRoman()} - ${chapter.data.title}",
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = genre.headerFont(),
@@ -125,7 +177,7 @@ fun ActReader(saga: SagaContent) {
                     )
 
                     Text(
-                        it.data.introduction,
+                        chapter.data.introduction,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = genre.bodyFont(),
@@ -133,17 +185,20 @@ fun ActReader(saga: SagaContent) {
                     )
 
                     Text(
-                        it.data.overview,
+                        chapter.data.overview,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = genre.bodyFont(),
                             ),
                     )
 
-                    if (it != act.chapters.last()) {
+                    if (chapter != act.chapters.last()) {
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                            modifier = Modifier.padding(vertical = 8.dp).height(1.dp),
+                            modifier =
+                                Modifier
+                                    .padding(vertical = 8.dp)
+                                    .height(1.dp),
                         )
                     }
                 }
@@ -170,7 +225,10 @@ fun ActReader(saga: SagaContent) {
                                 fontWeight = FontWeight.Normal,
                                 fontStyle = FontStyle.Italic,
                             ),
-                        modifier = Modifier.padding(16.dp).alpha(.4f),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .alpha(.4f),
                     )
                 }
             }
@@ -178,7 +236,10 @@ fun ActReader(saga: SagaContent) {
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
             }
         }
@@ -199,21 +260,27 @@ fun ActReader(saga: SagaContent) {
 
         item {
             Text(
-                saga.data.endMessage,
+                endMessage,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = genre.bodyFont(),
                         textAlign = TextAlign.Justify,
                     ),
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
             )
         }
 
-        saga.data.emotionalReview?.let {
+        emotionalReview?.let {
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
             }
             item {
@@ -239,7 +306,10 @@ fun ActReader(saga: SagaContent) {
                             fontFamily = genre.bodyFont(),
                             textAlign = TextAlign.Justify,
                         ),
-                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
                 )
             }
         }
@@ -313,7 +383,10 @@ fun ActReadingContent(
             Column(Modifier.padding(horizontal = 16.dp)) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
 
                 Text(
@@ -331,7 +404,10 @@ fun ActReadingContent(
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .height(1.dp),
                 )
             }
 
@@ -358,7 +434,10 @@ fun ActReadingContent(
                             fontFamily = genre.bodyFont(),
                             textAlign = TextAlign.Justify,
                         ),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 )
             }
 
@@ -366,7 +445,10 @@ fun ActReadingContent(
                 item {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                        modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                        modifier =
+                            Modifier
+                                .padding(vertical = 12.dp)
+                                .height(1.dp),
                     )
                 }
                 item {
@@ -392,7 +474,10 @@ fun ActReadingContent(
                                 fontFamily = genre.bodyFont(),
                                 textAlign = TextAlign.Justify,
                             ),
-                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }
@@ -413,8 +498,12 @@ fun ActReadingContent(
 }
 
 @Composable
-fun IntroductionPage(saga: SagaContent) {
-    val genre = saga.data.genre
+fun IntroductionPage(
+    genre: Genre,
+    createdAt: Long,
+    title: String,
+    description: String,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -422,10 +511,8 @@ fun IntroductionPage(saga: SagaContent) {
             Modifier
                 .padding(16.dp),
     ) {
-        val genre = saga.data.genre
-
         Text(
-            "Criado em ${saga.data.createdAt.formatDate(DateFormatOption.DAY_OF_WEEK_DD_MM_YYYY)}",
+            "Criado em ${createdAt.formatDate(DateFormatOption.DAY_OF_WEEK_DD_MM_YYYY)}",
             style =
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = genre.bodyFont(),
@@ -434,7 +521,7 @@ fun IntroductionPage(saga: SagaContent) {
         )
 
         Text(
-            saga.data.title,
+            title,
             style =
                 MaterialTheme.typography.displaySmall.copy(
                     textAlign = TextAlign.Center,
@@ -445,7 +532,7 @@ fun IntroductionPage(saga: SagaContent) {
         )
 
         Text(
-            saga.data.description,
+            description,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     textAlign = TextAlign.Justify,

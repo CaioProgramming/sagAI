@@ -66,6 +66,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -84,6 +85,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
@@ -94,10 +97,11 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
-import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.ui.SettingsView
@@ -112,6 +116,8 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkLoader
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -146,6 +152,7 @@ fun HomeView(
     val selectedSaga by viewModel.selectedSaga.collectAsStateWithLifecycle()
     val storyBriefing by viewModel.storyBriefing.collectAsStateWithLifecycle()
     val loadingStoryId by viewModel.loadingStoryId.collectAsStateWithLifecycle()
+    val visualConfigs by viewModel.visualConfigs.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.checkForBackups()
@@ -180,7 +187,8 @@ fun HomeView(
                                 .reactiveShimmer(
                                     true,
                                     themeShimmer(),
-                                    2.seconds,
+                                    1.seconds,
+                                    targetValue = 150f,
                                 ),
                     )
                 }
@@ -193,7 +201,17 @@ fun HomeView(
                                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                     ModalDrawerSheet(
                                         drawerContainerColor = MaterialTheme.colorScheme.background,
-                                    ) { SettingsView(navController) }
+                                    ) {
+                                        SettingsView(
+                                            navController,
+                                            onOpenPremiumOnboarding = {
+                                                showPremiumSheet = true
+                                                coroutineScope.launch {
+                                                    drawerState.close()
+                                                }
+                                            },
+                                        )
+                                    }
                                 }
                             },
                         ) {
@@ -208,6 +226,7 @@ fun HomeView(
                                     isLoadingDynamicPrompts = isLoadingDynamicPrompts,
                                     isPremium = isPremium,
                                     loadingStoryId = loadingStoryId,
+                                    visualConfigs = visualConfigs,
                                     animatedContentScope = this@AnimatedContent,
                                     onCreateNewChat = {
                                         if (BuildConfig.DEBUG) {
@@ -234,7 +253,9 @@ fun HomeView(
                                         viewModel.createFakeSaga()
                                     },
                                     openPremiumSheet = {
-                                        showPremiumSheet = true
+                                        if (showPremiumSheet.not()) {
+                                            showPremiumSheet = true
+                                        }
                                     },
                                     recoverSagas = {
                                         showBackupSheet = true
@@ -268,12 +289,15 @@ fun HomeView(
         }
     }
 
-    PremiumView(
-        isVisible = showPremiumSheet,
-        onDismiss = {
-            showPremiumSheet = false
-        },
-    )
+    if (showPremiumSheet && isLoading.not()) {
+        OnboardingDialog(
+            type = OnboardingType.PREMIUM_GUIDE,
+            force = true,
+            onDismiss = {
+                showPremiumSheet = false
+            },
+        )
+    }
 
     if (showBackupSheet) {
         BackupSheet(true, {
@@ -301,6 +325,8 @@ fun HomeView(
         isLoading,
         loadingMessage,
     )
+
+    OnboardingDialog(type = OnboardingType.APP_INTRO)
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -314,6 +340,7 @@ private fun SharedTransitionScope.ChatList(
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
     loadingStoryId: Int? = null,
+    visualConfigs: Map<Genre, GenreVisualConfig> = emptyMap(),
     animatedContentScope: AnimatedContentScope,
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
@@ -442,20 +469,16 @@ private fun SharedTransitionScope.ChatList(
             }
         }
         item {
-            val shimmerColors =
-                remember {
-                    Genre.entries.random().colorPalette()
-                }
             Row(
                 modifier =
                     Modifier
                         .animateItem()
                         .padding(16.dp)
-                        .gradientFill(Brush.linearGradient(shimmerColors))
+                        .gradientFill(Brush.linearGradient(holographicGradient))
                         .reactiveShimmer(
                             true,
-                            shimmerColors = shimmerColors,
                             duration = 10.seconds,
+                            targetValue = 700f,
                         )
                         .clip(RoundedCornerShape(15.dp))
                         .clickable {
@@ -539,6 +562,7 @@ private fun SharedTransitionScope.ChatList(
                 loadingStoryId = loadingStoryId,
                 onStoryClicked = onStoryClicked,
                 listState.canScrollBackward.not(),
+                visualConfigs = visualConfigs,
             )
         }
 
@@ -547,6 +571,7 @@ private fun SharedTransitionScope.ChatList(
         ) {
             ChatCard(
                 it,
+                visualConfigs[it.data.genre],
                 Modifier
                     .animateItem()
                     .clickable {
@@ -608,113 +633,128 @@ private fun SharedTransitionScope.ChatList(
 @Composable
 fun ChatCard(
     saga: SagaContent,
+    visualConfig: GenreVisualConfig? = null,
     modifier: Modifier = Modifier,
 ) {
-    val sagaData = saga.data
-    Column {
-        Row(
-            modifier =
-                modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(15.dp))
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AvatarTimelineIcon(
-                saga.data.icon,
-                saga.data.isEnded,
-                saga.data.genre,
-                saga.data.title
-                    .first()
-                    .uppercase(),
-                borderWidth = 2.dp,
-                modifier = Modifier.size(48.dp),
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            val lastMessage = saga.flatMessages().lastOrNull()
-            val color by animateColorAsState(
-                if (saga.data.isEnded) sagaData.genre.color else MaterialTheme.colorScheme.onBackground,
-            )
-            Column(
+    CompositionLocalProvider(LocalGenreVisualConfig provides visualConfig) {
+        val sagaData = saga.data
+        val genre = sagaData.genre
+        val genreColor = genre.color
+        val genreBrush = genre.gradient()
+        Column {
+            Row(
                 modifier =
-                    Modifier
-                        .weight(1f),
+                    modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(15.dp))
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row {
-                    Text(
-                        text = sagaData.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = saga.data.genre.headerFont(),
-                        color = color,
-                        modifier = Modifier.weight(1f),
-                    )
-
-                    lastMessage?.let {
-                        val time =
-                            Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
-                        val timeText =
-                            String.format(
-                                "%02d:%02d",
-                                time.get(Calendar.HOUR_OF_DAY),
-                                time.get(Calendar.MINUTE),
-                            )
-
-                        Text(
-                            text = timeText,
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = saga.data.genre.bodyFont(),
-                                ),
-                            color = color.copy(alpha = .6f),
-                        )
-                    }
-                }
-
-                val message: AnnotatedString =
-                    if (sagaData.isEnded) {
-                        AnnotatedString(stringResource(R.string.chat_card_saga_ended))
-                    } else {
-                        if (saga.messagesSize() == 0) {
-                            AnnotatedString(stringResource(R.string.chat_card_saga_begins))
-                        } else {
-                            lastMessage
-                                ?.joinMessage()
-                                ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
-                                ?.let { buildMessagePreviewAnnotatedString(it) }
-                                ?: AnnotatedString(
-                                    lastMessage?.joinMessage(false)?.formatToString()
-                                        ?: emptyString(),
-                                )
-                        }
-                    }
-                Text(
-                    text = message,
-                    style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = saga.data.genre.bodyFont(),
-                            textAlign = TextAlign.Start,
-                            color = color.copy(alpha = .6f),
-                        ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                AvatarTimelineIcon(
+                    saga.data.icon,
+                    saga.data.isEnded,
+                    saga.data.genre,
+                    saga.data.title
+                        .first()
+                        .uppercase(),
+                    borderWidth = 1.dp,
                     modifier =
                         Modifier
-                            .padding(vertical = 4.dp)
-                            .fillMaxWidth()
-                            .alpha(.8f),
+                            .dropShadow(CircleShape) {
+                                radius = if (saga.data.isEnded) 10f else 5f
+                                color = genreColor
+                                brush = genreBrush
+                                spread = 5f
+                            }
+                            .size(50.dp)
+                            .selectiveColorHighlight(saga.data.genre),
                 )
-            }
-        }
 
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)),
-        )
+                Spacer(modifier = Modifier.width(12.dp))
+
+                val lastMessage = saga.flatMessages().lastOrNull()
+                val color by animateColorAsState(
+                    if (saga.data.isEnded) sagaData.genre.resolveColor() else MaterialTheme.colorScheme.onBackground,
+                )
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f),
+                ) {
+                    Row {
+                        Text(
+                            text = sagaData.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontFamily = saga.data.genre.headerFont(),
+                            color = color,
+                            modifier = Modifier.weight(1f),
+                        )
+
+                        lastMessage?.let {
+                            val time =
+                                Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
+                            val timeText =
+                                String.format(
+                                    "%02d:%02d",
+                                    time.get(Calendar.HOUR_OF_DAY),
+                                    time.get(Calendar.MINUTE),
+                                )
+
+                            Text(
+                                text = timeText,
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = saga.data.genre.bodyFont(),
+                                    ),
+                                color = color.copy(alpha = .6f),
+                            )
+                        }
+                    }
+
+                    val message: AnnotatedString =
+                        if (sagaData.isEnded) {
+                            AnnotatedString(stringResource(R.string.chat_card_saga_ended))
+                        } else {
+                            if (saga.messagesSize() == 0) {
+                                AnnotatedString(stringResource(R.string.chat_card_saga_begins))
+                            } else {
+                                lastMessage
+                                    ?.joinMessage()
+                                    ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
+                                    ?.let { buildMessagePreviewAnnotatedString(it) }
+                                    ?: AnnotatedString(
+                                        lastMessage?.joinMessage(false)?.formatToString()
+                                            ?: emptyString(),
+                                    )
+                            }
+                        }
+                    Text(
+                        text = message,
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Normal,
+                                fontFamily = saga.data.genre.bodyFont(),
+                                textAlign = TextAlign.Start,
+                                color = color.copy(alpha = .6f),
+                            ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier =
+                            Modifier
+                                .padding(vertical = 4.dp)
+                                .fillMaxWidth()
+                                .alpha(.8f),
+                    )
+                }
+            }
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)),
+            )
+        }
     }
 }
 

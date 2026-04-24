@@ -6,9 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import timber.log.Timber
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,6 +25,8 @@ import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.components.NotificationStyle
@@ -51,15 +53,13 @@ class ChatNotificationManagerImpl
             message: MessageContent,
         ) {
             if (appLifecycleManager.isAppInForeground.value) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "App is in foreground. Skipping notification for message: ${message.message.text}",
                 )
                 return
             }
 
-            Log.i(
-                javaClass.simpleName,
+            Timber.i(
                 "App is in background. Proceeding with notification for message: ${message.message.text}",
             )
 
@@ -78,8 +78,8 @@ class ChatNotificationManagerImpl
                 content = message.joinMessage().formatToString(),
                 largeIcon = characterIcon,
                 pendingIntent = createPendingIntent(formatChatDeepLink),
-                genreColor = saga.data.genre.color,
-                smallIconResId = saga.data.genre.background,
+                genreColor = saga.data.genre.resolveColor(null),
+                smallIconResId = saga.data.genre.resolveBackground(null) as Int,
             )
         }
 
@@ -91,15 +91,13 @@ class ChatNotificationManagerImpl
             largeIcon: Bitmap?,
         ) {
             if (appLifecycleManager.isAppInForeground.value) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "App is in foreground. Skipping notification for: $title",
                 )
                 return
             }
 
-            Log.i(
-                javaClass.simpleName,
+            Timber.i(
                 "App is in background. Proceeding with notification: $title",
             )
 
@@ -114,7 +112,7 @@ class ChatNotificationManagerImpl
                     ?: try {
                         android.graphics.BitmapFactory.decodeResource(
                             context.resources,
-                            saga.genre.background,
+                            saga.genre.resolveBackground(null) as Int,
                         )
                     } catch (e: Exception) {
                         null
@@ -147,8 +145,8 @@ class ChatNotificationManagerImpl
             // Use app icon for small icon
             val finalSmallIconResId =
                 try {
-                    context.resources.getDrawable(saga.genre.background, null)
-                    saga.genre.background
+                    context.resources.getDrawable(saga.genre.resolveBackground(null) as Int, null)
+                    saga.genre.resolveBackground(null) as Int
                 } catch (e: Exception) {
                     R.drawable.ic_spark
                 }
@@ -159,7 +157,7 @@ class ChatNotificationManagerImpl
                     .setSmallIcon(finalSmallIconResId)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(pendingIntent)
-                    .setColor(saga.genre.color.toArgb())
+                    .setColor(saga.genre.resolveColor(null).toArgb())
                     .setColorized(true)
                     .setAutoCancel(true)
                     .setStyle(messagingStyle)
@@ -192,15 +190,13 @@ class ChatNotificationManagerImpl
             snackBarState: SnackBarState,
         ) {
             if (appLifecycleManager.isAppInForeground.value || snackBarState.showInUi) {
-                Log.i(
-                    javaClass.simpleName,
+                Timber.i(
                     "App is in foreground or notification is UI-only. Skipping notification.",
                 )
                 return
             }
 
-            Log.i(
-                javaClass.simpleName,
+            Timber.i(
                 "App is in background. Sending notification with style: ${snackBarState.notificationStyle}",
             )
 
@@ -228,7 +224,7 @@ class ChatNotificationManagerImpl
                         content = snackBarState.message,
                         largeIcon = snackBarState.largeIcon,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
-                        genreColor = saga.data.genre.color,
+                        genreColor = saga.data.genre.resolveColor(null),
                         smallIconResId = R.drawable.ic_spark,
                         priority = NotificationCompat.PRIORITY_DEFAULT,
                     )
@@ -291,10 +287,10 @@ class ChatNotificationManagerImpl
             val builder =
                 NotificationCompat
                     .Builder(context, CHAT_CHANNEL_ID)
-                    .setSmallIcon(saga.genre.background)
+                    .setSmallIcon(saga.genre.resolveBackground(null) as Int)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(pendingIntent)
-                    .setColor(saga.genre.color.toArgb())
+                    .setColor(saga.genre.resolveColor(null).toArgb())
                     .setColorized(true)
                     .setAutoCancel(true)
                     .setStyle(messagingStyle)
@@ -325,7 +321,8 @@ class ChatNotificationManagerImpl
                     .setPriority(NotificationCompat.PRIORITY_LOW)
                     .setContentIntent(pendingIntent)
                     .setColor(
-                        saga.data.genre.color
+                        saga.data.genre
+                            .resolveColor(null)
                             .toArgb(),
                     ).setAutoCancel(true)
 

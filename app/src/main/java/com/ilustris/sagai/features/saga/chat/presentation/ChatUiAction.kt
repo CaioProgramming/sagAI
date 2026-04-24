@@ -10,6 +10,8 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 sealed class ChatUiAction {
+    data object AdvanceNarrative : ChatUiAction()
+
     data class SendInput(
         val userConfirmed: Boolean = false,
         val isAudio: Boolean = false,
@@ -33,6 +35,7 @@ sealed class ChatUiAction {
 
     data class RequestNewCharacter(
         val name: String,
+        val message: Message,
     ) : ChatUiAction()
 
     data class ReviewEvent(

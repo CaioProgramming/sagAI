@@ -3,9 +3,9 @@ package com.ilustris.sagai.core.segmentation
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
-import android.util.Log
 import androidx.core.graphics.get
 import coil3.ImageLoader
+import timber.log.Timber
 import coil3.request.ImageRequest
 import coil3.toBitmap
 import com.google.mlkit.vision.common.InputImage
@@ -147,8 +147,8 @@ class ImageSegmentationHelper(
                 } else {
                     null
                 }
-            Log.i(javaClass.simpleName, "calculateSmartZoom: Zoom result: ")
-            Log.i(javaClass.simpleName, requiredZoom.toJsonFormat())
+            Timber.i("calculateSmartZoom: Zoom result: ")
+            Timber.i(requiredZoom.toJsonFormat())
             requiredZoom
         }
 }

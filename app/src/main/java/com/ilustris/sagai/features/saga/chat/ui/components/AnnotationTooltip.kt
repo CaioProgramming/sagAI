@@ -21,6 +21,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -38,18 +39,16 @@ fun AnnotationTooltip(
             .padding(horizontal = 32.dp)
             .border(
                 1.dp,
-                Brush.verticalGradient(genre.color.darkerPalette(factor = .3f)),
+                Brush.verticalGradient(genre.resolveColor().darkerPalette(factor = .3f)),
                 shape,
-            )
-            .background(
+            ).background(
                 Brush.verticalGradient(
                     MaterialTheme.colorScheme.surfaceContainer.darkerPalette(
                         factor = .3f,
                     ),
                 ),
                 shape,
-            )
-            .padding(16.dp),
+            ).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
@@ -58,7 +57,7 @@ fun AnnotationTooltip(
         ) {
             when (data) {
                 is Character -> {
-                    val characterColor = data.hexColor.hexToColor() ?: genre.color
+                    val characterColor = data.hexColor.hexToColor() ?: genre.resolveColor()
 
                     CharacterAvatar(
                         data,
@@ -81,6 +80,7 @@ fun AnnotationTooltip(
                             ),
                     )
                 }
+
                 is Wiki -> {
                     Text(
                         text = data.emojiTag ?: emptyString(),
@@ -112,7 +112,9 @@ fun AnnotationTooltip(
                     data.content
                 }
 
-                else -> emptyString()
+                else -> {
+                    emptyString()
+                }
             }
 
         Text(

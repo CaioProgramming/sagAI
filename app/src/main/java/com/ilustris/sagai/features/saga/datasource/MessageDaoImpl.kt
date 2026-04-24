@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.saga.datasource
 
-import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import timber.log.Timber
 import javax.inject.Inject
 
 class MessageDaoImpl
@@ -18,10 +18,10 @@ class MessageDaoImpl
 
         override suspend fun saveMessage(message: Message) =
             try {
-                Log.i(javaClass.simpleName, "saveMessage: saving $message")
+                Timber.i("saveMessage: saving $message")
                 messageDao.saveMessage(message)
             } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Error saving $message\n ${e.message}")
+                Timber.e("Error saving $message\n ${e.message}")
 
                 null
             }

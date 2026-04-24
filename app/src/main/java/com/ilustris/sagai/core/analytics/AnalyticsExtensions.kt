@@ -1,8 +1,8 @@
 package com.ilustris.sagai.core.analytics
 
 import android.os.Bundle
-import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import timber.log.Timber
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
@@ -25,7 +25,7 @@ fun Any.toAnalyticsBundle(): Bundle {
         // Validate that this is a data class
         if (!kClass.isData) {
             val warning = "Analytics event class ${kClass.simpleName} is not a data class"
-            Log.w(TAG, warning)
+            Timber.tag(TAG).w(warning)
             FirebaseCrashlytics.getInstance().log(warning)
         }
 
@@ -70,7 +70,7 @@ fun Any.toAnalyticsBundle(): Bundle {
                     else -> {
                         val warning =
                             "Unsupported property type for ${property.name}: ${value::class.simpleName}"
-                        Log.w(TAG, warning)
+                        Timber.tag(TAG).w(warning)
                         FirebaseCrashlytics.getInstance().log(warning)
                         return@forEach
                     }
@@ -83,14 +83,14 @@ fun Any.toAnalyticsBundle(): Bundle {
                         "Failed to map property ${property.name}",
                         e,
                     )
-                Log.w(TAG, error.message, error)
+                Timber.tag(TAG).w(e, error.message)
                 FirebaseCrashlytics.getInstance().recordException(error)
             }
         }
 
         // Warn if bundle is too large
         if (propertyCount > BUNDLE_SIZE_WARNING_THRESHOLD) {
-            Log.w(TAG, "Bundle size is large: $propertyCount properties for ${kClass.simpleName}")
+            Timber.tag(TAG).w("Bundle size is large: $propertyCount properties for ${kClass.simpleName}")
         }
     } catch (e: Exception) {
         val error =
@@ -98,7 +98,7 @@ fun Any.toAnalyticsBundle(): Bundle {
                 "Failed to convert ${this::class.simpleName} to analytics bundle",
                 e,
             )
-        Log.e(TAG, error.message, error)
+        Timber.tag(TAG).e(e, error.message)
         FirebaseCrashlytics.getInstance().recordException(error)
     }
 

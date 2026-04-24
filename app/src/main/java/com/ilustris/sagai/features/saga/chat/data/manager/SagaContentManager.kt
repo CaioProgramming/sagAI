@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -18,27 +19,33 @@ import java.io.File
 
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
+    val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val ambientMusicFile: StateFlow<File?>
     val narrativeProcessingUiState: StateFlow<Boolean>
+    val contentReasoning: MutableStateFlow<String?>
 
     var snackBarUpdate: MutableStateFlow<SnackBarState?>
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
+    val isOnboardingVisible: MutableStateFlow<Boolean>
+
+    suspend fun advanceNarrative(pendingAdvance: PendingAdvance)
 
     suspend fun loadSaga(sagaId: String)
 
-    suspend fun generateCharacter(description: String): RequestResult<Character>
+    suspend fun generateCharacter(
+        description: String,
+        sceneSummary: SceneSummary? = null,
+    ): RequestResult<Character>
 
     suspend fun generateCharacterImage(character: Character): RequestResult<Character>
-
-    fun getDirective(): String
 
     fun setDebugMode(enabled: Boolean)
 
     fun isInDebugMode(): Boolean
 
-    fun setProcessing(bool: Boolean)
+    suspend fun setProcessing(bool: Boolean)
 
     fun checkNarrativeProgression(
         saga: SagaContent?,
