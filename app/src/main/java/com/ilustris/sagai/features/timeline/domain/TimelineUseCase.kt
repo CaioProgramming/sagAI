@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.timeline.domain
 
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -19,7 +21,7 @@ interface TimelineUseCase {
     fun generateFullLoreUpdateStream(
         saga: SagaContent,
         timelineContent: TimelineContent,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Unit>>>
+    ): Flow<StreamingState<GeneratedContent<Timeline>>>
 
     suspend fun generateTimeline(
         saga: SagaContent,
@@ -29,7 +31,7 @@ interface TimelineUseCase {
     fun generateTimelineStream(
         saga: SagaContent,
         currentTimeline: TimelineContent,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Timeline>>>
+    ): Flow<StreamingState<GeneratedContent<Timeline>>>
 
     suspend fun saveTimeline(timeline: Timeline): Timeline
 

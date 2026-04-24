@@ -679,7 +679,7 @@ class SagaContentManagerImpl
 
                 reasoningSynthesizerService
                     .synthesizeReasoning(
-                        sourceFlow = timelineUseCase.generateTimelineStream(saga, content),
+                        sourceFlow = timelineUseCase.generateFullLoreUpdateStream(saga, content),
                         context = contextString,
                         conversationStyle = style,
                     ).collect { state ->
@@ -695,12 +695,12 @@ class SagaContentManagerImpl
 
                             is StreamingState.Error -> {
                                 contentReasoning.value = null
-                                error(state.message) // Throws wrapped in RequestResult.Failure
+                                error(state.message)
                             }
                         }
                     }
 
-                generated ?: error("Failed to generate timeline")
+                generated ?: error("Failed to generate timeline update")
             }
         }
 
@@ -1135,6 +1135,8 @@ class SagaContentManagerImpl
                                 currentAct.data.copy(currentChapterId = chapter.id),
                             )
                         }
+                    } ?: run {
+                        dismissMilestone()
                     }
                 }
 
@@ -1152,6 +1154,8 @@ class SagaContentManagerImpl
                                 messageText = message,
                             ),
                         )
+                    } ?: run {
+                        dismissMilestone()
                     }
                 }
 
@@ -1174,6 +1178,8 @@ class SagaContentManagerImpl
                                 dismissMilestone()
                             }
                         }
+                    } ?: run {
+                        dismissMilestone()
                     }
                 }
 
@@ -1202,6 +1208,8 @@ class SagaContentManagerImpl
 
                         emitMilestone(SagaMilestone.NewEvent(t, mascotIcon, message))
                         endTimeline(saga.currentActInfo?.currentChapterInfo)
+                    } ?: run {
+                        dismissMilestone()
                     }
                 }
 
@@ -1212,6 +1220,8 @@ class SagaContentManagerImpl
                     val message = generatedContent?.finalMessage
                     chapter?.let { c ->
                         emitMilestone(SagaMilestone.ChapterFinished(c, message))
+                    } ?: run {
+                        dismissMilestone()
                     }
                 }
 
@@ -1222,6 +1232,8 @@ class SagaContentManagerImpl
                     val message = generatedContent?.finalMessage
                     act?.let { a ->
                         emitMilestone(SagaMilestone.ActFinished(a, message))
+                    } ?: run {
+                        dismissMilestone()
                     }
                 }
 
