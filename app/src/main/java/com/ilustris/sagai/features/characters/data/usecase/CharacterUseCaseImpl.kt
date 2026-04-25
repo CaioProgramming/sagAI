@@ -271,7 +271,7 @@ class CharacterUseCaseImpl
                                 "firstSceneId",
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    )!!
+                    blueprintKey = CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT)!!
 
                 val character = sagaContent.findCharacter(newCharacter.name)
 
@@ -404,7 +404,7 @@ class CharacterUseCaseImpl
                         prompt,
                         requirement = GemmaClient.ModelRequirement.LOW,
                         temperatureRandomness = .3f,
-                    )!!
+                    blueprintKey = CharacterPrompts.REFINE_CHARACTER_DRAFT_BLUEPRINT)!!
 
                 val updatedCharacters =
                     request
@@ -525,7 +525,7 @@ class CharacterUseCaseImpl
                 gemmaClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.LOW,
-                )!!
+                blueprintKey = CharacterPrompts.CHARACTER_RESUME_BLUEPRINT)!!
             }
 
         override suspend fun updateCharacterKnowledge(
@@ -542,7 +542,7 @@ class CharacterUseCaseImpl
                     gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,
                         requirement = GemmaClient.ModelRequirement.LOW,
-                    )
+                    blueprintKey = CharacterPrompts.KNOWLEDGE_UPDATE_BLUEPRINT)
 
                 if (result?.updates?.isNotEmpty() == true) {
                     Timber.i(

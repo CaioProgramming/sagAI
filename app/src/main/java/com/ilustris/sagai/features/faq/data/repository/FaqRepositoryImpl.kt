@@ -26,7 +26,7 @@ class FaqRepositoryImpl
             context: FAQContent,
         ) = executeRequest {
             val prompt = FAQPrompts.getAskAiPrompt(promptService, query, context)
-            gemmaClient.generate<String>(prompt, requireTranslation = false)
+            gemmaClient.generate<String>(prompt, requireTranslation = false, blueprintKey = FAQPrompts.FAQ_ASK_AI_BLUEPRINT)
                 ?: "Oops! My crystal ball is a bit foggy. Can you try again?"
         }
     }

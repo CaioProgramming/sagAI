@@ -57,7 +57,7 @@ class ActUseCaseImpl
                                 "introduction",
                             ),
                         useCore = true,
-                    )!!
+                    blueprintKey = ActPrompts.ACT_CONCLUSION_BLUEPRINT)!!
 
                 updateAct(
                     actContent.data.copy(
@@ -166,7 +166,7 @@ class ActUseCaseImpl
                 gemmaClient.generate<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
                     prompt,
                     useCore = true,
-                )!!
+                blueprintKey = ActPrompts.ACT_INTRODUCTION_BLUEPRINT)!!
             val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
             com.ilustris.sagai.core.ai.model
                 .GeneratedContent(updatedAct, intro.finalMessage)

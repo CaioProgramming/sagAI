@@ -171,6 +171,6 @@ class AudioService
                     prompt,
                     temperatureRandomness = .1f,
                     requirement = GemmaClient.ModelRequirement.LOW,
-                )!!
+                blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT)!!
             }
     }
