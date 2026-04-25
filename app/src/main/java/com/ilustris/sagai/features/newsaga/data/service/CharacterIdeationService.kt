@@ -34,6 +34,6 @@ class CharacterIdeationService
             return gemmaClient.generateStreaming<CharacterIdeas>(
                 blueprint,
                 requirement = GemmaClient.ModelRequirement.MEDIUM,
-            )
+            blueprintKey = NewSagaPrompts.CHARACTER_IDEATION_PROCESS)
         }
     }

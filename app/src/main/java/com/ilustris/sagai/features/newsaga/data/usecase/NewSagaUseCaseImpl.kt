@@ -182,7 +182,7 @@ class NewSagaUseCaseImpl
                             "review",
                             "emotionalReview",
                         ),
-                )!!
+                blueprintKey = NewSagaPrompts.CONVERSATIONAL_SAGA_REPLY_BLUEPRINT)!!
             }
 
         override suspend fun generateSagaIcon(
@@ -221,14 +221,14 @@ class NewSagaUseCaseImpl
                             identity = identity,
                         ),
                         requireTranslation = true,
-                    )!!
+                    blueprintKey = NewSagaPrompts.INITIAL_SAGA_KICKOFF_BLUEPRINT)!!
 
                 response
             }
 
         override suspend fun generateIntroduction(): RequestResult<SagaCreationGen> =
             executeRequest {
-                gemmaClient.generate(NewSagaPrompts.introPrompt(promptService))!!
+                gemmaClient.generate(NewSagaPrompts.introPrompt(promptService), blueprintKey = NewSagaPrompts.CREATION_INTRO_BLUEPRINT)!!
             }
 
         override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen> =
@@ -281,6 +281,7 @@ class NewSagaUseCaseImpl
                         sagaDraft,
                         identity,
                     ),
+                    blueprintKey = NewSagaPrompts.GENRE_ADAPTATION_BLUEPRINT
                 )!!
             }
 
@@ -293,6 +294,7 @@ class NewSagaUseCaseImpl
                         genre,
                         identity,
                     ),
+                    blueprintKey = NewSagaPrompts.GENRE_SUGGESTIONS_BLUEPRINT
                 )!!
             }
 

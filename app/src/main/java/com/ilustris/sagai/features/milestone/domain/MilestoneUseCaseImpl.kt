@@ -45,6 +45,6 @@ class MilestoneUseCaseImpl
                     prompt,
                     temperatureRandomness = 1f,
                     requirement = GemmaClient.ModelRequirement.LOW,
-                )
+                blueprintKey = MilestonePrompts.MILESTONE_GENERATION_BLUEPRINT)
             }
     }

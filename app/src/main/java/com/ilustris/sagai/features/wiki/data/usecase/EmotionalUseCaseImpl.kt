@@ -56,7 +56,7 @@ class EmotionalUseCaseImpl
                             conversationDirective,
                         ),
                     requirement = GemmaClient.ModelRequirement.HIGH,
-                )!!
+                blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT)!!
             }
 
         override suspend fun getEmotionalCard(sagaContent: SagaContent): RequestResult<String> =

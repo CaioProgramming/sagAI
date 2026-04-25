@@ -121,6 +121,6 @@ class SharePlayUseCaseImpl
                         }
                     }
 
-                gemmaClient.generate<ShareText>(prompt)!!
+                gemmaClient.generate<ShareText>(prompt, blueprintKey = SharePrompts.SHARE_PLAYSTYLE_BLUEPRINT)!!
             }
     }

@@ -59,7 +59,7 @@ class AudioTranscriptionService
                 val transcription =
                     gemmaClient.generate<String>(
                         prompt = transcriptionPrompt,
-                    )
+                    blueprintKey = com.ilustris.sagai.core.ai.prompts.AudioPrompts.AUDIO_CONFIG_BLUEPRINT)
 
                 transcription?.let { text ->
                     if (text.isNotBlank()) {

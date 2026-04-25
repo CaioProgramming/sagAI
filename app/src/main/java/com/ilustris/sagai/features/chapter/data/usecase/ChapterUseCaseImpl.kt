@@ -71,7 +71,7 @@ class ChapterUseCaseImpl
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    )!!
+                    blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT)!!
 
             updateChapter(
                 chapterContent.data.copy(
@@ -108,7 +108,7 @@ class ChapterUseCaseImpl
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    ).collect { state ->
+                    blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
                                 val genChapter = state.data.data
@@ -301,7 +301,7 @@ class ChapterUseCaseImpl
                     requireTranslation = true,
                     useCore = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
-                )!!
+                blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT)!!
             val updated = chapter.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
             com.ilustris.sagai.core.ai.model
@@ -328,7 +328,7 @@ class ChapterUseCaseImpl
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    ).collect { state ->
+                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
                                 val introContent = state.data
