@@ -54,6 +54,7 @@ class MessageUseCaseImpl
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
         private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
+        private val timelineUseCase: com.ilustris.sagai.features.timeline.domain.TimelineUseCase,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -210,6 +211,15 @@ class MessageUseCaseImpl
                                             timestamp = System.currentTimeMillis(),
                                         ),
                                     )
+                                reply.sceneSummary?.let { summary ->
+                                    saga.getCurrentTimeLine()?.let { timeline ->
+                                        timelineUseCase.updateTimeline(
+                                            timeline.data.copy(
+                                                sceneSummary = summary,
+                                            ),
+                                        )
+                                    }
+                                }
                                 withContext(Dispatchers.IO) {
                                     handleAIReplyReactions(saga, savedMessage, reply.reactions)
                                 }

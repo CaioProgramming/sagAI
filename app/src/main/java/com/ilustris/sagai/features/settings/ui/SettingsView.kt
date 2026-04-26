@@ -5,8 +5,6 @@ package com.ilustris.sagai.features.settings.ui
 import ai.atick.material.MaterialColor
 import android.Manifest
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -122,16 +120,12 @@ fun SettingsView(
     var showBackups by remember { mutableStateOf(true) }
 
     val exportLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/x-sqlite3"),
-        ) { uri ->
+        PermissionService.rememberDatabaseExportLauncher { uri ->
             uri?.let { viewModel.exportDatabase(it) }
         }
 
     val importLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
-        ) { uri ->
+        PermissionService.rememberDatabaseImportLauncher { uri ->
             uri?.let { viewModel.importDatabase(it) }
         }
     LazyColumn(
@@ -196,18 +190,15 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .clickable {
+                        ).clickable {
                             showPlaythroughSheet = true
                         }
                         .padding(16.dp),
@@ -690,7 +681,7 @@ fun SettingsView(
         item {
             Button(
                 onClick = {
-                    importLauncher.launch(arrayOf("application/x-sqlite3"))
+                    importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
                 },
                 colors = ButtonDefaults.textButtonColors(),
                 shape = RoundedCornerShape(15.dp),

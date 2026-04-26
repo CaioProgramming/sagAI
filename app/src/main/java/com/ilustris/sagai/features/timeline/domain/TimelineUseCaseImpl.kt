@@ -382,11 +382,11 @@ class TimelineUseCaseImpl
                         objectivePrompt,
                         useCore = true,
                     )!!
-                    .immediateObjective!!
 
             updateTimeline(
                 timelineContent.copy(
-                    currentObjective = summary,
+                    sceneSummary = summary,
+                    currentObjective = summary.immediateObjective,
                 ),
             )
         }

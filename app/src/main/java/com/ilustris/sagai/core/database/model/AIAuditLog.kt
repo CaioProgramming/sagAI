@@ -19,4 +19,5 @@ data class AIAuditLog(
     val errorMessage: String? = null,
     val suggestion: String? = null,
     val responseTime: Long = 0,
+    val usedTools: List<String>? = null,
 )

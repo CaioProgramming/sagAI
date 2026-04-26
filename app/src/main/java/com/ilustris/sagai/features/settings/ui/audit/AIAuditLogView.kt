@@ -381,6 +381,7 @@ fun AuditLogItem(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         text = log.dataType,
@@ -402,48 +403,86 @@ fun AuditLogItem(
                                 .border(1.dp, statusColor, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
-                }
 
-                if (!log.blueprintKey.isNullOrEmpty()) {
-                    Text(
-                        text = log.blueprintKey,
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                    RoundedCornerShape(4.dp),
-                                )
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                                .padding(8.dp),
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "${log.model} • ${dateFormat.format(Date(log.timestamp))}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
-                        modifier = Modifier.alpha(.7f),
-                    )
+                    androidx.compose.foundation.layout
+                        .Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "• ${String.format("%.1fs", log.responseTime / 1000.0)}",
+                        text = String.format("%.1fs", log.responseTime / 1000.0),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = responseTimeColor,
                             ),
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (!log.blueprintKey.isNullOrEmpty()) {
+                        Text(
+                            text = log.blueprintKey,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                        RoundedCornerShape(4.dp),
+                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    .padding(8.dp),
+                        )
+                    }
+
+                    Text(
+                        text = "• ${dateFormat.format(Date(log.timestamp))}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
+                        modifier = Modifier.alpha(.7f),
+                    )
+                }
+
+                val formattedModel = log.model.replace("models/", "")
+                Text(
+                    text = formattedModel,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
+                    modifier = Modifier.alpha(.7f),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+
+                if (!log.usedTools.isNullOrEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_settings),
+                            contentDescription = "Tools used",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        )
+                        log.usedTools.forEach { tool ->
+                            Text(
+                                text = tool,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier =
+                                    Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
                             )
+                        }
+                    }
                 }
             }
 

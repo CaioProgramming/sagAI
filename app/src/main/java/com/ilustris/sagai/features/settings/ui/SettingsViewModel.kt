@@ -1,12 +1,15 @@
 package com.ilustris.sagai.features.settings.ui
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +25,7 @@ class SettingsViewModel
     @Inject
     constructor(
         private val settingsUseCase: SettingsUseCase,
+        @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
 
@@ -158,9 +162,8 @@ class SettingsViewModel
                     .importDatabase(sourceUri)
                     .onSuccessAsync {
                         loadingMessage.emit("Banco de dados importado com sucesso!")
-                        delay(3.seconds)
-                        isLoading.value = false
-                        loadingMessage.emit(null)
+                        delay(2.seconds)
+                        context.restartApp()
                     }.onFailureAsync {
                         loadingMessage.emit("Falha ao importar banco de dados.")
                         delay(3.seconds)

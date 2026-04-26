@@ -31,13 +31,17 @@ fun DatabaseRestoreSheet(
     isVisible: Boolean,
     backups: List<BackupMetadata>,
     onRequestRestore: (BackupMetadata) -> Unit,
+    onImportFromFile: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (isVisible) {
         ModalBottomSheet(onDismissRequest = onDismiss) {
             LazyColumn(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item {
                     Text(
@@ -78,6 +82,20 @@ fun DatabaseRestoreSheet(
                             backup.fileSize.formatFileSize(),
                             style = MaterialTheme.typography.bodySmall,
                         )
+                    }
+                }
+
+                item {
+                    Button(
+                        onClick = onImportFromFile,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_zip),
+                            null,
+                            modifier = Modifier.padding(end = 8.dp),
+                        )
+                        Text(stringResource(R.string.import_database_button))
                     }
                 }
 

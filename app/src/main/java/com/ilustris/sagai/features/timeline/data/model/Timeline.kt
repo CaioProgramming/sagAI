@@ -1,10 +1,12 @@
 package com.ilustris.sagai.features.timeline.data.model
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import java.util.Calendar
 
 @Entity(
@@ -28,6 +30,8 @@ data class Timeline(
     val createdAt: Long = Calendar.getInstance().timeInMillis,
     @ColumnInfo(index = true)
     val chapterId: Int,
+    @Embedded(prefix = "scene_")
+    val sceneSummary: SceneSummary? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

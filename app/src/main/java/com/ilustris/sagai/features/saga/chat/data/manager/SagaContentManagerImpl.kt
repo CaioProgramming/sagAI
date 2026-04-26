@@ -333,19 +333,33 @@ class SagaContentManagerImpl
                                 }
 
                                 val previousSaga = content.value
+                                val previousTimeline = previousSaga?.getCurrentTimeLine()
+                                val currentTimeline = saga.getCurrentTimeLine()
+                                val sceneChanged =
+                                    previousTimeline?.data?.sceneSummary != currentTimeline?.data?.sceneSummary
+
+                                if (previousSaga != null &&
+                                    previousSaga.data.id == saga.data.id &&
+                                    (previousSaga.data.playTimeMs != saga.data.playTimeMs || sceneChanged) &&
+                                    previousSaga.flatMessages().size == saga.flatMessages().size &&
+                                    previousSaga.characters.size == saga.characters.size
+                                ) {
+                                    Timber.d(
+                                        "Saga update was subtle (playtime: ${previousSaga.data.playTimeMs != saga.data.playTimeMs}, scene: $sceneChanged). Skipping narrative check.",
+                                    )
+                                    currentTimeline?.data?.sceneSummary?.let {
+                                        _sceneSummary.value = it
+                                    }
+                                    content.value = saga
+                                    return@collectLatest
+                                }
+
                                 if (previousSaga == null) {
                                     emitMilestone(SagaMilestone.Loading)
                                 }
                                 content.value = saga
-
-                                if (previousSaga != null &&
-                                    previousSaga.data.id == saga.data.id &&
-                                    previousSaga.data.playTimeMs != saga.data.playTimeMs &&
-                                    previousSaga.acts == saga.acts &&
-                                    previousSaga.characters == saga.characters
-                                ) {
-                                    Timber.d("Saga update was only playtime. Skipping narrative check.")
-                                    return@collectLatest
+                                currentTimeline?.data?.sceneSummary?.let {
+                                    _sceneSummary.value = it
                                 }
 
                                 checkMessageNotifications(previousSaga, saga)
@@ -380,16 +394,17 @@ class SagaContentManagerImpl
                                             emitMilestone(SagaMilestone.Loading)
                                             startProcessing {
                                                 val sceneContext =
-                                                    _sceneSummary.value
+                                                    currentTimeline?.data?.sceneSummary
                                                         ?: messageUseCase
                                                             .getSceneContext(saga)
                                                             .getSuccess()
                                                 sceneContext?.let { summary ->
-                                                    saga.getCurrentTimeLine()?.data?.let {
-                                                        if (it.currentObjective.isNullOrEmpty()) {
+                                                    currentTimeline?.data?.let {
+                                                        if (it.sceneSummary == null) {
                                                             timelineUseCase.updateTimeline(
                                                                 it.copy(
                                                                     currentObjective = summary.immediateObjective,
+                                                                    sceneSummary = summary,
                                                                 ),
                                                             )
                                                         }
@@ -399,16 +414,14 @@ class SagaContentManagerImpl
                                                             type = IntroductionType.RESUME,
                                                             titleText = emptyString(),
                                                             introduction =
-                                                                summary.immediateObjective
-                                                                    ?: summary.currentConflict
-                                                                    ?: summary.mood
+                                                                summary.quote
+                                                                    ?: summary.immediateObjective
                                                                     ?: emptyString(),
                                                             number =
                                                                 saga
-                                                                    .chapterNumber(
-                                                                        chapter.data,
-                                                                    ).toRoman(),
-                                                            sceneSummary = summary,
+                                                                    .chapterNumber(chapter.data)
+                                                                .toRoman(),
+                                                                    sceneSummary = summary,
                                                         ),
                                                     )
                                                 } ?: run {

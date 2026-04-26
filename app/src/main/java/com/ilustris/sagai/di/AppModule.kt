@@ -12,6 +12,8 @@ import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.AudioGenClientImpl
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ImageGenerator
+import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
@@ -49,6 +51,7 @@ import com.ilustris.sagai.core.services.FirebaseInstallationService
 import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.core.usecase.PaletteUseCaseImpl
 import com.ilustris.sagai.core.utils.StringResourceHelper
@@ -331,6 +334,13 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideImageGenerator(
+        billingService: BillingService,
+        remoteConfigService: RemoteConfigService,
+    ): ImageGenerator = ImageGeneratorImpl(billingService, remoteConfigService)
+
+    @Provides
+    @Singleton
     fun provideImagenClient(
         remoteConfigService: RemoteConfigService,
         genreConfigService: GenreConfigService,
@@ -340,6 +350,7 @@ object AppModule {
         gemmaClient: GemmaClient,
         promptService: PromptService,
         reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
+        imageGenerator: ImageGenerator,
     ): ImagenClient =
         ImagenClientImpl(
             billingService,
@@ -350,6 +361,7 @@ object AppModule {
             analyticsService,
             promptService,
             reasoningSynthesizerService,
+            imageGenerator,
         )
 
     @Provides
@@ -372,7 +384,8 @@ object AppModule {
         @ApplicationContext context: Context,
         remoteConfigService: RemoteConfigService,
         firebaseInstallationService: FirebaseInstallationService,
-    ): BillingService = BillingService(context, remoteConfigService, firebaseInstallationService)
+        sideEffectService: SideEffectService,
+    ): BillingService = BillingService(context, remoteConfigService, firebaseInstallationService, sideEffectService)
 
     @Provides
     @Singleton

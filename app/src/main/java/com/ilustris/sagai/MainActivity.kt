@@ -6,7 +6,6 @@ import android.content.Intent // Added
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import timber.log.Timber
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,11 +33,14 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.LaunchedEffect // Added
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
@@ -50,8 +53,12 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.installations.FirebaseInstallations
+import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
+import com.ilustris.sagai.core.services.SideEffectService
+import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.SagaNavGraph
@@ -60,11 +67,16 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import timber.log.Timber
+import javax.inject.Inject
 
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val deepLinkChannel = Channel<String>(Channel.CONFLATED)
+
+    @Inject
+    lateinit var sideEffectService: SideEffectService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -88,7 +100,16 @@ class MainActivity : ComponentActivity() {
                     remember(currentEntry) {
                         currentEntry?.destination?.route?.findRoute() ?: Routes.HOME
                     }
+
                 val snackbarHostState = remember { SnackbarHostState() }
+                var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
+
+                LaunchedEffect(Unit) {
+                    sideEffectService.sideEffects.collect { effect ->
+                        Timber.d("Received global side effect: $effect")
+                        activeSideEffect = effect
+                    }
+                }
 
                 LaunchedEffect(navController, initialDeepLinkString) {
                     if (initialDeepLinkString.isNullOrBlank()) {
@@ -112,69 +133,71 @@ class MainActivity : ComponentActivity() {
                                 .background(MaterialTheme.colorScheme.background)
                                 .fillMaxSize(),
                         snackbarHost = {
-                        SnackbarHost(hostState = snackbarHostState) {
-                            Snackbar(
-                                it,
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(15.dp),
-                            )
+                            SnackbarHost(hostState = snackbarHostState) {
+                                Snackbar(
+                                    it,
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(15.dp),
+                                )
                             }
                         },
                         topBar = {
                             AnimatedContent(route, transitionSpec = {
                                 fadeIn() togetherWith fadeOut()
                             }) {
-                            if (it.topBarContent != null) {
-                                it.topBarContent(navController)
-                            } else {
-                                TopAppBar(
-                                    title = {
-                                        Box(modifier = Modifier.fillMaxWidth()) {
-                                            route.title?.let {
-                                                Text(
-                                                    text = stringResource(it),
-                                                    style = MaterialTheme.typography.titleSmall,
-                                                    fontWeight = FontWeight.Medium,
-                                                    textAlign = TextAlign.Center,
-                                                    modifier =
-                                                        Modifier
-                                                            .padding(16.dp)
-                                                            .fillMaxWidth(),
-                                                )
-                                            } ?: run {
-                                                Image(
-                                                    painterResource(R.drawable.ic_spark),
-                                                    contentDescription = stringResource(R.string.app_name),
-                                                    modifier =
-                                                        Modifier
-                                                            .align(Alignment.Center)
-                                                            .size(24.dp)
-                                                            .align(Alignment.Center),
-                                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                                                )
+                                if (it.topBarContent != null) {
+                                    it.topBarContent(navController)
+                                } else {
+                                    TopAppBar(
+                                        title = {
+                                            Box(modifier = Modifier.fillMaxWidth()) {
+                                                route.title?.let {
+                                                    Text(
+                                                        text = stringResource(it),
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Medium,
+                                                        textAlign = TextAlign.Center,
+                                                        modifier =
+                                                            Modifier
+                                                                .padding(16.dp)
+                                                                .fillMaxWidth(),
+                                                    )
+                                                } ?: run {
+                                                    Image(
+                                                        painterResource(R.drawable.ic_spark),
+                                                        contentDescription = stringResource(R.string.app_name),
+                                                        modifier =
+                                                            Modifier
+                                                                .align(Alignment.Center)
+                                                                .size(24.dp)
+                                                                .align(Alignment.Center),
+                                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                                                    )
+                                                }
                                             }
-                                        }
-                                    },
-                                    actions = {},
-                                    navigationIcon = {
-                                        AnimatedVisibility(route != Routes.HOME) {
-                                            IconButton(onClick = {
-                                                navController.popBackStack()
-                                            }) {
-                                                Icon(
-                                                    painterResource(R.drawable.ic_back_left),
-                                                    contentDescription = "Back",
-                                                    tint = MaterialTheme.colorScheme.onBackground,
-                                                )
+                                        },
+                                        actions = {},
+                                        navigationIcon = {
+                                            AnimatedVisibility(route != Routes.HOME) {
+                                                IconButton(onClick = {
+                                                    navController.popBackStack()
+                                                }) {
+                                                    Icon(
+                                                        painterResource(R.drawable.ic_back_left),
+                                                        contentDescription = "Back",
+                                                        tint = MaterialTheme.colorScheme.onBackground,
+                                                    )
+                                                }
                                             }
-                                        }
-                                    },
-                                )
+                                        },
+                                    )
+                                }
                             }
-                        }
-                    }, bottomBar = {
-                        // SagaBottomNavigation(navController, route)
-                    }) { padding ->
+                        },
+                        bottomBar = {
+                            // SagaBottomNavigation(navController, route)
+                        },
+                    ) { padding ->
                         AnimatedContent(isOnline, transitionSpec = {
                             fadeIn() togetherWith fadeOut()
                         }) {
@@ -193,6 +216,43 @@ class MainActivity : ComponentActivity() {
                                 NoInternetScreen()
                             }
                         }
+                    }
+
+                    if (activeSideEffect == SideEffect.ShowPremiumOnboarding) {
+                        OnboardingDialog(
+                            type = OnboardingType.PREMIUM_GUIDE,
+                            force = true,
+                            onDismiss = { activeSideEffect = null },
+                        )
+                    }
+
+                    if (activeSideEffect is SideEffect.ContentViolation) {
+                        val effect = activeSideEffect as SideEffect.ContentViolation
+                        AlertDialog(
+                            onDismissRequest = { activeSideEffect = null },
+                            title = {
+                                Text(
+                                    text = "Guardrail Warning",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = effect.message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { activeSideEffect = null }) {
+                                    Text("I Understand")
+                                }
+                            },
+                            shape = RoundedCornerShape(24.dp),
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            textContentColor = MaterialTheme.colorScheme.onSurface,
+                            titleContentColor = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
             }

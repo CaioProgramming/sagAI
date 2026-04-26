@@ -281,7 +281,6 @@ class NewSagaUseCaseImpl
                         sagaDraft,
                         identity,
                     ),
-                    blueprintKey = NewSagaPrompts.GENRE_ADAPTATION_BLUEPRINT
                 )!!
             }
 
@@ -294,7 +293,6 @@ class NewSagaUseCaseImpl
                         genre,
                         identity,
                     ),
-                    blueprintKey = NewSagaPrompts.GENRE_SUGGESTIONS_BLUEPRINT
                 )!!
             }
 

@@ -95,6 +95,33 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_9_10 =
+        object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `usedTools` TEXT")
+            }
+        }
+
+    val MIGRATION_10_11 =
+        object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_currentLocation` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_charactersPresent` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_immediateObjective` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_currentConflict` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_mood` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_currentTimeOfDay` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_tensionLevel` INTEGER")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_spatialContext` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_narrativePacing` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_worldStateChanges` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_relevantPastContext` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_establishedFacts` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_possibleOutcomes` TEXT")
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `scene_quote` TEXT")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -104,5 +131,7 @@ object DatabaseMigrations {
             MIGRATION_6_7,
             MIGRATION_7_8,
             MIGRATION_8_9,
+            MIGRATION_9_10,
+            MIGRATION_10_11,
         )
 }

@@ -147,15 +147,23 @@ class HomeViewModel
 
         private fun getDynamicPrompts() {
             viewModelScope.launch {
-                val result =
-                    homeUseCase.requestDynamicCall().getSuccess() ?: DynamicSagaPrompt(
-                        stringResourceHelper.getString(R.string.home_create_new_saga_title),
-                        stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
-                    )
-                _dynamicNewSagaTexts.emit(result)
-                if (_isStarting.value) {
-                    _isStarting.emit(false)
-                }
+                homeUseCase
+                    .requestDynamicCall()
+                    .onSuccessAsync {
+                        _dynamicNewSagaTexts.emit(it)
+                        if (_isStarting.value) {
+                            _isStarting.emit(false)
+                        }
+                    }.onFailureAsync {
+                        _dynamicNewSagaTexts.value =
+                            DynamicSagaPrompt(
+                                stringResourceHelper.getString(R.string.home_create_new_saga_title),
+                                stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
+                            )
+                        if (_isStarting.value) {
+                            _isStarting.emit(false)
+                        }
+                    }
             }
         }
 

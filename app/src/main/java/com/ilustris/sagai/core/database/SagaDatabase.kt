@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.IntListConverter
+import com.ilustris.sagai.core.database.converters.StringListConverter
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.features.act.data.model.Act
@@ -45,10 +46,10 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Reaction::class,
         AIAuditLog::class,
     ],
-    version = 9,
+    version = 11,
     exportSchema = true,
 )
-@TypeConverters(IntListConverter::class, EnumConverters::class)
+@TypeConverters(IntListConverter::class, EnumConverters::class, StringListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
 
@@ -73,4 +74,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun reactionDao(): ReactionDao
 
     abstract fun aiAuditLogDao(): AIAuditLogDao
+
+    companion object {
+        const val NAME = "SagaDatabase"
+    }
 }

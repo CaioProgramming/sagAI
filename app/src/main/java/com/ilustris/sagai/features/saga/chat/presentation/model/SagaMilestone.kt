@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.presentation.model
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
@@ -17,6 +18,7 @@ import kotlin.time.Duration.Companion.seconds
 
 enum class IntroductionType { ACT, CHAPTER, RESUME }
 
+@Immutable
 sealed class SagaMilestone(
     val title: Int,
     val subtitle: String,

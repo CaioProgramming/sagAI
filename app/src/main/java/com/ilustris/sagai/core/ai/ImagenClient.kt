@@ -1,13 +1,7 @@
 package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.google.firebase.ai.type.ResponseModality
-import com.google.firebase.ai.type.asImageOrNull
-import com.google.firebase.ai.type.content
-import com.google.firebase.ai.type.generationConfig
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImagePromptReview
@@ -17,6 +11,8 @@ import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.analytics.AnalyticsService
 import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
@@ -46,6 +42,11 @@ interface ImagenClient {
         imageType: ImageType,
         variationId: String? = null,
     ): kotlinx.coroutines.flow.Flow<StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Bitmap>>>
+
+    suspend fun generateImage(
+        prompt: String,
+        aspectRatio: String?,
+    ): RequestResult<Bitmap>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -58,8 +59,9 @@ class ImagenClientImpl
         private val imageConfigService: ImageConfigService,
         private val gemmaClient: GemmaClient,
         private val analyticsService: AnalyticsService,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
+        private val promptService: PromptService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val imageGenerator: ImageGenerator,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -70,63 +72,10 @@ class ImagenClientImpl
             remoteConfigService.getString(IMAGE_PREMIUM_MODEL_FLAG)
                 ?: error("Couldn't find model for Image generation")
 
-        private suspend fun generateImage(
+        override suspend fun generateImage(
             prompt: String,
-            references: List<ImageReference>,
-            aspectRatio: String? = null,
-        ): Bitmap? {
-            val modelName = modelName()
-            val logData =
-                buildString {
-                    append("Generating image with ➡ $modelName\n")
-                    appendLine("Prompt \uD83D\uDCC4:")
-                    appendLine(prompt)
-                    if (references.isNotEmpty()) {
-                        appendLine("References \uD83C\uDFDE\uFE0F:\n")
-                        references.forEach {
-                            appendLine("Bitmap with Description: ${it.description}\n")
-                        }
-                    }
-                }
-            Timber.tag(TAG).i(logData)
-            return billingService.runPremiumRequest {
-                val imageModel =
-                    Firebase.ai().generativeModel(
-                        modelName = modelName,
-                        generationConfig =
-                            generationConfig {
-                                responseModalities =
-                                    listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
-                            },
-                    )
-                val promptBuilder =
-                    content {
-                        text(prompt.trimIndent())
-                        aspectRatio?.let {
-                            text("Aspect Ratio: $it")
-                        }
-                        references.forEach {
-                            image(it.bitmap)
-                            text(it.description)
-                        }
-                    }
-
-                val content = imageModel.generateContent(promptBuilder)
-                Timber
-                    .tag(TAG)
-                    .d("generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
-                Timber.tag(TAG).d(
-                    "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}",
-                )
-
-                content
-                    .candidates
-                    .first()
-                    .content.parts
-                    .firstOrNull()
-                    ?.asImageOrNull()
-            }
-        }
+            aspectRatio: String?,
+        ): RequestResult<Bitmap> = imageGenerator.generateImageRequest(prompt, aspectRatio)
 
         override suspend fun generateIntegratedImageStream(
             genre: Genre,
@@ -203,7 +152,7 @@ class ImagenClientImpl
 
                             emit(StreamingState.Reasoning("\nRendering scene..."))
                             val generatedImage =
-                                generateImage(
+                                imageGenerator.generateImage(
                                     prompt = finalStringPrompt!!,
                                     references = referenceList,
                                     aspectRatio = finalAspectRatio,
@@ -327,7 +276,7 @@ class ImagenClientImpl
                     )
 
                     val generatedImage =
-                        generateImage(
+                        imageGenerator.generateImage(
                             finalPrompt,
                             references = emptyList(),
                             aspectRatio = finalAspectRatio,

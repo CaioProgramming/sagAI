@@ -69,7 +69,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -78,6 +77,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -206,16 +206,17 @@ fun ChatBubble(
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(3000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "rotation",
-    )
+    val rotationState =
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(3000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "rotation",
+        )
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -386,7 +387,7 @@ fun ChatBubble(
                                                             ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
-                                                            rotation,
+                                                            rotationState.value,
                                                             size.width / 2,
                                                             size.height / 2,
                                                         )
@@ -567,8 +568,10 @@ fun ChatBubble(
                                     },
                                     modifier =
                                         bubbleModifier
-                                            .scale(finalScale)
-                                            .border(
+                                            .graphicsLayer {
+                                                scaleX = finalScale
+                                                scaleY = finalScale
+                                            }.border(
                                                 2.dp,
                                                 borderColorAnimation,
                                                 bubbleShape,

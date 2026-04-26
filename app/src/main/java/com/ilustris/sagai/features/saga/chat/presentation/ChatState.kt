@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -30,6 +31,7 @@ sealed class ChatState {
     ) : ChatState()
 }
 
+@Immutable
 data class ChatUiState(
     val chatState: ChatState = ChatState.Loading,
     val sagaContent: SagaContent? = null,
@@ -70,24 +72,28 @@ data class ChatUiState(
     val maxContentLength: Int = 2000,
 )
 
+@Immutable
 data class MessageSelectionState(
     val isSelectionMode: Boolean = false,
     val selectedMessageIds: Set<Int> = emptySet(),
     val maxSelection: Int = 10,
 )
 
+@Immutable
 data class ActDisplayData(
     val content: ActContent,
     val isComplete: Boolean,
     val chapters: List<ChapterDisplayData>,
 )
 
+@Immutable
 data class ChapterDisplayData(
     val chapter: ChapterContent,
     val isComplete: Boolean,
     val timelineSummaries: List<TimelineDisplayData>,
 )
 
+@Immutable
 data class TimelineDisplayData(
     val isComplete: Boolean,
     val timeline: TimelineCardContent,

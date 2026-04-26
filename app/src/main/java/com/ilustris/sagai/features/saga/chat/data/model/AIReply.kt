@@ -7,4 +7,5 @@ package com.ilustris.sagai.features.saga.chat.data.model
 data class AIReply(
     val message: Message,
     val reactions: List<AIReaction>? = null,
+    val sceneSummary: SceneSummary? = null,
 )

@@ -134,6 +134,32 @@ class PermissionService
                     onresult(uri)
                 }
 
+            @Composable
+            fun rememberDatabaseImportLauncher(onResult: (Uri?) -> Unit = {}) =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.OpenDocument(),
+                ) { uri ->
+                    onResult(uri)
+                }
+
+            @Composable
+            fun rememberDatabaseExportLauncher(onResult: (Uri?) -> Unit = {}) =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument("application/x-sqlite3"),
+                ) { uri ->
+                    onResult(uri)
+                }
+
+            val SQLITE_MIME_TYPES =
+                arrayOf(
+                    "application/x-sqlite3",
+                    "application/vnd.sqlite3",
+                    "application/octet-stream",
+                    "application/database",
+                    "application/x-sqlite-3",
+                    "application/sqlite3",
+                )
+
             /**
              * Opens the application's settings screen for the user to manually manage permissions.
              * This is typically called from a rationale dialog.
