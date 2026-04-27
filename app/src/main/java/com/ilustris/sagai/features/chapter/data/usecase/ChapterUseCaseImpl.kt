@@ -77,7 +77,7 @@ class ChapterUseCaseImpl
                 chapterContent.data.copy(
                     title = genChapter.title,
                     overview = genChapter.overview,
-                    introduction = genChapter.introduction,
+                    introduction = chapterContent.data.introduction, // Keep existing introduction
                     featuredCharacters = genChapter.featuredCharacters.take(3),
                     emotionalReview = genChapter.emotionalReview,
                     currentEventId = null,
@@ -117,7 +117,7 @@ class ChapterUseCaseImpl
                                         chapterContent.data.copy(
                                             title = genChapter.title,
                                             overview = genChapter.overview,
-                                            introduction = genChapter.introduction,
+                                            introduction = chapterContent.data.introduction, // Keep existing introduction
                                             featuredCharacters = genChapter.featuredCharacters.take(3),
                                             emotionalReview = genChapter.emotionalReview,
                                             currentEventId = null,

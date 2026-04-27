@@ -172,34 +172,19 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
-                            val tier = requirement.name.lowercase()
-                            val coreRemoteKey = "core_${tier}_blueprint"
+                            requirement.name.lowercase()
                             val corePrompt =
-                                try {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = coreRemoteKey,
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                } catch (e: Exception) {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = "core_blueprint",
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                }
+                                promptService.buildRemotePrompt(
+                                    remoteConfigKey = "core_blueprint",
+                                    variables =
+                                        mapOf(
+                                            "language" to getLanguage(requireTranslation),
+                                            "type" to T::class.java.simpleName,
+                                            "structure" to structure,
+                                            "formattingRule" to formattingRule,
+                                        ),
+                                    logEnabled = false,
+                                )
 
                             val fullPrompt =
                                 buildString {
@@ -336,7 +321,12 @@ class GemmaClient
                             }
                         }
                         if (logEnabled) {
-                            Timber.tag(this@GemmaClient::class.java.simpleName).e("Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}")
+                            Timber
+                                .tag(
+                                    this@GemmaClient::class.java.simpleName,
+                                ).e(
+                                    "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                                )
                         }
 
                         // Check if it's a parsing error (no delay needed) or network error (delay recommended)
@@ -366,12 +356,20 @@ class GemmaClient
 
                                 errorResponse.error?.details?.forEach { detail ->
                                     detail.violations?.forEach { violation ->
-                                        Timber.tag(this@GemmaClient::class.java.simpleName).w("Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})")
+                                        Timber
+                                            .tag(
+                                                this@GemmaClient::class.java.simpleName,
+                                            ).w(
+                                                "Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})",
+                                            )
                                     }
                                 }
 
                                 if (extractedDelay != null) {
-                                    Timber.tag(this@GemmaClient::class.java.simpleName).i("Extracted precise delay from error: $extractedDelay seconds")
+                                    Timber
+                                        .tag(
+                                            this@GemmaClient::class.java.simpleName,
+                                        ).i("Extracted precise delay from error: $extractedDelay seconds")
                                 }
                             } catch (parseEx: Exception) {
                                 Timber.tag(this@GemmaClient::class.java.simpleName).e("Failed to parse error body: ${parseEx.message}")
@@ -383,10 +381,16 @@ class GemmaClient
                                 if (isParsingError) 0L else (extractedDelay ?: RETRY_DELAY.toLong())
 
                             if (delayToApply > 0) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).w("Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...")
+                                Timber
+                                    .tag(
+                                        this@GemmaClient::class.java.simpleName,
+                                    ).w("Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...")
                                 delay(delayToApply.seconds)
                             } else {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).w("Retrying immediately due to parsing error (${e.javaClass.simpleName})...")
+                                Timber
+                                    .tag(
+                                        this@GemmaClient::class.java.simpleName,
+                                    ).w("Retrying immediately due to parsing error (${e.javaClass.simpleName})...")
                             }
                         } else {
                             // Final failure
@@ -481,34 +485,19 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
-                            val tier = requirement.name.lowercase()
-                            val coreRemoteKey = "core_${tier}_blueprint"
+                            requirement.name.lowercase()
                             val corePrompt =
-                                try {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = coreRemoteKey,
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                } catch (e: Exception) {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = "core_blueprint",
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                }
+                                promptService.buildRemotePrompt(
+                                    remoteConfigKey = "core_blueprint",
+                                    variables =
+                                        mapOf(
+                                            "language" to getLanguage(requireTranslation),
+                                            "type" to T::class.java.simpleName,
+                                            "structure" to structure,
+                                            "formattingRule" to formattingRule,
+                                        ),
+                                    logEnabled = false,
+                                )
 
                             val fullPrompt =
                                 buildString {
@@ -641,7 +630,12 @@ class GemmaClient
                             return@flow
                         } catch (e: Exception) {
                             if (logEnabled) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}")
+                                Timber
+                                    .tag(
+                                        this@GemmaClient::class.java.simpleName,
+                                    ).e(
+                                        "Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                                    )
                             }
 
                             val isParsingError =
