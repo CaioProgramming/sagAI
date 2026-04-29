@@ -189,9 +189,22 @@ fun TimeLineContent(
                                                 .fillMaxWidth(),
                                     )
 
-                                    insight?.let {
+                                    if (insight.isNullOrBlank()) {
+                                        Box(
+                                            Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth()
+                                                .height(80.dp)
+                                                .background(
+                                                    MaterialTheme.colorScheme.onBackground.copy(
+                                                        alpha = 0.1f,
+                                                    ),
+                                                    genre.shape(),
+                                                ).reactiveShimmer(true),
+                                        )
+                                    } else {
                                         Text(
-                                            it,
+                                            insight,
                                             style =
                                                 MaterialTheme.typography.bodyMedium.copy(
                                                     fontFamily = genre.bodyFont(),

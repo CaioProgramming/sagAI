@@ -106,7 +106,7 @@ object ChatPrompts {
             "narratorVoice",
         )
 
-    val characterExclusions =
+    val CHARACTER_EXCLUSIONS =
         listOf(
             "id",
             "image",
@@ -159,7 +159,7 @@ object ChatPrompts {
                         backstory = it.backstory,
                         knowledge = it.knowledge?.takeLast(10) ?: emptyList(),
                     )
-                }.normalizetoAIItems(characterExclusions)
+                }.normalizetoAIItems(CHARACTER_EXCLUSIONS)
 
         val argsMap =
             mutableMapOf(
@@ -191,7 +191,7 @@ object ChatPrompts {
                                 "No specific characters present to react, but you can still generate reactions for the narrator if applicable.",
                             )
                         }
-                        },
+                    },
             )
 
         return promptService.buildRemotePrompt(REPLY_GENERATION_BLUEPRINT, argsMap)
@@ -289,7 +289,7 @@ object ChatPrompts {
             NotificationArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 sceneSummaryContent = sceneSummary.toAINormalize(),
-                characterContext = selectedCharacter.data.toAINormalize(characterExclusions),
+                characterContext = selectedCharacter.data.toAINormalize(CHARACTER_EXCLUSIONS),
                 relationshipBlock = relationshipBlock,
                 conversationHistory = conversationHistory(10, saga),
                 characterName = selectedCharacter.data.name,

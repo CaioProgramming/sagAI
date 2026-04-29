@@ -1,11 +1,14 @@
 package com.ilustris.sagai.features.chapter.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -23,6 +26,8 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun ChaptersGalleryContent(
@@ -58,9 +63,20 @@ fun ChaptersGalleryContent(
                             .fillMaxWidth(),
                 )
 
-                section.insight?.let {
+                if (section.insight.isNullOrBlank()) {
+                    Box(
+                        Modifier
+                            .padding(vertical = 24.dp)
+                            .fillMaxWidth()
+                            .height(60.dp)
+                            .background(
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                                genre.shape(),
+                            ).reactiveShimmer(true),
+                    )
+                } else {
                     Text(
-                        it,
+                        section.insight,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = genre.bodyFont(),

@@ -402,6 +402,7 @@ class NewSagaUseCaseImpl
                                 context = "Creating characters for the saga",
                                 conversationStyle = conversationStyle,
                                 targetLanguage = targetLanguage,
+                                genre = lockedSaga.genre.name,
                             ).collect { streamingState ->
                                 when (streamingState) {
                                     is StreamingState.Reasoning -> {
@@ -461,6 +462,7 @@ class NewSagaUseCaseImpl
                             context = "Sealing the Sacred Contract for ${sagaDraft.title}",
                             conversationStyle = identity,
                             targetLanguage = targetLanguage,
+                            genre = sagaDraft.genre.name,
                         ).collect { streamingState ->
                             when (streamingState) {
                                 is StreamingState.Reasoning -> {

@@ -3,7 +3,9 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.model.ChapterConclusionContext
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -90,35 +92,20 @@ object ChapterPrompts {
 
         val promptDataContext =
             ChapterConclusionContext(
-                sagaData = sagaContent.data,
-                mainCharacter = sagaContent.mainCharacter?.data,
+                sagaData = sagaContent.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+                mainCharacter = sagaContent.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
                 eventsOfThisChapter =
                     currentChapterContent.events
-                        .filter {
-                            it.isComplete(
-                                rules,
-                            )
-                        }.map { it.data },
-                previousChaptersInCurrentAct = currentChapters.map { it.data },
-                previousActData = previousAct?.data,
+                        .map { it.data }
+                        .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
+                previousChaptersInCurrentAct =
+                    currentChapters
+                        .map { it.data }
+                        .normalizetoAIItems(CHAPTER_EXCLUSIONS),
+                previousActData = previousAct?.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS),
             )
 
-        val includedFields =
-            listOf(
-                "sagaData",
-                "mainCharacter",
-                "previousActData",
-                "previousChaptersInCurrentAct",
-                "eventsOfThisChapter",
-                "title",
-                "description",
-                "content",
-                "genre",
-                "name",
-                "backstory",
-            )
-
-        val chapterContext = promptDataContext.toJsonFormatIncludingFields(includedFields)
+        val chapterContext = promptDataContext.toJsonFormat()
 
         val args =
             ChapterGenerationArgs(

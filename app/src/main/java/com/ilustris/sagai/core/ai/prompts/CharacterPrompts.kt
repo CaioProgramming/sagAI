@@ -270,7 +270,7 @@ object CharacterPrompts {
                     ),
                 charactersContext =
                     characters.toAINormalize(
-                        fieldsToExclude = ChatPrompts.characterExclusions,
+                        fieldsToExclude = ChatPrompts.CHARACTER_EXCLUSIONS,
                     ),
             )
 
@@ -296,7 +296,7 @@ object CharacterPrompts {
                             "chapterId",
                         ),
                     ),
-                charactersList = characters.normalizetoAIItems(ChatPrompts.characterExclusions),
+                charactersList = characters.normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
                 recentMessages = messages.normalizetoAIItems(messageExclusions),
             )
 
@@ -320,7 +320,7 @@ object CharacterPrompts {
                     ),
                 charactersList =
                     saga.getCharacters().toAINormalize(
-                        ChatPrompts.characterExclusions,
+                        ChatPrompts.CHARACTER_EXCLUSIONS,
                     ),
             )
 
@@ -383,7 +383,7 @@ object CharacterPrompts {
         val args =
             KnowledgeUpdateArgs(
                 eventContext = event.toAINormalize(listOf("id", "chapterId")),
-                charactersContext = characters.normalizetoAIItems(ChatPrompts.characterExclusions),
+                charactersContext = characters.normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
             )
 
         return promptService.buildRemotePrompt(KNOWLEDGE_UPDATE_BLUEPRINT, args)

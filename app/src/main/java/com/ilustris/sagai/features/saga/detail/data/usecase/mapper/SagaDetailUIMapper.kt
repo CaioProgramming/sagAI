@@ -42,12 +42,14 @@ class SagaDetailUIMapper(
     suspend fun buildDrawer(saga: SagaContent): TimelineDrawer {
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val actProgress =
-            (saga.completedActs(narrativeRules) - narrativeRules.actUpdateLimit) / 100f
+            saga.completedActs(narrativeRules).toFloat() / narrativeRules.maxActsLimit
         return TimelineDrawer(
-            stringResourceHelper.getString(R.string.recap_your_journey),
+            saga.data.title,
             saga.flatChapters().map {
                 val chapterProgress =
-                    (it.events.filter { it.isComplete(narrativeRules) }.size - narrativeRules.chapterUpdateLimit) / 100f
+                    it.events
+                        .count { event -> event.isComplete(narrativeRules) }
+                        .toFloat() / narrativeRules.chapterUpdateLimit
                 TimelineDrawerGroup(
                     it.data.title.ifEmpty {
                         stringResourceHelper.getString(
@@ -73,18 +75,22 @@ class SagaDetailUIMapper(
     suspend fun buildSection(
         sagaContent: SagaContent,
         section: RequestSection,
+        insight: String? = null,
     ) = executeRequest {
         when (section) {
-            RequestSection.START -> createInitialSection(sagaContent)
-            RequestSection.CHARACTERS -> createCharactersSection(sagaContent)
-            RequestSection.WIKI -> createWikiSection(sagaContent)
-            RequestSection.EVENTS -> createEventsSection(sagaContent)
-            RequestSection.CHAPTERS -> createChaptersSection(sagaContent)
-            RequestSection.ACTS -> createActsSection(sagaContent)
+            RequestSection.START -> createInitialSection(sagaContent, insight)
+            RequestSection.CHARACTERS -> createCharactersSection(sagaContent, insight)
+            RequestSection.WIKI -> createWikiSection(sagaContent, insight)
+            RequestSection.EVENTS -> createEventsSection(sagaContent, insight)
+            RequestSection.CHAPTERS -> createChaptersSection(sagaContent, insight)
+            RequestSection.ACTS -> createActsSection(sagaContent, insight)
         }
     }
 
-    suspend fun createInitialSection(saga: SagaContent): DetailSectionView {
+    suspend fun createInitialSection(
+        saga: SagaContent,
+        sagaResume: String? = null,
+    ): DetailSectionView {
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val subtitle =
             if (saga.data.isEnded) {
@@ -99,14 +105,14 @@ class SagaDetailUIMapper(
                 )
             }
 
-        val sagaResume = sagaDetailUseCase.generateSagaResume(saga).getSuccess()
-
         val segmentedImage =
-            if (saga.data.icon.isBlank()) {
-                null
-            } else {
-                imageSegmentationHelper.processImage(saga.data.icon).getSuccess()
-            }
+            runCatching {
+                if (saga.data.icon.isBlank()) {
+                    null
+                } else {
+                    imageSegmentationHelper.processImage(saga.data.icon).getSuccess()
+                }
+            }.getOrNull()
 
         val emotionalCard = emotionalUseCase.getEmotionalCard(saga).getSuccess()
         val topCharacters =
@@ -143,7 +149,10 @@ class SagaDetailUIMapper(
         )
     }
 
-    suspend fun createCharactersSection(sagaContent: SagaContent): DetailSectionView {
+    suspend fun createCharactersSection(
+        sagaContent: SagaContent,
+        insight: String? = null,
+    ): DetailSectionView {
         val characterRanking =
             sagaContent
                 .flatMessages()
@@ -156,8 +165,6 @@ class SagaDetailUIMapper(
             sagaContent.relationships.sortedByDescending {
                 it.relationshipEvents.size
             }
-
-        val insight = sagaDetailUseCase.generateCharactersInsight(sagaContent).getSuccess() ?: ""
 
         return DetailSectionView.CharacterSection(
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_characters),
@@ -173,8 +180,10 @@ class SagaDetailUIMapper(
         )
     }
 
-    suspend fun createWikiSection(sagaContent: SagaContent): DetailSectionView {
-        val insight = sagaDetailUseCase.generateWikiInsight(sagaContent).getSuccess()
+    suspend fun createWikiSection(
+        sagaContent: SagaContent,
+        insight: String? = null,
+    ): DetailSectionView {
         return DetailSectionView.WikiSection(
             saga = sagaContent,
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_wiki),
@@ -188,8 +197,10 @@ class SagaDetailUIMapper(
         )
     }
 
-    suspend fun createEventsSection(sagaContent: SagaContent): DetailSectionView {
-        val insight = sagaDetailUseCase.generateTimelineInsight(sagaContent).getSuccess()
+    suspend fun createEventsSection(
+        sagaContent: SagaContent,
+        insight: String? = null,
+    ): DetailSectionView {
         return DetailSectionView.EventsSection(
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_timeline),
             subtitle =
@@ -203,9 +214,11 @@ class SagaDetailUIMapper(
         )
     }
 
-    suspend fun createChaptersSection(sagaContent: SagaContent): DetailSectionView {
+    suspend fun createChaptersSection(
+        sagaContent: SagaContent,
+        insight: String? = null,
+    ): DetailSectionView {
         val narrativeRules = remoteConfigService.getNarrativeRules()
-        val insight = sagaDetailUseCase.generateSagaResume(sagaContent).getSuccess()
         val chapters = sagaContent.flatChapters().filter { it.isComplete(narrativeRules) }
         return DetailSectionView.ChapterSection(
             saga = sagaContent,
@@ -216,13 +229,15 @@ class SagaDetailUIMapper(
                     R.string.saga_detail_section_subtitle_chapters,
                     chapters.size,
                 ),
-            chapters = sagaContent.flatChapters().filter { it.isComplete(narrativeRules) },
+            chapters = chapters,
         )
     }
 
-    suspend fun createActsSection(sagaContent: SagaContent): DetailSectionView {
+    suspend fun createActsSection(
+        sagaContent: SagaContent,
+        insight: String? = null,
+    ): DetailSectionView {
         val narrativeRules = remoteConfigService.getNarrativeRules()
-        val insight = sagaDetailUseCase.generateSagaResume(sagaContent).getSuccess() ?: ""
         val acts = sagaContent.acts.filter { it.isComplete(narrativeRules) }
         return DetailSectionView.ActSection(
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_acts),

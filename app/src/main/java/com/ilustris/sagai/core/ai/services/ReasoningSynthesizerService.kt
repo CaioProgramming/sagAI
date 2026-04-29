@@ -21,6 +21,7 @@ class ReasoningSynthesizerService
     constructor(
         @PublishedApi internal val gemmaClient: GemmaClient,
         @PublishedApi internal val promptService: PromptService,
+        @PublishedApi internal val remoteConfigService: RemoteConfigService,
     ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
@@ -29,6 +30,7 @@ class ReasoningSynthesizerService
             conversationStyle: String? = null,
             targetLanguage: String = "Portuguese",
             showReasoning: Boolean = true,
+            genre: String? = null,
         ): Flow<StreamingState<T>> =
             channelFlow {
                 var synthesisJob: Job? = null
@@ -48,6 +50,7 @@ class ReasoningSynthesizerService
                                                 conversationStyle,
                                                 targetLanguage,
                                                 this@channelFlow,
+                                                genre,
                                             )
                                         }
                                 }
@@ -64,6 +67,7 @@ class ReasoningSynthesizerService
                                     conversationStyle,
                                     targetLanguage,
                                     this,
+                                    genre,
                                 )
                             }
                             synthesisJob?.cancel()
@@ -85,6 +89,7 @@ class ReasoningSynthesizerService
             conversationStyle: String?,
             targetLanguage: String,
             scope: ProducerScope<StreamingState<T>>,
+            genre: String? = null,
         ) {
             try {
                 val style =
@@ -125,9 +130,38 @@ class ReasoningSynthesizerService
                         ),
                     )
                     delay(3.seconds)
+                } else {
+                    Timber.w("AI Reasoning failed, using fallback...")
+                    useFallback(genre, scope)
                 }
             } catch (e: Exception) {
-                Timber.w("Failed to synthesize reasoning: ${e.message}")
+                Timber.w("Failed to synthesize reasoning: ${e.message}, using fallback...")
+                useFallback(genre, scope)
+            }
+        }
+
+        private suspend fun <T> useFallback(
+            genre: String?,
+            scope: ProducerScope<StreamingState<T>>,
+        ) {
+            try {
+                val fallbacks =
+                    remoteConfigService.getJson<com.ilustris.sagai.core.ai.model.ReasoningFallbacks>(
+                        REASONING_FALLBACKS_KEY,
+                    )
+                val fallbackMessage =
+                    if (genre != null && fallbacks?.genres?.containsKey(genre) == true) {
+                        fallbacks.genres[genre]?.randomOrNull()
+                    } else {
+                        fallbacks?.default?.randomOrNull()
+                    }
+
+                fallbackMessage?.let {
+                    scope.send(StreamingState.Reasoning(it))
+                    delay(2.seconds)
+                }
+            } catch (e: Exception) {
+            Timber.e("Error fetching fallbacks: ${e.message}")
             }
         }
 
@@ -144,5 +178,6 @@ class ReasoningSynthesizerService
 
         companion object {
             const val REASONING_SYNTHESIZER_BLUEPRINT = "reasoning_synthesizer_blueprint"
+            const val REASONING_FALLBACKS_KEY = "reasoning_fallbacks"
         }
     }

@@ -15,5 +15,13 @@ interface SagaHistoryUseCase {
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<String>
 
+    fun generateEndMessageStream(
+        saga: SagaContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>>
+
+    fun generateSagaEndingStream(
+        saga: SagaContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>>>
+
     suspend fun backupSaga(saga: SagaContent): RequestResult<RequestResult<Uri>>
 }

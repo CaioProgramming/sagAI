@@ -18,21 +18,6 @@ data class LoreGenerationArgs(
 object LorePrompts {
     const val LORE_GENERATION_BLUEPRINT = "lore_generation_blueprint"
 
-    private val SAGA_EXCLUDED_FIELDS =
-        listOf(
-            "id",
-            "icon",
-            "createdAt",
-            "mainCharacterId",
-            "isDebug",
-            "endMessage",
-            "currentActId",
-            "endedAt",
-            "review",
-            "emotionalReview",
-            "isEnded",
-        )
-
     private val CHARACTER_EXCLUDED_FIELDS =
         listOf(
             "id",
@@ -44,7 +29,7 @@ object LorePrompts {
         )
 
     val TIMELINE_EXCLUDED_FIELDS =
-        listOf("id", "timelineId", "emotionalReview", "createdAt", "chapterId")
+        listOf("id", "timelineId", "createdAt", "chapterId")
 
     val CHAPTER_EXCLUDED_FIELDS =
         listOf(
@@ -54,12 +39,11 @@ object LorePrompts {
             "actId",
             "featuredCharacters",
             "coverImage",
-            "emotionalReview",
             "createdAt",
         )
 
     val ACT_EXCLUDED_FIELDS =
-        listOf("id", "sagaId", "currentChapterId", "emotionalReview", "createdAt")
+        listOf("id", "sagaId", "currentChapterId", "createdAt")
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun loreGeneration(

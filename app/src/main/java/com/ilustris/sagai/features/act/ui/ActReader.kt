@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.act.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,6 +48,7 @@ import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun ActsGalleryContent(
@@ -86,8 +88,19 @@ fun ActReader(
             Spacer(Modifier.height(50.dp))
         }
 
-        if (!insight.isNullOrBlank()) {
-            item {
+        item {
+            if (insight.isNullOrBlank()) {
+                Box(
+                    Modifier
+                        .padding(horizontal = 16.dp, vertical = 24.dp)
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                            genre.shape(),
+                        ).reactiveShimmer(true),
+                )
+            } else {
                 Text(
                     insight,
                     style =

@@ -1,9 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
-import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -28,10 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -40,23 +34,20 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
-import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
+import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
-import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
-import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -182,8 +173,7 @@ fun SagaDetailInitialContent(
                                             .size(100.dp)
                                             .clickable {
                                                 onAction(DetailAction.RegenerateIcon)
-                                            }
-                                            .gradientFill(genre.gradient()),
+                                            }.gradientFill(genre.gradient()),
                                 )
 
                                 genre.stylisedText(
@@ -268,10 +258,15 @@ fun SagaDetailInitialContent(
                     }
 
                     item(span = { GridItemSpan(columnCount) }) {
+                        val isGeneratingInsight = section.sagaResume == saga.data.description
                         Column {
                             Text(
                                 section.sagaResume,
-                                modifier = Modifier.padding(16.dp),
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .alpha(if (isGeneratingInsight) .5f else 1f)
+                                        .reactiveShimmer(isGeneratingInsight),
                                 style =
                                     MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily = genre.bodyFont(),
@@ -282,13 +277,14 @@ fun SagaDetailInitialContent(
                     }
 
                     if (saga.data.isEnded) {
-                        item {
+                        item(span = { GridItemSpan(columnCount) }) {
                             RecapHeroCard(
                                 saga = saga,
                                 modifier =
                                     Modifier
                                         .padding(16.dp)
-                                        .fillMaxWidth(),
+                                        .fillMaxWidth()
+                                        .height(200.dp),
                                 onClick = {
                                     onAction(DetailAction.OpenReview)
                                 },
@@ -379,6 +375,41 @@ fun SagaDetailInitialContent(
                     RequestSection.entries.forEach {
                         item(span = { GridItemSpan(columnCount) }) {
                             section.miniSection(it, saga, onAction)
+                        }
+                    }
+
+                    if (saga.data.isEnded) {
+                        item(span = { GridItemSpan(columnCount) }) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                EmotionalProfileCard(
+                                    sagaContent = saga,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+
+                                if (saga.data.endMessage.isNotBlank()) {
+                                    Text(
+                                        text = saga.data.endMessage,
+                                        style =
+                                            MaterialTheme.typography.labelMedium.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                fontWeight = FontWeight.Light,
+                                                fontStyle = FontStyle.Italic,
+                                                textAlign = TextAlign.Center,
+                                                color =
+                                                    MaterialTheme.colorScheme.onBackground.copy(
+                                                        alpha = 0.7f,
+                                                    ),
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .padding(8.dp)
+                                                .fillMaxWidth(),
+                                    )
+                                }
+                            }
                         }
                     }
 

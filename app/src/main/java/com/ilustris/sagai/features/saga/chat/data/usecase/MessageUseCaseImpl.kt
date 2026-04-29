@@ -198,6 +198,7 @@ class MessageUseCaseImpl
                             generateStream,
                             "Generating a deep narrative reply",
                             conversationStyle = conversationDirective,
+                            genre = saga.data.genre.name,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val reply = state.data

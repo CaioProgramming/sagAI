@@ -122,6 +122,17 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_11_12 =
+        object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `emotionalTone` TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `emotional_personaTitle` TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `emotional_actionText` TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `emotional_emotionalContent` TEXT")
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `emotional_dominantTone` TEXT")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -133,5 +144,6 @@ object DatabaseMigrations {
             MIGRATION_8_9,
             MIGRATION_9_10,
             MIGRATION_10_11,
+            MIGRATION_11_12,
         )
 }

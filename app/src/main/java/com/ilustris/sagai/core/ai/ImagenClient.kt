@@ -114,6 +114,7 @@ class ImagenClientImpl
                                 sourceFlow = sourceStream,
                                 context = context,
                                 conversationStyle = genreConfig.conversationDirective,
+                                genre = genre.name,
                             ).collect { state ->
                                 when (state) {
                                     is StreamingState.Reasoning -> {

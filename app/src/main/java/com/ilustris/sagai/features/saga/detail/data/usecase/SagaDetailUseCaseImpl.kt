@@ -10,13 +10,8 @@ import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
-import com.ilustris.sagai.features.act.data.usecase.ActUseCase
-import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -24,9 +19,7 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.delay
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class SagaDetailUseCaseImpl
     @Inject
@@ -36,8 +29,6 @@ class SagaDetailUseCaseImpl
         private val textGenClient: GemmaClient,
         private val timelineUseCase: TimelineUseCase,
         private val emotionalUseCase: EmotionalUseCase,
-        private val chapterUseCase: ChapterUseCase,
-        private val actUseCase: ActUseCase,
         private val wikiUseCase: WikiUseCase,
         private val backupService: BackupService,
         private val genreConfigService: GenreConfigService,
@@ -66,34 +57,14 @@ class SagaDetailUseCaseImpl
 
         override suspend fun createEmotionalConclusion(currentSaga: SagaContent) =
             executeRequest {
-                val unReviewedTimelines =
-                    currentSaga.flatEvents().filter { it.data.emotionalReview.isNullOrEmpty() }
-                val unReviewedChapters =
-                    currentSaga.flatChapters().filter { it.data.emotionalReview.isNullOrEmpty() }
-                val unReviewedActs =
-                    currentSaga.acts.filter { it.data.emotionalReview.isNullOrEmpty() }
-
-                unReviewedTimelines.forEach {
-                    timelineUseCase.generateTimeline(currentSaga, it)
-                }
-
-                unReviewedChapters.forEach {
-                    chapterUseCase.generateChapter(currentSaga, it)
-                }
-
-                unReviewedActs.forEach {
-                    actUseCase.generateAct(currentSaga, it)
-                }
-
-                delay(3.seconds)
-
                 val request =
                     emotionalUseCase.generateEmotionalConclusion(currentSaga).getSuccess()!!
 
                 sagaRepository
                     .updateChat(
                         currentSaga.data.copy(
-                            emotionalReview = request,
+                            emotionalProfile = request,
+                            emotionalReview = request.emotionalContent,
                         ),
                     )
             }
@@ -174,7 +145,7 @@ class SagaDetailUseCaseImpl
         override suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String> =
             executeRequest {
                 val narrativeRules = remoteConfigService.getNarrativeRules()
-                if (saga.completedEvents(narrativeRules) > 3) return@executeRequest ""
+                if (saga.completedEvents(narrativeRules) < 3) return@executeRequest ""
                 val prompt =
                     SagaPrompts.timelineInsight(
                         promptService,

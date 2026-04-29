@@ -71,7 +71,8 @@ class ChapterUseCaseImpl
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT)!!
+                        blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                    )!!
 
             updateChapter(
                 chapterContent.data.copy(
@@ -108,7 +109,8 @@ class ChapterUseCaseImpl
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT).collect { state ->
+                        blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                    ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
                                 val genChapter = state.data.data
@@ -161,9 +163,7 @@ class ChapterUseCaseImpl
         ) = executeRequest {
             cleanUpEmptyTimeLines(chapterContent)
             val chapterWikis = chapterContent.events.map { it.updatedWikis }.flatten()
-            if (chapterWikis.size > 10) {
-                wikiUseCase.mergeWikis(saga, chapterWikis)
-            }
+            wikiUseCase.mergeWikis(saga, chapterWikis)
 
             generateChapter(
                 saga = saga,
@@ -301,7 +301,8 @@ class ChapterUseCaseImpl
                     requireTranslation = true,
                     useCore = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
-                blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT)!!
+                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                )!!
             val updated = chapter.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
             com.ilustris.sagai.core.ai.model
@@ -328,7 +329,8 @@ class ChapterUseCaseImpl
                         requireTranslation = true,
                         useCore = true,
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT).collect { state ->
+                        blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                    ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
                                 val introContent = state.data
@@ -352,9 +354,9 @@ class ChapterUseCaseImpl
                                 emit(StreamingState.Reasoning(state.chunk))
                             }
                         }
-                }
-        } catch (e: Exception) {
-            emit(StreamingState.Error(e.message ?: "Unknown error"))
+                    }
+            } catch (e: Exception) {
+                emit(StreamingState.Error(e.message ?: "Unknown error"))
+            }
         }
-    }
     }

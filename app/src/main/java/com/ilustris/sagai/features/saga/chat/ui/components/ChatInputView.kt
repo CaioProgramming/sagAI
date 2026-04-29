@@ -38,6 +38,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -210,6 +211,7 @@ fun ChatInputView(
     isEditing: Boolean = false,
     onCancelEdit: () -> Unit = {},
     maxContentLength: Int = 2000,
+    onStopGeneration: () -> Unit = {},
 ) {
     var focusModeEnabled by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -276,13 +278,15 @@ fun ChatInputView(
         val isImeVisible = WindowInsets.isImeVisible
         AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
             LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .heightIn(max = 60.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(suggestions) {
                     Button(
-                        modifier = Modifier.fillParentMaxWidth(.6f),
                         onClick = {
                             onUpdateInput(
                                 TextFieldValue(
@@ -292,7 +296,8 @@ fun ChatInputView(
                             )
                             onUpdateSender(it.type)
                         },
-                        shape = inputShape,
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         colors =
                             ButtonDefaults.outlinedButtonColors(
                                 contentColor = resolvedColor,
@@ -600,11 +605,12 @@ fun ChatInputView(
                         modifier =
                             Modifier
                                 .weight(1f)
+                                .heightIn(min = 40.dp)
                                 .verticalScroll(scrollState),
                     )
 
                     AnimatedContent(inputField.text.isEmpty()) {
-                        if (it) {
+                        if (it && !isGenerating) {
                             IconButton(onClick = {
                                 focusModeEnabled = true
                             }, modifier = Modifier.size(24.dp)) {
@@ -636,10 +642,14 @@ fun ChatInputView(
                                 val progress = cleanLength.toFloat() / maxContentLength
 
                                 IconButton(
-                                    {
-                                        if (isGenerating) return@IconButton
-                                        sendMessage()
+                                    onClick = {
+                                        if (isLoading) {
+                                            onStopGeneration()
+                                        } else {
+                                            sendMessage()
+                                        }
                                     },
+                                    enabled = (inputField.text.isNotBlank() || isGenerating),
                                     colors =
                                         IconButtonDefaults.filledIconButtonColors(
                                             containerColor = iconBg,

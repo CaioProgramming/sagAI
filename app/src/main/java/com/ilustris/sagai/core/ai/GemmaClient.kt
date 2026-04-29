@@ -636,6 +636,8 @@ class GemmaClient
                                     ).e(
                                         "Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
                                     )
+
+                                e.printStackTrace()
                             }
 
                             val isParsingError =

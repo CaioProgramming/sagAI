@@ -6,7 +6,6 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.LoadingType
-import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -54,7 +53,8 @@ class EmotionalReviewViewModel
                 emotionalUseCase.generateEmotionalConclusion(sagaContent).onSuccessAsync {
                     sagaRepository.updateChat(
                         sagaContent.data.copy(
-                            emotionalReview = it,
+                            emotionalProfile = it,
+                            emotionalReview = it.emotionalContent,
                         ),
                     )
                 }

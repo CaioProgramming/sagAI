@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.home.data.usecase
 
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
@@ -31,7 +30,7 @@ class HomeUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val backupService: BackupService,
         private val sagaBackupService: SagaBackupService,
-        private val remoteConfig: FirebaseRemoteConfig,
+        private val remoteConfig: com.ilustris.sagai.core.services.RemoteConfigService,
         private val promptService: PromptService,
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val billingService: BillingService,
@@ -43,16 +42,30 @@ class HomeUseCaseImpl
         override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
             executeRequest {
                 Timber.d("Fetching new dynamic saga texts...")
-                val result =
-                    gemmaClient.generate<DynamicSagaPrompt>(
-                        prompt = HomePrompts.dynamicSagaCreationPrompt(promptService),
-                        blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
-                        temperatureRandomness = .1f,
-                        requireTranslation = true,
-                        requirement = GemmaClient.ModelRequirement.TINY,
-                    )
-                result!!
+                try {
+                    val result =
+                        gemmaClient.generate<DynamicSagaPrompt>(
+                            prompt = HomePrompts.dynamicSagaCreationPrompt(promptService),
+                            blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
+                            temperatureRandomness = .1f,
+                            requireTranslation = true,
+                            requirement = GemmaClient.ModelRequirement.TINY,
+                        )
+                    result ?: useFallback()
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to generate dynamic prompt, using fallback")
+                    useFallback()
+                }
             }
+
+        private suspend fun useFallback(): DynamicSagaPrompt {
+            val fallbacks =
+                remoteConfig.getJson<List<DynamicSagaPrompt>>("dynamic_saga_prompt_fallbacks")
+            return fallbacks?.randomOrNull() ?: DynamicSagaPrompt(
+                title = "Prepare for a new adventure",
+                subtitle = "The cosmic library awaits your command...",
+            )
+        }
 
         override suspend fun createFakeSaga(): RequestResult<Saga> =
             executeRequest {

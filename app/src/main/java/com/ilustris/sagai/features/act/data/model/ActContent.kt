@@ -74,7 +74,7 @@ data class ActContent(
             chapters.forEach { chapter ->
                 val isLastChapter = chapter == chapters.last()
                 appendLine(chapters.indexOf(chapter) + 1)
-                append(
+                appendLine(
                     chapter.data.toAINormalize(LorePrompts.CHAPTER_EXCLUDED_FIELDS),
                 )
                 appendLine()
@@ -87,6 +87,5 @@ data class ActContent(
                     )
                 }
             }
-            appendLine("]")
         }
 }

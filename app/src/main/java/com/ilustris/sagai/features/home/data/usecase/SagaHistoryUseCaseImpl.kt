@@ -1,7 +1,9 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
@@ -48,8 +50,58 @@ class SagaHistoryUseCaseImpl
                 gemmaClient
                     .generate<String>(
                         SagaPrompts.endCredits(promptService, saga, conversationDirective),
+                        blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
                     )!!
             }
+
+        override fun generateEndMessageStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<String>>> =
+            kotlinx.coroutines.flow.flow {
+                try {
+                    genreConfigService.getGenreConfig(saga.data.genre)
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    gemmaClient
+                        .generateStreaming<GeneratedContent<String>>(
+                            prompt = SagaPrompts.endCredits(promptService, saga, conversationDirective),
+                            requireTranslation = true,
+                            useCore = true,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
+                        ).collect { state ->
+                            emit(state)
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                }
+            }
+
+        override fun generateSagaEndingStream(
+            saga: SagaContent,
+        ): Flow<StreamingState<GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>>> =
+            kotlinx.coroutines.flow.flow {
+                try {
+                    genreConfigService.getGenreConfig(saga.data.genre)
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    gemmaClient
+                        .generateStreaming<GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>>(
+                            prompt =
+                                SagaPrompts.generateSagaEnding(
+                                    promptService,
+                                    saga,
+                                    conversationDirective,
+                                ),
+                            requireTranslation = true,
+                            useCore = true,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
+                        ).collect { state ->
+                        emit(state)
+                    }
+            } catch (e: Exception) {
+                emit(StreamingState.Error(e.message ?: "Unknown error"))
+            }
+        }
 
         override suspend fun backupSaga(saga: SagaContent) = executeRequest { sagaRepository.backupSaga(saga) }
     }

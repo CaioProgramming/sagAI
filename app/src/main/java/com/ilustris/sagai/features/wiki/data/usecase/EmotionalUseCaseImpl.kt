@@ -2,13 +2,16 @@ package com.ilustris.sagai.features.wiki.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.features.emotional.data.model.EmotionalProfile
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import javax.inject.Inject
 
@@ -24,7 +27,7 @@ class EmotionalUseCaseImpl
         override suspend fun generateEmotionalReview(
             sagaContent: SagaContent,
             context: String,
-        ): RequestResult<String> =
+        ): RequestResult<EmotionalProfile> =
             executeRequest {
                 val conversationDirective =
                     genreConfigService.conversationBlueprint(sagaContent.data.genre)
@@ -36,7 +39,7 @@ class EmotionalUseCaseImpl
                         conversationDirective,
                     )
                 gemmaClient
-                    .generate<String>(
+                    .generate<EmotionalProfile>(
                         prompt = prompt,
                         requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )!!
@@ -47,16 +50,18 @@ class EmotionalUseCaseImpl
                 val conversationDirective =
                     genreConfigService.conversationBlueprint(sagaContent.data.genre)
 
-                gemmaClient.generate<String>(
-                    prompt =
-                        EmotionalPrompt.generateEmotionalConclusion(
-                            promptService,
-                            promptService.getPromptDirectives(),
-                            sagaContent,
-                            conversationDirective,
-                        ),
-                    requirement = GemmaClient.ModelRequirement.HIGH,
-                blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT)!!
+                val result =
+                    gemmaClient.generate<SagaEnding>(
+                        prompt =
+                            SagaPrompts.generateSagaEnding(
+                                promptService,
+                                sagaContent,
+                                conversationDirective,
+                            ),
+                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
+                    )!!
+                result.emotionalProfile
             }
 
         override suspend fun getEmotionalCard(sagaContent: SagaContent): RequestResult<String> =
@@ -73,6 +78,6 @@ class EmotionalUseCaseImpl
                 .getEmotionUrl(
                     genre = sagaContent.data.genre,
                     tone = timelineContent.emotionalRanking().first().first!!,
-            )!!
-    }
+                )!!
+        }
     }

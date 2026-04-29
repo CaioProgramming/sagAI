@@ -64,6 +64,7 @@ class SagaDetailViewModel
 
         private val sectionCache = mutableMapOf<RequestSection, DetailSectionView>()
         private var sectionJob: Job? = null
+        private val insightJobs = mutableMapOf<RequestSection, Job>()
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -90,11 +91,77 @@ class SagaDetailViewModel
                             sectionCache[requestSection] = mappedSection
                             _actualSection.value = mappedSection
                             _state.value = State.Success(currentSaga)
+                            generateInsight(requestSection, currentSaga)
                         }.onFailureAsync {
                             _state.emit(State.Error(emptyString()))
                         }
                 }
         }
+
+        private fun generateInsight(
+            section: RequestSection,
+            sagaContent: SagaContent,
+        ) {
+            if (insightJobs.containsKey(section)) return
+
+            insightJobs[section] =
+                viewModelScope.launch(Dispatchers.IO) {
+                    val result =
+                        when (section) {
+                            RequestSection.START -> {
+                                sagaDetailUseCase.generateSagaResume(sagaContent)
+                            }
+
+                            RequestSection.CHARACTERS -> {
+                                sagaDetailUseCase.generateCharactersInsight(
+                                    sagaContent,
+                                )
+                            }
+
+                            RequestSection.WIKI -> {
+                                sagaDetailUseCase.generateWikiInsight(sagaContent)
+                            }
+
+                            RequestSection.EVENTS -> {
+                                sagaDetailUseCase.generateTimelineInsight(
+                                    sagaContent,
+                                )
+                            }
+
+                            RequestSection.CHAPTERS -> {
+                                sagaDetailUseCase.generateSagaResume(sagaContent)
+                            }
+
+                            RequestSection.ACTS -> {
+                                sagaDetailUseCase.generateSagaResume(sagaContent)
+                            }
+                        }
+
+                    result.onSuccess { insight ->
+                        updateSectionWithInsight(section, insight)
+                    }
+                }
+        }
+
+        private fun updateSectionWithInsight(
+            section: RequestSection,
+            insight: String,
+        ) {
+            val currentSection = sectionCache[section] ?: return
+            val updatedSection =
+                when (currentSection) {
+                    is DetailSectionView.InitialSection -> currentSection.copy(sagaResume = insight)
+                    is DetailSectionView.CharacterSection -> currentSection.copy(insight = insight)
+                    is DetailSectionView.WikiSection -> currentSection.copy(insight = insight)
+                is DetailSectionView.EventsSection -> currentSection.copy(insight = insight)
+                is DetailSectionView.ChapterSection -> currentSection.copy(insight = insight)
+                is DetailSectionView.ActSection -> currentSection.copy(insight = insight)
+            }
+        sectionCache[section] = updatedSection
+        if (_actualSection.value?.title == currentSection.title) {
+            _actualSection.value = updatedSection
+        }
+    }
 
         fun handleAction(detailAction: DetailAction) {
             viewModelScope.launch {

@@ -121,4 +121,6 @@ sealed class ChatUiAction {
     data object ContinueMilestone : ChatUiAction()
 
     data object ShowObjective : ChatUiAction()
+
+    data object StopGeneration : ChatUiAction()
 }

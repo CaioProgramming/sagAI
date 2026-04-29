@@ -47,6 +47,7 @@ import com.ilustris.sagai.core.notifications.WorkManagerSchedulerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
 import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.MascotEmotionService
@@ -447,6 +448,11 @@ object AppModule {
     @Singleton
     fun provideMascotEmotionService(remoteConfigService: RemoteConfigService): MascotEmotionService =
         MascotEmotionService(remoteConfigService)
+
+    @Provides
+    @Singleton
+    fun provideEmotionalToneVisualService(remoteConfigService: RemoteConfigService): EmotionalToneVisualService =
+        EmotionalToneVisualService(remoteConfigService)
 }
 
 @InstallIn(SingletonComponent::class)

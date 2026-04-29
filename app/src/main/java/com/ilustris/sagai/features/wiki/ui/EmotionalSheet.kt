@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -31,12 +33,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.emotional.ui.EmotionalProfileViewModel
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.presentation.EmotionalReviewViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @Composable
@@ -44,13 +48,16 @@ fun EmotionalSheet(
     saga: SagaContent,
     onDismissRequest: () -> Unit = {},
     viewModel: EmotionalReviewViewModel = hiltViewModel(),
+    profileViewModel: EmotionalProfileViewModel = hiltViewModel(),
 ) {
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val genre = saga.data.genre
-    val cardImage by viewModel.emotionalIllustration.collectAsStateWithLifecycle()
+    val emotionalIconUrl by profileViewModel.emotionalIconUrl.collectAsStateWithLifecycle()
+
     LaunchedEffect(saga) {
         viewModel.createEmotionalReview(saga)
+        profileViewModel.loadEmotionalIcon(saga)
     }
 
     if (isGenerating) {
@@ -75,7 +82,7 @@ fun EmotionalSheet(
 
     Box(Modifier.fillMaxSize()) {
         AsyncImage(
-            cardImage,
+            emotionalIconUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             colorFilter =
@@ -85,20 +92,22 @@ fun EmotionalSheet(
                 ),
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .fillMaxHeight(.6f)
                     .zoomAnimation()
-                    .clipToBounds(),
+                    .clipToBounds()
+                    .reactiveShimmer(true),
         )
 
         Column(
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .background(fadeGradientTop())
+                    .background(fadeGradientBottom())
                     .verticalScroll(rememberScrollState()),
         ) {
             Text(
-                stringResource(R.string.inner_journey),
+                saga.data.emotionalProfile?.personaTitle ?: stringResource(R.string.inner_journey),
                 style =
                     MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Black,
@@ -107,7 +116,8 @@ fun EmotionalSheet(
             )
 
             Text(
-                saga.data.emotionalReview ?: emptyString(),
+                saga.data.emotionalProfile?.emotionalContent ?: saga.data.emotionalReview
+                    ?: emptyString(),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Justify,
                 modifier = Modifier.padding(16.dp),

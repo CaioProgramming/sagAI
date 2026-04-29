@@ -81,4 +81,6 @@ interface SagaContentManager {
     suspend fun showObjective()
 
     suspend fun getCurrentObjective(sceneSummary: SceneSummary)
+
+    fun stopProcessing()
 }

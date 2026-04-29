@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findTimeline
@@ -255,6 +256,7 @@ class SagaContentManagerImpl
                 }?.onFailureAsync {
                     Timber.e("Failed to advance narrative: ${it.message}")
                     emitMilestone(null)
+                    checkNarrativeProgression(currentSaga, true)
                 }
         }
 
@@ -420,8 +422,8 @@ class SagaContentManagerImpl
                                                             number =
                                                                 saga
                                                                     .chapterNumber(chapter.data)
-                                                                .toRoman(),
-                                                                    sceneSummary = summary,
+                                                                    .toRoman(),
+                                                            sceneSummary = summary,
                                                         ),
                                                     )
                                                 } ?: run {
@@ -536,7 +538,7 @@ class SagaContentManagerImpl
             saga: SagaContent,
             chapter: ChapterContent,
         ) = executeRequest {
-            emitMilestone(SagaMilestone.Loading)
+            dismissMilestone()
             var generated: GeneratedContent<Chapter>? = null
             val contextString = "Synthesizing chapter progression and weaving plot threads..."
             val style = genreConfigService.conversationBlueprint(saga.data.genre)
@@ -546,6 +548,7 @@ class SagaContentManagerImpl
                     sourceFlow = chapterUseCase.generateChapterStream(saga, chapter),
                     context = contextString,
                     conversationStyle = style,
+                    genre = saga.data.genre.name,
                 ).collect { state ->
                     when (state) {
                         is StreamingState.Reasoning -> {
@@ -685,7 +688,7 @@ class SagaContentManagerImpl
                 endTimeline(saga.currentActInfo?.currentChapterInfo)
                 error("Timeline already completed")
             } else {
-                emitMilestone(SagaMilestone.Loading)
+                dismissMilestone()
                 var generated: GeneratedContent<Timeline>? = null
                 val contextString = "Evaluating actions and shaping consequences..."
                 val style = genreConfigService.conversationBlueprint(saga.data.genre)
@@ -695,6 +698,7 @@ class SagaContentManagerImpl
                         sourceFlow = timelineUseCase.generateFullLoreUpdateStream(saga, content),
                         context = contextString,
                         conversationStyle = style,
+                        genre = saga.data.genre.name,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Reasoning -> {
@@ -751,7 +755,7 @@ class SagaContentManagerImpl
                         "Fake act finished!",
                     )
                 } else {
-                    emitMilestone(SagaMilestone.Loading)
+                    dismissMilestone()
                     var generated: GeneratedContent<Act>? = null
                     val contextString = "Judging the player's choices and concluding the act..."
                     val style = genreConfigService.conversationBlueprint(saga.data.genre)
@@ -761,6 +765,7 @@ class SagaContentManagerImpl
                             sourceFlow = actUseCase.generateActStream(saga, currentAct),
                             context = contextString,
                             conversationStyle = style,
+                            genre = saga.data.genre.name,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Reasoning -> {
@@ -799,6 +804,7 @@ class SagaContentManagerImpl
                             sourceFlow = flow,
                             context = "Generating act introduction for ${saga.data.title}",
                             conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
+                            genre = saga.data.genre.name,
                         )
                     }.collect { state ->
                         when (state) {
@@ -831,6 +837,7 @@ class SagaContentManagerImpl
                             sourceFlow = flow,
                             context = "Generating chapter introduction for ${currentChapter.data.title}",
                             conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
+                            genre = saga.data.genre.name,
                         )
                     }.collect { state ->
                         when (state) {
@@ -1031,31 +1038,27 @@ class SagaContentManagerImpl
 
             Timber.d("User continued from milestone: ${milestone.javaClass.simpleName}")
 
-            startProcessing {
-                when (milestone) {
-                    is SagaMilestone.Introduction -> {
-                        doNothing()
-                    }
-
-                    is SagaMilestone.NewEvent -> {
-                        generateTimelineContent(milestone.timeline, saga)
-                    }
-
-                    is SagaMilestone.ChapterFinished -> {
-                        handleChapterPostActions(milestone.chapter, saga)
-                    }
-
-                    is SagaMilestone.ActFinished -> {
-                        endAct(saga)
-                    }
-
-                    else -> {
-                        doNothing()
-                    }
+            dismissMilestone()
+            when (milestone) {
+                is SagaMilestone.Introduction -> {
+                    doNothing()
                 }
 
-                delay(milestone.delay)
-                dismissMilestone()
+                is SagaMilestone.NewEvent -> {
+                    generateTimelineContent(milestone.timeline, saga)
+                }
+
+                is SagaMilestone.ChapterFinished -> {
+                    handleChapterPostActions(milestone.chapter, saga)
+                }
+
+                is SagaMilestone.ActFinished -> {
+                    endAct(saga)
+                }
+
+                else -> {
+                    doNothing()
+                }
             }
         }
 
@@ -1331,7 +1334,6 @@ class SagaContentManagerImpl
             saga: SagaContent,
         ) {
             saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
-                timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
 
                 characterUseCase.updateCharacterKnowledge(timeline, saga)
 
@@ -1347,17 +1349,17 @@ class SagaContentManagerImpl
             chapter: Chapter,
             saga: SagaContent,
         ) {
-            val chapterContent =
-                saga
-                    .flatChapters()
-                    .find { it.data.id == chapter.id }!!
-                    .copy(data = chapter)
+            endChapter(saga.currentActInfo)
 
             CoroutineScope(Dispatchers.IO).launch {
+                val chapterContent =
+                    saga
+                        .flatChapters()
+                        .find { it.data.id == chapter.id }!!
+                        .copy(data = chapter)
+                chapterUseCase.reviewChapter(saga, chapterContent)
                 chapterUseCase.generateChapterCover(chapterContent, saga)
             }
-            chapterUseCase.reviewChapter(saga, chapterContent)
-            endChapter(saga.currentActInfo)
         }
 
         private suspend fun createEndingMessage(saga: SagaContent) =
@@ -1373,20 +1375,51 @@ class SagaContentManagerImpl
                                 endedAt = System.currentTimeMillis(),
                             ),
                         ).asSuccess()
+                } else {
+                    dismissMilestone()
+                    var generated: GeneratedContent<SagaEnding>? = null
+                    val contextString =
+                        "Concluding your legend and weaving the final threads of fate..."
+                    val style = genreConfigService.conversationBlueprint(saga.data.genre)
+
+                    emitMilestone(SagaMilestone.Loading)
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(saga),
+                            context = contextString,
+                            conversationStyle = style,
+                            genre = saga.data.genre.name,
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Reasoning -> {
+                                    contentReasoning.value = state.chunk
+                                }
+
+                                is StreamingState.Success -> {
+                                    generated = state.data
+                                    contentReasoning.value = null
+                                }
+
+                                is StreamingState.Error -> {
+                                    contentReasoning.value = null
+                                    error(state.message)
+                                }
+                            }
+                        }
+
+                    val ending = generated?.data ?: error("Failed to generate ending")
+                    emitMilestone(null)
+                    sagaHistoryUseCase
+                        .updateSaga(
+                            saga.data.copy(
+                                endMessage = ending.endingMessage,
+                                isEnded = true,
+                                endedAt = System.currentTimeMillis(),
+                                emotionalProfile = ending.emotionalProfile,
+                                emotionalReview = ending.emotionalProfile.emotionalContent,
+                            ),
+                        )
                 }
-                val endingMessage = sagaHistoryUseCase.generateEndMessage(saga).getSuccess()!!
-                val emotionalEnding =
-                    emotionalUseCase.generateEmotionalConclusion(saga).getSuccess()
-                emitMilestone(null)
-                sagaHistoryUseCase
-                    .updateSaga(
-                        saga.data.copy(
-                            endMessage = endingMessage,
-                            isEnded = true,
-                            endedAt = System.currentTimeMillis(),
-                            emotionalReview = emotionalEnding,
-                        ),
-                    )
             }
 
         override suspend fun generateCharacter(
@@ -1428,6 +1461,7 @@ class SagaContentManagerImpl
                                     ),
                                 context = contextString,
                                 conversationStyle = style,
+                                genre = currentSaga.data.genre.name,
                             ).collect { state ->
                                 when (state) {
                                     is StreamingState.Reasoning -> {
@@ -1503,4 +1537,11 @@ class SagaContentManagerImpl
             }
 
         suspend fun generateEnding(saga: SagaContent) = createEndingMessage(saga)
+
+        override fun stopProcessing() {
+            Timber.i("Stopping all narrative processing")
+            setNarrativeProcessingStatus(false)
+            isProcessing.set(false)
+            emitMilestone(null)
+    }
     }

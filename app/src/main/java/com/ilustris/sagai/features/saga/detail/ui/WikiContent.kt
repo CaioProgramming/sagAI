@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
@@ -42,6 +43,7 @@ import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
@@ -101,9 +103,20 @@ fun WikiContent(
             }
 
             item(span = { GridItemSpan(2) }) {
-                insight?.let {
+                if (insight.isNullOrBlank()) {
+                    Box(
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 24.dp)
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                                genre.shape(),
+                            ).reactiveShimmer(true),
+                    )
+                } else {
                     Text(
-                        it,
+                        insight,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = genre.bodyFont(),

@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -145,9 +144,8 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier =
             Modifier
-                .padding(16.dp)
-                .fillMaxSize()
-                .padding(8.dp),
+                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .fillMaxSize(),
     ) {
         item {
             Box(
@@ -163,19 +161,22 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                             fontFamily = genre.headerFont(),
                             color = genre.resolveIconColor(),
                             textAlign = TextAlign.Center,
+                            shadow =
+                                Shadow(
+                                    genre.resolveColor(),
+                                    Offset.Zero,
+                                    15f,
+                                ),
                         ),
                     modifier =
                         Modifier
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer,
-                                genre.shape(),
-                            ).background(
+                            .fillMaxWidth()
+                            .gradientFill(
                                 progressiveBrush(
                                     genre.resolveColor(),
                                     progress,
                                 ),
-                                genre.shape(),
-                            ).padding(8.dp),
+                            ).padding(16.dp),
                 )
             }
         }
@@ -184,30 +185,33 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
-                        Modifier.gradientFill(
-                            progressiveBrush(
-                                genre.resolveColor(),
-                                it.progress,
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .gradientFill(
+                                progressiveBrush(
+                                    genre.resolveColor(),
+                                    it.progress,
+                                ),
                             ),
-                        ),
                 ) {
                     Icon(
                         painterResource(genre.icon),
                         null,
-                        tint = MaterialTheme.colorScheme.onBackground,
                         modifier =
                             Modifier
-                                .padding(
-                                    end = 8.dp,
-                                ).size(48.dp),
+                                .padding(12.dp)
+                                .size(32.dp),
                     )
 
                     Text(
                         it.title,
                         style =
-                            MaterialTheme.typography.titleSmall.copy(
+                            MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.ExtraBold,
                             ),
+                        modifier = Modifier.padding(end = 8.dp),
                     )
                 }
             }
@@ -222,20 +226,21 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                             genre.resolveColor()
                         }
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 24.dp, top = 4.dp, bottom = 4.dp),
                     ) {
                         Icon(
                             painterResource(genre.icon),
                             null,
                             tint = iconTint,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(16.dp),
                         )
 
                         Text(
                             it.title,
                             style =
-                                MaterialTheme.typography.labelLarge.copy(
+                                MaterialTheme.typography.labelMedium.copy(
                                     fontFamily = genre.bodyFont(),
                                     color = iconTint,
                                 ),
@@ -243,12 +248,12 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                     }
                     if (it != drawerItems.last()) {
                         VerticalDivider(
-                            thickness = 2.dp,
+                            thickness = 1.dp,
                             color = iconTint,
                             modifier =
                                 Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .fillParentMaxHeight(.05f),
+                                    .padding(horizontal = 31.dp)
+                                    .fillParentMaxHeight(.03f),
                         )
                     }
                 }
@@ -273,9 +278,12 @@ fun DetailSectionView.InitialSection.miniSection(
         RequestSection.ACTS -> {
             if (acts.isEmpty()) return
             Column(
-                Modifier.clickable {
-                    onAction(OpenSection(RequestSection.ACTS))
-                },
+                Modifier
+                    .padding(16.dp)
+                    .clickable {
+                        onAction(OpenSection(RequestSection.ACTS))
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val text =
                     if (saga.data.isEnded) stringResource(R.string.see_full_story) else "A história até agora"

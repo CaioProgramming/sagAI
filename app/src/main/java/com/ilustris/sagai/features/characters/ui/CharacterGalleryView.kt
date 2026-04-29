@@ -5,6 +5,7 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -58,6 +60,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,9 +127,20 @@ fun CharactersGalleryContent(
                             titleModifier = titleModifier,
                         )
 
-                        section.insight?.let {
+                        if (section.insight.isNullOrBlank()) {
+                            Box(
+                                Modifier
+                                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                                    .fillMaxWidth()
+                                    .height(60.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                                        genre.shape(),
+                                    ).reactiveShimmer(true),
+                            )
+                        } else {
                             Text(
-                                it,
+                                section.insight,
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontFamily = genre.bodyFont(),

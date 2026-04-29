@@ -3,9 +3,10 @@ package com.ilustris.sagai.core.ai.services
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
 import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toPromptVariables
-import javax.inject.Inject
 import timber.log.Timber
+import javax.inject.Inject
 
 interface PromptService {
     /**
@@ -66,7 +67,9 @@ class PromptServiceImpl
             logEnabled: Boolean,
         ): String {
             if (logEnabled) {
-                Timber.tag("PromptService").i("buildPrompt: Received vars ->\n$variables")
+                Timber
+                    .tag("PromptService")
+                    .i("buildPrompt: Received vars ->\n${variables.toJsonFormat()}")
             }
 
             val placeholders =
@@ -74,7 +77,12 @@ class PromptServiceImpl
             val uniquePlaceholders = placeholders.distinct()
 
             if (logEnabled) {
-                Timber.tag("PromptService").i("buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders")
+                Timber
+                    .tag(
+                        "PromptService",
+                    ).i(
+                        "buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
+                    )
             }
 
             var result = template
@@ -103,7 +111,10 @@ class PromptServiceImpl
             logEnabled: Boolean,
         ): String {
             val stringMap = variablesDataClass.toPromptVariables()
-            Timber.tag("PromptService").d("buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys")
+            Timber
+                .tag(
+                    "PromptService",
+                ).d("buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys")
             return buildPrompt(template, stringMap, logEnabled)
         }
 
