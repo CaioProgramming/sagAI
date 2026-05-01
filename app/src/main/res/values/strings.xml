@@ -624,4 +624,18 @@
     <!-- Errors -->
     <string name="error_cosmic_interruption">Cosmic Interruption</string>
     <string name="error_retry_align">Try Aligning Again</string>
+    <string name="read_chronicles">Read Chronicles</string>
+    <string name="the_chronicles">The Chronicles</string>
+    <string name="the_chronicle_awaits">The Chronicle Awaits</string>
+    <string name="read_volume">Read Volume %s</string>
+    <string name="reveal_volume">Reveal Volume %s</string>
+    <string name="see_story">See story</string>
+    <string name="see_protagonists">See protagonists</string>
+    <string name="volume">Volume</string>
+    <string name="writing">Writing…</string>
+    <string name="chronicle_placeholder">This chapter of your legend has not been woven into the Great Library yet. Summon the Chronicler to record your deeds.</string>
+    <string name="weave_chronicle">Weave the Chronicle</string>
+    <string name="concluding_volume">Vol %s</string>
+    <string name="saga_continues">The Saga Continues</string>
+    <string name="chronicle_end">The chronicles have recorded all that has transpired... for now.</string>
 </resources>

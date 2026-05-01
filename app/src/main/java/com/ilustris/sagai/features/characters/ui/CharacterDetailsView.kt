@@ -258,6 +258,7 @@ private fun CharacterDetailsLoaded(
             fadeIn(tween(700)) togetherWith fadeOut(tween(200))
         },
     ) { character ->
+        var imageError by remember { mutableStateOf(false) }
         val characterColor = character.hexColor.hexToColor() ?: resolvedColor
         val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
 
@@ -275,10 +276,7 @@ private fun CharacterDetailsLoaded(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
-                    if (character.image.isNotBlank()) {
-                        // iOS lock screen depth effect: character name sits between background
-                        // and foreground subject layers so the artwork overlaps the text naturally.
-                        // A top gradient fade + translationY offset create readable room for the name.
+                    if (character.image.isNotBlank() && !imageError) {
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier =
@@ -288,6 +286,7 @@ private fun CharacterDetailsLoaded(
                         ) {
                             DepthLayout(
                                 imagePath = character.image,
+                                onLoadError = { imageError = true },
                                 modifier =
                                     Modifier
                                         .fillParentMaxHeight(.6f)
@@ -307,7 +306,8 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        ).graphicsLayer(
+                                        )
+                                        .graphicsLayer(
                                             translationY = 120f,
                                         ),
                             ) {
@@ -409,7 +409,8 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -536,7 +537,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

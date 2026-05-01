@@ -26,13 +26,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.Placeholder
@@ -47,22 +44,6 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.services.MascotEmotionService
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
-
-@EntryPoint
-@InstallIn(SingletonComponent::class)
-interface MascotEmotionEntryPoint {
-    fun mascotEmotionService(): MascotEmotionService
-}
-
-val LocalMascotEmotionService =
-    compositionLocalOf<MascotEmotionService> {
-        error("No MascotEmotionService provided")
-    }
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -114,23 +95,11 @@ fun SagAITheme(
             else -> LightColorScheme
         }
 
-    val context = LocalContext.current
-    val mascotEmotionService =
-        remember(context) {
-            EntryPointAccessors
-                .fromApplication(
-                    context.applicationContext,
-                    MascotEmotionEntryPoint::class.java,
-                ).mascotEmotionService()
-        }
-
-    CompositionLocalProvider(LocalMascotEmotionService provides mascotEmotionService) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
-            content = content,
-        )
-    }
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

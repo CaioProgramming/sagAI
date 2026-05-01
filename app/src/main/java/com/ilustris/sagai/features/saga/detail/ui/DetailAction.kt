@@ -11,6 +11,10 @@ sealed class DetailAction {
 
     data object OpenEmotionalReview : DetailAction()
 
+    data class OpenChronicles(
+        val actId: Int? = null,
+    ) : DetailAction()
+
     data object Delete : DetailAction()
 
     data object RegenerateIcon : DetailAction()

@@ -133,6 +133,23 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_12_13 =
+        object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE acts ADD COLUMN `book_actTitle` TEXT")
+                db.execSQL("ALTER TABLE acts ADD COLUMN `book_sagaTitle` TEXT")
+                db.execSQL("ALTER TABLE acts ADD COLUMN `book_coverQuote` TEXT")
+                db.execSQL("ALTER TABLE acts ADD COLUMN `book_pages` TEXT")
+            }
+        }
+
+    val MIGRATION_13_14 =
+        object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE acts ADD COLUMN `book_authorNote` TEXT")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -145,5 +162,7 @@ object DatabaseMigrations {
             MIGRATION_9_10,
             MIGRATION_10_11,
             MIGRATION_11_12,
+            MIGRATION_12_13,
+            MIGRATION_13_14,
         )
 }

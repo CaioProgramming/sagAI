@@ -122,6 +122,7 @@ class SagaContentManagerImpl
         private var sagaJob: kotlinx.coroutines.Job? = null
         private var loadingObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
+        private var reasoningObserverJob: kotlinx.coroutines.Job? = null
 
         override var snackBarUpdate: MutableStateFlow<SnackBarState?> = MutableStateFlow(null)
 
@@ -183,12 +184,10 @@ class SagaContentManagerImpl
                         }
 
                         is PendingAdvance.NewActIntroduction -> {
-                            emitMilestone(SagaMilestone.Loading)
                             generateActIntroduction(pendingAdvance.act)
                         }
 
                         is PendingAdvance.NewChapterIntroduction -> {
-                            emitMilestone(SagaMilestone.Loading)
                             generateChapterIntroduction(pendingAdvance.chapter)
                         }
 
@@ -296,6 +295,9 @@ class SagaContentManagerImpl
                         }
                         if (milestoneObserverJob == null || milestoneObserverJob?.isActive == false) {
                             milestoneObserverJob = observeMilestone()
+                        }
+                        if (reasoningObserverJob == null || reasoningObserverJob?.isActive == false) {
+                            reasoningObserverJob = observeReasoning()
                         }
                         managerScope.launch {
                             isOnboardingVisible.collect { isVisible ->
@@ -880,6 +882,15 @@ class SagaContentManagerImpl
                 }
             }
 
+        private fun observeReasoning() =
+            managerScope.launch {
+                contentReasoning.collectLatest { reasoning ->
+                    if (reasoning != null && milestoneUpdate.value != SagaMilestone.Loading) {
+                        emitMilestone(SagaMilestone.Loading)
+                    }
+                }
+        }
+
         override fun checkNarrativeProgression(
             saga: SagaContent?,
             isRetrying: Boolean,
@@ -1381,8 +1392,6 @@ class SagaContentManagerImpl
                     val contextString =
                         "Concluding your legend and weaving the final threads of fate..."
                     val style = genreConfigService.conversationBlueprint(saga.data.genre)
-
-                    emitMilestone(SagaMilestone.Loading)
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(saga),
@@ -1429,7 +1438,6 @@ class SagaContentManagerImpl
 
             executeRequest {
                 setProcessing(true)
-                emitMilestone(content.value?.data?.let { SagaMilestone.Loading })
                 try {
                     val currentSaga = content.value!!
                     if (isDebugModeEnabled) {

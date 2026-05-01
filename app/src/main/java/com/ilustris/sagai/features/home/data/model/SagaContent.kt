@@ -101,7 +101,7 @@ fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id =
 
 fun SagaContent.findChapter(chapterId: Int) = flatChapters().find { it.data.id == chapterId }
 
-fun SagaContent.findAct(actId: Int) = acts.find { it.data.id == actId }
+fun SagaContent.findAct(actId: Int?) = acts.find { it.data.id == actId }
 
 fun SagaContent.findCharacter(characterId: Int?) = characters.find { it.data.id == characterId }
 

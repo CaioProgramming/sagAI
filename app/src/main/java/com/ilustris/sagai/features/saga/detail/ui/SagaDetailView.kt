@@ -136,6 +136,10 @@ fun SagaDetailView(
                         showEmotionalReview = true
                     }
 
+                    is DetailAction.OpenChronicles -> {
+                        viewModel.loadSection(RequestSection.ACTS)
+                    }
+
                     DetailAction.Delete -> {
                         sagaToDelete = saga?.data
                     }

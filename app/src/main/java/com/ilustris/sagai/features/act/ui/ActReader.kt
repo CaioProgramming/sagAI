@@ -39,6 +39,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -54,6 +55,7 @@ import com.ilustris.sagai.ui.theme.shape
 fun ActsGalleryContent(
     section: DetailSectionView.ActSection,
     onBackClick: () -> Unit = {},
+    onAction: (DetailAction) -> Unit = {},
 ) {
     val saga = section.saga
     val genre = section.saga.data.genre
@@ -69,6 +71,7 @@ fun ActsGalleryContent(
         endMessage = saga.data.endMessage,
         emotionalReview = saga.data.emotionalReview,
         insight = section.insight,
+        onReadChronicles = { onAction(DetailAction.OpenChronicles()) },
     )
 }
 
@@ -82,6 +85,7 @@ fun ActReader(
     endMessage: String,
     emotionalReview: String?,
     insight: String? = null,
+    onReadChronicles: () -> Unit = {},
 ) {
     LazyColumn {
         item {
@@ -115,6 +119,28 @@ fun ActReader(
                             .fillMaxWidth()
                             .alpha(.7f),
                 )
+            }
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.Button(
+                    onClick = onReadChronicles,
+                    shape = genre.shape(),
+                    colors =
+                        androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = genre.resolveColor(),
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                ) {
+                    Text(
+                        androidx.compose.ui.res
+                            .stringResource(R.string.read_chronicles),
+                    )
+                }
             }
         }
 

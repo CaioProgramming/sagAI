@@ -101,7 +101,6 @@ object ChatPrompts {
             "isEnded",
             "isDebug",
             "endMessage",
-            "review",
             "playTimeMs",
             "narratorVoice",
         )

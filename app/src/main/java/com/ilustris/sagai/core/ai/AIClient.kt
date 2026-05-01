@@ -9,7 +9,7 @@ abstract class AIClient {
 
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
-        val languageName = locale.getDisplayName(Locale.ENGLISH)
+        val languageName = locale.getDisplayName(locale)
         return languageName.ifBlank { locale.toLanguageTag() }
     }
 }

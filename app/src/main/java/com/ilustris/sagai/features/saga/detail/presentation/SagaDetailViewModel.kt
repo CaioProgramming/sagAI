@@ -82,7 +82,6 @@ class SagaDetailViewModel
 
             sectionJob =
                 viewModelScope.launch {
-                    _state.value = State.Loading
                     sagaDetailUIMapper
                         .buildSection(
                             currentSaga,
@@ -153,15 +152,15 @@ class SagaDetailViewModel
                     is DetailSectionView.InitialSection -> currentSection.copy(sagaResume = insight)
                     is DetailSectionView.CharacterSection -> currentSection.copy(insight = insight)
                     is DetailSectionView.WikiSection -> currentSection.copy(insight = insight)
-                is DetailSectionView.EventsSection -> currentSection.copy(insight = insight)
-                is DetailSectionView.ChapterSection -> currentSection.copy(insight = insight)
-                is DetailSectionView.ActSection -> currentSection.copy(insight = insight)
+                    is DetailSectionView.EventsSection -> currentSection.copy(insight = insight)
+                    is DetailSectionView.ChapterSection -> currentSection.copy(insight = insight)
+                    is DetailSectionView.ActSection -> currentSection.copy(insight = insight)
+                }
+            sectionCache[section] = updatedSection
+            if (_actualSection.value?.title == currentSection.title) {
+                _actualSection.value = updatedSection
             }
-        sectionCache[section] = updatedSection
-        if (_actualSection.value?.title == currentSection.title) {
-            _actualSection.value = updatedSection
         }
-    }
 
         fun handleAction(detailAction: DetailAction) {
             viewModelScope.launch {
@@ -177,13 +176,15 @@ class SagaDetailViewModel
         fun fetchSagaDetails(sagaId: String) {
             showIntro.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                _state.value = State.Loading
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
                     saga?.let { data ->
+                        sectionCache.clear()
                         this@SagaDetailViewModel.saga.value = data
                         visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
 
-                        loadSection(RequestSection.START)
+                        if (_actualSection.value == null) {
+                            loadSection(RequestSection.START)
+                        }
                         detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
                         launchIntroSequence()
                     }

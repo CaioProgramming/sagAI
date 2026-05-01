@@ -80,7 +80,7 @@ class HomeUseCaseImpl
                     )
             }
 
-        override suspend fun checkDebugBuild(): Boolean = BuildConfig.DEBUG && remoteConfig.getValue("isDebugger").asBoolean()
+        override suspend fun checkDebugBuild(): Boolean = BuildConfig.DEBUG && remoteConfig.getBoolean("isDebugger") == true
 
         override suspend fun recoverSaga(sagaContent: RestorableSaga) = sagaBackupService.restoreContent(sagaContent)
 

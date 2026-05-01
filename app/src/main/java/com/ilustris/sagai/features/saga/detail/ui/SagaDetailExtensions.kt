@@ -6,13 +6,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -28,13 +31,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.features.act.ui.ActsGalleryContent
+import com.ilustris.sagai.features.act.ui.ChronicleView
+import com.ilustris.sagai.features.act.ui.components.BookCard
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChaptersGalleryContent
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
@@ -59,7 +62,6 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.shape
 
@@ -126,9 +128,10 @@ fun DetailSectionView.RenderSection(
         }
 
         is DetailSectionView.ActSection -> {
-            ActsGalleryContent(
+            ChronicleView(
                 section = this,
-                onBackClick = {
+                saga = saga,
+                onClose = {
                     onAction(OpenSection(RequestSection.START))
                 },
             )
@@ -279,36 +282,36 @@ fun DetailSectionView.InitialSection.miniSection(
             if (acts.isEmpty()) return
             Column(
                 Modifier
-                    .padding(16.dp)
-                    .clickable {
-                        onAction(OpenSection(RequestSection.ACTS))
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(vertical = 16.dp)
+                    .fillMaxWidth(),
             ) {
-                val text =
-                    if (saga.data.isEnded) stringResource(R.string.see_full_story) else "A história até agora"
-                Icon(
-                    painterResource(genre.icon),
-                    null,
-                    tint = genre.resolveColor(),
-                    modifier = Modifier.size(50.dp),
-                )
+                RowHeader(
+                    stringResource(R.string.saga_detail_section_title_acts),
+                    sectionStyle,
+                ) {
+                    onAction(OpenSection(RequestSection.ACTS))
+                }
 
-                Text(
-                    text,
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            shadow =
-                                Shadow(
-                                    genre.resolveColor(),
-                                    Offset.Zero,
-                                    10f,
-                                ),
-                            fontStyle = FontStyle.Italic,
-                        ),
-                    modifier = Modifier.levitate(),
-                )
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    modifier = Modifier.padding(vertical = 16.dp),
+                ) {
+                    items(acts) { actContent ->
+                        BookCard(
+                            act = actContent.data,
+                            saga = saga,
+                            modifier =
+                                Modifier
+                                    .width(160.dp)
+                                    .height(240.dp)
+                                    .clickable {
+                                        onAction(DetailAction.OpenChronicles(actContent.data.id))
+                                    },
+                            titleModifier = Modifier,
+                        )
+                    }
+                }
             }
         }
 

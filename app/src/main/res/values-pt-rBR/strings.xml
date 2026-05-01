@@ -626,4 +626,5 @@
     <!-- Errors -->
     <string name="error_cosmic_interruption">Interrupção Cósmica</string>
     <string name="error_retry_align">Tentar Alinhar Novamente</string>
+    <string name="read_chronicles">Ler Crônicas</string>
 </resources>

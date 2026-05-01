@@ -183,8 +183,8 @@ class SagaDetailUIMapper(
     suspend fun createWikiSection(
         sagaContent: SagaContent,
         insight: String? = null,
-    ): DetailSectionView {
-        return DetailSectionView.WikiSection(
+    ): DetailSectionView =
+        DetailSectionView.WikiSection(
             saga = sagaContent,
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_wiki),
             subtitle =
@@ -195,13 +195,12 @@ class SagaDetailUIMapper(
             insight = insight,
             wikiGroup = wikiMapper.buildWikiGroups(sagaContent),
         )
-    }
 
     suspend fun createEventsSection(
         sagaContent: SagaContent,
         insight: String? = null,
-    ): DetailSectionView {
-        return DetailSectionView.EventsSection(
+    ): DetailSectionView =
+        DetailSectionView.EventsSection(
             title = stringResourceHelper.getString(R.string.saga_detail_section_title_timeline),
             subtitle =
                 stringResourceHelper.getString(
@@ -212,7 +211,6 @@ class SagaDetailUIMapper(
             content = timelineMapper.buildTimelines(sagaContent),
             insight = insight,
         )
-    }
 
     suspend fun createChaptersSection(
         sagaContent: SagaContent,
@@ -240,7 +238,7 @@ class SagaDetailUIMapper(
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val acts = sagaContent.acts.filter { it.isComplete(narrativeRules) }
         return DetailSectionView.ActSection(
-            title = stringResourceHelper.getString(R.string.saga_detail_section_title_acts),
+            title = stringResourceHelper.getString(R.string.the_chronicles),
             subtitle =
                 stringResourceHelper.getString(
                     R.string.saga_detail_section_subtitle_acts,

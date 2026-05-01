@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -117,10 +118,11 @@ class ReasoningSynthesizerService
                     )
 
                 val translation =
-                    gemmaClient.generateText(
+                    gemmaClient.generate<String>(
                         prompt = prompt,
-                        requirement = GemmaClient.ModelRequirement.TINY,
+                        requirement = GemmaClient.ModelRequirement.LOW,
                         logEnabled = false,
+                        temperatureRandomness = 1f,
                     )
 
                 if (translation != null) {
@@ -161,7 +163,7 @@ class ReasoningSynthesizerService
                     delay(2.seconds)
                 }
             } catch (e: Exception) {
-            Timber.e("Error fetching fallbacks: ${e.message}")
+                Timber.e("Error fetching fallbacks: ${e.message}")
             }
         }
 

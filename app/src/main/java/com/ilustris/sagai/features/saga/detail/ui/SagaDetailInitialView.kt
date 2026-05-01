@@ -25,7 +25,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -40,10 +43,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
@@ -54,7 +59,6 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
@@ -72,6 +76,7 @@ fun SagaDetailInitialContent(
     val columnCount = 2
     val gridState = rememberLazyGridState()
     val genre = remember { saga.data.genre }
+    var iconError by remember(saga.data.id) { mutableStateOf(false) }
 
     AnimatedContent(showTitleOnly) {
         if (it) {
@@ -99,8 +104,11 @@ fun SagaDetailInitialContent(
                     state = gridState,
                 ) {
                     item(span = { GridItemSpan(columnCount) }) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (saga.data.icon.isNotBlank()) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            if (saga.data.icon.isNotBlank() && !iconError) {
                                 Box(
                                     modifier =
                                         Modifier
@@ -139,6 +147,11 @@ fun SagaDetailInitialContent(
                                         AsyncImage(
                                             saga.data.icon,
                                             contentDescription = saga.data.title,
+                                            onState = {
+                                                if (it is AsyncImagePainter.State.Error) {
+                                                    iconError = true
+                                                }
+                                            },
                                             modifier =
                                                 Modifier
                                                     .background(MaterialTheme.colorScheme.background)
@@ -163,30 +176,30 @@ fun SagaDetailInitialContent(
                                     )
                                 }
                             } else {
-                                Image(
-                                    painterResource(genre.icon),
-                                    null,
-                                    modifier =
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(16.dp),
+                                ) {
+                                    Image(
+                                        painterResource(genre.icon),
+                                        null,
                                         Modifier
-                                            .align(Alignment.CenterHorizontally)
-                                            .padding(32.dp)
                                             .size(100.dp)
-                                            .clickable {
-                                                onAction(DetailAction.RegenerateIcon)
-                                            }.gradientFill(genre.gradient()),
-                                )
-
-                                genre.stylisedText(
-                                    saga.data.title,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxWidth()
-                                            .reactiveShimmer(
-                                                true,
-                                                duration = 5.seconds,
-                                            ),
-                                )
+                                            .gradientFill(genre.resolveColor().gradientFade()),
+                                    )
+                                    genre.stylisedText(
+                                        saga.data.title,
+                                        modifier =
+                                            Modifier
+                                                .padding(8.dp)
+                                                .fillMaxWidth()
+                                                .reactiveShimmer(
+                                                    true,
+                                                    duration = 5.seconds,
+                                                ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -307,6 +320,7 @@ fun SagaDetailInitialContent(
 
                         item(span = { GridItemSpan(columnCount) }) {
                             val shape = genre.shape()
+                            var starringError by remember(it.data.id) { mutableStateOf(false) }
 
                             Box(
                                 Modifier
@@ -320,15 +334,35 @@ fun SagaDetailInitialContent(
                                         onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
                                     },
                             ) {
-                                AsyncImage(
-                                    it.data.image,
-                                    contentDescription = it.data.name,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .effectForGenre(genre),
-                                    contentScale = ContentScale.Crop,
-                                )
+                                if (!starringError) {
+                                    AsyncImage(
+                                        it.data.image,
+                                        contentDescription = it.data.name,
+                                        onState = {
+                                            if (it is AsyncImagePainter.State.Error) {
+                                                starringError = true
+                                            }
+                                        },
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .effectForGenre(genre),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                } else {
+                                    Box(
+                                        Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Image(
+                                            painterResource(genre.icon),
+                                            null,
+                                            Modifier
+                                                .size(100.dp)
+                                                .gradientFill(genre.resolveColor().gradientFade()),
+                                        )
+                                    }
+                                }
 
                                 Box(
                                     Modifier

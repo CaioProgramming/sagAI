@@ -182,16 +182,12 @@ class GemmaClient
                                             "type" to T::class.java.simpleName,
                                             "structure" to structure,
                                             "formattingRule" to formattingRule,
+                                            "task" to prompt,
                                         ),
                                     logEnabled = false,
                                 )
 
-                            val fullPrompt =
-                                buildString {
-                                    appendLine(prompt)
-                                    appendLine()
-                                    appendLine(corePrompt)
-                                }
+                            val fullPrompt = corePrompt
 
                             val promptLength =
                                 fullPrompt.length +

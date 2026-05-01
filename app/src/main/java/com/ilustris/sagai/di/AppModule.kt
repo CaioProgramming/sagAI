@@ -60,6 +60,8 @@ import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.act.data.usecase.ActUseCaseImpl
+import com.ilustris.sagai.features.act.data.usecase.BookUseCase
+import com.ilustris.sagai.features.act.data.usecase.BookUseCaseImpl
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
@@ -499,6 +501,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesActUseCase(actUseCaseImpl: ActUseCaseImpl): ActUseCase
+
+    @Binds
+    abstract fun providesBookUseCase(bookUseCaseImpl: BookUseCaseImpl): BookUseCase
 
     @Binds
     abstract fun providesGetInputSuggestionsUseCase(

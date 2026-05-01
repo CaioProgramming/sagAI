@@ -385,8 +385,7 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }
-                                    .wrapContentWidth()
+                                    }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -429,8 +428,7 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -664,9 +662,8 @@ fun ChatCard(
                                 radius = if (saga.data.isEnded) 10f else 5f
                                 color = genreColor
                                 brush = genreBrush
-                                spread = 5f
-                            }
-                            .size(50.dp)
+                                spread = 10f
+                            }.size(50.dp)
                             .selectiveColorHighlight(saga.data.genre),
                 )
 

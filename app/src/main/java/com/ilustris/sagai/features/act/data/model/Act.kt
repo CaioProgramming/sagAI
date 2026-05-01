@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.act.data.model
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
@@ -31,4 +32,6 @@ data class Act(
     val sagaId: Int? = null,
     @ColumnInfo(index = true)
     val currentChapterId: Int? = null,
+    @Embedded(prefix = "book_")
+    val book: Book? = null,
 )
