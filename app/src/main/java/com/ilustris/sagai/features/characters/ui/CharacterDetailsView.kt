@@ -297,9 +297,6 @@ private fun CharacterDetailsLoaded(
                                                 character,
                                             )
                                         },
-                                // Push the image down so the name text at the top has breathing room.
-                                // Both background and foreground layers share the same downward shift
-                                // so the segmentation mask stays aligned.
                                 imageModifier =
                                     Modifier
                                         .clipToBounds()
@@ -409,8 +406,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -537,8 +533,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }

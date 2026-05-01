@@ -185,6 +185,9 @@ fun SagaDetailInitialContent(
                                         painterResource(genre.icon),
                                         null,
                                         Modifier
+                                            .clickable {
+                                                onAction(DetailAction.RegenerateIcon)
+                                            }
                                             .size(100.dp)
                                             .gradientFill(genre.resolveColor().gradientFade()),
                                     )
@@ -310,7 +313,7 @@ fun SagaDetailInitialContent(
                             Text(
                                 stringResource(R.string.starring),
                                 style =
-                                    MaterialTheme.typography.displaySmall.copy(
+                                    MaterialTheme.typography.headlineLarge.copy(
                                         fontFamily = genre.headerFont(),
                                         textAlign = TextAlign.Start,
                                     ),

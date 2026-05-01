@@ -309,6 +309,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                         onAction(DetailAction.OpenChronicles(actContent.data.id))
                                     },
                             titleModifier = Modifier,
+                            isLoading = false,
                         )
                     }
                 }
