@@ -39,6 +39,7 @@ import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
+import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
@@ -380,6 +381,12 @@ object AppModule {
     fun provideMediaPlayerManager(
         @ApplicationContext context: Context,
     ): MediaPlayerManager = MediaPlayerManagerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideSoundFxService(
+        @ApplicationContext context: Context,
+    ): SoundFxService = SoundFxService(context)
 
     @Provides
     @Singleton

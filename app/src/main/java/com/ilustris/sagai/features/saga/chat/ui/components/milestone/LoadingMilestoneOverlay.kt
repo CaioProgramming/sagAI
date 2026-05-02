@@ -26,6 +26,8 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.lighter
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shimmerize
@@ -63,13 +65,15 @@ fun LoadingMilestoneOverlay(
                     sparkModifier
                         .genreVfx(genre)
                         .padding(8.dp)
+                        .gradientFill(genre.gradient())
                         .size(
                             50.dp,
-                        ).reactiveShimmer(
+                        )
+                        .reactiveShimmer(
                             true,
                             genre.resolveColor().lighter(.3f).shimmerize(),
                             duration = 4.seconds,
-                            targetValue = 150f,
+                            targetValue = 200f,
                             repeatMode = RepeatMode.Restart,
                         ),
             )

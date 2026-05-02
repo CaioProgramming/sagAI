@@ -6,12 +6,14 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.file.ImageHelper
+import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.doNothing
@@ -37,9 +39,11 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.isCharacter
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
@@ -94,6 +98,8 @@ class SagaContentManagerImpl
         private val imageHelper: ImageHelper,
         private val messageUseCase: MessageUseCase,
         private val genreConfigService: GenreConfigService,
+        private val genreVisualConfigService: GenreVisualConfigService,
+        private val soundFxService: SoundFxService,
         private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
         @ApplicationContext
         private val context: Context,
@@ -113,6 +119,7 @@ class SagaContentManagerImpl
             )
 
         override val ambientMusicFile = MutableStateFlow<File?>(null)
+        override val replySfxFile = MutableStateFlow<File?>(null)
 
         private val isProcessingNarrative = AtomicBoolean(false)
         private val _narrativeProcessingUiState = MutableStateFlow(false)
@@ -358,13 +365,13 @@ class SagaContentManagerImpl
                                     return@collectLatest
                                 }
 
-                                if (previousSaga == null) {
-                                    emitMilestone(SagaMilestone.Loading)
-                                }
                                 content.value = saga
                                 currentTimeline?.data?.sceneSummary?.let {
                                     _sceneSummary.value = it
                                 }
+
+                                getAmbienceMusic(saga)
+                                getReplySfx(saga)
 
                                 checkMessageNotifications(previousSaga, saga)
 
@@ -380,58 +387,28 @@ class SagaContentManagerImpl
                                 }
                                 checkNarrativeProgression(saga)
 
-                                getAmbienceMusic(saga)
-
                                 validateCharacters(saga)
 
-                                val rules = fetchNarrativeRules()
-                                val narrativeStep = NarrativeCheck.validateProgression(saga, rules)
                                 if (previousSaga == null) {
-                                    emitMilestone(null)
-                                    if (saga.data.isEnded.not() && saga
-                                            .flatEvents()
-                                            .filter { it.isComplete(rules) }
-                                            .size > 1 &&
-                                        narrativeStep == NarrativeStep.NoActionNeeded
-                                    ) {
-                                        saga.currentActInfo?.currentChapterInfo?.let { chapter ->
+                                    if (saga.data.isEnded.not()) {
+                                        saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
                                             emitMilestone(SagaMilestone.Loading)
-                                            startProcessing {
-                                                val sceneContext =
-                                                    currentTimeline?.data?.sceneSummary
-                                                        ?: messageUseCase
-                                                            .getSceneContext(saga)
-                                                            .getSuccess()
-                                                sceneContext?.let { summary ->
-                                                    currentTimeline?.data?.let {
-                                                        if (it.sceneSummary == null) {
-                                                            timelineUseCase.updateTimeline(
-                                                                it.copy(
-                                                                    currentObjective = summary.immediateObjective,
-                                                                    sceneSummary = summary,
-                                                                ),
-                                                            )
-                                                        }
-                                                    }
-                                                    emitMilestone(
-                                                        SagaMilestone.Introduction(
-                                                            type = IntroductionType.RESUME,
-                                                            titleText = emptyString(),
-                                                            introduction =
-                                                                summary.quote
-                                                                    ?: summary.immediateObjective
-                                                                    ?: emptyString(),
-                                                            number =
-                                                                saga
-                                                                    .chapterNumber(chapter.data)
-                                                                    .toRoman(),
-                                                            sceneSummary = summary,
-                                                        ),
-                                                    )
-                                                } ?: run {
-                                                    emitMilestone(null)
-                                                }
-                                            }
+                                            emitMilestone(
+                                                SagaMilestone.Introduction(
+                                                    type = IntroductionType.RESUME,
+                                                    titleText = emptyString(),
+                                                    introduction =
+                                                        it.quote
+                                                            ?: emptyString(),
+                                                    number =
+                                                        saga
+                                                            .chapterNumber(saga.currentActInfo?.currentChapterInfo?.data)
+                                                            .toRoman(),
+                                                    sceneSummary = it,
+                                                ),
+                                            )
+                                        } ?: run {
+                                            emitMilestone(null)
                                         }
                                     }
                                 }
@@ -469,7 +446,7 @@ class SagaContentManagerImpl
                     imageHelper
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
-                if (isFromUser.not()) {
+                if (isFromUser.not() && lastMessage.message.senderType.isCharacter()) {
                     updateSnackBar(
                         snackBar(
                             "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
@@ -479,8 +456,17 @@ class SagaContentManagerImpl
                             notificationStyle = NotificationStyle.CHAT
                         },
                     )
+                    playSoundFx()
                 }
             }
+        }
+
+        private suspend fun playSoundFx() {
+            val saga = content.value ?: return
+            delay(1.seconds)
+            val visualConfig = genreVisualConfigService.getVisualConfig(saga.data.genre)
+            val hapticPattern = saga.data.genre.vibrationPattern(visualConfig)
+            soundFxService.playWithHaptics(hapticPattern)
         }
 
         private suspend fun getAmbienceMusic(saga: SagaContent) {
@@ -500,6 +486,45 @@ class SagaContentManagerImpl
                 } else if (newMusicFile == null && ambientMusicFile.value != null) {
                     ambientMusicFile.emit(null)
                 }
+            }
+        }
+
+        private suspend fun getReplySfx(saga: SagaContent) {
+            if (replySfxFile.value != null) return
+            val genre = saga.data.genre
+            withContext(Dispatchers.IO) {
+                val sfxMap = remoteConfig.getJson<Map<String, String>>("reply_sfx_config")
+                Timber.d("getReplySfx: RC map=$sfxMap genre=${genre.name}")
+
+                if (sfxMap.isNullOrEmpty()) {
+                    Timber.w("getReplySfx: reply_sfx_config absent or empty")
+                    return@withContext
+                }
+
+                suspend fun downloadSfx(url: String): File? {
+                    val ext = Uri.parse(url).path?.substringAfterLast(".", "mp3") ?: "mp3"
+                    return fileCacheService.getFile(url, ext)
+                }
+
+                val genreUrl = sfxMap[genre.name]
+                val defaultUrl = sfxMap["DEFAULT"]
+
+                val sfxFile =
+                    genreUrl?.let { downloadSfx(it) }
+                        ?: defaultUrl?.let {
+                            if (genreUrl != null) Timber.w("getReplySfx: ${genre.name} download failed, using DEFAULT")
+                            downloadSfx(it)
+                        }
+
+                Timber.d("getReplySfx: sfxFile=$sfxFile")
+                if (sfxFile == null) {
+                    Timber.e("getReplySfx: Could not download SFX for ${genre.name} or DEFAULT")
+                    return@withContext
+                }
+
+                replySfxFile.emit(sfxFile)
+                soundFxService.prepare(sfxFile)
+                Timber.d("getReplySfx: SFX ready for ${genre.name} — ${sfxFile.name}")
             }
         }
 
@@ -889,7 +914,7 @@ class SagaContentManagerImpl
                         emitMilestone(SagaMilestone.Loading)
                     }
                 }
-        }
+            }
 
         override fun checkNarrativeProgression(
             saga: SagaContent?,
@@ -1077,6 +1102,7 @@ class SagaContentManagerImpl
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 if (milestone != null && milestone !is SagaMilestone.Loading) {
                     isMilestoneActive.value = true
+                    playSoundFx()
                 }
                 milestoneUpdate.emit(milestone)
             }
@@ -1551,5 +1577,5 @@ class SagaContentManagerImpl
             setNarrativeProcessingStatus(false)
             isProcessing.set(false)
             emitMilestone(null)
-    }
+        }
     }

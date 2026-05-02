@@ -22,6 +22,7 @@ interface SagaContentManager {
     val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val ambientMusicFile: StateFlow<File?>
+    val replySfxFile: StateFlow<File?>
     val narrativeProcessingUiState: StateFlow<Boolean>
     val contentReasoning: MutableStateFlow<String?>
 
