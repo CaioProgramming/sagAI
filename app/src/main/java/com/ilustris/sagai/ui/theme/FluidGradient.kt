@@ -1,11 +1,11 @@
 package com.ilustris.sagai.ui.theme
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.mikepenz.hypnoticcanvas.shaderBackground
+import com.mikepenz.hypnoticcanvas.shaders.BlackCherryCosmos
 import com.mikepenz.hypnoticcanvas.shaders.MeshGradient
 
 /**
@@ -22,8 +22,7 @@ fun FluidGradient(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        Modifier
-            .fillMaxSize()
+        modifier
             .shaderBackground(
                 MeshGradient(
                     colors.toTypedArray(),
@@ -31,4 +30,9 @@ fun FluidGradient(
                 ),
             ),
     )
+}
+
+@Composable
+fun CosmosGradient(modifier: Modifier) {
+    Box(modifier.shaderBackground(BlackCherryCosmos))
 }

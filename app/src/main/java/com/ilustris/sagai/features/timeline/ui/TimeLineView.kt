@@ -160,7 +160,8 @@ fun TimeLineContent(
                                                     "timeline-content-header",
                                                 ),
                                                 this,
-                                            ).background(MaterialTheme.colorScheme.background)
+                                            )
+                                            .background(MaterialTheme.colorScheme.background)
                                             .fillMaxWidth()
                                             .statusBarsPadding()
                                             .padding(horizontal = 16.dp),
@@ -185,7 +186,8 @@ fun TimeLineContent(
                                                         "timeline-content-header",
                                                     ),
                                                     this@AnimatedContent,
-                                                ).padding(16.dp)
+                                                )
+                                                .padding(16.dp)
                                                 .fillMaxWidth(),
                                     )
 
@@ -200,7 +202,8 @@ fun TimeLineContent(
                                                         alpha = 0.1f,
                                                     ),
                                                     genre.shape(),
-                                                ).reactiveShimmer(true),
+                                                )
+                                                .reactiveShimmer(true),
                                         )
                                     } else {
                                         Text(
@@ -670,8 +673,7 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        )
-                                        .padding(16.dp),
+                                        ).padding(16.dp),
                                 true,
                             )
                         }
@@ -803,8 +805,7 @@ fun TimeLineSimpleCard(
                         .clip(shape)
                         .clickable {
                             requestReview(eventContent)
-                        }
-                        .gradientFill(genre.gradient())
+                        }.gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -848,6 +849,7 @@ fun AvatarTimelineIcon(
     val background = resolvedColor.darker(.7f).solidGradient()
     Box(
         modifier
+            .clip(CircleShape)
             .border(borderWidth, border, CircleShape)
             .background(
                 background,
@@ -1041,8 +1043,7 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }
-                                .alpha(.4f),
+                                }.alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(

@@ -130,15 +130,16 @@ fun StoryItem(
                             .dropShadow(CircleShape) {
                                 radius =
                                     if (isLoading) {
-                                        15f
+                                        20f
                                     } else {
-                                        5f
+                                        10f
                                     }
                                 color =
                                     saga.data.genre.color
                                         .darker()
                                 spread = 10f
-                            }.fillMaxSize()
+                            }
+                            .fillMaxSize()
                             .clip(CircleShape)
                             .clickable(enabled = !isLoading) { onStoryClicked(saga) }
                             .effectForGenre(saga.data.genre),

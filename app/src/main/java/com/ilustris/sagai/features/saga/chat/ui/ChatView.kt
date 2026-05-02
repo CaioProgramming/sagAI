@@ -18,11 +18,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -1414,18 +1410,16 @@ fun ChatList(
                             fadeOut(tween(1500)) + slideOutVertically { it }
                     },
                 ) {
-                    val infiniteTransition = rememberInfiniteTransition()
                     Text(
                         text = it,
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontFamily = genre.bodyFont(),
-                                color = MaterialTheme.colorScheme.onBackground,
                                 textAlign = TextAlign.Center,
                                 shadow =
                                     Shadow(
-                                        resolvedColor,
-                                        blurRadius = 15f,
+                                        genre.resolveColor(),
+                                        blurRadius = 10f,
                                     ),
                             ),
                         overflow = TextOverflow.Ellipsis,
@@ -1433,7 +1427,8 @@ fun ChatList(
                             Modifier
                                 .levitate()
                                 .padding(16.dp)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .alpha(.6f),
                     )
                 }
             }

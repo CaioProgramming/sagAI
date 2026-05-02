@@ -343,7 +343,7 @@
 
     <string name="story_sheet_button_continue_saga">Continuar Saga</string>
     <string name="story_sheet_title_previously_on">Anteriormente em %s</string>
-    <string name="story_sheet_title_history_continues">A história continua</string>
+    <string name="story_sheet_title_history_continues">A Lenda Continua</string>
 
     <!-- Global Notifications -->
     <string name="notification_new_message">Nova Mensagem</string>
@@ -401,20 +401,20 @@
     <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
 
     <!-- Marcos de Narrativa -->
-    <string name="advance_new_event">Novo Evento</string>
-    <string name="releasing_event">Canalizando o próximo evento...</string>
-    <string name="advance_new_chapter">Novo Capítulo</string>
-    <string name="releasing_chapter">Forjando o próximo capítulo...</string>
+    <string name="advance_new_event">Continuar História</string>
+    <string name="releasing_event">Preparando próximo evento...</string>
+    <string name="advance_new_chapter">Próximo Capítulo</string>
+    <string name="releasing_chapter">Iniciando próximo capítulo...</string>
     <string name="advance_new_chapter_introduction">Entrar no Capítulo</string>
-    <string name="releasing_chapter_introduction">Virando a página...</string>
-    <string name="advance_new_act">Novo Ato</string>
-    <string name="releasing_act">Iniciando o próximo Ato...</string>
-    <string name="advance_new_act_introduction">Iniciar Ato</string>
-    <string name="releasing_act_introduction">As cortinas estão subindo...</string>
-    <string name="advance_start_story">Iniciar História</string>
-    <string name="releasing_start_story">Iniciando a jornada...</string>
-    <string name="advance_saga_ending">O Fim</string>
-    <string name="releasing_ending">Encerrando esta Saga...</string>
+    <string name="releasing_chapter_introduction">Entrando no capítulo...</string>
+    <string name="advance_new_act">Próximo Ato</string>
+    <string name="releasing_act">Iniciando próximo ato...</string>
+    <string name="advance_new_act_introduction">Entrar no Ato</string>
+    <string name="releasing_act_introduction">Entrando no ato...</string>
+    <string name="advance_start_story">Começar Aventura</string>
+    <string name="releasing_start_story">Manifestando o mundo...</string>
+    <string name="advance_saga_ending">Ver a Conclusão</string>
+    <string name="releasing_ending">Escrevendo as palavras finais...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>

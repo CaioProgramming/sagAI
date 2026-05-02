@@ -186,11 +186,21 @@ val holographicGradient =
         MaterialColor.Purple200,
     )
 
+val iridescentGradient =
+    listOf(
+        Color(0xFF90E0EF), // Electric Blue
+        Color(0xFFB1A7F0), // Deep Lavender
+        Color(0xFFF7D1CD), // Soft Rose
+        Color(0xFFE2CFEA), // Pale Lilac
+        Color(0xFFA0CED9), // Sky Blue
+        Color(0xFFADF7B6), // Mint
+)
+
 @Composable
 fun themeShimmer() =
     buildList {
         add(Color.Transparent)
-        addAll(holographicGradient)
+        addAll(iridescentGradient)
         add(Color.Transparent)
     }
 

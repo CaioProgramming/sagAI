@@ -8,14 +8,12 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -96,6 +94,7 @@ import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -108,21 +107,18 @@ import com.ilustris.sagai.features.settings.ui.SettingsView
 import com.ilustris.sagai.features.stories.ui.StoriesRow
 import com.ilustris.sagai.features.stories.ui.StorySheet
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -183,12 +179,12 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
-                                    targetValue = 150f,
+                                    targetValue = 250f,
+                                    repeatMode = RepeatMode.Restart,
                                 ),
                     )
                 }
@@ -466,93 +462,6 @@ private fun SharedTransitionScope.ChatList(
                 }
             }
         }
-        item {
-            Row(
-                modifier =
-                    Modifier
-                        .animateItem()
-                        .padding(16.dp)
-                        .gradientFill(Brush.linearGradient(holographicGradient))
-                        .reactiveShimmer(
-                            true,
-                            duration = 10.seconds,
-                            targetValue = 700f,
-                        )
-                        .clip(RoundedCornerShape(15.dp))
-                        .clickable {
-                            onCreateNewChat()
-                        }
-                        .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SparkLoader(
-                    brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
-                    strokeSize = 1.dp,
-                    modifier =
-                        Modifier
-                            .clip(CircleShape)
-                            .padding(4.dp)
-                            .size(32.dp),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                AnimatedContent(
-                    targetState = isLoadingDynamicPrompts,
-                    transitionSpec = {
-                        (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                            slideOutVertically { height -> -height } + fadeOut(),
-                        ) using
-                            SizeTransform(
-                                clip = false,
-                            )
-                    },
-                    label = "AnimatedDynamicTexts",
-                    modifier = Modifier.weight(1f),
-                ) { isLoading ->
-                    Column(
-                        modifier =
-                            Modifier
-                                .weight(1f),
-                    ) {
-                        if (isLoading) {
-                            StarryTextPlaceholder(
-                                starCount = 100,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(MaterialTheme.typography.bodyMedium.lineHeight.value.dp),
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            StarryTextPlaceholder(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth(0.7f)
-                                        .height(MaterialTheme.typography.labelSmall.lineHeight.value.dp),
-                            )
-                        } else {
-                            Text(
-                                text =
-                                    dynamicNewSagaTexts?.title
-                                        ?: stringResource(R.string.home_create_new_saga_title),
-                                style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
-                            )
-
-                            Text(
-                                text =
-                                    dynamicNewSagaTexts?.subtitle
-                                        ?: stringResource(R.string.home_create_new_saga_subtitle),
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                            )
-                        }
-                    }
-                }
-            }
-        }
 
         item {
             StoriesRow(
@@ -561,6 +470,15 @@ private fun SharedTransitionScope.ChatList(
                 onStoryClicked = onStoryClicked,
                 listState.canScrollBackward.not(),
                 visualConfigs = visualConfigs,
+            )
+        }
+
+        item {
+            CreateSagaCard(
+                modifier = Modifier.padding(16.dp),
+                dynamicNewSagaTexts = dynamicNewSagaTexts,
+                isLoadingDynamicPrompts = isLoadingDynamicPrompts,
+                onCreateNewChat = onCreateNewChat,
             )
         }
 
@@ -662,7 +580,7 @@ fun ChatCard(
                                 radius = if (saga.data.isEnded) 10f else 5f
                                 color = genreColor
                                 brush = genreBrush
-                                spread = 10f
+                                spread = 5f
                             }.size(50.dp)
                             .selectiveColorHighlight(saga.data.genre),
                 )

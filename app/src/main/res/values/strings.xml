@@ -383,7 +383,7 @@
 
     <string name="story_sheet_button_continue_saga">Continue Saga</string>
     <string name="story_sheet_title_previously_on">Previously on %s</string>
-    <string name="story_sheet_title_history_continues">The history continues</string>
+    <string name="story_sheet_title_history_continues">The Legend Continues</string>
 
     <!-- Global Notifications -->
     <string name="notification_new_message">New Message</string>
@@ -435,20 +435,20 @@
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
     <!-- Narrative Milestones -->
-    <string name="advance_new_event">New Event</string>
-    <string name="releasing_event">Channeling the next event...</string>
-    <string name="advance_new_chapter">New Chapter</string>
-    <string name="releasing_chapter">Forging the next chapter...</string>
+    <string name="advance_new_event">Continue Story</string>
+    <string name="releasing_event">Preparing next event...</string>
+    <string name="advance_new_chapter">Next Chapter</string>
+    <string name="releasing_chapter">Starting next chapter...</string>
     <string name="advance_new_chapter_introduction">Enter Chapter</string>
-    <string name="releasing_chapter_introduction">Turning the page...</string>
-    <string name="advance_new_act">New Act</string>
-    <string name="releasing_act">Opening the next Act...</string>
-    <string name="advance_new_act_introduction">Start Act</string>
-    <string name="releasing_act_introduction">The curtains are rising...</string>
-    <string name="advance_start_story">Start Story</string>
-    <string name="releasing_start_story">Setting the stage...</string>
-    <string name="advance_saga_ending">The End</string>
-    <string name="releasing_ending">Closing this Saga...</string>
+    <string name="releasing_chapter_introduction">Entering chapter...</string>
+    <string name="advance_new_act">Next Act</string>
+    <string name="releasing_act">Starting next Act...</string>
+    <string name="advance_new_act_introduction">Enter Act</string>
+    <string name="releasing_act_introduction">Entering act...</string>
+    <string name="advance_start_story">Begin Adventure</string>
+    <string name="releasing_start_story">Manifesting the world...</string>
+    <string name="advance_saga_ending">Reach the Conclusion</string>
+    <string name="releasing_ending">Writing the final words...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
