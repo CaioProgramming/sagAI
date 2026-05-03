@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -211,8 +212,7 @@ fun AIAuditLogView(
                             .fillMaxWidth()
                             .horizontalScroll(
                                 androidx.compose.foundation.rememberScrollState(),
-                            )
-                            .padding(bottom = 8.dp),
+                            ).padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -438,7 +438,8 @@ fun AuditLogItem(
                                         1.dp,
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         RoundedCornerShape(4.dp),
-                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    )
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                     .padding(8.dp),
                         )
                     }
@@ -482,6 +483,38 @@ fun AuditLogItem(
                                         .padding(horizontal = 6.dp, vertical = 2.dp),
                             )
                         }
+                    }
+                }
+
+                if (!log.safetyStatus.isNullOrEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        val safeguard =
+                            runCatching {
+                                SafeGuard.valueOf(
+                                    log.safetyStatus ?: "OK",
+                                )
+                            }.getOrDefault(SafeGuard.OK)
+                        val color = safeguard.color(MaterialTheme.colorScheme)
+                        Icon(
+                            painter = painterResource(safeguard.iconRes),
+                            contentDescription = "Safety Status",
+                            modifier = Modifier.size(12.dp),
+                            tint = color,
+                        )
+                        Text(
+                            text = log.safetyStatus ?: "OK",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = color,
+                            modifier =
+                                Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(color.copy(alpha = 0.1f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
                     }
                 }
             }
@@ -532,8 +565,7 @@ fun AuditLogItem(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(8.dp),
-                                )
-                                .padding(8.dp),
+                                ).padding(8.dp),
                     ) {
                         Text(
                             text = log.reasoning,
@@ -555,8 +587,7 @@ fun AuditLogItem(
                                 .background(
                                     Color(0xFF1E1E1E),
                                     RoundedCornerShape(8.dp),
-                                )
-                                .padding(12.dp),
+                                ).padding(12.dp),
                     ) {
                         JsonCodeBlock(jsonString = log.rawResponse)
                     }
@@ -580,8 +611,7 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    )
-                                    .padding(12.dp),
+                                    ).padding(12.dp),
                         )
                     } else {
                         Button(

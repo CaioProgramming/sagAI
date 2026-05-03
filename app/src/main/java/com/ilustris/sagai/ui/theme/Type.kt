@@ -22,19 +22,7 @@ val Typography =
     )
 
 fun Genre.headerFont(): FontFamily {
-    val fontResource =
-        when (this) {
-            Genre.FANTASY -> R.font.dragon_force
-            Genre.CYBERPUNK -> R.font.ninja_cyber
-            Genre.HORROR -> R.font.pixelwarden
-            Genre.HEROES -> R.font.masked_hero
-            Genre.CRIME -> R.font.broadway
-            Genre.SPACE_OPERA -> R.font.space_runner
-            Genre.SHINOBI -> R.font.genjiro
-            Genre.COWBOY -> R.font.rye
-            Genre.PUNK_ROCK -> R.font.punkland
-            else -> null
-        }
+    val fontResource = headerFontResource()
     return if (fontResource != null) {
         FontFamily(Font(fontResource, FontWeight.Normal))
     } else {
@@ -43,22 +31,38 @@ fun Genre.headerFont(): FontFamily {
 }
 
 fun Genre.bodyFont(): FontFamily {
-    val fontResource =
-        when (this) {
-            Genre.FANTASY -> R.font.fondamento_regular
-            Genre.CYBERPUNK -> R.font.tektur
-            Genre.HORROR -> R.font.jersey
-            Genre.HEROES -> R.font.comic_book
-            Genre.CRIME -> R.font.retro_neon
-            Genre.SPACE_OPERA -> R.font.eightgon
-            Genre.SHINOBI -> R.font.hina
-            Genre.COWBOY -> R.font.special_elite
-            Genre.PUNK_ROCK -> R.font.grunge
-            else -> null
-        }
+    val fontResource = bodyFontResource()
     return if (fontResource != null) {
         FontFamily(Font(fontResource, FontWeight.Normal))
     } else {
         FontFamily.Default
     }
 }
+
+fun Genre.headerFontResource(): Int? =
+    when (this) {
+        Genre.FANTASY -> R.font.dragon_force
+        Genre.CYBERPUNK -> R.font.ninja_cyber
+        Genre.HORROR -> R.font.pixelwarden
+        Genre.HEROES -> R.font.masked_hero
+        Genre.CRIME -> R.font.broadway
+        Genre.SPACE_OPERA -> R.font.space_runner
+        Genre.SHINOBI -> R.font.genjiro
+        Genre.COWBOY -> R.font.rye
+        Genre.PUNK_ROCK -> R.font.punkland
+        else -> null
+    }
+
+fun Genre.bodyFontResource(): Int? =
+    when (this) {
+        Genre.FANTASY -> R.font.fondamento_regular
+        Genre.CYBERPUNK -> R.font.tektur
+        Genre.HORROR -> R.font.jersey
+        Genre.HEROES -> R.font.comic_book
+        Genre.CRIME -> R.font.retro_neon
+        Genre.SPACE_OPERA -> R.font.eightgon
+        Genre.SHINOBI -> R.font.hina
+        Genre.COWBOY -> R.font.special_elite
+        Genre.PUNK_ROCK -> R.font.grunge
+        else -> null
+    }

@@ -2,7 +2,7 @@
 
 package com.ilustris.sagai
 
-import android.content.Intent // Added
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,24 +18,28 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.LaunchedEffect // Added
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -226,33 +230,67 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    if (activeSideEffect is SideEffect.ContentViolation) {
-                        val effect = activeSideEffect as SideEffect.ContentViolation
-                        AlertDialog(
+                    if (activeSideEffect is SideEffect.GuardrailBlock) {
+                        val effect = activeSideEffect as SideEffect.GuardrailBlock
+                        val sheetState = rememberModalBottomSheetState()
+                        ModalBottomSheet(
                             onDismissRequest = { activeSideEffect = null },
-                            title = {
-                                Text(
-                                    text = "Guardrail Warning",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            },
-                            text = {
-                                Text(
-                                    text = effect.message,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            },
-                            confirmButton = {
-                                TextButton(onClick = { activeSideEffect = null }) {
-                                    Text("I Understand")
-                                }
-                            },
-                            shape = RoundedCornerShape(24.dp),
+                            sheetState = sheetState,
                             containerColor = MaterialTheme.colorScheme.surface,
-                            textContentColor = MaterialTheme.colorScheme.onSurface,
-                            titleContentColor = MaterialTheme.colorScheme.primary,
-                        )
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            dragHandle = {
+                                BottomSheetDefaults.DragHandle(
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.4f,
+                                        ),
+                                )
+                            },
+                        ) {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp)
+                                        .padding(bottom = 32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Icon(
+                                    painter = painterResource(effect.status.iconRes),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = effect.status.color(MaterialTheme.colorScheme),
+                                )
+
+                                Spacer(modifier = Modifier.size(16.dp))
+
+                                Text(
+                                    text = stringResource(effect.status.titleRes),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    textAlign = TextAlign.Center,
+                                )
+
+                                Spacer(modifier = Modifier.size(8.dp))
+
+                                Text(
+                                    text = stringResource(effect.status.messageRes),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+
+                                Spacer(modifier = Modifier.size(32.dp))
+
+                                Button(
+                                    onClick = { activeSideEffect = null },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                ) {
+                                    Text(stringResource(R.string.guardrail_dismiss))
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -612,7 +612,7 @@ fun ChatContent(
                 Box(
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
-                        .background(resolvedColor.copy(alpha = .2f))
+                        .background(resolvedColor.copy(alpha = .05f))
                         .imePadding(),
                 ) {
                     Image(
@@ -630,12 +630,10 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                )
-                                .sharedElement(
+                                ).sharedElement(
                                     rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                )
-                                .fillMaxSize(.5f)
+                                ).fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -792,7 +790,8 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }.fillMaxWidth()
+                                }
+                                .fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -807,8 +806,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .animateContentSize(),
+                                    }.animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
                                     slideOutVertically { it } + fadeOut()
@@ -1002,8 +1000,7 @@ fun ChatContent(
                                                     .genreVfx(
                                                         saga.genre,
                                                         isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
@@ -1730,8 +1727,7 @@ fun CharactersTopIcons(
                         )
                         .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

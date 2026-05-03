@@ -84,6 +84,7 @@ class MessageUseCaseImpl
                         message = message,
                     ),
                     blueprintKey = ChatPrompts.CHAT_WRITING_PAL_BLUEPRINT,
+                    userInteraction = true,
                     requireTranslation = true,
                     requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
@@ -189,6 +190,7 @@ class MessageUseCaseImpl
                                     updateLimit = narrativeRules.loreUpdateLimit,
                                 ),
                             blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
+                            userInteraction = true,
                             filterOutputFields = ChatPrompts.messageExclusions,
                             requirement = GemmaClient.ModelRequirement.HIGH,
                             useCore = true,
@@ -232,8 +234,10 @@ class MessageUseCaseImpl
                 } catch (e: Exception) {
                     e.printStackTrace()
                     emit(
-                        StreamingState
-                            .Error(e.message ?: "Unknown error"),
+                        StreamingState.Error(
+                            message = e.message ?: "Unknown error",
+                            throwable = e,
+                        ),
                     )
                 }
             }

@@ -8,6 +8,7 @@ import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.model.AIGeneration
+import com.ilustris.sagai.core.ai.model.AgeGroup
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
@@ -17,11 +18,15 @@ import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
+import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiService
+import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -47,6 +52,9 @@ class GemmaClient
     @Inject
     constructor(
         private val remoteConfigService: RemoteConfigService,
+        val ageVerificationService: AgeVerificationService,
+        val safetyClient: SafetyClient,
+        val sideEffectService: SideEffectService,
         val geminiApiService: GeminiApiService,
         val promptService: PromptService,
         @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
@@ -80,7 +88,7 @@ class GemmaClient
             val tierConfig =
                 remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
             val modelName = tierConfig[requirement.name]
-            return modelName!!
+            return modelName!!.replace("models/", "")
         }
 
         suspend fun coreKey() =
@@ -104,6 +112,7 @@ class GemmaClient
          */
         suspend inline fun <reified T> generate(
             prompt: String,
+            userInteraction: Boolean = false,
             references: List<ImageReference?> = emptyList(),
             temperatureRandomness: Float = .5f,
             requireTranslation: Boolean = true,
@@ -115,6 +124,21 @@ class GemmaClient
             logEnabled: Boolean = true,
         ): T? =
             withContext(Dispatchers.IO) {
+                if (userInteraction) {
+                    val userAge = ageVerificationService.getUserAgeGroup()
+                    val safetyStatus = safetyClient.checkSafety(prompt)
+                    if (safetyStatus != SafeGuard.OK) {
+                        if (safetyStatus == SafeGuard.AGE_RESTRICTED && userAge == AgeGroup.ADULT) {
+                            // Allow mature/suggestive content for verified adults
+                            Timber
+                                .tag("GemmaClient")
+                                .i("Allowing AGE_RESTRICTED content for verified ADULT.")
+                        } else {
+                            sideEffectService.emit(SideEffect.GuardrailBlock(safetyStatus))
+                            throw GuardrailsException(safetyStatus)
+                        }
+                    }
+                }
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
                     if (logEnabled) Timber.w("Applying reactive delay due to high token count in last request.")
                     retryDelay = 5
@@ -302,6 +326,8 @@ class GemmaClient
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
                                 val duration = System.currentTimeMillis() - startTime
+                                val safetyStatus =
+                                    if (e is GuardrailsException) e.status.name else null
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
@@ -310,6 +336,7 @@ class GemmaClient
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                         responseTime = duration,
+                                        safetyStatus = safetyStatus,
                                     ),
                                 )
                             } catch (logEx: Exception) {
@@ -420,10 +447,26 @@ class GemmaClient
             useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.LOW,
             blueprintKey: String? = null,
+            userInteraction: Boolean = false,
             logEnabled: Boolean = true,
         ): Flow<StreamingState<T>> =
             flow {
                 try {
+                    if (userInteraction) {
+                        val userAge = ageVerificationService.getUserAgeGroup()
+                        val safetyStatus = safetyClient.checkSafety(prompt)
+                        if (safetyStatus != SafeGuard.OK) {
+                            if (safetyStatus == SafeGuard.AGE_RESTRICTED && userAge == AgeGroup.ADULT) {
+                                // Allow mature/suggestive content for verified adults
+                                Timber
+                                    .tag("GemmaClient")
+                                    .i("Allowing AGE_RESTRICTED content for verified ADULT in stream.")
+                            } else {
+                                sideEffectService.emit(SideEffect.GuardrailBlock(safetyStatus))
+                                throw GuardrailsException(safetyStatus)
+                            }
+                        }
+                    }
                     if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
                         Timber.w("Applying reactive delay due to high token count in last request.")
                         retryDelay = 5
@@ -672,6 +715,22 @@ class GemmaClient
                                     }
                                 if (delayToApply > 0) delay(delayToApply.seconds)
                             } else {
+                                if (logEnabled && BuildConfig.DEBUG) {
+                                    val duration = System.currentTimeMillis() - startTime
+                                    val safetyStatus =
+                                        if (e is GuardrailsException) e.status.name else null
+                                    aiAuditLogDao.insertLog(
+                                        AIAuditLog(
+                                            model = model,
+                                            blueprintKey = blueprintKey,
+                                            dataType = T::class.java.simpleName,
+                                            status = "ERROR",
+                                            errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                            responseTime = duration,
+                                            safetyStatus = safetyStatus,
+                                        ),
+                                    )
+                                }
                                 if (!isParsingError) {
                                     retryDelay = extractedDelay?.toInt()
                                         ?: retryDelay?.let { if (it > 30) it / 2 else it + it } ?: 2
@@ -699,12 +758,11 @@ class GemmaClient
                     contents = listOf(GeminiContent(parts = parts)),
                     generationConfig = GeminiGenerationConfig(temperature = temperatureRandomness),
                 )
-            val formattedModel = model.replace("models/", "")
             return requestMutexes.getOrPut(model) { Mutex() }.withLock {
                 try {
                     val response =
                         geminiApiService.generateContent(
-                            model = formattedModel,
+                            model = model,
                             apiKey = apiConfig(false),
                             request = geminiRequest,
                         )

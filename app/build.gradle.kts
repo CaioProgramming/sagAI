@@ -156,6 +156,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.play.services.mlkit.subject.segmentation)
     implementation(libs.jakewharton.timber)
+    implementation(libs.play.age.signals)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

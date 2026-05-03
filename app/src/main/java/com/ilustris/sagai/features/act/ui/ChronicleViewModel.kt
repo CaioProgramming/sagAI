@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
+import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +27,11 @@ sealed class ChronicleState {
     data class Error(
         val message: String,
     ) : ChronicleState()
+
+    data class PDFGenerated(
+        val uri: android.net.Uri,
+        val title: String,
+    ) : ChronicleState()
 }
 
 @HiltViewModel
@@ -33,6 +39,7 @@ class ChronicleViewModel
     @Inject
     constructor(
         private val bookUseCase: BookUseCase,
+        private val sharePlayUseCase: SharePlayUseCase,
     ) : ViewModel() {
         private val _state = MutableStateFlow<ChronicleState>(ChronicleState.Idle)
         val state = _state.asStateFlow()
@@ -58,6 +65,25 @@ class ChronicleViewModel
                 _selectedBook.value = null
             }
         }
+
+        fun shareBook(actContent: ActContent) {
+            viewModelScope.launch {
+                val book = actContent.data.book ?: return@launch
+                val saga = currentSagaContent ?: return@launch
+                _state.value = ChronicleState.Loading
+                val result = sharePlayUseCase.generateBookPDF(book, saga.data.genre)
+                if (result is com.ilustris.sagai.core.data.RequestResult.Success) {
+                    val uriResult = sharePlayUseCase.loadWithFileProvider(result.value)
+                    if (uriResult is com.ilustris.sagai.core.data.RequestResult.Success) {
+                        _state.value = ChronicleState.PDFGenerated(uriResult.value, book.actTitle)
+                    } else {
+                        _state.value = ChronicleState.Error("Failed to get file URI")
+                    }
+                } else {
+                    _state.value = ChronicleState.Error("Failed to generate PDF")
+            }
+        }
+    }
 
         fun selectBookById(
             saga: SagaContent,

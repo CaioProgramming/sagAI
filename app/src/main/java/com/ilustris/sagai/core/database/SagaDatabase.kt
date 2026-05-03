@@ -47,7 +47,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Reaction::class,
         AIAuditLog::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 @TypeConverters(

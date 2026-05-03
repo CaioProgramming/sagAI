@@ -627,4 +627,12 @@
     <string name="error_cosmic_interruption">Interrupção Cósmica</string>
     <string name="error_retry_align">Tentar Alinhar Novamente</string>
     <string name="read_chronicles">Ler Crônicas</string>
+    <!-- Guardrails -->
+    <string name="guardrail_blocked_title">Não foi possível processar</string>
+    <string name="guardrail_blocked_message">Sua mensagem viola nossas políticas de segurança e não pode ser processada. Tente reformular seu texto.</string>
+    <string name="guardrail_age_title">Conteúdo Restrito</string>
+    <string name="guardrail_age_message">Este conteúdo não é apropriado para a sua idade verificada.</string>
+    <string name="guardrail_explicit_title">Conteúdo Explícito Detectado</string>
+    <string name="guardrail_explicit_message">Sua mensagem contém conteúdo sexual ou gráfico explícito que é proibido para todos os usuários. Por favor, mantenha um ambiente seguro.</string>
+    <string name="guardrail_dismiss">Entendi</string>
 </resources>

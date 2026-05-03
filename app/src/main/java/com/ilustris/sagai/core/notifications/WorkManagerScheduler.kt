@@ -57,7 +57,6 @@ class WorkManagerSchedulerImpl
                     ).addTag(workTag)
                     .build()
 
-            // Usa ExistingWorkPolicy.REPLACE para evitar duplicatas
             workManager.enqueueUniqueWork(
                 workTag,
                 ExistingWorkPolicy.REPLACE,

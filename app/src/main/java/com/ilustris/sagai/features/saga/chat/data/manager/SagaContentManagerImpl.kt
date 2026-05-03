@@ -439,15 +439,13 @@ class SagaContentManagerImpl
             if (previousSaga != null &&
                 saga.flatMessages().size > previousSaga.flatMessages().size
             ) {
-                saga.flatMessages().size - previousSaga.flatMessages().size
                 val lastMessage = saga.flatMessages().last()
-                lastMessage.character == saga.mainCharacter?.data
                 val charIcon =
                     imageHelper
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
                 if (lastMessage.message.senderType.isCharacter()) {
-                    playSoundFx()
+                    playSoundFx(saga.data.genre)
                     updateSnackBar(
                         snackBar(
                             "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
@@ -461,12 +459,14 @@ class SagaContentManagerImpl
             }
         }
 
-        private suspend fun playSoundFx() {
-            val saga = content.value ?: return
-            delay(1.seconds)
-            val visualConfig = genreVisualConfigService.getVisualConfig(saga.data.genre)
-            val hapticPattern = saga.data.genre.vibrationPattern(visualConfig)
-            soundFxService.playWithHaptics(hapticPattern)
+        private fun playSoundFx(genre: Genre? = null) {
+            val selectedGenre = genre ?: content.value?.data?.genre ?: return
+            managerScope.launch {
+                delay(300)
+                val visualConfig = genreVisualConfigService.getVisualConfig(selectedGenre)
+                val hapticPattern = selectedGenre.vibrationPattern(visualConfig)
+                soundFxService.playWithHaptics(hapticPattern)
+        }
         }
 
         private suspend fun getAmbienceMusic(saga: SagaContent) {
@@ -1102,7 +1102,7 @@ class SagaContentManagerImpl
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 if (milestone != null && milestone !is SagaMilestone.Loading) {
                     isMilestoneActive.value = true
-                    playSoundFx()
+                    playSoundFx(content.value?.data?.genre)
                 }
                 milestoneUpdate.emit(milestone)
             }

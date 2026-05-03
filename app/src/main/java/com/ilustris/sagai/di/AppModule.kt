@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.ai.ImageGenerator
 import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
+import com.ilustris.sagai.core.ai.SafetyClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
@@ -47,6 +48,7 @@ import com.ilustris.sagai.core.notifications.WorkManagerScheduler
 import com.ilustris.sagai.core.notifications.WorkManagerSchedulerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
+import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
@@ -231,12 +233,45 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun providesAgeVerificationService(
+        @ApplicationContext context: Context,
+    ): AgeVerificationService = AgeVerificationService(context)
+
+    @Provides
+    @Singleton
+    fun providesSafetyClient(
+        remoteConfigService: RemoteConfigService,
+        ageVerificationService: AgeVerificationService,
+        geminiApiService: GeminiApiService,
+        promptService: PromptService,
+        aiAuditLogDao: AIAuditLogDao,
+    ): SafetyClient =
+        SafetyClient(
+            remoteConfigService,
+            ageVerificationService,
+            promptService,
+            geminiApiService,
+            aiAuditLogDao,
+        )
+
+    @Provides
+    @Singleton
     fun providesSummarizationClient(
         remoteConfigService: RemoteConfigService,
         geminiApiService: GeminiApiService,
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
-    ): GemmaClient = GemmaClient(remoteConfigService, geminiApiService, promptService, aiAuditLogDao)
+        safetyClient: SafetyClient,
+        sideEffectService: SideEffectService,
+    ): GemmaClient =
+        GemmaClient(
+            remoteConfigService,
+            safetyClient,
+            sideEffectService,
+            geminiApiService,
+            promptService,
+            aiAuditLogDao,
+        )
 
     @Provides
     @Singleton
@@ -452,6 +487,14 @@ object AppModule {
             genreConfigService,
             remoteConfigService,
         )
+
+    @Provides
+    @Singleton
+    fun providePDFGenerator(
+        @ApplicationContext context: Context,
+    ): com.ilustris.sagai.features.share.domain.PDFGenerator =
+        com.ilustris.sagai.features.share.domain
+            .PDFGenerator(context)
 
     @Provides
     @Singleton

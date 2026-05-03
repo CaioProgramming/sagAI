@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.features.act.ui
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -15,9 +16,11 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -65,10 +69,26 @@ fun ChronicleView(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val genre = saga.data.genre
 
+    val context = LocalContext.current
+
     LaunchedEffect(initialActId) {
         viewModel.start(saga)
         if (initialActId != null) {
             viewModel.selectBookById(saga, initialActId)
+        }
+    }
+
+    LaunchedEffect(state) {
+        if (state is ChronicleState.PDFGenerated) {
+            val shareState = state as ChronicleState.PDFGenerated
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_STREAM, shareState.uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "Sharing ${shareState.title} from Sagas")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            context.startActivity(Intent.createChooser(intent, "Share Book PDF"))
         }
     }
 
@@ -82,24 +102,45 @@ fun ChronicleView(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            IconButton(
-                onClick = {
-                    if (selectedBook == null) {
-                        onClose()
-                    } else {
-                        viewModel.selectBook(null)
-                    }
-                },
-                modifier =
-                    Modifier
-                        .align(Alignment.Start)
-                        .clip(CircleShape),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Icon(
-                    painterResource(R.drawable.ic_back_left),
-                    contentDescription = "Back",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
+                IconButton(
+                    onClick = {
+                        if (selectedBook == null) {
+                            onClose()
+                        } else {
+                            viewModel.selectBook(null)
+                        }
+                    },
+                    modifier =
+                        Modifier
+                            .clip(CircleShape),
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_back_left),
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+
+                if (isReading) {
+                    IconButton(
+                        onClick = {
+                            selectedBook?.let { viewModel.shareBook(it) }
+                        },
+                        modifier =
+                            Modifier
+                                .clip(CircleShape),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_share),
+                            contentDescription = "Share PDF",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
             }
 
             AnimatedVisibility(isReading.not()) {
@@ -183,30 +224,47 @@ fun ChronicleView(
         }
 
         AnimatedContent(state) {
-            (it as? ChronicleState.Generating)?.message?.let { message ->
-                Text(
-                    message,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            shadow =
-                                Shadow(
-                                    color = Color.White,
-                                    blurRadius = 5f,
+            when (it) {
+                is ChronicleState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        com.ilustris.sagai.ui.theme.components.SagaLoader(
+                            modifier =
+                                Modifier.size(
+                                    100.dp,
                                 ),
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .reactiveShimmer(
-                                true,
-                                genre.shimmerColors(),
-                                repeatMode = RepeatMode.Restart,
-                                targetValue = 800f,
-                            ),
-                )
+                        )
+                    }
+                }
+
+                is ChronicleState.Generating -> {
+                    it.message?.let { message ->
+                        Text(
+                            message,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    shadow =
+                                        Shadow(
+                                            color = Color.White,
+                                            blurRadius = 5f,
+                                        ),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .reactiveShimmer(
+                                        true,
+                                        genre.shimmerColors(),
+                                        repeatMode = RepeatMode.Restart,
+                                        targetValue = 800f,
+                                    ),
+                        )
+                    }
+                }
+
+                else -> {}
             }
         }
     }

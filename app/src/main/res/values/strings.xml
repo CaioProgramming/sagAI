@@ -638,4 +638,12 @@
     <string name="concluding_volume">Vol %s</string>
     <string name="saga_continues">The Saga Continues</string>
     <string name="chronicle_end">The chronicles have recorded all that has transpired... for now.</string>
+    <!-- Guardrails -->
+    <string name="guardrail_blocked_title">Unable to Process</string>
+    <string name="guardrail_blocked_message">Your input cannot be processed as it violates security policies. Rephrase your message.</string>
+    <string name="guardrail_age_title">Content Restricted</string>
+    <string name="guardrail_age_message">This content is not appropriate for your verified age.</string>
+    <string name="guardrail_explicit_title">Explicit Content Violation</string>
+    <string name="guardrail_explicit_message">Your input contains explicit sexual or graphic content that is prohibited for all users. Please maintain a safe environment.</string>
+    <string name="guardrail_dismiss">Got it</string>
 </resources>

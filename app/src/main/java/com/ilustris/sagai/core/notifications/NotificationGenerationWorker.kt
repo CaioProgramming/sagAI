@@ -8,27 +8,20 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ilustris.sagai.BuildConfig
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
-import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
-import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.core.utils.DateFormatOption
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
-import kotlin.time.Duration.Companion.seconds
 import timber.log.Timber
+import kotlin.time.Duration.Companion.seconds
 
 @HiltWorker
 class NotificationGenerationWorker
@@ -69,49 +62,11 @@ class NotificationGenerationWorker
                         return@withTimeout Result.failure()
                     }
 
-                    if (sagaContent.data.isEnded) {
-                        Timber.w("Saga has ended, skipping notification: $sagaId")
-                        return@withTimeout Result.success()
-                    }
-
-                    if (sagaContent.characters.isEmpty()) {
-                        Timber.e("No characters found for saga: $sagaId")
-                        return@withTimeout Result.failure()
-                    }
-
-                    if (sagaContent.flatMessages().isEmpty()) {
-                        Timber.e("No messages found for saga: $sagaId")
-                        return@withTimeout Result.failure()
-                    }
-
-                    val rules =
-                        remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
-                            Timber.e("Failed to fetch narrative rules")
-                            return@withTimeout Result.failure()
-                        }
-
-                    val sceneSummary =
-                        executeRequest {
-                            gemmaClient.generate<SceneSummary>(
-                                ChatPrompts.sceneSummarizationPrompt(
-                                    promptService = promptService,
-                                    saga = sagaContent,
-                                    rules,
-                                ),
-                            )
-                        }.getSuccess()
-
-                    val (character, generatedMessage) =
-                        sceneSummary?.let {
+                    val notification =
+                        sagaContent.getCurrentTimeLine()?.data?.sceneSummary?.let {
                             val selectedCharacter =
-                                it.charactersPresent
-                                    .mapNotNull { characterName ->
-                                        sagaContent.characters.find { char ->
-                                            char.data.name == characterName
-                                        }
-                                    }.randomOrNull() ?: sagaContent.characters.first()
-
-                            genreConfigService.getGenreConfig(sagaContent.data.genre)
+                                sagaContent.findCharacter(it.charactersPresent.randomOrNull())
+                                    ?: sagaContent.mainCharacter
                             val conversationDirective =
                                 genreConfigService.conversationBlueprint(sagaContent.data.genre)
 
@@ -119,69 +74,62 @@ class NotificationGenerationWorker
                                 ChatPrompts.scheduledNotificationPrompt(
                                     promptService = promptService,
                                     saga = sagaContent,
-                                    selectedCharacter = selectedCharacter,
-                                    sceneSummary = sceneSummary,
+                                    selectedCharacter = selectedCharacter!!,
+                                    sceneSummary = it,
                                     conversationDirective = conversationDirective,
                                 )
 
-                            val message =
-                                gemmaClient.generate<String>(prompt, useCore = true) ?: emptyString()
+                            val currentTime = System.currentTimeMillis()
+                            val scheduledTime = currentTime + getNotificationDelay()
+
+                            val message = gemmaClient.generate<String>(prompt, useCore = true)!!
 
                             selectedCharacter to message
-                        } ?: run {
-                            sagaContent.characters.first() to emptyString()
-                        }
 
-                    val currentTime = System.currentTimeMillis()
-                    val scheduledTime = currentTime + getNotificationDelay()
-
-                    val notification =
-                        ScheduledNotification(
-                            sagaId = sagaContent.data.id.toString(),
-                            sagaTitle = sagaContent.data.title,
-                            characterId = character.data.id.toString(),
-                            characterName = character.data.name,
-                            characterAvatarPath = character.data.image,
-                            generatedMessage =
-                                generatedMessage.ifEmpty {
-                                    applicationContext.getString(R.string.smart_notification_fallback)
-                                },
-                            exitTimestamp = currentTime,
-                            scheduledTimestamp = scheduledTime,
-                            generationTimestamp = currentTime,
-                        )
-
-                    dataStore.setString(
-                        ScheduledNotificationServiceImpl.SCHEDULED_NOTIFICATION_JSON_KEY,
-                        notification.toJsonFormat(),
-                    )
-
-                    val alarmManager =
-                        applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                    val intent =
-                        Intent(applicationContext, ScheduledNotificationReceiver::class.java).apply {
-                            action = "com.ilustris.sagai.SCHEDULED_NOTIFICATION"
-                        }
-                    val pendingIntent =
-                        PendingIntent.getBroadcast(
-                            applicationContext,
-                            0,
-                            intent,
-                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                        )
-
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        scheduledTime,
-                        pendingIntent,
-                    )
-
-                    Timber.d("Notification scheduled at: ${
-                            notification.scheduledTimestamp.formatDate(
-                                DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR,
+                            ScheduledNotification(
+                                sagaId = sagaContent.data.id.toString(),
+                                sagaTitle = sagaContent.data.title,
+                                characterId = selectedCharacter.data.id.toString(),
+                                characterName = selectedCharacter.data.name,
+                                characterAvatarPath = selectedCharacter.data.image,
+                                generatedMessage = message,
+                                exitTimestamp = currentTime,
+                                scheduledTimestamp = scheduledTime,
+                                generationTimestamp = currentTime,
                             )
-                        }")
-                    Timber.i("Generated notification: $notification")
+                        }
+
+                    notification?.let {
+                        dataStore.setString(
+                            ScheduledNotificationServiceImpl.SCHEDULED_NOTIFICATION_JSON_KEY,
+                            notification.toJsonFormat(),
+                        )
+
+                        val alarmManager =
+                            applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                        val intent =
+                            Intent(
+                                applicationContext,
+                                ScheduledNotificationReceiver::class.java,
+                            ).apply {
+                                action = "com.ilustris.sagai.SCHEDULED_NOTIFICATION"
+                            }
+                        val pendingIntent =
+                            PendingIntent.getBroadcast(
+                                applicationContext,
+                                0,
+                                intent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                            )
+
+                        alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            it.scheduledTimestamp,
+                            pendingIntent,
+                        )
+
+                        Timber.i("Notification scheduled: ${notification.toJsonFormat()}")
+                    }
 
                     Result.success()
                 }

@@ -34,6 +34,11 @@ interface SharePlayUseCase {
         shareType: ShareType,
         character: CharacterContent?,
     ): RequestResult<ShareText>
+
+    suspend fun generateBookPDF(
+        book: com.ilustris.sagai.features.act.data.model.Book,
+        genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+    ): RequestResult<File>
 }
 
 class SharePlayUseCaseImpl
@@ -44,6 +49,7 @@ class SharePlayUseCaseImpl
         private val context: Context,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
+        private val pdfGenerator: PDFGenerator,
     ) : SharePlayUseCase {
         override suspend fun saveBitmapToCache(
             bitmap: Bitmap,
@@ -123,4 +129,12 @@ class SharePlayUseCaseImpl
 
                 gemmaClient.generate<ShareText>(prompt, blueprintKey = SharePrompts.SHARE_PLAYSTYLE_BLUEPRINT)!!
             }
+
+        override suspend fun generateBookPDF(
+            book: com.ilustris.sagai.features.act.data.model.Book,
+            genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+        ): RequestResult<File> =
+            executeRequest {
+                pdfGenerator.generateBookPDF(book, genre)!!
+        }
     }

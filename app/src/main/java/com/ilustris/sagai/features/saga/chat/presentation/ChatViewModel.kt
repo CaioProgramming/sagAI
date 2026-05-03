@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.GuardrailsException
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.media.MediaPlayerManager
@@ -1252,22 +1253,36 @@ class ChatViewModel
 
                         is StreamingState.Error -> {
                             stateManager.updateState { it.copy(reasoningChunk = null) }
-                            messageUseCase.updateMessage(
-                                message.copy(
-                                    status = MessageStatus.ERROR,
-                                ),
-                            )
+
                             updateLoading(false)
                             sagaContentManager.setProcessing(false)
-                            updateSnackBar(
-                                snackBar(
-                                    context.getString(R.string.message_reply_error),
-                                ) {
-                                    action {
-                                        resendMessage(message)
-                                    }
-                                },
-                            )
+                            if (streamingState.throwable is GuardrailsException) {
+                                Timber
+                                    .tag("ChatViewModel")
+                                    .w("Guardrail block detected. Deleting message and restoring input.")
+                                messageUseCase.deleteMessage(message.id.toLong())
+                                stateManager.updateInput(
+                                    TextFieldValue(
+                                        text = message.text,
+                                        selection = TextRange(message.text.length),
+                                    ),
+                                )
+                            } else {
+                                updateSnackBar(
+                                    snackBar(
+                                        context.getString(R.string.message_reply_error),
+                                    ) {
+                                        action {
+                                            resendMessage(message)
+                                        }
+                                    },
+                                )
+                                messageUseCase.updateMessage(
+                                    message.copy(
+                                        status = MessageStatus.ERROR,
+                                    ),
+                                )
+                            }
                             stateManager.updateLoading(false)
                         }
                     }

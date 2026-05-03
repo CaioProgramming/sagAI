@@ -167,6 +167,7 @@ class NewSagaUseCaseImpl
                         config.variations ?: mapOf(),
                         identity,
                     ),
+                    userInteraction = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
                     filterOutputFields =
                         listOf(
@@ -220,6 +221,7 @@ class NewSagaUseCaseImpl
                             availableVariations = config.variations ?: mapOf(),
                             identity = identity,
                         ),
+                        userInteraction = true,
                         requireTranslation = true,
                     blueprintKey = NewSagaPrompts.INITIAL_SAGA_KICKOFF_BLUEPRINT)!!
 

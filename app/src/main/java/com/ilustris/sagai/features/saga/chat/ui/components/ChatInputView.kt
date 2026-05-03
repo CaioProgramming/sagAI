@@ -643,6 +643,11 @@ fun ChatInputView(
                                             onStopGeneration()
                                         } else {
                                             sendMessage()
+                                            onUpdateInput(
+                                                escapeCursorFromTagAndClean(
+                                                    inputField,
+                                                ),
+                                            )
                                         }
                                     },
                                     enabled = (inputField.text.isNotBlank() || isGenerating),

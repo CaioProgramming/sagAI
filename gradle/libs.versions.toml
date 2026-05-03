@@ -41,8 +41,10 @@ uiUnit = "1.9.4"
 uiGraphics = "1.9.4"
 playServicesMlkitSubjectSegmentation = "16.0.0-beta1"
 timber = "5.0.1"
+ageSignals = "0.0.3"
 
 [libraries]
+play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-media = { module = "androidx.media:media", version.ref = "media" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
