@@ -51,6 +51,4 @@ enum class SenderType {
     }
 }
 
-fun SenderType.isCharacter() =
-    this == SenderType.CHARACTER || this == SenderType.NARRATOR ||
-        this == SenderType.THOUGHT || this == SenderType.ACTION
+fun SenderType.isCharacter() = this == SenderType.CHARACTER

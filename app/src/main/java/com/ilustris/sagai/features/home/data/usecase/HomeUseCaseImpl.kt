@@ -47,7 +47,7 @@ class HomeUseCaseImpl
                         gemmaClient.generate<DynamicSagaPrompt>(
                             prompt = HomePrompts.dynamicSagaCreationPrompt(promptService),
                             blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
-                            temperatureRandomness = .1f,
+                            temperatureRandomness = .5f,
                             requireTranslation = true,
                             requirement = GemmaClient.ModelRequirement.TINY,
                         )
@@ -62,8 +62,9 @@ class HomeUseCaseImpl
             val fallbacks =
                 remoteConfig.getJson<List<DynamicSagaPrompt>>("dynamic_saga_prompt_fallbacks")
             return fallbacks?.randomOrNull() ?: DynamicSagaPrompt(
-                title = "Prepare for a new adventure",
-                subtitle = "The cosmic library awaits your command...",
+                title = "SYSTEM RESONANCE DETECTED",
+                subtitle = "A new narrative rift is opening. The library awaits your presence.",
+                genre = null,
             )
         }
 

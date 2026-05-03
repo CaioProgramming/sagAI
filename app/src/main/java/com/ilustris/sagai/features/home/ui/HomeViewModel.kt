@@ -49,7 +49,8 @@ class HomeViewModel
         private val _startDebugSaga = MutableStateFlow<Saga?>(null)
         val startDebugSaga = _startDebugSaga.asStateFlow()
 
-        private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
+        private val _dynamicNewSagaTexts =
+            MutableStateFlow<Pair<DynamicSagaPrompt?, GenreVisualConfig?>?>(null)
         val dynamicNewSagaTexts = _dynamicNewSagaTexts.asStateFlow()
 
         private val _backupAvailable = MutableStateFlow(false)
@@ -150,7 +151,7 @@ class HomeViewModel
                 homeUseCase
                     .requestDynamicCall()
                     .onSuccessAsync {
-                        _dynamicNewSagaTexts.emit(it)
+                        _dynamicNewSagaTexts.emit(it to genreVisualConfigService.getVisualConfig(it.genre))
                         if (_isStarting.value) {
                             _isStarting.emit(false)
                         }
@@ -159,7 +160,7 @@ class HomeViewModel
                             DynamicSagaPrompt(
                                 stringResourceHelper.getString(R.string.home_create_new_saga_title),
                                 stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
-                            )
+                            ) to null
                         if (_isStarting.value) {
                             _isStarting.emit(false)
                         }

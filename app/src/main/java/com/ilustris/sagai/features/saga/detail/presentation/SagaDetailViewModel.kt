@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -211,11 +210,7 @@ class SagaDetailViewModel
                 sagaDetailUseCase
                     .regenerateSagaIcon(
                         currentSaga,
-                    ).onFailure {
-                        if (it is BillingService.PremiumException) {
-                            showPremiumSheet.value = true
-                        }
-                    }
+                    )
                 isGenerating.value = false
                 _loadingMessage.value = null
             }

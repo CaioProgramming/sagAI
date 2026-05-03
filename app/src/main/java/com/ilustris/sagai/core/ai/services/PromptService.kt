@@ -173,7 +173,17 @@ class PromptServiceImpl
                         appendLine()
                     }
 
-                    // 4. The Core Template
+                    // 4. Few-Shot Examples
+                    if (blueprint.examples.isNotEmpty()) {
+                        appendLine("# FEW-SHOT EXAMPLES")
+                        blueprint.examples.forEachIndexed { index, example ->
+                            appendLine("## EXAMPLE ${index + 1}")
+                            appendLine(example.toJsonFormat())
+                        }
+                        appendLine()
+                    }
+
+                    // 5. The Core Template
                     appendLine("# TASK DEFINITION")
                     appendLine(buildPrompt(blueprint.template, variables, logEnabled))
                 }

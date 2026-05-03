@@ -441,12 +441,13 @@ class SagaContentManagerImpl
             ) {
                 saga.flatMessages().size - previousSaga.flatMessages().size
                 val lastMessage = saga.flatMessages().last()
-                val isFromUser = lastMessage.character == saga.mainCharacter?.data
+                lastMessage.character == saga.mainCharacter?.data
                 val charIcon =
                     imageHelper
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
-                if (isFromUser.not() && lastMessage.message.senderType.isCharacter()) {
+                if (lastMessage.message.senderType.isCharacter()) {
+                    playSoundFx()
                     updateSnackBar(
                         snackBar(
                             "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
@@ -456,7 +457,6 @@ class SagaContentManagerImpl
                             notificationStyle = NotificationStyle.CHAT
                         },
                     )
-                    playSoundFx()
                 }
             }
         }

@@ -8,19 +8,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,90 +29,102 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
-import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.iridescentGradient
-import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.ui.theme.bodyFont
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CreateSagaCard(
     modifier: Modifier = Modifier,
-    dynamicNewSagaTexts: DynamicSagaPrompt?,
-    isLoadingDynamicPrompts: Boolean,
+    dynamicNewSagaTexts: Pair<DynamicSagaPrompt?, GenreVisualConfig?>,
     onCreateNewChat: () -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.medium
+    val genre = dynamicNewSagaTexts.first?.genre
+    val genreColor =
+        genre?.resolveColor(dynamicNewSagaTexts.second) ?: MaterialTheme.colorScheme.primary
+    val contentColor =
+        genre?.resolveIconColor(dynamicNewSagaTexts.second) ?: MaterialTheme.colorScheme.onPrimary
+    val containerColor = MaterialTheme.colorScheme.background
+    val title =
+        remember {
+            dynamicNewSagaTexts.first?.title
+        }
+    val subtitle =
+        remember {
+            dynamicNewSagaTexts.first?.subtitle
+        }
     Column(
         modifier =
             modifier
-                .dropShadow(shape) {
-                    brush = Brush.verticalGradient(iridescentGradient)
-                    radius = 10f
-                    spread = 5f
-                }.border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), shape)
-                .background(Brush.verticalGradient(iridescentGradient), shape)
-                .clip(shape)
                 .fillMaxWidth()
-                .clickable { onCreateNewChat() }
-                .padding(8.dp),
+                .border(1.dp, genreColor, shape)
+                .clip(shape)
+                .background(containerColor)
+                .clickable { onCreateNewChat() },
     ) {
         Row(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .gradientFill(Color.Black.solidGradient()),
+                    .background(genreColor)
+                    .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // The Forge Portal Icon
+            Text(
+                text = (title ?: stringResource(R.string.home_create_new_saga_title)).uppercase(),
+                style =
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 3.sp,
+                        fontFamily = genre?.bodyFont(),
+                    ),
+                color = contentColor,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+
             Box(
                 contentAlignment = Alignment.Center,
                 modifier =
-                    Modifier.size(50.dp),
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .size(32.dp)
+                        .padding(8.dp),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_spark),
+                    painter = painterResource(genre?.icon ?: R.drawable.ic_spark),
                     contentDescription = null,
-                    modifier =
-                        Modifier
-                            .size(24.dp),
-                    tint = Color.Unspecified,
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text =
-                        (
-                            dynamicNewSagaTexts?.title
-                                ?: stringResource(R.string.home_create_new_saga_title)
-                        ).uppercase(),
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.sp,
-                        ),
-                )
-
-                Text(
-                    text =
-                        dynamicNewSagaTexts?.subtitle
-                            ?: stringResource(R.string.home_create_new_saga_subtitle),
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxSize(),
+                    tint = genreColor,
                 )
             }
         }
+
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            1.dp,
+            genreColor,
+        )
+
+        Text(
+            text = subtitle ?: stringResource(R.string.home_create_new_saga_subtitle),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = genre?.bodyFont(),
+                    color = genreColor,
+                ),
+            color = genreColor,
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+                    .alpha(.8f),
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

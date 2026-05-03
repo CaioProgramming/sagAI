@@ -62,11 +62,7 @@ class ChapterViewModel
                     .generateChapterCover(
                         chapter,
                         content,
-                    ).onFailure {
-                        if (it is BillingService.PremiumException) {
-                            showPremiumSheet.value = true
-                        }
-                    }
+                    )
                 isGenerating.value = false
             }
         }

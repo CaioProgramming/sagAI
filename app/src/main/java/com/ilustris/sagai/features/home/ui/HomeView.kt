@@ -118,6 +118,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
@@ -179,7 +180,8 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).reactiveShimmer(
+                                )
+                                .reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -190,7 +192,11 @@ fun HomeView(
                 }
             } else {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    Box(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier
+                            .padding(padding)
+                            .fillMaxSize(),
+                            ) {
                         ModalNavigationDrawer(
                             drawerState = drawerState,
                             drawerContent = {
@@ -214,6 +220,7 @@ fun HomeView(
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 val isPremium =
                                     billingState is BillingService.BillingState.SignatureEnabled
+
                                 ChatList(
                                     sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
                                     padding = padding,
@@ -229,7 +236,8 @@ fun HomeView(
                                             navController.navigateToRoute(Routes.NEW_SAGA)
                                             return@ChatList
                                         }
-                                        val freeSagasCount = sagas.count { it.data.isEnded.not() }
+                                        val freeSagasCount =
+                                            sagas.count { it.data.isEnded.not() }
                                         if (freeSagasCount <= 3 || isPremium) {
                                             navController.navigateToRoute(Routes.NEW_SAGA)
                                         } else {
@@ -264,6 +272,7 @@ fun HomeView(
                                     onStoryClicked = {
                                         viewModel.getBriefing(it)
                                     },
+                                    modifier = Modifier.fillMaxSize(),
                                 )
                             }
                         }
@@ -325,19 +334,37 @@ fun HomeView(
     OnboardingDialog(type = OnboardingType.APP_INTRO)
 }
 
+private fun navigateToNewSaga(
+    navController: NavHostController,
+    sagasCount: Int,
+    isPremium: Boolean,
+    onShowPremium: () -> Unit = {},
+) {
+    if (BuildConfig.DEBUG) {
+        navController.navigateToRoute(Routes.NEW_SAGA)
+        return
+    }
+    if (sagasCount <= 3 || isPremium) {
+        navController.navigateToRoute(Routes.NEW_SAGA)
+    } else {
+        onShowPremium()
+    }
+}
+
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun SharedTransitionScope.ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
-    dynamicNewSagaTexts: DynamicSagaPrompt?,
+    dynamicNewSagaTexts: Pair<DynamicSagaPrompt?, GenreVisualConfig?>?,
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
     loadingStoryId: Int? = null,
     visualConfigs: Map<Genre, GenreVisualConfig> = emptyMap(),
     animatedContentScope: AnimatedContentScope,
+    modifier: Modifier = Modifier,
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
@@ -350,7 +377,7 @@ private fun SharedTransitionScope.ChatList(
     LazyColumn(
         state = listState,
         modifier =
-            Modifier
+            modifier
                 .animateContentSize()
                 .padding(padding),
     ) {
@@ -381,7 +408,8 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -424,7 +452,8 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -473,13 +502,14 @@ private fun SharedTransitionScope.ChatList(
             )
         }
 
-        item {
-            CreateSagaCard(
-                modifier = Modifier.padding(16.dp),
-                dynamicNewSagaTexts = dynamicNewSagaTexts,
-                isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-                onCreateNewChat = onCreateNewChat,
-            )
+        dynamicNewSagaTexts?.let {
+            item {
+                CreateSagaCard(
+                    modifier = Modifier.padding(16.dp),
+                    dynamicNewSagaTexts = dynamicNewSagaTexts,
+                    onCreateNewChat = onCreateNewChat,
+                )
+            }
         }
 
         items(
@@ -543,6 +573,44 @@ private fun SharedTransitionScope.ChatList(
                 }
             }
         }
+
+        item {
+            Button(
+                onClick = {
+                    onCreateNewChat()
+                },
+                shape = MaterialTheme.shapes.large,
+                colors =
+                    ButtonDefaults.buttonColors().copy(
+                        containerColor = Color.Transparent,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(32.dp)
+                        .dropShadow(MaterialTheme.shapes.large) {
+                            brush =
+                                Brush.horizontalGradient(iridescentGradient)
+                            radius = 10f
+                            spread = 5f
+                        }.background(
+                            Brush.horizontalGradient(iridescentGradient),
+                            MaterialTheme.shapes.large,
+                        ).fillMaxWidth(),
+            ) {
+                Text(
+                    stringResource(R.string.home_create_new_saga_title).uppercase(),
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black,
+                        ),
+                )
+            }
+        }
+
+        item {
+            Spacer(Modifier.size(50.dp))
+        }
     }
 }
 
@@ -581,7 +649,8 @@ fun ChatCard(
                                 color = genreColor
                                 brush = genreBrush
                                 spread = 5f
-                            }.size(50.dp)
+                            }
+                            .size(50.dp)
                             .selectiveColorHighlight(saga.data.genre),
                 )
 
@@ -738,7 +807,7 @@ fun HomeViewPreview() {
                                 DynamicSagaPrompt(
                                     "Dynamic Title Preview",
                                     "Dynamic Subtitle Preview",
-                                ),
+                                ) to null,
                             isLoadingDynamicPrompts = false,
                         )
                     }

@@ -83,13 +83,6 @@ class CharacterDetailsViewModel
                     .onSuccessAsync {
                         characterResume.emit(it)
                         isSummarizing.value = false
-                    }.onFailure {
-                        isSummarizing.value = false
-                        characterResume.value = characterContent.data.backstory
-                        if (it is BillingService.PremiumException) {
-                            showPremiumSheet.value = true
-                        }
-                        Timber.e("Error generating character resume: ${it.message}")
                     }
             }
         }
@@ -123,9 +116,6 @@ class CharacterDetailsViewModel
                                 isGenerating.value = false
                                 loadingMessage.value = null
                                 imageReasoning.value = null
-                                if (state.throwable is BillingService.PremiumException) {
-                                    showPremiumSheet.value = true
-                                }
                             }
                         }
                     }
