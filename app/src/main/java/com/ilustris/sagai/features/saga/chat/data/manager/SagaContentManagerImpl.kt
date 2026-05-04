@@ -445,7 +445,7 @@ class SagaContentManagerImpl
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
                 if (lastMessage.message.senderType.isCharacter()) {
-                    playSoundFx(saga.data.genre)
+                    playSoundFx()
                     updateSnackBar(
                         snackBar(
                             "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
@@ -459,14 +459,14 @@ class SagaContentManagerImpl
             }
         }
 
-        private fun playSoundFx(genre: Genre? = null) {
-            val selectedGenre = genre ?: content.value?.data?.genre ?: return
+        private fun playSoundFx() {
+            val selectedGenre = content.value?.data?.genre ?: return
             managerScope.launch {
                 delay(300)
                 val visualConfig = genreVisualConfigService.getVisualConfig(selectedGenre)
                 val hapticPattern = selectedGenre.vibrationPattern(visualConfig)
                 soundFxService.playWithHaptics(hapticPattern)
-        }
+            }
         }
 
         private suspend fun getAmbienceMusic(saga: SagaContent) {
@@ -1102,7 +1102,7 @@ class SagaContentManagerImpl
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 if (milestone != null && milestone !is SagaMilestone.Loading) {
                     isMilestoneActive.value = true
-                    playSoundFx(content.value?.data?.genre)
+                    playSoundFx()
                 }
                 milestoneUpdate.emit(milestone)
             }

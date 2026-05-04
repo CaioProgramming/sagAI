@@ -196,7 +196,7 @@ fun HomeView(
                         Modifier
                             .padding(padding)
                             .fillMaxSize(),
-                            ) {
+                    ) {
                         ModalNavigationDrawer(
                             drawerState = drawerState,
                             drawerContent = {
@@ -408,8 +408,7 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }
-                                    .wrapContentWidth()
+                                    }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -452,8 +451,7 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -592,10 +590,12 @@ private fun SharedTransitionScope.ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 10f
                             spread = 5f
-                        }.background(
+                        }
+                        .background(
                             Brush.horizontalGradient(iridescentGradient),
                             MaterialTheme.shapes.large,
-                        ).fillMaxWidth(),
+                        )
+                        .fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -609,7 +609,7 @@ private fun SharedTransitionScope.ChatList(
         }
 
         item {
-            Spacer(Modifier.size(50.dp))
+            Spacer(Modifier.size(24.dp))
         }
     }
 }

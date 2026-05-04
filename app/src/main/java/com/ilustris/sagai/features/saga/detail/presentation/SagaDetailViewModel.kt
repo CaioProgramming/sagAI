@@ -62,6 +62,7 @@ class SagaDetailViewModel
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
 
         private val sectionCache = mutableMapOf<RequestSection, DetailSectionView>()
+        private var currentRequestSection: RequestSection = RequestSection.START
         private var sectionJob: Job? = null
         private val insightJobs = mutableMapOf<RequestSection, Job>()
 
@@ -70,6 +71,7 @@ class SagaDetailViewModel
         }
 
         fun loadSection(requestSection: RequestSection) {
+            currentRequestSection = requestSection
             val currentSaga = saga.value ?: return
 
             if (sectionCache.containsKey(requestSection)) {
@@ -181,9 +183,7 @@ class SagaDetailViewModel
                         this@SagaDetailViewModel.saga.value = data
                         visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
 
-                        if (_actualSection.value == null) {
-                            loadSection(RequestSection.START)
-                        }
+                        loadSection(currentRequestSection)
                         detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
                         launchIntroSequence()
                     }

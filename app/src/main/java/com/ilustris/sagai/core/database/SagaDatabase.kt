@@ -10,7 +10,9 @@ import com.ilustris.sagai.core.database.converters.StringListConverter
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.source.ActDao
+import com.ilustris.sagai.features.act.data.source.BookDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -41,13 +43,14 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Wiki::class,
         Timeline::class,
         Act::class,
+        Book::class,
         CharacterEvent::class,
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
         Reaction::class,
         AIAuditLog::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 @TypeConverters(
@@ -70,6 +73,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun timelineDao(): TimelineDao
 
     abstract fun actDao(): ActDao
+
+    abstract fun bookDao(): BookDao
 
     abstract fun characterEventDao(): CharacterEventDao
 

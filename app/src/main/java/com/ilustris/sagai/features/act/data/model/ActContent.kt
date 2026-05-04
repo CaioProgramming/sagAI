@@ -24,6 +24,12 @@ data class ActContent(
         entity = Chapter::class,
     )
     val chapters: List<ChapterContent> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "actId",
+        entity = Book::class,
+    )
+    val book: Book? = null,
 ) {
     fun isFull(
         actLimit: Int,
@@ -72,14 +78,14 @@ data class ActContent(
             )
             appendLine("CHAPTERS: ")
             chapters.forEach { chapter ->
-                val isLastChapter = chapter == chapters.last()
+                chapter == chapters.last()
                 appendLine(chapters.indexOf(chapter) + 1)
                 appendLine(
                     chapter.data.toAINormalize(LorePrompts.CHAPTER_EXCLUDED_FIELDS),
                 )
                 appendLine()
-                if (showEvents && isLastChapter) {
-                    appendLine("LATEST CHAPTER EVENTS:")
+                if (showEvents) {
+                    appendLine("CHAPTER EVENTS:")
                     appendLine(
                         chapter.events.map { it.data }.normalizetoAIItems(
                             LorePrompts.TIMELINE_EXCLUDED_FIELDS,

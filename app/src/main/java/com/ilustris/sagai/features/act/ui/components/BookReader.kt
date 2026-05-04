@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -45,20 +44,17 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.BookPage
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -67,7 +63,19 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlin.math.abs
+
+sealed class PageItem {
+    data class ChapterStart(
+        val title: String,
+    ) : PageItem()
+
+    data class Content(
+        val chapterTitle: String,
+        val page: BookPage,
+    ) : PageItem()
+}
 
 @Composable
 fun BookReader(
@@ -78,9 +86,19 @@ fun BookReader(
     animatedContentScope: AnimatedContentScope,
     onSelectNextVolume: () -> Unit,
 ) {
-    val book = act.data.book
-    val pages = book?.pages ?: emptyList()
-    val pagerState = rememberPagerState { pages.size + 1 }
+    val book = act.book
+    val pageItems =
+        remember(book) {
+            buildList {
+                book?.chapters?.forEach { chapter ->
+                    add(PageItem.ChapterStart(chapter.title))
+                    chapter.pages.forEach { page ->
+                        add(PageItem.Content(chapter.title, page))
+                    }
+                }
+            }
+        }
+    val pagerState = rememberPagerState { pageItems.size + 1 }
     val genre = remember { saga.data.genre }
 
     with(sharedTransitionScope) {
@@ -90,12 +108,16 @@ fun BookReader(
                     .fillMaxSize(),
         ) {
             val readingProgress by animateFloatAsState(
-                if (book != null) (pagerState.currentPage.toFloat() / pages.size.toFloat()) else 0f,
+                if (book != null && pageItems.isNotEmpty()) (pagerState.currentPage.toFloat() / pageItems.size.toFloat()) else 0f,
+                label = "readingProgress",
             )
 
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 pageSpacing = 8.dp,
             ) { pageIdx ->
                 val pageOffset =
@@ -130,16 +152,28 @@ fun BookReader(
                                     }
                             },
                 ) {
-                    if (pageIdx < pages.size) {
-                        ReaderPage(
-                            pages[pageIdx],
-                            saga.data.genre,
-                            titleModifier =
-                                Modifier.sharedElement(
-                                    rememberSharedContentState(key = "book-${act.data.id}"),
-                                    animatedContentScope,
-                                ),
-                        )
+                    if (pageIdx < pageItems.size) {
+                        when (val item = pageItems[pageIdx]) {
+                            is PageItem.ChapterStart -> {
+                                ChapterStartPage(
+                                    title = item.title,
+                                    genre = genre,
+                                )
+                            }
+
+                            is PageItem.Content -> {
+                                ReaderPage(
+                                    chapterTitle = item.chapterTitle,
+                                    page = item.page,
+                                    genre = genre,
+                                    titleModifier =
+                                        Modifier.sharedElement(
+                                            rememberSharedContentState(key = "book-${act.data.id}"),
+                                            animatedContentScope,
+                                        ),
+                                )
+                            }
+                        }
                     } else {
                         EndPaper(
                             currentAct = act,
@@ -163,9 +197,9 @@ fun BookReader(
             AnimatedContent(pagerState.currentPage, transitionSpec = {
                 slideInVertically { it / 2 } + fadeIn(tween(800)) togetherWith
                     fadeOut()
-            }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            }, label = "pageCounter", modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (it < pages.size) {
+                    if (it < pageItems.size) {
                         Text(
                             text = "${it + 1}",
                             style =
@@ -176,7 +210,7 @@ fun BookReader(
                         )
                     }
 
-                    if (it > pages.lastIndex && !isLast) {
+                    if (it >= pageItems.size && !isLast) {
                         Button(
                             onClick = {
                                 onSelectNextVolume()
@@ -206,7 +240,44 @@ fun BookReader(
 }
 
 @Composable
+fun ChapterStartPage(
+    title: String,
+    genre: Genre,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            painterResource(genre.icon),
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .size(50.dp)
+                    .reactiveShimmer(true),
+            tint = genre.resolveColor(),
+        )
+
+        AutoResizeText(
+            text = title.uppercase(),
+            style =
+                MaterialTheme.typography.headlineLarge.copy(
+                    fontFamily = genre.headerFont(),
+                    color = genre.resolveColor(),
+                    textAlign = TextAlign.Center,
+                ),
+            maxLines = 2,
+        )
+    }
+}
+
+@Composable
 fun ReaderPage(
+    chapterTitle: String,
     page: BookPage,
     genre: Genre,
     titleModifier: Modifier,
@@ -220,21 +291,9 @@ fun ReaderPage(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
-            text = page.chapterTitle,
-            style =
-                MaterialTheme.typography.headlineSmall.copy(
-                    color = genre.color,
-                    fontFamily = genre.headerFont(),
-                ),
-            modifier = titleModifier,
-        )
-
-        Spacer(modifier = Modifier.height(40.dp))
-
-        Text(
             text = page.content,
             style =
-                MaterialTheme.typography.bodyLarge.copy(
+                MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = genre.bodyFont(),
                     fontWeight = FontWeight.Normal,
                 ),
@@ -259,41 +318,20 @@ fun EndPaper(
         Icon(
             painterResource(saga.data.genre.icon),
             contentDescription = null,
-            modifier = Modifier.size(80.dp).alpha(0.7f),
+            modifier =
+                Modifier
+                    .size(80.dp)
+                    .genreVfx(genre),
             tint = genreColor,
         )
 
-        Text(
-            text =
-                stringResource(
-                    R.string.concluding_volume,
-                    saga.actNumber(currentAct.data).toRoman(),
-                ).uppercase(),
-            style =
-                MaterialTheme.typography.labelLarge.copy(
-                    color = genreColor,
-                    letterSpacing = 6.sp,
-                    fontFamily = genre.bodyFont(),
-                ),
-        )
-
-        Text(
-            text = currentAct.data.title,
-            style =
-                MaterialTheme.typography.headlineMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                    fontFamily = genre.headerFont(),
-                ),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-
-        currentAct.data.book?.authorNote?.let { note ->
+        currentAct.book?.authorNote?.let { note ->
             var showSagaSign by remember {
                 mutableStateOf(false)
             }
             val signAlpha by animateFloatAsState(
                 if (showSagaSign) 1f else 0f,
+                label = "signAlpha",
             )
             SimpleTypewriterText(
                 text = note,
@@ -303,6 +341,7 @@ fun EndPaper(
                         fontStyle = FontStyle.Italic,
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.Light,
+                        textAlign = TextAlign.Center,
                     ),
                 modifier = Modifier.padding(16.dp),
                 onAnimationFinished = {
@@ -312,7 +351,10 @@ fun EndPaper(
 
             SagaTitle(
                 textStyle = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.alpha(signAlpha).gradientFill(genre.gradient(true)),
+                modifier =
+                    Modifier
+                        .alpha(signAlpha)
+                        .gradientFill(genre.gradient(true)),
             )
         }
     }

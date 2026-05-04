@@ -3,9 +3,12 @@ package com.ilustris.sagai.features.act.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +43,7 @@ class ChronicleViewModel
     constructor(
         private val bookUseCase: BookUseCase,
         private val sharePlayUseCase: SharePlayUseCase,
+        private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<ChronicleState>(ChronicleState.Idle)
         val state = _state.asStateFlow()
@@ -49,14 +53,21 @@ class ChronicleViewModel
         private val _selectedBook = MutableStateFlow<ActContent?>(null)
         val selectedBook = _selectedBook.asStateFlow()
 
+        private val _visualConfig =
+            MutableStateFlow<com.ilustris.sagai.core.ai.model.GenreVisualConfig?>(null)
+        val visualConfig = _visualConfig.asStateFlow()
+
         fun start(sagaContent: SagaContent) {
             currentSagaContent = sagaContent
             _selectedBook.value = null
+            viewModelScope.launch {
+                _visualConfig.value = visualConfigService.getVisualConfig(sagaContent.data.genre)
+            }
         }
 
         fun selectBook(act: ActContent?) {
             act?.let {
-                if (it.data.book != null) {
+                if (it.book != null) {
                     _selectedBook.value = it
                 } else {
                     generateNextVolume(act)
@@ -68,10 +79,11 @@ class ChronicleViewModel
 
         fun shareBook(actContent: ActContent) {
             viewModelScope.launch {
-                val book = actContent.data.book ?: return@launch
+                val book = actContent.book ?: return@launch
                 val saga = currentSagaContent ?: return@launch
+                val volumeNumber = saga.actNumber(actContent.data).toRoman()
                 _state.value = ChronicleState.Loading
-                val result = sharePlayUseCase.generateBookPDF(book, saga.data.genre)
+                val result = sharePlayUseCase.generateBookPDF(book, saga.data.genre, volumeNumber)
                 if (result is com.ilustris.sagai.core.data.RequestResult.Success) {
                     val uriResult = sharePlayUseCase.loadWithFileProvider(result.value)
                     if (uriResult is com.ilustris.sagai.core.data.RequestResult.Success) {
@@ -81,9 +93,9 @@ class ChronicleViewModel
                     }
                 } else {
                     _state.value = ChronicleState.Error("Failed to generate PDF")
+                }
             }
         }
-    }
 
         fun selectBookById(
             saga: SagaContent,
@@ -101,11 +113,13 @@ class ChronicleViewModel
         fun generateNextVolume(actContent: ActContent) {
             viewModelScope.launch {
                 val saga = currentSagaContent ?: return@launch
-                if (actContent.data.book != null) {
+                if (actContent.book != null) {
                     _selectedBook.value = actContent
                     return@launch
                 }
-                _selectedBook.value = null
+                _state.emit(ChronicleState.Loading)
+                _selectedBook.value = actContent
+
                 bookUseCase.generateBookStream(saga, actContent).collect { state ->
                     when (state) {
                         is StreamingState.Success -> {
@@ -116,6 +130,31 @@ class ChronicleViewModel
                         is StreamingState.Error -> {
                             _state.value = ChronicleState.Error(state.message)
                         }
+
+                        is StreamingState.Reasoning -> {
+                            _state.value =
+                                ChronicleState.Generating(actContent.data.title, state.chunk)
+                        }
+                    }
+                }
+            }
+        }
+
+        fun regenerateBook(actContent: ActContent) {
+            viewModelScope.launch {
+                val saga = currentSagaContent ?: return@launch
+                _selectedBook.value = null
+                bookUseCase.resetBook(actContent)
+                bookUseCase.generateBookStream(saga, actContent).collect { state ->
+                    when (state) {
+                        is StreamingState.Success -> {
+                            _state.value = ChronicleState.Idle
+                            _selectedBook.value = actContent
+                        }
+
+                        is StreamingState.Error -> {
+                            _state.value = ChronicleState.Error(state.message)
+                    }
 
                         is StreamingState.Reasoning -> {
                             _state.value = ChronicleState.Generating(actContent.data.title, state.chunk)

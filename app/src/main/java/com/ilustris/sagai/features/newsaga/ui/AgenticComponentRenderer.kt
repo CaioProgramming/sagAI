@@ -113,7 +113,10 @@ fun AgenticUIComponent.Render(
                     lockedSaga,
                     lockedCharacter,
                     isAgentLoading,
-                    onAction,
+                    currentAgentMessage =
+                        (this@Render as? AgenticUIComponent.AgentMessage)?.text
+                            ?: "",
+                        onAction,
                 )
             }
         }
@@ -746,6 +749,7 @@ fun LibraryPager(
     lockedSaga: SagaDraft?,
     lockedCharacter: CharacterInfo?,
     isAgentLoading: Boolean,
+    currentAgentMessage: String? = null,
     onAction: (AgenticAction) -> Unit,
 ) {
     val pagerState =
@@ -782,6 +786,7 @@ fun LibraryPager(
                 isOpened = isOpened,
                 lockedCharacter = lockedCharacter,
                 isLoading = isAgentLoading && (lockedSaga?.id == bookEntry.first.draft.id),
+                reasoning = if (isAgentLoading && (lockedSaga?.id == bookEntry.first.draft.id)) currentAgentMessage else null,
                 onToggle = {
                     if (isOpened) {
                         onAction(AgenticAction.UnlockSaga)

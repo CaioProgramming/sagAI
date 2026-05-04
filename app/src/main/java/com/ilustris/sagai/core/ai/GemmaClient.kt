@@ -8,7 +8,6 @@ import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.model.AIGeneration
-import com.ilustris.sagai.core.ai.model.AgeGroup
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
@@ -20,11 +19,9 @@ import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiService
-import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
@@ -52,7 +49,6 @@ class GemmaClient
     @Inject
     constructor(
         private val remoteConfigService: RemoteConfigService,
-        val ageVerificationService: AgeVerificationService,
         val safetyClient: SafetyClient,
         val sideEffectService: SideEffectService,
         val geminiApiService: GeminiApiService,
@@ -125,18 +121,9 @@ class GemmaClient
         ): T? =
             withContext(Dispatchers.IO) {
                 if (userInteraction) {
-                    val userAge = ageVerificationService.getUserAgeGroup()
                     val safetyStatus = safetyClient.checkSafety(prompt)
                     if (safetyStatus != SafeGuard.OK) {
-                        if (safetyStatus == SafeGuard.AGE_RESTRICTED && userAge == AgeGroup.ADULT) {
-                            // Allow mature/suggestive content for verified adults
-                            Timber
-                                .tag("GemmaClient")
-                                .i("Allowing AGE_RESTRICTED content for verified ADULT.")
-                        } else {
-                            sideEffectService.emit(SideEffect.GuardrailBlock(safetyStatus))
-                            throw GuardrailsException(safetyStatus)
-                        }
+                        throw GuardrailsException(safetyStatus)
                     }
                 }
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
@@ -453,18 +440,9 @@ class GemmaClient
             flow {
                 try {
                     if (userInteraction) {
-                        val userAge = ageVerificationService.getUserAgeGroup()
                         val safetyStatus = safetyClient.checkSafety(prompt)
                         if (safetyStatus != SafeGuard.OK) {
-                            if (safetyStatus == SafeGuard.AGE_RESTRICTED && userAge == AgeGroup.ADULT) {
-                                // Allow mature/suggestive content for verified adults
-                                Timber
-                                    .tag("GemmaClient")
-                                    .i("Allowing AGE_RESTRICTED content for verified ADULT in stream.")
-                            } else {
-                                sideEffectService.emit(SideEffect.GuardrailBlock(safetyStatus))
-                                throw GuardrailsException(safetyStatus)
-                            }
+                            throw GuardrailsException(safetyStatus)
                         }
                     }
                     if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {

@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.repository.ActRepository
+import com.ilustris.sagai.features.act.data.source.BookDao
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -23,6 +24,7 @@ class BookUseCaseImpl
     @Inject
     constructor(
         private val actRepository: ActRepository,
+        private val bookDao: BookDao,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
@@ -58,6 +60,7 @@ class BookUseCaseImpl
                                 prompt = prompt,
                                 blueprintKey = BookPrompts.BOOK_CHRONICLE_BLUEPRINT,
                                 useCore = true,
+                                requirement = GemmaClient.ModelRequirement.HIGH,
                             )
 
                     reasoningSynthesizerService
@@ -68,8 +71,8 @@ class BookUseCaseImpl
                             genre = saga.data.genre.name,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val book = state.data.data
-                                actRepository.updateAct(actContent.data.copy(book = book))
+                                val book = state.data.data.copy(actId = actContent.data.id)
+                                bookDao.saveBook(book)
                             }
                             emit(state)
                         }
@@ -81,7 +84,7 @@ class BookUseCaseImpl
         override fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>>> =
             flow {
                 // Find all completed acts that don't have a book yet
-                val completedActs = saga.acts.filter { it.data.book == null }
+                val completedActs = saga.acts.filter { it.book == null }
 
                 for (act in completedActs) {
                     generateBookStream(saga, act).collect { state ->
@@ -89,4 +92,8 @@ class BookUseCaseImpl
                     }
                 }
             }
+
+        override suspend fun resetBook(actContent: ActContent) {
+            bookDao.deleteBookForAct(actContent.data.id)
+        }
     }

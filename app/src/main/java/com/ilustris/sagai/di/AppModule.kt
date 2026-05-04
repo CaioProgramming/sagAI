@@ -221,6 +221,10 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideBookDao(database: SagaDatabase): com.ilustris.sagai.features.act.data.source.BookDao = database.bookDao()
+
+    @Provides
+    @Singleton
     fun provideDatabaseBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
@@ -258,19 +262,19 @@ object AppModule {
     @Singleton
     fun providesSummarizationClient(
         remoteConfigService: RemoteConfigService,
-        geminiApiService: GeminiApiService,
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
         safetyClient: SafetyClient,
         sideEffectService: SideEffectService,
+        geminiApiService: GeminiApiService,
     ): GemmaClient =
         GemmaClient(
-            remoteConfigService,
-            safetyClient,
-            sideEffectService,
-            geminiApiService,
-            promptService,
-            aiAuditLogDao,
+            remoteConfigService = remoteConfigService,
+            safetyClient = safetyClient,
+            sideEffectService = sideEffectService,
+            geminiApiService = geminiApiService,
+            promptService = promptService,
+            aiAuditLogDao = aiAuditLogDao,
         )
 
     @Provides

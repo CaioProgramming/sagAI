@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient.ModelRequirement
 import com.ilustris.sagai.core.ai.model.AIGeneration
+import com.ilustris.sagai.core.ai.model.AgeGroup
 import com.ilustris.sagai.core.ai.model.GeminiContent
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiPart
@@ -97,6 +98,14 @@ class SafetyClient
                             responseTime = duration,
                         ),
                     )
+                }
+
+                Timber
+                    .tag("SafetyClient")
+                    .i("Age group: ${userAge.name} safeGuard result: $safetyResult")
+
+                if (userAge == AgeGroup.ADULT && safetyResult == SafeGuard.AGE_RESTRICTED) {
+                    return SafeGuard.OK
                 }
 
                 safetyResult

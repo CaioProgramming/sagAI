@@ -38,6 +38,7 @@ interface SharePlayUseCase {
     suspend fun generateBookPDF(
         book: com.ilustris.sagai.features.act.data.model.Book,
         genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+        volume: String,
     ): RequestResult<File>
 }
 
@@ -133,8 +134,9 @@ class SharePlayUseCaseImpl
         override suspend fun generateBookPDF(
             book: com.ilustris.sagai.features.act.data.model.Book,
             genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+            volume: String,
         ): RequestResult<File> =
             executeRequest {
-                pdfGenerator.generateBookPDF(book, genre)!!
-        }
+                pdfGenerator.generateBookPDF(book, genre, volume)!!
+            }
     }

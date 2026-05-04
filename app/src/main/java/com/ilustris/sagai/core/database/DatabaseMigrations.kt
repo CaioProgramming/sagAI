@@ -157,6 +157,31 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_15_16 =
+        object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Create the new books table
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `books` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `actId` INTEGER NOT NULL, `actTitle` TEXT NOT NULL, `sagaTitle` TEXT NOT NULL, `coverQuote` TEXT NOT NULL, `chapters` TEXT NOT NULL, `authorNote` TEXT, FOREIGN KEY(`actId`) REFERENCES `acts`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_books_actId` ON `books` (`actId`)")
+
+                // 2. Strip legacy book columns from acts table
+                db.execSQL(
+                    "CREATE TABLE `acts_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `content` TEXT NOT NULL, `introduction` TEXT NOT NULL DEFAULT '', `emotionalReview` TEXT DEFAULT '', `sagaId` INTEGER, `currentChapterId` INTEGER, FOREIGN KEY(`currentChapterId`) REFERENCES `Chapter`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+                )
+                db.execSQL(
+                    "INSERT INTO `acts_new` (`id`, `title`, `content`, `introduction`, `emotionalReview`, `sagaId`, `currentChapterId`) SELECT `id`, `title`, `content`, `introduction`, `emotionalReview`, `sagaId`, `currentChapterId` FROM `acts`",
+                )
+                db.execSQL("DROP TABLE `acts`")
+                db.execSQL("ALTER TABLE `acts_new` RENAME TO `acts`")
+
+                // 3. Re-create indices
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_acts_sagaId` ON `acts` (`sagaId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_acts_currentChapterId` ON `acts` (`currentChapterId`)")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -172,5 +197,6 @@ object DatabaseMigrations {
             MIGRATION_12_13,
             MIGRATION_13_14,
             MIGRATION_14_15,
+            MIGRATION_15_16,
         )
 }

@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.act.ui.ChronicleView
-import com.ilustris.sagai.features.act.ui.components.BookCard
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChaptersGalleryContent
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
@@ -58,9 +58,11 @@ import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.ui.WikiCard
+import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.shape
@@ -179,7 +181,8 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                                     genre.resolveColor(),
                                     progress,
                                 ),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 )
             }
         }
@@ -298,18 +301,34 @@ fun DetailSectionView.InitialSection.miniSection(
                     modifier = Modifier.padding(vertical = 16.dp),
                 ) {
                     items(acts) { actContent ->
-                        BookCard(
-                            act = actContent.data,
-                            saga = saga,
+                        val sagaBook =
+                            remember(actContent) {
+                                com.ilustris.sagai.features.newsaga.data.usecase.SagaBook(
+                                    draft =
+                                        com.ilustris.sagai.features.newsaga.data.model.SagaDraft(
+                                            title = actContent.data.title,
+                                            genre = saga.data.genre,
+                                            description = "",
+                                        ),
+                                )
+                            }
+                        CosmicBook(
+                            book = sagaBook,
+                            visualConfig =
+                                com.ilustris.sagai.core.ai.model
+                                    .GenreVisualConfig(),
+                            isOpened = false,
+                            isLoading = false,
+                            onToggle = {
+                                onAction(DetailAction.OpenChronicles(actContent.data.id))
+                            },
+                            onAction = {},
                             modifier =
                                 Modifier
+                                    .grayScale(if (actContent.book != null) 1f else 0f)
                                     .width(160.dp)
-                                    .height(240.dp)
-                                    .clickable {
-                                        onAction(DetailAction.OpenChronicles(actContent.data.id))
-                                    },
+                                    .height(240.dp),
                             titleModifier = Modifier,
-                            isLoading = false,
                         )
                     }
                 }
@@ -355,7 +374,8 @@ fun DetailSectionView.InitialSection.miniSection(
                                             RequestSection.CHAPTERS,
                                         ),
                                     )
-                                }.padding(8.dp),
+                                }
+                                .padding(8.dp),
                             showTitle = false,
                         )
                     }

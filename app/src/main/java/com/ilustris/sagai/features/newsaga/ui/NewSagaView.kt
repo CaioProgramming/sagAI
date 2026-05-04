@@ -211,6 +211,7 @@ fun NewSagaView(
                                 lockedSaga = lockedSaga,
                                 lockedCharacter = lockedCharacter,
                                 isAgentLoading = isAgentLoading || isSaving,
+                                currentAgentMessage = currentAgentMessage,
                                 onAction = viewModel::onAgenticAction,
                             )
                         }
@@ -234,8 +235,9 @@ fun NewSagaView(
                                 CosmicBook(
                                     book = it.first,
                                     visualConfig = it.second,
-                                    isOpened = false,
+                                    isOpened = true,
                                     isLoading = true,
+                                    reasoning = currentAgentMessage,
                                     onToggle = {},
                                     onAction = {},
                                     modifier =
@@ -343,7 +345,8 @@ fun NewSagaView(
                                                         this.color = color
                                                         this.radius = 5f
                                                         this.spread = 5f
-                                                    }.fillMaxWidth(),
+                                                    }
+                                                    .fillMaxWidth(),
                                             shape = buttonShape,
                                             enabled = !isSaving,
                                             colors =
@@ -440,7 +443,8 @@ fun PromptBar(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = themeBrush
-                }.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
+                }
+                .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
                 .background(MaterialTheme.colorScheme.background, shape)
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,

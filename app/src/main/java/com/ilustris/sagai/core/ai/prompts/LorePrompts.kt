@@ -29,7 +29,7 @@ object LorePrompts {
         )
 
     val TIMELINE_EXCLUDED_FIELDS =
-        listOf("id", "timelineId", "createdAt", "chapterId")
+        listOf("id", "timelineId", "createdAt", "chapterId", "sceneSummary")
 
     val CHAPTER_EXCLUDED_FIELDS =
         listOf(

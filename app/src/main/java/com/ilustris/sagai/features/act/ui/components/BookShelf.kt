@@ -8,57 +8,33 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.core.utils.toRoman
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.findAct
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
+import com.ilustris.sagai.ui.animations.chromaticAberration
+import com.ilustris.sagai.ui.animations.divineAura
+import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.theme.grayScale
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 @Composable
 fun BookShelf(
@@ -66,13 +42,14 @@ fun BookShelf(
     acts: List<ActContent>,
     selectedBook: ActContent?,
     isLoading: Boolean,
+    reasoning: String? = null,
+    generatingActTitle: String? = null,
+    visualConfig: com.ilustris.sagai.core.ai.model.GenreVisualConfig? = null,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     onBookSelected: (ActContent) -> Unit,
 ) {
     val pagerState = rememberPagerState { acts.size }
-    saga.data.genre.resolveColor()
-    saga.data.genre.colorPalette()
 
     LaunchedEffect(selectedBook) {
         saga.findAct(selectedBook?.data?.id)?.let {
@@ -86,6 +63,7 @@ fun BookShelf(
         pageSpacing = 24.dp,
         modifier =
             Modifier.fillMaxSize(),
+        userScrollEnabled = !isLoading,
     ) { page ->
         val act = acts[page]
         val isSelected = pagerState.currentPage == page
@@ -109,128 +87,51 @@ fun BookShelf(
                         },
                 contentAlignment = Alignment.Center,
             ) {
-                BookCard(
-                    act = act.data,
-                    saga = saga,
+                val isGenerating = isLoading && act.data.title == generatingActTitle
+                val sagaBook =
+                    remember(act) {
+                        SagaBook(
+                            draft =
+                                SagaDraft(
+                                    title = act.data.title,
+                                    genre = saga.data.genre,
+                                    description = "",
+                                ),
+                        )
+                    }
+
+                CosmicBook(
+                    book = sagaBook,
+                    visualConfig =
+                        visualConfig ?: com.ilustris.sagai.core.ai.model
+                            .GenreVisualConfig(),
+                    isOpened = isGenerating,
+                    isLoading = isGenerating || (isLoading && isSelected),
+                    reasoning = if (isGenerating) reasoning else null,
+                    onToggle = { if (!isGenerating) onBookSelected(act) },
+                    onAction = {},
                     modifier =
                         Modifier
+                            .grayScale(if (act.book == null) 0f else 1f)
                             .width(280.dp)
-                            .fillMaxHeight(.6f),
-                    isSelected = isSelected,
-                    isLoading = isLoading,
+                            .fillMaxHeight(.75f)
+                            .padding(vertical = 16.dp)
+                            .levitate(isSelected || isGenerating)
+                            .then(
+                                if (isGenerating) {
+                                    Modifier
+                                        .divineAura()
+                                        .chromaticAberration()
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     titleModifier =
                         Modifier.sharedElement(
                             rememberSharedContentState(key = "book-${act.data.id}"),
                             animatedContentScope,
                         ),
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun BookCard(
-    act: Act,
-    saga: SagaContent,
-    isLoading: Boolean,
-    isSelected: Boolean = false,
-    modifier: Modifier = Modifier,
-    titleModifier: Modifier,
-) {
-    val genre =
-        remember {
-            saga.data.genre
-        }
-    val genreColor = saga.data.genre.resolveColor()
-    val isReady = act.book != null
-    val shape =
-        RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 16.dp, bottomEnd = 16.dp)
-    val brush = genre.gradient()
-    val saturation by animateFloatAsState(if (isReady) 1f else 0f)
-    Box(
-        modifier =
-            modifier
-                .grayScale(saturation)
-                .levitate(isSelected)
-                .dropShadow(shape) {
-                    this.brush = brush
-                    radius = 10f
-                    spread = 5f
-                }.border(1.dp, genre.color.gradientFade(), shape)
-                .clip(shape),
-    ) {
-        // The Book Cover
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clip(shape)
-                    .background(
-                        Brush.verticalGradient(
-                            genreColor.darkerPalette(factor = .2f, count = 6),
-                        ),
-                    ).reactiveShimmer(isLoading && isSelected),
-        ) {
-            // Spine Detail
-            Row {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .width(32.dp)
-                            .background(
-                                MaterialTheme.colorScheme.background.copy(alpha = .4f),
-                            ),
-                )
-
-                // Cover Content
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    // Genre Icon with VFX
-                    Icon(
-                        painter = painterResource(saga.data.genre.icon),
-                        contentDescription = null,
-                        modifier =
-                            Modifier
-                                .genreVfx(genre)
-                                .size(64.dp),
-                        tint = genre.resolveIconColor(),
-                    )
-
-                    AutoResizeText(
-                        text = saga.actNumber(act).toRoman(),
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontFamily = genre.headerFont(),
-                                color = genre.iconColor,
-                            ),
-                    )
-
-                    AutoResizeText(
-                        text = act.title,
-                        style =
-                            MaterialTheme.typography.headlineMedium.copy(
-                                fontFamily = genre.headerFont(),
-                                fontWeight = FontWeight.Normal,
-                                color = genre.iconColor,
-                                textAlign = TextAlign.Center,
-                                shadow =
-                                    Shadow(
-                                        genre.color,
-                                        blurRadius = 10f,
-                                    ),
-                            ),
-                        modifier = titleModifier,
-                    )
-                }
             }
         }
     }

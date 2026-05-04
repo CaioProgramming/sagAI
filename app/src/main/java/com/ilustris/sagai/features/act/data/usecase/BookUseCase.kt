@@ -18,4 +18,6 @@ interface BookUseCase {
      * Emits each book as it becomes ready.
      */
     fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>>>
+
+    suspend fun resetBook(actContent: ActContent)
 }
