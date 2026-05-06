@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -11,7 +13,7 @@ interface ChapterUseCase {
         saga: SagaContent,
         chapterContent: Chapter,
         act: ActContent,
-    ): RequestResult<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>
+    ): RequestResult<GeneratedContent<Chapter>>
 
     suspend fun saveChapter(chapter: Chapter): Chapter
 
@@ -28,24 +30,29 @@ interface ChapterUseCase {
         saga: SagaContent,
     ): RequestResult<Chapter>
 
+    suspend fun generateChapterCoverStream(
+        chapter: ChapterContent,
+        saga: SagaContent,
+    ): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
+
     suspend fun generateChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
     ): RequestResult<Chapter>
 
-    fun generateChapterStream(
+    suspend fun generateChapterStream(
         saga: SagaContent,
         chapterContent: ChapterContent,
-    ): kotlinx.coroutines.flow.Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>>
+    ): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
 
     suspend fun reviewChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
     ): RequestResult<Chapter>
 
-    fun generateChapterIntroductionStream(
+    suspend fun generateChapterIntroductionStream(
         saga: SagaContent,
         chapterContent: Chapter,
         act: ActContent,
-    ): kotlinx.coroutines.flow.Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>>
+    ): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
 }

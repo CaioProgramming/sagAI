@@ -70,7 +70,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.database.model.AIAuditLog
@@ -86,7 +85,7 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIAuditLogView(
-    navController: NavHostController,
+    onBack: () -> Unit,
     viewModel: AIAuditLogViewModel = hiltViewModel(),
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
@@ -120,7 +119,7 @@ fun AIAuditLogView(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = { onBack() },
                     modifier =
                         Modifier
                             .padding(top = 16.dp)
@@ -611,7 +610,8 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    ).padding(12.dp),
+                                    )
+                                    .padding(12.dp),
                         )
                     } else {
                         Button(

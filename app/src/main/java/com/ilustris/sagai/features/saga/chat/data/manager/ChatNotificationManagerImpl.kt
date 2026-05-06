@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import timber.log.Timber
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -31,8 +30,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.components.NotificationStyle
 import com.ilustris.sagai.ui.components.SnackBarState
-import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import javax.inject.Inject
 
 class ChatNotificationManagerImpl
@@ -68,11 +67,7 @@ class ChatNotificationManagerImpl
                     fileHelper.readFile(message.character?.image),
                 )
 
-            val chatRoute = Routes.CHAT
-            val formatChatDeepLink =
-                chatRoute.deepLink
-                    ?.replace("{sagaId}", saga.data.id.toString())
-                    ?.replace("isDebug", "false")
+            val formatChatDeepLink = "saga://chat/${saga.data.id}/false"
             sendToNotificationChannel(
                 title = context.getString(R.string.notification_title, saga.data.title),
                 content = message.joinMessage().formatToString(),
@@ -101,11 +96,7 @@ class ChatNotificationManagerImpl
                 "App is in background. Proceeding with notification: $title",
             )
 
-            val chatRoute = Routes.CHAT
-            val formatChatDeepLink =
-                chatRoute.deepLink
-                    ?.replace("{sagaId}", saga.id.toString())
-                    ?.replace("isDebug", "false")
+            val formatChatDeepLink = "saga://chat/${saga.id}/false"
 
             val finalLargeIcon =
                 largeIcon
@@ -178,12 +169,7 @@ class ChatNotificationManagerImpl
             NotificationManagerCompat.from(context).cancel(CHAT_NOTIFICATION_ID)
         }
 
-        private fun chatDeepLink(sagaId: String): String {
-            val chatRoute = Routes.CHAT
-            return chatRoute.deepLink
-                ?.replace("{sagaId}", sagaId)
-                ?.replace("isDebug", "false") ?: ""
-        }
+        private fun chatDeepLink(sagaId: String): String = "saga://chat/$sagaId/false"
 
         fun sendSnackBarNotification(
             saga: SagaContent,
@@ -200,11 +186,7 @@ class ChatNotificationManagerImpl
                 "App is in background. Sending notification with style: ${snackBarState.notificationStyle}",
             )
 
-            val chatRoute = Routes.CHAT
-            val formatChatDeepLink =
-                chatRoute.deepLink
-                    ?.replace("{sagaId}", saga.data.id.toString())
-                    ?.replace("isDebug", "false")
+            val formatChatDeepLink = "saga://chat/${saga.data.id}/false"
 
             when (snackBarState.notificationStyle) {
                 NotificationStyle.CHAT -> {

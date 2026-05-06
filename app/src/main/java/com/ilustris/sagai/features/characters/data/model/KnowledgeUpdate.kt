@@ -5,6 +5,5 @@ data class KnowledgeUpdateResult(
 )
 
 data class CharacterKnowledgeUpdate(
-    val characterName: String,
     val learnedFacts: List<String>,
 )

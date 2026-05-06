@@ -95,7 +95,9 @@ class PromptServiceImpl
                         Timber.tag("PromptService").d("buildPrompt: Replaced {$key}")
                     }
                 } else {
-                    Timber.tag("PromptService").e("buildPrompt: CRITICAL - Variable '{$key}' not found in provided args!")
+                    Timber
+                        .tag("PromptService")
+                        .e("buildPrompt($key): CRITICAL - Variable '{$key}' not found in provided args!")
                 }
             }
 

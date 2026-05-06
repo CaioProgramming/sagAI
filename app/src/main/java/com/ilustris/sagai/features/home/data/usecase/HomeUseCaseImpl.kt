@@ -12,7 +12,6 @@ import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -37,7 +36,12 @@ class HomeUseCaseImpl
     ) : HomeUseCase {
         override val billingState = billingService.state
 
-        override fun getSagas(): Flow<List<SagaContent>> = sagaRepository.getChats().map { processSagaContent(it) }
+        override fun getSagas(): Flow<List<com.ilustris.sagai.features.home.data.model.SagaSummary>> =
+            sagaRepository.getSagaSummaries().map {
+                processSagaContent(it)
+            }
+
+        override fun getSagaContent(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
         override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
             executeRequest {
@@ -88,19 +92,17 @@ class HomeUseCaseImpl
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             sagaDetailUseCase.generateStoryBriefing(saga)
 
-        private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =
+        private fun processSagaContent(
+            content: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,
+        ): List<com.ilustris.sagai.features.home.data.model.SagaSummary> =
             content.sortedWith(
-                compareBy<SagaContent> { saga ->
+                compareBy<com.ilustris.sagai.features.home.data.model.SagaSummary> { saga ->
                     saga.data.isEnded
                 }.thenByDescending { saga ->
                     if (saga.data.isEnded) {
                         saga.data.endedAt
                     } else {
-                        saga
-                            .flatMessages()
-                            .lastOrNull()
-                            ?.message
-                            ?.timestamp ?: saga.data.createdAt
+                        saga.lastMessageTime ?: saga.data.createdAt
                     }
                 },
             )

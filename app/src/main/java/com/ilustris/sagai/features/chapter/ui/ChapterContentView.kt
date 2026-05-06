@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,13 +45,14 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
@@ -58,7 +60,6 @@ import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import kotlin.time.Duration.Companion.seconds
@@ -69,12 +70,13 @@ fun ChapterContentView(
     content: SagaContent,
     modifier: Modifier,
     isLast: Boolean = false,
-    imageSize: Dp = 250.dp,
+    imageSize: Dp = 300.dp,
     openCharacters: () -> Unit = {},
     requestReview: ((ChapterContent) -> Unit)? = null,
-    viewModel: ChapterViewModel = hiltViewModel(),
 ) {
+    val viewModel: ChapterViewModel = hiltViewModel()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val loadingMessage by viewModel.reasoningMessage.collectAsStateWithLifecycle()
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -93,11 +95,12 @@ fun ChapterContentView(
                             chapter,
                         )
                     }.size(100.dp)
-                    .gradientFill(genre.gradient(true))
+                    .effectForGenre(genre)
                     .padding(16.dp),
+                colorFilter = ColorFilter.tint(genre.resolveColor()),
             )
 
-            AutoResizeText(
+            genre.stylisedText(
                 text = chapter.data.title,
                 modifier =
                     Modifier
@@ -105,12 +108,6 @@ fun ChapterContentView(
                         .padding(16.dp)
                         .reactiveShimmer(isLast)
                         .genreVfx(genre),
-                style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = genre.headerFont(),
-                        brush = genre.gradient(true),
-                        textAlign = TextAlign.Center,
-                    ),
             )
         } else {
             var imageSize by remember {
@@ -146,7 +143,7 @@ fun ChapterContentView(
                         .align(Alignment.BottomCenter),
                 )
 
-                AutoResizeText(
+                genre.stylisedText(
                     text = chapter.data.title,
                     modifier =
                         Modifier
@@ -154,12 +151,6 @@ fun ChapterContentView(
                             .fillMaxWidth()
                             .padding(16.dp)
                             .reactiveShimmer(isLast),
-                    style =
-                        MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = genre.headerFont(),
-                            brush = genre.gradient(true),
-                            textAlign = TextAlign.Center,
-                        ),
                 )
             }
         }
@@ -220,8 +211,7 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient())
                     .clickable {
                         requestReview(chapter)
-                    }
-                    .padding(4.dp),
+                    }.padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -246,7 +236,7 @@ fun ChapterContentView(
         }
     }
 
-    StarryLoader(isGenerating, brushColors = content.data.genre.colorPalette())
+    StarryLoader(isGenerating, loadingMessage, brushColors = content.data.genre.colorPalette())
 
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     if (showPremiumSheet) {

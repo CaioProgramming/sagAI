@@ -162,7 +162,7 @@ object ChatPrompts {
 
         val argsMap =
             mutableMapOf(
-                "sceneContext" to (sceneSummary?.toAINormalize() ?: ""),
+                "sceneContext" to (sceneSummary?.toAINormalize() ?: "No context founded"),
                 "charactersPresent" to CharacterPrompts.charactersOverview(nonMainCharacters),
                 "relationshipsBlock" to relationshipsBlock,
                 "conversationHistory" to conversationHistory(updateLimit, saga),

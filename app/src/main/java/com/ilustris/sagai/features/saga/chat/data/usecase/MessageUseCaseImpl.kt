@@ -185,7 +185,7 @@ class MessageUseCaseImpl
                                     promptService = promptService,
                                     saga = saga,
                                     message = message.message,
-                                    sceneSummary = sceneSummary!!,
+                                    sceneSummary = sceneSummary,
                                     conversationDirective = conversationDirective,
                                     updateLimit = narrativeRules.loreUpdateLimit,
                                 ),

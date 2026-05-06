@@ -35,7 +35,6 @@ import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -625,22 +624,6 @@ class SagaContentManagerImpl
                         saga,
                         timelineContent,
                     ).onSuccessAsync {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                characterUseCase.findAndSuggestNicknames(saga, timelineContent)
-                                characterUseCase.updateCharacterKnowledge(
-                                    timelineContent.data,
-                                    saga,
-                                )
-                                if (timelineContent.updatedWikis.isEmpty()) {
-                                    wikiUseCase.generateWiki(saga, timelineContent.data)
-                                }
-                                Timber.i("Nickname analysis completed successfully.")
-                            } catch (e: Exception) {
-                                Timber.e("Error during nickname analysis: ${e.message}")
-                                e.printStackTrace()
-                            }
-                        }
                         SnackBarState(
                             message =
                                 context.getString(
@@ -1036,7 +1019,7 @@ class SagaContentManagerImpl
             saga: SagaContent,
             timelineContent: TimelineContent,
         ) = startProcessing {
-            generateTimelineContent(timelineContent.data, saga)
+            reviewEvent(timelineContent)
         }
 
         private suspend fun skipNarrative() =
@@ -1081,7 +1064,7 @@ class SagaContentManagerImpl
                 }
 
                 is SagaMilestone.NewEvent -> {
-                    generateTimelineContent(milestone.timeline, saga)
+                    endTimeline(saga.currentActInfo?.currentChapterInfo)
                 }
 
                 is SagaMilestone.ChapterFinished -> {
@@ -1363,22 +1346,6 @@ class SagaContentManagerImpl
                     timelineUseCase.updateTimeline(updatedTimeline)
                     showObjective()
                 }
-            }
-        }
-
-        private suspend fun generateTimelineContent(
-            timeline: Timeline,
-            saga: SagaContent,
-        ) {
-            saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
-
-                characterUseCase.updateCharacterKnowledge(timeline, saga)
-
-                updateSnackBar(
-                    snackBar(
-                        context.getString(R.string.timeline_generated_successfully, timeline.title),
-                    ),
-                )
             }
         }
 

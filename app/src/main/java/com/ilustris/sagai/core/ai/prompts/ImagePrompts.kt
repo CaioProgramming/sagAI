@@ -3,36 +3,20 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImageType
-import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
-/**
- * The specific keys used to inject variables into Remote Config master templates.
- * This object serves as the documentation for which variables are available to developers in Firebase.
- */
-object PromptKeys {
-    const val GENRE = "genre"
-    const val CONTEXT = "context"
-    const val IMAGE_TYPE = "imageType"
-    const val ART_STYLE = "artStyle"
-    const val CONVERSATION_DIRECTIVE = "conversationDirective"
-    const val APPEARANCE_GUIDELINES = "appearanceGuidelines"
-    const val COLOR_PALETTE = "colorPalette"
-    const val CRITICAL_VALIDATION = "criticalValidation"
-    const val REVIEWER_STRICTNESS = "reviewerStrictness"
-    const val VALIDATION_RULES = "validationRules"
-    const val CRITICAL_RULES = "criticalRules"
-    const val VISUAL_DIRECTION = "visualDirection"
-    const val FINAL_PROMPT = "finalPrompt"
-    const val ASPECT_RATIO = "aspectRatio"
-    const val RENDERING_INSTRUCTIONS = "renderingInstructions"
-}
-
-object AgentIds {
-    const val DIRECTOR = "director"
-    const val ARTIST = "artist"
-    const val REVIEWER = "reviewer"
-}
+data class UnifiedImageArgs(
+    val genre: String,
+    val context: String,
+    val imageType: String,
+    val artStyle: String,
+    val appearanceGuidelines: String,
+    val colorPalette: String,
+    val validationRules: String,
+    val criticalRules: String,
+    val renderingInstructions: String,
+    val aspectRatio: String,
+)
 
 object ImagePrompts {
     /**
@@ -46,110 +30,6 @@ object ImagePrompts {
         return result
     }
 
-    /**
-     * A unified god function that executes any AI agent by feeding it the corresponding PromptKeys.
-     */
-    fun generateAgentPrompt(
-        agentId: String,
-        genre: Genre,
-        config: GenreConfig,
-        imageConfig: ImageConfig,
-        imageType: ImageType,
-        context: String,
-        visualDirection: String? = null,
-        finalPrompt: String? = null,
-    ): String {
-        val agentTemplate = imageConfig.typeConfigs[imageType.name]?.getAgentTemplate(agentId) ?: ""
-
-        val variables =
-            mapOf(
-                PromptKeys.GENRE to genre.name,
-                PromptKeys.CONTEXT to context,
-                PromptKeys.IMAGE_TYPE to imageType.name.replace("_", " "),
-                PromptKeys.ART_STYLE to config.artStyle,
-                PromptKeys.CONVERSATION_DIRECTIVE to config.conversationDirective,
-                PromptKeys.APPEARANCE_GUIDELINES to config.appearanceGuidelines,
-                PromptKeys.COLOR_PALETTE to config.colorPalette,
-                PromptKeys.CRITICAL_VALIDATION to (
-                    config.criticalValidation.takeIf { it.isNotBlank() }
-                        ?: ""
-                ),
-                PromptKeys.REVIEWER_STRICTNESS to
-                    (
-                        config.reviewerStrictness
-                            ?: ReviewerStrictness.STRICT
-                    ).description,
-                PromptKeys.VALIDATION_RULES to
-                    config.getValidationRules(
-                        genre.name,
-                    ),
-                PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
-                PromptKeys.VISUAL_DIRECTION to (visualDirection ?: ""),
-                PromptKeys.FINAL_PROMPT to (finalPrompt ?: ""),
-                PromptKeys.RENDERING_INSTRUCTIONS to config.renderingInstructions,
-                PromptKeys.ASPECT_RATIO to (
-                    when (imageType) {
-                        ImageType.ICON -> {
-                            config.iconAspectRatio
-                                ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
-                        }
-
-                        ImageType.COVER -> {
-                            config.coverAspectRatio
-                                ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
-                        }
-                    }
-                ),
-            )
-
-        return agentTemplate.injectVariables(variables)
-    }
-
-    // Wrappers to maintain compatibility with ImagenClientImpl until we refactor it too.
-    fun generateDirectorialVision(
-        genre: Genre,
-        config: GenreConfig,
-        imageConfig: ImageConfig,
-        imageType: ImageType,
-        context: String,
-    ) = generateAgentPrompt(AgentIds.DIRECTOR, genre, config, imageConfig, imageType, context)
-
-    fun generateArtistPrompt(
-        genre: Genre,
-        config: GenreConfig,
-        imageConfig: ImageConfig,
-        imageType: ImageType,
-        visualDirection: String?,
-        context: String,
-    ) = generateAgentPrompt(
-        AgentIds.ARTIST,
-        genre,
-        config,
-        imageConfig,
-        imageType,
-        context,
-        visualDirection,
-    )
-
-    fun reviewImagePrompt(
-        visualDirection: String?,
-        config: GenreConfig,
-        imageConfig: ImageConfig,
-        imageType: ImageType,
-        finalPrompt: String,
-        genre: Genre = Genre.CYBERPUNK,
-        context: String,
-    ) = generateAgentPrompt(
-        AgentIds.REVIEWER,
-        genre,
-        config,
-        imageConfig,
-        imageType,
-        context,
-        visualDirection,
-        finalPrompt,
-    )
-
     suspend fun buildUnifiedImagePrompt(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         genre: Genre,
@@ -158,28 +38,18 @@ object ImagePrompts {
         imageType: ImageType,
         context: String,
     ): String {
-        val variables =
-            mapOf(
-                PromptKeys.GENRE to genre.name,
-                PromptKeys.CONTEXT to context,
-                PromptKeys.IMAGE_TYPE to imageType.name.replace("_", " "),
-                PromptKeys.ART_STYLE to config.artStyle,
-                PromptKeys.CONVERSATION_DIRECTIVE to config.conversationDirective,
-                PromptKeys.APPEARANCE_GUIDELINES to config.appearanceGuidelines,
-                PromptKeys.COLOR_PALETTE to config.colorPalette,
-                PromptKeys.CRITICAL_VALIDATION to (
-                    config.criticalValidation.takeIf { it.isNotBlank() }
-                        ?: ""
-                ),
-                PromptKeys.REVIEWER_STRICTNESS to
-                    (
-                        config.reviewerStrictness
-                            ?: ReviewerStrictness.STRICT
-                    ).description,
-                PromptKeys.VALIDATION_RULES to config.getValidationRules(genre.name),
-                PromptKeys.CRITICAL_RULES to imageConfig.criticalRules,
-                PromptKeys.RENDERING_INSTRUCTIONS to config.renderingInstructions,
-                PromptKeys.ASPECT_RATIO to (
+        val args =
+            UnifiedImageArgs(
+                genre = genre.name,
+                context = context,
+                imageType = imageType.name.replace("_", " "),
+                artStyle = config.artStyle,
+                appearanceGuidelines = config.appearanceGuidelines,
+                colorPalette = config.colorPalette,
+                validationRules = config.getValidationRules(genre.name),
+                criticalRules = imageConfig.criticalRules,
+                renderingInstructions = config.renderingInstructions,
+                aspectRatio =
                     when (imageType) {
                         ImageType.ICON -> {
                             config.iconAspectRatio
@@ -190,16 +60,11 @@ object ImagePrompts {
                             config.coverAspectRatio
                                 ?: imageConfig.typeConfigs[imageType.name]?.aspectRatio ?: ""
                         }
-                    }
-                ),
+                    },
             )
 
-        val remoteConfigKey =
-            when (imageType) {
-            ImageType.ICON -> "unified_icon_blueprint"
-            ImageType.COVER -> "unified_cover_blueprint"
-        }
+        val remoteConfigKey = "unified_${imageType.name.lowercase()}_blueprint"
 
-        return promptService.buildRemotePrompt(remoteConfigKey, variables)
+        return promptService.buildRemotePrompt(remoteConfigKey, args)
     }
 }

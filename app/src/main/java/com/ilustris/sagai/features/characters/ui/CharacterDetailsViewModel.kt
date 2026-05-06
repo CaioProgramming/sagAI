@@ -39,7 +39,9 @@ class CharacterDetailsViewModel
         val imageReasoning = MutableStateFlow<String?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
+        val characterDetailState = MutableStateFlow<CharacterDetailState?>(null)
         val isSummarizing = MutableStateFlow(false)
+        val isEnriching = MutableStateFlow(false)
         val showPremiumSheet = MutableStateFlow(false)
 
         fun togglePremiumSheet() {
@@ -64,10 +66,33 @@ class CharacterDetailsViewModel
                             ?.filterCharacterMessages(foundCharacter?.data)
                             ?.size ?: 0
 
-                    if (sagaContent != null && foundCharacter != null && characterResume.value == null) {
-                        generateResume(sagaContent, foundCharacter)
+                    if (sagaContent != null && foundCharacter != null) {
+                        if (characterResume.value == null) {
+                            generateResume(sagaContent, foundCharacter)
+                        }
+                        if (characterDetailState.value == null) {
+                            loadEnrichment(sagaContent, foundCharacter)
+                        }
                     }
                 }
+            }
+        }
+
+        private fun loadEnrichment(
+            sagaContent: SagaContent,
+            characterContent: CharacterContent,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+            /* isEnriching.value = true
+             characterUseCase
+                 .enrichCharacter(characterContent, sagaContent)
+                 .onSuccessAsync {
+                     characterDetailState.emit(it)
+                     isEnriching.value = false
+                 }
+                 .onFailure {
+                     isEnriching.value = false
+                 }*/
             }
         }
 
@@ -134,6 +159,7 @@ class CharacterDetailsViewModel
                     if (canGenerateResume) {
                         generateResume(sagaContent, it)
                     }
+                    loadEnrichment(sagaContent, it)
                     if (it.data.image.isNotEmpty()) {
                         val palette = paletteUseCase.extractPalette(it.data.image)
                         Timber.d("Extracted palette: ${palette.toAINormalize()}")

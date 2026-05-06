@@ -41,4 +41,23 @@ interface SagaDao {
     @Transaction
     @Query("SELECT * FROM sagas")
     fun getSagaContent(): Flow<List<SagaContent>>
+
+    @Transaction
+    @Query(
+        """
+        SELECT sagas.*, 
+               (SELECT text FROM messages WHERE sagaId = sagas.id ORDER BY timestamp DESC LIMIT 1) AS lastMessageText,
+               (SELECT timestamp FROM messages WHERE sagaId = sagas.id ORDER BY timestamp DESC LIMIT 1) AS lastMessageTime,
+               (SELECT senderType FROM messages WHERE sagaId = sagas.id ORDER BY timestamp DESC LIMIT 1) AS lastMessageSender,
+               (SELECT speakerName FROM messages WHERE sagaId = sagas.id ORDER BY timestamp DESC LIMIT 1) AS lastMessageSpeaker,
+               (SELECT COUNT(id) FROM messages WHERE sagaId = sagas.id) AS messagesCount,
+               (SELECT COUNT(Chapter.id) FROM Chapter JOIN acts ON Chapter.actId = acts.id WHERE acts.sagaId = sagas.id) AS chaptersCount
+        FROM sagas
+    """,
+    )
+    fun getSagaSummaries(): Flow<List<com.ilustris.sagai.features.home.data.model.SagaSummary>>
+
+    @Transaction
+    @Query("SELECT * FROM sagas WHERE playTimeMs > 0 OR isEnded = 1")
+    fun getPlaythroughData(): Flow<List<com.ilustris.sagai.features.playthrough.data.model.SagaPlaythrough>>
 }

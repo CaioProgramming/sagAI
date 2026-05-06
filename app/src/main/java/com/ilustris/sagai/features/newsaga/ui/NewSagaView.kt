@@ -63,7 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.doNothing
@@ -81,8 +81,6 @@ import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
-import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.FluidGradient
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -94,7 +92,8 @@ import com.ilustris.sagai.ui.theme.solidGradient
 
 @Composable
 fun NewSagaView(
-    navHostController: NavHostController,
+    onBack: () -> Unit = {},
+    onNavigate: (NavKey) -> Unit = {},
     viewModel: NewSagaViewModel = hiltViewModel(),
 ) {
     val isReadyToSave by viewModel.isReadyToSave.collectAsStateWithLifecycle()
@@ -116,11 +115,7 @@ fun NewSagaView(
     LaunchedEffect(effect) {
         when (effect) {
             is Effect.Navigate -> {
-                navHostController.navigateToRoute(
-                    (effect as Effect.Navigate).route,
-                    arguments = (effect as Effect.Navigate).arguments,
-                    popUpToRoute = Routes.NEW_SAGA,
-                )
+                onNavigate((effect as Effect.Navigate).key)
             }
 
             else -> {
@@ -195,7 +190,7 @@ fun NewSagaView(
                         AnimatedVisibility(!isSaving) {
                             TopBarContent(
                                 modifier = Modifier.fillMaxWidth(),
-                                navigateBack = { navHostController.popBackStack() },
+                                navigateBack = { onBack() },
                             )
                         }
 

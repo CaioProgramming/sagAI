@@ -8,14 +8,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +27,6 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -37,7 +34,6 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.network.ConnectivityObserver
@@ -64,9 +59,16 @@ import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
-import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.SagaNavGraph
-import com.ilustris.sagai.ui.navigation.findRoute
+import com.ilustris.sagai.ui.navigation.AuditLogsKey
+import com.ilustris.sagai.ui.navigation.FAQKey
+import com.ilustris.sagai.ui.navigation.HomeKey
+import com.ilustris.sagai.ui.navigation.Navigator
+import com.ilustris.sagai.ui.navigation.NewSagaKey
+import com.ilustris.sagai.ui.navigation.ProfileKey
+import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
+import com.ilustris.sagai.ui.navigation.findNavKey
+import com.ilustris.sagai.ui.navigation.rememberNavigationState
+import com.ilustris.sagai.ui.navigation.toEntries
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
@@ -96,14 +98,23 @@ class MainActivity : ComponentActivity() {
                 val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
                 val isOnline by connectivityObserver.observe().collectAsState(initial = true)
 
-                val navController = rememberNavController()
-                val currentEntry by navController
-                    .currentBackStackEntryFlow
-                    .collectAsState(initial = navController.currentBackStackEntry)
-                val route =
-                    remember(currentEntry) {
-                        currentEntry?.destination?.route?.findRoute() ?: Routes.HOME
-                    }
+                val navigationState =
+                    rememberNavigationState(
+                        startRoute = HomeKey,
+                        topLevelRoutes =
+                            setOf(
+                                HomeKey,
+                                ProfileKey,
+                                FAQKey,
+                                NewSagaKey,
+                                AuditLogsKey,
+                            ),
+                    )
+                val navigator = remember { Navigator(navigationState) }
+                val currentKey =
+                    navigationState.stacksInUse
+                        .lastOrNull()
+                        ?.let { navigationState.backStacks[it]?.lastOrNull() } ?: HomeKey
 
                 val snackbarHostState = remember { SnackbarHostState() }
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
@@ -115,15 +126,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(navController, initialDeepLinkString) {
+                LaunchedEffect(navigator, initialDeepLinkString) {
                     if (initialDeepLinkString.isNullOrBlank()) {
                         return@LaunchedEffect
                     }
                     Timber.d("Handling initial deep link: $initialDeepLinkString")
                     try {
-                        val deepLinkRoute = initialDeepLinkString.findRoute()
-                        if (route != deepLinkRoute) {
-                            navController.navigate(initialDeepLinkString)
+                        val key = initialDeepLinkString.findNavKey()
+                        if (currentKey != key && key != null) {
+                            navigator.navigate(key)
                         }
                     } catch (e: Exception) {
                         Timber.e(e, "Error navigating with initial deep link: $initialDeepLinkString")
@@ -145,59 +156,6 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         },
-                        topBar = {
-                            AnimatedContent(route, transitionSpec = {
-                                fadeIn() togetherWith fadeOut()
-                            }) {
-                                if (it.topBarContent != null) {
-                                    it.topBarContent(navController)
-                                } else {
-                                    TopAppBar(
-                                        title = {
-                                            Box(modifier = Modifier.fillMaxWidth()) {
-                                                route.title?.let {
-                                                    Text(
-                                                        text = stringResource(it),
-                                                        style = MaterialTheme.typography.titleSmall,
-                                                        fontWeight = FontWeight.Medium,
-                                                        textAlign = TextAlign.Center,
-                                                        modifier =
-                                                            Modifier
-                                                                .padding(16.dp)
-                                                                .fillMaxWidth(),
-                                                    )
-                                                } ?: run {
-                                                    Image(
-                                                        painterResource(R.drawable.ic_spark),
-                                                        contentDescription = stringResource(R.string.app_name),
-                                                        modifier =
-                                                            Modifier
-                                                                .align(Alignment.Center)
-                                                                .size(24.dp)
-                                                                .align(Alignment.Center),
-                                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        actions = {},
-                                        navigationIcon = {
-                                            AnimatedVisibility(route != Routes.HOME) {
-                                                IconButton(onClick = {
-                                                    navController.popBackStack()
-                                                }) {
-                                                    Icon(
-                                                        painterResource(R.drawable.ic_back_left),
-                                                        contentDescription = "Back",
-                                                        tint = MaterialTheme.colorScheme.onBackground,
-                                                    )
-                                                }
-                                            }
-                                        },
-                                    )
-                                }
-                            }
-                        },
                         bottomBar = {
                             // SagaBottomNavigation(navController, route)
                         },
@@ -208,11 +166,17 @@ class MainActivity : ComponentActivity() {
                             if (it) {
                                 SharedTransitionLayout {
                                     Box(modifier = Modifier.fillMaxSize()) {
-                                        SagaNavGraph(
-                                            navController,
-                                            padding,
-                                            this@SharedTransitionLayout,
-                                            snackbarHostState,
+                                        NavDisplay(
+                                            entries =
+                                                navigationState.toEntries(
+                                                    createSagaEntryProvider(
+                                                        navigator,
+                                                        padding,
+                                                        snackbarHostState,
+                                                        this@SharedTransitionLayout,
+                                                    ),
+                                                ),
+                                            onBack = { navigator.goBack() },
                                         )
                                     }
                                 }

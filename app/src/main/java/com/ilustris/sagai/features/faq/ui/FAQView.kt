@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.faq.data.model.FAQCategory
 import com.ilustris.sagai.features.faq.data.model.FAQContent
@@ -65,7 +64,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 @Composable
 fun FAQView(
     viewModel: FAQViewModel = hiltViewModel(),
-    navHostController: NavHostController,
+    onBack: () -> Unit = {},
 ) {
     val state by viewModel.faqState.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -160,7 +159,7 @@ fun FAQView(
                             onQueryChange = viewModel::updateQuery,
                             onAskAi = viewModel::askAi,
                         ) {
-                            navHostController.popBackStack()
+                            onBack()
                         }
                     }
                 }

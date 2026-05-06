@@ -11,7 +11,13 @@ import kotlinx.coroutines.flow.Flow
 interface SagaRepository {
     fun getChats(): Flow<List<SagaContent>>
 
+    fun getSagaSummaries(): Flow<List<com.ilustris.sagai.features.home.data.model.SagaSummary>>
+
     fun getSagaById(id: Int): Flow<SagaContent?>
+
+    fun getAllSagas(): Flow<List<Saga>>
+
+    fun getPlaythroughData(): Flow<List<com.ilustris.sagai.features.playthrough.data.model.SagaPlaythrough>>
 
     suspend fun saveChat(saga: Saga): Saga
 

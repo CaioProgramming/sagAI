@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
@@ -100,7 +99,7 @@ import kotlin.time.Duration.Companion.seconds
 fun CharacterDetailsView(
     sagaId: String? = null,
     characterId: Int? = null,
-    navHostController: NavHostController,
+    onBack: () -> Unit = {},
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
@@ -303,8 +302,7 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        )
-                                        .graphicsLayer(
+                                        ).graphicsLayer(
                                             translationY = 120f,
                                         ),
                             ) {

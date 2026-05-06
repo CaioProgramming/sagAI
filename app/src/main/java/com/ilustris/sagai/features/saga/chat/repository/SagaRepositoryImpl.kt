@@ -37,6 +37,12 @@ class SagaRepositoryImpl
 
         override fun getChats(): Flow<List<SagaContent>> = sagaDao.getSagaContent()
 
+        override fun getSagaSummaries() = sagaDao.getSagaSummaries()
+
+        override fun getAllSagas() = sagaDao.getAllSagas()
+
+        override fun getPlaythroughData() = sagaDao.getPlaythroughData()
+
         override fun getSagaById(id: Int) = sagaDao.getSagaContent(id)
 
         override suspend fun saveChat(saga: Saga) =

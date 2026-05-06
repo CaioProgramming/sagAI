@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.file.FileManager
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionStatus
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.settings.ui.SagaStorageInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -70,6 +71,8 @@ interface SettingsUseCase {
     fun getMusicEnabled(): Flow<Boolean>
 
     suspend fun setMusicEnabled(enabled: Boolean)
+
+    fun getSagasOnly(): Flow<List<Saga>>
 }
 
 class SettingsUseCaseImpl
@@ -135,7 +138,7 @@ class SettingsUseCaseImpl
         override suspend fun isUserPro(): Boolean = billingService.isPremium()
 
         override fun getSagas() =
-            sagaRepository.getChats().map {
+            sagaRepository.getSagaSummaries().map {
                 fileManager.fetchSagasStorage(it.map { saga -> saga.data })
             }
 
@@ -151,10 +154,9 @@ class SettingsUseCaseImpl
 
         override suspend fun hasSagasWithChapters(): Boolean =
             withContext(Dispatchers.IO) {
-                val sagas = sagaRepository.getChats().firstOrNull() ?: return@withContext false
-                sagas.any { saga ->
-                    saga.acts.any { act -> act.chapters.isNotEmpty() }
-                }
+                val sagas =
+                    sagaRepository.getSagaSummaries().firstOrNull() ?: return@withContext false
+                sagas.any { saga -> saga.chaptersCount > 1 }
             }
 
         override suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit> =
@@ -201,4 +203,6 @@ class SettingsUseCaseImpl
         override suspend fun clearPreferences() {
             dataStorePreferences.clearAll()
         }
+
+        override fun getSagasOnly(): Flow<List<Saga>> = sagaRepository.getAllSagas()
     }

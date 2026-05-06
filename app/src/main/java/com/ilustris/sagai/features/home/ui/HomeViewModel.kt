@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
@@ -21,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -71,7 +73,7 @@ class HomeViewModel
 
         private val _briefingCache = mutableMapOf<Int, SagaBriefing>()
 
-        private val _selectedSaga = MutableStateFlow<SagaContent?>(null)
+        private val _selectedSaga = MutableStateFlow<SagaSummary?>(null)
         val selectedSaga = _selectedSaga.asStateFlow()
 
         private val _storyBriefing = MutableStateFlow<SagaBriefing?>(null)
@@ -108,7 +110,7 @@ class HomeViewModel
             }
         }
 
-        fun getBriefing(saga: SagaContent) {
+        fun getBriefing(saga: SagaSummary) {
             viewModelScope.launch(Dispatchers.IO) {
                 _loadingStoryId.emit(saga.data.id)
                 if (_briefingCache.containsKey(saga.data.id)) {
@@ -116,12 +118,15 @@ class HomeViewModel
                     _selectedSaga.emit(saga)
                     _loadingStoryId.emit(null)
                 } else {
-                    homeUseCase.generateStoryBriefing(saga).onSuccessAsync {
-                        val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
-                        val briefingState = SagaBriefing(saga, it, iconSegmentation.getSuccess())
-                        _briefingCache[saga.data.id] = briefingState
-                        _storyBriefing.emit(briefingState)
-                        _selectedSaga.emit(saga)
+                    homeUseCase.getSagaContent(saga.data.id).firstOrNull()?.let { sagaContent ->
+                        homeUseCase.generateStoryBriefing(sagaContent).onSuccessAsync {
+                            val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
+                            val briefingState =
+                                SagaBriefing(sagaContent, it, iconSegmentation.getSuccess())
+                            _briefingCache[saga.data.id] = briefingState
+                            _storyBriefing.emit(briefingState)
+                            _selectedSaga.emit(saga)
+                        }
                     }
                     _loadingStoryId.emit(null)
                 }

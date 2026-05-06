@@ -27,8 +27,7 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.hasMoreThanOneChapter
+import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.theme.darker
@@ -38,13 +37,13 @@ import com.ilustris.sagai.ui.theme.gradientFill
 
 @Composable
 fun StoriesRow(
-    sagas: List<SagaContent>,
+    sagas: List<SagaSummary>,
     loadingStoryId: Int?,
-    onStoryClicked: (SagaContent) -> Unit,
+    onStoryClicked: (SagaSummary) -> Unit,
     isAtTop: Boolean,
     visualConfigs: Map<Genre, GenreVisualConfig>,
 ) {
-    val eligibleSagas = sagas.filter { it.data.isEnded.not() && it.hasMoreThanOneChapter() }
+    val eligibleSagas = sagas.filter { it.data.isEnded.not() && it.chaptersCount > 1 }
     if (eligibleSagas.isNotEmpty()) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             LazyRow(
@@ -67,9 +66,9 @@ fun StoriesRow(
 
 @Composable
 fun StoryItem(
-    saga: SagaContent,
+    saga: SagaSummary,
     isLoading: Boolean,
-    onStoryClicked: (SagaContent) -> Unit,
+    onStoryClicked: (SagaSummary) -> Unit,
     expanded: Boolean,
     visualConfig: GenreVisualConfig?,
 ) {

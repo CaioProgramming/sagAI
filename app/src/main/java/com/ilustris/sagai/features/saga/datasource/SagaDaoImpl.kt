@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.datasource
 
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
@@ -39,4 +38,8 @@ class SagaDaoImpl
             }
 
         override fun getSagaContent() = sagaDao.getSagaContent()
+
+        override fun getSagaSummaries() = sagaDao.getSagaSummaries()
+
+        override fun getPlaythroughData() = sagaDao.getPlaythroughData()
     }

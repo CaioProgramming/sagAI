@@ -12,9 +12,10 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
-import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
@@ -62,6 +63,7 @@ class TimelineUseCaseImpl
                 gemmaClient.generate<UnifiedLoreUpdate>(
                     prompt = prompt,
                     blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
 
             updateTimeline(
@@ -92,34 +94,23 @@ class TimelineUseCaseImpl
                 }
             }
 
-            // 3. Save Character Events
-            unifiedLore.characterEvents.forEach { charEvent ->
-                val character =
-                    saga.characters.find { it.data.name.equals(charEvent.characterName, true) }?.data
-                character?.let {
-                    characterUseCase.insertCharacterEvent(
-                        CharacterEvent(
-                            characterId = it.id,
-                            gameTimelineId = timelineContent.data.id,
-                            title = charEvent.title,
-                            summary = charEvent.summary,
-                        ),
-                    )
-                }
-            }
-
-            // 4. Save Relationship Updates
-            unifiedLore.relationshipUpdates.forEach { relUpdate ->
-                characterRelationUseCase.updateRelation(
-                    saga = saga,
-                    timelineId = timelineContent.data.id,
-                    firstCharacterName = relUpdate.characterOne,
-                    secondCharacterName = relUpdate.characterTwo,
-                    title = relUpdate.title,
-                    description = relUpdate.description,
-                    emoji = relUpdate.emoji,
+            val charactersUpdates =
+                updateCharactersFromLore(
+                    saga,
+                    timelineContent.data.id,
+                    unifiedLore.charactersUpdates,
                 )
-            }
+            Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
+        }
+
+        private suspend fun updateCharactersFromLore(
+            saga: SagaContent,
+            timelineId: Int,
+            updates: List<CharacterUpdates>,
+        ) = updates.map { charUpdate ->
+            val character = saga.findCharacter(charUpdate.name)?.data ?: return@map null
+            characterUseCase
+                .applyCharacterUpdates(saga, timelineId, character, charUpdate)
         }
 
         override fun generateFullLoreUpdateStream(
@@ -178,40 +169,13 @@ class TimelineUseCaseImpl
                                     }
                                 }
 
-                                // 3. Save Character Events
-                                unifiedLore.characterEvents.forEach { charEvent ->
-                                    val character =
-                                        saga.characters
-                                            .find {
-                                                it.data.name.equals(
-                                                    charEvent.characterName,
-                                                    true,
-                                                )
-                                            }?.data
-                                    character?.let {
-                                        characterUseCase.insertCharacterEvent(
-                                            CharacterEvent(
-                                                characterId = it.id,
-                                                gameTimelineId = timelineContent.data.id,
-                                                title = charEvent.title,
-                                                summary = charEvent.summary,
-                                            ),
-                                        )
-                                    }
-                                }
-
-                                // 4. Save Relationship Updates
-                                unifiedLore.relationshipUpdates.forEach { relUpdate ->
-                                    characterRelationUseCase.updateRelation(
+                                val charactersUpdates =
+                                    updateCharactersFromLore(
                                         saga = saga,
                                         timelineId = timelineContent.data.id,
-                                        firstCharacterName = relUpdate.characterOne,
-                                        secondCharacterName = relUpdate.characterTwo,
-                                        title = relUpdate.title,
-                                        description = relUpdate.description,
-                                        emoji = relUpdate.emoji,
+                                        updates = unifiedLore.charactersUpdates,
                                     )
-                                }
+                                Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
 
                                 emit(
                                     StreamingState.Success(

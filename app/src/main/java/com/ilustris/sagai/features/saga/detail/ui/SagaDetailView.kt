@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.data.State
@@ -69,7 +68,6 @@ import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -78,9 +76,11 @@ import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun SagaDetailView(
-    navHostController: NavHostController,
     sagaId: String,
     paddingValues: PaddingValues,
+    onBack: () -> Unit = {},
+    onChapters: () -> Unit = {},
+    onDeleted: () -> Unit = {},
     viewModel: SagaDetailViewModel = hiltViewModel(),
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
@@ -102,7 +102,7 @@ fun SagaDetailView(
             showDeleteConfirmation = false
         } else {
             if (actualSection == null || actualSection is DetailSectionView.InitialSection) {
-                navHostController.popBackStack()
+                onBack()
             } else {
                 viewModel.loadSection(RequestSection.START)
             }
@@ -117,7 +117,7 @@ fun SagaDetailView(
 
     LaunchedEffect(state) {
         if (state == State.Deleted) {
-            navHostController.popBackStack(Routes.HOME.name, inclusive = false)
+            onDeleted()
         }
     }
 

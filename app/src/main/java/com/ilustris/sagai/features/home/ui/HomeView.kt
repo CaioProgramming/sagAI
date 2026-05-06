@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
@@ -80,7 +81,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -92,8 +92,7 @@ import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewAnnotatedString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
@@ -102,14 +101,11 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.ui.SettingsView
 import com.ilustris.sagai.features.stories.ui.StoriesRow
 import com.ilustris.sagai.features.stories.ui.StorySheet
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -126,11 +122,15 @@ import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
 @Suppress("ktlint:standard:function-naming")
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeView(
-    navController: NavHostController,
-    padding: PaddingValues,
+    navToNewSaga: () -> Unit,
+    navToSaga: (String, Boolean) -> Unit,
+    navToProfile: () -> Unit,
+    navToFAQ: () -> Unit,
+    navToAuditLogs: () -> Unit,
+    padding: PaddingValues = PaddingValues(0.dp),
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
@@ -180,8 +180,7 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -205,7 +204,11 @@ fun HomeView(
                                         drawerContainerColor = MaterialTheme.colorScheme.background,
                                     ) {
                                         SettingsView(
-                                            navController,
+                                            onBack = {
+                                                coroutineScope.launch { drawerState.close() }
+                                            },
+                                            navToFAQ = navToFAQ,
+                                            navToAuditLogs = navToAuditLogs,
                                             onOpenPremiumOnboarding = {
                                                 showPremiumSheet = true
                                                 coroutineScope.launch {
@@ -233,25 +236,19 @@ fun HomeView(
                                     animatedContentScope = this@AnimatedContent,
                                     onCreateNewChat = {
                                         if (BuildConfig.DEBUG) {
-                                            navController.navigateToRoute(Routes.NEW_SAGA)
+                                            navToNewSaga()
                                             return@ChatList
                                         }
                                         val freeSagasCount =
                                             sagas.count { it.data.isEnded.not() }
                                         if (freeSagasCount <= 3 || isPremium) {
-                                            navController.navigateToRoute(Routes.NEW_SAGA)
+                                            navToNewSaga()
                                         } else {
                                             showPremiumSheet = true
                                         }
                                     },
                                     onSelectSaga = { sagaData ->
-                                        navController.navigateToRoute(
-                                            Routes.CHAT,
-                                            mapOf(
-                                                "sagaId" to sagaData.id.toString(),
-                                                "isDebug" to sagaData.isDebug.toString(),
-                                            ),
-                                        )
+                                        navToSaga(sagaData.id.toString(), sagaData.isDebug)
                                     },
                                     createFakeSaga = {
                                         viewModel.createFakeSaga()
@@ -284,13 +281,7 @@ fun HomeView(
 
     LaunchedEffect(startFakeSaga) {
         startFakeSaga?.let {
-            navController.navigateToRoute(
-                Routes.CHAT,
-                mapOf(
-                    "sagaId" to it.id.toString(),
-                    "isDebug" to "true",
-                ),
-            )
+            navToSaga(it.id.toString(), true)
         }
     }
 
@@ -315,13 +306,7 @@ fun HomeView(
         StorySheet(storyBriefing, onDismiss = {
             viewModel.clearSelectedSaga()
         }, onContinue = {
-            navController.navigateToRoute(
-                Routes.CHAT,
-                mapOf(
-                    "sagaId" to selectedSaga!!.data.id.toString(),
-                    "isDebug" to selectedSaga!!.data.isDebug.toString(),
-                ),
-            )
+            navToSaga(selectedSaga!!.data.id.toString(), selectedSaga!!.data.isDebug)
             viewModel.clearSelectedSaga()
         })
     }
@@ -334,27 +319,10 @@ fun HomeView(
     OnboardingDialog(type = OnboardingType.APP_INTRO)
 }
 
-private fun navigateToNewSaga(
-    navController: NavHostController,
-    sagasCount: Int,
-    isPremium: Boolean,
-    onShowPremium: () -> Unit = {},
-) {
-    if (BuildConfig.DEBUG) {
-        navController.navigateToRoute(Routes.NEW_SAGA)
-        return
-    }
-    if (sagasCount <= 3 || isPremium) {
-        navController.navigateToRoute(Routes.NEW_SAGA)
-    } else {
-        onShowPremium()
-    }
-}
-
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun SharedTransitionScope.ChatList(
-    sagas: List<SagaContent>,
+    sagas: List<SagaSummary>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
     dynamicNewSagaTexts: Pair<DynamicSagaPrompt?, GenreVisualConfig?>?,
@@ -368,7 +336,7 @@ private fun SharedTransitionScope.ChatList(
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
-    onStoryClicked: (SagaContent) -> Unit = {},
+    onStoryClicked: (SagaSummary) -> Unit = {},
     createFakeSaga: () -> Unit = {},
     openPremiumSheet: () -> Unit = {},
     openSettings: () -> Unit = {},
@@ -590,12 +558,10 @@ private fun SharedTransitionScope.ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 10f
                             spread = 5f
-                        }
-                        .background(
+                        }.background(
                             Brush.horizontalGradient(iridescentGradient),
                             MaterialTheme.shapes.large,
-                        )
-                        .fillMaxWidth(),
+                        ).fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -616,7 +582,7 @@ private fun SharedTransitionScope.ChatList(
 
 @Composable
 fun ChatCard(
-    saga: SagaContent,
+    saga: SagaSummary,
     visualConfig: GenreVisualConfig? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -649,14 +615,12 @@ fun ChatCard(
                                 color = genreColor
                                 brush = genreBrush
                                 spread = 5f
-                            }
-                            .size(50.dp)
+                            }.size(50.dp)
                             .selectiveColorHighlight(saga.data.genre),
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                val lastMessage = saga.flatMessages().lastOrNull()
                 val color by animateColorAsState(
                     if (saga.data.isEnded) sagaData.genre.resolveColor() else MaterialTheme.colorScheme.onBackground,
                 )
@@ -674,9 +638,10 @@ fun ChatCard(
                             modifier = Modifier.weight(1f),
                         )
 
-                        lastMessage?.let {
+                        val timeInMillis = saga.lastMessageTime
+                        if (timeInMillis != null) {
                             val time =
-                                Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
+                                Calendar.getInstance().apply { this.timeInMillis = timeInMillis }
                             val timeText =
                                 String.format(
                                     "%02d:%02d",
@@ -695,25 +660,27 @@ fun ChatCard(
                         }
                     }
 
-                    val message: AnnotatedString =
+                    val message =
                         if (sagaData.isEnded) {
                             AnnotatedString(stringResource(R.string.chat_card_saga_ended))
                         } else {
-                            if (saga.messagesSize() == 0) {
+                            if (saga.messagesCount == 0) {
                                 AnnotatedString(stringResource(R.string.chat_card_saga_begins))
                             } else {
-                                lastMessage
-                                    ?.joinMessage()
-                                    ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
-                                    ?.let { buildMessagePreviewAnnotatedString(it) }
-                                    ?: AnnotatedString(
-                                        lastMessage?.joinMessage(false)?.formatToString()
-                                            ?: emptyString(),
-                                    )
+                                val isNarrator = saga.lastMessageSender == SenderType.NARRATOR
+                                val pair =
+                                    (
+                                        saga.lastMessageSpeaker ?: saga.lastMessageSender?.name
+                                            ?: emptyString()
+                                    ) to
+                                        (saga.lastMessageText ?: emptyString())
+                                buildMessagePreviewAnnotatedString(pair.formatToString(!isNarrator))
                             }
                         }
                     Text(
-                        text = message,
+                        text =
+                            message
+                                ?: AnnotatedString(stringResource(R.string.chat_card_saga_begins)),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Normal,
@@ -746,32 +713,18 @@ fun ChatCard(
 @Composable
 fun HomeViewPreview() {
     SagAITheme {
-        val route = Routes.HOME
         Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
             TopAppBar(
                 title = {
-                    route.title?.let {
-                        Text(
-                            text = stringResource(it),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.headlineMedium,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                        )
-                    } ?: run {
-                        Box(Modifier.fillMaxWidth()) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                contentDescription = stringResource(R.string.app_name),
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .size(50.dp),
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.home_title),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
                 },
                 actions = {},
                 navigationIcon = {
@@ -783,18 +736,23 @@ fun HomeViewPreview() {
                 Box(modifier = Modifier.padding(it)) {
                     val previewChats =
                         List(10) {
-                            SagaContent(
-                                Saga(
-                                    title = "Chat ${it + 1}",
-                                    description = "The journey of our lifes",
-                                    genre = Genre.FANTASY,
-                                    icon = "",
-                                    isEnded = true,
-                                    createdAt = Calendar.getInstance().timeInMillis,
-                                    mainCharacterId = null,
-                                ),
-                                mainCharacter = null,
-                                acts = emptyList(),
+                            SagaSummary(
+                                data =
+                                    Saga(
+                                        title = "Chat ${it + 1}",
+                                        description = "The journey of our lifes",
+                                        genre = Genre.FANTASY,
+                                        icon = "",
+                                        isEnded = true,
+                                        createdAt = Calendar.getInstance().timeInMillis,
+                                        mainCharacterId = null,
+                                    ),
+                                lastMessageText = "Hello!",
+                                lastMessageTime = System.currentTimeMillis(),
+                                lastMessageSender = null,
+                                lastMessageSpeaker = null,
+                                messagesCount = 1,
+                                chaptersCount = 2,
                             )
                         }
                     SharedTransitionLayout {

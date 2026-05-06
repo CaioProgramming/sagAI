@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.characters.relations.data.model.CharacterRela
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGenerationGen
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import timber.log.Timber
@@ -70,9 +71,9 @@ class CharacterRelationUseCaseImpl
             emoji: String,
         ): RequestResult<Unit> =
             executeRequest {
-                val firstChar = saga.characters.find { it.data.name.equals(firstCharacterName, true) }?.data
+                val firstChar = saga.findCharacter(firstCharacterName)?.data
                 val secondChar =
-                    saga.characters.find { it.data.name.equals(secondCharacterName, true) }?.data
+                    saga.findCharacter(secondCharacterName)?.data
                 processRelation(
                     saga,
                     timelineId,

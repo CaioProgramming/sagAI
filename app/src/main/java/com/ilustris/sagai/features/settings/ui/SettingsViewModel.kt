@@ -175,9 +175,9 @@ class SettingsViewModel
 
         val totalPlaytime =
             settingsUseCase
-                .getSagas()
+                .getSagasOnly()
                 .map { sagas ->
-                    sagas.sumOf { it.data.playTimeMs }
+                    sagas.sumOf { it.playTimeMs }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
         fun clearPreferences() {

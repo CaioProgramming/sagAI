@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
@@ -64,10 +65,22 @@ interface CharacterUseCase {
         saga: SagaContent,
     ): RequestResult<String>
 
-    suspend fun updateCharacterKnowledge(
-        timeline: Timeline,
+    suspend fun applyCharacterUpdates(
         saga: SagaContent,
+        timelineId: Int,
+        character: Character,
+        update: CharacterUpdates,
+    ): RequestResult<Character>
+
+    suspend fun updateCharacterKnowledge(
+        character: Character,
+        knowledgeUpdate: List<String>,
     ): RequestResult<Unit>
+
+    suspend fun enrichCharacter(
+        character: CharacterContent,
+        saga: SagaContent,
+    ): RequestResult<com.ilustris.sagai.features.characters.ui.CharacterDetailState>
 
     suspend fun insertCharacterEvent(
         characterEvent: com.ilustris.sagai.features.characters.events.data.model.CharacterEvent,

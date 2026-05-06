@@ -50,7 +50,14 @@ class ImageGeneratorImpl
             references: List<ImageReference>,
         ): Bitmap? {
             val modelName = modelName()
-            Timber.tag(TAG).i("Generating image with ➡ $modelName\nPrompt: $prompt")
+            val trimmedPrompt = prompt.trim()
+            Timber.tag(TAG).i("Generating image with ➡ $modelName")
+            Timber
+                .tag(TAG)
+                .i("\uD83D\uDE80 TEST THIS PROMPT ON GEMINI: https://gemini.google.com/app")
+            Timber.tag(TAG).i("--- COPY START ---")
+            Timber.tag(TAG).i(trimmedPrompt)
+            Timber.tag(TAG).i("--- COPY END ---")
 
             return billingService.runPremiumRequest {
                 val imageModel =

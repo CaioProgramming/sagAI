@@ -490,8 +490,11 @@ class ChatViewModel
                     message?.let {
                         messageUseCase.updateMessage(message.copy(status = MessageStatus.LOADING))
 
-                        val summary = messageUseCase.getSceneContext(currentSaga).getSuccess()
-                        replyMessage(message, summary, false)
+                        replyMessage(
+                            message,
+                            currentSaga.getCurrentTimeLine()?.data?.sceneSummary,
+                            false,
+                        )
                     } ?: run {
                         updateLoading(false)
                     }

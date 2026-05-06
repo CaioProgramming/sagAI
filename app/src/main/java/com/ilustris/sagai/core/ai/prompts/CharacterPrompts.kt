@@ -91,6 +91,7 @@ object CharacterPrompts {
     const val CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT = "conversational_character_reply_blueprint"
     const val KNOWLEDGE_UPDATE_BLUEPRINT = "knowledge_update_blueprint"
     const val REFINE_CHARACTER_DRAFT_BLUEPRINT = "refine_character_draft_blueprint"
+    const val CHARACTER_ENRICHMENT_BLUEPRINT = "character_enrichment_blueprint"
 
     suspend fun conversationalCharacterReply(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
@@ -403,5 +404,24 @@ object CharacterPrompts {
             )
 
         return promptService.buildRemotePrompt(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
+
+        suspend fun characterEnrichmentPrompt(
+            promptService: com.ilustris.sagai.core.ai.services.PromptService,
+            character: CharacterContent,
+            saga: SagaContent,
+        ): String {
+            val args =
+                CharacterResumeArgs(
+                    sagaContext = SagaPrompts.mainContext(saga, character),
+                    characterIdentity = character.data.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+                    journeyEvents =
+                        character.events
+                            .takeLast(10)
+                            .joinToString("\n") { "- ${it.event.summary}" },
+                    relationships = character.summarizeRelationships(),
+                    toneStyle = saga.data.genre.name,
+                )
+            return promptService.buildRemotePrompt(CHARACTER_ENRICHMENT_BLUEPRINT, args)
+        }
     }
 }

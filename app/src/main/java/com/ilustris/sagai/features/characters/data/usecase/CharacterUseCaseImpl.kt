@@ -22,7 +22,6 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
-import com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
 import com.ilustris.sagai.features.characters.data.model.fullName
@@ -30,12 +29,14 @@ import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
+import com.ilustris.sagai.features.characters.ui.CharacterDetailState
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
@@ -271,7 +272,8 @@ class CharacterUseCaseImpl
                                 "firstSceneId",
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                    blueprintKey = CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT)!!
+                        blueprintKey = CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT,
+                    )!!
 
                 val character = sagaContent.findCharacter(newCharacter.name)
 
@@ -404,7 +406,8 @@ class CharacterUseCaseImpl
                         prompt,
                         requirement = GemmaClient.ModelRequirement.LOW,
                         temperatureRandomness = .3f,
-                    blueprintKey = CharacterPrompts.REFINE_CHARACTER_DRAFT_BLUEPRINT)!!
+                        blueprintKey = CharacterPrompts.REFINE_CHARACTER_DRAFT_BLUEPRINT,
+                    )!!
 
                 val updatedCharacters =
                     request
@@ -525,56 +528,82 @@ class CharacterUseCaseImpl
                 gemmaClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.LOW,
-                blueprintKey = CharacterPrompts.CHARACTER_RESUME_BLUEPRINT)!!
+                    blueprintKey = CharacterPrompts.CHARACTER_RESUME_BLUEPRINT,
+                )!!
+            }
+
+        override suspend fun applyCharacterUpdates(
+            saga: SagaContent,
+            timelineId: Int,
+            character: Character,
+            update: CharacterUpdates,
+        ): RequestResult<Character> =
+            executeRequest {
+                update.event?.let {
+                    insertCharacterEvent(
+                        CharacterEvent(
+                            characterId = character.id,
+                            gameTimelineId = timelineId,
+                            title = it.title,
+                            summary = it.summary,
+                        ),
+                    )
+                }
+                update.relationships?.let {
+                    if (it.isEmpty()) return@let
+                    it.forEach {
+                        characterRelationUseCase.updateRelation(
+                            saga = saga,
+                            timelineId = timelineId,
+                            firstCharacterName = it.characterOne,
+                            secondCharacterName = it.characterTwo,
+                            title = it.title,
+                            description = it.description,
+                            emoji = it.emoji,
+                        )
+                    }
+                }
+
+                updateCharacter(
+                    character.copy(
+                        knowledge = update.knowledgeUpdate.orEmpty().ifEmpty { character.knowledge },
+                        nicknames = update.nickNames.orEmpty().ifEmpty { character.nicknames },
+                    ),
+                )
             }
 
         override suspend fun updateCharacterKnowledge(
-            timeline: Timeline,
-            saga: SagaContent,
+            character: Character,
+            knowledgeUpdate: List<String>,
         ): RequestResult<Unit> =
             executeRequest {
-                val characters = saga.getCharacters()
-                if (characters.isEmpty()) return@executeRequest
+                val currentKnowledge = (character.knowledge ?: emptyList()).toMutableList()
+                val newFacts = knowledgeUpdate.filter { !currentKnowledge.contains(it) }
 
-                val prompt =
-                    CharacterPrompts.knowledgeUpdatePrompt(promptService, timeline, characters)
-                val result =
-                    gemmaClient.generate<KnowledgeUpdateResult>(
-                        prompt,
-                        requirement = GemmaClient.ModelRequirement.LOW,
-                    blueprintKey = CharacterPrompts.KNOWLEDGE_UPDATE_BLUEPRINT)
-
-                if (result?.updates?.isNotEmpty() == true) {
-                    Timber.i(
-                        "Updating knowledge for ${result.updates.size} characters.",
-                    )
-                    result.updates.forEach { update ->
-                        saga.findCharacter(update.characterName)?.let { charContent ->
-                            val currentKnowledge =
-                                (charContent.data.knowledge ?: emptyList()).toMutableList()
-                            val newFacts =
-                                update.learnedFacts.filter { !currentKnowledge.contains(it) }
-
-                            if (newFacts.isNotEmpty()) {
-                                currentKnowledge.addAll(newFacts)
-                                if (currentKnowledge.size > 50) {
-                                    currentKnowledge.subList(0, currentKnowledge.size - 50).clear()
-                                }
-
-                                val updatedChar =
-                                    charContent.data.copy(knowledge = currentKnowledge)
-                                updateCharacter(updatedChar)
-                                Timber.d(
-                                    "Added ${newFacts.size} facts to ${update.characterName}",
-                                )
-                            }
-                        }
+                if (newFacts.isNotEmpty()) {
+                    currentKnowledge.addAll(newFacts)
+                    if (currentKnowledge.size > 50) {
+                        currentKnowledge.subList(0, currentKnowledge.size - 50).clear()
                     }
-                } else {
+
+                    val updatedChar = updateCharacter(character.copy(knowledge = currentKnowledge))
                     Timber.d(
-                        "No new knowledge extracted from this timeline event.",
+                        "Added ${newFacts.size} facts to ${updatedChar.name}",
                     )
                 }
+            }
+
+        override suspend fun enrichCharacter(
+            character: CharacterContent,
+            saga: SagaContent,
+        ): RequestResult<CharacterDetailState> =
+            executeRequest {
+                val prompt = emptyString()
+                gemmaClient.generate<CharacterDetailState>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.LOW,
+                    blueprintKey = CharacterPrompts.CHARACTER_ENRICHMENT_BLUEPRINT,
+                )!!
             }
 
         override suspend fun insertCharacterEvent(characterEvent: CharacterEvent): CharacterEvent =

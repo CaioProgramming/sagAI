@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -148,7 +149,7 @@ class ReasoningSynthesizerService
         ) {
             try {
                 val fallbacks =
-                    remoteConfigService.getJson<com.ilustris.sagai.core.ai.model.ReasoningFallbacks>(
+                    remoteConfigService.getJson<ReasoningFallbacks>(
                         REASONING_FALLBACKS_KEY,
                     )
                 val fallbackMessage =

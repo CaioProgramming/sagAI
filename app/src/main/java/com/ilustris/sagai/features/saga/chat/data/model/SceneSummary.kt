@@ -13,8 +13,6 @@ data class SceneSummary(
     val worldStateChanges: List<String>? = emptyList(),
     val relevantPastContext: List<String>? = emptyList(),
     val establishedFacts: List<String>? = emptyList(),
-    // Plausible narrative branches from this scene state (limit: 2)
-    // Future use: Timeline branching visualization (multiverse tree)
     val possibleOutcomes: List<String>? = emptyList(),
     val quote: String? = null,
 )

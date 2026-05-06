@@ -58,7 +58,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.permissions.PermissionComponent
@@ -67,14 +66,11 @@ import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSe
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
-import com.ilustris.sagai.features.playthrough.PlaythroughSheet
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -83,7 +79,10 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 @Composable
 fun SettingsView(
-    navController: NavHostController? = null,
+    onBack: () -> Unit = {},
+    navToFAQ: () -> Unit = {},
+    navToAuditLogs: () -> Unit = {},
+    navToPlaythrough: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     onOpenPremiumOnboarding: () -> Unit = {},
 ) {
@@ -169,17 +168,6 @@ fun SettingsView(
         }
 
         item {
-            val totalPlaytime by viewModel.totalPlaytime.collectAsStateWithLifecycle()
-            var showPlaythroughSheet by remember { mutableStateOf(false) }
-
-            val hours = totalPlaytime / 3600000
-            val minutes = (totalPlaytime % 3600000) / 60000
-            if (hours > 0) {
-                stringResource(R.string.playtime_format_hours, hours, minutes)
-            } else {
-                stringResource(R.string.playtime_format_minutes, minutes)
-            }
-
             Column(
                 modifier =
                     Modifier
@@ -199,9 +187,8 @@ fun SettingsView(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
                         ).clickable {
-                            showPlaythroughSheet = true
-                        }
-                        .padding(16.dp),
+                            navToPlaythrough()
+                        }.padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -228,12 +215,6 @@ fun SettingsView(
                     }
                 }
             }
-
-            if (showPlaythroughSheet) {
-                PlaythroughSheet(
-                    onDismiss = { showPlaythroughSheet = false },
-                )
-            }
         }
 
         item {
@@ -244,8 +225,7 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(12.dp),
+                        ).padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -286,11 +266,9 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .clickable {
+                            ).clickable {
                                 viewModel.clearCache()
-                            }
-                            .padding(16.dp),
+                            }.padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -338,8 +316,7 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -424,8 +401,7 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    )
-                    .padding(8.dp),
+                    ).padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
@@ -611,15 +587,14 @@ fun SettingsView(
                 true,
                 showSwitch = false,
                 onClickSwitch = {
-                    navController?.navigateToRoute(Routes.FAQ)
+                    navToFAQ()
                 },
                 modifier =
                     Modifier
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(8.dp),
+                        ).padding(8.dp),
             )
         }
 
@@ -722,7 +697,7 @@ fun SettingsView(
         if (com.ilustris.sagai.BuildConfig.DEBUG) {
             item {
                 Button(
-                    onClick = { navController?.navigateToRoute(Routes.AUDIT_LOGS) },
+                    onClick = { navToAuditLogs() },
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
