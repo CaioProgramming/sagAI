@@ -36,4 +36,9 @@ interface ActUseCase {
         saga: SagaContent,
         act: Act,
     ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
+
+    fun synthesizeActEvolutionStream(
+        saga: SagaContent,
+        actContent: ActContent,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
 }

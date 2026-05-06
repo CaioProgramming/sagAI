@@ -147,7 +147,7 @@ class NewSagaUseCaseImpl
 
         override suspend fun updateSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
-                sagaRepository.updateChat(saga)
+                sagaRepository.updateSaga(saga)
             }
 
         override suspend fun deleteSaga(saga: Saga): RequestResult<Unit> = sagaRepository.deleteChat(saga).asSuccess()
@@ -183,7 +183,8 @@ class NewSagaUseCaseImpl
                             "review",
                             "emotionalReview",
                         ),
-                blueprintKey = NewSagaPrompts.CONVERSATIONAL_SAGA_REPLY_BLUEPRINT)!!
+                    blueprintKey = NewSagaPrompts.CONVERSATIONAL_SAGA_REPLY_BLUEPRINT,
+                )!!
             }
 
         override suspend fun generateSagaIcon(
@@ -223,7 +224,8 @@ class NewSagaUseCaseImpl
                         ),
                         userInteraction = true,
                         requireTranslation = true,
-                    blueprintKey = NewSagaPrompts.INITIAL_SAGA_KICKOFF_BLUEPRINT)!!
+                        blueprintKey = NewSagaPrompts.INITIAL_SAGA_KICKOFF_BLUEPRINT,
+                    )!!
 
                 response
             }

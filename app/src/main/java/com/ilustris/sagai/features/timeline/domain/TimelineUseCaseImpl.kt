@@ -71,6 +71,7 @@ class TimelineUseCaseImpl
                     title = unifiedLore.title,
                     content = unifiedLore.content,
                     emotionalReview = unifiedLore.emotionalReview,
+                    narrativeGuide = unifiedLore.narrativeGuide,
                 ),
             )
 
@@ -145,6 +146,7 @@ class TimelineUseCaseImpl
                                             title = unifiedLore.title,
                                             content = unifiedLore.content,
                                             emotionalReview = unifiedLore.emotionalReview,
+                                            narrativeGuide = unifiedLore.narrativeGuide,
                                         ),
                                     )
 
@@ -210,41 +212,6 @@ class TimelineUseCaseImpl
                         .Error(e.message ?: "Unknown error"),
                 )
             }
-        }
-
-        override suspend fun generateTimeline(
-            saga: SagaContent,
-            currentTimeline: TimelineContent,
-        ) = executeRequest {
-            val narrativeRules =
-                remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
-            val newLore =
-                gemmaClient
-                    .generate<Timeline>(
-                        TimelinePrompts.generateTimelinePrompt(
-                            promptService = promptService,
-                            narrativeRules = narrativeRules,
-                            sagaContent = saga,
-                            currentTimeline = currentTimeline,
-                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
-                        ),
-                        filterOutputFields =
-                            listOf(
-                                "id",
-                                "chapterId",
-                                "createdAt",
-                                "currentObjective",
-                            ),
-                        useCore = true,
-                    )!!
-
-            updateTimeline(
-                currentTimeline.data.copy(
-                    title = newLore.title,
-                    content = newLore.content,
-                    emotionalReview = newLore.emotionalReview,
-                ),
-            )
         }
 
         override fun generateTimelineStream(
@@ -344,6 +311,7 @@ class TimelineUseCaseImpl
                 gemmaClient
                     .generate<SceneSummary>(
                         objectivePrompt,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                         useCore = true,
                     )!!
 

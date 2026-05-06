@@ -225,6 +225,11 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideCharacterArcDao(database: SagaDatabase): com.ilustris.sagai.features.characters.data.source.CharacterArcDao =
+        database.characterArcDao()
+
+    @Provides
+    @Singleton
     fun provideDatabaseBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,

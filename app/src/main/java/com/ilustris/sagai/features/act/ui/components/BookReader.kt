@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.BookPage
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -59,6 +60,7 @@ import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
@@ -75,6 +77,11 @@ sealed class PageItem {
         val chapterTitle: String,
         val page: BookPage,
     ) : PageItem()
+
+    data class Illustration(
+        val imagePath: String,
+        val title: String? = null,
+    ) : PageItem()
 }
 
 @Composable
@@ -88,10 +95,17 @@ fun BookReader(
 ) {
     val book = act.book
     val pageItems =
-        remember(book) {
+        remember(book, act.chapters, saga.data.icon) {
             buildList {
-                book?.chapters?.forEach { chapter ->
+                if (saga.data.icon.isNotEmpty()) {
+                    add(PageItem.Illustration(saga.data.icon, saga.data.title))
+                }
+                book?.chapters?.forEachIndexed { index, chapter ->
                     add(PageItem.ChapterStart(chapter.title))
+                    val chapterContent = act.chapters.getOrNull(index)
+                    chapterContent?.data?.coverImage?.takeIf { it.isNotEmpty() }?.let {
+                        add(PageItem.Illustration(it, chapter.title))
+                    }
                     chapter.pages.forEach { page ->
                         add(PageItem.Content(chapter.title, page))
                     }
@@ -157,6 +171,13 @@ fun BookReader(
                             is PageItem.ChapterStart -> {
                                 ChapterStartPage(
                                     title = item.title,
+                                    genre = genre,
+                                )
+                            }
+
+                            is PageItem.Illustration -> {
+                                IllustrationPage(
+                                    imagePath = item.imagePath,
                                     genre = genre,
                                 )
                             }
@@ -298,6 +319,25 @@ fun ReaderPage(
                     fontWeight = FontWeight.Normal,
                 ),
             textAlign = TextAlign.Start,
+        )
+    }
+}
+
+@Composable
+fun IllustrationPage(
+    imagePath: String,
+    genre: Genre,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        AsyncImage(
+            model = imagePath,
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .effectForGenre(genre),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alignment = Alignment.Center,
         )
     }
 }

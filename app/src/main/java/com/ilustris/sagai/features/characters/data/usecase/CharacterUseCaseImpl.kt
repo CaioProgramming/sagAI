@@ -20,11 +20,13 @@ import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
 import com.ilustris.sagai.features.characters.data.model.fullName
+import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
@@ -56,6 +58,7 @@ class CharacterUseCaseImpl
     constructor(
         private val repository: CharacterRepository,
         private val eventsRepository: CharacterEventRepository,
+        private val characterArcDao: CharacterArcDao,
         private val characterRelationUseCase: CharacterRelationUseCase,
         private val imagenClient: ImagenClient,
         private val textGenClient: TextGenClient,
@@ -611,4 +614,8 @@ class CharacterUseCaseImpl
 
         override suspend fun insertCharacterEvents(characterEvents: List<CharacterEvent>) =
             eventsRepository.insertCharacterEvents(characterEvents)
+
+        override suspend fun insertCharacterArc(characterArc: CharacterArc) = characterArcDao.insertArc(characterArc)
+
+        override fun getCharacterArcs(characterId: Int) = characterArcDao.getArcsForCharacter(characterId)
     }

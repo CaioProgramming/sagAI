@@ -571,7 +571,7 @@ class SagaContentManagerImpl
 
             reasoningSynthesizerService
                 .synthesizeReasoning(
-                    sourceFlow = chapterUseCase.generateChapterStream(saga, chapter),
+                    sourceFlow = chapterUseCase.synthesizeChapterEvolutionStream(saga, chapter),
                     context = contextString,
                     conversationStyle = style,
                     genre = saga.data.genre.name,
@@ -593,7 +593,7 @@ class SagaContentManagerImpl
                     }
                 }
 
-            generated ?: error("Failed to generate chapter")
+            generated ?: error("Failed to generate chapter synthesis")
         }
 
         override suspend fun reviewWiki(wikiItems: List<Wiki>) {
@@ -772,7 +772,7 @@ class SagaContentManagerImpl
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
-                            sourceFlow = actUseCase.generateActStream(saga, currentAct),
+                            sourceFlow = actUseCase.synthesizeActEvolutionStream(saga, currentAct),
                             context = contextString,
                             conversationStyle = style,
                             genre = saga.data.genre.name,
@@ -794,7 +794,7 @@ class SagaContentManagerImpl
                             }
                         }
 
-                    generated ?: error("Failed to generate act")
+                    generated ?: error("Failed to generate act synthesis")
                 }
             }
 
@@ -1361,7 +1361,7 @@ class SagaContentManagerImpl
                         .flatChapters()
                         .find { it.data.id == chapter.id }!!
                         .copy(data = chapter)
-                chapterUseCase.reviewChapter(saga, chapterContent)
+                // Synthesis already handled Wiki and Arcs. Just generate cover.
                 chapterUseCase.generateChapterCover(chapterContent, saga)
             }
         }
@@ -1545,4 +1545,10 @@ class SagaContentManagerImpl
             isProcessing.set(false)
             emitMilestone(null)
         }
+
+        override suspend fun updateSummary(sceneSummary: SceneSummary) {
+            val currentTimeline = content.value?.getCurrentTimeLine() ?: return
+            val updatedTimeline = currentTimeline.data.copy(sceneSummary = sceneSummary)
+            timelineUseCase.updateTimeline(updatedTimeline)
+    }
     }

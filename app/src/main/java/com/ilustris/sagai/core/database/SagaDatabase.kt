@@ -16,6 +16,8 @@ import com.ilustris.sagai.features.act.data.source.BookDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
+import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.source.CharacterEventDao
@@ -49,8 +51,9 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         RelationshipUpdateEvent::class,
         Reaction::class,
         AIAuditLog::class,
+        CharacterArc::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
 )
 @TypeConverters(
@@ -85,6 +88,8 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun reactionDao(): ReactionDao
 
     abstract fun aiAuditLogDao(): AIAuditLogDao
+
+    abstract fun characterArcDao(): CharacterArcDao
 
     companion object {
         const val NAME = "SagaDatabase"

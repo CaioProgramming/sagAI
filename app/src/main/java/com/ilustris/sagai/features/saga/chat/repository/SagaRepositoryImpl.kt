@@ -53,7 +53,7 @@ class SagaRepositoryImpl
                         .toInt(),
             )
 
-        override suspend fun updateChat(saga: Saga): Saga {
+        override suspend fun updateSaga(saga: Saga): Saga {
             sagaDao.updateSaga(saga)
             return saga
         }
@@ -90,7 +90,7 @@ class SagaRepositoryImpl
                     path = "${saga.id}",
                 )
 
-            updateChat(saga.copy(icon = file!!.absolutePath))
+            updateSaga(saga.copy(icon = file!!.absolutePath))
         }
 
         override fun generateSagaIconStream(
@@ -120,7 +120,8 @@ class SagaRepositoryImpl
                                             data = state.data.data,
                                             path = "${saga.id}",
                                         )
-                                    val updatedSaga = updateChat(saga.copy(icon = file!!.absolutePath))
+                                    val updatedSaga =
+                                        updateSaga(saga.copy(icon = file!!.absolutePath))
                                     emit(StreamingState.Success(updatedSaga))
                                 }
 

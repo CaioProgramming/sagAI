@@ -34,6 +34,8 @@ data class Timeline(
     val chapterId: Int,
     @Embedded(prefix = "scene_")
     val sceneSummary: SceneSummary? = null,
+    @ColumnInfo(defaultValue = "")
+    val narrativeGuide: String? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

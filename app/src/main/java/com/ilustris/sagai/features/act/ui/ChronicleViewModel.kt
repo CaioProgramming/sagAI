@@ -83,7 +83,15 @@ class ChronicleViewModel
                 val saga = currentSagaContent ?: return@launch
                 val volumeNumber = saga.actNumber(actContent.data).toRoman()
                 _state.value = ChronicleState.Loading
-                val result = sharePlayUseCase.generateBookPDF(book, saga.data.genre, volumeNumber)
+                val chapterCovers = actContent.chapters.map { it.data.coverImage }
+                val result =
+                    sharePlayUseCase.generateBookPDF(
+                        book,
+                        saga.data.genre,
+                        volumeNumber,
+                        saga.data.icon,
+                        chapterCovers,
+                )
                 if (result is com.ilustris.sagai.core.data.RequestResult.Success) {
                     val uriResult = sharePlayUseCase.loadWithFileProvider(result.value)
                     if (uriResult is com.ilustris.sagai.core.data.RequestResult.Success) {

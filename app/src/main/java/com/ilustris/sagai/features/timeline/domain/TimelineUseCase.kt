@@ -23,11 +23,6 @@ interface TimelineUseCase {
         timelineContent: TimelineContent,
     ): Flow<StreamingState<GeneratedContent<Timeline>>>
 
-    suspend fun generateTimeline(
-        saga: SagaContent,
-        currentTimeline: TimelineContent,
-    ): RequestResult<Timeline>
-
     fun generateTimelineStream(
         saga: SagaContent,
         currentTimeline: TimelineContent,

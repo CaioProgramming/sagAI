@@ -21,7 +21,7 @@ interface SagaRepository {
 
     suspend fun saveChat(saga: Saga): Saga
 
-    suspend fun updateChat(saga: Saga): Saga
+    suspend fun updateSaga(saga: Saga): Saga
 
     suspend fun deleteChat(saga: Saga)
 

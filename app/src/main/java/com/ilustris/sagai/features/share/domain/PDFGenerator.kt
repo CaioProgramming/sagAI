@@ -1,9 +1,11 @@
 package com.ilustris.sagai.features.share.domain
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.text.Layout
@@ -31,6 +33,8 @@ class PDFGenerator
             book: Book,
             genre: Genre,
             volume: String,
+            sagaIcon: String? = null,
+            chapterCovers: List<String> = emptyList(),
         ): File? {
             val pdfDocument = PdfDocument()
             val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 Size
@@ -43,6 +47,13 @@ class PDFGenerator
                     ?: Typeface.DEFAULT
             val genreColor = genre.color.toArgb()
             val iconColor = genre.iconColor.toArgb()
+
+            // 0. Saga Icon (Frontispiece)
+            sagaIcon?.takeIf { it.isNotEmpty() }?.let { iconPath ->
+                val iconPage = pdfDocument.startPage(pageInfo)
+                drawIllustrationPage(iconPage.canvas, iconPath)
+                pdfDocument.finishPage(iconPage)
+            }
 
             // 1. Cover Page
             val coverPage = pdfDocument.startPage(pageInfo)
@@ -59,7 +70,7 @@ class PDFGenerator
 
             // 2. Chapters and Content Pages
             var globalPageCount = 1
-            book.chapters.forEach { chapter ->
+            book.chapters.forEachIndexed { index, chapter ->
                 // Chapter Start Page
                 val chapterStartPage = pdfDocument.startPage(pageInfo)
                 drawChapterStartPage(
@@ -70,6 +81,13 @@ class PDFGenerator
                     genreColor,
                 )
                 pdfDocument.finishPage(chapterStartPage)
+
+                // Chapter Cover (Illustration)
+                chapterCovers.getOrNull(index)?.takeIf { it.isNotEmpty() }?.let { coverPath ->
+                    val coverPage = pdfDocument.startPage(pageInfo)
+                    drawIllustrationPage(coverPage.canvas, coverPath)
+                    pdfDocument.finishPage(coverPage)
+                }
 
                 // Chapter Pages
                 chapter.pages.forEach { page ->
@@ -393,4 +411,55 @@ class PDFGenerator
             noteLayout.draw(canvas)
             canvas.restore()
         }
+
+        private fun drawIllustrationPage(
+            canvas: Canvas,
+            imagePath: String,
+        ) {
+            val options =
+                BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+            BitmapFactory.decodeFile(imagePath, options)
+            options.inSampleSize = calculateInSampleSize(options, 595, 842)
+            options.inJustDecodeBounds = false
+
+            val bitmap = BitmapFactory.decodeFile(imagePath, options) ?: return
+            val bWidth = bitmap.width.toFloat()
+            val bHeight = bitmap.height.toFloat()
+            val pWidth = 595f
+            val pHeight = 842f
+
+            val scale = maxOf(pWidth / bWidth, pHeight / bHeight)
+            val finalWidth = bWidth * scale
+            val finalHeight = bHeight * scale
+            val left = (pWidth - finalWidth) / 2
+            val top = (pHeight - finalHeight) / 2
+
+            canvas.drawBitmap(
+                bitmap,
+                null,
+                RectF(left, top, left + finalWidth, top + finalHeight),
+                null,
+            )
+            bitmap.recycle()
+        }
+
+        private fun calculateInSampleSize(
+            options: BitmapFactory.Options,
+            reqWidth: Int,
+            reqHeight: Int,
+        ): Int {
+            val (height: Int, width: Int) = options.outHeight to options.outWidth
+            var inSampleSize = 1
+
+            if (height > reqHeight || width > reqWidth) {
+                val halfHeight: Int = height / 2
+                val halfWidth: Int = width / 2
+                while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
+    }
     }

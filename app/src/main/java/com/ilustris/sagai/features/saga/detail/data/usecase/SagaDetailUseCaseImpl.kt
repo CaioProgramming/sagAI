@@ -48,7 +48,7 @@ class SagaDetailUseCaseImpl
         }
 
         override suspend fun resetReview(content: SagaContent) {
-            sagaRepository.updateChat(
+            sagaRepository.updateSaga(
                 content.data.copy(
                     review = null,
                 ),
@@ -61,7 +61,7 @@ class SagaDetailUseCaseImpl
                     emotionalUseCase.generateEmotionalConclusion(currentSaga).getSuccess()!!
 
                 sagaRepository
-                    .updateChat(
+                    .updateSaga(
                         currentSaga.data.copy(
                             emotionalProfile = request,
                             emotionalReview = request.emotionalContent,

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
-import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.review.domain.SagaReviewUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +55,7 @@ class SagaReviewViewModel
 
         fun resetReview(saga: SagaContent) {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaRepository.updateChat(saga.data.copy(review = null))
+                sagaRepository.updateSaga(saga.data.copy(review = null))
                 createReview(saga)
             }
         }

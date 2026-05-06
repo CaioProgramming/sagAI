@@ -39,6 +39,8 @@ interface SharePlayUseCase {
         book: com.ilustris.sagai.features.act.data.model.Book,
         genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
         volume: String,
+        sagaIcon: String? = null,
+        chapterCovers: List<String> = emptyList(),
     ): RequestResult<File>
 }
 
@@ -135,8 +137,10 @@ class SharePlayUseCaseImpl
             book: com.ilustris.sagai.features.act.data.model.Book,
             genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
             volume: String,
+            sagaIcon: String?,
+            chapterCovers: List<String>,
         ): RequestResult<File> =
             executeRequest {
-                pdfGenerator.generateBookPDF(book, genre, volume)!!
+                pdfGenerator.generateBookPDF(book, genre, volume, sagaIcon, chapterCovers)!!
             }
     }

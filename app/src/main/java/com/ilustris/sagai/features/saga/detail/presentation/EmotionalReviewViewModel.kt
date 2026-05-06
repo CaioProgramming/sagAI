@@ -51,7 +51,7 @@ class EmotionalReviewViewModel
                     )
 
                 emotionalUseCase.generateEmotionalConclusion(sagaContent).onSuccessAsync {
-                    sagaRepository.updateChat(
+                    sagaRepository.updateSaga(
                         sagaContent.data.copy(
                             emotionalProfile = it,
                             emotionalReview = it.emotionalContent,

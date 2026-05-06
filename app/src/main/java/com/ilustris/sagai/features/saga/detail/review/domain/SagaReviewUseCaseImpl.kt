@@ -53,7 +53,7 @@ class SagaReviewUseCaseImpl
                     val review = stepsMap.buildReview()
 
                     val finalSaga = content.data.copy(review = review)
-                    sagaRepository.updateChat(finalSaga)
+                    sagaRepository.updateSaga(finalSaga)
                     emit(ReviewState.Success(finalSaga))
                 }
             }

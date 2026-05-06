@@ -1248,7 +1248,7 @@ class ChatViewModel
                             viewModelScope.launch(Dispatchers.IO) {
                                 sceneSummary?.let {
                                     generateSuggestions(it)
-                                    sagaContentManager.getCurrentObjective(it)
+                                    sagaContentManager.updateSummary(it)
                                 }
                                 updateLoading(false)
                             }

@@ -182,6 +182,46 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_16_17 =
+        object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Update sagas table
+                db.execSQL("ALTER TABLE sagas ADD COLUMN `worldState` TEXT DEFAULT ''")
+
+                // 2. Update timelines table
+                db.execSQL("ALTER TABLE timelines ADD COLUMN `narrativeGuide` TEXT DEFAULT ''")
+
+                // 3. Update Chapter table
+                db.execSQL("ALTER TABLE Chapter ADD COLUMN `narrativeGuide` TEXT DEFAULT ''")
+
+                // 4. Update acts table
+                db.execSQL("ALTER TABLE acts ADD COLUMN `narrativeGuide` TEXT DEFAULT ''")
+
+                // 5. Update wikis table
+                db.execSQL("ALTER TABLE wikis ADD COLUMN `isFeatured` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE wikis ADD COLUMN `chapterId` INTEGER")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_wikis_chapterId` ON `wikis` (`chapterId`)")
+
+                // 6. Create character_arcs table
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `character_arcs` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                        `characterId` INTEGER NOT NULL, 
+                        `sourceId` INTEGER NOT NULL, 
+                        `sourceType` TEXT NOT NULL, 
+                        `title` TEXT NOT NULL, 
+                        `content` TEXT NOT NULL, 
+                        `createdAt` INTEGER NOT NULL, 
+                        FOREIGN KEY(`characterId`) REFERENCES `Characters`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_character_arcs_characterId` ON `character_arcs` (`characterId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_character_arcs_sourceId` ON `character_arcs` (`sourceId`)")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -198,5 +238,6 @@ object DatabaseMigrations {
             MIGRATION_13_14,
             MIGRATION_14_15,
             MIGRATION_15_16,
+            MIGRATION_16_17,
         )
 }

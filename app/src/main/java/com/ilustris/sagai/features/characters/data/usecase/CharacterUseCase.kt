@@ -87,4 +87,8 @@ interface CharacterUseCase {
     ): com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 
     suspend fun insertCharacterEvents(characterEvents: List<com.ilustris.sagai.features.characters.events.data.model.CharacterEvent>)
+
+    suspend fun insertCharacterArc(characterArc: com.ilustris.sagai.features.characters.data.model.CharacterArc)
+
+    fun getCharacterArcs(characterId: Int): Flow<List<com.ilustris.sagai.features.characters.data.model.CharacterArc>>
 }

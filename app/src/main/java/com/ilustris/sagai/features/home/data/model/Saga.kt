@@ -51,4 +51,6 @@ data class Saga(
     val narratorVoice: String? = null,
     @ColumnInfo(index = true)
     val variationId: String? = null,
+    @ColumnInfo(defaultValue = "")
+    val worldState: String? = null,
 )

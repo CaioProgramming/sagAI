@@ -19,11 +19,18 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
+import com.ilustris.sagai.features.characters.data.model.ArcSourceType
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +46,8 @@ class ChapterUseCaseImpl
         private val chapterRepository: ChapterRepository,
         private val timelineRepository: TimelineRepository,
         private val wikiUseCase: WikiUseCase,
+        private val characterUseCase: CharacterUseCase,
+        private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
@@ -145,8 +154,8 @@ class ChapterUseCaseImpl
                                     generateChapterCover(
                                         chapterContent.copy(data = updatedChapter),
                                         saga,
-                                )
-                            }
+                                    )
+                                }
                                 emit(
                                     StreamingState.Success(
                                         GeneratedContent(
@@ -156,13 +165,13 @@ class ChapterUseCaseImpl
                                     ),
                                 )
                             } else {
-                            emit(state)
+                                emit(state)
+                            }
                         }
-                    }
-            } catch (e: Exception) {
-                emit(StreamingState.Error(e.message ?: "Unknown error"))
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                }
             }
-        }
 
         override suspend fun reviewChapter(
             saga: SagaContent,
@@ -309,16 +318,16 @@ class ChapterUseCaseImpl
                     appendLine(
                         "• ${char1.data.name} & ${char2.data.name}: ${
                             char1.findRelationship(char2.data.id)?.summarizeRelation(1)
-                            ?: "Complex dynamic connection."
-                    }",
+                                ?: "Complex dynamic connection."
+                        }",
+                    )
+                }
+
+                appendLine()
+                appendLine(
+                    "FINAL ARTBOOK MANDATE: Prioritize the emotional interaction or shared silence between these subjects. No crowded compositions. Focus on character fidelity and the art style.",
                 )
             }
-
-            appendLine()
-            appendLine(
-                "FINAL ARTBOOK MANDATE: Prioritize the emotional interaction or shared silence between these subjects. No crowded compositions. Focus on character fidelity and the art style.",
-            )
-        }
 
         private suspend fun generateChapterPrompt(
             saga: SagaContent,
@@ -364,24 +373,24 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapterContent: Chapter,
             act: ActContent,
-    ): Flow<StreamingState<GeneratedContent<Chapter>>> =
-        flow {
+        ): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
                 try {
                     val prompt =
                         ChapterPrompts.chapterIntroductionPrompt(
                             promptService = promptService,
                             sagaContent = saga,
-                        currentChapter = chapterContent,
-                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                            currentChapter = chapterContent,
+                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                         )
 
                     gemmaClient
                         .generateStreaming<GeneratedContent<String>>(
-                        prompt = prompt,
-                        requireTranslation = true,
-                        useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                        blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                            prompt = prompt,
+                            requireTranslation = true,
+                            useCore = true,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val introContent = state.data
@@ -395,12 +404,118 @@ class ChapterUseCaseImpl
                                         ),
                                     ),
                                 )
-                        } else {
-                            emit(state as StreamingState<GeneratedContent<Chapter>>)
+                            } else {
+                                emit(state as StreamingState<GeneratedContent<Chapter>>)
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                }
+            }
+
+        override fun synthesizeChapterEvolutionStream(
+            saga: SagaContent,
+            chapterContent: ChapterContent,
+        ): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
+                try {
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val prompt =
+                        ChapterPrompts.chapterSynthesisPrompt(
+                            promptService = promptService,
+                            saga = saga,
+                            chapter = chapterContent,
+                            narrativeRules = remoteConfigService.getNarrativeRules(),
+                            conversationDirective = conversationDirective,
+                        )
+
+                    gemmaClient
+                        .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
+                            prompt = prompt,
+                            blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val synthesis = state.data.data
+
+                                    // 1. Update Chapter details & Narrative Guide
+                                    val updatedChapter =
+                                        updateChapter(
+                                            chapterContent.data.copy(
+                                                title = synthesis.chapterTitle,
+                                                introduction = synthesis.chapterIntroduction,
+                                                overview = synthesis.chapterOverview,
+                                                narrativeGuide = synthesis.narrativeGuide,
+                                                emotionalReview = synthesis.emotionalReview,
+                                            ),
+                                        )
+
+                                    // 2. Save Landmark Wikis
+                                    synthesis.landmarkWikis.forEach { wikiUpdate ->
+                                        val existingWiki =
+                                            saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                                        val wikiToSave =
+                                            Wiki(
+                                                id = existingWiki?.id ?: 0,
+                                                title = wikiUpdate.title,
+                                                content = wikiUpdate.content,
+                                                type = wikiUpdate.type,
+                                                emojiTag = wikiUpdate.emojiTag,
+                                                sagaId = saga.data.id,
+                                                chapterId = chapterContent.data.id,
+                                                isFeatured = true,
+                                            )
+                                        if (existingWiki != null) {
+                                            wikiUseCase.updateWiki(wikiToSave)
+                                        } else {
+                                            wikiUseCase.saveWiki(wikiToSave)
+                                        }
+                                    }
+
+                                    // 3. Save Character Arcs
+                                    synthesis.characterArcs.forEach { arcUpdate ->
+                                        val character = saga.findCharacter(arcUpdate.characterName)
+                                        character?.let {
+                                            characterUseCase.insertCharacterArc(
+                                                CharacterArc(
+                                                    characterId = it.data.id,
+                                                    sourceId = chapterContent.data.id,
+                                                    sourceType = ArcSourceType.CHAPTER,
+                                                    title = arcUpdate.arcTitle,
+                                                    content = arcUpdate.arcContent,
+                                                ),
+                                            )
+                                        }
+                                    }
+
+                                    // 4. Update Global World State
+                                    synthesis.worldStateUpdate?.let {
+                                        sagaRepository.updateSaga(saga.data.copy(worldState = it))
+                                    }
+
+                                    emit(
+                                        StreamingState.Success(
+                                            GeneratedContent(
+                                                updatedChapter,
+                                                state.data.finalMessage,
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(StreamingState.Error(state.message, state.throwable))
+                                }
+
+                                is StreamingState.Reasoning -> {
+                                emit(StreamingState.Reasoning(state.chunk))
+                            }
                         }
                     }
             } catch (e: Exception) {
-                emit(StreamingState.Error(e.message ?: "Unknown error"))
+                emit(StreamingState.Error(e.message ?: "Chapter synthesis failed", e))
             }
         }
     }

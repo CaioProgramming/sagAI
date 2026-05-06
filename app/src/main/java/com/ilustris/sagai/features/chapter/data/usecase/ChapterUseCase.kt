@@ -55,4 +55,9 @@ interface ChapterUseCase {
         chapterContent: Chapter,
         act: ActContent,
     ): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
+
+    fun synthesizeChapterEvolutionStream(
+        saga: SagaContent,
+        chapterContent: ChapterContent,
+    ): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
 }

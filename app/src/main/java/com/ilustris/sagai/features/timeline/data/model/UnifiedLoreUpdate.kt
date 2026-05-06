@@ -8,6 +8,7 @@ data class UnifiedLoreUpdate(
     val emotionalReview: String? = null,
     val charactersUpdates: List<CharacterUpdates> = emptyList(),
     val wikiUpdates: List<GeneratedWikiUpdate> = emptyList(),
+    val narrativeGuide: String? = null,
 )
 
 data class CharacterUpdates(

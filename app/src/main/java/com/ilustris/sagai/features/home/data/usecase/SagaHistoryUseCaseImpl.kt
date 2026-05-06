@@ -27,7 +27,7 @@ class SagaHistoryUseCaseImpl
     ) : SagaHistoryUseCase {
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
-        override suspend fun updateSaga(saga: Saga) = sagaRepository.updateChat(saga)
+        override suspend fun updateSaga(saga: Saga) = sagaRepository.updateSaga(saga)
 
         override suspend fun createFakeSaga(): RequestResult<Saga> =
             executeRequest {
@@ -96,12 +96,12 @@ class SagaHistoryUseCaseImpl
                             requirement = GemmaClient.ModelRequirement.HIGH,
                             blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                         ).collect { state ->
-                        emit(state)
-                    }
-            } catch (e: Exception) {
-                emit(StreamingState.Error(e.message ?: "Unknown error"))
+                            emit(state)
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                }
             }
-        }
 
         override suspend fun backupSaga(saga: SagaContent) = executeRequest { sagaRepository.backupSaga(saga) }
     }

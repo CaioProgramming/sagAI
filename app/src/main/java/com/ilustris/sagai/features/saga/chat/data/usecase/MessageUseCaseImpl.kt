@@ -138,7 +138,7 @@ class MessageUseCaseImpl
                         prompt,
                         blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )?.trim()
                     ?.uppercase()
             EmotionalTone.getTone(raw)
@@ -363,7 +363,7 @@ class MessageUseCaseImpl
                         voice = voice ?: audioConfig.voice,
                     )
                 if (isNarrator) {
-                    sagaRepository.updateChat(
+                    sagaRepository.updateSaga(
                         saga.data.copy(
                             narratorVoice = finalConfig.voice.id,
                         ),

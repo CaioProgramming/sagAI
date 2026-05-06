@@ -432,7 +432,7 @@ class GemmaClient
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
-            requirement: ModelRequirement = ModelRequirement.LOW,
+            requirement: ModelRequirement = ModelRequirement.MEDIUM,
             blueprintKey: String? = null,
             userInteraction: Boolean = false,
             logEnabled: Boolean = true,
