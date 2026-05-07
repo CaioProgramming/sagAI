@@ -11,14 +11,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -66,11 +63,9 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
-import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.components.SectionLoading
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 
@@ -80,14 +75,20 @@ fun SagaDetailView(
     paddingValues: PaddingValues,
     onBack: () -> Unit = {},
     onChapters: () -> Unit = {},
+    onCharacters: () -> Unit = {},
+    onWiki: () -> Unit = {},
+    onEvents: () -> Unit = {},
+    onActs: () -> Unit = {},
     onDeleted: () -> Unit = {},
+    onCharacterDetails: (Int) -> Unit = {},
+    onLoreDebug: () -> Unit = {},
     viewModel: SagaDetailViewModel = hiltViewModel(),
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val saga by viewModel.saga.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
-    val actualSection by viewModel.actualSection.collectAsStateWithLifecycle()
+    val initialSection by viewModel.initialSection.collectAsStateWithLifecycle()
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
@@ -101,17 +102,7 @@ fun SagaDetailView(
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
         } else {
-            if (actualSection == null || actualSection is DetailSectionView.InitialSection) {
-                onBack()
-            } else {
-                viewModel.loadSection(RequestSection.START)
-            }
-        }
-    }
-
-    LaunchedEffect(saga) {
-        saga?.let { sagaContent ->
-            viewModel.loadSection(RequestSection.START)
+            onBack()
         }
     }
 
@@ -122,55 +113,75 @@ fun SagaDetailView(
     }
 
     CompositionLocalProvider(LocalGenreVisualConfig provides visualConfig) {
-        SagaDetailContentView(
-            state = state,
-            actualSection = actualSection,
-            drawer = drawer,
-            onAction = { action ->
-                when (action) {
-                    DetailAction.OpenReview -> {
-                        showReview = true
-                    }
+        var lastNavigationTime by remember { mutableStateOf(0L) }
+        val onAction: (DetailAction) -> Unit =
+            remember(onCharacterDetails, onLoreDebug, viewModel) {
+                { action ->
+                    when (action) {
+                        DetailAction.OpenReview -> {
+                            showReview = true
+                        }
 
-                    DetailAction.OpenEmotionalReview -> {
-                        showEmotionalReview = true
-                    }
+                        DetailAction.OpenEmotionalReview -> {
+                            showEmotionalReview = true
+                        }
 
-                    is DetailAction.OpenChronicles -> {
-                        viewModel.loadSection(RequestSection.ACTS)
-                    }
+                        is DetailAction.OpenChronicles -> {
+                            onActs()
+                        }
 
-                    DetailAction.Delete -> {
-                        sagaToDelete = saga?.data
-                    }
+                        DetailAction.Delete -> {
+                            sagaToDelete = saga?.data
+                        }
 
-                    else -> {
-                        viewModel.handleAction(action)
+                        is DetailAction.OpenCharacter -> {
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastNavigationTime > 500L) {
+                                lastNavigationTime = currentTime
+                                onCharacterDetails(action.characterId)
+                            }
+                        }
+
+                        DetailAction.OpenLoreDebug -> {
+                            onLoreDebug()
+                        }
+
+                        is DetailAction.OpenSection -> {
+                            when (action.section) {
+                                RequestSection.EVENTS -> onEvents()
+                                RequestSection.CHARACTERS -> onCharacters()
+                                RequestSection.WIKI -> onWiki()
+                                RequestSection.CHAPTERS -> onChapters()
+                                RequestSection.ACTS -> onActs()
+                                RequestSection.START -> viewModel.loadInitialSection()
+                            }
+                        }
+
+                        else -> {
+                            viewModel.handleAction(action)
+                        }
                     }
                 }
-            },
+            }
+        SagaDetailContentView(
+            state = state,
+            initialSection = initialSection,
+            drawer = drawer,
+            onAction = onAction,
             modifier = Modifier.fillMaxSize(),
         )
 
         AnimatedVisibility(isGenerating || state == State.Loading) {
-            StarryLoader(
-                isLoading = true,
-                loadingMessage = loadingMessage ?: emptyString(),
-                textStyle = MaterialTheme.typography.labelMedium,
-                brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
-            )
-
-            saga?.let {
-                val genre = it.data.genre
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Image(
-                        painterResource(genre.icon),
-                        null,
-                        Modifier
-                            .size(50.dp)
-                            .gradientFill(genre.gradient())
-                            .genreVfx(genre),
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                if (isGenerating) {
+                    StarryLoader(
+                        isLoading = true,
+                        loadingMessage = loadingMessage ?: emptyString(),
+                        textStyle = MaterialTheme.typography.labelMedium,
+                        brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
                     )
+                } else {
+                    SectionLoading(genre = saga?.data?.genre)
                 }
             }
         }
@@ -264,7 +275,7 @@ fun SagaDetailView(
 @Composable
 fun SagaDetailContentView(
     state: State,
-    actualSection: DetailSectionView?,
+    initialSection: DetailSectionView.InitialSection?,
     drawer: TimelineDrawer?,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -308,7 +319,7 @@ fun SagaDetailContentView(
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             AnimatedContent(
-                                actualSection,
+                                initialSection,
                                 transitionSpec = {
                                     fadeIn(tween(500)) togetherWith
                                         fadeOut(
@@ -321,11 +332,13 @@ fun SagaDetailContentView(
                                     Modifier
                                         .fillMaxSize(),
                             ) { section ->
-                                section?.RenderSection(
-                                    saga,
-                                    animationScopes = this@SharedTransitionLayout to this,
-                                    onAction = onAction,
-                                )
+                                section?.let {
+                                    SagaDetailInitialContent(
+                                        saga = sagaContent,
+                                        section = it,
+                                        onAction = onAction,
+                                    )
+                                }
                             }
                         }
                     }

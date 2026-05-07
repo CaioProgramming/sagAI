@@ -46,12 +46,4 @@ interface SagaDetailUseCase {
     fun getBackupEnabled(): Flow<Boolean>
 
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
-
-    suspend fun generateSagaResume(saga: SagaContent): RequestResult<String>
-
-    suspend fun generateCharactersInsight(saga: SagaContent): RequestResult<String>
-
-    suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String>
-
-    suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String>
 }

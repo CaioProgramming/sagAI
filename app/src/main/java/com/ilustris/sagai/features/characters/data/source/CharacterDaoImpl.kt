@@ -35,4 +35,6 @@ class CharacterDaoImpl
         ) = characterDao.getCharacterByName(name, sagaId)
 
         override suspend fun getAllCharacterNames(): List<String> = characterDao.getAllCharacterNames()
+
+        override fun getCharacterDetailDataById(characterId: Int) = characterDao.getCharacterDetailDataById(characterId)
     }

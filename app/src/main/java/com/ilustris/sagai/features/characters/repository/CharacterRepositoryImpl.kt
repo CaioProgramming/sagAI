@@ -29,4 +29,6 @@ class CharacterRepositoryImpl
         override suspend fun getCharacterById(characterId: Int): Character? = dao.getCharacterById(characterId)
 
         override suspend fun getAllCharacterNames(): List<String> = dao.getAllCharacterNames()
+
+        override fun getCharacterDetailData(characterId: Int) = dao.getCharacterDetailDataById(characterId)
     }

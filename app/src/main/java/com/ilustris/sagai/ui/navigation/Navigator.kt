@@ -13,7 +13,10 @@ class Navigator(
             // This is a top level route, just switch to it.
             state.topLevelRoute = route
         } else {
-            state.backStacks[state.topLevelRoute]?.add(route)
+            val currentStack = state.backStacks[state.topLevelRoute]
+            if (currentStack?.lastOrNull() != route) {
+                currentStack?.add(route)
+            }
         }
     }
 

@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
@@ -187,8 +188,7 @@ fun SagaDetailInitialContent(
                                         Modifier
                                             .clickable {
                                                 onAction(DetailAction.RegenerateIcon)
-                                            }
-                                            .size(100.dp)
+                                            }.size(100.dp)
                                             .gradientFill(genre.resolveColor().gradientFade()),
                                     )
                                     genre.stylisedText(
@@ -274,15 +274,12 @@ fun SagaDetailInitialContent(
                     }
 
                     item(span = { GridItemSpan(columnCount) }) {
-                        val isGeneratingInsight = section.sagaResume == saga.data.description
                         Column {
                             Text(
-                                section.sagaResume,
+                                saga.data.description,
                                 modifier =
                                     Modifier
-                                        .padding(16.dp)
-                                        .alpha(if (isGeneratingInsight) .5f else 1f)
-                                        .reactiveShimmer(isGeneratingInsight),
+                                        .padding(16.dp),
                                 style =
                                     MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily = genre.bodyFont(),
@@ -450,6 +447,34 @@ fun SagaDetailInitialContent(
                         }
                     }
 
+                    if (BuildConfig.DEBUG) {
+                        item(span = {
+                            GridItemSpan(columnCount)
+                        }) {
+                            Button(
+                                onClick = {
+                                    onAction(DetailAction.OpenLoreDebug)
+                                },
+                                shape = genre.shape(),
+                                colors =
+                                    ButtonDefaults.buttonColors().copy(
+                                        containerColor = genre.resolveColor(),
+                                        contentColor = genre.iconColor,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .fillMaxWidth(),
+                            ) {
+                                Text(
+                                    "Manage Story",
+                                    fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
+
                     item(span = {
                         GridItemSpan(columnCount)
                     }) {
@@ -463,7 +488,7 @@ fun SagaDetailInitialContent(
                                 ),
                             modifier =
                                 Modifier
-                                    .padding(16.dp)
+                                    .padding(horizontal = 16.dp)
                                     .fillMaxWidth(),
                         ) {
                             Text(

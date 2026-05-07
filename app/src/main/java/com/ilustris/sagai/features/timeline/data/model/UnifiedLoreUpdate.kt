@@ -3,12 +3,9 @@ package com.ilustris.sagai.features.timeline.data.model
 import com.ilustris.sagai.features.wiki.data.model.WikiType
 
 data class UnifiedLoreUpdate(
-    val title: String = "",
-    val content: String = "",
-    val emotionalReview: String? = null,
+    val event: Timeline,
     val charactersUpdates: List<CharacterUpdates> = emptyList(),
     val wikiUpdates: List<GeneratedWikiUpdate> = emptyList(),
-    val narrativeGuide: String? = null,
 )
 
 data class CharacterUpdates(

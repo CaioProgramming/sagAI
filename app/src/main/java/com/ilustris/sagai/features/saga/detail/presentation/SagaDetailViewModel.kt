@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
@@ -21,7 +23,6 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +40,7 @@ class SagaDetailViewModel
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val visualConfigService: GenreVisualConfigService,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
+        private val soundFxService: SoundFxService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
@@ -54,112 +56,40 @@ class SagaDetailViewModel
         val originalBitmap = MutableStateFlow<Bitmap?>(null)
         val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
-        val sagaResume = MutableStateFlow<String?>(null)
         val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
-        private val _actualSection = MutableStateFlow<DetailSectionView?>(null)
-        val actualSection = _actualSection.asStateFlow()
+        private val _initialSection = MutableStateFlow<DetailSectionView.InitialSection?>(null)
+        val initialSection = _initialSection.asStateFlow()
 
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
-
-        private val sectionCache = mutableMapOf<RequestSection, DetailSectionView>()
-        private var currentRequestSection: RequestSection = RequestSection.START
-        private var sectionJob: Job? = null
-        private val insightJobs = mutableMapOf<RequestSection, Job>()
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
-        fun loadSection(requestSection: RequestSection) {
-            currentRequestSection = requestSection
+        fun loadInitialSection() {
             val currentSaga = saga.value ?: return
-
-            if (sectionCache.containsKey(requestSection)) {
-                _actualSection.value = sectionCache[requestSection]
-                return
-            }
-
-            sectionJob?.cancel()
-
-            sectionJob =
-                viewModelScope.launch {
-                    sagaDetailUIMapper
-                        .buildSection(
-                            currentSaga,
-                            requestSection,
-                        ).onSuccess { mappedSection ->
-                            sectionCache[requestSection] = mappedSection
-                            _actualSection.value = mappedSection
-                            _state.value = State.Success(currentSaga)
-                            generateInsight(requestSection, currentSaga)
-                        }.onFailureAsync {
-                            _state.emit(State.Error(emptyString()))
-                        }
-                }
-        }
-
-        private fun generateInsight(
-            section: RequestSection,
-            sagaContent: SagaContent,
-        ) {
-            if (insightJobs.containsKey(section)) return
-
-            insightJobs[section] =
-                viewModelScope.launch(Dispatchers.IO) {
-                    val result =
-                        when (section) {
-                            RequestSection.START -> {
-                                sagaDetailUseCase.generateSagaResume(sagaContent)
-                            }
-
-                            RequestSection.CHARACTERS -> {
-                                sagaDetailUseCase.generateCharactersInsight(
-                                    sagaContent,
-                                )
-                            }
-
-                            RequestSection.WIKI -> {
-                                sagaDetailUseCase.generateWikiInsight(sagaContent)
-                            }
-
-                            RequestSection.EVENTS -> {
-                                sagaDetailUseCase.generateTimelineInsight(
-                                    sagaContent,
-                                )
-                            }
-
-                            RequestSection.CHAPTERS -> {
-                                sagaDetailUseCase.generateSagaResume(sagaContent)
-                            }
-
-                            RequestSection.ACTS -> {
-                                sagaDetailUseCase.generateSagaResume(sagaContent)
-                            }
-                        }
-
-                    result.onSuccess { insight ->
-                        updateSectionWithInsight(section, insight)
+            viewModelScope.launch {
+                sagaDetailUIMapper
+                    .buildSection(
+                        currentSaga,
+                        RequestSection.START,
+                    ).onSuccess { mappedSection ->
+                        _initialSection.value = mappedSection as DetailSectionView.InitialSection
+                        _state.value = State.Success(currentSaga)
+                        playSoundFx()
+                    }.onFailureAsync {
+                        _state.emit(State.Error(emptyString()))
                     }
-                }
+            }
         }
 
-        private fun updateSectionWithInsight(
-            section: RequestSection,
-            insight: String,
-        ) {
-            val currentSection = sectionCache[section] ?: return
-            val updatedSection =
-                when (currentSection) {
-                    is DetailSectionView.InitialSection -> currentSection.copy(sagaResume = insight)
-                    is DetailSectionView.CharacterSection -> currentSection.copy(insight = insight)
-                    is DetailSectionView.WikiSection -> currentSection.copy(insight = insight)
-                    is DetailSectionView.EventsSection -> currentSection.copy(insight = insight)
-                    is DetailSectionView.ChapterSection -> currentSection.copy(insight = insight)
-                    is DetailSectionView.ActSection -> currentSection.copy(insight = insight)
-                }
-            sectionCache[section] = updatedSection
-            if (_actualSection.value?.title == currentSection.title) {
-                _actualSection.value = updatedSection
+        private fun playSoundFx() {
+            val selectedGenre = saga.value?.data?.genre ?: return
+            viewModelScope.launch {
+                delay(300)
+                val visualConfig = visualConfigService.getVisualConfig(selectedGenre)
+                val hapticPattern = selectedGenre.vibrationPattern(visualConfig)
+            soundFxService.playWithHaptics(hapticPattern)
             }
         }
 
@@ -167,7 +97,6 @@ class SagaDetailViewModel
             viewModelScope.launch {
                 when (detailAction) {
                     DetailAction.Delete -> deleteSaga(saga.value?.data)
-                    is DetailAction.OpenSection -> loadSection(detailAction.section)
                     DetailAction.RegenerateIcon -> regenerateIcon()
                     else -> doNothing()
                 }
@@ -179,11 +108,10 @@ class SagaDetailViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
                     saga?.let { data ->
-                        sectionCache.clear()
                         this@SagaDetailViewModel.saga.value = data
                         visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
 
-                        loadSection(currentRequestSection)
+                        loadInitialSection()
                         detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
                         launchIntroSequence()
                     }

@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -38,6 +39,7 @@ class ActUseCaseImpl
         private val remoteConfigService: RemoteConfigService,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -90,17 +92,21 @@ class ActUseCaseImpl
         ) = flow {
             try {
                 val titlePrompt = generateActPrompt(saga)
-                gemmaClient
-                    .generateStreaming<GeneratedContent<Act>>(
-                        prompt = titlePrompt,
-                        filterOutputFields =
-                            listOf(
-                                "id",
-                                "sagaId",
-                                "currentChapterId",
-                                "introduction",
+                reasoningSynthesizerService
+                    .synthesizeReasoning(
+                        gemmaClient
+                            .generateStreaming<GeneratedContent<Act>>(
+                                prompt = titlePrompt,
+                                filterOutputFields =
+                                    listOf(
+                                        "id",
+                                        "sagaId",
+                                        "currentChapterId",
+                                        "introduction",
+                                    ),
+                                useCore = true,
                             ),
-                        useCore = true,
+                        "Generating new act...",
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -198,13 +204,16 @@ class ActUseCaseImpl
                         narrativeRules = remoteConfigService.getNarrativeRules(),
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
-
-                gemmaClient
-                    .generateStreaming<GeneratedContent<String>>(
-                        prompt = prompt,
-                        requireTranslation = true,
-                        useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                reasoningSynthesizerService
+                    .synthesizeReasoning(
+                        gemmaClient
+                            .generateStreaming<GeneratedContent<String>>(
+                                prompt = prompt,
+                                requireTranslation = true,
+                                useCore = true,
+                                requirement = GemmaClient.ModelRequirement.HIGH,
+                            ),
+                        "Starting a new act...",
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -251,11 +260,15 @@ class ActUseCaseImpl
                             conversationDirective = conversationDirective,
                         )
 
-                    gemmaClient
-                        .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
-                            prompt = prompt,
-                            blueprintKey = ActPrompts.ACT_SYNTHESIS_BLUEPRINT,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
+                                    prompt = prompt,
+                                    blueprintKey = ActPrompts.ACT_SYNTHESIS_BLUEPRINT,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                ),
+                            "Finishing story act",
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {
@@ -328,12 +341,12 @@ class ActUseCaseImpl
                                 }
 
                                 is StreamingState.Reasoning -> {
-                                emit(StreamingState.Reasoning(state.chunk))
+                                    emit(StreamingState.Reasoning(state.chunk))
+                                }
                             }
                         }
-                    }
-            } catch (e: Exception) {
-                emit(StreamingState.Error(e.message ?: "Act synthesis failed", e))
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Act synthesis failed", e))
+                }
             }
-        }
     }

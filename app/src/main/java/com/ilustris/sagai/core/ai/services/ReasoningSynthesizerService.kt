@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.services
 
+import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
@@ -24,13 +25,12 @@ class ReasoningSynthesizerService
         @PublishedApi internal val gemmaClient: GemmaClient,
         @PublishedApi internal val promptService: PromptService,
         @PublishedApi internal val remoteConfigService: RemoteConfigService,
-    ) {
+    ) : AIClient() {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
             sourceFlow: Flow<StreamingState<T>>,
             context: String,
             conversationStyle: String? = null,
-            targetLanguage: String = "Portuguese",
             showReasoning: Boolean = true,
             genre: String? = null,
         ): Flow<StreamingState<T>> =
@@ -50,7 +50,7 @@ class ReasoningSynthesizerService
                                                 lastReasoning,
                                                 context,
                                                 conversationStyle,
-                                                targetLanguage,
+                                                getLanguage(true),
                                                 this@channelFlow,
                                                 genre,
                                             )
@@ -67,7 +67,7 @@ class ReasoningSynthesizerService
                                     lastReasoning,
                                     context,
                                     conversationStyle,
-                                    targetLanguage,
+                                    getLanguage(true),
                                     this,
                                     genre,
                                 )

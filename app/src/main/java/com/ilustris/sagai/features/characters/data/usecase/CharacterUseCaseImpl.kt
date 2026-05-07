@@ -618,4 +618,6 @@ class CharacterUseCaseImpl
         override suspend fun insertCharacterArc(characterArc: CharacterArc) = characterArcDao.insertArc(characterArc)
 
         override fun getCharacterArcs(characterId: Int) = characterArcDao.getArcsForCharacter(characterId)
+
+        override fun getCharacterDetailData(characterId: Int) = repository.getCharacterDetailData(characterId)
     }

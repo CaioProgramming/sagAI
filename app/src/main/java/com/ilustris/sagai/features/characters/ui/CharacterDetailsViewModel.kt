@@ -5,33 +5,24 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
-import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
-import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class CharacterDetailsViewModel
     @Inject
     constructor(
-        private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val characterUseCase: CharacterUseCase,
         private val billingService: BillingService,
         private val paletteUseCase: PaletteUseCase,
     ) : ViewModel() {
-        val saga = MutableStateFlow<SagaContent?>(null)
-        val character = MutableStateFlow<CharacterContent?>(null)
+        val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
@@ -48,44 +39,41 @@ class CharacterDetailsViewModel
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
-        fun loadSagaAndCharacter(
-            sagaId: String?,
-            characterId: Int?,
-        ) {
-            if (sagaId == null) return
+        fun loadCharacterDetails(characterId: Int?) {
             if (characterId == null) return
             viewModelScope.launch(Dispatchers.IO) {
-                sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect { sagaContent ->
-                    saga.value = sagaContent
-                    val foundCharacter =
-                        sagaContent?.characters?.find { char -> char.data.id == characterId.toInt() }
-                    character.value = foundCharacter
-                    messageCount.value =
-                        sagaContent
-                            ?.flatMessages()
-                            ?.filterCharacterMessages(foundCharacter?.data)
-                            ?.size ?: 0
-
-                    if (sagaContent != null && foundCharacter != null) {
-                        if (characterResume.value == null) {
-                            generateResume(sagaContent, foundCharacter)
-                        }
-                        if (characterDetailState.value == null) {
-                            loadEnrichment(sagaContent, foundCharacter)
+                launch {
+                    characterUseCase.getCharacterDetailData(characterId).collect { data ->
+                        characterDetailData.value = data
+                        data?.let {
+                            messageCount.value = it.messageCount
+                            if (characterResume.value == null) {
+                                generateResume(it)
+                            }
+                            if (characterDetailState.value == null) {
+                                loadEnrichment(it)
+                            }
+                            if (imagePalette.value == null && it.character.image.isNotEmpty()) {
+                                extractPalette(it.character.image)
+                            }
                         }
                     }
                 }
             }
         }
 
-        private fun loadEnrichment(
-            sagaContent: SagaContent,
-            characterContent: CharacterContent,
-        ) {
+        private fun extractPalette(imageUrl: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val palette = paletteUseCase.extractPalette(imageUrl)
+                imagePalette.value = palette.getSuccess()
+            }
+        }
+
+        private fun loadEnrichment(detailData: CharacterDetailData) {
             viewModelScope.launch(Dispatchers.IO) {
             /* isEnriching.value = true
              characterUseCase
-                 .enrichCharacter(characterContent, sagaContent)
+                 .enrichCharacter(detailData.character, detailData.saga)
                  .onSuccessAsync {
                      characterDetailState.emit(it)
                      isEnriching.value = false
@@ -96,24 +84,24 @@ class CharacterDetailsViewModel
             }
         }
 
-        private fun generateResume(
-            sagaContent: SagaContent,
-            characterContent: CharacterContent,
-        ) {
-            characterResume.value = characterContent.data.backstory
-            viewModelScope.launch(Dispatchers.IO) {
-                isSummarizing.value = true
-                characterUseCase
-                    .generateCharacterResume(characterContent, sagaContent)
-                    .onSuccessAsync {
-                        characterResume.emit(it)
-                        isSummarizing.value = false
-                    }
-            }
+        private fun generateResume(detailData: CharacterDetailData) {
+            characterResume.value =
+                buildString {
+                    appendLine(detailData.character.backstory)
+                }
+        /*viewModelScope.launch(Dispatchers.IO) {
+            isSummarizing.value = true
+            characterUseCase
+                .generateCharacterResume(detailData.character, detailData.saga)
+                .onSuccessAsync {
+                    characterResume.emit(it)
+                    isSummarizing.value = false
+                }
+        }*/
         }
 
         fun regenerate(
-            sagaContent: SagaContent,
+            saga: com.ilustris.sagai.features.home.data.model.Saga,
             selectedCharacter: Character,
         ) {
             isGenerating.value = true
@@ -124,7 +112,7 @@ class CharacterDetailsViewModel
                 characterUseCase
                     .generateCharacterImageStream(
                         selectedCharacter,
-                        sagaContent.data,
+                        saga,
                     ).collect { state ->
                         when (state) {
                             is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
@@ -144,30 +132,6 @@ class CharacterDetailsViewModel
                             }
                         }
                     }
-            }
-        }
-
-        fun init(
-            characterId: Int?,
-            sagaContent: SagaContent,
-        ) {
-            val characterContent = sagaContent.findCharacter(characterId)
-            val canGenerateResume = character.value != characterContent
-            viewModelScope.launch(Dispatchers.IO) {
-                character.value = characterContent
-                characterContent?.let {
-                    if (canGenerateResume) {
-                        generateResume(sagaContent, it)
-                    }
-                    loadEnrichment(sagaContent, it)
-                    if (it.data.image.isNotEmpty()) {
-                        val palette = paletteUseCase.extractPalette(it.data.image)
-                        Timber.d("Extracted palette: ${palette.toAINormalize()}")
-                        imagePalette.value = palette.getSuccess()
-                    } else {
-                        imagePalette.value = null
-                    }
-                }
             }
         }
     }

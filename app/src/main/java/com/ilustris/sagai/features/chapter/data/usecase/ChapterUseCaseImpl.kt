@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
@@ -54,6 +55,7 @@ class ChapterUseCaseImpl
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val remoteConfigService: RemoteConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : ChapterUseCase {
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
@@ -138,16 +140,12 @@ class ChapterUseCaseImpl
                                 val genChapter = state.data.data
                                 val updatedChapter =
                                     updateChapter(
-                                        chapterContent.data.copy(
-                                            title = genChapter.title,
-                                            overview = genChapter.overview,
-                                            introduction = chapterContent.data.introduction, // Keep existing introduction
-                                            featuredCharacters =
-                                                genChapter.featuredCharacters.take(
-                                                    2,
-                                                ),
-                                            emotionalReview = genChapter.emotionalReview,
-                                            currentEventId = null,
+                                        genChapter.copy(
+                                            id = chapterContent.data.id,
+                                            currentEventId = chapterContent.data.currentEventId,
+                                            actId = chapterContent.data.actId,
+                                            coverImage = chapterContent.data.coverImage,
+                                            introduction = chapterContent.data.introduction,
                                         ),
                                     )
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -384,13 +382,17 @@ class ChapterUseCaseImpl
                             conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                         )
 
-                    gemmaClient
-                        .generateStreaming<GeneratedContent<String>>(
-                            prompt = prompt,
-                            requireTranslation = true,
-                            useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
-                            blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<String>>(
+                                    prompt = prompt,
+                                    requireTranslation = true,
+                                    useCore = true,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                                ),
+                            "Generating chapter introduction...",
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val introContent = state.data
@@ -430,11 +432,15 @@ class ChapterUseCaseImpl
                             conversationDirective = conversationDirective,
                         )
 
-                    gemmaClient
-                        .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
-                            prompt = prompt,
-                            blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
+                                    prompt = prompt,
+                                    blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                ),
+                            "Generating new chapter...",
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {
@@ -443,12 +449,11 @@ class ChapterUseCaseImpl
                                     // 1. Update Chapter details & Narrative Guide
                                     val updatedChapter =
                                         updateChapter(
-                                            chapterContent.data.copy(
-                                                title = synthesis.chapterTitle,
-                                                introduction = synthesis.chapterIntroduction,
-                                                overview = synthesis.chapterOverview,
-                                                narrativeGuide = synthesis.narrativeGuide,
-                                                emotionalReview = synthesis.emotionalReview,
+                                            synthesis.chapter.copy(
+                                                id = chapterContent.data.id,
+                                                currentEventId = chapterContent.data.currentEventId,
+                                                actId = chapterContent.data.actId,
+                                                coverImage = chapterContent.data.coverImage,
                                             ),
                                         )
 
@@ -510,12 +515,12 @@ class ChapterUseCaseImpl
                                 }
 
                                 is StreamingState.Reasoning -> {
-                                emit(StreamingState.Reasoning(state.chunk))
+                                    emit(StreamingState.Reasoning(state.chunk))
+                                }
                             }
                         }
-                    }
-            } catch (e: Exception) {
-                emit(StreamingState.Error(e.message ?: "Chapter synthesis failed", e))
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Chapter synthesis failed", e))
+                }
             }
-        }
     }

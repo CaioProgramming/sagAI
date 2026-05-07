@@ -180,10 +180,6 @@ class ChatViewModel
                     updateCharacter(action.characterContent)
                 }
 
-                is ChatUiAction.ShowCharacter -> {
-                    revealCharacter(action.characterContent)
-                }
-
                 is ChatUiAction.RegenerateAudio -> {
                     regenerateAudio(action.messageContent)
                 }
@@ -226,10 +222,6 @@ class ChatViewModel
                     enableBackup(action.uri)
                 }
 
-                is ChatUiAction.DismissCharacterReveal -> {
-                    dismissCharacter()
-                }
-
                 is ChatUiAction.RequestAudioTranscript -> {
                     stateManager.updateAudioTranscriptVisibility(action.show)
                 }
@@ -269,6 +261,10 @@ class ChatViewModel
 
                 is ChatUiAction.StopGeneration -> {
                     stopGeneration()
+                }
+
+                is ChatUiAction.OpenCharacter -> {
+                    doNothing()
                 }
             }
         }

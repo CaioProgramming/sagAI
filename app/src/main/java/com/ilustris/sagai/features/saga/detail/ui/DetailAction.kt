@@ -30,4 +30,10 @@ sealed class DetailAction {
     data class OpenSection(
         val section: RequestSection,
     ) : DetailAction()
+
+    data class OpenCharacter(
+        val characterId: Int,
+    ) : DetailAction()
+
+    data object OpenLoreDebug : DetailAction()
 }

@@ -5,7 +5,6 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -26,22 +24,15 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -50,17 +41,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
-import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,17 +73,18 @@ fun CharacterGalleryView(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersGalleryContent(
-    section: DetailSectionView.CharacterSection,
+    title: String,
+    subtitle: String,
+    saga: SagaContent,
+    characters: List<CharacterContent>,
+    relationships: List<RelationshipContent>,
     onOpenEvent: (Timeline) -> Unit = {},
+    onOpenCharacter: (Int) -> Unit = {},
     onBackClick: () -> Unit = {},
     titleModifier: Modifier = Modifier,
     animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
 ) {
-    var showCharacter by remember {
-        mutableStateOf<Int?>(null)
-    }
-    val selectedCharacter = section.saga.findCharacter(showCharacter)
-    val genre = section.saga.data.genre
+    val genre = saga.data.genre
 
     with(animationScopes.first) {
         Box {
@@ -110,8 +102,8 @@ fun CharactersGalleryContent(
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Column {
                         LargeHorizontalHeader(
-                            section.title,
-                            section.subtitle,
+                            title,
+                            subtitle,
                             titleStyle =
                                 MaterialTheme.typography.displaySmall.copy(
                                     fontFamily = genre.headerFont(),
@@ -126,38 +118,10 @@ fun CharactersGalleryContent(
                                     .fillMaxWidth(),
                             titleModifier = titleModifier,
                         )
-
-                        if (section.insight.isNullOrBlank()) {
-                            Box(
-                                Modifier
-                                    .padding(horizontal = 16.dp, vertical = 24.dp)
-                                    .fillMaxWidth()
-                                    .height(60.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                                        genre.shape(),
-                                    ).reactiveShimmer(true),
-                            )
-                        } else {
-                            Text(
-                                section.insight,
-                                style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        textAlign = TextAlign.Center,
-                                        fontStyle = FontStyle.Italic,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .padding(horizontal = 16.dp, vertical = 24.dp)
-                                        .fillMaxWidth()
-                                        .alpha(.7f),
-                            )
-                        }
                     }
                 }
 
-                items(section.characters, key = { character -> character.data.id }) { character ->
+                items(characters, key = { character -> character.data.id }) { character ->
 
                     CharacterYearbookItem(
                         character = character.data,
@@ -167,29 +131,11 @@ fun CharactersGalleryContent(
                             Modifier
                                 .clip(genre.shape())
                                 .clickable {
-                                    showCharacter = character.data.id
+                                    onOpenCharacter(character.data.id)
                                 },
                     )
                 }
             }
-        }
-    }
-
-    if (selectedCharacter != null) {
-        val bottomSheetState =
-            rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { showCharacter = null },
-            sheetState = bottomSheetState,
-            containerColor = Color.Transparent,
-            dragHandle = null,
-        ) {
-            CharacterDetailsContent(
-                section.saga,
-                showCharacter,
-                openEvent = {
-                },
-            )
         }
     }
 }

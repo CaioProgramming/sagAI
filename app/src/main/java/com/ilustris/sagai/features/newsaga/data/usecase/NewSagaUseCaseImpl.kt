@@ -349,13 +349,12 @@ class NewSagaUseCaseImpl
         ): Flow<AgenticFlowResponse> =
             flow {
                 try {
-                    val targetLanguage = getSessionLanguage()
+                    getSessionLanguage()
                     if (lockedSaga == null) {
                         reasoningSynthesizerService
                             .synthesizeReasoning(
                                 sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt),
                                 context = "Curating your cosmic library",
-                                targetLanguage = targetLanguage,
                             ).collect { streamingState ->
                                 when (streamingState) {
                                     is StreamingState.Reasoning -> {
@@ -405,7 +404,6 @@ class NewSagaUseCaseImpl
                                     ),
                                 context = "Creating characters for the saga",
                                 conversationStyle = conversationStyle,
-                                targetLanguage = targetLanguage,
                                 genre = lockedSaga.genre.name,
                             ).collect { streamingState ->
                                 when (streamingState) {
@@ -453,7 +451,7 @@ class NewSagaUseCaseImpl
             flow {
                 try {
                     val identity = genreConfigService.conversationBlueprint(sagaDraft.genre)
-                    val targetLanguage = getSessionLanguage()
+                    getSessionLanguage()
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
@@ -465,7 +463,6 @@ class NewSagaUseCaseImpl
                                 ),
                             context = "Sealing the Sacred Contract for ${sagaDraft.title}",
                             conversationStyle = identity,
-                            targetLanguage = targetLanguage,
                             genre = sagaDraft.genre.name,
                         ).collect { streamingState ->
                             when (streamingState) {

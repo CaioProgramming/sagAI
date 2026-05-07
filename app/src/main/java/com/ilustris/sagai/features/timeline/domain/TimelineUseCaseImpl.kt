@@ -5,13 +5,16 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -34,11 +37,12 @@ class TimelineUseCaseImpl
         private val emotionalUseCase: EmotionalUseCase,
         private val wikiUseCase: WikiUseCase,
         private val characterUseCase: CharacterUseCase,
-        private val characterRelationUseCase: com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase,
+        private val characterRelationUseCase: CharacterRelationUseCase,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
-        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
+        private val genreConfigService: GenreConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : TimelineUseCase {
         override suspend fun getAllTimelines() = timelineRepository.getAllTimelines()
 
@@ -67,11 +71,8 @@ class TimelineUseCaseImpl
                 )!!
 
             updateTimeline(
-                timelineContent.data.copy(
-                    title = unifiedLore.title,
-                    content = unifiedLore.content,
-                    emotionalReview = unifiedLore.emotionalReview,
-                    narrativeGuide = unifiedLore.narrativeGuide,
+                unifiedLore.event.copy(
+                    id = timelineContent.data.id,
                 ),
             )
 
@@ -130,10 +131,19 @@ class TimelineUseCaseImpl
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
 
-                gemmaClient
-                    .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
-                        prompt = prompt,
-                        blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                val conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre)
+
+                reasoningSynthesizerService
+                    .synthesizeReasoning(
+                        sourceFlow =
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
+                                    prompt = prompt,
+                                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                                ),
+                        context = "Generating new lore...",
+                        conversationStyle = conversationStyle,
+                        genre = saga.data.genre.name,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -142,11 +152,10 @@ class TimelineUseCaseImpl
                                 // 1. Update Timeline Details
                                 val timelineUpdate =
                                     updateTimeline(
-                                        timelineContent.data.copy(
-                                            title = unifiedLore.title,
-                                            content = unifiedLore.content,
-                                            emotionalReview = unifiedLore.emotionalReview,
-                                            narrativeGuide = unifiedLore.narrativeGuide,
+                                        unifiedLore.event.copy(
+                                            id = timelineContent.data.id,
+                                            chapterId = timelineContent.data.chapterId,
+                                            createdAt = timelineContent.data.createdAt,
                                         ),
                                     )
 

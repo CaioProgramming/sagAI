@@ -57,7 +57,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -118,7 +117,6 @@ import kotlin.time.DurationUnit
 @Composable
 fun TimeLineContent(
     saga: SagaContent,
-    insight: String?,
     title: String,
     subtitle: String,
     onBackClick: () -> Unit = {},
@@ -160,8 +158,7 @@ fun TimeLineContent(
                                                     "timeline-content-header",
                                                 ),
                                                 this,
-                                            )
-                                            .background(MaterialTheme.colorScheme.background)
+                                            ).background(MaterialTheme.colorScheme.background)
                                             .fillMaxWidth()
                                             .statusBarsPadding()
                                             .padding(horizontal = 16.dp),
@@ -186,41 +183,9 @@ fun TimeLineContent(
                                                         "timeline-content-header",
                                                     ),
                                                     this@AnimatedContent,
-                                                )
-                                                .padding(16.dp)
+                                                ).padding(16.dp)
                                                 .fillMaxWidth(),
                                     )
-
-                                    if (insight.isNullOrBlank()) {
-                                        Box(
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth()
-                                                .height(80.dp)
-                                                .background(
-                                                    MaterialTheme.colorScheme.onBackground.copy(
-                                                        alpha = 0.1f,
-                                                    ),
-                                                    genre.shape(),
-                                                )
-                                                .reactiveShimmer(true),
-                                        )
-                                    } else {
-                                        Text(
-                                            insight,
-                                            style =
-                                                MaterialTheme.typography.bodyMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    textAlign = TextAlign.Center,
-                                                    fontStyle = FontStyle.Italic,
-                                                ),
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth()
-                                                    .alpha(.7f),
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -241,8 +206,7 @@ fun TimeLineContent(
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    )
-                                    .padding(16.dp),
+                                    ).padding(16.dp),
                         )
                     }
 
@@ -718,8 +682,7 @@ fun TimeLineSimpleCard(
             .background(
                 MaterialTheme.colorScheme.background,
                 shape,
-            )
-            .padding(16.dp)
+            ).padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {

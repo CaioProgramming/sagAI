@@ -7,33 +7,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
 fun ChaptersGalleryContent(
-    section: DetailSectionView.ChapterSection,
+    title: String,
+    subtitle: String,
+    saga: SagaContent,
+    chapters: List<ChapterContent>,
     onBackClick: () -> Unit = {},
 ) {
-    val genre = section.saga.data.genre
-    val chapters = section.chapters ?: emptyList()
+    val genre = saga.data.genre
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
     ) {
         stickyHeader {
             LargeHorizontalHeader(
-                section.title,
-                section.subtitle,
+                title,
+                subtitle,
                 titleStyle =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = genre.headerFont(),
@@ -50,28 +49,9 @@ fun ChaptersGalleryContent(
             )
         }
 
-        section.insight?.let {
-            item {
-                Text(
-                    section.insight,
-                    style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            textAlign = TextAlign.Center,
-                            fontStyle = FontStyle.Italic,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .alpha(.7f),
-                )
-            }
-        }
-
         itemsIndexed(chapters) { index, chapter ->
             ChapterContentView(
-                content = section.saga,
+                content = saga,
                 chapter = chapter,
                 modifier = Modifier.fillMaxWidth(),
                 isLast = index == chapters.lastIndex,

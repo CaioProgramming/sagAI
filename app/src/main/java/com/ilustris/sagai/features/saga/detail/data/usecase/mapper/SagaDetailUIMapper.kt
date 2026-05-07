@@ -75,21 +75,15 @@ class SagaDetailUIMapper(
     suspend fun buildSection(
         sagaContent: SagaContent,
         section: RequestSection,
-        insight: String? = null,
     ) = executeRequest {
         when (section) {
-            RequestSection.START -> createInitialSection(sagaContent, insight)
-            RequestSection.CHARACTERS -> createCharactersSection(sagaContent, insight)
-            RequestSection.WIKI -> createWikiSection(sagaContent, insight)
-            RequestSection.EVENTS -> createEventsSection(sagaContent, insight)
-            RequestSection.CHAPTERS -> createChaptersSection(sagaContent, insight)
-            RequestSection.ACTS -> createActsSection(sagaContent, insight)
+            RequestSection.START -> createInitialSection(sagaContent)
+            else -> createInitialSection(sagaContent)
         }
     }
 
     suspend fun createInitialSection(
         saga: SagaContent,
-        sagaResume: String? = null,
     ): DetailSectionView {
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val subtitle =
@@ -135,7 +129,6 @@ class SagaDetailUIMapper(
             title = saga.data.title,
             subtitle = subtitle,
             saga = saga,
-            sagaResume = sagaResume ?: saga.data.description,
             segmentedImage = segmentedImage,
             emotionalCard = emotionalCard,
             starring = saga.mainCharacter,
@@ -148,110 +141,7 @@ class SagaDetailUIMapper(
             readyToReview = saga.isComplete(narrativeRules),
         )
     }
-
-    suspend fun createCharactersSection(
-        sagaContent: SagaContent,
-        insight: String? = null,
-    ): DetailSectionView {
-        val characterRanking =
-            sagaContent
-                .flatMessages()
-                .rankTopCharacters(sagaContent.characters.map { it.data })
-                .mapNotNull {
-                    sagaContent.findCharacter(it.first.id)
-                }
-
-        val relationships =
-            sagaContent.relationships.sortedByDescending {
-                it.relationshipEvents.size
-            }
-
-        return DetailSectionView.CharacterSection(
-            title = stringResourceHelper.getString(R.string.saga_detail_section_title_characters),
-            subtitle =
-                stringResourceHelper.getString(
-                    R.string.saga_detail_section_subtitle_characters,
-                    sagaContent.characters.size,
-                ),
-            saga = sagaContent,
-            insight = insight,
-            characters = characterRanking,
-            relationships = relationships,
-        )
-    }
-
-    suspend fun createWikiSection(
-        sagaContent: SagaContent,
-        insight: String? = null,
-    ): DetailSectionView =
-        DetailSectionView.WikiSection(
-            saga = sagaContent,
-            title = stringResourceHelper.getString(R.string.saga_detail_section_title_wiki),
-            subtitle =
-                stringResourceHelper.getString(
-                    R.string.saga_detail_section_subtitle_wiki,
-                    sagaContent.wikis.size,
-                ),
-            insight = insight,
-            wikiGroup = wikiMapper.buildWikiGroups(sagaContent),
-        )
-
-    suspend fun createEventsSection(
-        sagaContent: SagaContent,
-        insight: String? = null,
-    ): DetailSectionView =
-        DetailSectionView.EventsSection(
-            title = stringResourceHelper.getString(R.string.saga_detail_section_title_timeline),
-            subtitle =
-                stringResourceHelper.getString(
-                    R.string.saga_detail_section_subtitle_timeline,
-                    sagaContent.eventsSize(),
-                ),
-            saga = sagaContent,
-            content = timelineMapper.buildTimelines(sagaContent),
-            insight = insight,
-        )
-
-    suspend fun createChaptersSection(
-        sagaContent: SagaContent,
-        insight: String? = null,
-    ): DetailSectionView {
-        val narrativeRules = remoteConfigService.getNarrativeRules()
-        val chapters = sagaContent.flatChapters().filter { it.isComplete(narrativeRules) }
-        return DetailSectionView.ChapterSection(
-            saga = sagaContent,
-            insight = insight,
-            title = stringResourceHelper.getString(R.string.saga_detail_section_title_chapters),
-            subtitle =
-                stringResourceHelper.getString(
-                    R.string.saga_detail_section_subtitle_chapters,
-                    chapters.size,
-                ),
-            chapters = chapters,
-        )
-    }
-
-    suspend fun createActsSection(
-        sagaContent: SagaContent,
-        insight: String? = null,
-    ): DetailSectionView {
-        val narrativeRules = remoteConfigService.getNarrativeRules()
-        val acts = sagaContent.acts.filter { it.isComplete(narrativeRules) }
-        return DetailSectionView.ActSection(
-            title = stringResourceHelper.getString(R.string.the_chronicles),
-            subtitle =
-                stringResourceHelper.getString(
-                    R.string.saga_detail_section_subtitle_acts,
-                    acts.size,
-                ),
-            saga = sagaContent,
-            insight = insight,
-            acts = acts,
-        )
-    }
 }
-
-private const val EMOTIONAL_CARD_CONFIG = "mental_card_icon"
 
 data class TimelineDrawer(
     val title: String,

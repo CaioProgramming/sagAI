@@ -1,12 +1,10 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shadow
@@ -37,109 +36,31 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.features.act.ui.ChronicleView
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
-import com.ilustris.sagai.features.chapter.ui.ChaptersGalleryContent
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction.OpenSection
 import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
-import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.shape
-
-@Composable
-fun DetailSectionView.RenderSection(
-    saga: SagaContent,
-    animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
-    onAction: (DetailAction) -> Unit = {},
-) {
-    when (this) {
-        is DetailSectionView.InitialSection -> {
-            SagaDetailInitialContent(
-                saga = saga,
-                section = this,
-                onAction = onAction,
-            )
-        }
-
-        is DetailSectionView.CharacterSection -> {
-            CharactersGalleryContent(
-                section = this,
-                animationScopes = animationScopes,
-                onOpenEvent = {
-                    onAction(OpenSection(RequestSection.EVENTS))
-                },
-            )
-        }
-
-        is DetailSectionView.WikiSection -> {
-            WikiContent(
-                title,
-                subtitle,
-                insight,
-                saga,
-                groups = wikiGroup,
-                onBackClick = {
-                    onAction(OpenSection(RequestSection.START))
-                },
-                reviewWiki = {
-                    onAction(DetailAction.ReviewWiki(it))
-                },
-            )
-        }
-
-        is DetailSectionView.EventsSection -> {
-            TimeLineContent(
-                saga,
-                this.insight,
-                this.title,
-                this.subtitle,
-                onBackClick = {
-                    onAction(OpenSection(RequestSection.START))
-                },
-            )
-        }
-
-        is DetailSectionView.ChapterSection -> {
-            ChaptersGalleryContent(
-                section = this,
-                onBackClick = {
-                    onAction(OpenSection(RequestSection.START))
-                },
-            )
-        }
-
-        is DetailSectionView.ActSection -> {
-            ChronicleView(
-                section = this,
-                saga = saga,
-                onClose = {
-                    onAction(OpenSection(RequestSection.START))
-                },
-            )
-        }
-    }
-}
 
 @Composable
 fun TimelineDrawer.renderDrawer(saga: SagaContent) {
@@ -181,8 +102,7 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                                     genre.resolveColor(),
                                     progress,
                                 ),
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                 )
             }
         }
@@ -274,6 +194,7 @@ fun DetailSectionView.InitialSection.miniSection(
     saga: SagaContent,
     onAction: (DetailAction) -> Unit,
 ) {
+    val currentActs = saga.acts
     val genre = saga.data.genre
     val sectionStyle =
         MaterialTheme.typography.titleSmall.copy(
@@ -282,31 +203,30 @@ fun DetailSectionView.InitialSection.miniSection(
         )
     when (section) {
         RequestSection.ACTS -> {
-            if (acts.isEmpty()) return
+            if (currentActs.isEmpty()) {
+                return
+            }
             Column(
                 Modifier
                     .padding(vertical = 16.dp)
                     .fillMaxWidth(),
             ) {
+                val books = saga.acts.mapNotNull { it.book }
                 RowHeader(
-                    stringResource(R.string.saga_detail_section_title_acts),
+                    stringResource(R.string.the_chronicles),
                     sectionStyle,
                 ) {
                     onAction(OpenSection(RequestSection.ACTS))
                 }
 
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier.padding(vertical = 16.dp),
-                ) {
-                    items(acts) { actContent ->
+                LazyRow(modifier = Modifier.padding(vertical = 8.dp)) {
+                    items(books) { book ->
                         val sagaBook =
-                            remember(actContent) {
-                                com.ilustris.sagai.features.newsaga.data.usecase.SagaBook(
+                            remember(book) {
+                                SagaBook(
                                     draft =
                                         com.ilustris.sagai.features.newsaga.data.model.SagaDraft(
-                                            title = actContent.data.title,
+                                            title = book.actTitle,
                                             genre = saga.data.genre,
                                             description = "",
                                         ),
@@ -320,17 +240,79 @@ fun DetailSectionView.InitialSection.miniSection(
                             isOpened = false,
                             isLoading = false,
                             onToggle = {
-                                onAction(DetailAction.OpenChronicles(actContent.data.id))
+                                onAction(DetailAction.OpenChronicles(null))
                             },
                             onAction = {},
                             modifier =
                                 Modifier
-                                    .grayScale(if (actContent.book != null) 1f else 0f)
                                     .width(160.dp)
                                     .height(240.dp),
                             titleModifier = Modifier,
                         )
                     }
+                }
+
+                if (currentActs.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth()
+                                .clip(genre.shape())
+                                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+                                .clickable {
+                                    onAction(OpenSection(RequestSection.ACTS))
+                                }.padding(16.dp),
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.Start,
+                            modifier =
+                                Modifier.weight(
+                                    1f,
+                                ),
+                        ) {
+                            Text(
+                                "Read your story",
+                                style =
+                                    MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                            )
+                            Text(
+                                "Read the story from start to beginning until now",
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = genre.bodyFont(),
+                                    ),
+                                modifier = Modifier.alpha(0.6f),
+                            )
+                        }
+
+                        Icon(
+                            painterResource(R.drawable.round_arrow_forward_ios_24),
+                            contentDescription = null,
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .size(24.dp),
+                        )
+                    }
+                } else {
+                    Text(
+                        "Continue playing to see your story here",
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
                 }
             }
         }
@@ -374,8 +356,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                             RequestSection.CHAPTERS,
                                         ),
                                     )
-                                }
-                                .padding(8.dp),
+                                }.padding(8.dp),
                             showTitle = false,
                         )
                     }
@@ -447,11 +428,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                 .clip(genre.shape())
                                 .padding(8.dp)
                                 .clickable {
-                                    onAction(
-                                        OpenSection(
-                                            RequestSection.CHARACTERS,
-                                        ),
-                                    )
+                                    onAction(DetailAction.OpenCharacter(char.id))
                                 },
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {

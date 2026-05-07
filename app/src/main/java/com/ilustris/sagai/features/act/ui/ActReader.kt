@@ -38,8 +38,6 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
-import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -52,30 +50,6 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
-fun ActsGalleryContent(
-    section: DetailSectionView.ActSection,
-    onBackClick: () -> Unit = {},
-    onAction: (DetailAction) -> Unit = {},
-) {
-    val saga = section.saga
-    val genre = section.saga.data.genre
-    val createdAt = section.saga.data.createdAt
-    val title = section.saga.data.title
-    val description = section.saga.data.description
-    ActReader(
-        acts = section.acts ?: emptyList(),
-        genre = genre,
-        createdAt = createdAt,
-        sagaTitle = title,
-        description = description,
-        endMessage = saga.data.endMessage,
-        emotionalReview = saga.data.emotionalReview,
-        insight = section.insight,
-        onReadChronicles = { onAction(DetailAction.OpenChronicles()) },
-    )
-}
-
-@Composable
 fun ActReader(
     acts: List<ActContent>,
     genre: Genre,
@@ -84,7 +58,6 @@ fun ActReader(
     description: String,
     endMessage: String,
     emotionalReview: String?,
-    insight: String? = null,
     onReadChronicles: () -> Unit = {},
 ) {
     LazyColumn {
@@ -93,34 +66,6 @@ fun ActReader(
         }
 
         item {
-            if (insight.isNullOrBlank()) {
-                Box(
-                    Modifier
-                        .padding(horizontal = 16.dp, vertical = 24.dp)
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .background(
-                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                            genre.shape(),
-                        ).reactiveShimmer(true),
-                )
-            } else {
-                Text(
-                    insight,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            textAlign = TextAlign.Center,
-                            fontStyle = FontStyle.Italic,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(horizontal = 16.dp, vertical = 24.dp)
-                            .fillMaxWidth()
-                            .alpha(.7f),
-                )
-            }
-
             Box(
                 Modifier
                     .fillMaxWidth()

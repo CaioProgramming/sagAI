@@ -204,13 +204,11 @@ class ImagenClientImpl
                 val finalAspectRatio =
                     when (imageType) {
                         ImageType.ICON -> {
-                            genreConfig.iconAspectRatio
-                                ?: typeConfig?.aspectRatio
+                            typeConfig?.aspectRatio
                         }
 
                         ImageType.COVER -> {
-                            genreConfig.coverAspectRatio
-                                ?: typeConfig?.aspectRatio
+                            typeConfig?.aspectRatio
                         }
                     } ?: ""
 

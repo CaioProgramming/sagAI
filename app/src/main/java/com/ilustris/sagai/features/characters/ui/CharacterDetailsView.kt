@@ -28,7 +28,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,23 +56,19 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
-import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
@@ -94,36 +89,31 @@ import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.shimmerize
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CharacterDetailsView(
-    sagaId: String? = null,
     characterId: Int? = null,
     onBack: () -> Unit = {},
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
-    val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val detailData by viewModel.characterDetailData.collectAsStateWithLifecycle()
 
-    LaunchedEffect(saga) {
-        if (saga == null) {
-            viewModel.loadSagaAndCharacter(sagaId, characterId)
-        }
+    LaunchedEffect(characterId) {
+        viewModel.loadCharacterDetails(characterId)
     }
 
-    AnimatedContent(saga, transitionSpec = {
+    AnimatedContent(detailData, transitionSpec = {
         slideInVertically { -it } togetherWith fadeOut()
     }) {
         if (it != null) {
-            CharacterDetailsContent(
-                it,
-                characterId,
-            )
+            CharacterDetailsContent(it)
         } else {
-            SparkIcon(
-                brush = gradientAnimation(holographicGradient),
-                duration = 1.seconds,
-                modifier = Modifier.size(50.dp),
-            )
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                SparkIcon(
+                    brush = gradientAnimation(holographicGradient),
+                    duration = 1.seconds,
+                    modifier = Modifier.size(50.dp),
+                )
+            }
         }
     }
 }
@@ -134,58 +124,30 @@ fun CharacterDetailsView(
 )
 @Composable
 fun CharacterDetailsContent(
-    sagaContent: SagaContent,
-    characterId: Int?,
+    detailData: CharacterDetailData,
     openEvent: (Timeline?) -> Unit = {},
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
-    val genre = sagaContent.data.genre
+    val genre = detailData.saga.genre
     val resolvedColor = genre.resolveColor()
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
     var shareCharacter by remember { mutableStateOf(false) }
 
-    val currentCharacter by viewModel.character.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val imageReasoning by viewModel.imageReasoning.collectAsStateWithLifecycle()
 
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
-    LaunchedEffect(characterId) {
-        viewModel.init(characterId, sagaContent)
-    }
-
-    AnimatedContent(
-        targetState = currentCharacter,
-        transitionSpec = {
-            fadeIn(tween(600)) togetherWith fadeOut(tween(200))
-        },
-        modifier = Modifier.blur(blurEffect),
-    ) { character ->
-        if (character != null) {
-            CharacterDetailsLoaded(
-                sagaContent = sagaContent,
-                characterContent = character,
-                openEvent = openEvent,
-                viewModel = viewModel,
-                onShareCharacter = { shareCharacter = true },
-                imagePalette = imagePalette,
-            )
-        } else {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                val genre = sagaContent.data.genre
-                Icon(
-                    painterResource(genre.icon),
-                    null,
-                    tint = genre.color,
-                    modifier =
-                        Modifier
-                            .genreVfx(genre)
-                            .size(64.dp),
-                )
-            }
-        }
+    Box(modifier = Modifier.blur(blurEffect)) {
+        CharacterDetailsLoaded(
+            detailData = detailData,
+            openEvent = openEvent,
+            viewModel = viewModel,
+            onShareCharacter = { shareCharacter = true },
+            imagePalette = imagePalette,
+        )
     }
 
     StarryLoader(
@@ -200,12 +162,15 @@ fun CharacterDetailsContent(
         brushColors = genre.colorPalette(),
     )
 
-    LaunchedEffect(currentCharacter?.data?.id) {
+    LaunchedEffect(detailData.character.id) {
         shareCharacter = false
     }
 
-    if (shareCharacter && currentCharacter != null) {
-        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, currentCharacter, onDismiss = {
+    if (shareCharacter) {
+        val characterContent =
+            remember(detailData.character) { CharacterContent(data = detailData.character) }
+        val sagaContent = remember(detailData.saga) { SagaContent(data = detailData.saga) }
+        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {
             shareCharacter = false
         })
     }
@@ -226,14 +191,15 @@ fun CharacterDetailsContent(
 )
 @Composable
 private fun CharacterDetailsLoaded(
-    sagaContent: SagaContent,
-    characterContent: CharacterContent,
+    detailData: CharacterDetailData,
     viewModel: CharacterDetailsViewModel,
     onShareCharacter: () -> Unit = {},
     imagePalette: ImagePalette? = null,
     openEvent: (Timeline?) -> Unit = {},
 ) {
-    val genre = sagaContent.data.genre
+    val saga = detailData.saga
+    val character = detailData.character
+    val genre = saga.genre
     val resolvedColor = genre.resolveColor()
     genre.resolveIconColor()
 
@@ -247,19 +213,25 @@ private fun CharacterDetailsLoaded(
     )
 
     val listState = rememberLazyListState()
-    val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
-    val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
-    val characterRelations = remember { characterContent.sortRelationsByTimeline(timelineEvents) }
+    val characterEvents = detailData.events
+    val characterRelations = detailData.relationships
+    val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
+
+    // Lite wrappers to satisfy legacy components without reloading the full graph
+    val liteSagaContent =
+        remember(saga) {
+            SagaContent(data = saga)
+        }
+    remember(character) { CharacterContent(data = character) }
 
     AnimatedContent(
-        characterContent.data,
+        character,
         transitionSpec = {
             fadeIn(tween(700)) togetherWith fadeOut(tween(200))
         },
-    ) { character ->
+    ) { characterData ->
         var imageError by remember { mutableStateOf(false) }
-        val characterColor = character.hexColor.hexToColor() ?: resolvedColor
-        val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
+        val characterColor = characterData.hexColor.hexToColor() ?: resolvedColor
 
         Box(
             modifier =
@@ -275,7 +247,7 @@ private fun CharacterDetailsLoaded(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
-                    if (character.image.isNotBlank() && !imageError) {
+                    if (characterData.image.isNotBlank() && !imageError) {
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier =
@@ -284,16 +256,16 @@ private fun CharacterDetailsLoaded(
                                     .fillParentMaxHeight(.6f),
                         ) {
                             DepthLayout(
-                                imagePath = character.image,
+                                imagePath = characterData.image,
                                 onLoadError = { imageError = true },
                                 modifier =
                                     Modifier
                                         .fillParentMaxHeight(.6f)
                                         .fillMaxSize()
-                                        .clickable(enabled = character.emojified || character.image.isEmpty()) {
+                                        .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
                                             viewModel.regenerate(
-                                                sagaContent,
-                                                character,
+                                                saga,
+                                                characterData,
                                             )
                                         },
                                 imageModifier =
@@ -306,11 +278,6 @@ private fun CharacterDetailsLoaded(
                                             translationY = 120f,
                                         ),
                             ) {
-                                // This content block is drawn BETWEEN the background and the
-                                // segmented foreground — the iOS lock screen trick.
-                                // The scrim fills the full parent height so the gradient has
-                                // plenty of room to melt from opaque into fully transparent,
-                                // with no hard cut-off line.
                                 Box(
                                     Modifier
                                         .align(Alignment.TopCenter)
@@ -318,7 +285,7 @@ private fun CharacterDetailsLoaded(
                                         .background(fadeGradientTop(adaptiveColor)),
                                 ) {
                                     genre.stylisedText(
-                                        text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                        text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
                                         modifier =
                                             Modifier
                                                 .align(Alignment.TopCenter)
@@ -330,7 +297,6 @@ private fun CharacterDetailsLoaded(
                                 }
                             }
 
-                            // Bottom gradient fade with share button — stays on top of everything.
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier =
@@ -355,8 +321,6 @@ private fun CharacterDetailsLoaded(
                             }
                         }
 
-                        // Occupation and nicknames sit cleanly below the depth hero image
-                        // so they are never obscured by the artwork.
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier =
@@ -365,7 +329,7 @@ private fun CharacterDetailsLoaded(
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
                         ) {
                             Text(
-                                character.profile.occupation,
+                                characterData.profile.occupation,
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = genre.bodyFont(),
@@ -374,7 +338,7 @@ private fun CharacterDetailsLoaded(
                                     ),
                             )
 
-                            character.nicknames?.let {
+                            characterData.nicknames?.let {
                                 if (it.isNotEmpty()) {
                                     Text(
                                         text =
@@ -401,8 +365,8 @@ private fun CharacterDetailsLoaded(
                                     .statusBarsPadding()
                                     .clickable {
                                         viewModel.regenerate(
-                                            sagaContent,
-                                            character,
+                                            saga,
+                                            characterData,
                                         )
                                     }.padding(16.dp)
                                     .size(100.dp)
@@ -410,7 +374,7 @@ private fun CharacterDetailsLoaded(
                             )
 
                             genre.stylisedText(
-                                text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -419,7 +383,7 @@ private fun CharacterDetailsLoaded(
                             )
 
                             Text(
-                                character.profile.occupation,
+                                characterData.profile.occupation,
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = genre.bodyFont(),
@@ -428,7 +392,7 @@ private fun CharacterDetailsLoaded(
                                     ),
                             )
 
-                            character.nicknames?.let {
+                            characterData.nicknames?.let {
                                 if (it.isNotEmpty()) {
                                     Text(
                                         text =
@@ -451,7 +415,7 @@ private fun CharacterDetailsLoaded(
 
                 item {
                     CharacterStats(
-                        character = character,
+                        character = characterData,
                         genre = genre,
                         contentColor = adaptiveTextColor,
                     )
@@ -510,7 +474,7 @@ private fun CharacterDetailsLoaded(
                         )
 
                         AnimatedContent(
-                            targetState = characterResume ?: character.backstory,
+                            targetState = characterResume ?: characterData.backstory,
                             transitionSpec = {
                                 fadeIn(tween(1000)) togetherWith fadeOut(tween(100))
                             },
@@ -553,7 +517,7 @@ private fun CharacterDetailsLoaded(
                         )
 
                         Text(
-                            character.profile.personality,
+                            characterData.profile.personality,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = genre.bodyFont(),
@@ -592,29 +556,23 @@ private fun CharacterDetailsLoaded(
                             items(
                                 characterRelations,
                             ) { relationContent ->
-                                sagaContent
-                                    .findCharacter(
-                                        relationContent
-                                            .getCharacterExcluding(
-                                                character,
-                                            ).id,
-                                    )?.let { relatedCharacter ->
-                                        SingleRelationShipCard(
-                                            saga = sagaContent,
-                                            character = relatedCharacter,
-                                            content = relationContent,
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .requiredWidthIn(max = 300.dp),
-                                        )
-                                    }
+                                val relatedCharacter =
+                                    relationContent.getCharacterExcluding(characterData)
+                                SingleRelationShipCard(
+                                    saga = liteSagaContent,
+                                    character = CharacterContent(data = relatedCharacter),
+                                    content = relationContent,
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .requiredWidthIn(max = 300.dp),
+                                )
                             }
                         }
                     }
                 }
 
-                if (characterContent.events.isNotEmpty()) {
+                if (characterEvents.isNotEmpty()) {
                     item {
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.onSurface.copy(.1f),
@@ -637,15 +595,15 @@ private fun CharacterDetailsLoaded(
                         )
                     }
 
-                    items(characterEvents) {
+                    items(items = characterEvents) { characterEvent ->
                         TimelineCharacterAttachment(
-                            it,
-                            sagaContent,
+                            eventDetails = characterEvent,
+                            sagaContent = liteSagaContent,
                             showIndicator = true,
-                            showSpark = character == sagaContent.mainCharacter,
-                            isLast = it == characterContent.events.last(),
-                            onSelectReference = {
-                                openEvent(it)
+                            showSpark = false, // Simplified for now
+                            isLast = characterEvent == characterEvents.last(),
+                            onSelectReference = { timeline ->
+                                openEvent(timeline)
                             },
                             modifier =
                                 Modifier
@@ -661,7 +619,7 @@ private fun CharacterDetailsLoaded(
                 animationSpec = tween(1500),
             )
             Text(
-                "${character.name} ${character.lastName ?: emptyString()}",
+                "${characterData.name} ${characterData.lastName ?: emptyString()}",
                 style =
                     MaterialTheme.typography.titleLarge.copy(
                         fontFamily = genre.headerFont(),

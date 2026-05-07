@@ -63,14 +63,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -108,6 +106,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
@@ -125,12 +124,10 @@ import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
-import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.milestone.ui.MilestoneOverlay
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -223,7 +220,7 @@ fun ChatView(
                 viewModel.handleAction(action)
                 when (action) {
                     is ChatUiAction.Back -> onBack()
-                    is ChatUiAction.OpenSagaDetails -> navigateToSaga()
+                    is ChatUiAction.OpenSagaDetails -> onSagaDetails()
                     else -> doNothing()
                 }
             }
@@ -378,8 +375,8 @@ fun ChatView(
                                         when (val data = it.data) {
                                             is Character -> {
                                                 onAction(
-                                                    ChatUiAction.UpdateCharacter(
-                                                        content?.findCharacter(it.data.id),
+                                                    ChatUiAction.OpenCharacter(
+                                                        it.data.id,
                                                     ),
                                                 )
                                             }
@@ -495,25 +492,6 @@ fun ChatView(
             }
 
             content.let {
-                uiState.revealCharacter?.let { requestedCharacter ->
-                    val bottomSheetState =
-                        rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                    ModalBottomSheet(
-                        onDismissRequest = { onAction(ChatUiAction.DismissCharacterReveal) },
-                        sheetState = bottomSheetState,
-                        containerColor = Color.Transparent,
-                        dragHandle = null,
-                    ) {
-                        CharacterDetailsContent(
-                            it,
-                            requestedCharacter.data.id,
-                            openEvent = {
-                                navigateToSaga()
-                            },
-                        )
-                    }
-                }
-
                 uiState.onboardingType?.let {
                     OnboardingDialog(
                         saga = content.data,
@@ -735,8 +713,8 @@ fun ChatContent(
                                             is MessageAction.ClickCharacter -> {
                                                 action.character?.let {
                                                     onAction(
-                                                        ChatUiAction.ShowCharacter(
-                                                            it,
+                                                        ChatUiAction.OpenCharacter(
+                                                            it.data.id,
                                                         ),
                                                     )
                                                 }
@@ -1088,7 +1066,7 @@ fun ChatContent(
                             )
                         }
 
-                        if (isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
+                        if (BuildConfig.DEBUG && isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
                             var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
                             val shape = RoundedCornerShape(content.data.genre.cornerSize())
                             Box(

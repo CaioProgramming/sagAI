@@ -9,7 +9,6 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -92,69 +91,5 @@ class SagaDetailUseCaseImpl
                         genreConfigService.conversationBlueprint(saga.data.genre),
                     )
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
-            }
-
-        override suspend fun generateSagaResume(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val narrativeRules = remoteConfigService.getNarrativeRules()
-
-                if (saga.completedChapters(narrativeRules) < 1) {
-                    return@executeRequest saga.data.description
-                }
-                val prompt =
-                    SagaPrompts.sagaResume(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
-                ) ?: saga.data.description
-            }
-
-        override suspend fun generateCharactersInsight(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val prompt =
-                    SagaPrompts.charactersInsight(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                ) ?: ""
-            }
-
-        override suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                if (saga.wikis.isEmpty()) return@executeRequest ""
-                val prompt =
-                    SagaPrompts.wikiInsight(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                ) ?: ""
-            }
-
-        override suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val narrativeRules = remoteConfigService.getNarrativeRules()
-                if (saga.completedEvents(narrativeRules) < 3) return@executeRequest ""
-                val prompt =
-                    SagaPrompts.timelineInsight(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                ) ?: ""
             }
     }

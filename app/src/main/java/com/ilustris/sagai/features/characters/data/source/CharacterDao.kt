@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -33,4 +34,10 @@ interface CharacterDao {
 
     @Query("SELECT TRIM(name || ' ' || IFNULL(lastName, '')) FROM Characters")
     suspend fun getAllCharacterNames(): List<String>
+
+    @androidx.room.Transaction
+    @Query(
+        "SELECT *, (SELECT COUNT(*) FROM messages WHERE characterId = Characters.id) as messageCount FROM Characters WHERE id = :characterId LIMIT 1",
+    )
+    fun getCharacterDetailDataById(characterId: Int): Flow<CharacterDetailData?>
 }

@@ -10,7 +10,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
@@ -26,11 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
@@ -43,14 +40,12 @@ import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun WikiContent(
     title: String,
     subtitle: String,
-    insight: String?,
     saga: SagaContent,
     groups: List<WikiGroup>,
     onBackClick: () -> Unit,
@@ -100,36 +95,6 @@ fun WikiContent(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 )
-            }
-
-            item(span = { GridItemSpan(2) }) {
-                if (insight.isNullOrBlank()) {
-                    Box(
-                        Modifier
-                            .padding(horizontal = 16.dp, vertical = 24.dp)
-                            .fillMaxWidth()
-                            .height(100.dp)
-                            .background(
-                                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                                genre.shape(),
-                            ).reactiveShimmer(true),
-                    )
-                } else {
-                    Text(
-                        insight,
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                                textAlign = TextAlign.Center,
-                                fontStyle = FontStyle.Italic,
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp, vertical = 24.dp)
-                                .fillMaxWidth()
-                                .alpha(.7f),
-                    )
-                }
             }
 
             groups.forEach {

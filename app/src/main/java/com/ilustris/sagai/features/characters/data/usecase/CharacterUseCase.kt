@@ -91,4 +91,6 @@ interface CharacterUseCase {
     suspend fun insertCharacterArc(characterArc: com.ilustris.sagai.features.characters.data.model.CharacterArc)
 
     fun getCharacterArcs(characterId: Int): Flow<List<com.ilustris.sagai.features.characters.data.model.CharacterArc>>
+
+    fun getCharacterDetailData(characterId: Int): Flow<com.ilustris.sagai.features.characters.data.model.CharacterDetailData?>
 }

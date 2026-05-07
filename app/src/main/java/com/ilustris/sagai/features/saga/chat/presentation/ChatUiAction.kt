@@ -50,10 +50,6 @@ sealed class ChatUiAction {
         val characterContent: CharacterContent?,
     ) : ChatUiAction()
 
-    data class ShowCharacter(
-        val characterContent: CharacterContent?,
-    ) : ChatUiAction()
-
     data class RegenerateAudio(
         val messageContent: MessageContent,
     ) : ChatUiAction()
@@ -102,8 +98,6 @@ sealed class ChatUiAction {
         val uri: android.net.Uri?,
     ) : ChatUiAction()
 
-    data object DismissCharacterReveal : ChatUiAction()
-
     data class RequestAudioTranscript(
         val show: Boolean,
     ) : ChatUiAction()
@@ -123,4 +117,8 @@ sealed class ChatUiAction {
     data object ShowObjective : ChatUiAction()
 
     data object StopGeneration : ChatUiAction()
+
+    data class OpenCharacter(
+        val characterId: Int,
+    ) : ChatUiAction()
 }

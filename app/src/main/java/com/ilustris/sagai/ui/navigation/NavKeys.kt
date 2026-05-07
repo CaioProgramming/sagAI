@@ -33,13 +33,37 @@ data class SagaDetailKey(
 ) : NavKey
 
 @Serializable
-data class CharacterDetailKey(
+data class SagaCharactersKey(
     val sagaId: String,
+) : NavKey
+
+@Serializable
+data class SagaWikiKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
+data class SagaEventsKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
+data class SagaActsKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
+data class CharacterDetailKey(
     val characterId: Int,
 ) : NavKey
 
 @Serializable
 data class SagaChaptersKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
+data class LoreDebugKey(
     val sagaId: String,
 ) : NavKey
 
@@ -94,7 +118,9 @@ fun String.findNavKey(): NavKey? {
         this.startsWith("saga://character_detail/") -> {
             val parts = this.removePrefix("saga://character_detail/").split("/")
             if (parts.size >= 2) {
-                CharacterDetailKey(parts[0], parts[1].toIntOrNull() ?: 0)
+                CharacterDetailKey(parts[1].toIntOrNull() ?: 0)
+            } else if (parts.isNotEmpty()) {
+                CharacterDetailKey(parts[0].toIntOrNull() ?: 0)
             } else {
                 null
             }
@@ -102,6 +128,10 @@ fun String.findNavKey(): NavKey? {
 
         this.startsWith("saga://saga_chapters/") -> {
             SagaChaptersKey(this.removePrefix("saga://saga_chapters/"))
+        }
+
+        this.startsWith("saga://lore_debug/") -> {
+            LoreDebugKey(this.removePrefix("saga://lore_debug/"))
         }
 
         else -> {

@@ -38,12 +38,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.components.BookReader
 import com.ilustris.sagai.features.act.ui.components.BookShelf
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
@@ -51,8 +51,10 @@ import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
 fun ChronicleView(
-    section: DetailSectionView.ActSection,
+    title: String,
+    subtitle: String,
     saga: SagaContent,
+    acts: List<ActContent>,
     initialActId: Int? = null,
     onClose: () -> Unit,
 ) {
@@ -156,8 +158,8 @@ fun ChronicleView(
 
                 AnimatedVisibility(isReading.not()) {
                     LargeHorizontalHeader(
-                        section.title,
-                        section.subtitle,
+                        title,
+                        subtitle,
                         titleStyle =
                             MaterialTheme.typography.displaySmall.copy(
                                 fontFamily = genre.headerFont(),
@@ -208,7 +210,7 @@ fun ChronicleView(
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 BookShelf(
                                     saga = saga,
-                                    acts = section.acts,
+                                    acts = acts,
                                     selectedBook = selectedBook,
                                     sharedTransitionScope = this@SharedTransitionLayout,
                                     animatedContentScope = this@AnimatedContent,
@@ -220,7 +222,7 @@ fun ChronicleView(
                                 )
                             }
                         } else {
-                            val acts = remember { saga.acts }
+                            val actsList = remember { saga.acts }
                             val isLast = saga.findAct(book.data.id) == saga.acts.last()
 
                             BookReader(
@@ -231,9 +233,9 @@ fun ChronicleView(
                                 isLast = isLast,
                                 onSelectNextVolume = {
                                     saga.findAct(book.data.id)?.let {
-                                        val index = acts.indexOf(it)
-                                        if (index != acts.lastIndex) {
-                                            viewModel.generateNextVolume(acts[index + 1])
+                                        val index = actsList.indexOf(it)
+                                        if (index != actsList.lastIndex) {
+                                            viewModel.generateNextVolume(actsList[index + 1])
                                         }
                                     }
                                 },

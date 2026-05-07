@@ -10,10 +10,12 @@ import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.findAct
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -44,11 +46,26 @@ class ChronicleViewModel
         private val bookUseCase: BookUseCase,
         private val sharePlayUseCase: SharePlayUseCase,
         private val visualConfigService: GenreVisualConfigService,
+        private val sagaRepository: SagaRepository,
     ) : ViewModel() {
         private val _state = MutableStateFlow<ChronicleState>(ChronicleState.Idle)
         val state = _state.asStateFlow()
 
+        private val _saga = MutableStateFlow<SagaContent?>(null)
+        val saga = _saga.asStateFlow()
+
         var currentSagaContent: SagaContent? = null
+
+        fun loadSaga(sagaId: Int) {
+            viewModelScope.launch {
+                sagaRepository.getSagaById(sagaId).collectLatest {
+                    _saga.value = it
+                    it?.let { sagaContent ->
+                        start(sagaContent)
+                    }
+                }
+        }
+    }
 
         private val _selectedBook = MutableStateFlow<ActContent?>(null)
         val selectedBook = _selectedBook.asStateFlow()
@@ -91,7 +108,7 @@ class ChronicleViewModel
                         volumeNumber,
                         saga.data.icon,
                         chapterCovers,
-                )
+                    )
                 if (result is com.ilustris.sagai.core.data.RequestResult.Success) {
                     val uriResult = sharePlayUseCase.loadWithFileProvider(result.value)
                     if (uriResult is com.ilustris.sagai.core.data.RequestResult.Success) {
@@ -162,7 +179,7 @@ class ChronicleViewModel
 
                         is StreamingState.Error -> {
                             _state.value = ChronicleState.Error(state.message)
-                    }
+                        }
 
                         is StreamingState.Reasoning -> {
                             _state.value = ChronicleState.Generating(actContent.data.title, state.chunk)

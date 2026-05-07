@@ -15,4 +15,6 @@ interface CharacterRepository {
     suspend fun getCharacterById(characterId: Int): Character?
 
     suspend fun getAllCharacterNames(): List<String>
+
+    fun getCharacterDetailData(characterId: Int): Flow<com.ilustris.sagai.features.characters.data.model.CharacterDetailData?>
 }
