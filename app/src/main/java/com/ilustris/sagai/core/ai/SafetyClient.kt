@@ -56,7 +56,7 @@ class SafetyClient
                         ),
                     )
 
-                val modelName = modelName(ModelRequirement.LOW)
+                val modelName = modelName(ModelRequirement.MEDIUM)
                 val apiKey = getApiKey()
 
                 val request =
@@ -129,9 +129,26 @@ class SafetyClient
 
         suspend fun modelName(requirement: ModelRequirement): String {
             val tierConfig =
-                remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
-            val modelName = tierConfig[requirement.name]
-            return modelName!!.replace("models/", "")
+                remoteConfigService.getJson<Map<String, Any>>("model_configs") ?: emptyMap()
+            return when (val config = tierConfig[requirement.name]) {
+                is String -> {
+                    config.replace("models/", "")
+                }
+
+                is Map<*, *> -> {
+                    val enabled = config["enabled"] as? Boolean ?: true
+                    if (!enabled) throw ModelOutageException(requirement)
+                    val model =
+                        config["model"] as? String
+                            ?: error("Model name not found in config for ${requirement.name}")
+                    model.replace("models/", "")
+                }
+
+                else -> {
+                    Timber.e("Invalid model configuration for ${requirement.name}: $config")
+                    error("Invalid model configuration for ${requirement.name}")
+                }
+            }
         }
 
         private suspend fun getApiKey(): String = remoteConfigService.getString(GemmaClient.CORE_FLAG, false)!!

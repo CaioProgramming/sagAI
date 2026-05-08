@@ -82,9 +82,26 @@ class GemmaClient
 
         suspend fun modelName(requirement: ModelRequirement): String {
             val tierConfig =
-                remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
-            val modelName = tierConfig[requirement.name]
-            return modelName!!.replace("models/", "")
+                remoteConfigService.getJson<Map<String, Any>>("model_configs") ?: emptyMap()
+            return when (val config = tierConfig[requirement.name]) {
+                is String -> {
+                    config.replace("models/", "")
+                }
+
+                is Map<*, *> -> {
+                    val enabled = config["enabled"] as? Boolean ?: true
+                    if (!enabled) throw ModelOutageException(requirement)
+                    val model =
+                        config["model"] as? String
+                            ?: error("Model name not found in config for ${requirement.name}")
+                    model.replace("models/", "")
+                }
+
+                else -> {
+                    Timber.e("Invalid model configuration for ${requirement.name}: $config")
+                    error("Invalid model configuration for ${requirement.name}")
+                }
+            }
         }
 
         suspend fun coreKey() =
@@ -141,7 +158,7 @@ class GemmaClient
                     if (logEnabled) Timber.i("generate: Core calls don't require delay.")
                 }
 
-                val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+                val maxAttempts = MAX_RETRIES + 1
                 val startTime = System.currentTimeMillis()
 
                 for (currentAttempt in 1..maxAttempts) {
@@ -386,9 +403,17 @@ class GemmaClient
                             }
                         }
 
+                        val isNetworkError = e is java.io.IOException
                         if (currentAttempt < maxAttempts) {
                             val delayToApply =
-                                if (isParsingError) 0L else (extractedDelay ?: RETRY_DELAY.toLong())
+                                when {
+                                    isParsingError -> 0L
+
+                                    isNetworkError -> 2L
+
+                                    // Quick retry for DNS/Network hiccups
+                                    else -> (extractedDelay ?: RETRY_DELAY.toLong())
+                                }
 
                             if (delayToApply > 0) {
                                 Timber
@@ -460,8 +485,7 @@ class GemmaClient
                         if (logEnabled) Timber.i("generateStreaming: Core calls don't require delay.")
                     }
 
-                    val maxAttempts =
-                        if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+                    val maxAttempts = MAX_RETRIES + 1
                     val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
@@ -681,15 +705,16 @@ class GemmaClient
                                 }
                             }
 
+                            val isNetworkError = e is java.io.IOException
                             if (currentAttempt < maxAttempts) {
                                 val delayToApply =
-                                    if (isParsingError) {
-                                        0L
-                                    } else {
-                                        (
-                                            extractedDelay
-                                                ?: RETRY_DELAY.toLong()
-                                        )
+                                    when {
+                                        isParsingError -> 0L
+
+                                        isNetworkError -> 2L
+
+                                        // Quick retry for DNS/Network hiccups
+                                        else -> (extractedDelay ?: RETRY_DELAY.toLong())
                                     }
                                 if (delayToApply > 0) delay(delayToApply.seconds)
                             } else {

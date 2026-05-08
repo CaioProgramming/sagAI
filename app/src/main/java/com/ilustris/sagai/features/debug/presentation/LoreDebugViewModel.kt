@@ -179,11 +179,15 @@ class LoreDebugViewModel
 
                 val actsToFix =
                     currentSaga.acts.filter {
-                        it.isComplete(rules) && (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty())
+                        it.isFull(rules.actUpdateLimit, rules) &&
+                            (
+                                it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() ||
+                                    it.data.content.isEmpty())
                     }
                 val chaptersToFix =
                     currentSaga.flatChapters().filter {
-                        it.isComplete(rules) && (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty())
+                        it.isFull(rules.chapterUpdateLimit, rules) &&
+                            (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() || it.data.overview.isEmpty())
                     }
                 val timelinesToFix =
                     currentSaga.flatEvents().filter {

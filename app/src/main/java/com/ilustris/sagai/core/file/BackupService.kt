@@ -98,7 +98,7 @@ class BackupService(
                 ZipInputStream(inputStream).use { zipStream ->
                     var entry = zipStream.nextEntry
                     while (entry != null) {
-                        if (entry.name == "$IMAGES_FOLDER/$iconFileName") {
+                        if (entry.name == iconFileName) {
                             return BitmapFactory.decodeStream(zipStream)
                         }
                         entry = zipStream.nextEntry
@@ -162,7 +162,7 @@ class BackupService(
                 title = saga.data.title,
                 description = saga.data.description,
                 genre = saga.data.genre,
-                iconName = File(saga.data.icon).name,
+                iconName = getRelativePath(saga.data.id, "icons", saga.data.icon),
                 lastBackup = System.currentTimeMillis(),
                 zipFileName = zipFileName,
             )
@@ -228,8 +228,8 @@ class BackupService(
             zipStream.write(sagaJson.toByteArray())
             zipStream.closeEntry()
 
-            val imagePaths = getAllImageFiles(saga)
-            imagePaths.forEach { (path, file) ->
+            val imageFiles = getAllImageFiles(saga)
+            imageFiles.forEach { (path, file) ->
                 if (file.exists()) {
                     zipStream.putNextEntry(ZipEntry(path))
                     FileInputStream(file).use { it.copyTo(zipStream) }
@@ -253,11 +253,21 @@ class BackupService(
         saga.copy(
             data =
                 saga.data.copy(
-                    icon = getFileRelativePath(saga.data.icon, saga.data.id),
+                    icon = getRelativePath(saga.data.id, "icons", saga.data.icon),
                 ),
             characters =
                 saga.characters.map {
-                    it.copy(data = it.data.copy(image = getFileRelativePath(it.data.image, saga.data.id)))
+                    it.copy(
+                        data =
+                            it.data.copy(
+                                image =
+                                    getRelativePath(
+                                        it.data.id,
+                                        "characters",
+                                        it.data.image,
+                                    ),
+                        )
+                    )
                 },
             acts =
                 saga.acts.map {
@@ -265,48 +275,59 @@ class BackupService(
                         chapters =
                             it.chapters.map {
                                 it.copy(
-                                    data = it.data.copy(coverImage = getFileRelativePath(it.data.coverImage, saga.data.id)),
+                                    data =
+                                        it.data.copy(
+                                            coverImage =
+                                                getRelativePath(
+                                                    it.data.id,
+                                                    "chapters",
+                                            it.data.coverImage,
+                                                ),
+                                        ),
                                 )
                             },
                     )
                 },
         )
 
-    private fun getFileRelativePath(
-        path: String,
-        sagaId: Int,
+    private fun getRelativePath(
+        id: Int,
+        folder: String,
+        originalPath: String,
     ): String {
-        val sagaBasePath = File(context.filesDir, "sagas/$sagaId").absolutePath + File.separator
-        val relativePath = { absolutePath: String ->
-            absolutePath.removePrefix(sagaBasePath)
-        }
-
-        return relativePath(path)
+        if (originalPath.isBlank()) return emptyString()
+        val extension = File(originalPath).extension.ifEmpty { "png" }
+        return "$folder/$id.$extension"
     }
 
     private fun getAllImageFiles(saga: SagaContent): List<Pair<String, File>> =
         buildList {
             val sagaId = saga.data.id
             if (saga.data.icon.isNotBlank()) {
-                add(getFileRelativePath(saga.data.icon, sagaId) to File(saga.data.icon))
+                add(getRelativePath(sagaId, "icons", saga.data.icon) to File(saga.data.icon))
             }
-            addAll(
-                saga.characters.mapNotNull {
-                    if (it.data.image.isNotBlank()) getFileRelativePath(it.data.image, sagaId) to File(it.data.image) else null
-                },
-            )
-            addAll(
-                saga.flatChapters().mapNotNull {
-                    if (it.data.coverImage.isNotBlank()) {
-                        getFileRelativePath(
-                            it.data.coverImage,
-                            sagaId,
+            saga.characters.forEach {
+                if (it.data.image.isNotBlank()) {
+                    add(
+                        getRelativePath(
+                            it.data.id,
+                            "characters",
+                            it.data.image,
+                        ) to File(it.data.image),
+                    )
+                }
+            }
+            saga.flatChapters().forEach {
+                if (it.data.coverImage.isNotBlank()) {
+                    add(
+                        getRelativePath(
+                            it.data.id,
+                            "chapters",
+                            it.data.coverImage
                         ) to File(it.data.coverImage)
-                    } else {
-                        null
-                    }
-                },
-            )
+                    )
+                }
+            }
         }
 
     suspend fun enableBackup(uri: Uri?) =
@@ -339,24 +360,18 @@ class BackupService(
         imageByteMap: List<Pair<String, ByteArray>>,
     ): MutableList<Pair<String, String>> {
         val pathTranslationMap = mutableListOf<Pair<String, String>>()
-        val sagaRoot = File(context.filesDir, "sagas/$newSagaId")
-        if (!sagaRoot.exists()) sagaRoot.mkdirs()
 
-        imageByteMap.forEach { (path, bytes) ->
+        imageByteMap.forEach { (relativePath, bytes) ->
+            val file = File(relativePath)
+            val folder = file.parent ?: return@forEach
+            val name = file.nameWithoutExtension
 
-            val destinationFile = File(sagaRoot, path)
+            val localPath = "sagas/$newSagaId/$folder"
+            val savedFile = fileHelper.saveFile(bytes, localPath, name)
 
-            // 2. Ensure the parent directory (e.g., ".../sagas/4/characters/") exists
-            val destinationDir = destinationFile.parentFile
-            if (destinationDir != null && !destinationDir.exists()) {
-                destinationDir.mkdirs()
+            if (savedFile != null) {
+                pathTranslationMap.add(relativePath to savedFile.absolutePath)
             }
-
-            // 3. Save the file's byte array to the correct destination
-            destinationDir?.path ?: return@forEach
-            val newFile = fileHelper.saveFile(bytes, destinationDir.path, destinationFile.name) ?: return@forEach
-
-            pathTranslationMap.add(path to newFile.absolutePath)
         }
         return pathTranslationMap
     }

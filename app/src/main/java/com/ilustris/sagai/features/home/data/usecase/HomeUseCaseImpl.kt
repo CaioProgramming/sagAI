@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -18,6 +19,7 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import javax.inject.Inject
@@ -29,7 +31,7 @@ class HomeUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val backupService: BackupService,
         private val sagaBackupService: SagaBackupService,
-        private val remoteConfig: com.ilustris.sagai.core.services.RemoteConfigService,
+        private val remoteConfig: RemoteConfigService,
         private val promptService: PromptService,
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val billingService: BillingService,
@@ -106,4 +108,16 @@ class HomeUseCaseImpl
                     }
                 },
             )
+
+        override suspend fun autoBackup(): RequestResult<Unit> =
+            executeRequest {
+                val isBackupEnabled = backupService.backupEnabled().first()
+                if (isBackupEnabled) {
+                    Timber.d("Auto-backup triggered, backing up all sagas...")
+                    val sagas = sagaRepository.getChats().first()
+                    sagas.forEach { saga ->
+                        backupService.backupSaga(saga)
+                    }
+            }
+        }
     }

@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,13 +43,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
@@ -135,6 +141,34 @@ fun CharactersGalleryContent(
                                     onOpenCharacter(character.data.id)
                                 },
                     )
+                }
+
+                if (relationships.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        RowHeader(
+                            stringResource(R.string.saga_detail_relationships_section_title),
+                            textStyle =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        ) {}
+                    }
+
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        LazyRow(Modifier.fillMaxWidth()) {
+                            items(relationships.size) { index ->
+                                val relationship = relationships[index]
+                                RelationShipCard(
+                                    content = relationship,
+                                    saga = saga,
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .requiredWidthIn(max = 300.dp),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

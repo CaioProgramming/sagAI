@@ -755,27 +755,33 @@ class ChatViewModel
                 ) { musicFile, sagaContent ->
                     musicFile
                 }.collectLatest { musicFile ->
-                    if (musicFile != null && musicFile.exists()) {
-                        Timber
-                            .tag(
-                                "ChatViewModel",
-                            ).d("Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}")
-                        val musicIntent =
-                            Intent(context, SagaPlaybackService::class.java).apply {
-                                action = SagaPlaybackService.ACTION_START
-                                putExtra(
-                                    SagaPlaybackService.EXTRA_MUSIC_PATH,
-                                    musicFile.absolutePath,
-                                )
-                            }
-                        context.startService(musicIntent)
-                    } else {
-                        Timber.tag("ChatViewModel").d("Music file not available. Instructing SagaPlaybackService to stop.")
-                        context.startService(
-                            Intent(context, SagaPlaybackService::class.java).apply {
-                                action = SagaPlaybackService.ACTION_STOP
-                            },
-                        )
+                    try {
+                        if (musicFile != null && musicFile.exists()) {
+                            Timber
+                                .tag(
+                                    "ChatViewModel",
+                                ).d("Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}")
+                            val musicIntent =
+                                Intent(context, SagaPlaybackService::class.java).apply {
+                                    action = SagaPlaybackService.ACTION_START
+                                    putExtra(
+                                        SagaPlaybackService.EXTRA_MUSIC_PATH,
+                                        musicFile.absolutePath,
+                                    )
+                                }
+                            context.startService(musicIntent)
+                        } else {
+                            Timber
+                                .tag("ChatViewModel")
+                                .d("Music file not available. Instructing SagaPlaybackService to stop.")
+                            context.startService(
+                                Intent(context, SagaPlaybackService::class.java).apply {
+                                    action = SagaPlaybackService.ACTION_STOP
+                                },
+                            )
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
             }

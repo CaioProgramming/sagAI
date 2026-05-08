@@ -489,41 +489,34 @@ class SagaContentManagerImpl
         }
 
         private suspend fun getReplySfx(saga: SagaContent) {
-            if (replySfxFile.value != null) return
             val genre = saga.data.genre
             withContext(Dispatchers.IO) {
                 val sfxMap = remoteConfig.getJson<Map<String, String>>("reply_sfx_config")
-                Timber.d("getReplySfx: RC map=$sfxMap genre=${genre.name}")
 
                 if (sfxMap.isNullOrEmpty()) {
                     Timber.w("getReplySfx: reply_sfx_config absent or empty")
                     return@withContext
                 }
 
-                suspend fun downloadSfx(url: String): File? {
-                    val ext = Uri.parse(url).path?.substringAfterLast(".", "mp3") ?: "mp3"
-                    return fileCacheService.getFile(url, ext)
-                }
-
-                val genreUrl = sfxMap[genre.name]
-                val defaultUrl = sfxMap["DEFAULT"]
-
-                val sfxFile =
-                    genreUrl?.let { downloadSfx(it) }
-                        ?: defaultUrl?.let {
-                            if (genreUrl != null) Timber.w("getReplySfx: ${genre.name} download failed, using DEFAULT")
-                            downloadSfx(it)
-                        }
-
-                Timber.d("getReplySfx: sfxFile=$sfxFile")
-                if (sfxFile == null) {
-                    Timber.e("getReplySfx: Could not download SFX for ${genre.name} or DEFAULT")
+                val finalUrl = sfxMap[genre.name] ?: sfxMap["DEFAULT"]
+                if (finalUrl.isNullOrEmpty()) {
+                    Timber.w("getReplySfx: No URL found for ${genre.name} or DEFAULT")
+                    if (replySfxFile.value != null) replySfxFile.emit(null)
                     return@withContext
                 }
 
-                replySfxFile.emit(sfxFile)
-                soundFxService.prepare(sfxFile)
-                Timber.d("getReplySfx: SFX ready for ${genre.name} — ${sfxFile.name}")
+                val extension = Uri.parse(finalUrl).path?.substringAfterLast(".", "mp3") ?: "mp3"
+                val sfxFile = fileCacheService.getFile(finalUrl, extension)
+
+                if (sfxFile?.absolutePath != replySfxFile.value?.absolutePath) {
+                    replySfxFile.emit(sfxFile)
+                    sfxFile?.let {
+                        soundFxService.prepare(it)
+                        Timber.d("getReplySfx: SFX updated for ${genre.name} — ${it.name}")
+                    }
+                } else if (sfxFile == null && replySfxFile.value != null) {
+                    replySfxFile.emit(null)
+                }
             }
         }
 

@@ -21,9 +21,9 @@ import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 
 enum class RequestSection {
+    CHARACTERS,
     EVENTS,
 
-    CHARACTERS,
     WIKI,
     CHAPTERS,
     ACTS,
@@ -82,9 +82,7 @@ class SagaDetailUIMapper(
         }
     }
 
-    suspend fun createInitialSection(
-        saga: SagaContent,
-    ): DetailSectionView {
+    suspend fun createInitialSection(saga: SagaContent): DetailSectionView {
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val subtitle =
             if (saga.data.isEnded) {

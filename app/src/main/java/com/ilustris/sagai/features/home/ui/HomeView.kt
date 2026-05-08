@@ -155,6 +155,7 @@ fun HomeView(
 
     LaunchedEffect(Unit) {
         viewModel.checkForBackups()
+        viewModel.autoBackup()
     }
 
     BackHandler(enabled = drawerState.isOpen) {

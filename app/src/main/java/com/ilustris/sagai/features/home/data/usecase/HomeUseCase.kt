@@ -26,4 +26,6 @@ interface HomeUseCase {
     suspend fun recoverSaga(sagaContent: RestorableSaga): RequestResult<SagaContent>
 
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
+
+    suspend fun autoBackup(): RequestResult<Unit>
 }

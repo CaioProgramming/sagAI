@@ -140,6 +140,11 @@ class TimelineUseCaseImpl
                                 .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
                                     prompt = prompt,
                                     blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                                    filterOutputFields =
+                                        listOf(
+                                            "id",
+                                            "timelineId",
+                                        ),
                                 ),
                         context = "Generating new lore...",
                         conversationStyle = conversationStyle,

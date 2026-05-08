@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
-import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
@@ -450,29 +448,6 @@ fun DetailSectionView.InitialSection.miniSection(
                                         textAlign = TextAlign.Center,
                                         fontFamily = saga.data.genre.bodyFont(),
                                     ),
-                            )
-                        }
-                    }
-                }
-                if (relationships.isNotEmpty()) {
-                    RowHeader(
-                        stringResource(R.string.saga_detail_relationships_section_title),
-                        textStyle =
-                        sectionStyle,
-                    ) {
-                        onAction(OpenSection(RequestSection.CHARACTERS))
-                    }
-
-                    LazyRow(Modifier.fillMaxWidth()) {
-                        items(relationships.size) { index ->
-                            val relationship = relationships[index]
-                            RelationShipCard(
-                                content = relationship,
-                                saga = saga,
-                                modifier =
-                                    Modifier
-                                        .padding(16.dp)
-                                        .requiredWidthIn(max = 300.dp),
                             )
                         }
                     }

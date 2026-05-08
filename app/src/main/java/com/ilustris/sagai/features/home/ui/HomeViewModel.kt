@@ -189,4 +189,15 @@ class HomeViewModel
                 }
             }
         }
+
+        private var isBackingUp = false
+
+        fun autoBackup() {
+            if (isBackingUp) return
+            viewModelScope.launch(Dispatchers.IO) {
+                isBackingUp = true
+                homeUseCase.autoBackup()
+                isBackingUp = false
+        }
+    }
     }

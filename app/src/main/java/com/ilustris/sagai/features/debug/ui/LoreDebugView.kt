@@ -38,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -98,6 +100,16 @@ fun LoreDebugView(
 
     LaunchedEffect(sagaId) {
         viewModel.loadSaga(sagaId.toIntOrNull() ?: 0)
+    }
+
+    val view = LocalView.current
+    DisposableEffect(uiState.isFixing) {
+        if (uiState.isFixing) {
+            view.keepScreenOn = true
+        }
+        onDispose {
+            view.keepScreenOn = false
+        }
     }
 
     Box(
@@ -220,13 +232,19 @@ fun LoreDebugView(
             val rules = NarrativeRules() // Fallback if RC not ready, but VM uses actual one
             val actsToFix =
                 saga.acts.count {
-                    it.isComplete(rules) &&
-                        (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty())
+                    it.isFull(rules.actUpdateLimit, rules) &&
+                        (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() || it.data.content.isEmpty())
                 }
             val chaptersToFix =
                 saga
                     .flatChapters()
-                    .count { it.isComplete(rules) && (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty()) }
+                    .count {
+                        it.isFull(rules.chapterUpdateLimit, rules) &&
+                            (
+                                it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() ||
+                                    it.data.overview.isEmpty()
+                            )
+                    }
             val timelinesToFix =
                 saga
                     .flatEvents()

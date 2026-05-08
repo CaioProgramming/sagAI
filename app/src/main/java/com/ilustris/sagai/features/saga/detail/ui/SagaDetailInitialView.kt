@@ -29,7 +29,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -397,63 +396,6 @@ fun SagaDetailInitialContent(
                                 }
                             }
 
-                            item(span = { GridItemSpan(columnCount) }) {
-                                Column(
-                                    Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth()
-                                        .height(150.dp)
-                                        .clip(genre.shape())
-                                        .background(
-                                            MaterialTheme.colorScheme.onBackground.copy(
-                                                alpha = 0.05f,
-                                            ),
-                                        ).clickable {
-                                            onAction(DetailAction.OpenSection(RequestSection.ACTS))
-                                        },
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    Text(
-                                        "Read your story",
-                                        style =
-                                            MaterialTheme.typography.titleMedium.copy(
-                                                fontFamily = genre.headerFont(),
-                                                color = genre.resolveColor(),
-                                            ),
-                                    )
-                                    Text(
-                                        "Read the story from start to beginning until now",
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontFamily = genre.bodyFont(),
-                                            ),
-                                        modifier = Modifier.alpha(0.6f),
-                                    )
-                                    Icon(
-                                        painterResource(R.drawable.round_arrow_forward_ios_24),
-                                        contentDescription = null,
-                                        modifier =
-                                            Modifier
-                                                .padding(top = 16.dp)
-                                                .size(24.dp),
-                                        tint = genre.resolveColor(),
-                                    )
-                                }
-                            }
-
-                            RequestSection.entries.forEach {
-                                if (it != RequestSection.ACTS) {
-                                    item(span = { GridItemSpan(columnCount) }) {
-                                        section.miniSection(it, saga, onAction)
-                                    }
-                                }
-                            }
-
-                            item(span = { GridItemSpan(columnCount) }) {
-                                section.miniSection(RequestSection.ACTS, saga, onAction)
-                            }
-
                             if (saga.data.isEnded) {
                                 item(span = { GridItemSpan(columnCount) }) {
                                     RecapHeroCard(
@@ -576,6 +518,12 @@ fun SagaDetailInitialContent(
                                             )
                                         }
                                     }
+                                }
+                            }
+
+                            RequestSection.entries.forEach {
+                                item(span = { GridItemSpan(columnCount) }) {
+                                    section.miniSection(it, saga, onAction)
                                 }
                             }
 
