@@ -174,6 +174,7 @@ class MainActivity : ComponentActivity() {
                                                         padding,
                                                         snackbarHostState,
                                                         this@SharedTransitionLayout,
+                                                        this@AnimatedContent,
                                                     ),
                                                 ),
                                             onBack = { navigator.goBack() },

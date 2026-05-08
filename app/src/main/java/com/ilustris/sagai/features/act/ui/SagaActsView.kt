@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.act.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
@@ -27,9 +27,9 @@ import com.ilustris.sagai.ui.components.SectionLoading
 fun SagaActsView(
     sagaId: String,
     onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     viewModel: ChronicleViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
 
@@ -65,18 +65,12 @@ fun SagaActsView(
                     acts = sagaContent.acts,
                     onClose = onBack,
                     titleModifier =
-                        Modifier.then(
-                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedBounds(
-                                        rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                    )
-                                }
-                            } else {
-                                Modifier
-                            },
-                        ),
+                        with(sharedTransitionScope) {
+                            Modifier.sharedBounds(
+                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        },
                 )
             } else {
                 SectionLoading()

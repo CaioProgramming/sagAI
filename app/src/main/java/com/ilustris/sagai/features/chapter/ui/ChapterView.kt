@@ -4,7 +4,7 @@ package com.ilustris.sagai.features.chapter.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
@@ -30,9 +30,9 @@ import com.ilustris.sagai.ui.components.SectionLoading
 fun ChapterView(
     sagaId: String,
     onBack: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     viewModel: ChapterViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
 
@@ -69,18 +69,12 @@ fun ChapterView(
                     chapters = chapters,
                     onBackClick = onBack,
                     titleModifier =
-                        Modifier.then(
-                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedBounds(
-                                        rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                    )
-                                }
-                            } else {
-                                Modifier
-                            },
-                        ),
+                        with(sharedTransitionScope) {
+                            Modifier.sharedBounds(
+                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        },
                 )
             } else {
                 SectionLoading()

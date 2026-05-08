@@ -2,7 +2,9 @@
 
 package com.ilustris.sagai.features.characters.ui
 
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,7 +82,8 @@ fun CharactersGalleryContent(
     onOpenCharacter: (Int) -> Unit = {},
     onBackClick: () -> Unit = {},
     titleModifier: Modifier = Modifier,
-    animationScopes: Pair<androidx.compose.animation.SharedTransitionScope, androidx.compose.animation.AnimatedVisibilityScope>? = null,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val genre = saga.data.genre
 
@@ -137,11 +140,7 @@ fun CharactersGalleryContent(
         }
     }
 
-    if (animationScopes != null) {
-        with(animationScopes.first) {
-            content()
-        }
-    } else {
+    with(sharedTransitionScope) {
         content()
     }
 }

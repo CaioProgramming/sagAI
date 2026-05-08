@@ -4,8 +4,10 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -82,8 +84,8 @@ fun SagaDetailView(
     onCharacterDetails: (Int) -> Unit = {},
     onLoreDebug: () -> Unit = {},
     viewModel: SagaDetailViewModel = hiltViewModel(),
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -282,8 +284,8 @@ fun SagaDetailContentView(
     drawer: TimelineDrawer?,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

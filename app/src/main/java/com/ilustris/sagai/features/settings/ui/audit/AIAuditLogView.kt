@@ -1,8 +1,9 @@
 package com.ilustris.sagai.features.settings.ui.audit
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.scaleIn
@@ -87,6 +88,8 @@ import kotlin.time.Duration.Companion.seconds
 fun AIAuditLogView(
     onBack: () -> Unit,
     viewModel: AIAuditLogViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
     val statusFilter by viewModel.statusFilter.collectAsState()
@@ -201,6 +204,8 @@ fun AIAuditLogView(
             PipelineInsightCard(
                 insight = pipelineInsight,
                 isLoading = isPipelineInsightLoading,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
         item {
@@ -211,7 +216,8 @@ fun AIAuditLogView(
                             .fillMaxWidth()
                             .horizontalScroll(
                                 androidx.compose.foundation.rememberScrollState(),
-                            ).padding(bottom = 8.dp),
+                            )
+                            .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -564,7 +570,8 @@ fun AuditLogItem(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(8.dp),
-                                ).padding(8.dp),
+                                )
+                                .padding(8.dp),
                     ) {
                         Text(
                             text = log.reasoning,
@@ -586,7 +593,8 @@ fun AuditLogItem(
                                 .background(
                                     Color(0xFF1E1E1E),
                                     RoundedCornerShape(8.dp),
-                                ).padding(12.dp),
+                                )
+                                .padding(12.dp),
                     ) {
                         JsonCodeBlock(jsonString = log.rawResponse)
                     }
@@ -720,8 +728,10 @@ fun JsonCodeBlock(jsonString: String) {
 fun PipelineInsightCard(
     insight: String?,
     isLoading: Boolean,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
-    SharedTransitionLayout {
+    with(sharedTransitionScope) {
         AnimatedContent(insight) {
             if (it == null) {
                 Box(
@@ -738,7 +748,7 @@ fun PipelineInsightCard(
                             Modifier
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
-                                    this@AnimatedContent,
+                                    animatedVisibilityScope,
                                 )
                                 .size(50.dp)
                                 .reactiveShimmer(

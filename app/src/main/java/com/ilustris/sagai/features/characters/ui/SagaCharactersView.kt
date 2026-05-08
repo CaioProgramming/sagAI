@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
@@ -29,9 +29,9 @@ fun SagaCharactersView(
     sagaId: String,
     onBack: () -> Unit,
     onCharacterDetails: (Int) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     viewModel: CharacterViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
 
@@ -68,25 +68,15 @@ fun SagaCharactersView(
                     relationships = sagaContent.relationships,
                     onOpenCharacter = onCharacterDetails,
                     onBackClick = onBack,
-                    animationScopes =
-                        if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                            sharedTransitionScope to animatedVisibilityScope
-                        } else {
-                            null
-                        },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
                     titleModifier =
-                        Modifier.then(
-                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedBounds(
-                                        rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                    )
-                                }
-                            } else {
-                                Modifier
-                            },
-                        ),
+                        with(sharedTransitionScope) {
+                            Modifier.sharedBounds(
+                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        },
                 )
             } else {
                 SectionLoading()

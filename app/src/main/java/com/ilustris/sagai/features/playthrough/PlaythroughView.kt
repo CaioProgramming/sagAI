@@ -1,6 +1,9 @@
 package com.ilustris.sagai.features.playthrough
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
@@ -50,10 +53,12 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun PlaythroughView(
     onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     viewModel: PlaythroughViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -227,7 +232,10 @@ fun PlaythroughView(
                             )
 
                             Box(
-                                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 32.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(

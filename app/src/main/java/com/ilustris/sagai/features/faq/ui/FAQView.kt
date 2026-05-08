@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.faq.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -65,10 +64,12 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 fun FAQView(
     viewModel: FAQViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val state by viewModel.faqState.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
-    SharedTransitionLayout {
+    with(sharedTransitionScope) {
         AnimatedContent(state, transitionSpec = {
             fadeIn() + slideInVertically() togetherWith fadeOut() + slideOutVertically()
         }) { faqState ->

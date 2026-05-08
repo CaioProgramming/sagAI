@@ -132,6 +132,7 @@ fun HomeView(
     navToAuditLogs: () -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
     sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())

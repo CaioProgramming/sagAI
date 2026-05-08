@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -97,9 +97,9 @@ import kotlin.time.Duration.Companion.seconds
 fun CharacterDetailsView(
     characterId: Int? = null,
     onBack: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val detailData by viewModel.characterDetailData.collectAsStateWithLifecycle()
 
@@ -135,9 +135,9 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     detailData: CharacterDetailData,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     openEvent: (Timeline?) -> Unit = {},
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
     val genre = detailData.saga.genre
@@ -286,7 +286,8 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        ).graphicsLayer(
+                                        )
+                                        .graphicsLayer(
                                             translationY = 120f,
                                         ),
                             ) {
@@ -380,7 +381,8 @@ private fun CharacterDetailsLoaded(
                                             saga,
                                             characterData,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -507,7 +509,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

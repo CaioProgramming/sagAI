@@ -5,6 +5,8 @@ package com.ilustris.sagai.features.settings.ui
 import ai.atick.material.MaterialColor
 import android.Manifest
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -85,6 +87,8 @@ fun SettingsView(
     navToPlaythrough: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     onOpenPremiumOnboarding: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle(false)
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
@@ -178,17 +182,21 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).clickable {
+                        )
+                        .clickable {
                             navToPlaythrough()
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -225,7 +233,8 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(12.dp),
+                        )
+                        .padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -266,9 +275,11 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).clickable {
+                            )
+                            .clickable {
                                 viewModel.clearCache()
-                            }.padding(16.dp),
+                            }
+                            .padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -316,7 +327,8 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -401,7 +413,8 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    ).padding(8.dp),
+                    )
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
@@ -594,7 +607,8 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(8.dp),
+                        )
+                        .padding(8.dp),
             )
         }
 

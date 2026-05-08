@@ -3,7 +3,9 @@
 package com.ilustris.sagai.features.newsaga.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -95,6 +97,8 @@ fun NewSagaView(
     onBack: () -> Unit = {},
     onNavigate: (NavKey) -> Unit = {},
     viewModel: NewSagaViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val isReadyToSave by viewModel.isReadyToSave.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -340,8 +344,7 @@ fun NewSagaView(
                                                         this.color = color
                                                         this.radius = 5f
                                                         this.spread = 5f
-                                                    }
-                                                    .fillMaxWidth(),
+                                                    }.fillMaxWidth(),
                                             shape = buttonShape,
                                             enabled = !isSaving,
                                             colors =
@@ -438,8 +441,7 @@ fun PromptBar(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = themeBrush
-                }
-                .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
+                }.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
                 .background(MaterialTheme.colorScheme.background, shape)
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,

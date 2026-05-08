@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.navigation
 
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.SnackbarHostState
@@ -27,6 +28,7 @@ fun createSagaEntryProvider(
     padding: PaddingValues,
     snackbarHostState: SnackbarHostState,
     sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) = entryProvider {
     entry<HomeKey> {
         HomeView(
@@ -36,6 +38,8 @@ fun createSagaEntryProvider(
             navToFAQ = { navigator.navigate(FAQKey) },
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             padding = padding,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -46,26 +50,42 @@ fun createSagaEntryProvider(
             navToFAQ = { navigator.navigate(FAQKey) },
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
             navToPlaythrough = { navigator.navigate(PlaythroughKey) },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
     entry<PlaythroughKey> {
-        PlaythroughView(onBack = { navigator.goBack() })
+        PlaythroughView(
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 
     entry<FAQKey> {
-        FAQView(onBack = { navigator.goBack() })
+        FAQView(
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 
     entry<NewSagaKey> {
         NewSagaView(
             onBack = { navigator.goBack() },
             onNavigate = { key -> navigator.navigate(key) },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
     entry<AuditLogsKey> {
-        AIAuditLogView(onBack = { navigator.goBack() })
+        AIAuditLogView(
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 
     entry<ChatKey> { key ->
@@ -81,6 +101,7 @@ fun createSagaEntryProvider(
                 navigator.navigate(SagaDetailKey(key.sagaId))
             },
             sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -100,7 +121,7 @@ fun createSagaEntryProvider(
             },
             onLoreDebug = { navigator.navigate(LoreDebugKey(key.sagaId)) },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -112,7 +133,7 @@ fun createSagaEntryProvider(
                 navigator.navigate(CharacterDetailKey(characterId))
             },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -121,7 +142,7 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -130,7 +151,7 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -139,7 +160,7 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -148,7 +169,7 @@ fun createSagaEntryProvider(
             characterId = key.characterId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -157,7 +178,7 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = null,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -166,6 +187,8 @@ fun createSagaEntryProvider(
             LoreDebugView(
                 sagaId = key.sagaId,
                 onBack = { navigator.goBack() },
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
     }

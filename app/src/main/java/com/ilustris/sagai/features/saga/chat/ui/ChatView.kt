@@ -200,6 +200,7 @@ fun ChatView(
     onCharacterDetails: (Int) -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     fun navigateToSaga() {
         sagaId ?: return
