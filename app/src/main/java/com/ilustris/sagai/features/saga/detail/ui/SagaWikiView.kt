@@ -1,6 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
-
-package com.ilustris.sagai.features.chapter.ui
+package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -22,52 +20,55 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
-import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.wiki.presentation.WikiViewModel
 import com.ilustris.sagai.ui.components.SectionLoading
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun ChapterView(
+fun SagaWikiView(
     sagaId: String,
-    onBack: () -> Unit = {},
-    viewModel: ChapterViewModel = hiltViewModel(),
+    onBack: () -> Unit,
+    viewModel: WikiViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val groups by viewModel.wikiGroups.collectAsStateWithLifecycle()
 
     BackHandler {
         onBack()
     }
 
     LaunchedEffect(Unit) {
-        viewModel.loadSaga(sagaId)
+        viewModel.loadSaga(sagaId.toInt())
     }
 
     Box(
         Modifier
             .fillMaxSize()
             .statusBarsPadding(),
-            ) {
+    ) {
         AnimatedContent(
             saga,
             transitionSpec = {
                 fadeIn(tween(500)) togetherWith fadeOut(tween(400))
             },
-            label = "SagaChaptersContent",
+            label = "SagaWikiContent",
         ) { sagaContent ->
             if (sagaContent != null) {
-                val chapters = sagaContent.flatChapters()
-                ChaptersGalleryContent(
-                    title = stringResource(R.string.saga_detail_section_title_chapters),
+                WikiContent(
+                    title = stringResource(R.string.saga_detail_section_title_wiki),
                     subtitle =
                         stringResource(
-                            R.string.saga_detail_section_subtitle_chapters,
-                            chapters.size,
+                            R.string.saga_detail_section_subtitle_wiki,
+                            sagaContent.wikis.size,
                         ),
                     saga = sagaContent,
-                    chapters = chapters,
+                    groups = groups,
                     onBackClick = onBack,
+                    reviewWiki = {
+                        viewModel.reviewWiki(it)
+                    },
                     titleModifier =
                         Modifier.then(
                             if (sharedTransitionScope != null && animatedVisibilityScope != null) {

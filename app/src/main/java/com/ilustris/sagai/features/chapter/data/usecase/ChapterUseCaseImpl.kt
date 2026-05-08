@@ -146,6 +146,7 @@ class ChapterUseCaseImpl
                                             actId = chapterContent.data.actId,
                                             coverImage = chapterContent.data.coverImage,
                                             introduction = chapterContent.data.introduction,
+                                            createdAt = chapterContent.data.createdAt,
                                         ),
                                     )
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -454,6 +455,7 @@ class ChapterUseCaseImpl
                                                 currentEventId = chapterContent.data.currentEventId,
                                                 actId = chapterContent.data.actId,
                                                 coverImage = chapterContent.data.coverImage,
+                                                createdAt = chapterContent.data.createdAt,
                                             ),
                                         )
 

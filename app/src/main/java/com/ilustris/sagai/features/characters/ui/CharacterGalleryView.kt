@@ -2,9 +2,7 @@
 
 package com.ilustris.sagai.features.characters.ui
 
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -82,11 +80,11 @@ fun CharactersGalleryContent(
     onOpenCharacter: (Int) -> Unit = {},
     onBackClick: () -> Unit = {},
     titleModifier: Modifier = Modifier,
-    animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
+    animationScopes: Pair<androidx.compose.animation.SharedTransitionScope, androidx.compose.animation.AnimatedVisibilityScope>? = null,
 ) {
     val genre = saga.data.genre
 
-    with(animationScopes.first) {
+    val content: @Composable () -> Unit = {
         Box {
             val listState = rememberLazyGridState()
             LazyVerticalGrid(
@@ -137,6 +135,14 @@ fun CharactersGalleryContent(
                 }
             }
         }
+    }
+
+    if (animationScopes != null) {
+        with(animationScopes.first) {
+            content()
+        }
+    } else {
+        content()
     }
 }
 

@@ -56,6 +56,7 @@ fun ChronicleView(
     saga: SagaContent,
     acts: List<ActContent>,
     initialActId: Int? = null,
+    titleModifier: Modifier = Modifier,
     onClose: () -> Unit,
 ) {
     val viewModel: ChronicleViewModel = hiltViewModel()
@@ -171,6 +172,7 @@ fun ChronicleView(
                         modifier =
                             Modifier
                                 .fillMaxWidth(),
+                        titleModifier = titleModifier,
                     )
                 }
             }

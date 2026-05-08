@@ -7,15 +7,14 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveChapter(chapter: Chapter): Long
 
-    @Update(onConflict = OnConflictStrategy.REPLACE)
-    fun updateChapter(chapter: Chapter): Int
+    @Update
+    suspend fun updateChapter(chapter: Chapter): Int
 
     @Delete
     suspend fun deleteChapter(chapter: Chapter)

@@ -23,6 +23,7 @@ fun ChaptersGalleryContent(
     saga: SagaContent,
     chapters: List<ChapterContent>,
     onBackClick: () -> Unit = {},
+    titleModifier: Modifier = Modifier,
 ) {
     val genre = saga.data.genre
 
@@ -46,6 +47,7 @@ fun ChaptersGalleryContent(
                         .background(MaterialTheme.colorScheme.background)
                         .padding(16.dp)
                         .fillMaxWidth(),
+                titleModifier = titleModifier,
             )
         }
 

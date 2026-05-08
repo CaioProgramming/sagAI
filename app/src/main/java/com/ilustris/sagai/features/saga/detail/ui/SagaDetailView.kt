@@ -6,7 +6,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -83,6 +82,8 @@ fun SagaDetailView(
     onCharacterDetails: (Int) -> Unit = {},
     onLoreDebug: () -> Unit = {},
     viewModel: SagaDetailViewModel = hiltViewModel(),
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -169,6 +170,8 @@ fun SagaDetailView(
             drawer = drawer,
             onAction = onAction,
             modifier = Modifier.fillMaxSize(),
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
 
         AnimatedVisibility(isGenerating || state == State.Loading) {
@@ -279,6 +282,8 @@ fun SagaDetailContentView(
     drawer: TimelineDrawer?,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope? = null,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -315,30 +320,29 @@ fun SagaDetailContentView(
                     },
                 ) {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        SharedTransitionLayout(
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            AnimatedContent(
-                                initialSection,
-                                transitionSpec = {
-                                    fadeIn(tween(500)) togetherWith
-                                        fadeOut(
-                                            tween(
-                                                400,
-                                            ),
-                                        )
-                                },
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize(),
-                            ) { section ->
-                                section?.let {
-                                    SagaDetailInitialContent(
-                                        saga = sagaContent,
-                                        section = it,
-                                        onAction = onAction,
+                        AnimatedContent(
+                            initialSection,
+                            transitionSpec = {
+                                fadeIn(tween(500)) togetherWith
+                                    fadeOut(
+                                        tween(
+                                            400,
+                                        ),
                                     )
-                                }
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(),
+                            label = "SagaDetailContentTransition",
+                        ) { section ->
+                            section?.let {
+                                SagaDetailInitialContent(
+                                    saga = sagaContent,
+                                    section = it,
+                                    onAction = onAction,
+                                    sharedTransitionScope = sharedTransitionScope,
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                )
                             }
                         }
                     }

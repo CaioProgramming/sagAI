@@ -99,6 +99,8 @@ fun createSagaEntryProvider(
                 navigator.navigate(CharacterDetailKey(characterId))
             },
             onLoreDebug = { navigator.navigate(LoreDebugKey(key.sagaId)) },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 
@@ -109,6 +111,8 @@ fun createSagaEntryProvider(
             onCharacterDetails = { characterId ->
                 navigator.navigate(CharacterDetailKey(characterId))
             },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 
@@ -116,6 +120,8 @@ fun createSagaEntryProvider(
         SagaWikiView(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 
@@ -123,6 +129,8 @@ fun createSagaEntryProvider(
         SagaEventsView(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 
@@ -130,6 +138,8 @@ fun createSagaEntryProvider(
         SagaActsView(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 
@@ -137,6 +147,8 @@ fun createSagaEntryProvider(
         CharacterDetailsView(
             characterId = key.characterId,
             onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 
@@ -144,6 +156,8 @@ fun createSagaEntryProvider(
         ChapterView(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = null,
         )
     }
 

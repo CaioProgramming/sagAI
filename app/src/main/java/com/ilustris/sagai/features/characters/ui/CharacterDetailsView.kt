@@ -1,7 +1,10 @@
 package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
@@ -89,11 +92,14 @@ import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.shimmerize
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CharacterDetailsView(
     characterId: Int? = null,
     onBack: () -> Unit = {},
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val detailData by viewModel.characterDetailData.collectAsStateWithLifecycle()
 
@@ -103,9 +109,13 @@ fun CharacterDetailsView(
 
     AnimatedContent(detailData, transitionSpec = {
         slideInVertically { -it } togetherWith fadeOut()
-    }) {
+    }, label = "CharacterDetailsTransition") {
         if (it != null) {
-            CharacterDetailsContent(it)
+            CharacterDetailsContent(
+                it,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+            )
         } else {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 SparkIcon(
@@ -120,12 +130,14 @@ fun CharacterDetailsView(
 
 @OptIn(
     ExperimentalAnimationApi::class,
-    androidx.compose.animation.ExperimentalSharedTransitionApi::class,
+    ExperimentalSharedTransitionApi::class,
 )
 @Composable
 fun CharacterDetailsContent(
     detailData: CharacterDetailData,
     openEvent: (Timeline?) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
     val genre = detailData.saga.genre
@@ -187,7 +199,7 @@ fun CharacterDetailsContent(
 
 @OptIn(
     ExperimentalAnimationApi::class,
-    androidx.compose.animation.ExperimentalSharedTransitionApi::class,
+    ExperimentalSharedTransitionApi::class,
 )
 @Composable
 private fun CharacterDetailsLoaded(

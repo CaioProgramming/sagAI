@@ -131,6 +131,7 @@ fun HomeView(
     navToFAQ: () -> Unit,
     navToAuditLogs: () -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
+    sharedTransitionScope: SharedTransitionScope,
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
@@ -163,7 +164,7 @@ fun HomeView(
         }
     }
 
-    SharedTransitionLayout {
+    with(sharedTransitionScope) {
         AnimatedContent(isStarting, transitionSpec = {
             fadeIn(tween(700)) togetherWith fadeOut(tween(400))
         }) {

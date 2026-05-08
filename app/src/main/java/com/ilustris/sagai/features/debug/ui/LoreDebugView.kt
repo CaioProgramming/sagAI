@@ -392,6 +392,7 @@ fun StoryCard(
                                     ).clickable {
                                         eventExpanded = !eventExpanded
                                     }.fillMaxWidth()
+                                    .padding(8.dp)
                                     .animateContentSize(),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
