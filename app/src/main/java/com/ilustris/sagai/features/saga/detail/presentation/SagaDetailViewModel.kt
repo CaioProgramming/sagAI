@@ -75,8 +75,11 @@ class SagaDetailViewModel
                         RequestSection.START,
                     ).onSuccess { mappedSection ->
                         _initialSection.value = mappedSection as DetailSectionView.InitialSection
+                        if (_state.value !is State.Success) {
+                            playSoundFx()
+                        }
+
                         _state.value = State.Success(currentSaga)
-                        playSoundFx()
                     }.onFailureAsync {
                         _state.emit(State.Error(emptyString()))
                     }
@@ -89,7 +92,7 @@ class SagaDetailViewModel
                 delay(300)
                 val visualConfig = visualConfigService.getVisualConfig(selectedGenre)
                 val hapticPattern = selectedGenre.vibrationPattern(visualConfig)
-            soundFxService.playWithHaptics(hapticPattern)
+                soundFxService.playWithHaptics(hapticPattern)
             }
         }
 

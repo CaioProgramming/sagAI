@@ -211,6 +211,8 @@ fun HomeView(
                                             },
                                             navToFAQ = navToFAQ,
                                             navToAuditLogs = navToAuditLogs,
+                                            sharedTransitionScope = sharedTransitionScope,
+                                            animatedVisibilityScope = animatedVisibilityScope,
                                             onOpenPremiumOnboarding = {
                                                 showPremiumSheet = true
                                                 coroutineScope.launch {

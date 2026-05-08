@@ -56,7 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -182,21 +181,17 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .clickable {
+                        ).clickable {
                             navToPlaythrough()
-                        }
-                        .padding(16.dp),
+                        }.padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -233,8 +228,7 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(12.dp),
+                        ).padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -275,11 +269,9 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .clickable {
+                            ).clickable {
                                 viewModel.clearCache()
-                            }
-                            .padding(16.dp),
+                            }.padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -327,8 +319,7 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -413,8 +404,7 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    )
-                    .padding(8.dp),
+                    ).padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
@@ -607,8 +597,7 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(8.dp),
+                        ).padding(8.dp),
             )
         }
 
@@ -857,10 +846,4 @@ fun LegendDot(
             Text(value, style = MaterialTheme.typography.labelSmall, modifier = Modifier.alpha(.5f))
         }
     }
-}
-
-@Preview
-@Composable
-fun SettingsViewPreview() {
-    SettingsView()
 }
