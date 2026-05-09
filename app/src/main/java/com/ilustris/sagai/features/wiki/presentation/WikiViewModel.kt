@@ -43,9 +43,9 @@ class WikiViewModel
         }
 
         fun reviewWiki(wikis: List<Wiki>) {
-            val currentSaga = saga.value ?: return
+            saga.value ?: return
             viewModelScope.launch {
-                wikiUseCase.mergeWikis(currentSaga.toSaga(), wikis)
+                // wikiUseCase.mergeWikis(currentSaga.toSaga(), wikis)
             }
         }
     }
