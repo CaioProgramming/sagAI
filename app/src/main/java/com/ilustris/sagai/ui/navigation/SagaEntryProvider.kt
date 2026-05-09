@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.SnackbarHostState
 import androidx.navigation3.runtime.entryProvider
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.features.act.ui.BookReaderView
 import com.ilustris.sagai.features.act.ui.SagaActsView
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
@@ -159,6 +160,7 @@ fun createSagaEntryProvider(
         SagaActsView(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
+            onOpenBookReader = { bookReaderKey -> navigator.navigate(bookReaderKey) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
         )
@@ -191,5 +193,15 @@ fun createSagaEntryProvider(
                 animatedVisibilityScope = animatedVisibilityScope,
             )
         }
+    }
+
+    entry<BookReaderKey> { key ->
+        BookReaderView(
+            sagaId = key.sagaId,
+            initialActId = key.initialActId,
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 }

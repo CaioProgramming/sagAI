@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.detail.presentation
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
@@ -139,11 +140,26 @@ class SagaDetailViewModel
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
-                    .regenerateSagaIcon(
-                        currentSaga,
-                    )
-                isGenerating.value = false
-                _loadingMessage.value = null
+                    .regenerateSagaIconStream(currentSaga)
+                    .collect { state ->
+                        when (state) {
+                            is StreamingState.Reasoning -> {
+                                _loadingMessage.value = state.chunk
+                            }
+
+                            is StreamingState.Success -> {
+                                // Update the saga with the new icon
+                                saga.value = saga.value?.copy(data = state.data)
+                                isGenerating.value = false
+                                _loadingMessage.value = null
+                            }
+
+                            is StreamingState.Error -> {
+                                isGenerating.value = false
+                                _loadingMessage.value = "Error regenerating icon: ${state.message}"
+                            }
+                        }
+                    }
             }
         }
 

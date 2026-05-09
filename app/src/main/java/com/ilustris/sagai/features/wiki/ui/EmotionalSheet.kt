@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileViewModel
@@ -40,7 +42,6 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.presentation.EmotionalReviewViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @Composable
@@ -95,8 +96,7 @@ fun EmotionalSheet(
                     .fillMaxWidth()
                     .fillMaxHeight(.6f)
                     .zoomAnimation()
-                    .clipToBounds()
-                    .reactiveShimmer(true),
+                    .clipToBounds(),
         )
 
         Column(
@@ -105,6 +105,7 @@ fun EmotionalSheet(
                     .align(Alignment.BottomCenter)
                     .background(fadeGradientBottom())
                     .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 saga.data.emotionalProfile?.personaTitle ?: stringResource(R.string.inner_journey),
@@ -124,6 +125,12 @@ fun EmotionalSheet(
             )
 
             Spacer(modifier = Modifier.height(50.dp))
+
+            if (BuildConfig.DEBUG) {
+                Button(onClick = { viewModel.resetEmotionalProfile(saga) }) {
+                    Text("Reset Emotional Profile")
+                }
+            }
         }
     }
 }

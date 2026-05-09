@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -18,6 +19,7 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class SagaDetailUseCaseImpl
@@ -37,6 +39,11 @@ class SagaDetailUseCaseImpl
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
             val topCharacters = listOf(saga.mainCharacter!!.data)
             return sagaRepository.generateSagaIcon(saga.data, topCharacters)
+        }
+
+        override fun regenerateSagaIconStream(saga: SagaContent): Flow<StreamingState<Saga>> {
+            val topCharacters = listOf(saga.mainCharacter!!.data)
+            return sagaRepository.generateSagaIconStream(saga.data, topCharacters)
         }
 
         override suspend fun fetchSaga(sagaId: Int) = sagaRepository.getSagaById(sagaId)
@@ -62,8 +69,8 @@ class SagaDetailUseCaseImpl
                 sagaRepository
                     .updateSaga(
                         currentSaga.data.copy(
-                            emotionalProfile = request,
-                            emotionalReview = request.emotionalContent,
+                            emotionalProfile = request.emotionalProfile,
+                            emotionalReview = request.emotionalProfile.emotionalContent,
                         ),
                     )
             }

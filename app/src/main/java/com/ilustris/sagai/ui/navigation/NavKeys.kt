@@ -67,6 +67,12 @@ data class LoreDebugKey(
     val sagaId: String,
 ) : NavKey
 
+@Serializable
+data class BookReaderKey(
+    val sagaId: Int,
+    val initialActId: Int,
+) : NavKey
+
 fun String.findNavKey(): NavKey? {
     val sanitized = this.substringBeforeLast("/")
     return when {
@@ -132,6 +138,15 @@ fun String.findNavKey(): NavKey? {
 
         this.startsWith("saga://lore_debug/") -> {
             LoreDebugKey(this.removePrefix("saga://lore_debug/"))
+        }
+
+        this.startsWith("saga://book_reader/") -> {
+            val parts = this.removePrefix("saga://book_reader/").split("/")
+            if (parts.size >= 2) {
+                BookReaderKey(parts[0].toIntOrNull() ?: 0, parts[1].toIntOrNull() ?: 0)
+            } else {
+                null
+            }
         }
 
         else -> {

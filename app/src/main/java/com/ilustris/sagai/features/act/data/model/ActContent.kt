@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 
 data class ActContent(
     @Embedded
@@ -94,4 +95,14 @@ data class ActContent(
                 }
             }
         }
+
+    fun getChapterCovers(): List<String> = chapters.map { it.data.coverImage }.filter { it.isNotEmpty() }
+
+    fun getPresentCharacters(allCharacters: List<CharacterContent>): List<CharacterContent> {
+        val characterIds =
+            chapters
+                .flatMap { it.events.flatMap { it.messages.map { it.message.characterId } } }
+                .toSet()
+        return allCharacters.filter { it.data.id in characterIds }
+    }
 }

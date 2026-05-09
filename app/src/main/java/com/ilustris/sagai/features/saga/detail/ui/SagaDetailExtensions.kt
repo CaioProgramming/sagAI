@@ -243,6 +243,7 @@ fun DetailSectionView.InitialSection.miniSection(
                             onAction = {},
                             modifier =
                                 Modifier
+                                    .padding(8.dp)
                                     .width(160.dp)
                                     .height(240.dp),
                             titleModifier = Modifier,

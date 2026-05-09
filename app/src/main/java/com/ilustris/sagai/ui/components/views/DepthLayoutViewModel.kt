@@ -3,13 +3,13 @@ package com.ilustris.sagai.ui.components.views
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import timber.log.Timber
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,6 +28,7 @@ class DepthLayoutViewModel
         val isProcessing = _isProcessing.asStateFlow()
 
         fun processImage(imagePath: String) {
+            _segmentedBitmap.value = null
             if (imagePath.isBlank()) return
 
             viewModelScope.launch(Dispatchers.IO) {

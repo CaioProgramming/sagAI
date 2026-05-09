@@ -21,12 +21,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.ui.components.SectionLoading
+import com.ilustris.sagai.ui.navigation.BookReaderKey
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SagaActsView(
     sagaId: String,
     onBack: () -> Unit,
+    onOpenBookReader: (BookReaderKey) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     viewModel: ChronicleViewModel = hiltViewModel(),
@@ -71,6 +73,7 @@ fun SagaActsView(
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         },
+                    onOpenBook = onOpenBookReader,
                 )
             } else {
                 SectionLoading()

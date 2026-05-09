@@ -65,6 +65,7 @@ import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.act.data.usecase.ActUseCaseImpl
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
 import com.ilustris.sagai.features.act.data.usecase.BookUseCaseImpl
+import com.ilustris.sagai.features.act.ui.BookPageMapper
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
@@ -299,6 +300,9 @@ object AppModule {
         WikiMapper(
             stringResourceHelper = stringResourceHelper,
         )
+
+    @Provides
+    fun providesBookPageMapper(fileHelper: FileHelper) = BookPageMapper(fileHelper)
 
     @Provides
     fun bindsTimelineMapper(

@@ -1000,7 +1000,10 @@ fun ReviewTopCharacterContent(
                     slideInVertically(tween(1500, easing = EaseIn)) { -it },
             exit = slideOutVertically { it } + fadeOut(),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 CounterText(
                     messageCount,
                     onAnimationFinished = {

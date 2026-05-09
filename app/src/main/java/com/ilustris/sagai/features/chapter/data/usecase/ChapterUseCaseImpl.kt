@@ -213,8 +213,13 @@ class ChapterUseCaseImpl
                         .generateIntegratedImage(
                             genre = saga.data.genre,
                             imageReference = null,
-                            context = buildCoverPromptContext(characters, saga),
-                            imageType = ImageType.COVER,
+                            context =
+                                buildCoverPromptContext(
+                                    chapter.data.narrativeGuide,
+                                    characters,
+                                    saga,
+                                ),
+                                imageType = ImageType.COVER,
                             variationId = saga.data.variationId,
                         )
 
@@ -250,8 +255,13 @@ class ChapterUseCaseImpl
                         .generateIntegratedImageStream(
                             genre = saga.data.genre,
                             imageReference = null,
-                            context = buildCoverPromptContext(characters, saga),
-                            imageType = ImageType.COVER,
+                            context =
+                                buildCoverPromptContext(
+                                    chapter.data.narrativeGuide,
+                                    characters,
+                                    saga
+                            ),
+                                imageType = ImageType.COVER,
                             variationId = saga.data.variationId,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
@@ -283,6 +293,7 @@ class ChapterUseCaseImpl
             }
 
         private fun buildCoverPromptContext(
+            narrativeContext: String?,
             characters: List<CharacterContent?>,
             saga: SagaContent,
         ): String =
@@ -291,7 +302,7 @@ class ChapterUseCaseImpl
                 appendLine("### THE ARTBOOK DUO")
                 appendLine("This is a focused character study. Capture the intimate tension and presence of exactly these two individuals.")
                 append("[")
-                append(
+                appendLine(
                     duo.joinToString {
                         buildString {
                             appendLine(it.data.fullName())
@@ -320,6 +331,11 @@ class ChapterUseCaseImpl
                                 ?: "Complex dynamic connection."
                         }",
                     )
+                }
+
+                narrativeContext?.let {
+                    appendLine("Narrative moment: ")
+                    appendLine(narrativeContext)
                 }
 
                 appendLine()

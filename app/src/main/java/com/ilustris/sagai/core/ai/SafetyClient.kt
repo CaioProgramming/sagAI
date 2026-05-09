@@ -137,7 +137,12 @@ class SafetyClient
 
                 is Map<*, *> -> {
                     val enabled = config["enabled"] as? Boolean ?: true
-                    if (!enabled) throw ModelOutageException(requirement)
+                    if (!enabled) {
+                        throw ModelOutageException(
+                            requirement,
+                            config["model"] as? String ?: "UNKNOWN",
+                        )
+                    }
                     val model =
                         config["model"] as? String
                             ?: error("Model name not found in config for ${requirement.name}")

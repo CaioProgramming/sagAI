@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -24,6 +25,8 @@ sealed class ReviewState {
 
 interface SagaDetailUseCase {
     suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga>
+
+    fun regenerateSagaIconStream(saga: SagaContent): Flow<StreamingState<Saga>>
 
     suspend fun fetchSaga(sagaId: Int): Flow<SagaContent?>
 

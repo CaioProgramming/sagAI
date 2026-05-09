@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
@@ -16,6 +17,8 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.model.BookPage
+import com.ilustris.sagai.features.act.ui.PageItem
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.bodyFontResource
 import com.ilustris.sagai.ui.theme.headerFontResource
@@ -33,8 +36,7 @@ class PDFGenerator
             book: Book,
             genre: Genre,
             volume: String,
-            sagaIcon: String? = null,
-            chapterCovers: List<String> = emptyList(),
+            pages: List<PageItem>,
         ): File? {
             val pdfDocument = PdfDocument()
             val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 Size
@@ -48,62 +50,73 @@ class PDFGenerator
             val genreColor = genre.color.toArgb()
             val iconColor = genre.iconColor.toArgb()
 
-            // 0. Saga Icon (Frontispiece)
-            sagaIcon?.takeIf { it.isNotEmpty() }?.let { iconPath ->
-                val iconPage = pdfDocument.startPage(pageInfo)
-                drawIllustrationPage(iconPage.canvas, iconPath)
-                pdfDocument.finishPage(iconPage)
-            }
-
-            // 1. Cover Page
-            val coverPage = pdfDocument.startPage(pageInfo)
-            drawCoverPage(
-                coverPage.canvas,
-                book,
-                genre,
-                headerTypeface,
-                bodyTypeface,
-                iconColor,
-                volume,
-            )
-            pdfDocument.finishPage(coverPage)
-
-            // 2. Chapters and Content Pages
+            // 1. Pages (Mapped from PageItem)
             var globalPageCount = 1
-            book.chapters.forEachIndexed { index, chapter ->
-                // Chapter Start Page
-                val chapterStartPage = pdfDocument.startPage(pageInfo)
-                drawChapterStartPage(
-                    chapterStartPage.canvas,
-                    chapter.title,
-                    genre,
-                    headerTypeface,
-                    genreColor,
-                )
-                pdfDocument.finishPage(chapterStartPage)
+            pages.forEach { item ->
+                when (item) {
+                    is PageItem.BookCover -> {
+                        val coverPage = pdfDocument.startPage(pageInfo)
+                        drawCoverPage(
+                            coverPage.canvas,
+                            item,
+                            genre,
+                            headerTypeface,
+                            bodyTypeface,
+                            iconColor,
+                            item.volume,
+                        )
+                        pdfDocument.finishPage(coverPage)
+                    }
 
-                // Chapter Cover (Illustration)
-                chapterCovers.getOrNull(index)?.takeIf { it.isNotEmpty() }?.let { coverPath ->
-                    val coverPage = pdfDocument.startPage(pageInfo)
-                    drawIllustrationPage(coverPage.canvas, coverPath)
-                    pdfDocument.finishPage(coverPage)
-                }
+                    is PageItem.ChapterStart -> {
+                        val chapterStartPage = pdfDocument.startPage(pageInfo)
+                        drawChapterStartPage(
+                            chapterStartPage.canvas,
+                            item.title,
+                            book,
+                            genre,
+                            headerTypeface,
+                            genreColor,
+                        )
+                        pdfDocument.finishPage(chapterStartPage)
+                    }
 
-                // Chapter Pages
-                chapter.pages.forEach { page ->
-                    val contentPage = pdfDocument.startPage(pageInfo)
-                    drawContentPage(
-                        contentPage.canvas,
-                        chapter.title,
-                        page,
-                        globalPageCount,
-                        genre,
-                        headerTypeface,
-                        bodyTypeface,
-                        genreColor,
-                    )
-                    pdfDocument.finishPage(contentPage)
-                    globalPageCount++
+                    is PageItem.Illustration -> {
+                        val illustrationPage = pdfDocument.startPage(pageInfo)
+                        drawIllustrationPage(illustrationPage.canvas, item.imagePath)
+                        pdfDocument.finishPage(illustrationPage)
+                    }
+
+                    is PageItem.Content -> {
+                        val contentPage = pdfDocument.startPage(pageInfo)
+                        drawContentPage(
+                            contentPage.canvas,
+                            item.chapterTitle,
+                            item.page,
+                            globalPageCount,
+                            book,
+                            genre,
+                            headerTypeface,
+                            bodyTypeface,
+                            genreColor,
+                        )
+                        pdfDocument.finishPage(contentPage)
+                        globalPageCount++
+                    }
+
+                    is PageItem.CharacterGrid -> {
+                        val characterGridPage = pdfDocument.startPage(pageInfo)
+                        drawCharacterGridPage(
+                            characterGridPage.canvas,
+                            item.characters,
+                            book,
+                            genre,
+                            headerTypeface,
+                            bodyTypeface,
+                            genreColor,
+                        )
+                        pdfDocument.finishPage(characterGridPage)
+                    }
                 }
             }
 
@@ -130,7 +143,7 @@ class PDFGenerator
 
         private fun drawCoverPage(
             canvas: Canvas,
-            book: Book,
+            pageItem: PageItem.BookCover,
             genre: Genre,
             headerTypeface: Typeface,
             bodyTypeface: Typeface,
@@ -176,9 +189,9 @@ class PDFGenerator
             val sagaTitleLayout =
                 StaticLayout.Builder
                     .obtain(
-                        book.sagaTitle.uppercase(),
+                        pageItem.sagaTitle.uppercase(),
                         0,
-                        book.sagaTitle.length,
+                        pageItem.sagaTitle.length,
                         headerPaint,
                         coverContentWidth,
                     ).setAlignment(Layout.Alignment.ALIGN_CENTER)
@@ -186,8 +199,13 @@ class PDFGenerator
 
             val actTitleLayout =
                 StaticLayout.Builder
-                    .obtain(book.actTitle, 0, book.actTitle.length, bodyPaint, coverContentWidth)
-                    .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                    .obtain(
+                        pageItem.actTitle,
+                        0,
+                        pageItem.actTitle.length,
+                        bodyPaint,
+                        coverContentWidth,
+                    ).setAlignment(Layout.Alignment.ALIGN_CENTER)
                     .build()
 
             canvas.drawText("VOL $volume", 595f / 2, 180f, volPaint)
@@ -235,9 +253,9 @@ class PDFGenerator
             val quoteLayout =
                 StaticLayout.Builder
                     .obtain(
-                        "\"${book.coverQuote}\"",
+                        "\"${pageItem.quote}\"",
                         0,
-                        book.coverQuote.length + 2,
+                        pageItem.quote.length + 2,
                         quotePaint,
                         400,
                     ).setAlignment(Layout.Alignment.ALIGN_CENTER)
@@ -252,6 +270,7 @@ class PDFGenerator
         private fun drawChapterStartPage(
             canvas: Canvas,
             title: String,
+            book: Book,
             genre: Genre,
             headerTypeface: Typeface,
             genreColor: Int,
@@ -280,6 +299,18 @@ class PDFGenerator
             titleLayout.draw(canvas)
             canvas.restore()
 
+            // Signature footer
+            val signaturePaint =
+                TextPaint().apply {
+                    color = genreColor
+                    typeface = headerTypeface
+                    textSize = 10f
+                    textAlign = Paint.Align.CENTER
+                    isAntiAlias = true
+                    letterSpacing = 0.2f
+                }
+            canvas.drawText(book.sagaTitle, 595f / 2, 820f, signaturePaint)
+
             // Draw icon below title
             ResourcesCompat.getDrawable(context.resources, genre.icon, null)?.let { drawable ->
                 val iconSize = 48
@@ -305,6 +336,7 @@ class PDFGenerator
             chapterTitle: String,
             page: BookPage,
             pageNum: Int,
+            book: Book,
             genre: Genre,
             headerTypeface: Typeface,
             bodyTypeface: Typeface,
@@ -370,7 +402,19 @@ class PDFGenerator
                 canvas.drawBitmap(bitmap, (595f - iconSize) / 2, 780f, iconPaint)
             }
 
-            canvas.drawText(pageNum.toString(), 595f / 2, 820f, footerPaint)
+            canvas.drawText(pageNum.toString(), 595f / 2, 810f, footerPaint)
+
+            // Signature footer
+            val signaturePaint =
+                TextPaint().apply {
+                    color = genreColor
+                    typeface = headerTypeface
+                    textSize = 10f
+                    textAlign = Paint.Align.CENTER
+                    isAntiAlias = true
+                    letterSpacing = 0.2f
+                }
+            canvas.drawText(book.sagaTitle, 595f / 2, 830f, signaturePaint)
         }
 
         private fun drawEndPage(
@@ -412,6 +456,128 @@ class PDFGenerator
             canvas.restore()
         }
 
+    private fun drawCharacterGridPage(
+            canvas: Canvas,
+            characters: List<CharacterContent>,
+            book: Book,
+            genre: Genre,
+            headerTypeface: Typeface,
+            bodyTypeface: Typeface,
+            genreColor: Int,
+        ) {
+            val paint = Paint()
+            paint.color = Color.WHITE
+            canvas.drawRect(0f, 0f, 595f, 842f, paint)
+
+            val gridTitle =
+                when (genre) {
+                    Genre.FANTASY -> "Our Legends"
+                    Genre.CYBERPUNK -> "The Edge-Runners"
+                    Genre.HORROR -> "The Lost Souls"
+                    Genre.HEROES -> "The Vanguard"
+                    Genre.CRIME -> "The Suspects"
+                    Genre.SHINOBI -> "The Shadow-Walkers"
+                    Genre.SPACE_OPERA -> "The Star-Farers"
+                    Genre.COWBOY -> "The Outlaws"
+                    Genre.PUNK_ROCK -> "The Anarchists"
+                }
+
+            val titlePaint =
+                TextPaint().apply {
+                    color = genreColor
+                    typeface = headerTypeface
+                    textSize = 28f
+                    textAlign = Paint.Align.CENTER
+                    isAntiAlias = true
+                }
+
+            canvas.drawText(gridTitle.uppercase(), 595f / 2, 80f, titlePaint)
+
+            // Signature footer
+            val signaturePaint =
+                TextPaint().apply {
+                    color = genreColor
+                    typeface = headerTypeface
+                    textSize = 10f
+                    textAlign = Paint.Align.CENTER
+                    isAntiAlias = true
+                    letterSpacing = 0.2f
+                }
+            canvas.drawText(book.sagaTitle, 595f / 2, 830f, signaturePaint)
+
+            val charNamePaint =
+                TextPaint().apply {
+                    color = Color.BLACK
+                    typeface = bodyTypeface
+                    textSize = 10f
+                    textAlign = Paint.Align.CENTER
+                    isAntiAlias = true
+                }
+
+            val margin = 60f
+            val spacing = 20f
+            val itemSize = (595f - (margin * 2) - (spacing * 2)) / 3
+            val startX = margin
+            var startY = 120f
+
+            characters.forEachIndexed { index, character ->
+                val column = index % 3
+                val row = index / 3
+                val x = startX + (column * (itemSize + spacing))
+                val y = startY + (row * (itemSize + spacing + 30f))
+
+                // Draw character image
+                character.data.image?.let { imagePath ->
+                    val options =
+                        BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
+                        }
+                    BitmapFactory.decodeFile(imagePath, options)
+                    options.inSampleSize =
+                        calculateInSampleSize(options, itemSize.toInt(), itemSize.toInt())
+                    options.inJustDecodeBounds = false
+
+                    val bitmap = BitmapFactory.decodeFile(imagePath, options)
+                    if (bitmap != null) {
+                        val bWidth = bitmap.width
+                        val bHeight = bitmap.height
+                        val side = minOf(bWidth, bHeight)
+                        val srcLeft = (bWidth - side) / 2
+                        val srcTop = (bHeight - side) / 2
+                        val srcRect = Rect(srcLeft, srcTop, srcLeft + side, srcTop + side)
+
+                        canvas.drawBitmap(
+                            bitmap,
+                            srcRect,
+                            RectF(x, y, x + itemSize, y + itemSize),
+                            null,
+                        )
+                        bitmap.recycle()
+                    } else {
+                        // Draw placeholder
+                        val placeholderPaint =
+                            Paint().apply {
+                                color = Color.LTGRAY
+                                style = Paint.Style.FILL
+                            }
+                        canvas.drawRect(x, y, x + itemSize, y + itemSize, placeholderPaint)
+                    }
+                } ?: run {
+                    // Draw placeholder
+                    val placeholderPaint =
+                        Paint().apply {
+                            color = Color.LTGRAY
+                        style = Paint.Style.FILL
+                    }
+                canvas.drawRect(x, y, x + itemSize, y + itemSize, placeholderPaint)
+            }
+
+            // Draw name
+            val name = character.data.name
+            canvas.drawText(name, x + (itemSize / 2), y + itemSize + 20f, charNamePaint)
+            }
+        }
+
         private fun drawIllustrationPage(
             canvas: Canvas,
             imagePath: String,
@@ -421,6 +587,14 @@ class PDFGenerator
                     inJustDecodeBounds = true
                 }
             BitmapFactory.decodeFile(imagePath, options)
+
+            // Validate if image is valid
+            if (options.outWidth <= 0 || options.outHeight <= 0) {
+                // Draw a blank page with a subtle note or just skip
+                canvas.drawColor(Color.WHITE)
+                return
+            }
+
             options.inSampleSize = calculateInSampleSize(options, 595, 842)
             options.inJustDecodeBounds = false
 
@@ -457,9 +631,9 @@ class PDFGenerator
                 val halfHeight: Int = height / 2
                 val halfWidth: Int = width / 2
                 while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
+                    inSampleSize *= 2
+                }
             }
+            return inSampleSize
         }
-        return inSampleSize
-    }
     }

@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.share.domain.model.ShareText
@@ -39,8 +40,7 @@ interface SharePlayUseCase {
         book: com.ilustris.sagai.features.act.data.model.Book,
         genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
         volume: String,
-        sagaIcon: String? = null,
-        chapterCovers: List<String> = emptyList(),
+        pages: List<PageItem>,
     ): RequestResult<File>
 }
 
@@ -137,10 +137,9 @@ class SharePlayUseCaseImpl
             book: com.ilustris.sagai.features.act.data.model.Book,
             genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
             volume: String,
-            sagaIcon: String?,
-            chapterCovers: List<String>,
+            pages: List<PageItem>,
         ): RequestResult<File> =
             executeRequest {
-                pdfGenerator.generateBookPDF(book, genre, volume, sagaIcon, chapterCovers)!!
+                pdfGenerator.generateBookPDF(book, genre, volume, pages)!!
             }
     }

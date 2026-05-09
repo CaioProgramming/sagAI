@@ -50,7 +50,7 @@ class ImageGeneratorImpl
             references: List<ImageReference>,
         ): Bitmap? {
             val modelName = modelName()
-            val trimmedPrompt = prompt.plus("\n").plus(aspectRatio).trim()
+            val trimmedPrompt = prompt.trim()
             Timber.tag(TAG).i("Generating image with ➡ $modelName")
             Timber
                 .tag(TAG)

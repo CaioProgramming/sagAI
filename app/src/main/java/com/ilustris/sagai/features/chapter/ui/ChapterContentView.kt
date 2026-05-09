@@ -70,7 +70,7 @@ fun ChapterContentView(
     content: SagaContent,
     modifier: Modifier,
     isLast: Boolean = false,
-    imageSize: Dp = 300.dp,
+    imageSize: Dp = 500.dp,
     openCharacters: () -> Unit = {},
     requestReview: ((ChapterContent) -> Unit)? = null,
 ) {

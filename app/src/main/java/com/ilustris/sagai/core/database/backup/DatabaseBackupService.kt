@@ -3,11 +3,11 @@ package com.ilustris.sagai.core.database.backup
 import android.content.Context
 import com.google.gson.Gson
 import com.ilustris.sagai.BuildConfig
-import timber.log.Timber
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -107,6 +107,25 @@ class DatabaseBackupService(
                 Result.success(Unit)
             } catch (e: Exception) {
                 Timber.tag("DatabaseBackup").e(e, "Restore failed")
+                Result.failure(e)
+            }
+        }
+
+    suspend fun clearDatabase(): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                database.close()
+                val dbFile = context.getDatabasePath(DB_NAME)
+                val walFile = File(dbFile.path + "-wal")
+                val shmFile = File(dbFile.path + "-shm")
+
+                if (dbFile.exists()) dbFile.delete()
+                if (walFile.exists()) walFile.delete()
+                if (shmFile.exists()) shmFile.delete()
+
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Timber.tag("DatabaseBackup").e(e, "Clear database failed")
                 Result.failure(e)
             }
         }

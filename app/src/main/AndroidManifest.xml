@@ -49,6 +49,13 @@
         </provider>
 
         <activity
+            android:name=".features.sos.ui.SOSActivity"
+            android:exported="false"
+            android:process=":sos"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.SagAI" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"

@@ -6,6 +6,7 @@ import androidx.work.Configuration
 import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
+import com.ilustris.sagai.core.error.SagasExceptionHandler
 import com.ilustris.sagai.core.permissions.NotificationUtils
 import com.ilustris.sagai.core.services.BillingService
 import dagger.hilt.android.HiltAndroidApp
@@ -26,6 +27,8 @@ class SagaApp :
     lateinit var workerFactory: HiltWorkerFactory
 
     override fun onCreate() {
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler(SagasExceptionHandler(this, defaultHandler))
         super.onCreate()
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
@@ -61,8 +64,8 @@ class SagaApp :
 
                 override fun onError(error: com.google.firebase.remoteconfig.FirebaseRemoteConfigException) {
                     // Log error if needed
-            }
-        }
-                )
+                }
+            },
+        )
     }
 }

@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.detail.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.services.LoadingService
@@ -50,16 +51,45 @@ class EmotionalReviewViewModel
                         genreConfig.conversationDirective,
                     )
 
-                emotionalUseCase.generateEmotionalConclusion(sagaContent).onSuccessAsync {
-                    sagaRepository.updateSaga(
-                        sagaContent.data.copy(
-                            emotionalProfile = it,
-                            emotionalReview = it.emotionalContent,
-                        ),
-                    )
+                emotionalUseCase.streamEmotionalConclusion(sagaContent).collect { state ->
+                    when (state) {
+                        is StreamingState.Reasoning -> {
+                            _loadingMessage.value = state.chunk
+                        }
+
+                        is StreamingState.Success -> {
+                            sagaRepository.updateSaga(
+                                sagaContent.data.copy(
+                                    emotionalProfile = state.data.emotionalProfile,
+                                    emotionalReview = state.data.emotionalProfile.emotionalContent,
+                                    endMessage = state.data.endingMessage,
+                                ),
+                            )
+                            _isGenerating.value = false
+                            _loadingMessage.value = null
+                        }
+
+                        is StreamingState.Error -> {
+                            _isGenerating.value = false
+                            _loadingMessage.value =
+                                "Error generating emotional conclusion: ${state.message}"
+                        }
+                    }
                 }
-                _isGenerating.value = false
-                _loadingMessage.value = null
             }
         }
+
+        fun resetEmotionalProfile(saga: SagaContent) {
+            viewModelScope.launch {
+                emotionalUseCase.generateEmotionalConclusion(saga).onSuccessAsync {
+                    sagaRepository.updateSaga(
+                        saga.data.copy(
+                            emotionalProfile = it.emotionalProfile,
+                            emotionalReview = it.emotionalProfile.emotionalContent,
+                            endMessage = it.endingMessage,
+                        ),
+                    )
+            }
+        }
+    }
     }

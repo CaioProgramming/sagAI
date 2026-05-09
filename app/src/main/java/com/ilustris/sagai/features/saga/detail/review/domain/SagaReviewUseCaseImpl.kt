@@ -1,12 +1,11 @@
 package com.ilustris.sagai.features.saga.detail.review.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.services.LoadingService
-import com.ilustris.sagai.core.services.LoadingType
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
@@ -23,7 +22,7 @@ class SagaReviewUseCaseImpl
         val genreConfigService: GenreConfigService,
         val gemmaClient: GemmaClient,
         val promptService: PromptService,
-        val loadingService: LoadingService,
+        val synthesizerService: ReasoningSynthesizerService,
         val sagaRepository: SagaRepository,
     ) : SagaReviewUseCase {
         override suspend fun createReview(content: SagaContent) =
@@ -31,27 +30,38 @@ class SagaReviewUseCaseImpl
                 executeRequest {
                     val config =
                         genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
+                    val stages = mutableMapOf<ReviewSteps, ReviewStage>()
 
-                    val stepsMap =
-                        ReviewSteps.entries.associateWith {
-                            val loadingMessage =
-                                loadingService.generateLoadingMessage(
-                                    LoadingType("Revisiting user journey..."),
-                                    conversationStyle = config.conversationDirective,
-                                ) ?: emptyString()
-                            emit(ReviewState.Loading(loadingMessage))
-                            val review =
-                                gemmaClient.generate<ReviewStage>(
-                                    promptService.buildRemotePrompt(
-                                        it.blueprintKey,
-                                        it.buildArgs(content, config.conversationDirective),
-                                    ),
-                                )!!
-                            review
+                    ReviewSteps.entries.forEach { step ->
+                        val prompt =
+                            promptService.buildRemotePrompt(
+                                step.blueprintKey,
+                                step.buildArgs(content, config.conversationDirective),
+                            )
+
+                        val sourceFlow =
+                            gemmaClient.generateStreaming<ReviewStage>(
+                                prompt,
+                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                blueprintKey = step.blueprintKey,
+                            )
+
+                        synthesizerService
+                            .synthesizeReasoning(
+                                sourceFlow = sourceFlow,
+                                context = step.name,
+                                conversationStyle = config.conversationDirective,
+                                genre = content.data.genre.name,
+                            ).collect { state ->
+                                when (state) {
+                                    is StreamingState.Reasoning -> emit(ReviewState.Loading(state.chunk))
+                                    is StreamingState.Success -> stages[step] = state.data!!
+                                    is StreamingState.Error -> error(state.message)
+                                }
                         }
+                    }
 
-                    val review = stepsMap.buildReview()
-
+                    val review = stages.buildReview()
                     val finalSaga = content.data.copy(review = review)
                     sagaRepository.updateSaga(finalSaga)
                     emit(ReviewState.Success(finalSaga))
