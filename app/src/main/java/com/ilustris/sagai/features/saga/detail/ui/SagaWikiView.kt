@@ -61,9 +61,10 @@ fun SagaWikiView(
                     subtitle =
                         stringResource(
                             R.string.saga_detail_section_subtitle_wiki,
-                            sagaContent.wikis.size,
+                            groups.sumOf { it.wikis.size },
                         ),
-                    saga = sagaContent,
+                    genre = sagaContent.genre,
+                    sagaId = sagaContent.id,
                     groups = groups,
                     onBackClick = onBack,
                     reviewWiki = {
@@ -72,7 +73,7 @@ fun SagaWikiView(
                     titleModifier =
                         with(sharedTransitionScope) {
                             Modifier.sharedBounds(
-                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
+                                rememberSharedContentState(key = "saga-title-${sagaContent.id}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         },

@@ -4,6 +4,8 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
+import com.ilustris.sagai.features.characters.data.model.CharacterWithRelations
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -36,5 +38,8 @@ class CharacterDaoImpl
 
         override suspend fun getAllCharacterNames(): List<String> = characterDao.getAllCharacterNames()
 
-        override fun getCharacterDetailDataById(characterId: Int) = characterDao.getCharacterDetailDataById(characterId)
+        override fun getCharacterWithRelations(characterId: Int): Flow<CharacterWithRelations?> =
+            characterDao.getCharacterWithRelations(characterId)
+
+        override suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo? = characterDao.getSagaInfoForCharacter(sagaId)
     }

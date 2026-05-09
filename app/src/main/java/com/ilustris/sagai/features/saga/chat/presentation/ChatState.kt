@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
+import com.ilustris.sagai.features.wiki.data.model.WikiGroup
 import com.ilustris.sagai.ui.components.SnackBarState
 
 sealed class ChatState {
@@ -69,6 +70,7 @@ data class ChatUiState(
     val onboardingType: OnboardingType? = null,
     val pendingAdvance: PendingAdvance? = null,
     val reasoningChunk: String? = null,
+    val wikiGroups: List<WikiGroup> = emptyList(),
     val maxContentLength: Int = 2000,
 )
 

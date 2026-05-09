@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import kotlinx.coroutines.flow.Flow
 
 interface CharacterRepository {
@@ -16,5 +17,5 @@ interface CharacterRepository {
 
     suspend fun getAllCharacterNames(): List<String>
 
-    fun getCharacterDetailData(characterId: Int): Flow<com.ilustris.sagai.features.characters.data.model.CharacterDetailData?>
+    fun getCharacterDetailData(characterId: Int): Flow<CharacterDetailData?>
 }

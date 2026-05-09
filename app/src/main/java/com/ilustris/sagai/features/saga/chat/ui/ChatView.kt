@@ -48,9 +48,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -157,11 +154,11 @@ import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackSt
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvanceTrigger
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
+import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.SagaSnackBar
@@ -223,6 +220,7 @@ fun ChatView(
                 when (action) {
                     is ChatUiAction.Back -> onBack()
                     is ChatUiAction.OpenSagaDetails -> onSagaDetails()
+                    is ChatUiAction.OpenCharacter -> onCharacterDetails(action.characterId)
                     else -> doNothing()
                 }
             }
@@ -270,44 +268,12 @@ fun ChatView(
                             drawerShape = RoundedCornerShape(0.dp),
                             drawerContainerColor = MaterialTheme.colorScheme.background,
                         ) {
-                            uiState.sagaContent?.let {
-                                val genre = it.data.genre
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(2),
-                                    modifier =
-                                        Modifier
-                                            .animateContentSize(),
-                                ) {
-                                    stickyHeader {
-                                        Column {
-                                            Text(
-                                                stringResource(R.string.saga_detail_section_title_wiki),
-                                                style =
-                                                    MaterialTheme.typography.headlineLarge.copy(
-                                                        fontFamily = genre.headerFont(),
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                                modifier =
-                                                    Modifier
-                                                        .padding(16.dp)
-                                                        .fillMaxWidth(),
-                                            )
-                                        }
-                                    }
-
-                                    items(it.wikis) { wiki ->
-                                        WikiCard(
-                                            wiki = wiki,
-                                            genre = genre,
-                                            modifier =
-                                                Modifier
-                                                    .padding(8.dp)
-                                                    .animateItem()
-                                                    .fillMaxWidth(),
-                                        )
-                                    }
-                                }
-                            }
+                            SagaWikiView(
+                                content.data.id.toString(),
+                                {},
+                                sharedTransitionScope,
+                                animatedVisibilityScope,
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxSize(),

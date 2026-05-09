@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaInfo
 import kotlinx.coroutines.flow.Flow
 
 interface SagaRepository {
@@ -14,6 +15,8 @@ interface SagaRepository {
     fun getSagaSummaries(): Flow<List<com.ilustris.sagai.features.home.data.model.SagaSummary>>
 
     fun getSagaById(id: Int): Flow<SagaContent?>
+
+    fun getSagaInfo(id: Int): Flow<SagaInfo?>
 
     fun getAllSagas(): Flow<List<Saga>>
 

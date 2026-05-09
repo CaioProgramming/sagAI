@@ -1,10 +1,11 @@
 package com.ilustris.sagai.features.wiki.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.model.WikiWithChapter
+import kotlinx.coroutines.flow.Flow
 
 interface WikiUseCase {
     suspend fun saveWiki(wiki: Wiki): Wiki
@@ -24,4 +25,6 @@ interface WikiUseCase {
         saga: SagaContent,
         wikiContents: List<Wiki>,
     ): RequestResult<Unit>
+
+    fun getWikisWithChapter(sagaId: Int): Flow<List<WikiWithChapter>>
 }

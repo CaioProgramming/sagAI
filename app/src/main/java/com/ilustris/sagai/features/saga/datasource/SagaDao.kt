@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaInfo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -18,6 +19,9 @@ interface SagaDao {
 
     @Query("SELECT * FROM sagas WHERE id = :sagaId")
     fun getSaga(sagaId: Int): Flow<Saga?>
+
+    @Query("SELECT id, title, genre, variationId FROM sagas WHERE id = :sagaId LIMIT 1")
+    fun getSagaInfo(sagaId: Int): Flow<SagaInfo?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveSagaData(saga: Saga): Long

@@ -45,6 +45,8 @@ class SagaRepositoryImpl
 
         override fun getSagaById(id: Int) = sagaDao.getSagaContent(id)
 
+        override fun getSagaInfo(id: Int) = sagaDao.getSagaInfo(id)
+
         override suspend fun saveChat(saga: Saga) =
             saga.copy(
                 id =

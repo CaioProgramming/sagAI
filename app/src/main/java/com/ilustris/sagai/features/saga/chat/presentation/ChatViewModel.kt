@@ -48,7 +48,8 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
+import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.components.snackBar
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -80,6 +81,8 @@ class ChatViewModel
         private val visualConfigService: GenreVisualConfigService,
         private val remoteConfigService: RemoteConfigService,
         private val mapper: SagaContentUIMapper,
+        private val wikiUseCase: WikiUseCase,
+        private val wikiMapper: WikiMapper,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel(),
         DefaultLifecycleObserver {
@@ -97,7 +100,7 @@ class ChatViewModel
         private var lastChapterId: Int = 0
         private var lastEventId: Int = 0
         private var lastMessageCount: Int = 0
-        private var saveStateJob: kotlinx.coroutines.Job? = null
+        private var wikiObserverJob: kotlinx.coroutines.Job? = null
 
         private var sagaObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
@@ -110,17 +113,8 @@ class ChatViewModel
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
         private var generationJob: kotlinx.coroutines.Job? = null
 
-        private val INPUT_VALUE_KEY = "chat_input_value"
-        private val SELECTION_START_KEY = "chat_input_selection_start"
-        private val SELECTION_END_KEY = "chat_input_selection_end"
-
         init {
-            val savedInput = savedStateHandle.get<String>(INPUT_VALUE_KEY)
-            val selectionStart = savedStateHandle.get<Int>(SELECTION_START_KEY) ?: 0
-            val selectionEnd = savedStateHandle.get<Int>(SELECTION_END_KEY) ?: 0
-            savedInput?.let {
-                stateManager.updateInput(TextFieldValue(it, TextRange(selectionStart, selectionEnd)))
-            }
+            // State initialized by ChatStateManager
         }
 
         fun handleAction(action: ChatUiAction) {
@@ -364,6 +358,14 @@ class ChatViewModel
                 val limit = remoteConfigService.getLong("chat_input_limit") ?: 2000L
                 stateManager.updateState { it.copy(maxContentLength = limit.toInt()) }
             }
+
+            wikiObserverJob?.cancel()
+            wikiObserverJob =
+                viewModelScope.launch {
+                    wikiUseCase.getWikisWithChapter(sagaId.toInt()).collectLatest { wikis ->
+                        stateManager.updateWikiGroups(wikiMapper.buildWikiGroups(wikis))
+                    }
+                }
         }
 
         private fun observeMediaState() =
@@ -445,14 +447,6 @@ class ChatViewModel
 
         fun updateInput(value: TextFieldValue) {
             stateManager.updateInput(value)
-            saveStateJob?.cancel()
-            saveStateJob =
-                viewModelScope.launch {
-                    delay(500)
-                    savedStateHandle[INPUT_VALUE_KEY] = value.text
-                    savedStateHandle[SELECTION_START_KEY] = value.selection.start
-                    savedStateHandle[SELECTION_END_KEY] = value.selection.end
-                }
         }
 
         fun updateSendType(type: SenderType) {

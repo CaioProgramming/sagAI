@@ -10,9 +10,11 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.MergeWikiGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGen
+import com.ilustris.sagai.features.wiki.data.model.WikiWithChapter
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
+import javax.inject.Inject
 
 class WikiUseCaseImpl
     @Inject
@@ -115,4 +117,6 @@ class WikiUseCaseImpl
 
                 Timber.d("mergeWikis: Updated ${validItems.size} items")
             }
+
+        override fun getWikisWithChapter(sagaId: Int): Flow<List<WikiWithChapter>> = wikiRepository.getWikisWithChapter(sagaId)
     }

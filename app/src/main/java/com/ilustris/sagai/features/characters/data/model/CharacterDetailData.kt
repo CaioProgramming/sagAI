@@ -1,43 +1,20 @@
 package com.ilustris.sagai.features.characters.data.model
 
-import androidx.room.Embedded
-import androidx.room.Relation
-import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
-import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
-import com.ilustris.sagai.features.home.data.model.Saga
 
 /**
- * A dedicated data model for the character details page to avoid loading the full [SagaContent].
- * This structure is flat and avoids recursive relations that could lead to memory issues.
+ * A dedicated data model for the character details page.
+ * Uses [CharacterSagaInfo] instead of the full [com.ilustris.sagai.features.home.data.model.Saga]
+ * to avoid loading unnecessary columns (review, emotionalProfile, worldState, etc.).
+ *
+ * Assembled manually in the repository from [CharacterWithRelations] + [CharacterSagaInfo].
  */
 data class CharacterDetailData(
-    @Embedded
     val character: Character,
-    @Relation(
-        parentColumn = "sagaId",
-        entityColumn = "id",
-        entity = Saga::class,
-    )
-    val saga: Saga,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "characterId",
-        entity = CharacterEvent::class,
-    )
+    val sagaInfo: CharacterSagaInfo,
     val events: List<CharacterEventDetails> = emptyList(),
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "characterOneId",
-        entity = CharacterRelation::class,
-    )
     val relationshipsAsFirst: List<RelationshipContent> = emptyList(),
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "characterTwoId",
-        entity = CharacterRelation::class,
-    )
     val relationshipsAsSecond: List<RelationshipContent> = emptyList(),
     val messageCount: Int = 0,
 ) {

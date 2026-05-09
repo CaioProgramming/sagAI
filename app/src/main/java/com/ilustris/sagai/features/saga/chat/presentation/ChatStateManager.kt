@@ -133,4 +133,8 @@ class ChatStateManager {
     fun updatePendingAdvance(pendingAdvance: PendingAdvance?) {
         _uiState.update { it.copy(pendingAdvance = pendingAdvance) }
     }
+
+    fun updateWikiGroups(wikiGroups: List<com.ilustris.sagai.features.wiki.data.model.WikiGroup>) {
+        _uiState.update { it.copy(wikiGroups = wikiGroups) }
+    }
 }

@@ -1,10 +1,16 @@
 package com.ilustris.sagai.features.characters.data.usecase
 
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
+import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -29,19 +35,19 @@ interface CharacterUseCase {
     suspend fun generateCharacterImageStream(
         character: Character,
         saga: Saga,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Pair<Character, String>>>>
+    ): Flow<StreamingState<GeneratedContent<Pair<Character, String>>>>
 
     suspend fun generateCharacter(
         sagaContent: SagaContent,
         description: String,
-        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
+        sceneSummary: SceneSummary? = null,
     ): RequestResult<Character>
 
     suspend fun generateCharacterStream(
         sagaContent: SagaContent,
         description: String,
-        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Character>>>
+        sceneSummary: SceneSummary? = null,
+    ): Flow<StreamingState<GeneratedContent<Character>>>
 
     suspend fun createSmartZoom(character: Character): RequestResult<Unit>
 
@@ -82,15 +88,13 @@ interface CharacterUseCase {
         saga: SagaContent,
     ): RequestResult<com.ilustris.sagai.features.characters.ui.CharacterDetailState>
 
-    suspend fun insertCharacterEvent(
-        characterEvent: com.ilustris.sagai.features.characters.events.data.model.CharacterEvent,
-    ): com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
+    suspend fun insertCharacterEvent(characterEvent: CharacterEvent): CharacterEvent
 
-    suspend fun insertCharacterEvents(characterEvents: List<com.ilustris.sagai.features.characters.events.data.model.CharacterEvent>)
+    suspend fun insertCharacterEvents(characterEvents: List<CharacterEvent>)
 
-    suspend fun insertCharacterArc(characterArc: com.ilustris.sagai.features.characters.data.model.CharacterArc)
+    suspend fun insertCharacterArc(characterArc: CharacterArc)
 
-    fun getCharacterArcs(characterId: Int): Flow<List<com.ilustris.sagai.features.characters.data.model.CharacterArc>>
+    fun getCharacterArcs(characterId: Int): Flow<List<CharacterArc>>
 
-    fun getCharacterDetailData(characterId: Int): Flow<com.ilustris.sagai.features.characters.data.model.CharacterDetailData?>
+    fun getCharacterDetailData(characterId: Int): Flow<CharacterDetailData?>
 }

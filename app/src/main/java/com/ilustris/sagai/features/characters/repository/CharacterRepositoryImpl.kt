@@ -2,7 +2,9 @@ package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class CharacterRepositoryImpl
@@ -30,5 +32,20 @@ class CharacterRepositoryImpl
 
         override suspend fun getAllCharacterNames(): List<String> = dao.getAllCharacterNames()
 
-        override fun getCharacterDetailData(characterId: Int) = dao.getCharacterDetailDataById(characterId)
+        override fun getCharacterDetailData(characterId: Int): Flow<CharacterDetailData?> =
+            dao.getCharacterWithRelations(characterId).map { withRelations ->
+                withRelations?.let {
+                    val sagaInfo =
+                        dao.getSagaInfoForCharacter(it.character.sagaId)
+                            ?: return@map null
+                    CharacterDetailData(
+                        character = it.character,
+                        sagaInfo = sagaInfo,
+                        events = it.events,
+                        relationshipsAsFirst = it.relationshipsAsFirst,
+                        relationshipsAsSecond = it.relationshipsAsSecond,
+                        messageCount = it.messageCount,
+                )
+            }
+        }
     }

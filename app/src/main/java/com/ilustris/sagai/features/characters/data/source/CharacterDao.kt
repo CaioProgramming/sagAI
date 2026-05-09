@@ -4,9 +4,11 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
+import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
+import com.ilustris.sagai.features.characters.data.model.CharacterWithRelations
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -35,9 +37,19 @@ interface CharacterDao {
     @Query("SELECT TRIM(name || ' ' || IFNULL(lastName, '')) FROM Characters")
     suspend fun getAllCharacterNames(): List<String>
 
-    @androidx.room.Transaction
+    /**
+     * Fetches a [Character] with its events, relationships, and message count.
+     * Does NOT load the parent Saga — use [getSagaInfoForCharacter] for the lightweight projection.
+     */
+    @Transaction
     @Query(
         "SELECT *, (SELECT COUNT(*) FROM messages WHERE characterId = Characters.id) as messageCount FROM Characters WHERE id = :characterId LIMIT 1",
     )
-    fun getCharacterDetailDataById(characterId: Int): Flow<CharacterDetailData?>
+    fun getCharacterWithRelations(characterId: Int): Flow<CharacterWithRelations?>
+
+    /**
+     * Lightweight projection of the Saga entity, loading only the fields needed by the character details page.
+     */
+    @Query("SELECT id, genre, variationId, title FROM sagas WHERE id = :sagaId LIMIT 1")
+    suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo?
 }

@@ -3,13 +3,14 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
+import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,7 +20,6 @@ class CharacterDetailsViewModel
     @Inject
     constructor(
         private val characterUseCase: CharacterUseCase,
-        private val billingService: BillingService,
         private val paletteUseCase: PaletteUseCase,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
@@ -35,14 +35,34 @@ class CharacterDetailsViewModel
         val isEnriching = MutableStateFlow(false)
         val showPremiumSheet = MutableStateFlow(false)
 
+        /** Tracks the currently loaded character to prevent stale data from previous loads. */
+        private var currentCharacterId: Int? = null
+
+        /** Job for the active character detail collection — cancelled on re-entry. */
+        private var detailJob: Job? = null
+
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
         fun loadCharacterDetails(characterId: Int?) {
             if (characterId == null) return
-            viewModelScope.launch(Dispatchers.IO) {
-                launch {
+            // Guard: skip if we're already loading this exact character.
+            if (characterId == currentCharacterId) return
+
+            // Cancel any in-flight collection from a previous character.
+            detailJob?.cancel()
+            currentCharacterId = characterId
+
+            // Reset state so the UI never flashes stale data from the old character.
+            characterDetailData.value = null
+            characterResume.value = null
+            characterDetailState.value = null
+            imagePalette.value = null
+            messageCount.value = 0
+
+            detailJob =
+                viewModelScope.launch(Dispatchers.IO) {
                     characterUseCase.getCharacterDetailData(characterId).collect { data ->
                         characterDetailData.value = data
                         data?.let {
@@ -59,7 +79,6 @@ class CharacterDetailsViewModel
                         }
                     }
                 }
-            }
         }
 
         private fun extractPalette(imageUrl: String) {
@@ -73,7 +92,7 @@ class CharacterDetailsViewModel
             viewModelScope.launch(Dispatchers.IO) {
             /* isEnriching.value = true
              characterUseCase
-                 .enrichCharacter(detailData.character, detailData.saga)
+                 .enrichCharacter(detailData.character, detailData.sagaInfo.toSaga())
                  .onSuccessAsync {
                      characterDetailState.emit(it)
                      isEnriching.value = false
@@ -92,7 +111,7 @@ class CharacterDetailsViewModel
         /*viewModelScope.launch(Dispatchers.IO) {
             isSummarizing.value = true
             characterUseCase
-                .generateCharacterResume(detailData.character, detailData.saga)
+                .generateCharacterResume(detailData.character, detailData.sagaInfo.toSaga())
                 .onSuccessAsync {
                     characterResume.emit(it)
                     isSummarizing.value = false
@@ -101,7 +120,7 @@ class CharacterDetailsViewModel
         }
 
         fun regenerate(
-            saga: com.ilustris.sagai.features.home.data.model.Saga,
+            sagaInfo: CharacterSagaInfo,
             selectedCharacter: Character,
         ) {
             isGenerating.value = true
@@ -112,7 +131,7 @@ class CharacterDetailsViewModel
                 characterUseCase
                     .generateCharacterImageStream(
                         selectedCharacter,
-                        saga,
+                        sagaInfo.toSaga(),
                     ).collect { state ->
                         when (state) {
                             is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {

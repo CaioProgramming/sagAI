@@ -68,8 +68,6 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.share.domain.model.ShareType
-import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -140,12 +138,11 @@ fun CharacterDetailsContent(
     openEvent: (Timeline?) -> Unit = {},
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
-    val genre = detailData.saga.genre
+    val genre = detailData.sagaInfo.genre
     val resolvedColor = genre.resolveColor()
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
-    var shareCharacter by remember { mutableStateOf(false) }
 
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val imageReasoning by viewModel.imageReasoning.collectAsStateWithLifecycle()
@@ -157,7 +154,6 @@ fun CharacterDetailsContent(
             detailData = detailData,
             openEvent = openEvent,
             viewModel = viewModel,
-            onShareCharacter = { shareCharacter = true },
             imagePalette = imagePalette,
         )
     }
@@ -174,18 +170,9 @@ fun CharacterDetailsContent(
         brushColors = genre.colorPalette(),
     )
 
-    LaunchedEffect(detailData.character.id) {
-        shareCharacter = false
-    }
-
-    if (shareCharacter) {
-        val characterContent =
-            remember(detailData.character) { CharacterContent(data = detailData.character) }
-        val sagaContent = remember(detailData.saga) { SagaContent(data = detailData.saga) }
-        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {
-            shareCharacter = false
-        })
-    }
+    // TODO: Share sheet will be refactored with its own ViewModel to fetch required data independently.
+    // val shareCharacter by remember { mutableStateOf(false) }
+    // if (shareCharacter) { ... }
 
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     if (showPremiumSheet) {
@@ -205,13 +192,12 @@ fun CharacterDetailsContent(
 private fun CharacterDetailsLoaded(
     detailData: CharacterDetailData,
     viewModel: CharacterDetailsViewModel,
-    onShareCharacter: () -> Unit = {},
     imagePalette: ImagePalette? = null,
     openEvent: (Timeline?) -> Unit = {},
 ) {
-    val saga = detailData.saga
+    val sagaInfo = detailData.sagaInfo
     val character = detailData.character
-    val genre = saga.genre
+    val genre = sagaInfo.genre
     val resolvedColor = genre.resolveColor()
     genre.resolveIconColor()
 
@@ -229,12 +215,11 @@ private fun CharacterDetailsLoaded(
     val characterRelations = detailData.relationships
     val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
 
-    // Lite wrappers to satisfy legacy components without reloading the full graph
+    // Lite wrapper to satisfy legacy components that still need SagaContent
     val liteSagaContent =
-        remember(saga) {
-            SagaContent(data = saga)
+        remember(sagaInfo) {
+            SagaContent(data = sagaInfo.toSaga())
         }
-    remember(character) { CharacterContent(data = character) }
 
     AnimatedContent(
         character,
@@ -276,7 +261,7 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
                                             viewModel.regenerate(
-                                                saga,
+                                                sagaInfo,
                                                 characterData,
                                             )
                                         },
@@ -286,8 +271,7 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        )
-                                        .graphicsLayer(
+                                        ).graphicsLayer(
                                             translationY = 120f,
                                         ),
                             ) {
@@ -325,10 +309,7 @@ private fun CharacterDetailsLoaded(
                                         Modifier
                                             .padding(top = 16.dp)
                                             .size(24.dp)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                onShareCharacter()
-                                            },
+                                            .clip(CircleShape),
                                     colorFilter = ColorFilter.tint(characterColor),
                                 )
                             }
@@ -378,11 +359,10 @@ private fun CharacterDetailsLoaded(
                                     .statusBarsPadding()
                                     .clickable {
                                         viewModel.regenerate(
-                                            saga,
+                                            sagaInfo,
                                             characterData,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -509,8 +489,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }
