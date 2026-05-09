@@ -1144,7 +1144,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.ACT,
                                 titleText = a.title,
-                                introduction = a.introduction,
+                                introduction = message ?: act.introduction,
                                 number = saga.actNumber(a).toRoman(),
                                 messageText = message,
                             ),
@@ -1178,7 +1178,7 @@ class SagaContentManagerImpl
                             SagaMilestone.Introduction(
                                 type = IntroductionType.CHAPTER,
                                 titleText = c.title,
-                                introduction = c.introduction,
+                                introduction = message ?: emptyString(),
                                 number = saga.chapterNumber(c).toRoman(),
                                 messageText = message,
                             ),
@@ -1543,5 +1543,5 @@ class SagaContentManagerImpl
             val currentTimeline = content.value?.getCurrentTimeLine() ?: return
             val updatedTimeline = currentTimeline.data.copy(sceneSummary = sceneSummary)
             timelineUseCase.updateTimeline(updatedTimeline)
-    }
+        }
     }

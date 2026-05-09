@@ -170,8 +170,7 @@ class ActUseCaseImpl
             saga: SagaContent,
             act: Act,
         ) = executeRequest {
-            val isFirst = saga.acts.isEmpty()
-            if (isFirst) null else saga.acts.last()
+            saga.acts.isEmpty()
 
             genreConfigService.getGenreConfig(saga.data.genre)
             val prompt =

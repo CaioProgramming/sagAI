@@ -97,6 +97,7 @@ class ChatViewModel
         private var lastChapterId: Int = 0
         private var lastEventId: Int = 0
         private var lastMessageCount: Int = 0
+        private var saveStateJob: kotlinx.coroutines.Job? = null
 
         private var sagaObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
@@ -444,9 +445,14 @@ class ChatViewModel
 
         fun updateInput(value: TextFieldValue) {
             stateManager.updateInput(value)
-            savedStateHandle[INPUT_VALUE_KEY] = value.text
-            savedStateHandle[SELECTION_START_KEY] = value.selection.start
-            savedStateHandle[SELECTION_END_KEY] = value.selection.end
+            saveStateJob?.cancel()
+            saveStateJob =
+                viewModelScope.launch {
+                    delay(500)
+                    savedStateHandle[INPUT_VALUE_KEY] = value.text
+                    savedStateHandle[SELECTION_START_KEY] = value.selection.start
+                    savedStateHandle[SELECTION_END_KEY] = value.selection.end
+                }
         }
 
         fun updateSendType(type: SenderType) {
