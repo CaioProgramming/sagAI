@@ -9,7 +9,8 @@ data class SagaInfo(
     val id: Int,
     val title: String,
     val genre: Genre,
-    val variationId: String,
+    val variationId: String? = null,
+    val icon: String = "",
 )
 
 fun SagaInfo.toSaga() =
@@ -18,4 +19,5 @@ fun SagaInfo.toSaga() =
         title = title,
         genre = genre,
         variationId = variationId,
+        icon = icon,
     )

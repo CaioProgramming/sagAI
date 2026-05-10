@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.data.mapper
 
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.toSagaInfo
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
@@ -84,7 +85,7 @@ class SagaContentUIMapper
                                             isComplete = it.isComplete(rules),
                                             timeline =
                                                 timelineMapper.buildTimeline(
-                                                    saga = saga,
+                                                    saga = saga.toSagaInfo(),
                                                     timelineContent =
                                                         it.copy(
                                                             messages =

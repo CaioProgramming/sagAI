@@ -154,15 +154,16 @@ class ActUseCaseImpl
         }
 
         private suspend fun generateActPrompt(saga: SagaContent): String {
-            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+            remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
 
-            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
+            genreConfigService.getGenreConfig(saga.data.genre)
             return ActPrompts.generateActConclusion(
                 promptService,
                 saga,
                 saga.currentActInfo!!,
-                narrativeRules,
-                genreConfig,
+                genreConfigService.conversationBlueprint(
+                    saga.data.genre,
+                ),
             )
         }
 

@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.toSagaInfo
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
@@ -118,7 +119,7 @@ class SagaDetailUIMapper(
         val timelineCard =
             lastEvent?.let {
                 if (it.isComplete(narrativeRules).not()) return@let null
-                timelineMapper.buildTimeline(saga, lastEvent)
+                timelineMapper.buildTimeline(saga.toSagaInfo(), lastEvent)
             } ?: run {
                 null
             }

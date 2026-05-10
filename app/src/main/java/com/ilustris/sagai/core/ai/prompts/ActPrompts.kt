@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
@@ -72,8 +71,7 @@ object ActPrompts {
         promptService: PromptService,
         sagaContent: SagaContent,
         currentActContent: ActContent,
-        narrativeRules: NarrativeRules,
-        genreConfig: GenreConfig,
+        conversationDirective: String,
     ): String {
         val isFirst = sagaContent.acts.indexOfFirst { it.data.id == currentActContent.data.id } == 0
         val previousAct =
@@ -102,7 +100,7 @@ object ActPrompts {
                         ChapterPrompts.CHAPTER_EXCLUSIONS,
                     ),
                 actPurposeRule = actPurposeRule,
-                conversationDirective = genreConfig.conversationDirective,
+                conversationDirective = conversationDirective,
                 previousActContext =
                     previousAct?.data?.toAINormalize(ACT_EXCLUSIONS)
                         ?: "Initial Volume: The saga begins here, with no prior history recorded.",

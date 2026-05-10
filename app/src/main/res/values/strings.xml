@@ -646,4 +646,5 @@
     <string name="guardrail_explicit_title">Explicit Content Violation</string>
     <string name="guardrail_explicit_message">Your input contains explicit sexual or graphic content that is prohibited for all users. Please maintain a safe environment.</string>
     <string name="guardrail_dismiss">Got it</string>
+    <string name="mascot_insight_label">Mascot\'s Emotional Insight</string>
 </resources>

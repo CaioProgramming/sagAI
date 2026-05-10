@@ -43,12 +43,12 @@ class EmotionalReviewViewModel
                     return@launch
                 }
                 _isGenerating.value = true
-                val genreConfig = genreConfigService.getGenreConfig(sagaContent.data.genre)
+                genreConfigService.getGenreConfig(sagaContent.data.genre)
                 val emotionalTask = promptService.buildPrompt("emotional_loading", emptyMap())
                 _loadingMessage.value =
                     loadingService.generateLoadingMessage(
                         LoadingType(emotionalTask),
-                        genreConfig.conversationDirective,
+                        genreConfigService.conversationBlueprint(sagaContent.data.genre),
                     )
 
                 emotionalUseCase.streamEmotionalConclusion(sagaContent).collect { state ->
@@ -89,7 +89,7 @@ class EmotionalReviewViewModel
                             endMessage = it.endingMessage,
                         ),
                     )
+                }
             }
         }
-    }
     }

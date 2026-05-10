@@ -305,14 +305,12 @@ object AppModule {
     fun providesBookPageMapper(fileHelper: FileHelper) = BookPageMapper(fileHelper)
 
     @Provides
-    fun bindsTimelineMapper(
+    fun providesTimelineMapper(
         mascotEmotionService: MascotEmotionService,
-        stringResourceHelper: StringResourceHelper,
         genreVisualConfigService: GenreVisualConfigService,
         remoteConfigService: RemoteConfigService,
     ) = TimelineMapper(
         mascotEmotionService,
-        stringResourceHelper,
         genreVisualConfigService,
         remoteConfigService,
     )

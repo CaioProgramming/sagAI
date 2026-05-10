@@ -28,15 +28,19 @@ class SagaReviewUseCaseImpl
         override suspend fun createReview(content: SagaContent) =
             flow {
                 executeRequest {
-                    val config =
-                        genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
+                    genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
                     val stages = mutableMapOf<ReviewSteps, ReviewStage>()
 
                     ReviewSteps.entries.forEach { step ->
                         val prompt =
                             promptService.buildRemotePrompt(
                                 step.blueprintKey,
-                                step.buildArgs(content, config.conversationDirective),
+                                step.buildArgs(
+                                    content,
+                                    genreConfigService.conversationBlueprint(
+                                        content.data.genre,
+                                    ),
+                                ),
                             )
 
                         val sourceFlow =
@@ -50,7 +54,7 @@ class SagaReviewUseCaseImpl
                             .synthesizeReasoning(
                                 sourceFlow = sourceFlow,
                                 context = step.name,
-                                conversationStyle = config.conversationDirective,
+                                conversationStyle = genreConfigService.conversationBlueprint(content.data.genre),
                                 genre = content.data.genre.name,
                             ).collect { state ->
                                 when (state) {
@@ -58,7 +62,7 @@ class SagaReviewUseCaseImpl
                                     is StreamingState.Success -> stages[step] = state.data!!
                                     is StreamingState.Error -> error(state.message)
                                 }
-                        }
+                            }
                     }
 
                     val review = stages.buildReview()

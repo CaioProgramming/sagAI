@@ -5,8 +5,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -25,4 +27,13 @@ interface TimelineDao {
 
     @Update
     suspend fun updateTimeline(timeline: Timeline)
+
+    @Transaction
+    @Query(
+        "SELECT timelines.*, acts.title as actTitle FROM timelines " +
+            "INNER JOIN CHAPTER ON timelines.chapterId = chapter.id " +
+            "INNER JOIN acts ON chapter.actId = acts.id " +
+            "WHERE acts.sagaId = :sagaId ORDER BY timelines.createdAt ASC",
+    )
+    fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>>
 }

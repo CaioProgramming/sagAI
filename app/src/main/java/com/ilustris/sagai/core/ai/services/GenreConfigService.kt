@@ -34,9 +34,6 @@ class GenreConfigService
                 appearanceGuidelines =
                     variation.appearanceGuidelines
                         ?: baseConfig.appearanceGuidelines,
-                conversationDirective =
-                    variation.conversationDirective
-                        ?: baseConfig.conversationDirective,
                 criticalRules = variation.criticalRules ?: baseConfig.criticalRules,
             )
         }.getSuccess()!!

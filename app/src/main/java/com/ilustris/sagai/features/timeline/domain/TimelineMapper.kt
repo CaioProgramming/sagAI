@@ -1,62 +1,49 @@
 package com.ilustris.sagai.features.timeline.domain
 
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
-import com.ilustris.sagai.core.utils.StringResourceHelper
-import com.ilustris.sagai.features.act.ui.toRoman
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
-import com.ilustris.sagai.features.home.data.model.chapterNumber
-import com.ilustris.sagai.features.home.data.model.findChapter
+import com.ilustris.sagai.features.home.data.model.SagaInfo
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 
 class TimelineMapper(
     private val mascotEmotionService: MascotEmotionService,
-    private val stringResourceHelper: StringResourceHelper,
     private val genreVisualConfigService: GenreVisualConfigService,
     private val remoteConfigService: RemoteConfigService,
 ) {
-    suspend fun buildTimelines(sagaContent: SagaContent) =
-        TimelineViewContent(
-            saga = sagaContent,
-            visualConfig = genreVisualConfigService.getVisualConfig(sagaContent.data.genre),
-            groups =
-                sagaContent.acts.map {
-                    val chapters = it.chapters
+    suspend fun buildTimelines(
+        sagaInfo: SagaInfo,
+        timelineData: List<TimelineWithAct>,
+    ) = TimelineViewContent(
+        saga = sagaInfo,
+        visualConfig = genreVisualConfigService.getVisualConfig(sagaInfo.genre),
+        groups =
+            timelineData
+                .groupBy { it.actTitle }
+                .map { (actTitle, events) ->
                     TimelineGroup(
-                        title =
-                            it.data.title.ifEmpty {
-                                stringResourceHelper.getString(
-                                    R.string.act_title,
-                                    sagaContent.actNumber(it.data).toRoman(),
+                        title = actTitle,
+                        events =
+                            events.map {
+                                buildTimeline(
+                                    sagaInfo,
+                                    it.timelineContent,
                                 )
                             },
-                        events =
-                            chapters
-                                .flatMap { chapterContent -> chapterContent.events }
-                                .map {
-                                    buildTimeline(
-                                        sagaContent,
-                                        it,
-                                    )
-                                },
                     )
                 },
-        )
+    )
 
     suspend fun buildTimeline(
-        saga: SagaContent,
+        saga: SagaInfo,
         timelineContent: TimelineContent,
     ): TimelineCardContent {
         val narrativeRules = remoteConfigService.getNarrativeRules()
-        val genre = saga.data.genre
-        val chapter = saga.findChapter(timelineContent.data.id)
-        val chapterNumber = saga.chapterNumber(chapter?.data).toRoman()
+        val genre = saga.genre
         val topEmotion =
             timelineContent.emotionalRanking().firstOrNull()?.first ?: EmotionalTone.NEUTRAL
         val mascotEmotion =
@@ -67,14 +54,14 @@ class TimelineMapper(
         return TimelineCardContent(
             timelineContent,
             topEmotion to mascotEmotion,
-            chapterNumber,
+            null, // Chapter number is removed in favor of continuous thread
             timelineContent.isComplete(narrativeRules),
         )
     }
 }
 
 data class TimelineViewContent(
-    val saga: SagaContent,
+    val saga: SagaInfo,
     val groups: List<TimelineGroup>,
     val visualConfig: GenreVisualConfig?,
 )

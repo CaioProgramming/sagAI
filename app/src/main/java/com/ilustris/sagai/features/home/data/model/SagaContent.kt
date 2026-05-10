@@ -73,6 +73,15 @@ data class SagaContent(
     fun completedEvents(narrativeRules: NarrativeRules) = flatEvents().count { it.isComplete(narrativeRules) }
 }
 
+fun SagaContent.toSagaInfo() =
+    SagaInfo(
+        id = data.id,
+        title = data.title,
+        genre = data.genre,
+        variationId = data.variationId,
+        icon = data.icon,
+)
+
 fun SagaContent.historySummary() =
     acts.joinToString(";\n---\n") {
         "${acts.indexOf(it) + 1} - ${it.actSummary(it == acts.last())}"

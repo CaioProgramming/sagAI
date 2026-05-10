@@ -69,7 +69,7 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
+import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
@@ -271,7 +271,8 @@ private fun CharacterDetailsLoaded(
                                         .fillMaxSize()
                                         .effectForGenre(
                                             genre,
-                                        ).graphicsLayer(
+                                        )
+                                        .graphicsLayer(
                                             translationY = 120f,
                                         ),
                             ) {
@@ -362,7 +363,8 @@ private fun CharacterDetailsLoaded(
                                             sagaInfo,
                                             characterData,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -489,7 +491,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }
@@ -592,7 +595,7 @@ private fun CharacterDetailsLoaded(
                     items(items = characterEvents) { characterEvent ->
                         TimelineCharacterAttachment(
                             eventDetails = characterEvent,
-                            sagaContent = liteSagaContent,
+                            sagaContent = sagaInfo.toSagaInfo(),
                             showIndicator = true,
                             showSpark = false, // Simplified for now
                             isLast = characterEvent == characterEvents.last(),

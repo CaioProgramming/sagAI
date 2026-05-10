@@ -32,13 +32,14 @@ fun SagaEventsView(
     animatedVisibilityScope: AnimatedContentScope,
     viewModel: TimelineViewModel = hiltViewModel(),
 ) {
-    val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val timelineView by viewModel.timelineView.collectAsStateWithLifecycle()
+    val sagaInfo = timelineView?.saga
 
     BackHandler {
         onBack()
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(sagaId) {
         viewModel.loadSaga(sagaId.toInt())
     }
 
@@ -48,26 +49,26 @@ fun SagaEventsView(
             .statusBarsPadding(),
     ) {
         AnimatedContent(
-            saga,
+            sagaInfo,
             transitionSpec = {
                 fadeIn(tween(500)) togetherWith fadeOut(tween(400))
             },
             label = "SagaEventsContent",
-        ) { sagaContent ->
-            if (sagaContent != null) {
+        ) { info ->
+            if (info != null) {
                 TimeLineContent(
-                    saga = sagaContent,
+                    sagaId = sagaId.toInt(),
                     title = stringResource(R.string.saga_detail_section_title_timeline),
                     subtitle =
                         stringResource(
                             R.string.saga_detail_section_subtitle_timeline,
-                            sagaContent.eventsSize(),
+                            timelineView?.groups?.sumOf { it.events.size } ?: 0,
                         ),
                     onBackClick = onBack,
                     titleModifier =
                         with(sharedTransitionScope) {
                             Modifier.sharedBounds(
-                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
+                                rememberSharedContentState(key = "saga-title-${info.id}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         },

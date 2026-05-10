@@ -404,7 +404,7 @@ fun ReaderPage(
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 80.dp)
+                .padding(horizontal = 24.dp, vertical = 80.dp)
                 .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {

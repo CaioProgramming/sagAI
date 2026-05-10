@@ -21,11 +21,13 @@ import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 import com.ilustris.sagai.features.timeline.data.model.UnifiedLoreUpdate
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
@@ -394,4 +396,7 @@ class TimelineUseCaseImpl
 
             characterUseCase.generateCharacterRelations(timeline, saga)
         }
+
+        override fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>> =
+            timelineRepository.getTimelineWithActBySaga(sagaId)
     }

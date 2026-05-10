@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 import kotlinx.coroutines.flow.Flow
 
 interface TimelineUseCase {
@@ -43,4 +44,6 @@ interface TimelineUseCase {
         saga: SagaContent,
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
+
+    fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>>
 }

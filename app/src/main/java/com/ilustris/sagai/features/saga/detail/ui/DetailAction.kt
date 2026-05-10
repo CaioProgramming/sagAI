@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 sealed class DetailAction {
     data object Back : DetailAction()
@@ -19,10 +18,6 @@ sealed class DetailAction {
 
     data object RegenerateIcon : DetailAction()
 
-    data class ReviewWiki(
-        val wikis: List<Wiki>,
-    ) : DetailAction()
-
     data class ReviewEvent(
         val event: TimelineContent,
     ) : DetailAction()
@@ -36,4 +31,6 @@ sealed class DetailAction {
     ) : DetailAction()
 
     data object OpenLoreDebug : DetailAction()
+
+    data object ViewWiki : DetailAction()
 }

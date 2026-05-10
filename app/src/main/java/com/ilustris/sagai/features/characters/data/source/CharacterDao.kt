@@ -50,6 +50,6 @@ interface CharacterDao {
     /**
      * Lightweight projection of the Saga entity, loading only the fields needed by the character details page.
      */
-    @Query("SELECT id, genre, variationId, title FROM sagas WHERE id = :sagaId LIMIT 1")
+    @Query("SELECT id, genre, variationId, title, icon FROM sagas WHERE id = :sagaId LIMIT 1")
     suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo?
 }

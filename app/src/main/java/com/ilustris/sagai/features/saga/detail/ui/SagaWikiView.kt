@@ -67,8 +67,8 @@ fun SagaWikiView(
                     sagaId = sagaContent.id,
                     groups = groups,
                     onBackClick = onBack,
-                    reviewWiki = {
-                        viewModel.reviewWiki(it)
+                    onHoldWiki = {
+                        // viewModel.reviewWiki(it)
                     },
                     titleModifier =
                         with(sharedTransitionScope) {

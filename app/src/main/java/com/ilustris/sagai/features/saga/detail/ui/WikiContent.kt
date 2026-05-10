@@ -35,7 +35,6 @@ fun WikiContent(
     groups: List<WikiGroup>,
     onBackClick: () -> Unit,
     titleModifier: Modifier = Modifier,
-    reviewWiki: (List<Wiki>) -> Unit = {},
     onHoldWiki: (Wiki) -> Unit = {},
 ) {
     val gridState = rememberLazyGridState()
@@ -75,7 +74,6 @@ fun WikiContent(
                     )
                 }
             },
-            reviewWiki = reviewWiki,
             onHoldWiki = onHoldWiki,
         )
 
