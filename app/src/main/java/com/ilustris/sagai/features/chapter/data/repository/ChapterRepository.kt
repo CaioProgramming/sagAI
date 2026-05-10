@@ -13,6 +13,8 @@ interface ChapterRepository {
 
     suspend fun deleteChapterById(chapterId: Int)
 
+    fun getChaptersInfoBySaga(sagaId: Int): Flow<List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo>>
+
     suspend fun deleteAllChapters()
 
 }

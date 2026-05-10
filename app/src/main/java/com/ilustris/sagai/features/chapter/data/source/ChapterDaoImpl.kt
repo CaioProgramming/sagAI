@@ -25,6 +25,8 @@ class ChapterDaoImpl
             chapterDao.deleteChapterById(chapterId)
         }
 
+        override fun getChaptersInfoBySaga(sagaId: Int) = chapterDao.getChaptersInfoBySaga(sagaId)
+
         override suspend fun deleteAllChapters() {
             chapterDao.deleteAllChapters()
         }

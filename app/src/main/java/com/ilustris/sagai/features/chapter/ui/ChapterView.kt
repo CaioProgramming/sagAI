@@ -18,12 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
-import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.ui.components.SectionLoading
 
 @Composable
@@ -35,6 +32,9 @@ fun ChapterView(
     viewModel: ChapterViewModel = hiltViewModel(),
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val chaptersInfo by viewModel.chaptersInfo.collectAsStateWithLifecycle()
+    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val reasoningMessage by viewModel.reasoningMessage.collectAsStateWithLifecycle()
 
     BackHandler {
         onBack()
@@ -48,7 +48,7 @@ fun ChapterView(
         Modifier
             .fillMaxSize()
             .statusBarsPadding(),
-            ) {
+    ) {
         AnimatedContent(
             saga,
             transitionSpec = {
@@ -57,24 +57,17 @@ fun ChapterView(
             label = "SagaChaptersContent",
         ) { sagaContent ->
             if (sagaContent != null) {
-                val chapters = sagaContent.flatChapters()
                 ChaptersGalleryContent(
-                    title = stringResource(R.string.saga_detail_section_title_chapters),
-                    subtitle =
-                        stringResource(
-                            R.string.saga_detail_section_subtitle_chapters,
-                            chapters.size,
-                        ),
                     saga = sagaContent,
-                    chapters = chapters,
-                    onBackClick = onBack,
-                    titleModifier =
-                        with(sharedTransitionScope) {
-                            Modifier.sharedBounds(
-                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                        },
+                    chapters = chaptersInfo,
+                    isGenerating = isGenerating,
+                    loadingMessage = reasoningMessage,
+                    onGenerateIcon = {
+                        viewModel.generateIcon(sagaContent, it)
+                    },
+                    onReviewChapter = {
+                        viewModel.reviewChapter(it)
+                    },
                 )
             } else {
                 SectionLoading()

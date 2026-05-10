@@ -35,24 +35,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.onboarding.data.OnboardingType
-import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
@@ -60,54 +53,42 @@ import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun ChapterContentView(
-    chapter: ChapterContent,
+    chapter: com.ilustris.sagai.features.chapter.data.model.ChapterInfo,
     content: SagaContent,
     modifier: Modifier,
+    isGenerating: Boolean = false,
+    loadingMessage: String? = null,
     isLast: Boolean = false,
     imageSize: Dp = 500.dp,
-    openCharacters: () -> Unit = {},
-    requestReview: ((ChapterContent) -> Unit)? = null,
+    onGenerateIcon: (com.ilustris.sagai.features.chapter.data.model.ChapterInfo) -> Unit = {},
+    onReviewChapter: (com.ilustris.sagai.features.chapter.data.model.ChapterInfo) -> Unit = {},
 ) {
-    val viewModel: ChapterViewModel = hiltViewModel()
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val loadingMessage by viewModel.reasoningMessage.collectAsStateWithLifecycle()
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val genre = remember { content.data.genre }
-        val characters = remember { chapter.fetchCharacters(content).filterNotNull() }
+        val characters =
+            remember {
+                chapter.featuredCharacters.map { content.findCharacter(it) }.filterNotNull()
+            }
 
-        if (chapter.data.coverImage.isEmpty()) {
+        if (chapter.coverImage.isEmpty()) {
             Image(
                 painterResource(genre.icon),
                 null,
                 Modifier
                     .clickable {
-                        viewModel.generateIcon(
-                            content,
-                            chapter,
-                        )
+                        onGenerateIcon(chapter)
                     }.size(100.dp)
                     .effectForGenre(genre)
                     .padding(16.dp),
                 colorFilter = ColorFilter.tint(genre.resolveColor()),
-            )
-
-            genre.stylisedText(
-                text = chapter.data.title,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .reactiveShimmer(isLast)
-                        .genreVfx(genre),
             )
         } else {
             var imageSize by remember {
@@ -122,7 +103,7 @@ fun ChapterContentView(
                         .animateContentSize(),
             ) {
                 AsyncImage(
-                    model = chapter.data.coverImage,
+                    model = chapter.coverImage,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     onError = {
@@ -141,16 +122,6 @@ fun ChapterContentView(
                         .fillMaxSize()
                         .background(fadedGradientTopAndBottom())
                         .align(Alignment.BottomCenter),
-                )
-
-                genre.stylisedText(
-                    text = chapter.data.title,
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                            .reactiveShimmer(isLast),
                 )
             }
         }
@@ -171,7 +142,7 @@ fun ChapterContentView(
         }
 
         TypewriterText(
-            text = chapter.data.overview,
+            text = chapter.overview,
             modifier =
                 Modifier
                     .background(MaterialTheme.colorScheme.background)
@@ -194,56 +165,45 @@ fun ChapterContentView(
             },
         )
 
-        if (chapter.data.emotionalReview?.isNotEmpty() == true) {
+        if (chapter.emotionalReview?.isNotEmpty() == true) {
             EmotionalCard(
-                chapter.data.emotionalReview,
+                chapter.emotionalReview,
                 genre,
                 true,
                 modifier = Modifier.padding(16.dp),
             )
         }
 
-        if (requestReview != null) {
-            Row(
-                Modifier
-                    .alpha(.4f)
-                    .clip(genre.shape())
-                    .gradientFill(genre.gradient())
-                    .clickable {
-                        requestReview(chapter)
-                    }.padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painterResource(R.drawable.center_spark),
-                    null,
-                    modifier =
-                        Modifier
-                            .size(50.dp)
-                            .padding(8.dp),
-                )
-                Text(
-                    stringResource(R.string.review_chapter),
-                    style =
-                        MaterialTheme.typography.labelLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                        ),
-                )
-            }
+        Row(
+            Modifier
+                .alpha(.4f)
+                .clip(genre.shape())
+                .gradientFill(genre.gradient())
+                .clickable {
+                    onReviewChapter(chapter)
+                }.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Image(
+                painterResource(R.drawable.center_spark),
+                null,
+                modifier =
+                    Modifier
+                        .size(50.dp)
+                        .padding(8.dp),
+            )
+            Text(
+                stringResource(R.string.review_chapter),
+                style =
+                    MaterialTheme.typography.labelLarge.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                    ),
+            )
         }
     }
 
     StarryLoader(isGenerating, loadingMessage, brushColors = content.data.genre.colorPalette())
-
-    val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
-    if (showPremiumSheet) {
-        OnboardingDialog(
-            type = OnboardingType.PREMIUM_GUIDE,
-            force = true,
-            onDismiss = { viewModel.togglePremiumSheet() },
-        )
-    }
 }

@@ -67,6 +67,8 @@ class ChapterUseCaseImpl
 
         override suspend fun deleteAllChapters() = chapterRepository.deleteAllChapters()
 
+        override fun getChaptersInfoBySaga(sagaId: Int) = chapterRepository.getChaptersInfoBySaga(sagaId)
+
         override suspend fun generateChapter(
             saga: SagaContent,
             chapterContent: ChapterContent,

@@ -3,9 +3,10 @@ package com.ilustris.sagai.features.chapter.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,7 @@ class ChapterViewModel
         private val chapterUseCase: ChapterUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
+        val chaptersInfo = MutableStateFlow<List<ChapterInfo>>(emptyList())
 
         val isGenerating = MutableStateFlow(false)
         val reasoningMessage = MutableStateFlow<String?>(null)
@@ -43,10 +45,16 @@ class ChapterViewModel
                     saga.value = it
                 }
             }
+            viewModelScope.launch(Dispatchers.IO) {
+                chapterUseCase.getChaptersInfoBySaga(sagaId.toInt()).collect {
+                    chaptersInfo.value = it
+                }
+            }
         }
 
-        fun reviewChapter(chapter: ChapterContent) {
+        fun reviewChapter(chapterInfo: ChapterInfo) {
             val currentSaga = saga.value ?: return
+            val chapter = currentSaga.flatChapters().find { it.data.id == chapterInfo.id } ?: return
             viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.emit(true)
                 chapterUseCase.reviewChapter(currentSaga, chapter)
@@ -56,8 +64,9 @@ class ChapterViewModel
 
         fun generateIcon(
             content: SagaContent,
-            chapter: ChapterContent,
+            chapterInfo: ChapterInfo,
         ) {
+            val chapter = content.flatChapters().find { it.data.id == chapterInfo.id } ?: return
             viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
                 chapterUseCase

@@ -25,6 +25,8 @@ interface ChapterUseCase {
 
     suspend fun deleteAllChapters()
 
+    fun getChaptersInfoBySaga(sagaId: Int): kotlinx.coroutines.flow.Flow<List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo>>
+
     suspend fun generateChapterCover(
         chapter: ChapterContent,
         saga: SagaContent,
