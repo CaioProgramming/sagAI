@@ -262,7 +262,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                 .clip(genre.shape())
                                 .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
                                 .clickable {
-                                    onAction(OpenSection(RequestSection.ACTS))
+                                    onAction(DetailAction.OpenStoryReader)
                                 }.padding(16.dp),
                     ) {
                         Column(

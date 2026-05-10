@@ -53,6 +53,11 @@ data class SagaActsKey(
 ) : NavKey
 
 @Serializable
+data class SagaStoryReaderKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
 data class CharacterDetailKey(
     val characterId: Int,
 ) : NavKey
@@ -147,6 +152,10 @@ fun String.findNavKey(): NavKey? {
             } else {
                 null
             }
+        }
+
+        this.startsWith("saga://story_reader/") -> {
+            SagaStoryReaderKey(this.removePrefix("saga://story_reader/"))
         }
 
         else -> {

@@ -204,4 +204,13 @@ fun createSagaEntryProvider(
             animatedVisibilityScope = animatedVisibilityScope,
         )
     }
+
+    entry<SagaStoryReaderKey> { key ->
+        com.ilustris.sagai.features.act.ui.SagaStoryReaderView(
+            sagaId = key.sagaId,
+            onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
+    }
 }

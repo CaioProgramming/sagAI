@@ -33,4 +33,6 @@ sealed class DetailAction {
     data object OpenLoreDebug : DetailAction()
 
     data object ViewWiki : DetailAction()
+
+    data object OpenStoryReader : DetailAction()
 }

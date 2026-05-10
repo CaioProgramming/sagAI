@@ -80,6 +80,7 @@ fun SagaDetailView(
     onWiki: () -> Unit = {},
     onEvents: () -> Unit = {},
     onActs: () -> Unit = {},
+    onStoryReader: () -> Unit = {},
     onDeleted: () -> Unit = {},
     onCharacterDetails: (Int) -> Unit = {},
     onLoreDebug: () -> Unit = {},
@@ -158,6 +159,10 @@ fun SagaDetailView(
                                 RequestSection.ACTS -> onActs()
                                 RequestSection.START -> viewModel.loadInitialSection()
                             }
+                        }
+
+                        DetailAction.OpenStoryReader -> {
+                            onStoryReader()
                         }
 
                         else -> {
