@@ -20,7 +20,7 @@ interface SagaDao {
     @Query("SELECT * FROM sagas WHERE id = :sagaId")
     fun getSaga(sagaId: Int): Flow<Saga?>
 
-    @Query("SELECT id, title, genre, variationId, icon FROM sagas WHERE id = :sagaId LIMIT 1")
+    @Query("SELECT id, title, genre, variationId, icon, playTimeMs, description FROM sagas WHERE id = :sagaId LIMIT 1")
     fun getSagaInfo(sagaId: Int): Flow<SagaInfo?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

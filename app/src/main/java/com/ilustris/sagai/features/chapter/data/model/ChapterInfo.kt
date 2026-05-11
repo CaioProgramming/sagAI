@@ -9,6 +9,7 @@ data class ChapterInfo(
     val overview: String,
     val coverImage: String,
     val actId: Int,
+    val sagaId: Int,
     val featuredCharacters: List<Int>,
     val emotionalReview: String?,
     val createdAt: Long?,

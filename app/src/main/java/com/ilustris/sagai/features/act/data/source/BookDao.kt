@@ -20,4 +20,7 @@ interface BookDao {
 
     @Query("DELETE FROM books WHERE actId = :actId")
     suspend fun deleteBookForAct(actId: Int)
+
+    @Query("SELECT * FROM books WHERE actId IN (SELECT id FROM acts WHERE sagaId = :sagaId) ORDER BY id ASC")
+    fun getBooksBySaga(sagaId: Int): Flow<List<Book>>
 }

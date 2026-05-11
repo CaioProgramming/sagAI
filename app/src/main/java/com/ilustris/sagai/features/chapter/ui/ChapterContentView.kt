@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,10 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
+import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -42,6 +46,7 @@ import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -52,23 +57,32 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun ChapterContentView(
     chapter: ChapterInfo,
-    content: SagaContent,
     modifier: Modifier,
     isGenerating: Boolean = false,
     loadingMessage: String? = null,
     isLast: Boolean = false,
     imageSize: Dp = 500.dp,
-    onGenerateIcon: (ChapterInfo) -> Unit = {},
-    onReviewChapter: (ChapterInfo) -> Unit = {},
 ) {
+    val viewModel = hiltViewModel<ChapterViewModel>()
+    val sagaContent by viewModel.saga.collectAsStateWithLifecycle()
+    val isGeneratingState by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val reasoningMessage by viewModel.reasoningMessage.collectAsStateWithLifecycle()
+
+    val genre =
+        remember(sagaContent) {
+            sagaContent?.data?.genre ?: com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
+        }
+
+    LaunchedEffect(chapter.id) {
+        viewModel.loadSaga(chapter.sagaId.toString())
+    }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val genre = remember { content.data.genre }
         val characters =
-            remember {
-                chapter.featuredCharacters.map { content.findCharacter(it) }.filterNotNull()
+            remember(sagaContent, chapter.featuredCharacters) {
+                chapter.featuredCharacters.map { sagaContent?.findCharacter(it) }.filterNotNull()
             }
 
         if (chapter.coverImage.isEmpty()) {
@@ -77,7 +91,7 @@ fun ChapterContentView(
                 null,
                 Modifier
                     .clickable {
-                        onGenerateIcon(chapter)
+                        viewModel.generateIcon(chapter.id)
                     }.size(100.dp)
                     .gradientFill(genre.gradient())
                     .padding(16.dp),
@@ -116,6 +130,19 @@ fun ChapterContentView(
                         .background(fadedGradientTopAndBottom())
                         .align(Alignment.BottomCenter),
                 )
+
+                IconButton(
+                    onClick = { viewModel.generateIcon(chapter.id) },
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp),
+                ) {
+                    SparkIcon(
+                        brush = genre.gradient(),
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
             }
         }
 
@@ -144,9 +171,9 @@ fun ChapterContentView(
             easing = LinearEasing,
             isAnimated = false,
             genre = genre,
-            mainCharacter = content.mainCharacter?.data,
-            characters = content.getCharacters(),
-            wiki = content.wikis,
+            mainCharacter = sagaContent?.mainCharacter?.data,
+            characters = sagaContent?.getCharacters() ?: emptyList(),
+            wiki = sagaContent?.wikis ?: emptyList(),
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Normal,
@@ -168,5 +195,9 @@ fun ChapterContentView(
         }
     }
 
-    StarryLoader(isGenerating, loadingMessage, brushColors = content.data.genre.colorPalette())
+    StarryLoader(
+        isGeneratingState || isGenerating,
+        reasoningMessage ?: loadingMessage,
+        brushColors = genre.colorPalette(),
+    )
 }

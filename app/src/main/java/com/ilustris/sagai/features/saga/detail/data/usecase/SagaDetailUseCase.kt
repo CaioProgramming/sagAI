@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -24,29 +25,31 @@ sealed class ReviewState {
 }
 
 interface SagaDetailUseCase {
-    suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga>
+    suspend fun regenerateSagaIcon(sagaId: Int): RequestResult<Saga>
 
-    fun regenerateSagaIconStream(saga: SagaContent): Flow<StreamingState<Saga>>
+    fun regenerateSagaIconStream(sagaId: Int): Flow<StreamingState<Saga>>
 
     suspend fun fetchSaga(sagaId: Int): Flow<SagaContent?>
+
+    fun getSagaResume(sagaId: Int): Flow<SagaDetailResume>
 
     suspend fun deleteSaga(saga: Saga)
 
     suspend fun resetReview(content: SagaContent)
 
-    suspend fun createEmotionalConclusion(currentSaga: SagaContent): RequestResult<Saga>
+    suspend fun createEmotionalConclusion(sagaId: Int): RequestResult<Saga>
 
     suspend fun generateTimelineContent(
-        saga: SagaContent,
+        sagaId: Int,
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
 
     suspend fun reviewWiki(
-        currentsaga: SagaContent,
+        sagaId: Int,
         wikis: List<Wiki>,
     )
 
     fun getBackupEnabled(): Flow<Boolean>
 
-    suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
+    suspend fun generateStoryBriefing(sagaId: Int): RequestResult<StoryDailyBriefing>
 }

@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -22,18 +23,20 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themeShimmer
 
 @Composable
 fun SagaTopBar(
     title: String,
     subtitle: String = emptyString(),
-    genre: Genre,
+    genre: Genre?,
     actionContent: (@Composable () -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
     modifier: Modifier,
@@ -43,7 +46,7 @@ fun SagaTopBar(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         onBackClick?.let {
@@ -53,12 +56,13 @@ fun SagaTopBar(
                 contentDescription = stringResource(R.string.back_button_description),
                 modifier =
                     Modifier
-                        .reactiveShimmer(isLoading, shimmerColors = genre.shimmerColors())
-                        .clip(CircleShape)
+                        .reactiveShimmer(
+                            isLoading,
+                            shimmerColors = genre?.shimmerColors() ?: themeShimmer(),
+                        ).clip(CircleShape)
                         .clickable {
                             onBackClick()
-                        }
-                        .size(24.dp)
+                        }.size(24.dp)
                         .padding(4.dp),
             )
         }
@@ -66,7 +70,7 @@ fun SagaTopBar(
         Column(
             modifier =
                 Modifier
-                    .reactiveShimmer(isLoading, genre.shimmerColors())
+                    .reactiveShimmer(isLoading, genre?.shimmerColors() ?: themeShimmer())
                     .padding(horizontal = 8.dp)
                     .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -75,15 +79,18 @@ fun SagaTopBar(
                 title,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
-                        brush = genre.gradient(true, targetValue = 1000f),
+                        fontFamily = genre?.headerFont(),
+                        brush =
+                            Brush.verticalGradient(
+                                genre?.colorPalette() ?: holographicGradient,
+                            ),
                         textAlign = TextAlign.Center,
                     ),
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .then(titleModifier)
-                        .reactiveShimmer(isLoading, genre.shimmerColors()),
+                        .reactiveShimmer(isLoading, genre?.shimmerColors() ?: themeShimmer()),
             )
 
             if (subtitle.isNotEmpty()) {
@@ -91,7 +98,7 @@ fun SagaTopBar(
                     subtitle,
                     style =
                         MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = genre?.bodyFont(),
                             fontWeight = FontWeight.Light,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                             textAlign = TextAlign.Center,

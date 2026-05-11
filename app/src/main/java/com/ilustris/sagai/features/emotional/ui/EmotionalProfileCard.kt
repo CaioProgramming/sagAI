@@ -7,16 +7,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -45,17 +42,17 @@ import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @Composable
 fun EmotionalProfileCard(
-    sagaContent: SagaContent,
+    saga: Saga,
     modifier: Modifier,
     viewModel: EmotionalProfileViewModel = hiltViewModel(),
 ) {
     val emotionalIconUrl by viewModel.emotionalIconUrl.collectAsState()
 
-    LaunchedEffect(sagaContent) {
-        viewModel.loadEmotionalIcon(sagaContent)
+    LaunchedEffect(saga.id) {
+        viewModel.loadEmotionalIcon(saga.id)
     }
 
-    val genre = sagaContent.data.genre
+    val genre = saga.genre
     var showEmotionalReview by remember { mutableStateOf(false) }
     Box(
         modifier
@@ -99,7 +96,7 @@ fun EmotionalProfileCard(
                     .padding(horizontal = 16.dp, vertical = 24.dp),
         ) {
             Text(
-                sagaContent.data.emotionalProfile?.personaTitle
+                saga.emotionalProfile?.personaTitle
                     ?: stringResource(id = R.string.inner_journey),
                 style =
                     MaterialTheme.typography.headlineSmall.copy(
@@ -109,7 +106,7 @@ fun EmotionalProfileCard(
             )
 
             Text(
-                sagaContent.data.emotionalProfile?.actionText
+                saga.emotionalProfile?.actionText
                     ?: stringResource(id = R.string.inner_journey_description),
                 style =
                     MaterialTheme.typography.bodySmall.copy(),
@@ -118,21 +115,8 @@ fun EmotionalProfileCard(
     }
 
     if (showEmotionalReview) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                showEmotionalReview = false
-            },
-            dragHandle = null,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            EmotionalSheet(sagaContent, onDismissRequest = {
-                showEmotionalReview = false
-            })
-        }
+        EmotionalSheet(saga, onDismiss = {
+            showEmotionalReview = false
+        })
     }
 }

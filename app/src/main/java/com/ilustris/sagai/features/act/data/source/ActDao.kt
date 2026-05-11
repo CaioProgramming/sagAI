@@ -35,8 +35,10 @@ interface ActDao {
     @Query("SELECT * FROM acts WHERE sagaId = :sagaId ORDER BY title ASC")
     fun getActContentsForSaga(sagaId: Int): Flow<List<ActContent>>
 
-    // New query to get a specific ActContent by its ID
     @Transaction
     @Query("SELECT * FROM acts WHERE id = :actId")
     fun getActContent(actId: Int): Flow<ActContent?> // Nullable in case actId doesn't exist
+
+    @Query("SELECT * FROM acts WHERE id = :actId")
+    suspend fun getActById(actId: Int): Act?
 }

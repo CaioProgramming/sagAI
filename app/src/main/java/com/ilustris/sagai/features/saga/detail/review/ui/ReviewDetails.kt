@@ -340,7 +340,7 @@ fun ReviewDetails(saga: SagaContent) {
                     items(saga.relationships) { relation ->
                         RelationShipCard(
                             content = relation,
-                            saga = saga,
+                            saga = saga.data,
                             modifier =
                                 Modifier
                                     .padding(16.dp)

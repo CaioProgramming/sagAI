@@ -43,13 +43,14 @@ data class ChapterContent(
 
     fun fetchChapterWikis() = events.map { it.updatedWikis }.flatten()
 
-    fun toInfo() =
+    fun toInfo(sagaId: Int) =
         ChapterInfo(
             id = data.id,
             title = data.title,
             overview = data.overview,
             coverImage = data.coverImage,
             actId = data.actId,
+            sagaId = sagaId,
             featuredCharacters = data.featuredCharacters,
             emotionalReview = data.emotionalReview,
             createdAt = data.createdAt,

@@ -28,6 +28,22 @@ class SagaReviewViewModel
         private val _loadingMessage = MutableStateFlow<String?>(null)
         val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
 
+        private val _sagaContent = MutableStateFlow<SagaContent?>(null)
+        val sagaContent: StateFlow<SagaContent?> = _sagaContent.asStateFlow()
+
+        fun loadSaga(sagaId: Int) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaRepository.getSagaById(sagaId).collectLatest {
+                    _sagaContent.value = it
+                    it?.let { content ->
+                        if (content.data.review == null) {
+                            createReview(content)
+                        }
+                    }
+            }
+        }
+    }
+
         fun createReview(saga: SagaContent) {
             if (saga.data.review != null) return
             _isGenerating.value = true

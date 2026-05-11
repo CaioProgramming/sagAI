@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,11 +56,11 @@ import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
@@ -90,7 +92,7 @@ fun SagaDetailView(
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val resume by viewModel.sagaResume.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
     val initialSection by viewModel.initialSection.collectAsStateWithLifecycle()
 
@@ -101,6 +103,7 @@ fun SagaDetailView(
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
     val drawer by viewModel.detailDrawer.collectAsStateWithLifecycle()
+    val gridState = rememberLazyGridState()
 
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
@@ -139,7 +142,7 @@ fun SagaDetailView(
                         }
 
                         DetailAction.Delete -> {
-                            sagaToDelete = saga?.data
+                            sagaToDelete = resume?.saga
                         }
 
                         is DetailAction.OpenCharacter -> {
@@ -169,6 +172,10 @@ fun SagaDetailView(
                             onStoryReader()
                         }
 
+                        is DetailAction.OpenChapter -> {
+                            onStoryReader()
+                        }
+
                         else -> {
                             viewModel.handleAction(action)
                         }
@@ -178,7 +185,9 @@ fun SagaDetailView(
         SagaDetailContentView(
             state = state,
             initialSection = initialSection,
+            resume = resume,
             drawer = drawer,
+            gridState = gridState,
             onAction = onAction,
             modifier = Modifier.fillMaxSize(),
             sharedTransitionScope = sharedTransitionScope,
@@ -191,7 +200,7 @@ fun SagaDetailView(
                     isLoading = true,
                     loadingMessage = loadingMessage ?: emptyString(),
                     textStyle = MaterialTheme.typography.labelMedium,
-                    brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
+                    brushColors = resume?.saga?.genre?.colorPalette() ?: holographicGradient,
                 )
             }
         }
@@ -235,49 +244,36 @@ fun SagaDetailView(
             )
         }
 
-        saga?.let { sagaContent ->
-            if (showReview) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showReview = false
-                    },
-                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                    dragHandle = null,
-                    containerColor = MaterialTheme.colorScheme.background,
-                ) {
-                    SagaReview(saga = sagaContent, onDismiss = {
-                        showReview = false
-                    })
-                }
+        if (showEmotionalReview) {
+            resume?.saga?.let {
+                EmotionalSheet(
+                    saga = it,
+                    onDismiss = { showEmotionalReview = false },
+                )
             }
+        }
 
-            if (showEmotionalReview) {
+        if (showReview) {
+            resume?.saga?.let {
                 ModalBottomSheet(
-                    onDismissRequest = {
-                        showEmotionalReview = false
-                    },
+                    onDismissRequest = { showReview = false },
                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                    dragHandle = null,
                     containerColor = MaterialTheme.colorScheme.background,
+                    dragHandle = null,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    modifier = Modifier.fillMaxHeight(),
                 ) {
-                    EmotionalSheet(saga = sagaContent, onDismissRequest = {
-                        showEmotionalReview = false
-                    })
+                    SagaReview(
+                        saga = it,
+                        onDismiss = { showReview = false },
+                    )
                 }
             }
         }
     }
 
     LaunchedEffect(Unit) {
-        viewModel.fetchSagaDetails(sagaId)
+        viewModel.fetchSagaDetails(sagaId.toInt())
     }
 }
 
@@ -286,16 +282,18 @@ fun SagaDetailView(
 fun SagaDetailContentView(
     state: State,
     initialSection: DetailSectionView.InitialSection?,
+    resume: SagaDetailResume?,
     drawer: TimelineDrawer?,
+    gridState: LazyGridState,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
-    val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    saga?.let { sagaContent ->
+    resume?.let { sagaResume ->
+        val baseSaga = sagaResume.saga
         CompositionLocalProvider(
             LocalLayoutDirection provides LayoutDirection.Rtl,
         ) {
@@ -303,7 +301,7 @@ fun SagaDetailContentView(
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
-                        val genre = sagaContent.data.genre
+                        val genre = baseSaga.genre
                         val brush = Brush.verticalGradient(genre.resolveColor().darkerPalette())
                         val shape = genre.shape()
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -321,14 +319,14 @@ fun SagaDetailContentView(
                                 drawerShape = shape,
                                 drawerContainerColor = MaterialTheme.colorScheme.background,
                             ) {
-                                drawer?.renderDrawer(saga)
+                                drawer?.renderDrawer(baseSaga)
                             }
                         }
                     },
                 ) {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                         AnimatedContent(
-                            initialSection,
+                            initialSection != null,
                             transitionSpec = {
                                 fadeIn(tween(500)) togetherWith
                                     fadeOut(
@@ -341,11 +339,13 @@ fun SagaDetailContentView(
                                 Modifier
                                     .fillMaxSize(),
                             label = "SagaDetailContentTransition",
-                        ) { section ->
-                            section?.let {
+                        ) { hasSection ->
+                            if (hasSection) {
                                 SagaDetailInitialContent(
-                                    saga = sagaContent,
-                                    section = it,
+                                    saga = baseSaga,
+                                    section = initialSection!!,
+                                    resume = sagaResume,
+                                    gridState = gridState,
                                     onAction = onAction,
                                     sharedTransitionScope = sharedTransitionScope,
                                     animatedVisibilityScope = animatedVisibilityScope,

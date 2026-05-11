@@ -30,4 +30,7 @@ interface MessageDao {
 
     @Query("SELECT * FROM messages WHERE sagaId = :sagaId ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastMessage(sagaId: Int): Message?
+
+    @Query("SELECT COUNT(id) FROM messages WHERE sagaId = :sagaId")
+    fun getMessagesCount(sagaId: Int): Flow<Int>
 }

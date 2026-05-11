@@ -45,7 +45,7 @@ import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
@@ -65,13 +65,13 @@ import com.ilustris.sagai.ui.theme.shimmerize
 
 @Composable
 fun TimelineContentViewCard(
-    saga: SagaContent,
+    saga: Saga,
     eventCard: TimelineCardContent,
     modifier: Modifier = Modifier,
     onAction: (DetailAction) -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val genre = remember { saga.data.genre }
+    val genre = remember { saga.genre }
     val event = remember { eventCard.timelineContent }
     val emotionalMascot = remember { eventCard.mascotEmotion }
 
@@ -85,32 +85,21 @@ fun TimelineContentViewCard(
                 .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
                 .clickable {
                     expanded = true
-                }.padding(16.dp),
+                }
+                .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        eventCard.chapterNumber?.let {
-            Text(
-                it,
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.headerFont(),
-                        brush = genre.gradient(),
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-        }
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top,
         ) {
             AvatarTimelineIcon(
-                icon = saga.data.icon,
+                icon = saga.icon,
                 showSpark = true,
-                genre = saga.data.genre,
+                genre = saga.genre,
                 placeHolderChar =
-                    saga.data.title
+                    saga.title
                         .first()
                         .uppercase(),
                 borderWidth = 1.dp,
@@ -119,7 +108,7 @@ fun TimelineContentViewCard(
                     Modifier
                         .size(48.dp)
                         .effectForGenre(genre)
-                        .selectiveColorHighlight(saga.data.genre),
+                        .selectiveColorHighlight(saga.genre),
             )
 
             Column(
@@ -138,7 +127,8 @@ fun TimelineContentViewCard(
 
                 Text(
                     event.data.content
-                        .take(200)
+                        .ifEmpty { event.data.sceneSummary?.immediateObjective }
+                        ?.take(200)
                         .plus(stringResource(id = R.string.read_more)),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
@@ -239,11 +229,11 @@ fun TimelineActionItem(
 
 @Composable
 fun ExpandedTimeline(
-    saga: SagaContent,
+    saga: Saga,
     eventCard: TimelineCardContent,
     onAction: (DetailAction) -> Unit = {},
 ) {
-    val genre = remember { saga.data.genre }
+    val genre = remember { saga.genre }
     val event = remember { eventCard.timelineContent }
     val emotionalMascot = remember { eventCard.mascotEmotion }
     Column(
@@ -338,7 +328,7 @@ fun ExpandedTimeline(
                 items(event.newlyAppearedCharacters) {
                     CharacterYearbookItem(
                         character = it,
-                        saga.data.genre,
+                        genre = genre,
                         modifier = Modifier.clip(genre.shape()),
                     )
                 }
@@ -359,16 +349,16 @@ fun ExpandedTimeline(
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(event.updatedWikis) {
                     WikiCard(
-                        it,
-                        genre,
+                        wiki = it,
+                        genre = genre,
                         modifier =
                             Modifier
                                 .border(
                                     1.dp,
                                     genre.resolveColor(),
                                     genre.shape(),
-                                ).requiredWidthIn(max = 200.dp),
-                        true,
+                                )
+                                .requiredWidthIn(max = 200.dp),
                     )
                 }
             }
@@ -388,8 +378,8 @@ fun ExpandedTimeline(
             LazyRow {
                 items(event.updatedRelationshipDetails) {
                     RelationShipCard(
-                        content = it,
                         saga = saga,
+                        content = it,
                         modifier =
                             Modifier
                                 .padding(8.dp)
@@ -403,10 +393,12 @@ fun ExpandedTimeline(
                     Modifier
                         .gradientFill(
                             genre.gradient(),
-                        ).clip(genre.shape())
+                        )
+                        .clip(genre.shape())
                         .clickable {
                             onAction(DetailAction.ReviewEvent(event))
-                        }.align(Alignment.CenterHorizontally),
+                        }
+                        .align(Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {

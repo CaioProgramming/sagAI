@@ -23,12 +23,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
@@ -135,7 +138,12 @@ fun ActReader(
                     modifier = Modifier.padding(16.dp),
                 ) {
                     AsyncImage(
-                        model = chapter.data.coverImage,
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(chapter.data.coverImage)
+                                .crossfade(true)
+                                .build(),
                         contentDescription = chapter.data.title,
                         contentScale = ContentScale.Crop,
                         modifier =
@@ -330,7 +338,12 @@ fun ActReadingContent(
                 )
 
                 AsyncImage(
-                    model = it.data.coverImage,
+                    model =
+                        ImageRequest
+                            .Builder(LocalContext.current)
+                            .data(it.data.coverImage)
+                            .crossfade(true)
+                            .build(),
                     contentDescription = it.data.title,
                     placeholder = painterResource(R.drawable.ic_spark),
                     error = painterResource(R.drawable.ic_spark),

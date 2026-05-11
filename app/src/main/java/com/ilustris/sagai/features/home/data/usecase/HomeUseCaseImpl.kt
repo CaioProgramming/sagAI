@@ -92,7 +92,7 @@ class HomeUseCaseImpl
         override suspend fun recoverSaga(sagaContent: RestorableSaga) = sagaBackupService.restoreContent(sagaContent)
 
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
-            sagaDetailUseCase.generateStoryBriefing(saga)
+            sagaDetailUseCase.generateStoryBriefing(saga.data.id)
 
         private fun processSagaContent(
             content: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,
@@ -118,6 +118,6 @@ class HomeUseCaseImpl
                     sagas.forEach { saga ->
                         backupService.backupSaga(saga)
                     }
+                }
             }
-        }
     }

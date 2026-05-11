@@ -88,6 +88,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -104,6 +105,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
@@ -447,8 +450,7 @@ fun ChatView(
                                     true,
                                     it.data.genre.shimmerColors(),
                                     duration = 2.seconds,
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     )
                 }
 
@@ -561,7 +563,15 @@ fun ChatContent(
                         .imePadding(),
                 ) {
                     Image(
-                        painter = rememberAsyncImagePainter(model = saga.genre.resolveBackground()),
+                        painter =
+                            rememberAsyncImagePainter(
+                                model =
+                                    ImageRequest
+                                        .Builder(LocalContext.current)
+                                        .data(saga.genre.resolveBackground())
+                                        .crossfade(true)
+                                        .build(),
+                            ),
                         null,
                         colorFilter =
                             ColorFilter.tint(
@@ -575,12 +585,10 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                )
-                                .sharedElement(
+                                ).sharedElement(
                                     rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                )
-                                .fillMaxSize(.5f)
+                                ).fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -948,8 +956,7 @@ fun ChatContent(
                                                     .genreVfx(
                                                         saga.genre,
                                                         isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
@@ -1280,7 +1287,12 @@ fun SagaHeader(
                     }
                 } else {
                     AsyncImage(
-                        saga.icon,
+                        model =
+                            ImageRequest
+                                .Builder(LocalContext.current)
+                                .data(saga.icon)
+                                .crossfade(true)
+                                .build(),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier =
@@ -1411,7 +1423,10 @@ fun ChatList(
         if (saga.data.isEnded && saga.data.endMessage.isNotEmpty()) {
             item {
                 RecapHeroCard(
-                    saga,
+                    saga.data,
+                    saga.chaptersSize(),
+                    saga.characters.size,
+                    saga.flatMessages().size,
                     Modifier
                         .padding(16.dp)
                         .fillMaxWidth()
@@ -1464,13 +1479,9 @@ fun ChatList(
                 if (chapter.isComplete) {
                     item(key = "chapter-${chapter.chapter.data.id}") {
                         ChapterContentView(
-                            chapter = chapter.chapter.toInfo(),
-                            content = saga,
+                            chapter = chapter.chapter.toInfo(saga.data.id),
                             isLast = act.chapters.lastOrNull() == chapter,
                             imageSize = 400.dp,
-                            onReviewChapter = {
-                                onAction(ChatUiAction.ReviewChapter(chapter.chapter))
-                            },
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
@@ -1487,7 +1498,7 @@ fun ChatList(
                         if (it.canShowData) {
                             item(key = "timeline-${timeline.timelineContent.data.id}") {
                                 TimelineContentViewCard(
-                                    saga = saga,
+                                    saga = saga.data,
                                     eventCard = it,
                                     modifier = Modifier.fillMaxWidth(),
                                     onAction = { },
@@ -1675,8 +1686,7 @@ fun CharactersTopIcons(
                         )
                         .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

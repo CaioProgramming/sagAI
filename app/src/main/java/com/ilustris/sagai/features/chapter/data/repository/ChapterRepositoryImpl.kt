@@ -36,5 +36,9 @@ class ChapterRepositoryImpl
 
         override fun getChaptersInfoBySaga(sagaId: Int) = chapterDao.getChaptersInfoBySaga(sagaId)
 
+        override suspend fun getChapterContentById(chapterId: Int) = chapterDao.getChapterContentById(chapterId)
+
+        override suspend fun getChapterById(chapterId: Int) = chapterDao.getChapterById(chapterId)
+
         override suspend fun deleteAllChapters() = chapterDao.deleteAllChapters()
     }

@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.model.CharacterWithRelations
 import kotlinx.coroutines.flow.Flow
@@ -52,4 +53,22 @@ interface CharacterDao {
      */
     @Query("SELECT id, genre, variationId, title, icon FROM sagas WHERE id = :sagaId LIMIT 1")
     suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo?
+
+    @Transaction
+    @Query(
+        """
+        SELECT *, (SELECT COUNT(*) FROM messages WHERE characterId = Characters.id) as messageCount 
+        FROM Characters 
+        WHERE sagaId = :sagaId 
+        ORDER BY messageCount DESC 
+        LIMIT :limit
+        """,
+    )
+    fun getTopCharacters(
+        sagaId: Int,
+        limit: Int,
+    ): Flow<List<CharacterContent>>
+
+    @Query("SELECT COUNT(*) FROM Characters WHERE sagaId = :sagaId")
+    fun getCharactersCount(sagaId: Int): Flow<Int>
 }

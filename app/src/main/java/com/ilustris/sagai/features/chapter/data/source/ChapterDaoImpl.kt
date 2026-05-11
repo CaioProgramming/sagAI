@@ -30,4 +30,12 @@ class ChapterDaoImpl
         override suspend fun deleteAllChapters() {
             chapterDao.deleteAllChapters()
         }
+
+        override fun getChaptersCount(sagaId: Int) = chapterDao.getChaptersCount(sagaId)
+
+        override fun getChaptersBySaga(sagaId: Int) = chapterDao.getChaptersBySaga(sagaId)
+
+        override suspend fun getChapterContentById(chapterId: Int) = chapterDao.getChapterContentById(chapterId)
+
+        override suspend fun getChapterById(chapterId: Int) = chapterDao.getChapterById(chapterId)
     }

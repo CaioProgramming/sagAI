@@ -45,16 +45,20 @@ class TimelineMapper(
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val genre = saga.genre
         val topEmotion =
-            timelineContent.emotionalRanking().firstOrNull()?.first ?: EmotionalTone.NEUTRAL
-        val mascotEmotion =
-            mascotEmotionService.getEmotionUrl(
-                genre,
-                topEmotion,
-            )
+            timelineContent.data.emotionalTone
+        val mascotPair =
+            timelineContent.data.emotionalTone?.let {
+                topEmotion to
+                    mascotEmotionService.getEmotionUrl(
+                        genre,
+                        topEmotion,
+                    )
+            }
+
         return TimelineCardContent(
             timelineContent,
-            topEmotion to mascotEmotion,
-            null, // Chapter number is removed in favor of continuous thread
+            mascotPair,
+            null,
             timelineContent.isComplete(narrativeRules),
         )
     }

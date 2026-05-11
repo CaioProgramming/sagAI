@@ -25,16 +25,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.features.timeline.ui.components.TimelineThreadList
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 @Composable
@@ -105,22 +112,47 @@ fun AvatarTimelineIcon(
     borderWidth: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
+    val finalBackgroundColor =
+        if (backgroundColor == Color.Transparent) {
+            genre.resolveColor()
+        } else {
+            backgroundColor
+        }
+
     Box(
         modifier =
             modifier
                 .clip(CircleShape)
-                .background(backgroundColor),
+                .background(finalBackgroundColor),
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
-            model = icon,
-            contentDescription = null,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .border(borderWidth, borderColor, CircleShape)
-                    .clip(CircleShape),
-            contentScale = ContentScale.Crop,
+        androidx.compose.material3.Text(
+            text = placeHolderChar,
+            style =
+                MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 24.sp,
+                ),
+            color = genre.iconColor,
+            fontFamily = genre.headerFont(),
         )
+
+        if (!icon.isNullOrBlank()) {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(icon)
+                        .crossfade(true)
+                        .build(),
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .border(borderWidth, borderColor, CircleShape)
+                        .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+            )
+        }
     }
 }

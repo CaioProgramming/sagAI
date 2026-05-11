@@ -160,7 +160,7 @@ fun CharactersGalleryContent(
                                 val relationship = relationships[index]
                                 RelationShipCard(
                                     content = relationship,
-                                    saga = saga,
+                                    saga = saga.data,
                                     modifier =
                                         Modifier
                                             .padding(16.dp)

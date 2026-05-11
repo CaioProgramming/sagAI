@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.MascotEmotionService
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,24 +20,28 @@ class EmotionalProfileViewModel
     constructor(
         private val mascotEmotionService: MascotEmotionService,
         private val emotionalToneVisualService: EmotionalToneVisualService,
+        private val sagaRepository: SagaRepository,
     ) : ViewModel() {
         private val _emotionalIconUrl = MutableStateFlow<String?>(null)
         val emotionalIconUrl = _emotionalIconUrl.asStateFlow()
 
-        fun loadEmotionalIcon(sagaContent: SagaContent) {
+        fun loadEmotionalIcon(sagaId: Int) {
             viewModelScope.launch {
-                val dominantTone =
-                    sagaContent.data.emotionalProfile?.dominantTone
-                        ?: sagaContent
-                            .flatMessages()
-                            .rankEmotionalTone()
-                            .firstOrNull()
-                            ?.first
-                        ?: EmotionalTone.NEUTRAL
+                sagaRepository.getSagaById(sagaId).collect { sagaContent ->
+                    if (sagaContent == null) return@collect
+                    val dominantTone =
+                        sagaContent.data.emotionalProfile?.dominantTone
+                            ?: sagaContent
+                                .flatMessages()
+                                .rankEmotionalTone()
+                                .firstOrNull()
+                                ?.first
+                            ?: EmotionalTone.NEUTRAL
 
-                // Priority: 1. Abstract Visual (tone_visuals) | 2. Genre Mascot | 3. Default Mascot
-                _emotionalIconUrl.value = emotionalToneVisualService.getVisualUrl(dominantTone)
-                    ?: mascotEmotionService.getEmotionUrl(sagaContent.data.genre, dominantTone)
+                    // Priority: 1. Abstract Visual (tone_visuals) | 2. Genre Mascot | 3. Default Mascot
+                    _emotionalIconUrl.value = emotionalToneVisualService.getVisualUrl(dominantTone)
+                        ?: mascotEmotionService.getEmotionUrl(sagaContent.data.genre, dominantTone)
+                }
             }
         }
     }

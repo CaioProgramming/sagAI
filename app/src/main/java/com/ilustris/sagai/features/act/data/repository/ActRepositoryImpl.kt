@@ -30,4 +30,6 @@ class ActRepositoryImpl
         override suspend fun deleteActsForSaga(sagaId: Int) = actDao.deleteActsForSaga(sagaId)
 
         override fun getActContent(actId: Int): Flow<ActContent?> = actDao.getActContent(actId)
+
+        override suspend fun getActById(actId: Int) = actDao.getActById(actId)
     }

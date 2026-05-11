@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import android.view.MotionEvent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -26,17 +25,15 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.detail.review.presentation.SagaReviewViewModel
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
-import com.ilustris.sagai.features.saga.detail.review.ui.ReviewLoadingPage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -51,25 +48,26 @@ import kotlinx.coroutines.launch
 )
 @Composable
 fun SagaReview(
-    saga: SagaContent,
+    saga: Saga,
     onDismiss: () -> Unit = {},
     viewModel: SagaReviewViewModel = hiltViewModel(),
 ) {
+    val sagaContent by viewModel.sagaContent.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    val genre = saga.data.genre
-    LaunchedEffect(Unit) {
-        viewModel.createReview(saga)
+    val genre = saga.genre
+
+    LaunchedEffect(saga.id) {
+        viewModel.loadSaga(saga.id)
     }
 
-    saga.let { sagaContent ->
+    sagaContent?.let { currentContent ->
         val coroutineScope = rememberCoroutineScope()
-        val genre = sagaContent.data.genre
         val animatedPages = remember { mutableStateOf(setOf<Int>()) }
 
         val experience =
-            remember(sagaContent) {
-                ReviewExperienceFactory.createExperience(sagaContent)
+            remember(currentContent) {
+                ReviewExperienceFactory.createExperience(currentContent)
             }
 
         val pages = experience.pages
@@ -145,7 +143,7 @@ fun SagaReview(
                             null,
                             Modifier
                                 .size(50.dp)
-                                .gradientFill(sagaContent.data.genre.gradient()),
+                                .gradientFill(genre.gradient()),
                         )
                     }
                 }
@@ -178,7 +176,7 @@ fun SagaReview(
 
         shareType?.let {
             ShareSheet(
-                sagaContent,
+                currentContent,
                 true,
                 it,
                 onDismiss = {

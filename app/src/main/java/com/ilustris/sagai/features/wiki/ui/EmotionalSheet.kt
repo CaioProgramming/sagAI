@@ -36,7 +36,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileViewModel
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.presentation.EmotionalReviewViewModel
@@ -46,19 +46,19 @@ import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @Composable
 fun EmotionalSheet(
-    saga: SagaContent,
-    onDismissRequest: () -> Unit = {},
+    saga: Saga,
+    onDismiss: () -> Unit = {},
     viewModel: EmotionalReviewViewModel = hiltViewModel(),
     profileViewModel: EmotionalProfileViewModel = hiltViewModel(),
 ) {
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    val genre = saga.data.genre
+    val genre = saga.genre
     val emotionalIconUrl by profileViewModel.emotionalIconUrl.collectAsStateWithLifecycle()
 
-    LaunchedEffect(saga) {
-        viewModel.createEmotionalReview(saga)
-        profileViewModel.loadEmotionalIcon(saga)
+    LaunchedEffect(saga.id) {
+        viewModel.createEmotionalReview(saga.id)
+        profileViewModel.loadEmotionalIcon(saga.id)
     }
 
     if (isGenerating) {
@@ -108,7 +108,7 @@ fun EmotionalSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                saga.data.emotionalProfile?.personaTitle ?: stringResource(R.string.inner_journey),
+                saga.emotionalProfile?.personaTitle ?: stringResource(R.string.inner_journey),
                 style =
                     MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Black,
@@ -117,7 +117,7 @@ fun EmotionalSheet(
             )
 
             Text(
-                saga.data.emotionalProfile?.emotionalContent ?: saga.data.emotionalReview
+                saga.emotionalProfile?.emotionalContent ?: saga.emotionalReview
                     ?: emptyString(),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Justify,
@@ -127,7 +127,7 @@ fun EmotionalSheet(
             Spacer(modifier = Modifier.height(50.dp))
 
             if (BuildConfig.DEBUG) {
-                Button(onClick = { viewModel.resetEmotionalProfile(saga) }) {
+                Button(onClick = { viewModel.resetEmotionalProfile(saga.id) }) {
                     Text("Reset Emotional Profile")
                 }
             }

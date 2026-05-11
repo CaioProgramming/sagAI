@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.LoadingType
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,8 +36,9 @@ class EmotionalReviewViewModel
 
         val emotionalIllustration = MutableStateFlow<String?>(null)
 
-        fun createEmotionalReview(sagaContent: SagaContent) {
+        fun createEmotionalReview(sagaId: Int) {
             viewModelScope.launch(Dispatchers.IO) {
+                val sagaContent = sagaRepository.getSagaById(sagaId).firstOrNull() ?: return@launch
                 emotionalIllustration.emit(emotionalUseCase.getEmotionalCard(sagaContent).getSuccess())
                 if (sagaContent.data.emotionalReview?.isNotBlank() == true) {
                     return@launch
@@ -79,11 +80,12 @@ class EmotionalReviewViewModel
             }
         }
 
-        fun resetEmotionalProfile(saga: SagaContent) {
-            viewModelScope.launch {
-                emotionalUseCase.generateEmotionalConclusion(saga).onSuccessAsync {
+        fun resetEmotionalProfile(sagaId: Int) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val sagaContent = sagaRepository.getSagaById(sagaId).firstOrNull() ?: return@launch
+                emotionalUseCase.generateEmotionalConclusion(sagaContent).onSuccessAsync {
                     sagaRepository.updateSaga(
-                        saga.data.copy(
+                        sagaContent.data.copy(
                             emotionalProfile = it.emotionalProfile,
                             emotionalReview = it.emotionalProfile.emotionalContent,
                             endMessage = it.endingMessage,

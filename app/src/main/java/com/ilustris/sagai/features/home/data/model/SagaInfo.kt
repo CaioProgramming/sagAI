@@ -11,6 +11,8 @@ data class SagaInfo(
     val genre: Genre,
     val variationId: String? = null,
     val icon: String = "",
+    val playTimeMs: Long = 0L,
+    val description: String = "",
 )
 
 fun SagaInfo.toSaga() =
@@ -20,4 +22,6 @@ fun SagaInfo.toSaga() =
         genre = genre,
         variationId = variationId,
         icon = icon,
+        playTimeMs = playTimeMs,
+        description = description,
     )

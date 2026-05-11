@@ -5,8 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,36 +34,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
-import com.ilustris.sagai.features.saga.detail.ui.DetailAction.OpenSection
 import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
-fun TimelineDrawer.renderDrawer(saga: SagaContent) {
-    val genre = saga.data.genre
+fun TimelineDrawer.renderDrawer(saga: Saga) {
+    val genre = saga.genre
     LazyColumn(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -101,8 +94,7 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                                     genre.resolveColor(),
                                     progress,
                                 ),
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                 )
             }
         }
@@ -191,47 +183,50 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
 @Composable
 fun DetailSectionView.InitialSection.miniSection(
     section: RequestSection,
-    saga: SagaContent,
-    onAction: (DetailAction) -> Unit,
+    resume: SagaDetailResume,
+    onAction: (DetailAction) -> Unit = {},
 ) {
-    val currentActs = saga.acts
-    val genre = saga.data.genre
+    val saga = resume.saga
+    val genre = saga.genre
     val sectionStyle =
         MaterialTheme.typography.titleSmall.copy(
             fontWeight = FontWeight.SemiBold,
             fontFamily = genre.bodyFont(),
         )
-    when (section) {
-        RequestSection.ACTS -> {
-            if (currentActs.isEmpty()) {
-                return
-            }
-            Column(
-                Modifier
-                    .padding(vertical = 16.dp)
-                    .fillMaxWidth(),
-            ) {
-                val books = saga.acts.mapNotNull { it.book }
+
+    Column(
+        modifier =
+            Modifier
+                .padding(vertical = 8.dp)
+                .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        when (section) {
+            RequestSection.ACTS -> {
+                if (resume.generatedBooks.isEmpty()) return@Column
                 RowHeader(
-                    stringResource(R.string.the_chronicles),
-                    sectionStyle,
+                    title = stringResource(R.string.the_chronicles),
+                    textStyle = sectionStyle,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
                     onAction(DetailAction.OpenChronicles(null))
                 }
 
                 LazyRow(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                 ) {
-                    items(books) { book ->
+                    items(resume.generatedBooks) { book ->
                         val sagaBook =
                             remember(book) {
                                 SagaBook(
                                     draft =
                                         SagaDraft(
+                                            id = book.id.toString(),
                                             title = book.actTitle,
-                                            genre = saga.data.genre,
-                                            description = "",
+                                            description = book.authorNote ?: "",
+                                            genre = saga.genre,
                                         ),
                                 )
                             }
@@ -255,247 +250,153 @@ fun DetailSectionView.InitialSection.miniSection(
                     }
                 }
 
-                if (currentActs.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .clip(genre.shape())
+                            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+                            .clickable {
+                                onAction(DetailAction.OpenStoryReader)
+                            }.padding(16.dp),
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.Start,
                         modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
-                                .clip(genre.shape())
-                                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
-                                .clickable {
-                                    onAction(DetailAction.OpenStoryReader)
-                                }
-                                .padding(16.dp),
+                            Modifier.weight(
+                                1f,
+                            ),
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.Start,
-                            modifier =
-                                Modifier.weight(
-                                    1f,
+                        Text(
+                            "Read your story",
+                            style =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    fontWeight = FontWeight.SemiBold,
                                 ),
-                        ) {
-                            Text(
-                                "Read your story",
-                                style =
-                                    MaterialTheme.typography.bodyLarge.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
-                            )
-                            Text(
-                                "Read the story from start to beginning until now",
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontFamily = genre.bodyFont(),
-                                    ),
-                                modifier = Modifier.alpha(0.6f),
-                            )
-                        }
-
-                        Icon(
-                            painterResource(R.drawable.round_arrow_forward_ios_24),
-                            contentDescription = null,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .size(24.dp),
+                        )
+                        Text(
+                            "Read the story from start to beginning until now",
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                            modifier = Modifier.alpha(0.6f),
                         )
                     }
-                } else {
-                    Text(
-                        "Continue playing to see your story here",
-                        style =
-                            MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                                textAlign = TextAlign.Center,
-                            ),
+
+                    Icon(
+                        painterResource(R.drawable.round_arrow_forward_ios_24),
+                        contentDescription = null,
                         modifier =
                             Modifier
                                 .padding(16.dp)
-                                .fillMaxWidth(),
+                                .size(24.dp),
                     )
                 }
             }
-        }
 
-        RequestSection.CHAPTERS -> {
-            if (chapters.isEmpty()) {
-                return
+            RequestSection.CHAPTERS -> {
+                // Chapters are now managed autonomously in ChapterContentView, removed from detail overview.
             }
-            Column(
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-            ) {
-                RowHeader(
-                    stringResource(R.string.saga_detail_section_title_chapters),
-                    sectionStyle,
-                ) {
-                    onAction(OpenSection(RequestSection.CHAPTERS))
-                }
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(chapters) { chapter ->
-                        val shape =
-                            genre.bubble(
-                                BubbleTailAlignment.BottomRight,
-                                0.dp,
-                                0.dp,
-                                true,
-                            )
-
-                        ChapterCardView(
-                            genre,
-                            chapter.data,
-                            saga.flatChapters().indexOf(chapter),
-                            Modifier
-                                .size(250.dp)
-                                .clip(shape)
-                                .clickable {
-                                    onAction(
-                                        OpenSection(
-                                            RequestSection.CHAPTERS,
-                                        ),
-                                    )
-                                }
-                                .padding(8.dp),
-                            showTitle = false,
-                        )
-                    }
-                }
-            }
-        }
-
-        RequestSection.WIKI -> {
-            if (saga.wikis.isEmpty()) {
-                return
-            }
-            Column(
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-            ) {
-                RowHeader(
-                    stringResource(R.string.saga_detail_section_title_wiki),
-                    sectionStyle,
-                ) {
-                    onAction(OpenSection(RequestSection.WIKI))
-                }
-
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(saga.wikis) { wiki ->
-                        val shape = genre.shape()
-
-                        WikiCard(
-                            wiki,
-                            genre,
-                            Modifier
-                                .size(100.dp)
-                                .clip(shape)
-                                .clickable {
-                                    onAction(
-                                        OpenSection(
-                                            RequestSection.WIKI,
-                                        ),
-                                    )
-                                },
-                        )
-                    }
-                }
-            }
-        }
-
-        RequestSection.CHARACTERS -> {
-            if (characters.isEmpty()) {
-                return
-            }
-            Column {
+            RequestSection.CHARACTERS -> {
+                if (resume.topCharacters.isEmpty()) return@Column
                 RowHeader(
                     stringResource(R.string.saga_detail_section_title_characters),
-                    textStyle =
                     sectionStyle,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
-                    onAction(OpenSection(RequestSection.CHARACTERS))
+                    onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
                 }
-                LazyRow {
-                    items(
-                        sortCharactersByMessageCount(
-                            saga.getCharacters(),
-                            saga.flatMessages(),
-                        ),
-                    ) { char ->
-
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                ) {
+                    items(resume.topCharacters) { char ->
                         Column(
-                            Modifier
-                                .clip(genre.shape())
-                                .padding(8.dp)
-                                .clickable {
-                                    onAction(DetailAction.OpenCharacter(char.id))
-                                },
+                            modifier =
+                                Modifier
+                                    .clip(genre.shape())
+                                    .clickable {
+                                        onAction(DetailAction.OpenCharacter(char.data.id))
+                                    }.padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             CharacterAvatar(
-                                char,
-                                borderSize = 2.dp,
-                                genre = saga.data.genre,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .size(100.dp),
+                                character = char.data,
+                                genre = genre,
+                                modifier = Modifier.size(100.dp),
                             )
-
                             Text(
-                                char.name,
+                                char.data.name,
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Light,
                                         textAlign = TextAlign.Center,
-                                        fontFamily = saga.data.genre.bodyFont(),
+                                        fontFamily = genre.bodyFont(),
                                     ),
                             )
                         }
                     }
                 }
             }
-        }
 
-        RequestSection.EVENTS -> {
-            lastEvent?.let {
-                Column(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                ) {
+            RequestSection.EVENTS -> {
+                lastEvent?.let {
                     RowHeader(
                         stringResource(R.string.saga_detail_timeline_section_title),
                         sectionStyle,
+                        modifier = Modifier.padding(horizontal = 16.dp),
                     ) {
-                        onAction(OpenSection(RequestSection.EVENTS))
+                        onAction(DetailAction.OpenSection(RequestSection.EVENTS))
                     }
 
                     TimelineContentViewCard(
-                        saga,
-                        it,
+                        saga = saga,
+                        eventCard = it,
+                        onAction = onAction,
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onAction(
-                                        OpenSection(
-                                            RequestSection.EVENTS,
-                                        ),
-                                    )
-                                },
+                                .padding(horizontal = 16.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }
-        }
 
-        RequestSection.START -> {
-            Spacer(Modifier.size(50.dp))
+            RequestSection.WIKI -> {
+                if (resume.latestWikis.isEmpty()) return@Column
+                RowHeader(
+                    stringResource(R.string.saga_detail_section_title_wiki),
+                    sectionStyle,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                ) {
+                    onAction(DetailAction.OpenSection(RequestSection.WIKI))
+                }
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                ) {
+                    items(resume.latestWikis) { wiki ->
+                        WikiCard(
+                            wiki = wiki,
+                            genre = genre,
+                            modifier =
+                                Modifier
+                                    .size(100.dp)
+                                    .clickable {
+                                        onAction(DetailAction.OpenSection(RequestSection.WIKI))
+                                    },
+                        )
+                    }
+                }
+            }
+
+            else -> {}
         }
     }
 }

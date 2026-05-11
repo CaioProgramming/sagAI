@@ -51,7 +51,6 @@ fun ChaptersGalleryContent(
             item {
                 ChapterContentView(
                     chapter = chapter,
-                    content = saga,
                     isGenerating = isGenerating,
                     loadingMessage = loadingMessage,
                     modifier =
@@ -59,8 +58,6 @@ fun ChaptersGalleryContent(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                     isLast = index == chapters.size - 1,
-                    onGenerateIcon = onGenerateIcon,
-                    onReviewChapter = onReviewChapter,
                 )
             }
         }

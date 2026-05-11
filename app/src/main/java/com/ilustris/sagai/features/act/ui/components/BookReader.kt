@@ -209,7 +209,7 @@ fun BookReader(
                 Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
-                    .fillMaxHeight(.3f)
+                    .fillMaxHeight(.5f)
                     .background(fadeGradientTop()),
             )
 

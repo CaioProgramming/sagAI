@@ -98,12 +98,12 @@ class LoreDebugViewModel
             chapter: ChapterContent,
             act: ActContent,
         ) {
-            val saga = _uiState.value.sagaContent ?: return
+            _uiState.value.sagaContent ?: return
             val sectionId = "chapter_intro_${chapter.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
                 chapterUseCase
-                    .generateChapterIntroductionStream(saga, chapter.data, act)
+                    .generateChapterIntroductionStream(chapter.data.id)
                     .collectLatest { state ->
                         handleStreamingState(state)
                     }
@@ -111,13 +111,15 @@ class LoreDebugViewModel
         }
 
         fun regenerateChapterConclusion(chapter: ChapterContent) {
-            val saga = _uiState.value.sagaContent ?: return
+            _uiState.value.sagaContent ?: return
             val sectionId = "chapter_conclusion_${chapter.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
-                chapterUseCase.synthesizeChapterEvolutionStream(saga, chapter).collectLatest { state ->
-                    handleStreamingState(state)
-                }
+                chapterUseCase
+                    .synthesizeChapterEvolutionStream(chapter.data.id)
+                    .collectLatest { state ->
+                        handleStreamingState(state)
+                    }
             }
         }
 
@@ -182,7 +184,8 @@ class LoreDebugViewModel
                         it.isFull(rules.actUpdateLimit, rules) &&
                             (
                                 it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() ||
-                                    it.data.content.isEmpty())
+                                    it.data.content.isEmpty()
+                            )
                     }
                 val chaptersToFix =
                     currentSaga.flatChapters().filter {
@@ -222,10 +225,10 @@ class LoreDebugViewModel
                 }
 
                 chaptersToFix.forEach { chapter ->
-                    val latestSaga = sagaUseCase.getSagaById(sagaId).first() ?: return@forEach
+                    sagaUseCase.getSagaById(sagaId).first() ?: return@forEach
                     updateFixProgress()
                     chapterUseCase
-                        .synthesizeChapterEvolutionStream(latestSaga, chapter)
+                        .synthesizeChapterEvolutionStream(chapter.data.id)
                         .collect { state ->
                             handleStreamingState(state)
                         }

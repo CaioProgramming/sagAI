@@ -77,11 +77,9 @@ fun SagaStoryReaderContent(
                 }
             }
 
-            // Chapters in this Act
             itemsIndexed(act.chapters) { chapterIndex, chapter ->
                 ChapterContentView(
-                    chapter = chapter.toInfo(),
-                    content = saga,
+                    chapter = chapter.toInfo(saga.data.id),
                     modifier =
                         Modifier
                             .fillMaxWidth()

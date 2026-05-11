@@ -61,6 +61,7 @@ import com.ilustris.sagai.core.usecase.PaletteUseCaseImpl
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
+import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.act.data.usecase.ActUseCaseImpl
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
@@ -68,14 +69,19 @@ import com.ilustris.sagai.features.act.data.usecase.BookUseCaseImpl
 import com.ilustris.sagai.features.act.ui.BookPageMapper
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
+import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCaseImpl
+import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCaseImpl
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepositoryImpl
+import com.ilustris.sagai.features.characters.events.data.source.CharacterEventDao
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepositoryImpl
+import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
+import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
@@ -106,7 +112,10 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupServiceImpl
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
+import com.ilustris.sagai.features.saga.datasource.MessageDao
+import com.ilustris.sagai.features.saga.datasource.ReactionDao
 import com.ilustris.sagai.features.saga.datasource.ReactionRepositoryImpl
+import com.ilustris.sagai.features.saga.datasource.SagaDao
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
@@ -119,12 +128,14 @@ import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import com.ilustris.sagai.features.share.domain.SharePlayUseCaseImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
+import com.ilustris.sagai.features.timeline.data.source.TimelineDao
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
+import com.ilustris.sagai.features.wiki.data.source.WikiDao
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
@@ -228,6 +239,50 @@ object AppModule {
     @Singleton
     fun provideCharacterArcDao(database: SagaDatabase): com.ilustris.sagai.features.characters.data.source.CharacterArcDao =
         database.characterArcDao()
+
+    @Provides
+    @Singleton
+    fun provideSagaDao(database: SagaDatabase): SagaDao = database.sagaDao()
+
+    @Provides
+    @Singleton
+    fun provideMessageDao(database: SagaDatabase): MessageDao = database.messageDao()
+
+    @Provides
+    @Singleton
+    fun provideChapterDao(database: SagaDatabase): ChapterDao = database.chapterDao()
+
+    @Provides
+    @Singleton
+    fun provideCharacterDao(database: SagaDatabase): CharacterDao = database.characterDao()
+
+    @Provides
+    @Singleton
+    fun provideWikiDao(database: SagaDatabase): WikiDao = database.wikiDao()
+
+    @Provides
+    @Singleton
+    fun provideTimelineDao(database: SagaDatabase): TimelineDao = database.timelineDao()
+
+    @Provides
+    @Singleton
+    fun provideActDao(database: SagaDatabase): ActDao = database.actDao()
+
+    @Provides
+    @Singleton
+    fun provideCharacterEventDao(database: SagaDatabase): CharacterEventDao = database.characterEventDao()
+
+    @Provides
+    @Singleton
+    fun provideCharacterRelationDao(database: SagaDatabase): CharacterRelationDao = database.characterRelationDao()
+
+    @Provides
+    @Singleton
+    fun provideRelationshipUpdateEventDao(database: SagaDatabase): RelationshipUpdateEventDao = database.relationshipUpdateEventDao()
+
+    @Provides
+    @Singleton
+    fun provideReactionDao(database: SagaDatabase): ReactionDao = database.reactionDao()
 
     @Provides
     @Singleton

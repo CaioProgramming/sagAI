@@ -42,4 +42,11 @@ class CharacterDaoImpl
             characterDao.getCharacterWithRelations(characterId)
 
         override suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo? = characterDao.getSagaInfoForCharacter(sagaId)
+
+        override fun getTopCharacters(
+            sagaId: Int,
+            limit: Int,
+        ) = characterDao.getTopCharacters(sagaId, limit)
+
+        override fun getCharactersCount(sagaId: Int): Flow<Int> = characterDao.getCharactersCount(sagaId)
     }

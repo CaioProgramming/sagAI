@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
@@ -38,10 +39,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -51,14 +52,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.ui.components.stylisedText
@@ -77,17 +81,18 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SagaDetailInitialContent(
-    saga: SagaContent,
+    saga: Saga,
     section: DetailSectionView.InitialSection,
+    resume: SagaDetailResume,
+    gridState: LazyGridState = rememberLazyGridState(),
     onAction: (DetailAction) -> Unit = {},
     showTitleOnly: Boolean = false,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val columnCount = 2
-    val gridState = rememberLazyGridState()
-    val genre = remember { saga.data.genre }
-    var iconError by remember(saga.data.id) { mutableStateOf(false) }
+    val genre = remember { saga.genre }
+    var iconError by remember(saga.id) { mutableStateOf(false) }
 
     val innerContent: @Composable (SharedTransitionScope?, AnimatedVisibilityScope?) -> Unit =
         { sharedScope, visibilityScope ->
@@ -101,14 +106,14 @@ fun SagaDetailInitialContent(
                 if (showOnlyTitle) {
                     Box(Modifier.fillMaxSize()) {
                         genre.stylisedText(
-                            saga.data.title,
+                            saga.title,
                             modifier =
                                 Modifier
                                     .then(
                                         if (sharedScope != null && visibilityScope != null) {
                                             with(sharedScope) {
                                                 Modifier.sharedBounds(
-                                                    rememberSharedContentState(key = "saga-title-${saga.data.id}"),
+                                                    rememberSharedContentState(key = "saga-title-${saga.id}"),
                                                     animatedVisibilityScope = visibilityScope,
                                                 )
                                             }
@@ -124,10 +129,6 @@ fun SagaDetailInitialContent(
                 } else {
                     Box(Modifier.fillMaxSize()) {
                         val genreHighlight = genre.selectiveHighlight()
-                        val chapters = section.chapters ?: emptyList()
-                        val eventsCount = saga.characters.size
-                        val messagesCount =
-                            chapters.sumOf { it.events.sumOf { it.messages.size } }
 
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(columnCount),
@@ -139,7 +140,7 @@ fun SagaDetailInitialContent(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center,
                                 ) {
-                                    if (saga.data.icon.isNotBlank() && !iconError) {
+                                    if (saga.icon.isNotBlank() && !iconError) {
                                         Box(
                                             modifier =
                                                 Modifier
@@ -147,7 +148,7 @@ fun SagaDetailInitialContent(
                                                         if (sharedScope != null && visibilityScope != null) {
                                                             with(sharedScope) {
                                                                 Modifier.sharedBounds(
-                                                                    rememberSharedContentState(key = "saga-cover-${saga.data.id}"),
+                                                                    rememberSharedContentState(key = "saga-cover-${saga.id}"),
                                                                     animatedVisibilityScope = visibilityScope,
                                                                 )
                                                             }
@@ -180,7 +181,7 @@ fun SagaDetailInitialContent(
                                                             ),
                                                 ) {
                                                     genre.stylisedText(
-                                                        saga.data.title,
+                                                        saga.title,
                                                         modifier =
                                                             currentModifier
                                                                 .then(
@@ -188,7 +189,7 @@ fun SagaDetailInitialContent(
                                                                         with(sharedScope) {
                                                                             Modifier.sharedBounds(
                                                                                 rememberSharedContentState(
-                                                                                    key = "saga-title-${saga.data.id}",
+                                                                                    key = "saga-title-${saga.id}",
                                                                                 ),
                                                                                 animatedVisibilityScope = visibilityScope,
                                                                             )
@@ -202,8 +203,13 @@ fun SagaDetailInitialContent(
                                                 }
                                             } else {
                                                 AsyncImage(
-                                                    saga.data.icon,
-                                                    contentDescription = saga.data.title,
+                                                    model =
+                                                        ImageRequest
+                                                            .Builder(LocalContext.current)
+                                                            .data(saga.icon)
+                                                            .crossfade(true)
+                                                            .build(),
+                                                    contentDescription = saga.title,
                                                     onState = {
                                                         if (it is AsyncImagePainter.State.Error) {
                                                             iconError = true
@@ -221,7 +227,7 @@ fun SagaDetailInitialContent(
                                                 )
 
                                                 genre.stylisedText(
-                                                    saga.data.title,
+                                                    saga.title,
                                                     modifier =
                                                         currentModifier
                                                             .then(
@@ -229,7 +235,7 @@ fun SagaDetailInitialContent(
                                                                     with(sharedScope) {
                                                                         Modifier.sharedBounds(
                                                                             rememberSharedContentState(
-                                                                                key = "saga-title-${saga.data.id}",
+                                                                                key = "saga-title-${saga.id}",
                                                                             ),
                                                                             animatedVisibilityScope = visibilityScope,
                                                                         )
@@ -260,7 +266,7 @@ fun SagaDetailInitialContent(
                                                             with(sharedScope) {
                                                                 Modifier.sharedBounds(
                                                                     rememberSharedContentState(
-                                                                        key = "saga-cover-${saga.data.id}",
+                                                                        key = "saga-cover-${saga.id}",
                                                                     ),
                                                                     animatedVisibilityScope = visibilityScope,
                                                                 )
@@ -282,7 +288,7 @@ fun SagaDetailInitialContent(
                                                     ),
                                             )
                                             genre.stylisedText(
-                                                saga.data.title,
+                                                saga.title,
                                                 modifier =
                                                     Modifier
                                                         .then(
@@ -290,7 +296,7 @@ fun SagaDetailInitialContent(
                                                                 with(sharedScope) {
                                                                     Modifier.sharedBounds(
                                                                         rememberSharedContentState(
-                                                                            key = "saga-title-${saga.data.id}",
+                                                                            key = "saga-title-${saga.id}",
                                                                         ),
                                                                         animatedVisibilityScope = visibilityScope,
                                                                     )
@@ -321,7 +327,7 @@ fun SagaDetailInitialContent(
                                 ) {
                                     item {
                                         VerticalLabel(
-                                            chapters.count().toString(),
+                                            section.chaptersCount.toString(),
                                             stringResource(
                                                 R.string.saga_detail_section_title_chapters,
                                             ),
@@ -330,39 +336,18 @@ fun SagaDetailInitialContent(
                                     }
 
                                     item {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.padding(16.dp),
-                                        ) {
-                                            Text(
-                                                messagesCount.toString(),
-                                                style =
-                                                    MaterialTheme.typography.titleMedium.copy(
-                                                        fontFamily = genre.headerFont(),
-                                                        fontWeight = FontWeight.Normal,
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                                modifier =
-                                                    Modifier
-                                                        .padding(2.dp)
-                                                        .fillMaxWidth(),
-                                            )
-
-                                            Text(
-                                                stringResource(R.string.saga_detail_messages_label),
-                                                style =
-                                                    MaterialTheme.typography.bodySmall.copy(
-                                                        fontFamily = genre.bodyFont(),
-                                                        fontWeight = FontWeight.Light,
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                                modifier = Modifier.alpha(.4f),
-                                            )
-                                        }
+                                        VerticalLabel(
+                                            resume.messagesCount.toString(),
+                                            stringResource(
+                                                R.string.saga_detail_messages_label,
+                                            ),
+                                            genre,
+                                        )
                                     }
+
                                     item {
                                         VerticalLabel(
-                                            eventsCount.toString(),
+                                            resume.charactersCount.toString(),
                                             stringResource(
                                                 R.string.saga_detail_section_title_characters,
                                             ),
@@ -372,8 +357,8 @@ fun SagaDetailInitialContent(
 
                                     item {
                                         VerticalLabel(
-                                            saga.data.playTimeMs.toPlaytimeFormat(),
-                                            stringResource(R.string.playtime_title),
+                                            resume.playtime.toPlaytimeFormat(),
+                                            stringResource(R.string.total_playtime_label),
                                             genre,
                                         )
                                     }
@@ -383,7 +368,7 @@ fun SagaDetailInitialContent(
                             item(span = { GridItemSpan(columnCount) }) {
                                 Column {
                                     Text(
-                                        saga.data.description,
+                                        saga.description,
                                         modifier =
                                             Modifier
                                                 .padding(16.dp),
@@ -396,10 +381,13 @@ fun SagaDetailInitialContent(
                                 }
                             }
 
-                            if (saga.data.isEnded) {
+                            if (saga.isEnded) {
                                 item(span = { GridItemSpan(columnCount) }) {
                                     RecapHeroCard(
                                         saga = saga,
+                                        chaptersCount = resume.chaptersCount,
+                                        charactersCount = resume.charactersCount,
+                                        messagesCount = resume.messagesCount,
                                         modifier =
                                             Modifier
                                                 .padding(16.dp)
@@ -449,7 +437,12 @@ fun SagaDetailInitialContent(
                                     ) {
                                         if (!starringError) {
                                             AsyncImage(
-                                                it.data.image,
+                                                model =
+                                                    ImageRequest
+                                                        .Builder(LocalContext.current)
+                                                        .data(it.data.image)
+                                                        .crossfade(true)
+                                                        .build(),
                                                 contentDescription = it.data.name,
                                                 onState = {
                                                     if (it is AsyncImagePainter.State.Error) {
@@ -523,24 +516,24 @@ fun SagaDetailInitialContent(
 
                             RequestSection.entries.forEach {
                                 item(span = { GridItemSpan(columnCount) }) {
-                                    section.miniSection(it, saga, onAction)
+                                    section.miniSection(it, resume, onAction)
                                 }
                             }
 
-                            if (saga.data.isEnded) {
+                            if (saga.isEnded) {
                                 item(span = { GridItemSpan(columnCount) }) {
                                     Column(
                                         modifier = Modifier.padding(16.dp),
                                         verticalArrangement = Arrangement.spacedBy(16.dp),
                                     ) {
                                         EmotionalProfileCard(
-                                            sagaContent = saga,
+                                            saga = saga,
                                             modifier = Modifier.fillMaxWidth(),
                                         )
 
-                                        if (saga.data.endMessage.isNotBlank()) {
+                                        if (saga.endMessage.isNotBlank()) {
                                             Text(
-                                                text = saga.data.endMessage,
+                                                text = saga.endMessage,
                                                 style =
                                                     MaterialTheme.typography.labelMedium.copy(
                                                         fontFamily = genre.bodyFont(),

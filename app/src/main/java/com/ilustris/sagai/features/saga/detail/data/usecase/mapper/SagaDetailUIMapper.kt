@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase.mapper
 
+import android.graphics.Bitmap
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
@@ -8,14 +9,9 @@ import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.toRoman
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.chapterNumber
-import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.toSagaInfo
-import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
+import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.home.data.model.SagaInfo
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
@@ -40,13 +36,16 @@ class SagaDetailUIMapper(
     private val wikiMapper: WikiMapper,
     private val emotionalUseCase: EmotionalUseCase,
 ) {
-    suspend fun buildDrawer(saga: SagaContent): TimelineDrawer {
+    suspend fun buildDrawer(
+        saga: Saga,
+        chapters: List<com.ilustris.sagai.features.chapter.data.model.ChapterContent>,
+        completedActsCount: Int,
+    ): TimelineDrawer {
         val narrativeRules = remoteConfigService.getNarrativeRules()
-        val actProgress =
-            saga.completedActs(narrativeRules).toFloat() / narrativeRules.maxActsLimit
+        val actProgress = completedActsCount.toFloat() / narrativeRules.maxActsLimit
         return TimelineDrawer(
-            saga.data.title,
-            saga.flatChapters().map {
+            saga.title,
+            chapters.mapIndexed { index, it ->
                 val chapterProgress =
                     it.events
                         .count { event -> event.isComplete(narrativeRules) }
@@ -55,7 +54,7 @@ class SagaDetailUIMapper(
                     it.data.title.ifEmpty {
                         stringResourceHelper.getString(
                             R.string.chapter_number_label,
-                            saga.chapterNumber(it.data).toRoman(),
+                            (index + 1).toRoman(),
                         )
                     },
                     progress = chapterProgress,
@@ -74,70 +73,79 @@ class SagaDetailUIMapper(
     }
 
     suspend fun buildSection(
-        sagaContent: SagaContent,
+        resume: SagaDetailResume,
         section: RequestSection,
+        existingSegmentedImage: Pair<Bitmap, Bitmap>? = null,
     ) = executeRequest {
         when (section) {
-            RequestSection.START -> createInitialSection(sagaContent)
-            else -> createInitialSection(sagaContent)
+            RequestSection.START -> createInitialSection(resume, existingSegmentedImage)
+            else -> createInitialSection(resume, existingSegmentedImage)
         }
     }
 
-    suspend fun createInitialSection(saga: SagaContent): DetailSectionView {
-        val narrativeRules = remoteConfigService.getNarrativeRules()
+    suspend fun createInitialSection(
+        resume: SagaDetailResume,
+        existingSegmentedImage: Pair<Bitmap, Bitmap>? = null,
+    ): DetailSectionView {
+        val saga = resume.saga
+        remoteConfigService.getNarrativeRules()
         val subtitle =
-            if (saga.data.isEnded) {
+            if (saga.isEnded) {
                 stringResourceHelper.getString(
                     R.string.saga_ended_on,
-                    saga.data.endedAt.formatDate(),
+                    saga.endedAt.formatDate(),
                 )
             } else {
                 stringResourceHelper.getString(
                     R.string.saga_detail_status_created,
-                    saga.data.createdAt.formatDate(),
+                    saga.createdAt.formatDate(),
                 )
             }
 
         val segmentedImage =
-            runCatching {
-                if (saga.data.icon.isBlank()) {
+            existingSegmentedImage ?: runCatching {
+                if (saga.icon.isBlank()) {
                     null
                 } else {
-                    imageSegmentationHelper.processImage(saga.data.icon).getSuccess()
+                    imageSegmentationHelper.processImage(saga.icon).getSuccess()
                 }
             }.getOrNull()
 
-        val emotionalCard = emotionalUseCase.getEmotionalCard(saga).getSuccess()
-        val topCharacters =
-            saga
-                .flatMessages()
-                .rankTopCharacters(saga.characters.map { it.data })
-                .mapNotNull { saga.findCharacter(it.first.id) }
-
-        val lastEvent = saga.flatEvents().lastOrNull { it.isComplete(narrativeRules) }
-
-        val timelineCard =
-            lastEvent?.let {
-                if (it.isComplete(narrativeRules).not()) return@let null
-                timelineMapper.buildTimeline(saga.toSagaInfo(), lastEvent)
-            } ?: run {
+        val emotionalCard =
+            if (saga.emotionalReview != null) {
+                remoteConfigService.getString("mental_card_icon")
+            } else {
                 null
             }
 
         return DetailSectionView.InitialSection(
-            title = saga.data.title,
+            title = saga.title,
             subtitle = subtitle,
             saga = saga,
             segmentedImage = segmentedImage,
             emotionalCard = emotionalCard,
-            starring = saga.mainCharacter,
-            characters = topCharacters,
-            relationships = saga.relationships,
-            lastEvent = timelineCard,
-            acts = saga.acts.filter { it.isComplete(narrativeRules) },
-            chapters = saga.flatChapters().filter { it.isComplete(narrativeRules) },
-            endMessage = saga.data.endMessage,
-            readyToReview = saga.isComplete(narrativeRules),
+            starring = resume.starringCharacter,
+            topCharacters = resume.topCharacters,
+            relationships = emptyList(),
+            lastEvent =
+                resume.latestEvent?.let {
+                    timelineMapper.buildTimeline(
+                        SagaInfo(
+                            id = saga.id,
+                            title = saga.title,
+                            genre = saga.genre,
+                            variationId = saga.variationId,
+                            icon = saga.icon,
+                        ),
+                        it.timelineContent,
+                    )
+                },
+            latestWikis = resume.latestWikis,
+            books = resume.generatedBooks,
+            chaptersCount = resume.chaptersCount,
+            hasActs = resume.hasActs,
+            endMessage = saga.endMessage,
+            readyToReview = false,
         )
     }
 }

@@ -8,6 +8,7 @@ import androidx.navigation3.runtime.entryProvider
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.features.act.ui.BookReaderView
 import com.ilustris.sagai.features.act.ui.SagaActsView
+import com.ilustris.sagai.features.act.ui.SagaStoryReaderView
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.SagaCharactersView
@@ -210,7 +211,7 @@ fun createSagaEntryProvider(
     }
 
     entry<SagaStoryReaderKey> { key ->
-        com.ilustris.sagai.features.act.ui.SagaStoryReaderView(
+        SagaStoryReaderView(
             sagaId = key.sagaId,
             onBack = { navigator.goBack() },
             sharedTransitionScope = sharedTransitionScope,

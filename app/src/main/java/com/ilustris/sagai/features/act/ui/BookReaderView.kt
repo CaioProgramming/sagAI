@@ -40,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.ui.components.BookReader
+import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
 /**
  * Dedicated Book Reader screen.
@@ -163,53 +165,45 @@ fun BookReaderView(
 
             // Overlay controls — always visible on top of the reader content
             // statusBarsPadding ensures they never hide behind the transparent status bar
-            Row(
+
+            SagaTopBar(
+                title = (state as? BookReaderState.Ready)?.currentAct?.data?.title ?: "",
+                subtitle = emptyString(),
+                genre = (state as? BookReaderState.Ready)?.saga?.data?.genre,
                 modifier =
                     Modifier
+                        .align(Alignment.TopCenter)
                         .statusBarsPadding()
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.clip(CircleShape),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_back_left),
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
+                        .fillMaxWidth(),
+                onBackClick = onBack,
+                actionContent = {
+                    if (state is BookReaderState.Ready) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = viewModel::regenerateBook,
+                                modifier = Modifier.clip(CircleShape),
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.baseline_refresh_24),
+                                    contentDescription = "Regenerate Book",
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
 
-                // Action buttons — only shown when a book is ready
-                if (state is BookReaderState.Ready) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = viewModel::regenerateBook,
-                            modifier = Modifier.clip(CircleShape),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.baseline_refresh_24),
-                                contentDescription = "Regenerate Book",
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-
-                        IconButton(
-                            onClick = viewModel::shareCurrentBook,
-                            modifier = Modifier.clip(CircleShape),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.ic_share),
-                                contentDescription = "Share PDF",
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
+                            IconButton(
+                                onClick = viewModel::shareCurrentBook,
+                                modifier = Modifier.clip(CircleShape),
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_share),
+                                    contentDescription = "Share PDF",
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
+                            }
                         }
                     }
-                }
-            }
+                },
+            )
         }
     }
 }

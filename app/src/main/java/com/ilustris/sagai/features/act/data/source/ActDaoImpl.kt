@@ -2,10 +2,9 @@ package com.ilustris.sagai.features.act.data.source
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.data.model.ActContent // Import ActContent
+import com.ilustris.sagai.features.act.data.model.ActContent
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
-import kotlin.getValue
 
 class ActDaoImpl
     @Inject
@@ -31,4 +30,6 @@ class ActDaoImpl
         override fun getActContentsForSaga(sagaId: Int): Flow<List<ActContent>> = actDao.getActContentsForSaga(sagaId)
 
         override fun getActContent(actId: Int): Flow<ActContent?> = actDao.getActContent(actId) // Added implementation
+
+        override suspend fun getActById(actId: Int): Act? = actDao.getActById(actId)
     }

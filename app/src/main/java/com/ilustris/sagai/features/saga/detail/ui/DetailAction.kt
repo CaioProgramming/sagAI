@@ -34,5 +34,9 @@ sealed class DetailAction {
 
     data object ViewWiki : DetailAction()
 
+    data class OpenChapter(
+        val chapterId: Int,
+    ) : DetailAction()
+
     data object OpenStoryReader : DetailAction()
 }

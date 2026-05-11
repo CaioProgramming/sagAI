@@ -40,4 +40,10 @@ interface WikiDao {
 
     @Query("DELETE FROM wikis WHERE sagaId = :sagaId")
     suspend fun deleteWikisBySaga(sagaId: Int)
+
+    @Query("SELECT * FROM wikis WHERE sagaId = :sagaId ORDER BY id DESC LIMIT :limit")
+    fun getLatestWikis(
+        sagaId: Int,
+        limit: Int,
+    ): Flow<List<Wiki>>
 }

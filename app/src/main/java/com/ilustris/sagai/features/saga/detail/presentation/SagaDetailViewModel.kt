@@ -8,12 +8,11 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.media.SoundFxService
-import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
@@ -38,14 +37,13 @@ class SagaDetailViewModel
     @Inject
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
-        private val imageSegmentationHelper: ImageSegmentationHelper,
         private val visualConfigService: GenreVisualConfigService,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val soundFxService: SoundFxService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
-        val saga = MutableStateFlow<SagaContent?>(null)
+        val sagaResume = MutableStateFlow<SagaDetailResume?>(null)
         val isGenerating = MutableStateFlow(false)
         val showIntro = MutableStateFlow(false)
         private val _loadingMessage = MutableStateFlow<String?>(null)
@@ -54,41 +52,58 @@ class SagaDetailViewModel
 
         val showPremiumSheet = MutableStateFlow(false)
 
-        val originalBitmap = MutableStateFlow<Bitmap?>(null)
-        val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
-
         val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
         private val _initialSection = MutableStateFlow<DetailSectionView.InitialSection?>(null)
         val initialSection = _initialSection.asStateFlow()
 
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
 
+        private var cachedSegmentedImage: Pair<Bitmap, Bitmap>? = null
+        private var cachedIconPath: String? = null
+        private var initialSectionJob: kotlinx.coroutines.Job? = null
+
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
         fun loadInitialSection() {
-            val currentSaga = saga.value ?: return
-            viewModelScope.launch {
-                sagaDetailUIMapper
-                    .buildSection(
-                        currentSaga,
-                        RequestSection.START,
-                    ).onSuccess { mappedSection ->
-                        _initialSection.value = mappedSection as DetailSectionView.InitialSection
-                        if (_state.value !is State.Success) {
-                            playSoundFx()
-                        }
-
-                        _state.value = State.Success(currentSaga)
-                    }.onFailureAsync {
-                        _state.emit(State.Error(emptyString()))
+            val resume = sagaResume.value ?: return
+            initialSectionJob?.cancel()
+            initialSectionJob =
+                viewModelScope.launch {
+                    val saga = resume.saga
+                    if (cachedIconPath != saga.icon) {
+                        cachedIconPath = saga.icon
+                        cachedSegmentedImage = null
                     }
-            }
+
+                    sagaDetailUIMapper
+                        .buildSection(
+                            resume = resume,
+                            section = RequestSection.START,
+                            existingSegmentedImage = cachedSegmentedImage,
+                        ).onSuccess { mappedSection ->
+                            val section = mappedSection as DetailSectionView.InitialSection
+                            _initialSection.value =
+                                if (cachedSegmentedImage != null) {
+                                    section.copy(segmentedImage = cachedSegmentedImage)
+                                } else {
+                                    cachedSegmentedImage = section.segmentedImage
+                                    section
+                                }
+                            if (_state.value !is State.Success) {
+                                playSoundFx()
+                            }
+
+                            _state.value = State.Success(resume.saga)
+                        }.onFailureAsync {
+                            _state.emit(State.Error(emptyString()))
+                        }
+                }
         }
 
         private fun playSoundFx() {
-            val selectedGenre = saga.value?.data?.genre ?: return
+            val selectedGenre = sagaResume.value?.saga?.genre ?: return
             viewModelScope.launch {
                 delay(300)
                 val visualConfig = visualConfigService.getVisualConfig(selectedGenre)
@@ -100,27 +115,39 @@ class SagaDetailViewModel
         fun handleAction(detailAction: DetailAction) {
             viewModelScope.launch {
                 when (detailAction) {
-                    DetailAction.Delete -> deleteSaga(saga.value?.data)
+                    DetailAction.Delete -> deleteSaga(sagaResume.value?.saga)
                     DetailAction.RegenerateIcon -> regenerateIcon()
                     else -> doNothing()
                 }
             }
         }
 
-        fun fetchSagaDetails(sagaId: String) {
-            showIntro.value = true
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
-                    saga?.let { data ->
-                        this@SagaDetailViewModel.saga.value = data
-                        visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
+        private var fetchJob: kotlinx.coroutines.Job? = null
 
-                        loadInitialSection()
-                        detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
-                        launchIntroSequence()
+        fun fetchSagaDetails(sagaId: Int) {
+            if (sagaResume.value?.saga?.id == sagaId) {
+                return
+            }
+            fetchJob?.cancel()
+            showIntro.value = true
+            fetchJob =
+                viewModelScope.launch {
+                    sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
+                        resume?.let { data ->
+                            this@SagaDetailViewModel.sagaResume.value = data
+                            visualConfig.value = visualConfigService.getVisualConfig(data.saga.genre)
+
+                            loadInitialSection()
+                            detailDrawer.value =
+                                sagaDetailUIMapper.buildDrawer(
+                                    data.saga,
+                                    data.fullChapters,
+                                    data.completedActsCount,
+                                )
+                            launchIntroSequence()
+                        }
                     }
                 }
-            }
         }
 
         fun deleteSaga(saga: Saga?) {
@@ -135,12 +162,12 @@ class SagaDetailViewModel
         }
 
         fun regenerateIcon() {
-            val currentSaga = saga.value ?: return
+            val currentSagaId = sagaResume.value?.saga?.id ?: return
             isGenerating.value = true
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
-                    .regenerateSagaIconStream(currentSaga)
+                    .regenerateSagaIconStream(currentSagaId)
                     .collect { state ->
                         when (state) {
                             is StreamingState.Reasoning -> {
@@ -148,8 +175,6 @@ class SagaDetailViewModel
                             }
 
                             is StreamingState.Success -> {
-                                // Update the saga with the new icon
-                                saga.value = saga.value?.copy(data = state.data)
                                 isGenerating.value = false
                                 _loadingMessage.value = null
                             }
@@ -164,11 +189,11 @@ class SagaDetailViewModel
         }
 
         fun generateTimelineContent(timelineContent: TimelineContent) {
-            val currentSaga = saga.value ?: return
+            val currentSagaId = sagaResume.value?.saga?.id ?: return
             viewModelScope.launch {
                 isGenerating.value = true
                 _loadingMessage.value = "Generating timeline content..."
-                sagaDetailUseCase.generateTimelineContent(currentSaga, timelineContent)
+                sagaDetailUseCase.generateTimelineContent(currentSagaId, timelineContent)
                 isGenerating.value = false
                 _loadingMessage.value = null
             }
@@ -182,11 +207,11 @@ class SagaDetailViewModel
         }
 
         fun reviewWiki(wikis: List<Wiki>) {
-            val currentsaga = saga.value ?: return
+            val currentSagaId = sagaResume.value?.saga?.id ?: return
             viewModelScope.launch {
                 isGenerating.emit(true)
                 _loadingMessage.value = "Reviewing wiki entries..."
-                sagaDetailUseCase.reviewWiki(currentsaga, wikis)
+                sagaDetailUseCase.reviewWiki(currentSagaId, wikis)
                 isGenerating.emit(false)
                 _loadingMessage.value = null
             }

@@ -564,7 +564,7 @@ class SagaContentManagerImpl
 
             reasoningSynthesizerService
                 .synthesizeReasoning(
-                    sourceFlow = chapterUseCase.synthesizeChapterEvolutionStream(saga, chapter),
+                    sourceFlow = chapterUseCase.synthesizeChapterEvolutionStream(chapter.data.id),
                     context = contextString,
                     conversationStyle = style,
                     genre = saga.data.genre.name,
@@ -603,9 +603,8 @@ class SagaContentManagerImpl
         }
 
         override suspend fun reviewChapter(chapterContent: ChapterContent) {
-            val saga = content.value ?: return
             startProcessing {
-                chapterUseCase.reviewChapter(saga, chapterContent)
+                chapterUseCase.reviewChapter(chapterContent.data.id)
             }
         }
 
@@ -831,10 +830,9 @@ class SagaContentManagerImpl
         private suspend fun generateChapterIntroduction(currentChapter: ChapterContent) =
             executeRequest {
                 val saga = content.value!!
-                val currentAct = saga.currentActInfo!!
                 var finalChapter: GeneratedContent<Chapter>? = null
                 chapterUseCase
-                    .generateChapterIntroductionStream(saga, currentChapter.data, currentAct)
+                    .generateChapterIntroductionStream(currentChapter.data.id)
                     .let { flow ->
                         reasoningSynthesizerService.synthesizeReasoning(
                             sourceFlow = flow,
@@ -1355,7 +1353,7 @@ class SagaContentManagerImpl
                         .find { it.data.id == chapter.id }!!
                         .copy(data = chapter)
                 // Synthesis already handled Wiki and Arcs. Just generate cover.
-                chapterUseCase.generateChapterCover(chapterContent, saga)
+                chapterUseCase.generateChapterCover(chapterContent.data.id)
             }
         }
 

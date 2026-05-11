@@ -58,7 +58,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
@@ -541,8 +540,8 @@ private fun CharacterDetailsLoaded(
                                 val relatedCharacter =
                                     relationContent.getCharacterExcluding(characterData)
                                 SingleRelationShipCard(
-                                    saga = liteSagaContent,
-                                    character = CharacterContent(data = relatedCharacter),
+                                    saga = liteSagaContent.data,
+                                    character = relatedCharacter,
                                     content = relationContent,
                                     modifier =
                                         Modifier

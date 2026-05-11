@@ -62,10 +62,10 @@ fun ChapterView(
                     isGenerating = isGenerating,
                     loadingMessage = reasoningMessage,
                     onGenerateIcon = {
-                        viewModel.generateIcon(sagaContent, it)
+                        viewModel.generateIcon(it.id)
                     },
                     onReviewChapter = {
-                        viewModel.reviewChapter(it)
+                        viewModel.reviewChapter(it.id)
                     },
                 )
             }

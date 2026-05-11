@@ -84,13 +84,11 @@ class BookReaderViewModel
                     }
                     sagaContent = saga
 
-                    // Resolve index on first load; subsequent emissions keep the current index
-                    if (currentActIndex == 0) {
-                        currentActIndex =
-                            saga.acts
-                                .indexOfFirst { it.data.id == actId }
-                                .coerceAtLeast(0)
-                    }
+                    // Always resolve index based on initialActId or current target
+                    currentActIndex =
+                        saga.acts
+                            .indexOfFirst { it.data.id == initialActId }
+                            .coerceAtLeast(0)
 
                     renderCurrentAct(saga)
                 }
