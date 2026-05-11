@@ -620,4 +620,11 @@ class CharacterUseCaseImpl
         override fun getCharacterArcs(characterId: Int) = characterArcDao.getArcsForCharacter(characterId)
 
         override fun getCharacterDetailData(characterId: Int) = repository.getCharacterDetailData(characterId)
+
+        override fun getCharactersBySaga(sagaId: Int) = repository.getCharactersBySaga(sagaId)
+
+        override fun getTopCharacters(
+            sagaId: Int,
+            limit: Int,
+        ) = repository.getTopCharacters(sagaId, limit)
     }

@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -19,7 +20,7 @@ class CharacterRepositoryImpl
         override suspend fun insertCharacter(character: Character): Character {
             val id = dao.insertCharacter(character)
             return character.copy(id = id.toInt())
-    }
+        }
 
         override suspend fun updateCharacter(character: Character): Character {
             dao.updateCharacter(character)
@@ -45,7 +46,14 @@ class CharacterRepositoryImpl
                         relationshipsAsFirst = it.relationshipsAsFirst,
                         relationshipsAsSecond = it.relationshipsAsSecond,
                         messageCount = it.messageCount,
-                )
+                    )
+                }
             }
-        }
+
+        override fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>> = dao.getCharactersBySaga(sagaId)
+
+        override fun getTopCharacters(
+            sagaId: Int,
+            limit: Int,
+        ): Flow<List<CharacterContent>> = dao.getTopCharacters(sagaId, limit)
     }

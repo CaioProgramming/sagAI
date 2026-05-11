@@ -6,8 +6,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -37,7 +39,12 @@ data class ChatUiState(
     val chatState: ChatState = ChatState.Loading,
     val sagaContent: SagaContent? = null,
     val messages: List<ActDisplayData> = emptyList(),
-    val characters: List<Character> = emptyList(),
+    val characters: List<CharacterContent> = emptyList(),
+    val topCharacters: List<CharacterContent> = emptyList(),
+    val mainCharacter: CharacterContent? = null,
+    val wikis: List<Wiki> = emptyList(),
+    val activeGenre: Genre? = null,
+    val flatEvents: List<Timeline> = emptyList(),
     val isGenerating: Boolean = false,
     val isLoading: Boolean = false,
     val isPlaying: Boolean = false,

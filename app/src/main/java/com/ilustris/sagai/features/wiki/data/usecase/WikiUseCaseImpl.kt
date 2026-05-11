@@ -119,4 +119,6 @@ class WikiUseCaseImpl
             }
 
         override fun getWikisWithChapter(sagaId: Int): Flow<List<WikiWithChapter>> = wikiRepository.getWikisWithChapter(sagaId)
+
+        override fun getWikisBySaga(sagaId: Int): Flow<List<Wiki>> = wikiRepository.getWikisBySaga(sagaId)
     }

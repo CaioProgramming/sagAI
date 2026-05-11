@@ -137,4 +137,28 @@ class ChatStateManager {
     fun updateWikiGroups(wikiGroups: List<com.ilustris.sagai.features.wiki.data.model.WikiGroup>) {
         _uiState.update { it.copy(wikiGroups = wikiGroups) }
     }
+
+    fun updateTopCharacters(characters: List<CharacterContent>) {
+        _uiState.update { it.copy(topCharacters = characters) }
+    }
+
+    fun updateCharacters(characters: List<CharacterContent>) {
+        _uiState.update { it.copy(characters = characters) }
+    }
+
+    fun updateWikis(wikis: List<com.ilustris.sagai.features.wiki.data.model.Wiki>) {
+        _uiState.update { it.copy(wikis = wikis) }
+    }
+
+    fun updateMainCharacter(character: CharacterContent?) {
+        _uiState.update { it.copy(mainCharacter = character) }
+    }
+
+    fun updateGenre(genre: com.ilustris.sagai.features.newsaga.data.model.Genre?) {
+        _uiState.update { it.copy(activeGenre = genre) }
+    }
+
+    fun updateFlatEvents(events: List<com.ilustris.sagai.features.timeline.data.model.Timeline>) {
+        _uiState.update { it.copy(flatEvents = events) }
+    }
 }

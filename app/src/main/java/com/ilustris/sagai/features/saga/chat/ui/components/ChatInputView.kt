@@ -195,6 +195,7 @@ private fun handleWikiSelection(
 @Composable
 fun ChatInputView(
     content: SagaContent,
+    characters: List<CharacterContent>,
     isGenerating: Boolean,
     suggestions: List<Suggestion>,
     modifier: Modifier = Modifier,
@@ -234,8 +235,8 @@ fun ChatInputView(
         )
     val tagBg = MaterialTheme.colorScheme.background
     val textColor = textStyle.color
-    LaunchedEffect(inputField.text, content.characters, content.wikis) {
-        queryItemsType = detectQueryType(inputField.text, content.characters, content.wikis)
+    LaunchedEffect(inputField.text, characters, content.wikis) {
+        queryItemsType = detectQueryType(inputField.text, characters, content.wikis)
     }
     val glowRadiusState =
         animateFloatAsState(if (isGenerating.not()) 10f else 25f, label = "glowRadius")
@@ -254,7 +255,7 @@ fun ChatInputView(
         remember(
             genre,
             content.mainCharacter,
-            content.characters,
+            characters,
             content.wikis,
             resolvedColor,
             tagBg,
@@ -264,7 +265,7 @@ fun ChatInputView(
                 transformTextWithContent(
                     genre = genre,
                     mainCharacter = content.mainCharacter?.data,
-                    characters = content.getCharacters(),
+                    characters = characters.map { it.data },
                     wiki = content.wikis,
                     text = text.text,
                     genreColor = resolvedColor,
@@ -531,8 +532,8 @@ fun ChatInputView(
                                                     .fillMaxWidth()
                                                     .padding(bottom = 32.dp),
                                         ) {
-                                            items(content.characters.size) { index ->
-                                                val character = content.characters[index]
+                                            items(characters.size) { index ->
+                                                val character = characters[index]
                                                 Column(
                                                     horizontalAlignment = Alignment.CenterHorizontally,
                                                     modifier =

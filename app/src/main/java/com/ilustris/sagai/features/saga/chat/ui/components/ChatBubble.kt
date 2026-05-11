@@ -91,6 +91,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatHours
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
@@ -110,6 +111,8 @@ import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioMessagePlayer
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -129,7 +132,11 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun ChatBubble(
     messageContent: MessageContent,
-    content: SagaContent,
+    mainCharacter: CharacterContent?,
+    characters: List<CharacterContent>,
+    wikis: List<Wiki>,
+    genre: Genre,
+    flatEvents: List<Timeline>,
     canAnimate: Boolean = true,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
@@ -141,10 +148,6 @@ fun ChatBubble(
 ) {
     val message = messageContent.message
     val sender = message.senderType
-    val mainCharacter = content.mainCharacter
-    val characters = content.characters
-    val wiki = content.wikis
-    val genre = content.data.genre
     val resolvedColor = genre.resolveColor()
     val resolvedIconColor = genre.resolveIconColor()
     val isUser = messageContent.isUser(mainCharacter?.data)
@@ -275,14 +278,15 @@ fun ChatBubble(
                             Modifier
                                 .clip(CircleShape)
                                 .clickable {
-                                    messageContent.character?.let {
+                                    messageContent.character?.let { character ->
                                         onAction(
                                             MessageAction.ClickCharacter(
-                                                content.findCharacter(it.id),
+                                                characters.find { it.data.id == character.id },
                                             ),
                                         )
                                     }
-                                }.size(avatarSize),
+                                }
+                                .size(avatarSize),
                         ) {
                             messageContent.character?.let { character ->
                                 AnimatedContent(
@@ -309,7 +313,7 @@ fun ChatBubble(
                                 val relationWithMainCharacter =
                                     mainCharacter
                                         ?.findRelationship(character.id)
-                                        ?.sortedByEvents(content.flatEvents().map { it.data })
+                                        ?.sortedByEvents(flatEvents)
                                         ?.firstOrNull()
 
                                 if (isUser.not()) {
@@ -347,7 +351,8 @@ fun ChatBubble(
                                                     message,
                                                 ),
                                             )
-                                        }.size(24.dp)
+                                        }
+                                        .size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -367,7 +372,8 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             messageEffectsEnabled,
-                                        ).wrapContentSize()
+                                        )
+                                        .wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -381,10 +387,10 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                sweepGradient(
-                                                                    palette,
-                                                                ) as ShaderBrush
-                                                            ).createShader(size)
+                                                                    sweepGradient(
+                                                                        palette,
+                                                                    ) as ShaderBrush
+                                                                    ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotationState.value,
@@ -400,7 +406,8 @@ fun ChatBubble(
                                                 brush = brush,
                                                 style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }.background(
+                                        }
+                                        .background(
                                             MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             bubbleShape,
                                         )
@@ -429,10 +436,12 @@ fun ChatBubble(
                                                             )
                                                         }
                                                     },
-                                                ).emotionalEntrance(
+                                                )
+                                                .emotionalEntrance(
                                                     message.emotionalTone,
                                                     messageEffectsEnabled,
-                                                ).wrapContentSize()
+                                                )
+                                                .wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
@@ -464,14 +473,17 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    ).emotionalEntrance(
+                                                    )
+                                                    .emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
-                                                    ).wrapContentSize()
+                                                    )
+                                                    .wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
-                                                    ).background(
+                                                    )
+                                                    .background(
                                                         MaterialTheme.colorScheme.surfaceContainer
                                                             .copy(
                                                                 alpha = .5f,
@@ -502,10 +514,12 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    ).emotionalEntrance(
+                                                    )
+                                                    .emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
-                                                    ).wrapContentSize()
+                                                    )
+                                                    .wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -571,11 +585,13 @@ fun ChatBubble(
                                             .graphicsLayer {
                                                 scaleX = finalScale
                                                 scaleY = finalScale
-                                            }.border(
+                                            }
+                                            .border(
                                                 2.dp,
                                                 borderColorAnimation,
                                                 bubbleShape,
-                                            ).padding(paddingAnimation)
+                                            )
+                                            .padding(paddingAnimation)
                                             .clip(bubbleShape)
                                             .padding(vertical = 4.dp)
                                             .animateContentSize(),
@@ -638,7 +654,7 @@ fun ChatBubble(
                                                     modifier = Modifier.fillMaxWidth(),
                                                     mainCharacter = mainCharacter?.data,
                                                     characters = characters.map { it.data },
-                                                    wiki = wiki,
+                                                    wiki = wikis,
                                                     shouldAnimate = canAnimate && messageEffectsEnabled,
                                                     onAnnotationClick = { data ->
                                                         tooltipData = data
@@ -651,7 +667,7 @@ fun ChatBubble(
                                                     genre = genre,
                                                     mainCharacter = mainCharacter?.data,
                                                     characters = characters.map { it.data },
-                                                    wiki = wiki,
+                                                    wiki = wikis,
                                                     duration = duration,
                                                     easing = EaseIn,
                                                     onAnnotationClick = { data ->
@@ -810,7 +826,8 @@ fun ChatBubble(
                             .emotionalEntrance(
                                 message.emotionalTone,
                                 messageEffectsEnabled,
-                            ).padding(16.dp)
+                            )
+                            .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
                     Column(
@@ -845,7 +862,7 @@ fun ChatBubble(
                                         .fillMaxWidth(),
                                 mainCharacter = mainCharacter?.data,
                                 characters = characters.map { it.data },
-                                wiki = wiki,
+                                wiki = wikis,
                                 shouldAnimate = canAnimate && messageEffectsEnabled,
                                 onAnnotationClick = { data ->
                                     tooltipData = data
@@ -992,55 +1009,6 @@ private fun ReasoningView(
     }
 }
 
-@Preview(
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true,
-)
-@Composable
-fun ChatBubblePreview() {
-    SagAIScaffold {
-        LazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            val character =
-                Character(
-                    name = "John",
-                    details = Details(),
-                    profile = CharacterProfile(),
-                )
-            Genre.entries.forEach { genre ->
-                item {
-                    ChatBubble(
-                        canAnimate = false,
-                        messageContent =
-                            MessageContent(
-                                Message(
-                                    id = 0,
-                                    text = "This is a message from ${genre.name}",
-                                    senderType = SenderType.CHARACTER,
-                                    timestamp = System.currentTimeMillis(),
-                                    sagaId = 0,
-                                    timelineId = 0,
-                                ),
-                                character = character,
-                                reactions = emptyList(),
-                            ),
-                        content =
-                            SagaContent(
-                                data =
-                                    Saga(
-                                        title = "Test",
-                                        description = "Test",
-                                        genre = genre,
-                                    ),
-                                // mainCharacter = CharacterContent(data = character),
-                            ),
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Immutable
 data class BubbleStyle(

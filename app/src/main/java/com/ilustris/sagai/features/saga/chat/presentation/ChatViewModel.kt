@@ -29,8 +29,10 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
@@ -84,6 +86,7 @@ class ChatViewModel
         private val mapper: SagaContentUIMapper,
         private val wikiUseCase: WikiUseCase,
         private val wikiMapper: WikiMapper,
+        private val characterUseCase: CharacterUseCase,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel(),
         DefaultLifecycleObserver {
@@ -112,6 +115,9 @@ class ChatViewModel
         private var processingObserverJob: kotlinx.coroutines.Job? = null
         private var sceneSummaryObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
+        private var characterObserverJob: kotlinx.coroutines.Job? = null
+        private var topCharacterObserverJob: kotlinx.coroutines.Job? = null
+        private var fullWikiObserverJob: kotlinx.coroutines.Job? = null
         private var generationJob: kotlinx.coroutines.Job? = null
 
         init {
@@ -354,6 +360,15 @@ class ChatViewModel
             reasoningObserverJob?.cancel()
             reasoningObserverJob = observeReasoning()
 
+            characterObserverJob?.cancel()
+            characterObserverJob = observeCharacters(sagaId.toInt())
+
+            topCharacterObserverJob?.cancel()
+            topCharacterObserverJob = observeTopCharacters(sagaId.toInt())
+
+            fullWikiObserverJob?.cancel()
+            fullWikiObserverJob = observeFullWikis(sagaId.toInt())
+
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
                 val limit = remoteConfigService.getLong("chat_input_limit") ?: 2000L
@@ -394,6 +409,27 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.contentReasoning.collect { reasoning ->
                     stateManager.updateState { it.copy(reasoningChunk = reasoning) }
+                }
+            }
+
+        private fun observeCharacters(sagaId: Int) =
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase.getCharactersBySaga(sagaId).collectLatest { characters ->
+                    stateManager.updateCharacters(characters)
+                }
+            }
+
+        private fun observeTopCharacters(sagaId: Int) =
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase.getTopCharacters(sagaId, 3).collectLatest { topCharacters ->
+                    stateManager.updateTopCharacters(topCharacters)
+                }
+            }
+
+        private fun observeFullWikis(sagaId: Int) =
+            viewModelScope.launch(Dispatchers.IO) {
+                wikiUseCase.getWikisBySaga(sagaId).collectLatest { wikis ->
+                    stateManager.updateWikis(wikis)
                 }
             }
 
@@ -642,26 +678,18 @@ class ChatViewModel
                         val messages =
                             mapper.mapToActDisplayData(sagaContent, rules)
 
-                        val characters =
-                            if (messagesChanged || uiState.value.characters.isEmpty()) {
-                                sortCharactersByMessageCount(
-                                    sagaContent.characters.map { it.data },
-                                    flatMessages,
-                                )
-                            } else {
-                                uiState.value.characters
-                            }
-
                         val pendingAdvance = mapper.computePendingAdvance(sagaContent, rules)
 
                         stateManager.updateState {
                             it.copy(
                                 sagaContent = sagaContent,
                                 messages = messages,
-                                characters = characters,
                                 chatState = ChatState.Success,
                                 isLoading = if (loadFinished) it.isLoading else false,
                                 pendingAdvance = pendingAdvance,
+                                mainCharacter = sagaContent.mainCharacter,
+                                activeGenre = sagaContent.data.genre,
+                                flatEvents = sagaContent.flatEvents().map { it.data },
                             )
                         }
 

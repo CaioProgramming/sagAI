@@ -4,6 +4,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.model.CharacterWithRelations
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,8 @@ class CharacterDaoImpl
 
         @Query("SELECT * FROM Characters")
         override fun getAllCharacters(): Flow<List<Character>> = characterDao.getAllCharacters()
+
+        override fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>> = characterDao.getCharactersBySaga(sagaId)
 
         @Transaction
         override suspend fun insertCharacter(character: Character): Long = characterDao.insertCharacter(character)

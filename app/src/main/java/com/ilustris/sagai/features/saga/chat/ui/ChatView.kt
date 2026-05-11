@@ -160,6 +160,7 @@ import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -596,8 +597,7 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar, bottomGradient) = createRefs()
@@ -666,6 +666,11 @@ fun ChatContent(
                         ChatList(
                             saga = content,
                             actList = uiState.messages,
+                            mainCharacter = uiState.mainCharacter,
+                            characters = uiState.characters,
+                            wikis = uiState.wikis,
+                            activeGenre = uiState.activeGenre,
+                            flatEvents = uiState.flatEvents,
                             listState = listState,
                             reasoningChunk = uiState.reasoningChunk,
                             modifier =
@@ -745,8 +750,7 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }
-                                .fillMaxWidth()
+                                }.fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -761,8 +765,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .animateContentSize(),
+                                    }.animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
                                     slideOutVertically { it } + fadeOut()
@@ -786,6 +789,7 @@ fun ChatContent(
                                 ) {
                                     ChatInputView(
                                         content = content,
+                                        characters = uiState.characters,
                                         isGenerating = uiState.isGenerating || uiState.isLoading,
                                         modifier =
                                             Modifier
@@ -821,8 +825,7 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }
-                                    .padding(
+                                    }.padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -920,8 +923,7 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    )
-                                    .wrapContentSize(),
+                                    ).wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -960,18 +962,15 @@ fun ChatContent(
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }
-                                                    .gradientFill(
+                                                    }.gradientFill(
                                                         progressiveBrush(
                                                             resolvedColor,
                                                             progressState.value,
                                                         ),
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
                                                         shimmerColors = saga.genre.shimmerColors(),
-                                                    )
-                                                    .sharedElement(
+                                                    ).sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga_${saga.id}_spark",
                                                         ),
@@ -997,7 +996,7 @@ fun ChatContent(
                                     )
                                 }
 
-                            val characters = uiState.characters
+                            val topCharacters = uiState.topCharacters
 
                             SagaTopBar(
                                 saga.title,
@@ -1013,8 +1012,7 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }
-                                        .fillMaxWidth()
+                                        }.fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.sharedElement(
@@ -1024,11 +1022,11 @@ fun ChatContent(
                                         animatedVisibilityScope = this@AnimatedContent,
                                     ),
                                 actionContent = {
-                                    AnimatedContent(characters, transitionSpec = {
+                                    AnimatedContent(topCharacters, transitionSpec = {
                                         slideInVertically() + fadeIn() togetherWith fadeOut()
                                     }) { chars ->
                                         CharactersTopIcons(
-                                            chars,
+                                            chars.map { it.data },
                                             saga.genre,
                                             isLoading = uiState.isGenerating || uiState.isLoading,
                                         ) { _ ->
@@ -1097,8 +1095,7 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            )
-                                            .fillMaxWidth(),
+                                            ).fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1117,8 +1114,7 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1301,8 +1297,7 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     )
                 }
 
@@ -1345,8 +1340,7 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }
-                    .animateContentSize(),
+                    }.animateContentSize(),
         )
     }
 }
@@ -1355,6 +1349,11 @@ fun SagaHeader(
 fun ChatList(
     saga: SagaContent,
     actList: List<ActDisplayData>,
+    mainCharacter: com.ilustris.sagai.features.characters.data.model.CharacterContent?,
+    characters: List<com.ilustris.sagai.features.characters.data.model.CharacterContent>,
+    wikis: List<Wiki>,
+    activeGenre: Genre?,
+    flatEvents: List<Timeline>,
     modifier: Modifier,
     listState: LazyListState,
     onMessageAction: (MessageAction) -> Unit = {},
@@ -1511,7 +1510,11 @@ fun ChatList(
                         ChatBubble(
                             it,
                             isLoading = false,
-                            content = saga,
+                            mainCharacter = mainCharacter,
+                            characters = characters,
+                            wikis = wikis,
+                            genre = activeGenre ?: genre,
+                            flatEvents = flatEvents,
                             canAnimate = true,
                             messageEffectsEnabled = messageEffectsEnabled,
                             audioPlaybackState = audioPlaybackState,
@@ -1683,8 +1686,7 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        )
-                        .graphicsLayer(
+                        ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
                         ).clip(CircleShape)
                         .size(24.dp)

@@ -18,4 +18,11 @@ interface CharacterRepository {
     suspend fun getAllCharacterNames(): List<String>
 
     fun getCharacterDetailData(characterId: Int): Flow<CharacterDetailData?>
+
+    fun getCharactersBySaga(sagaId: Int): Flow<List<com.ilustris.sagai.features.characters.data.model.CharacterContent>>
+
+    fun getTopCharacters(
+        sagaId: Int,
+        limit: Int,
+    ): Flow<List<com.ilustris.sagai.features.characters.data.model.CharacterContent>>
 }

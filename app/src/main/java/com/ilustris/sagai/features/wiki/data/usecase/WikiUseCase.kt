@@ -27,4 +27,5 @@ interface WikiUseCase {
     ): RequestResult<Unit>
 
     fun getWikisWithChapter(sagaId: Int): Flow<List<WikiWithChapter>>
+    fun getWikisBySaga(sagaId: Int): Flow<List<Wiki>>
 }

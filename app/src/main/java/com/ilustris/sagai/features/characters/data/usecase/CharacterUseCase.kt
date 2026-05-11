@@ -97,4 +97,11 @@ interface CharacterUseCase {
     fun getCharacterArcs(characterId: Int): Flow<List<CharacterArc>>
 
     fun getCharacterDetailData(characterId: Int): Flow<CharacterDetailData?>
+
+    fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>>
+
+    fun getTopCharacters(
+        sagaId: Int,
+        limit: Int,
+    ): Flow<List<CharacterContent>>
 }

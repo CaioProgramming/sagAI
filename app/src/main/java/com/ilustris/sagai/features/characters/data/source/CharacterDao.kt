@@ -17,6 +17,10 @@ interface CharacterDao {
     @Query("SELECT * FROM Characters ORDER BY id ASC")
     fun getAllCharacters(): Flow<List<Character>>
 
+    @Transaction
+    @Query("SELECT * FROM Characters WHERE sagaId = :sagaId ORDER BY id ASC")
+    fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCharacter(character: Character): Long
 
