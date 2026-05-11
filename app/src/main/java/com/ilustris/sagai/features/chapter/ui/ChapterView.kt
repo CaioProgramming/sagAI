@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
-import com.ilustris.sagai.ui.components.SectionLoading
 
 @Composable
 fun ChapterView(
@@ -69,8 +68,6 @@ fun ChapterView(
                         viewModel.reviewChapter(it)
                     },
                 )
-            } else {
-                SectionLoading()
             }
         }
     }

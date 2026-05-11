@@ -23,6 +23,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
@@ -42,7 +43,7 @@ fun SagaTopBar(
     Row(
         modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         onBackClick?.let {
@@ -56,7 +57,8 @@ fun SagaTopBar(
                         .clip(CircleShape)
                         .clickable {
                             onBackClick()
-                        }.size(24.dp)
+                        }
+                        .size(24.dp)
                         .padding(4.dp),
             )
         }
@@ -69,7 +71,7 @@ fun SagaTopBar(
                     .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
+            AutoResizeText(
                 title,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
@@ -84,16 +86,18 @@ fun SagaTopBar(
                         .reactiveShimmer(isLoading, genre.shimmerColors()),
             )
 
-            Text(
-                subtitle,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                        textAlign = TextAlign.Center,
-                    ),
-            )
+            if (subtitle.isNotEmpty()) {
+                Text(
+                    subtitle,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                            textAlign = TextAlign.Center,
+                        ),
+                )
+            }
         }
 
         actionContent?.invoke()

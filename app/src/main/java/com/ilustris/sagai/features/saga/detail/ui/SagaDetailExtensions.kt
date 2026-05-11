@@ -41,6 +41,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
@@ -100,7 +101,8 @@ fun TimelineDrawer.renderDrawer(saga: SagaContent) {
                                     genre.resolveColor(),
                                     progress,
                                 ),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 )
             }
         }
@@ -214,16 +216,19 @@ fun DetailSectionView.InitialSection.miniSection(
                     stringResource(R.string.the_chronicles),
                     sectionStyle,
                 ) {
-                    onAction(OpenSection(RequestSection.ACTS))
+                    onAction(DetailAction.OpenChronicles(null))
                 }
 
-                LazyRow(modifier = Modifier.padding(vertical = 8.dp)) {
+                LazyRow(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
                     items(books) { book ->
                         val sagaBook =
                             remember(book) {
                                 SagaBook(
                                     draft =
-                                        com.ilustris.sagai.features.newsaga.data.model.SagaDraft(
+                                        SagaDraft(
                                             title = book.actTitle,
                                             genre = saga.data.genre,
                                             description = "",
@@ -238,12 +243,11 @@ fun DetailSectionView.InitialSection.miniSection(
                             isOpened = false,
                             isLoading = false,
                             onToggle = {
-                                onAction(DetailAction.OpenChronicles(null))
+                                onAction(DetailAction.OpenChronicles(book.actId))
                             },
                             onAction = {},
                             modifier =
                                 Modifier
-                                    .padding(8.dp)
                                     .width(160.dp)
                                     .height(240.dp),
                             titleModifier = Modifier,
@@ -263,7 +267,8 @@ fun DetailSectionView.InitialSection.miniSection(
                                 .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
                                 .clickable {
                                     onAction(DetailAction.OpenStoryReader)
-                                }.padding(16.dp),
+                                }
+                                .padding(16.dp),
                     ) {
                         Column(
                             horizontalAlignment = Alignment.Start,
@@ -355,7 +360,8 @@ fun DetailSectionView.InitialSection.miniSection(
                                             RequestSection.CHAPTERS,
                                         ),
                                     )
-                                }.padding(8.dp),
+                                }
+                                .padding(8.dp),
                             showTitle = false,
                         )
                     }

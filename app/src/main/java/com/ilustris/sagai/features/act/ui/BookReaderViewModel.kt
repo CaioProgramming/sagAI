@@ -141,7 +141,11 @@ class BookReaderViewModel
             val act = saga.acts.getOrNull(currentActIndex) ?: return
             val book = act.book ?: return
             viewModelScope.launch {
-                _state.value = BookReaderState.Loading
+                _state.value =
+                    BookReaderState.Generating(
+                        book.actTitle,
+                        "Preparing your chronicle for sharing...",
+                    )
 
                 val pages = pageMapper.buildPages(saga, act, saga.characters)
                 val volumeNumber = saga.actNumber(act.data).toRoman()

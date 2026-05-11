@@ -116,6 +116,10 @@ fun createSagaEntryProvider(
             onWiki = { navigator.navigate(SagaWikiKey(key.sagaId)) },
             onEvents = { navigator.navigate(SagaEventsKey(key.sagaId)) },
             onActs = { navigator.navigate(SagaActsKey(key.sagaId)) },
+            onStoryReader = { navigator.navigate(SagaStoryReaderKey(key.sagaId)) },
+            onOpenBookReader = { actId ->
+                navigator.navigate(BookReaderKey(key.sagaId.toInt(), actId))
+            },
             onDeleted = { navigator.navigate(HomeKey) },
             onCharacterDetails = { characterId ->
                 navigator.navigate(CharacterDetailKey(characterId))

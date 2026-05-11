@@ -14,16 +14,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.wiki.ui.EmotionalReviewCard
-import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.features.home.data.model.actNumber
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.headerFont
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -40,21 +42,20 @@ fun SagaStoryReaderContent(
     ) {
         acts.forEachIndexed { actIndex, act ->
             stickyHeader {
-                genre.stylisedText(
-                    text = act.data.title,
+                SagaTopBar(
+                    act.data.title.ifEmpty {
+                        stringResource(
+                            R.string.act_title_template,
+                            saga.actNumber(act.data).toRoman(),
+                        )
+                    },
+                    emptyString(),
+                    genre,
+                    onBackClick = onBack,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            MaterialTheme.colorScheme.background,
-                                            Color.Transparent,
-                                        ),
-                                ),
-                            ).padding(16.dp)
-                            .genreVfx(genre),
+                            .background(MaterialTheme.colorScheme.background)
+                            .fillMaxWidth(),
                 )
             }
 
@@ -124,9 +125,10 @@ fun SagaStoryReaderContent(
             act.data.emotionalReview?.let { review ->
                 item {
                     Box(modifier = Modifier.padding(16.dp)) {
-                        EmotionalReviewCard(
+                        EmotionalCard(
                             review = review,
                             genre = genre,
+                            isExpanded = true,
                         )
                     }
                 }

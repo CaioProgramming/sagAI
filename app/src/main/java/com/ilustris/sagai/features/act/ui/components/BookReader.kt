@@ -21,8 +21,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,6 +73,8 @@ import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -88,7 +94,10 @@ fun BookReader(
     onSelectNextVolume: () -> Unit,
 ) {
     val pageItems = pages
-    val pagerState = rememberPagerState { pageItems.size + 1 }
+    val pagerState =
+        key(act.data.id) {
+            rememberPagerState { pageItems.size + 1 }
+        }
     val genre = remember { saga.data.genre }
 
     with(sharedTransitionScope) {
@@ -195,6 +204,22 @@ fun BookReader(
                     }
                 }
             }
+
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(.3f)
+                    .background(fadeGradientTop()),
+            )
+
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(.3f)
+                    .background(fadeGradientBottom()),
+            )
 
             Column(
                 Modifier
@@ -404,10 +429,11 @@ fun ReaderPage(
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 80.dp)
+                .padding(horizontal = 32.dp)
                 .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        Spacer(Modifier.height(100.dp))
         Text(
             text = page.content,
             style =
@@ -417,6 +443,7 @@ fun ReaderPage(
                 ),
             textAlign = TextAlign.Start,
         )
+        Spacer(Modifier.height(100.dp))
     }
 }
 

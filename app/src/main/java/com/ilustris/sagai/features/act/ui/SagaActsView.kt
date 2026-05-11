@@ -20,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
-import com.ilustris.sagai.ui.components.SectionLoading
 import com.ilustris.sagai.ui.navigation.BookReaderKey
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -75,8 +74,6 @@ fun SagaActsView(
                         },
                     onOpenBook = onOpenBookReader,
                 )
-            } else {
-                SectionLoading()
             }
         }
     }

@@ -21,7 +21,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.wiki.presentation.WikiViewModel
-import com.ilustris.sagai.ui.components.SectionLoading
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -78,8 +77,6 @@ fun SagaWikiView(
                             )
                         },
                 )
-            } else {
-                SectionLoading()
             }
         }
     }

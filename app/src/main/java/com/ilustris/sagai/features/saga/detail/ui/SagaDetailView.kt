@@ -64,7 +64,6 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
-import com.ilustris.sagai.ui.components.SectionLoading
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -81,6 +80,7 @@ fun SagaDetailView(
     onEvents: () -> Unit = {},
     onActs: () -> Unit = {},
     onStoryReader: () -> Unit = {},
+    onOpenBookReader: (Int) -> Unit = {},
     onDeleted: () -> Unit = {},
     onCharacterDetails: (Int) -> Unit = {},
     onLoreDebug: () -> Unit = {},
@@ -131,7 +131,11 @@ fun SagaDetailView(
                         }
 
                         is DetailAction.OpenChronicles -> {
-                            onActs()
+                            if (action.actId != null) {
+                                onOpenBookReader(action.actId)
+                            } else {
+                                onActs()
+                            }
                         }
 
                         DetailAction.Delete -> {
@@ -181,18 +185,14 @@ fun SagaDetailView(
             animatedVisibilityScope = animatedVisibilityScope,
         )
 
-        AnimatedVisibility(isGenerating || state == State.Loading) {
+        AnimatedVisibility(isGenerating) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (isGenerating) {
-                    StarryLoader(
-                        isLoading = true,
-                        loadingMessage = loadingMessage ?: emptyString(),
-                        textStyle = MaterialTheme.typography.labelMedium,
-                        brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
-                    )
-                } else {
-                    SectionLoading(genre = saga?.data?.genre)
-                }
+                StarryLoader(
+                    isLoading = true,
+                    loadingMessage = loadingMessage ?: emptyString(),
+                    textStyle = MaterialTheme.typography.labelMedium,
+                    brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
+                )
             }
         }
 

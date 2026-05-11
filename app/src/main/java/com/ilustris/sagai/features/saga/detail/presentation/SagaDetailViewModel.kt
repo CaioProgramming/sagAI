@@ -43,7 +43,7 @@ class SagaDetailViewModel
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val soundFxService: SoundFxService,
     ) : ViewModel() {
-        private val _state = MutableStateFlow<State>(State.Loading)
+        private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
         val saga = MutableStateFlow<SagaContent?>(null)
         val isGenerating = MutableStateFlow(false)

@@ -21,7 +21,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
-import com.ilustris.sagai.ui.components.SectionLoading
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -73,8 +72,6 @@ fun SagaEventsView(
                             )
                         },
                 )
-            } else {
-                SectionLoading()
             }
         }
     }
