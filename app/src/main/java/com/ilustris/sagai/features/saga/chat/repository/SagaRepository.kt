@@ -14,7 +14,9 @@ interface SagaRepository {
 
     fun getSagaSummaries(): Flow<List<com.ilustris.sagai.features.home.data.model.SagaSummary>>
 
-    fun getSagaById(id: Int): Flow<SagaContent?>
+    fun getSagaById(id: Int?): Flow<SagaContent?>
+
+    fun getSagaMetadata(id: Int): Flow<com.ilustris.sagai.features.home.data.model.SagaMetadata?>
 
     fun getSagaInfo(id: Int): Flow<SagaInfo?>
 

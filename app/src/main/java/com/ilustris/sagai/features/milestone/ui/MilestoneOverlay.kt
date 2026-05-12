@@ -45,18 +45,19 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findChapter
-import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.playthrough.CounterText
-import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOverlay
@@ -75,7 +76,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun MilestoneOverlay(
     milestone: SagaMilestone,
-    saga: SagaContent,
+    saga: SagaMetadata,
     isLoading: Boolean = false,
     reasoningChunk: String? = null,
     onDismiss: () -> Unit = {},
@@ -112,7 +113,7 @@ fun MilestoneOverlay(
                 is SagaMilestone.Introduction -> {
                     IntroductionOverlay(
                         it,
-                        saga,
+                        saga.data,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = this,
                     ) {
@@ -136,7 +137,7 @@ fun MilestoneOverlay(
                         it.message ?: congratsMessage,
                         genre,
                         sparkModifier,
-                        extraContent = { it.extraContent(saga) },
+                        extraContent = { it.extraContent() },
                         onDismiss = onDismiss,
                     )
                 }
@@ -223,8 +224,7 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }
-                        .background(
+                        }.background(
                             MaterialTheme.colorScheme.background,
                             shape,
                         ).padding(4.dp)
@@ -253,13 +253,15 @@ fun NewEventContent(
     val event = saga.findTimeline(timelineId)
     event?.let {
         val stats = event.statsSummary()
-        val topTone = event.messages.rankEmotionalTone().first()
+        val topTone = event.data.emotionalTone
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            MascotEmotionFace(
-                emotionMascot,
-                topTone.first,
-                modifier = Modifier.size(64.dp),
-            )
+            topTone?.let {
+                MascotEmotionFace(
+                    emotionMascot,
+                    topTone,
+                    modifier = Modifier.size(64.dp),
+                )
+            }
 
             LazyRow(
                 horizontalArrangement = Arrangement.Center,
@@ -319,19 +321,18 @@ fun NewChapterContent(
 
 @Composable
 fun NewCharacterContent(
-    saga: SagaContent,
-    characterId: Int,
+    saga: Saga,
+    character: Character,
 ) {
-    val character = saga.findCharacter(characterId)
-    val genre = saga.data.genre
-    character?.let {
-        if (it.data.image.isNotBlank()) {
+    val genre = saga.genre
+    character.let {
+        if (it.image.isNotBlank()) {
             CharacterAvatar(
-                it.data,
+                it,
                 genre = genre,
                 modifier =
                     Modifier
-                        .size(120.dp)
+                        .size(200.dp)
                         .levitate(),
             )
         }

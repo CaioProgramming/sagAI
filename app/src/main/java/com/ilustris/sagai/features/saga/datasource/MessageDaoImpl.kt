@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.datasource
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import javax.inject.Inject
@@ -33,7 +34,9 @@ class MessageDaoImpl
 
         override suspend fun updateMessage(message: Message) = messageDao.updateMessage(message)
 
-        override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessage(sagaId)
+        override suspend fun getLastMessageWithContent(sagaId: Int): MessageContent? = messageDao.getLastMessageWithContent(sagaId)
 
         override fun getMessagesCount(sagaId: Int): Flow<Int> = messageDao.getMessagesCount(sagaId)
+
+    override fun getMessagesPagingSource(sagaId: Int) = messageDao.getMessagesPagingSource(sagaId)
     }

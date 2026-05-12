@@ -19,8 +19,6 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSectio
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -188,32 +186,10 @@ class SagaDetailViewModel
             }
         }
 
-        fun generateTimelineContent(timelineContent: TimelineContent) {
-            val currentSagaId = sagaResume.value?.saga?.id ?: return
-            viewModelScope.launch {
-                isGenerating.value = true
-                _loadingMessage.value = "Generating timeline content..."
-                sagaDetailUseCase.generateTimelineContent(currentSagaId, timelineContent)
-                isGenerating.value = false
-                _loadingMessage.value = null
-            }
-        }
-
         private fun launchIntroSequence() {
             viewModelScope.launch {
                 delay(2.seconds)
                 showIntro.value = false
-            }
-        }
-
-        fun reviewWiki(wikis: List<Wiki>) {
-            val currentSagaId = sagaResume.value?.saga?.id ?: return
-            viewModelScope.launch {
-                isGenerating.emit(true)
-                _loadingMessage.value = "Reviewing wiki entries..."
-                sagaDetailUseCase.reviewWiki(currentSagaId, wikis)
-                isGenerating.emit(false)
-                _loadingMessage.value = null
             }
         }
     }

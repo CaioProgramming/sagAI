@@ -7,7 +7,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.flow.Flow
 
 interface SagaHistoryUseCase {
-    suspend fun getSagaById(sagaId: Int): Flow<SagaContent?>
+    suspend fun getSagaById(sagaId: Int?): Flow<SagaContent?>
+
+    suspend fun getSagaMetadata(sagaId: Int): Flow<com.ilustris.sagai.features.home.data.model.SagaMetadata?>
 
     suspend fun updateSaga(saga: Saga): Saga
 

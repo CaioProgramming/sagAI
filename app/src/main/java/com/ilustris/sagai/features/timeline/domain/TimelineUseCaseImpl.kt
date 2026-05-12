@@ -16,7 +16,9 @@ import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -28,6 +30,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
@@ -40,6 +43,7 @@ class TimelineUseCaseImpl
         private val wikiUseCase: WikiUseCase,
         private val characterUseCase: CharacterUseCase,
         private val characterRelationUseCase: CharacterRelationUseCase,
+        private val sagaHistoryUseCase: com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
@@ -51,17 +55,18 @@ class TimelineUseCaseImpl
         override suspend fun getTimeline(id: String) = timelineRepository.getTimeline(id)
 
         override suspend fun generateFullLoreUpdate(
-            saga: SagaContent,
-            timelineContent: TimelineContent,
+            saga: SagaMetadata,
+            timeline: Timeline,
         ) = executeRequest {
             val narrativeRules =
                 remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+            val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first()!!
             val prompt =
                 TimelinePrompts.generateUnifiedLorePrompt(
                     promptService = promptService,
                     narrativeRules = narrativeRules,
-                    sagaContent = saga,
-                    currentTimeline = timelineContent,
+                    sagaContent = fullSaga,
+                    currentTimeline = fullSaga.findTimeline(timeline.id)!!,
                     conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                 )
 
@@ -74,13 +79,13 @@ class TimelineUseCaseImpl
 
             updateTimeline(
                 unifiedLore.event.copy(
-                    id = timelineContent.data.id,
+                    id = timeline.id,
                 ),
             )
 
             // 2. Save Wiki Updates
             unifiedLore.wikiUpdates.forEach { wikiUpdate ->
-                val existingWiki = saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                val existingWiki = fullSaga.wikis.find { it.title.equals(wikiUpdate.title, true) }
                 val wikiToSave =
                     Wiki(
                         id = existingWiki?.id ?: 0,
@@ -89,7 +94,7 @@ class TimelineUseCaseImpl
                         type = wikiUpdate.type,
                         emojiTag = wikiUpdate.emojiTag,
                         sagaId = saga.data.id,
-                        timelineId = timelineContent.data.id,
+                        timelineId = timeline.id,
                     )
                 if (existingWiki != null) {
                     wikiUseCase.updateWiki(wikiToSave)
@@ -101,35 +106,38 @@ class TimelineUseCaseImpl
             val charactersUpdates =
                 updateCharactersFromLore(
                     saga,
-                    timelineContent.data.id,
+                    timeline.id,
                     unifiedLore.charactersUpdates,
                 )
             Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
         }
 
         private suspend fun updateCharactersFromLore(
-            saga: SagaContent,
+            saga: SagaMetadata,
             timelineId: Int,
             updates: List<CharacterUpdates>,
         ) = updates.map { charUpdate ->
-            val character = saga.findCharacter(charUpdate.name)?.data ?: return@map null
+            val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
+            val character = fullSaga.findCharacter(charUpdate.name) ?: return@map null
+
             characterUseCase
-                .applyCharacterUpdates(saga, timelineId, character, charUpdate)
+                .applyCharacterUpdates(fullSaga, timelineId, character.data, charUpdate)
         }
 
         override fun generateFullLoreUpdateStream(
-            saga: SagaContent,
-            timelineContent: TimelineContent,
+            saga: SagaMetadata,
+            timeline: Timeline,
         ) = flow {
             try {
                 val narrativeRules =
                     remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
                 val prompt =
                     TimelinePrompts.generateUnifiedLorePrompt(
                         promptService = promptService,
                         narrativeRules = narrativeRules,
-                        sagaContent = saga,
-                        currentTimeline = timelineContent,
+                        sagaContent = fullSaga,
+                        currentTimeline = TimelineContent(timeline, emptyList()),
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
 
@@ -160,16 +168,21 @@ class TimelineUseCaseImpl
                                 val timelineUpdate =
                                     updateTimeline(
                                         unifiedLore.event.copy(
-                                            id = timelineContent.data.id,
-                                            chapterId = timelineContent.data.chapterId,
-                                            createdAt = timelineContent.data.createdAt,
+                                            id = timeline.id,
+                                            chapterId = timeline.chapterId,
+                                            createdAt = timeline.createdAt,
                                         ),
                                     )
 
                                 // 2. Save Wiki Updates
                                 unifiedLore.wikiUpdates.forEach { wikiUpdate ->
                                     val existingWiki =
-                                        saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                                        fullSaga.wikis.find {
+                                            it.title.equals(
+                                                wikiUpdate.title,
+                                                true,
+                                            )
+                                        }
                                     val wikiToSave =
                                         Wiki(
                                             id = existingWiki?.id ?: 0,
@@ -178,7 +191,7 @@ class TimelineUseCaseImpl
                                             type = wikiUpdate.type,
                                             emojiTag = wikiUpdate.emojiTag,
                                             sagaId = saga.data.id,
-                                            timelineId = timelineContent.data.id,
+                                            timelineId = timeline.id,
                                         )
                                     if (existingWiki != null) {
                                         wikiUseCase.updateWiki(wikiToSave)
@@ -190,7 +203,7 @@ class TimelineUseCaseImpl
                                 val charactersUpdates =
                                     updateCharactersFromLore(
                                         saga = saga,
-                                        timelineId = timelineContent.data.id,
+                                        timelineId = timeline.id,
                                         updates = unifiedLore.charactersUpdates,
                                     )
                                 Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
@@ -231,20 +244,21 @@ class TimelineUseCaseImpl
         }
 
         override fun generateTimelineStream(
-            saga: SagaContent,
-            currentTimeline: TimelineContent,
+            saga: SagaMetadata,
+            currentTimeline: Timeline,
         ) = flow {
             try {
                 val narrativeRules =
                     remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
+                val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() ?: return@flow
                 gemmaClient
                     .generateStreaming<GeneratedContent<Timeline>>(
                         prompt =
                             TimelinePrompts.generateTimelinePrompt(
                                 promptService = promptService,
                                 narrativeRules = narrativeRules,
-                                sagaContent = saga,
-                                currentTimeline = currentTimeline,
+                                sagaContent = fullSaga,
+                                currentTimeline = TimelineContent(currentTimeline, emptyList()),
                                 conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                             ),
                         filterOutputFields =
@@ -261,7 +275,7 @@ class TimelineUseCaseImpl
                                 val newLore = state.data.data
                                 val updatedTimeline =
                                     updateTimeline(
-                                        currentTimeline.data.copy(
+                                        currentTimeline.copy(
                                             title = newLore.title,
                                             content = newLore.content,
                                             emotionalReview = newLore.emotionalReview,
@@ -314,13 +328,14 @@ class TimelineUseCaseImpl
         }
 
         override suspend fun getTimelineObjective(
-            saga: SagaContent,
-            timelineContent: Timeline,
+            saga: SagaMetadata,
+            timeline: Timeline,
         ) = executeRequest {
+            val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
             val objectivePrompt =
                 ChatPrompts.sceneSummarizationPrompt(
                     promptService = promptService,
-                    saga = saga,
+                    saga = fullSaga,
                     remoteConfigService.getNarrativeRules(),
                 )
             val summary =
@@ -332,7 +347,7 @@ class TimelineUseCaseImpl
                     )!!
 
             updateTimeline(
-                timelineContent.copy(
+                timeline.copy(
                     sceneSummary = summary,
                     currentObjective = summary.immediateObjective,
                 ),
@@ -340,22 +355,23 @@ class TimelineUseCaseImpl
         }
 
         override suspend fun generateTimelineContent(
-            saga: SagaContent,
-            timelineContent: TimelineContent,
+            saga: SagaMetadata,
+            timeline: Timeline,
         ): RequestResult<Unit> =
             executeRequest {
-                generateFullLoreUpdate(saga, timelineContent).getSuccess()!!
+                generateFullLoreUpdate(saga, timeline).getSuccess()!!
             }
 
         private suspend fun updateWikis(
             timeline: Timeline,
-            saga: SagaContent,
+            saga: SagaMetadata,
         ) = executeRequest {
+            val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
             val wikisToUpdateOrAdd = wikiUseCase.generateWiki(saga, timeline).getSuccess()!!
             Timber.d("updateWikis: Updating wikis $wikisToUpdateOrAdd")
             wikisToUpdateOrAdd.forEach { generatedWiki ->
                 val existingWiki =
-                    saga.wikis.find { wiki ->
+                    fullSaga.wikis.find { wiki ->
                         wiki.title
                             .trim()
                             .lowercase()
@@ -390,11 +406,12 @@ class TimelineUseCaseImpl
 
         private suspend fun updateCharacters(
             timeline: Timeline,
-            saga: SagaContent,
+            saga: SagaMetadata,
         ) = executeRequest {
-            characterUseCase.generateCharactersUpdate(timeline, saga)
+            val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
+            characterUseCase.generateCharactersUpdate(timeline, fullSaga)
 
-            characterUseCase.generateCharacterRelations(timeline, saga)
+            characterUseCase.generateCharacterRelations(timeline, fullSaga)
         }
 
         override fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>> =

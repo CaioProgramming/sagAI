@@ -92,7 +92,7 @@ fun HistoryShareView(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.generateShareText(saga, ShareType.HISTORY)
+        viewModel.generateShareText(saga.data, ShareType.HISTORY)
     }
 
     LaunchedEffect(isLoading) {

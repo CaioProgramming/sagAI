@@ -32,7 +32,7 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
@@ -49,14 +49,14 @@ import com.ilustris.sagai.ui.theme.hexToColor
 @Composable
 fun CharacterCard(
     character: CharacterContent,
-    sagaContent: SagaContent,
+    saga: Saga,
     modifier: Modifier = Modifier,
     segmentedImage: Bitmap? = null,
     originalImage: Bitmap? = null,
     shareText: ShareText? = null,
     showWatermark: Boolean = false,
 ) {
-    val genre = remember { sagaContent.data.genre }
+    val genre = remember(saga) { saga.genre }
     val resolvedColor = genre.resolveColor()
     val resolvedIconColor = genre.resolveIconColor()
     val characterColor =

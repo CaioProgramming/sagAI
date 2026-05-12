@@ -36,7 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
@@ -52,13 +52,13 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun EmotionShareView(
-    saga: SagaContent,
+    saga: Saga,
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val genre = remember { saga.data.genre }
+    val genre = remember { saga.genre }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
@@ -90,12 +90,14 @@ fun EmotionShareView(
                                     viewModel.saveBitmap(bitmap, ShareType.EMOTIONS.name)
                                 }
                             }
-                        }.drawWithContent {
+                        }
+                        .drawWithContent {
                             graphicsLayer.record {
                                 this@drawWithContent.drawContent()
                             }
                             drawLayer(graphicsLayer)
-                        }.fillMaxWidth()
+                        }
+                        .fillMaxWidth()
                         .padding(24.dp),
             ) {
                 Text(

@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 
 import MessageStatus
 import ai.atick.material.MaterialColor
-import android.content.res.Configuration
 import android.graphics.Matrix
 import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
@@ -43,7 +42,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -84,7 +82,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.BuildConfig
@@ -92,13 +89,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatHours
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.data.model.CharacterProfile
-import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
@@ -113,7 +104,6 @@ import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioMessagePla
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
@@ -133,7 +123,7 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatBubble(
     messageContent: MessageContent,
     mainCharacter: CharacterContent?,
-    characters: List<CharacterContent>,
+    characters: List<Character>,
     wikis: List<Wiki>,
     genre: Genre,
     flatEvents: List<Timeline>,
@@ -281,12 +271,11 @@ fun ChatBubble(
                                     messageContent.character?.let { character ->
                                         onAction(
                                             MessageAction.ClickCharacter(
-                                                characters.find { it.data.id == character.id },
+                                                characters.find { it.id == character.id },
                                             ),
                                         )
                                     }
-                                }
-                                .size(avatarSize),
+                                }.size(avatarSize),
                         ) {
                             messageContent.character?.let { character ->
                                 AnimatedContent(
@@ -351,8 +340,7 @@ fun ChatBubble(
                                                     message,
                                                 ),
                                             )
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -372,8 +360,7 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             messageEffectsEnabled,
-                                        )
-                                        .wrapContentSize()
+                                        ).wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -389,8 +376,8 @@ fun ChatBubble(
                                                             (
                                                                     sweepGradient(
                                                                         palette,
-                                                                    ) as ShaderBrush
-                                                                    ).createShader(size)
+                                                                ) as ShaderBrush
+                                                            ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotationState.value,
@@ -653,7 +640,7 @@ fun ChatBubble(
                                                         ),
                                                     modifier = Modifier.fillMaxWidth(),
                                                     mainCharacter = mainCharacter?.data,
-                                                    characters = characters.map { it.data },
+                                                    characters = characters,
                                                     wiki = wikis,
                                                     shouldAnimate = canAnimate && messageEffectsEnabled,
                                                     onAnnotationClick = { data ->
@@ -666,7 +653,7 @@ fun ChatBubble(
                                                     isAnimated = isAnimated,
                                                     genre = genre,
                                                     mainCharacter = mainCharacter?.data,
-                                                    characters = characters.map { it.data },
+                                                    characters = characters,
                                                     wiki = wikis,
                                                     duration = duration,
                                                     easing = EaseIn,
@@ -861,7 +848,7 @@ fun ChatBubble(
                                         .padding(4.dp)
                                         .fillMaxWidth(),
                                 mainCharacter = mainCharacter?.data,
-                                characters = characters.map { it.data },
+                                characters = characters,
                                 wiki = wikis,
                                 shouldAnimate = canAnimate && messageEffectsEnabled,
                                 onAnnotationClick = { data ->
@@ -1008,7 +995,6 @@ private fun ReasoningView(
         }
     }
 }
-
 
 @Immutable
 data class BubbleStyle(

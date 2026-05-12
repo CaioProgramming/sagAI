@@ -4,13 +4,13 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.home.data.model.ActMetadata
+import com.ilustris.sagai.features.home.data.model.ChapterMetadata
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -20,7 +20,9 @@ import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGroup
 import com.ilustris.sagai.ui.components.SnackBarState
 
@@ -37,10 +39,10 @@ sealed class ChatState {
 @Immutable
 data class ChatUiState(
     val chatState: ChatState = ChatState.Loading,
-    val sagaContent: SagaContent? = null,
+    val sagaContent: SagaMetadata? = null,
     val messages: List<ActDisplayData> = emptyList(),
-    val characters: List<CharacterContent> = emptyList(),
-    val topCharacters: List<CharacterContent> = emptyList(),
+    val characters: List<Character> = emptyList(),
+    val topCharacters: List<Character> = emptyList(),
     val mainCharacter: CharacterContent? = null,
     val wikis: List<Wiki> = emptyList(),
     val activeGenre: Genre? = null,
@@ -52,8 +54,8 @@ data class ChatUiState(
     val snackBarMessage: SnackBarState? = null,
     val suggestions: List<Suggestion> = emptyList(),
     val loreUpdateProgress: Float = 0f,
-    val selectedCharacter: CharacterContent? = null,
-    val revealCharacter: CharacterContent? = null,
+    val selectedCharacter: Character? = null,
+    val revealCharacter: Character? = null,
     val inputValue: TextFieldValue = TextFieldValue(),
     val senderType: SenderType = SenderType.CHARACTER,
     val typoFixMessage: TypoFix? = null,
@@ -79,6 +81,8 @@ data class ChatUiState(
     val reasoningChunk: String? = null,
     val wikiGroups: List<WikiGroup> = emptyList(),
     val maxContentLength: Int = 2000,
+    val relationships: List<RelationshipContent> = emptyList(),
+    val currentMessageCount: Int = 0,
 )
 
 @Immutable
@@ -90,14 +94,14 @@ data class MessageSelectionState(
 
 @Immutable
 data class ActDisplayData(
-    val content: ActContent,
+    val content: ActMetadata,
     val isComplete: Boolean,
     val chapters: List<ChapterDisplayData>,
 )
 
 @Immutable
 data class ChapterDisplayData(
-    val chapter: ChapterContent,
+    val chapter: ChapterMetadata,
     val isComplete: Boolean,
     val timelineSummaries: List<TimelineDisplayData>,
 )

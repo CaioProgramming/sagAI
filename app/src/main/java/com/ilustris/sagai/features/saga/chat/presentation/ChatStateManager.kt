@@ -1,6 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -84,7 +84,7 @@ class ChatStateManager {
         }
     }
 
-    fun updateCharacter(content: CharacterContent?) {
+    fun updateCharacter(content: Character?) {
         _uiState.update {
             it.copy(selectedCharacter = content)
         }
@@ -138,27 +138,15 @@ class ChatStateManager {
         _uiState.update { it.copy(wikiGroups = wikiGroups) }
     }
 
-    fun updateTopCharacters(characters: List<CharacterContent>) {
+    fun updateTopCharacters(characters: List<Character>) {
         _uiState.update { it.copy(topCharacters = characters) }
     }
 
-    fun updateCharacters(characters: List<CharacterContent>) {
+    fun updateCharacters(characters: List<Character>) {
         _uiState.update { it.copy(characters = characters) }
     }
 
     fun updateWikis(wikis: List<com.ilustris.sagai.features.wiki.data.model.Wiki>) {
         _uiState.update { it.copy(wikis = wikis) }
-    }
-
-    fun updateMainCharacter(character: CharacterContent?) {
-        _uiState.update { it.copy(mainCharacter = character) }
-    }
-
-    fun updateGenre(genre: com.ilustris.sagai.features.newsaga.data.model.Genre?) {
-        _uiState.update { it.copy(activeGenre = genre) }
-    }
-
-    fun updateFlatEvents(events: List<com.ilustris.sagai.features.timeline.data.model.Timeline>) {
-        _uiState.update { it.copy(flatEvents = events) }
     }
 }

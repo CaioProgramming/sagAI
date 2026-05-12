@@ -13,10 +13,12 @@ import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import java.io.File
 import javax.inject.Inject
 
@@ -31,7 +33,7 @@ interface SharePlayUseCase {
     suspend fun clearShareFolder(): RequestResult<Unit>
 
     suspend fun generateShareMessage(
-        saga: SagaContent,
+        saga: Saga,
         shareType: ShareType,
         character: CharacterContent?,
     ): RequestResult<ShareText>
@@ -53,6 +55,7 @@ class SharePlayUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
         private val pdfGenerator: PDFGenerator,
+        private val sagaRepository: SagaRepository,
     ) : SharePlayUseCase {
         override suspend fun saveBitmapToCache(
             bitmap: Bitmap,
@@ -81,39 +84,40 @@ class SharePlayUseCaseImpl
             }
 
         override suspend fun generateShareMessage(
-            saga: SagaContent,
+            saga: Saga,
             shareType: ShareType,
             character: CharacterContent?,
         ): RequestResult<ShareText> =
             executeRequest {
+                val fullSaga = sagaRepository.getSagaById(saga.id).first()!!
                 val prompt =
                     when (shareType) {
                         ShareType.PLAYSTYLE -> {
                             SharePrompts.playStylePrompt(
                                 promptService,
-                                saga.mainCharacter!!,
-                                saga,
+                                fullSaga.mainCharacter!!,
+                                fullSaga,
                             )
                         }
 
                         ShareType.EMOTIONS -> {
                             SharePrompts.emotionalPrompt(
                                 promptService,
-                                saga,
+                                fullSaga,
                             )
                         }
 
                         ShareType.HISTORY -> {
                             SharePrompts.historyPrompt(
                                 promptService,
-                                saga,
+                                fullSaga,
                             )
                         }
 
                         ShareType.RELATIONS -> {
                             SharePrompts.relationsPrompt(
                                 promptService,
-                                saga,
+                                fullSaga,
                             )
                         }
 
@@ -121,7 +125,7 @@ class SharePlayUseCaseImpl
                             SharePrompts.characterPrompt(
                                 promptService,
                                 character!!,
-                                saga,
+                                fullSaga,
                             )
                         }
 

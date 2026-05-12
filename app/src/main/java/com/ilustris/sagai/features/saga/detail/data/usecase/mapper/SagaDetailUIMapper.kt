@@ -11,8 +11,10 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaInfo
+import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -137,7 +139,7 @@ class SagaDetailUIMapper(
                             variationId = saga.variationId,
                             icon = saga.icon,
                         ),
-                        it.timelineContent,
+                        it.timelineContent.toMetaData(),
                     )
                 },
             latestWikis = resume.latestWikis,
@@ -149,6 +151,11 @@ class SagaDetailUIMapper(
         )
     }
 }
+
+fun TimelineContent.toMetaData(): TimelineMetadata =
+    TimelineMetadata(
+        data = data,
+    )
 
 data class TimelineDrawer(
     val title: String,

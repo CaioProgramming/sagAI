@@ -182,7 +182,10 @@ class ChapterUseCaseImpl
                 val (saga, chapterContent) = fetchContext(chapterId)
                 cleanUpEmptyTimeLines(chapterContent)
                 val chapterWikis = chapterContent.events.map { it.updatedWikis }.flatten()
-                wikiUseCase.mergeWikis(saga, chapterWikis)
+                val metadata =
+                    sagaRepository.getSagaMetadata(saga.data.id).first()
+                        ?: error("Metadata not found")
+                wikiUseCase.mergeWikis(metadata, chapterWikis)
 
                 generateChapter(
                     chapterId = chapterId,

@@ -4,8 +4,8 @@ import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
-import javax.inject.Inject
 import timber.log.Timber
+import javax.inject.Inject
 
 class MessageRepositoryImpl
     @Inject
@@ -17,6 +17,8 @@ class MessageRepositoryImpl
         }
 
         override suspend fun getMessages(sagaId: Int) = messageDao.getMessages(sagaId)
+
+        override fun getMessagesPagingSource(sagaId: Int) = messageDao.getMessagesPagingSource(sagaId)
 
         override suspend fun saveMessage(message: Message): Message {
             Timber.d("saveMessage: Saving\n${message.toJsonFormat()}")
@@ -47,5 +49,7 @@ class MessageRepositoryImpl
             return message
         }
 
-        override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessage(sagaId)
+        override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessageWithContent(sagaId)?.message
+
+        override fun getMessagesCount(sagaId: Int) = messageDao.getMessagesCount(sagaId)
     }

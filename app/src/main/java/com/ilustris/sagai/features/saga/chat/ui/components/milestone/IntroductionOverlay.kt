@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.ui.components.stylisedText
@@ -41,13 +41,13 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun IntroductionOverlay(
     introduction: SagaMilestone.Introduction,
-    saga: SagaContent,
+    saga: Saga,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     onComplete: () -> Unit,
 ) {
     val message = introduction.introduction
-    val genre = saga.data.genre
+    val genre = saga.genre
     var showContent by remember { mutableStateOf(false) }
     var showTypewriter by remember { mutableStateOf(false) }
     var animationComplete by remember { mutableStateOf(false) }
@@ -102,14 +102,14 @@ fun IntroductionOverlay(
 
             with(sharedTransitionScope) {
                 genre.stylisedText(
-                    text = saga.data.title,
+                    text = saga.title,
                     modifier =
                         Modifier
                             .padding(8.dp)
                             .fillMaxWidth()
                             .sharedElement(
                                 rememberSharedContentState(
-                                    key = "saga_${saga.data.id}_title",
+                                    key = "saga_${saga.id}_title",
                                 ),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             ),

@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
+import com.ilustris.sagai.features.characters.ui.CharacterDetailState
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -86,7 +87,7 @@ interface CharacterUseCase {
     suspend fun enrichCharacter(
         character: CharacterContent,
         saga: SagaContent,
-    ): RequestResult<com.ilustris.sagai.features.characters.ui.CharacterDetailState>
+    ): RequestResult<CharacterDetailState>
 
     suspend fun insertCharacterEvent(characterEvent: CharacterEvent): CharacterEvent
 
@@ -99,6 +100,8 @@ interface CharacterUseCase {
     fun getCharacterDetailData(characterId: Int): Flow<CharacterDetailData?>
 
     fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>>
+
+    fun getCharacterContent(characterId: Int): Flow<CharacterContent?>
 
     fun getTopCharacters(
         sagaId: Int,

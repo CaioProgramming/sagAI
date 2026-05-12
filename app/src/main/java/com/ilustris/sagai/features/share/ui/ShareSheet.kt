@@ -8,25 +8,30 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 
 @Composable
 fun ShareSheet(
-    content: SagaContent,
+    saga: Saga,
     isVisible: Boolean,
     shareType: ShareType,
     character: CharacterContent? = null,
     onDismiss: () -> Unit = {},
-    viewModel: SharePlayViewModel = hiltViewModel(),
-    chatViewModel: ChatViewModel = hiltViewModel(),
 ) {
-    if (isVisible) {
+    val viewModel: SharePlayViewModel = hiltViewModel()
+    val chatViewModel: ChatViewModel = hiltViewModel()
+
+    val content by viewModel.sagaContent.collectAsStateWithLifecycle()
+
+    if (isVisible && content != null) {
         Dialog(
             onDismissRequest = {
                 viewModel.deleteSavedFile()
@@ -40,7 +45,7 @@ fun ShareSheet(
                 when (it) {
                     ShareType.PLAYSTYLE -> {
                         PlayStyleShareView(
-                            content,
+                            saga,
                             viewModel,
                         )
                     }
@@ -48,7 +53,7 @@ fun ShareSheet(
                     ShareType.CHARACTER -> {
                         character?.let { char ->
                             CharacterShareView(
-                                content,
+                                saga,
                                 character = char,
                                 viewModel,
                             )
@@ -56,20 +61,24 @@ fun ShareSheet(
                     }
 
                     ShareType.HISTORY -> {
-                        HistoryShareView(content, viewModel)
+                        content?.let {
+                            HistoryShareView(it, viewModel)
+                        }
                     }
 
                     ShareType.EMOTIONS -> {
-                        EmotionShareView(content, viewModel)
+                        EmotionShareView(saga, viewModel)
                     }
 
                     ShareType.RELATIONS -> {
-                        RelationsShareView(content, viewModel)
+                        content?.let {
+                            RelationsShareView(it, viewModel)
+                        }
                     }
 
                     ShareType.CONVERSATION -> {
                         ConversationShareView(
-                            sagaContent = content,
+                            sagaContent = saga,
                             messages = chatViewModel.getSelectedMessages(),
                         )
                     }

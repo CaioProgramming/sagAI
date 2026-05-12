@@ -126,10 +126,12 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.home.data.model.currentActInfo
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.toInfo
 import com.ilustris.sagai.features.milestone.ui.MilestoneOverlay
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -139,6 +141,7 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
@@ -451,12 +454,13 @@ fun ChatView(
                                     true,
                                     it.data.genre.shimmerColors(),
                                     duration = 2.seconds,
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 
                 ShareSheet(
-                    content = it,
+                    saga = it.data,
                     isVisible = uiState.showShareSheet,
                     shareType = ShareType.CONVERSATION,
                     onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
@@ -514,7 +518,7 @@ fun ChatContent(
         mutableStateOf<MessageContent?>(null)
     }
     var showDeleteConfirmDialog by remember {
-        mutableStateOf<com.ilustris.sagai.features.saga.chat.data.model.Message?>(null)
+        mutableStateOf<Message?>(null)
     }
     val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val progressState =
@@ -586,10 +590,12 @@ fun ChatContent(
                                     shimmerColors = saga.genre.shimmerColors(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).sharedElement(
+                                )
+                                .sharedElement(
                                     rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
                                     animatedVisibilityScope = this@AnimatedContent,
-                                ).fillMaxSize(.5f)
+                                )
+                                .fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
 
@@ -597,7 +603,8 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            ).fillMaxSize(),
+                            )
+                            .fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar, bottomGradient) = createRefs()
@@ -638,7 +645,7 @@ fun ChatContent(
                                 }
                             }
 
-                        val onSelectCharacter: (CharacterContent) -> Unit =
+                        val onSelectCharacter: (Character) -> Unit =
                             remember(onAction) {
                                 { character ->
                                     onAction(
@@ -699,7 +706,7 @@ fun ChatContent(
                                                 action.character?.let {
                                                     onAction(
                                                         ChatUiAction.OpenCharacter(
-                                                            it.data.id,
+                                                            it.id,
                                                         ),
                                                     )
                                                 }
@@ -750,7 +757,8 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }.fillMaxWidth()
+                                }
+                                .fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -765,7 +773,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.animateContentSize(),
+                                    }
+                                    .animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
                                     slideOutVertically { it } + fadeOut()
@@ -825,7 +834,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(
+                                    }
+                                    .padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -923,7 +933,8 @@ fun ChatContent(
                                 Modifier
                                     .align(
                                         Alignment.CenterHorizontally,
-                                    ).wrapContentSize(),
+                                    )
+                                    .wrapContentSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 AnimatedContent(uiState.milestone, transitionSpec = {
@@ -958,19 +969,23 @@ fun ChatContent(
                                                     .genreVfx(
                                                         saga.genre,
                                                         isPlaying = uiState.isGenerating || uiState.isLoading,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         onAction(ChatUiAction.ShowObjective)
-                                                    }.gradientFill(
+                                                    }
+                                                    .gradientFill(
                                                         progressiveBrush(
                                                             resolvedColor,
                                                             progressState.value,
                                                         ),
-                                                    ).reactiveShimmer(
+                                                    )
+                                                    .reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
                                                         shimmerColors = saga.genre.shimmerColors(),
-                                                    ).sharedElement(
+                                                    )
+                                                    .sharedElement(
                                                         rememberSharedContentState(
                                                             key = "saga_${saga.id}_spark",
                                                         ),
@@ -988,11 +1003,15 @@ fun ChatContent(
                                     stringResource(
                                         R.string.chat_view_subtitle,
                                         content
-                                            .actNumber(content.currentActInfo?.data)
+                                            .actNumber(content.actNumber(content.currentActInfo?.data?.id))
                                             .toRoman(),
                                         content
-                                            .chapterNumber(content.currentActInfo?.currentChapterInfo?.data)
-                                            .toRoman(),
+                                            .chapterNumber(
+                                                content.currentActInfo
+                                                    ?.currentChapter()
+                                                    ?.data
+                                                    ?.id,
+                                            ).toRoman(),
                                     )
                                 }
 
@@ -1012,7 +1031,8 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }.fillMaxWidth()
+                                        }
+                                        .fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.sharedElement(
@@ -1026,7 +1046,7 @@ fun ChatContent(
                                         slideInVertically() + fadeIn() togetherWith fadeOut()
                                     }) { chars ->
                                         CharactersTopIcons(
-                                            chars.map { it.data },
+                                            chars,
                                             saga.genre,
                                             isLoading = uiState.isGenerating || uiState.isLoading,
                                         ) { _ ->
@@ -1095,7 +1115,8 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            ).fillMaxWidth(),
+                                            )
+                                            .fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1114,7 +1135,8 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1297,7 +1319,8 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                ).fillMaxSize(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 
@@ -1340,17 +1363,18 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }.animateContentSize(),
+                    }
+                    .animateContentSize(),
         )
     }
 }
 
 @Composable
 fun ChatList(
-    saga: SagaContent,
+    saga: SagaMetadata,
     actList: List<ActDisplayData>,
-    mainCharacter: com.ilustris.sagai.features.characters.data.model.CharacterContent?,
-    characters: List<com.ilustris.sagai.features.characters.data.model.CharacterContent>,
+    mainCharacter: CharacterContent?,
+    characters: List<Character>,
     wikis: List<Wiki>,
     activeGenre: Genre?,
     flatEvents: List<Timeline>,
@@ -1370,7 +1394,7 @@ fun ChatList(
     val genre = saga.data.genre
     val resolvedColor = genre.resolveColor()
 
-    LaunchedEffect(saga.messagesSize()) {
+    LaunchedEffect(saga.flatMessages().size) {
         coroutineScope.launch {
             listState.animateScrollToItem(0)
         }
@@ -1423,7 +1447,7 @@ fun ChatList(
             item {
                 RecapHeroCard(
                     saga.data,
-                    saga.chaptersSize(),
+                    saga.flatChapters().size,
                     saga.characters.size,
                     saga.flatMessages().size,
                     Modifier
@@ -1567,7 +1591,7 @@ fun ChatList(
                         chapter.chapter.data.title.ifEmpty {
                             stringResource(
                                 id = R.string.chapter_title_template,
-                                saga.chapterNumber(chapter.chapter.data).toRoman(),
+                                saga.chapterNumber(chapter.chapter.data.id).toRoman(),
                             )
                         }
                     Text(
@@ -1612,7 +1636,7 @@ fun ChatList(
                         .ifEmpty {
                             stringResource(
                                 id = R.string.act_title_template,
-                                saga.actNumber(act.content.data).toRoman(),
+                                saga.actNumber(act.content.data.id).toRoman(),
                             )
                         }
                 Text(
@@ -1686,9 +1710,11 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        ).graphicsLayer(
+                        )
+                        .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).clip(CircleShape)
+                        )
+                        .clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

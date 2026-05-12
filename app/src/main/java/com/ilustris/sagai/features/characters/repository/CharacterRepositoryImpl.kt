@@ -56,4 +56,6 @@ class CharacterRepositoryImpl
             sagaId: Int,
             limit: Int,
         ): Flow<List<CharacterContent>> = dao.getTopCharacters(sagaId, limit)
+
+        override fun getCharacterContent(characterId: Int): Flow<CharacterContent?> = dao.getCharacterContent(characterId)
     }

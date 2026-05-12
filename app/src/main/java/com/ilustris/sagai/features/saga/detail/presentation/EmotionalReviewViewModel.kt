@@ -39,7 +39,9 @@ class EmotionalReviewViewModel
         fun createEmotionalReview(sagaId: Int) {
             viewModelScope.launch(Dispatchers.IO) {
                 val sagaContent = sagaRepository.getSagaById(sagaId).firstOrNull() ?: return@launch
-                emotionalIllustration.emit(emotionalUseCase.getEmotionalCard(sagaContent).getSuccess())
+                emotionalIllustration.emit(
+                    emotionalUseCase.getEmotionalCard(sagaContent.data).getSuccess(),
+                )
                 if (sagaContent.data.emotionalReview?.isNotBlank() == true) {
                     return@launch
                 }

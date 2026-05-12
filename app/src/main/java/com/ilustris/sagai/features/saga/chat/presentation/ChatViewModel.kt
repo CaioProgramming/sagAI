@@ -26,11 +26,8 @@ import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -39,7 +36,7 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
-import com.ilustris.sagai.features.saga.chat.data.mapper.SagaContentUIMapper
+import com.ilustris.sagai.features.saga.chat.data.mapper.SagaMetadataUIMapper
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -49,7 +46,6 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUse
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
@@ -83,7 +79,7 @@ class ChatViewModel
         private val scheduledNotificationService: ScheduledNotificationService,
         private val visualConfigService: GenreVisualConfigService,
         private val remoteConfigService: RemoteConfigService,
-        private val mapper: SagaContentUIMapper,
+        private val mapper: SagaMetadataUIMapper,
         private val wikiUseCase: WikiUseCase,
         private val wikiMapper: WikiMapper,
         private val characterUseCase: CharacterUseCase,
@@ -179,7 +175,7 @@ class ChatViewModel
                 }
 
                 is ChatUiAction.UpdateCharacter -> {
-                    updateCharacter(action.characterContent)
+                    updateCharacter(action.character)
                 }
 
                 is ChatUiAction.RegenerateAudio -> {
@@ -282,12 +278,6 @@ class ChatViewModel
             stateManager.updateGenerating(false)
             stateManager.updateSendingPending(false)
             stateManager.updateSendingProgress(0f)
-        }
-
-        private fun revealCharacter(characterContent: CharacterContent?) {
-            stateManager.updateState {
-                it.copy(revealCharacter = characterContent)
-            }
         }
 
         private fun observeMileStone() =
@@ -415,14 +405,14 @@ class ChatViewModel
         private fun observeCharacters(sagaId: Int) =
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase.getCharactersBySaga(sagaId).collectLatest { characters ->
-                    stateManager.updateCharacters(characters)
+                    stateManager.updateCharacters(characters.map { it.data })
                 }
             }
 
         private fun observeTopCharacters(sagaId: Int) =
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase.getTopCharacters(sagaId, 3).collectLatest { topCharacters ->
-                    stateManager.updateTopCharacters(topCharacters)
+                    stateManager.updateTopCharacters(topCharacters.map { it.data })
                 }
             }
 
@@ -554,21 +544,21 @@ class ChatViewModel
             )
         }
 
-        fun reviewEvent(timelineContent: TimelineContent) {
+        fun reviewEvent(timelineContent: com.ilustris.sagai.features.home.data.model.TimelineMetadata) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.reviewEvent(timelineContent)
             }
         }
 
-        fun reviewChapter(chapterContent: ChapterContent) {
+        fun reviewChapter(chapterContent: com.ilustris.sagai.features.home.data.model.ChapterMetadata) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.reviewChapter(chapterContent)
             }
         }
 
-        fun updateCharacter(characterContent: CharacterContent?) {
+        fun updateCharacter(character: com.ilustris.sagai.features.characters.data.model.Character?) {
             viewModelScope.launch(Dispatchers.IO) {
-                stateManager.updateCharacter(characterContent)
+                stateManager.updateCharacter(character)
             }
         }
 
@@ -637,6 +627,14 @@ class ChatViewModel
             stateManager.updateInput(TextFieldValue(""))
         }
 
+        private fun observeMainCharacter(characterId: Int) {
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase.getCharacterContent(characterId).collectLatest { character ->
+                    stateManager.updateState { it.copy(mainCharacter = character) }
+                }
+        }
+    }
+
         private fun observeSaga() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.content
@@ -644,10 +642,7 @@ class ChatViewModel
                         if (old == null || new == null) return@distinctUntilChanged old == new
                         old.data.copy(playTimeMs = 0) == new.data.copy(playTimeMs = 0) &&
                             old.acts == new.acts &&
-                            old.characters == new.characters &&
-                            old.mainCharacter == new.mainCharacter &&
-                            old.wikis == new.wikis &&
-                            old.relationships == new.relationships
+                            old.mainCharacter == new.mainCharacter
                     }.collectLatest { sagaContent ->
 
                         Timber.tag("ChatViewModel").d("observeSaga triggered for genre: ${sagaContent?.data?.genre}")
@@ -687,9 +682,9 @@ class ChatViewModel
                                 chatState = ChatState.Success,
                                 isLoading = if (loadFinished) it.isLoading else false,
                                 pendingAdvance = pendingAdvance,
-                                mainCharacter = sagaContent.mainCharacter,
                                 activeGenre = sagaContent.data.genre,
                                 flatEvents = sagaContent.flatEvents().map { it.data },
+                                characters = sagaContent.characters,
                             )
                         }
 
@@ -716,10 +711,14 @@ class ChatViewModel
                             stateManager.updateOnboardingType(OnboardingType.GAMEPLAY_GUIDE)
                             sagaContentManager.isOnboardingVisible.value = true
                         }
+
+                        sagaContent.mainCharacter?.id?.let {
+                            observeMainCharacter(it)
+                        }
                     }
             }
 
-        private fun validateMessageStatus(sagaContent: SagaContent) {
+        private fun validateMessageStatus(sagaContent: SagaMetadata) {
             viewModelScope.launch(Dispatchers.IO) {
                 if (uiState.value.isGenerating) return@launch
                 if (uiState.value.isLoading) return@launch
@@ -751,7 +750,7 @@ class ChatViewModel
             }
         }
 
-        private fun updateProgress(sagaContent: SagaContent) {
+        private fun updateProgress(sagaContent: SagaMetadata) {
             viewModelScope.launch {
                 val rules =
                     remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: return@launch
@@ -879,7 +878,7 @@ class ChatViewModel
             audioMediaPlayerManager.release()
         }
 
-        private suspend fun validateCharacterMessageUpdates(content: SagaContent) {
+        private suspend fun validateCharacterMessageUpdates(content: SagaMetadata) {
             val updatableMessages =
                 content.flatMessages().filter { messageContent ->
                     messageContent.character == null &&
@@ -893,7 +892,7 @@ class ChatViewModel
                 character?.let {
                     messageUseCase.updateMessage(
                         message.message.copy(
-                            characterId = it.data.id,
+                            characterId = it.id,
                         ),
                     )
                 }
@@ -921,7 +920,7 @@ class ChatViewModel
             uiState.value.senderType
 
             val saga = uiState.value.sagaContent ?: return
-            val mainCharacter = uiState.value.selectedCharacter?.data ?: saga.mainCharacter?.data
+            val mainCharacter = uiState.value.selectedCharacter ?: saga.mainCharacter
             if (mainCharacter == null) return
             val currentTimeline = uiState.value.sagaContent?.getCurrentTimeLine()
             if (currentTimeline == null) {
@@ -998,7 +997,7 @@ class ChatViewModel
             uiState.value.senderType
             val saga = uiState.value.sagaContent ?: return
             val mainCharacter =
-                uiState.value.selectedCharacter?.data ?: saga.mainCharacter?.data ?: return
+                uiState.value.selectedCharacter ?: saga.mainCharacter ?: return
             val currentTimeline = uiState.value.sagaContent?.getCurrentTimeLine() ?: return
 
             val message =
@@ -1086,14 +1085,14 @@ class ChatViewModel
                     if (message.senderType == SenderType.NARRATOR) {
                         null
                     } else {
-                        message.characterId ?: characterReference?.data?.id
+                        message.characterId ?: characterReference?.id
                     }
 
                 val speaker =
                     if (message.senderType == SenderType.NARRATOR) {
                         null
                     } else {
-                        characterReference?.data?.name ?: message.speakerName
+                        characterReference?.name ?: message.speakerName
                     }
 
                 messageUseCase
@@ -1178,14 +1177,14 @@ class ChatViewModel
                     return@launch
                 }
 
-                val currentSaga = uiState.value.sagaContent ?: return@launch
+                val currentSaga = sagaContentManager.getSagaContent() ?: return@launch
                 if (currentSaga.data.isEnded) return@launch
                 val currentTimeline = currentSaga.getCurrentTimeLine() ?: return@launch
                 if (currentTimeline.messages.isEmpty()) return@launch
                 if (uiState.value.isLoading || uiState.value.isGenerating) return@launch
                 suggestionUseCase(
                     currentTimeline.messages,
-                    currentSaga.mainCharacter?.data,
+                    uiState.value.selectedCharacter,
                     currentSaga,
                     sceneSummary,
                 ).onSuccess {
@@ -1360,7 +1359,7 @@ class ChatViewModel
 
         fun sendFakeUserMessages(count: Int) {
             val currentSaga = uiState.value.sagaContent ?: return
-            val mainCharacterId = currentSaga.mainCharacter?.data?.id ?: return
+            val mainCharacterId = currentSaga.mainCharacter?.id ?: return
             val timeline = currentSaga.getCurrentTimeLine() ?: return
 
             viewModelScope.launch(Dispatchers.IO) {

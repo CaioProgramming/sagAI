@@ -1,48 +1,51 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.home.data.model.ActMetadata
+import com.ilustris.sagai.features.home.data.model.ChapterMetadata
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.home.data.model.TimelineMetadata
+import com.ilustris.sagai.features.home.data.model.currentActInfo
+import com.ilustris.sagai.features.home.data.model.currentChapterInfo
+import com.ilustris.sagai.features.home.data.model.currentEventInfo
 
 sealed class NarrativeStep {
     data class GenerateSagaEnding(
-        val saga: SagaContent,
+        val saga: SagaMetadata,
     ) : NarrativeStep()
 
     data object StartAct : NarrativeStep()
 
     data class GenerateAct(
-        val act: ActContent,
+        val act: ActMetadata,
     ) : NarrativeStep()
 
     data class GenerateActIntroduction(
-        val act: ActContent,
+        val act: ActMetadata,
     ) : NarrativeStep()
 
     data class StartChapter(
-        val act: ActContent,
+        val act: ActMetadata,
     ) : NarrativeStep()
 
     data class GenerateChapter(
-        val chapter: ChapterContent,
+        val chapter: ChapterMetadata,
     ) : NarrativeStep()
 
     data class GenerateChapterIntroduction(
-        val chapter: ChapterContent,
+        val chapter: ChapterMetadata,
     ) : NarrativeStep()
 
     data class StartTimeline(
-        val chapter: ChapterContent,
+        val chapter: ChapterMetadata,
     ) : NarrativeStep()
 
     data class GenerateTimeLine(
-        val timeline: TimelineContent,
+        val timeline: TimelineMetadata,
     ) : NarrativeStep()
 
     data class EndTimeLine(
-        val currentChapterContent: ChapterContent,
+        val currentChapter: ChapterMetadata,
     ) : NarrativeStep()
 
     data object NoActionNeeded : NarrativeStep()
@@ -50,12 +53,12 @@ sealed class NarrativeStep {
 
 object NarrativeCheck {
     fun validateProgression(
-        saga: SagaContent,
+        saga: SagaMetadata,
         rules: NarrativeRules,
     ): NarrativeStep {
         val currentAct = saga.currentActInfo
-        val currentChapter = currentAct?.currentChapterInfo
-        val currentTimeline = currentChapter?.currentEventInfo
+        val currentChapter = saga.currentChapterInfo
+        val currentTimeline = saga.currentEventInfo
 
         return when {
             saga.isComplete(rules) -> {
@@ -70,7 +73,7 @@ object NarrativeCheck {
                 NarrativeStep.StartAct
             }
 
-            currentAct.isFull(rules.actUpdateLimit, rules) -> {
+            currentAct.isFull(rules) -> {
                 NarrativeStep.GenerateAct(currentAct)
             }
 
@@ -84,7 +87,7 @@ object NarrativeCheck {
                 )
             }
 
-            currentChapter.isFull(rules.chapterUpdateLimit, rules) -> {
+            currentChapter.isFull(rules) -> {
                 NarrativeStep.GenerateChapter(currentChapter)
             }
 

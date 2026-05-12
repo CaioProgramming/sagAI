@@ -176,7 +176,7 @@ fun SagaReview(
 
         shareType?.let {
             ShareSheet(
-                currentContent,
+                currentContent.data,
                 true,
                 it,
                 onDismiss = {

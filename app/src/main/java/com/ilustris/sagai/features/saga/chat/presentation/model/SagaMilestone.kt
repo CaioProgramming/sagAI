@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.milestone.ui.NewChapterContent
 import com.ilustris.sagai.features.milestone.ui.NewCharacterContent
@@ -25,27 +26,29 @@ sealed class SagaMilestone(
     val message: String? = null,
     val delay: Duration = 7.seconds,
     val isIntrusive: Boolean = true,
-    val extraContent: @Composable (saga: SagaContent) -> Unit = {},
+    val extraContent: @Composable () -> Unit = {},
 ) {
     data class NewEvent(
         val timeline: Timeline,
         val emotionalMascot: String?,
         val messageText: String? = null,
+        val sagaContent: SagaContent,
     ) : SagaMilestone(
             R.string.advance_new_event,
             timeline.title,
             messageText,
-            extraContent = { NewEventContent(it, timeline.id, emotionalMascot) },
+            extraContent = { NewEventContent(sagaContent, timeline.id, emotionalMascot) },
         )
 
     data class ChapterFinished(
         val chapter: Chapter,
         val messageText: String? = null,
+        val sagaContent: SagaContent,
     ) : SagaMilestone(
             R.string.notification_new_chapter,
             chapter.title,
             messageText,
-            extraContent = { NewChapterContent(it, chapter.id) },
+            extraContent = { NewChapterContent(sagaContent, chapter.id) },
         )
 
     data class ActFinished(
@@ -59,13 +62,14 @@ sealed class SagaMilestone(
 
     data class NewCharacter(
         val character: Character,
-        val messageText: String? = null,
+        private val messageText: String? = null,
+        private val saga: Saga,
     ) : SagaMilestone(
             R.string.notification_new_character,
             "${character.name} ${character.lastName ?: emptyString()}",
             messageText,
             delay = 2.seconds,
-            extraContent = { NewCharacterContent(it, character.id) },
+            extraContent = { NewCharacterContent(saga, character) },
         )
 
     data class CurrentObjective(

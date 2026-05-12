@@ -35,7 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ConversationShareView(
-    sagaContent: SagaContent,
+    sagaContent: Saga,
     messages: List<MessageContent>,
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
@@ -64,7 +64,7 @@ fun ConversationShareView(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val filePath = viewModel.savedFilePath.collectAsStateWithLifecycle().value
-    val genre = sagaContent.data.genre
+    val genre = sagaContent.genre
     val resolvedColor = genre.resolveColor()
     val resolvedIconColor = genre.resolveIconColor()
 
@@ -97,13 +97,15 @@ fun ConversationShareView(
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.border(1.dp, resolvedColor.gradientFade(), genre.shape())
+                    }
+                    .border(1.dp, resolvedColor.gradientFade(), genre.shape())
                     .background(
                         Brush.verticalGradient(
                             resolvedColor.darkerPalette(factor = .35f),
                         ),
                         shape = genre.shape(),
-                    ).padding(8.dp),
+                    )
+                    .padding(8.dp),
         ) {
             item {
                 Row(
@@ -122,10 +124,10 @@ fun ConversationShareView(
                     )
 
                     Text(
-                        text = sagaContent.data.title,
+                        text = sagaContent.title,
                         style =
                             MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = sagaContent.data.genre.headerFont(),
+                                fontFamily = sagaContent.genre.headerFont(),
                                 fontWeight = FontWeight.Bold,
                             ),
                         color = resolvedIconColor,
@@ -134,7 +136,7 @@ fun ConversationShareView(
             }
 
             items(messages) { message ->
-                val isFromUser = message.character?.id == sagaContent.mainCharacter?.data?.id
+                val isFromUser = message.character?.id == sagaContent.mainCharacterId
 
                 Row(
                     horizontalArrangement = if (isFromUser) Arrangement.End else Arrangement.Start,
@@ -161,7 +163,8 @@ fun ConversationShareView(
                                     .background(
                                         backgroundColor,
                                         shape,
-                                    ).padding(16.dp),
+                                    )
+                                    .padding(16.dp),
                         )
 
                         message.character?.let {
@@ -204,7 +207,8 @@ fun ConversationShareView(
                                     .background(
                                         backgroundColor.copy(alpha = .3f),
                                         shape,
-                                    ).padding(16.dp),
+                                    )
+                                    .padding(16.dp),
                         )
                     }
                 }

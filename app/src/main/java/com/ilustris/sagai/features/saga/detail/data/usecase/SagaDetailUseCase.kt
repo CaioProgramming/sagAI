@@ -4,10 +4,10 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.Flow
 
 sealed class ReviewState {
@@ -40,14 +40,9 @@ interface SagaDetailUseCase {
     suspend fun createEmotionalConclusion(sagaId: Int): RequestResult<Saga>
 
     suspend fun generateTimelineContent(
-        sagaId: Int,
+        saga: SagaMetadata,
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
-
-    suspend fun reviewWiki(
-        sagaId: Int,
-        wikis: List<Wiki>,
-    )
 
     fun getBackupEnabled(): Flow<Boolean>
 

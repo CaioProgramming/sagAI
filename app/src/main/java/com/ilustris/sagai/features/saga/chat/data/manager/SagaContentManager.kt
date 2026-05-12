@@ -2,14 +2,12 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.components.SnackBarState
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 
 interface SagaContentManager {
-    val content: MutableStateFlow<SagaContent?>
+    val content: MutableStateFlow<com.ilustris.sagai.features.home.data.model.SagaMetadata?>
     val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val ambientMusicFile: StateFlow<File?>
@@ -49,24 +47,24 @@ interface SagaContentManager {
     suspend fun setProcessing(bool: Boolean)
 
     fun checkNarrativeProgression(
-        saga: SagaContent?,
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata?,
         isRetrying: Boolean = false,
     )
 
     suspend fun regenerateTimeline(
-        saga: SagaContent,
-        timelineContent: TimelineContent,
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        timelineContent: com.ilustris.sagai.features.home.data.model.TimelineMetadata,
     )
 
     suspend fun reviewWiki(wikiItems: List<Wiki>)
 
-    suspend fun reviewEvent(timelineContent: TimelineContent)
+    suspend fun reviewEvent(timelineContent: com.ilustris.sagai.features.home.data.model.TimelineMetadata)
 
     suspend fun backupSaga()
 
     suspend fun enableBackup(uri: Uri?)
 
-    suspend fun reviewChapter(chapterContent: ChapterContent)
+    suspend fun reviewChapter(chapterContent: com.ilustris.sagai.features.home.data.model.ChapterMetadata)
 
     val isMilestoneActive: StateFlow<Boolean>
 
@@ -86,4 +84,6 @@ interface SagaContentManager {
     fun stopProcessing()
 
     suspend fun updateSummary(sceneSummary: SceneSummary)
+
+    suspend fun getSagaContent(): SagaContent?
 }

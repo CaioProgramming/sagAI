@@ -45,4 +45,6 @@ class SagaDaoImpl
         override fun getSagaSummaries() = sagaDao.getSagaSummaries()
 
         override fun getPlaythroughData() = sagaDao.getPlaythroughData()
+
+        override fun getSagaMetadata(sagaId: Int) = sagaDao.getSagaMetadata(sagaId)
     }

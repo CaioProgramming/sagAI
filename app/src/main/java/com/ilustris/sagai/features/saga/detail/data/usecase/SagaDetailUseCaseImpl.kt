@@ -24,6 +24,7 @@ import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaInfo
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.toSaga
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -178,20 +179,9 @@ class SagaDetailUseCaseImpl
             }
 
         override suspend fun generateTimelineContent(
-            sagaId: Int,
+            saga: SagaMetadata,
             timelineContent: TimelineContent,
-        ): RequestResult<Unit> {
-            val saga = sagaRepository.getSagaById(sagaId).first()!!
-            return timelineUseCase.generateTimelineContent(saga, timelineContent)
-        }
-
-        override suspend fun reviewWiki(
-            sagaId: Int,
-            wikis: List<Wiki>,
-        ) {
-            val saga = sagaRepository.getSagaById(sagaId).first()!!
-            wikiUseCase.mergeWikis(saga, wikis)
-        }
+        ): RequestResult<Unit> = timelineUseCase.generateTimelineContent(saga, timelineContent.data)
 
         override fun getBackupEnabled() = backupService.backupEnabled()
 

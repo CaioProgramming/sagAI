@@ -44,6 +44,7 @@ timber = "5.0.1"
 ageSignals = "0.0.3"
 nav3Core = "1.0.0"
 lifecycleViewmodelNav3 = "2.10.0-rc01"
+paging = "3.3.6"
 
 [libraries]
 play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
@@ -120,6 +121,9 @@ androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runt
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.8.0" }
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
+androidx-room-paging = { module = "androidx.room:room-paging", version = "2.7.1" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

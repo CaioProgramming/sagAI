@@ -25,7 +25,10 @@ class SagaHistoryUseCaseImpl
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
     ) : SagaHistoryUseCase {
-        override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
+        override suspend fun getSagaById(sagaId: Int?): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
+
+        override suspend fun getSagaMetadata(sagaId: Int): Flow<com.ilustris.sagai.features.home.data.model.SagaMetadata?> =
+            sagaRepository.getSagaMetadata(sagaId)
 
         override suspend fun updateSaga(saga: Saga) = sagaRepository.updateSaga(saga)
 

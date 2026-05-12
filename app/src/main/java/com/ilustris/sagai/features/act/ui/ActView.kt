@@ -17,9 +17,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
@@ -30,9 +28,9 @@ private val DEFAULT_DELAY = 1.seconds
 
 @Composable
 fun ActComponent(
-    act: ActContent,
+    act: com.ilustris.sagai.features.home.data.model.ActMetadata,
     actCount: Int,
-    content: SagaContent,
+    content: com.ilustris.sagai.features.home.data.model.SagaMetadata,
     modifier: Modifier = Modifier,
 ) {
     // Animation flags

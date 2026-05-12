@@ -55,9 +55,7 @@ import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
@@ -85,8 +83,7 @@ fun TimelineContentViewCard(
                 .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
                 .clickable {
                     expanded = true
-                }
-                .padding(16.dp),
+                }.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
@@ -357,8 +354,7 @@ fun ExpandedTimeline(
                                     1.dp,
                                     genre.resolveColor(),
                                     genre.shape(),
-                                )
-                                .requiredWidthIn(max = 200.dp),
+                                ).requiredWidthIn(max = 200.dp),
                     )
                 }
             }
@@ -386,38 +382,6 @@ fun ExpandedTimeline(
                                 .requiredWidthIn(max = 300.dp),
                     )
                 }
-            }
-
-            Row(
-                modifier =
-                    Modifier
-                        .gradientFill(
-                            genre.gradient(),
-                        )
-                        .clip(genre.shape())
-                        .clickable {
-                            onAction(DetailAction.ReviewEvent(event))
-                        }
-                        .align(Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    painterResource(R.drawable.ic_full_spark),
-                    null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(24.dp),
-                )
-
-                Text(
-                    stringResource(R.string.review_event_label),
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = genre.headerFont(),
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Start,
-                        ),
-                )
             }
 
             Spacer(modifier = Modifier.size(32.dp))

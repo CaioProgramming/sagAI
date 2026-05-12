@@ -32,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
@@ -46,12 +46,11 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun CharacterShareView(
-    content: SagaContent,
+    content: Saga,
     character: CharacterContent,
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
-    val saga = remember { content.data }
-    val genre = remember { saga.genre }
+    val genre = remember(content) { content.genre }
     val resolvedColor = genre.resolveColor()
     genre.resolveIconColor()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -87,7 +86,8 @@ fun CharacterShareView(
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.shadow(10.dp, RectangleShape, spotColor = resolvedColor)
+                    }
+                    .shadow(10.dp, RectangleShape, spotColor = resolvedColor)
                     .clip(RectangleShape)
                     .background(resolvedColor, RectangleShape)
                     .clickable {
@@ -105,7 +105,7 @@ fun CharacterShareView(
             ) {
                 CharacterCard(
                     character = character,
-                    sagaContent = content,
+                    saga = content,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -120,7 +120,7 @@ fun CharacterShareView(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.generateShareText(sagaContent = content, ShareType.CHARACTER, character)
+        viewModel.generateShareText(saga = content, ShareType.CHARACTER, character)
     }
 
     LaunchedEffect(isLoading) {

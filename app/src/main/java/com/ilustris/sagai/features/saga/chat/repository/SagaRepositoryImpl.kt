@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ImageType
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
@@ -18,6 +17,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import javax.inject.Inject
 
 class SagaRepositoryImpl
@@ -43,7 +43,9 @@ class SagaRepositoryImpl
 
         override fun getPlaythroughData() = sagaDao.getPlaythroughData()
 
-        override fun getSagaById(id: Int) = sagaDao.getSagaContent(id)
+        override fun getSagaById(id: Int?) = if (id != null) sagaDao.getSagaContent(id) else emptyFlow()
+
+        override fun getSagaMetadata(id: Int) = sagaDao.getSagaMetadata(id)
 
         override fun getSagaInfo(id: Int) = sagaDao.getSagaInfo(id)
 
@@ -162,7 +164,7 @@ class SagaRepositoryImpl
                 )
                 appendLine()
                 appendLine("Story context: ")
-                appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
+                appendLine(saga.description)
                 appendLine(
                     "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
                 )

@@ -1,12 +1,12 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
 import androidx.compose.ui.text.input.TextFieldValue
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.ChapterMetadata
+import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 sealed class ChatUiAction {
@@ -39,15 +39,15 @@ sealed class ChatUiAction {
     ) : ChatUiAction()
 
     data class ReviewEvent(
-        val timelineContent: TimelineContent,
+        val timelineContent: TimelineMetadata,
     ) : ChatUiAction()
 
     data class ReviewChapter(
-        val chapterContent: ChapterContent,
+        val chapterContent: ChapterMetadata,
     ) : ChatUiAction()
 
     data class UpdateCharacter(
-        val characterContent: CharacterContent?,
+        val character: Character?,
     ) : ChatUiAction()
 
     data class RegenerateAudio(

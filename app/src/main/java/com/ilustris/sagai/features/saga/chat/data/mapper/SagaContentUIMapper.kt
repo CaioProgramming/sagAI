@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.mapper
 
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.toSagaInfo
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
@@ -12,13 +12,13 @@ import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.timeline.domain.TimelineMapper
 import javax.inject.Inject
 
-class SagaContentUIMapper
+class SagaMetadataUIMapper
     @Inject
     constructor(
         private val timelineMapper: TimelineMapper,
     ) {
         fun computePendingAdvance(
-            saga: SagaContent,
+            saga: SagaMetadata,
             rules: NarrativeRules,
         ): PendingAdvance? =
             when (val step = NarrativeCheck.validateProgression(saga, rules)) {
@@ -66,7 +66,7 @@ class SagaContentUIMapper
             }
 
         suspend fun mapToActDisplayData(
-            saga: SagaContent,
+            saga: SagaMetadata,
             rules: NarrativeRules,
         ): List<ActDisplayData> =
             saga.acts.asReversed().map { actContentDomain ->

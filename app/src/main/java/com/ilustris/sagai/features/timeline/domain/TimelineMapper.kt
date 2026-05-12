@@ -6,8 +6,9 @@ import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.home.data.model.SagaInfo
+import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.toMetaData
 import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 
 class TimelineMapper(
@@ -31,7 +32,7 @@ class TimelineMapper(
                             events.map {
                                 buildTimeline(
                                     sagaInfo,
-                                    it.timelineContent,
+                                    it.timelineContent.toMetaData(),
                                 )
                             },
                     )
@@ -40,7 +41,7 @@ class TimelineMapper(
 
     suspend fun buildTimeline(
         saga: SagaInfo,
-        timelineContent: TimelineContent,
+        timelineContent: TimelineMetadata,
     ): TimelineCardContent {
         val narrativeRules = remoteConfigService.getNarrativeRules()
         val genre = saga.genre
@@ -76,7 +77,7 @@ data class TimelineGroup(
 )
 
 data class TimelineCardContent(
-    val timelineContent: TimelineContent,
+    val timelineContent: TimelineMetadata,
     val mascotEmotion: Pair<EmotionalTone, String?>?,
     val chapterNumber: String?,
     val canShowData: Boolean,

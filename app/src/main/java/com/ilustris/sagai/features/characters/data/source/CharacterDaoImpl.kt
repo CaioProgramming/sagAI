@@ -17,10 +17,11 @@ class CharacterDaoImpl
     ) : CharacterDao {
         private val characterDao: CharacterDao by lazy { database.characterDao() }
 
-        @Query("SELECT * FROM Characters")
         override fun getAllCharacters(): Flow<List<Character>> = characterDao.getAllCharacters()
 
         override fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>> = characterDao.getCharactersBySaga(sagaId)
+
+        override fun getCharacterContent(id: Int): Flow<CharacterContent> = characterDao.getCharacterContent(id)
 
         @Transaction
         override suspend fun insertCharacter(character: Character): Long = characterDao.insertCharacter(character)

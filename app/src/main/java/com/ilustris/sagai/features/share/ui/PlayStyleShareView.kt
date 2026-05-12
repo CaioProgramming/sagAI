@@ -49,7 +49,6 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
@@ -72,11 +71,10 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PlayStyleShareView(
-    content: SagaContent,
+    saga: Saga,
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
-    val saga = remember { content.data }
-    val genre = remember { saga.genre }
+    val genre = remember(saga) { saga.genre }
     val resolvedColor = genre.resolveColor()
     val resolvedIconColor = genre.resolveIconColor()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -98,9 +96,9 @@ fun PlayStyleShareView(
         }
     }
 
-    LaunchedEffect(content) {
-        if (content.data.icon.isNotEmpty()) {
-            viewModel.segmentImage(content.data.icon)
+    LaunchedEffect(saga) {
+        if (saga.icon.isNotEmpty()) {
+            viewModel.segmentImage(saga.icon)
         }
     }
 
@@ -176,7 +174,7 @@ fun PlayStyleShareView(
                                 )
 
                                 Text(
-                                    content.data.title,
+                                    saga.title,
                                     modifier =
                                         Modifier
                                             .fillMaxWidth(),
@@ -252,7 +250,7 @@ fun PlayStyleShareView(
                             )
 
                             Text(
-                                content.data.title,
+                                saga.title,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth(),
@@ -336,7 +334,7 @@ fun PlayStyleShareView(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.generateShareText(sagaContent = content, ShareType.PLAYSTYLE)
+        viewModel.generateShareText(saga = saga, ShareType.PLAYSTYLE)
     }
 
     LaunchedEffect(isLoading) {
@@ -369,14 +367,12 @@ fun PlayStyleShareView(
 fun PlayStyleShareViewPreview() {
     SagAITheme {
         PlayStyleShareView(
-            content =
-                SagaContent(
-                    Saga(
-                        id = 1,
-                        title = "BluePrinting",
-                        description = "A saga of a legendary sword and the heroes who wield it.",
-                        genre = Genre.CYBERPUNK,
-                    ),
+            saga =
+                Saga(
+                    id = 1,
+                    title = "BluePrinting",
+                    description = "A saga of a legendary sword and the heroes who wield it.",
+                    genre = Genre.CYBERPUNK,
                 ),
         )
     }

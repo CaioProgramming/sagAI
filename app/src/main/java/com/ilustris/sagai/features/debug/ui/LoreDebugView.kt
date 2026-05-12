@@ -61,11 +61,10 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toRoman
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.debug.presentation.DebugSection
 import com.ilustris.sagai.features.debug.presentation.LoreDebugViewModel
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
+import com.ilustris.sagai.features.home.data.model.ActMetadata
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
@@ -95,7 +94,7 @@ fun LoreDebugView(
     viewModel: LoreDebugViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val saga = uiState.sagaContent
+    val saga = uiState.sagaMetadata
     val scrollState = rememberLazyListState()
 
     LaunchedEffect(sagaId) {
@@ -232,14 +231,14 @@ fun LoreDebugView(
             val rules = NarrativeRules() // Fallback if RC not ready, but VM uses actual one
             val actsToFix =
                 saga.acts.count {
-                    it.isFull(rules.actUpdateLimit, rules) &&
+                    it.isFull(rules) &&
                         (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() || it.data.content.isEmpty())
                 }
             val chaptersToFix =
                 saga
                     .flatChapters()
                     .count {
-                        it.isFull(rules.chapterUpdateLimit, rules) &&
+                        it.isFull(rules) &&
                             (
                                 it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() ||
                                     it.data.overview.isEmpty()
@@ -344,8 +343,8 @@ fun LoreDebugView(
 
 @Composable
 fun StoryCard(
-    saga: SagaContent,
-    actContent: ActContent,
+    saga: SagaMetadata,
+    actContent: ActMetadata,
     isLoading: Boolean,
     reasoning: String?,
     onRegenerate: (Any, DebugSection) -> Unit,
@@ -387,7 +386,7 @@ fun StoryCard(
                 }.animateContentSize(tween(500, easing = EaseIn)),
     ) {
         val act = actContent.data
-        val actNumber = saga.actNumber(act)
+        val actNumber = saga.actNumber(act.id)
         Text(
             stringResource(R.string.act_title, actNumber.toRoman()),
             style = MaterialTheme.typography.labelMedium,
@@ -463,7 +462,7 @@ fun StoryCard(
                             "emotional review" to chapter.data.emotionalReview,
                             "featured characters" to
                                 chapter.data.featuredCharacters.mapNotNull {
-                                    saga.findCharacter(it)?.data?.name
+                                    saga.findCharacter(it)?.name
                                 },
                             "narrative guide" to chapter.data.narrativeGuide,
                         ).toJsonFormat()
@@ -485,7 +484,7 @@ fun StoryCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    val chapterNumber = saga.chapterNumber(chapter.data)
+                    val chapterNumber = saga.chapterNumber(chapter.data.id)
                     Text(
                         stringResource(R.string.chapter_number_label, chapterNumber.toRoman()),
                         style = MaterialTheme.typography.labelMedium,

@@ -134,7 +134,7 @@ fun CharacterRevealOverlay(
                     ) {
                         CharacterCard(
                             character = character,
-                            sagaContent = sagaContent,
+                            saga = sagaContent.data,
                             modifier =
                                 Modifier
                                     .fillMaxSize()
@@ -144,8 +144,7 @@ fun CharacterRevealOverlay(
                                             10.dp,
                                             revealGradient,
                                         ),
-                                    )
-                                    .clip(shape)
+                                    ).clip(shape)
                                     .border(1.dp, revealGradient, shape)
                                     .background(genre.resolveColor(), shape),
                             showWatermark = false,

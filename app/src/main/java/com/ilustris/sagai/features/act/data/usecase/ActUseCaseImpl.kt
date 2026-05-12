@@ -13,18 +13,21 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.home.data.model.currentActInfo
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -56,8 +59,8 @@ class ActUseCaseImpl
         }
 
         override suspend fun generateAct(
-            saga: SagaContent,
-            actContent: ActContent,
+            saga: SagaMetadata,
+            actContent: ActMetadata,
         ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
@@ -87,8 +90,8 @@ class ActUseCaseImpl
             }
 
         override fun generateActStream(
-            saga: SagaContent,
-            actContent: ActContent,
+            saga: SagaMetadata,
+            actContent: ActMetadata,
         ) = flow {
             try {
                 val titlePrompt = generateActPrompt(saga)
@@ -153,31 +156,35 @@ class ActUseCaseImpl
             }
         }
 
-        private suspend fun generateActPrompt(saga: SagaContent): String {
+        private suspend fun generateActPrompt(sagaMetadata: SagaMetadata): String {
             remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+            val sagaId = sagaMetadata.data.id
+            val fullSaga = sagaRepository.getSagaById(sagaId).first() as SagaContent
 
-            genreConfigService.getGenreConfig(saga.data.genre)
+            genreConfigService.getGenreConfig(sagaMetadata.data.genre)
             return ActPrompts.generateActConclusion(
                 promptService,
-                saga,
-                saga.currentActInfo!!,
+                fullSaga,
+                fullSaga.acts.find { it.data.id == sagaMetadata.currentActInfo?.data?.id }
+                    ?: fullSaga.acts.last(),
                 genreConfigService.conversationBlueprint(
-                    saga.data.genre,
+                    sagaMetadata.data.genre,
                 ),
             )
         }
 
         override suspend fun generateActIntroduction(
-            saga: SagaContent,
+            saga: SagaMetadata,
             act: Act,
         ) = executeRequest {
             saga.acts.isEmpty()
 
             genreConfigService.getGenreConfig(saga.data.genre)
+            val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
             val prompt =
                 ActPrompts.actIntroductionPrompt(
                     promptService = promptService,
-                    saga = saga,
+                    saga = fullSaga,
                     narrativeRules = remoteConfigService.getNarrativeRules(),
                     conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                 )
@@ -193,14 +200,15 @@ class ActUseCaseImpl
         }
 
         override fun generateActIntroductionStream(
-            saga: SagaContent,
+            saga: SagaMetadata,
             act: Act,
         ) = flow {
             try {
+                val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
                 val prompt =
                     ActPrompts.actIntroductionPrompt(
                         promptService = promptService,
-                        saga = saga,
+                        saga = fullSaga,
                         narrativeRules = remoteConfigService.getNarrativeRules(),
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
@@ -244,17 +252,21 @@ class ActUseCaseImpl
         }
 
         override fun synthesizeActEvolutionStream(
-            saga: SagaContent,
-            actContent: ActContent,
+            saga: SagaMetadata,
+            actMetadata: ActMetadata,
         ): Flow<StreamingState<GeneratedContent<Act>>> =
             flow {
                 try {
                     val conversationDirective =
                         genreConfigService.conversationBlueprint(saga.data.genre)
+                    val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
+                    val actContent =
+                        fullSaga.acts.find { it.data.id == actMetadata.data.id }
+                            ?: fullSaga.acts.last()
                     val prompt =
                         ActPrompts.actSynthesisPrompt(
                             promptService = promptService,
-                            saga = saga,
+                            saga = fullSaga,
                             act = actContent,
                             narrativeRules = remoteConfigService.getNarrativeRules(),
                             conversationDirective = conversationDirective,
@@ -289,7 +301,12 @@ class ActUseCaseImpl
                                     // 2. Save Landmark Wikis
                                     synthesis.landmarkWikis.forEach { wikiUpdate ->
                                         val existingWiki =
-                                            saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                                            fullSaga.wikis.find {
+                                                it.title.equals(
+                                                    wikiUpdate.title,
+                                                    true,
+                                                )
+                                            }
                                         val wikiToSave =
                                             Wiki(
                                                 id = existingWiki?.id ?: 0,
@@ -313,7 +330,7 @@ class ActUseCaseImpl
                                         character?.let {
                                             characterUseCase.insertCharacterArc(
                                                 CharacterArc(
-                                                    characterId = it.data.id,
+                                                    characterId = it.id,
                                                     sourceId = actContent.data.id,
                                                     sourceType = ArcSourceType.ACT,
                                                     title = arcUpdate.arcTitle,

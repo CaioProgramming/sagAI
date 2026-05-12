@@ -254,7 +254,7 @@ fun RelationsShareView(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.generateShareText(sagaContent = sagaContent, ShareType.RELATIONS)
+        viewModel.generateShareText(saga = sagaContent.data, ShareType.RELATIONS)
     }
 
     LaunchedEffect(isLoading) {

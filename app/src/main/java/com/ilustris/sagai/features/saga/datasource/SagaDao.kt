@@ -40,6 +40,10 @@ interface SagaDao {
 
     @Transaction
     @Query("SELECT * FROM sagas WHERE id = :sagaId")
+    fun getSagaMetadata(sagaId: Int): Flow<com.ilustris.sagai.features.home.data.model.SagaMetadata?>
+
+    @Transaction
+    @Query("SELECT * FROM sagas WHERE id = :sagaId")
     fun getSagaContent(sagaId: Int): Flow<SagaContent?>
 
     @Transaction

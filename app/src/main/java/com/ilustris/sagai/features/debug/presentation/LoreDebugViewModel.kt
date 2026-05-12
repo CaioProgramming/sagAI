@@ -5,16 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.findAct
+import com.ilustris.sagai.features.home.data.model.ActMetadata
+import com.ilustris.sagai.features.home.data.model.ChapterMetadata
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +34,7 @@ enum class DebugSection {
 }
 
 data class LoreDebugUiState(
-    val sagaContent: SagaContent? = null,
+    val sagaMetadata: SagaMetadata? = null,
     val isLoading: Boolean = false,
     val reasoning: String? = null,
     val error: String? = null,
@@ -62,43 +61,42 @@ class LoreDebugViewModel
         fun loadSaga(sagaId: Int) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                sagaUseCase.getSagaById(sagaId).collectLatest { result ->
-                    result?.let {
-                        _uiState.update { it.copy(sagaContent = result, isLoading = false) }
-                    } ?: run {
+                sagaUseCase.getSagaMetadata(sagaId).collectLatest { saga ->
+                    if (saga != null) {
+                        _uiState.update { it.copy(sagaMetadata = saga, isLoading = false) }
+                    } else {
                         _uiState.update { it.copy(isLoading = false, error = "Saga not found") }
                     }
                 }
             }
         }
 
-        fun regenerateActIntroduction(act: ActContent) {
-            val saga = _uiState.value.sagaContent ?: return
+        fun regenerateActIntroduction(act: ActMetadata) {
+            val sagaMetadata = _uiState.value.sagaMetadata ?: return
             val sectionId = "act_intro_${act.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
-                actUseCase.generateActIntroductionStream(saga, act.data).collectLatest { state ->
-                    handleStreamingState(state)
-                }
+                actUseCase
+                    .generateActIntroductionStream(sagaMetadata, act.data)
+                    .collectLatest { state ->
+                        handleStreamingState(state)
+                    }
             }
         }
 
-        fun regenerateActConclusion(act: ActContent) {
-            val saga = _uiState.value.sagaContent ?: return
+        fun regenerateActConclusion(act: ActMetadata) {
+            val sagaMetadata = _uiState.value.sagaMetadata ?: return
             val sectionId = "act_conclusion_${act.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
-                actUseCase.synthesizeActEvolutionStream(saga, act).collectLatest { state ->
+                actUseCase.synthesizeActEvolutionStream(sagaMetadata, act).collectLatest { state ->
                     handleStreamingState(state)
                 }
             }
         }
 
-        fun regenerateChapterIntroduction(
-            chapter: ChapterContent,
-            act: ActContent,
-        ) {
-            _uiState.value.sagaContent ?: return
+        fun regenerateChapterIntroduction(chapter: ChapterMetadata) {
+            _uiState.value.sagaMetadata ?: return
             val sectionId = "chapter_intro_${chapter.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
@@ -110,8 +108,8 @@ class LoreDebugViewModel
             }
         }
 
-        fun regenerateChapterConclusion(chapter: ChapterContent) {
-            _uiState.value.sagaContent ?: return
+        fun regenerateChapterConclusion(chapter: ChapterMetadata) {
+            _uiState.value.sagaMetadata ?: return
             val sectionId = "chapter_conclusion_${chapter.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
@@ -123,14 +121,16 @@ class LoreDebugViewModel
             }
         }
 
-        fun regenerateTimeline(timeline: TimelineContent) {
-            val saga = _uiState.value.sagaContent ?: return
+        fun regenerateTimeline(timeline: TimelineMetadata) {
+            val sagaMetadata = _uiState.value.sagaMetadata ?: return
             val sectionId = "timeline_${timeline.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
-                timelineUseCase.generateFullLoreUpdateStream(saga, timeline).collectLatest { state ->
-                    handleStreamingState(state)
-                }
+                timelineUseCase
+                    .generateFullLoreUpdateStream(sagaMetadata, timeline.data)
+                    .collectLatest { state ->
+                        handleStreamingState(state)
+                    }
             }
         }
 
@@ -171,7 +171,7 @@ class LoreDebugViewModel
 
         fun fixStory() {
             val sagaId =
-                _uiState.value.sagaContent
+                _uiState.value.sagaMetadata
                     ?.data
                     ?.id ?: return
             viewModelScope.launch {
@@ -190,7 +190,11 @@ class LoreDebugViewModel
                 val chaptersToFix =
                     currentSaga.flatChapters().filter {
                         it.isFull(rules.chapterUpdateLimit, rules) &&
-                            (it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() || it.data.overview.isEmpty())
+                            (
+                                it.data.emotionalReview.isNullOrEmpty() ||
+                                    it.data.narrativeGuide.isNullOrEmpty() ||
+                                    it.data.overview.isEmpty()
+                            )
                     }
                 val timelinesToFix =
                     currentSaga.flatEvents().filter {
@@ -212,13 +216,15 @@ class LoreDebugViewModel
                     )
                 }
 
-                // Sequential Bottom-Up Processing: Timelines -> Chapters -> Acts
-
                 timelinesToFix.forEach { timeline ->
-                    val latestSaga = sagaUseCase.getSagaById(sagaId).first() ?: return@forEach
+                    val sagaId =
+                        _uiState.value.sagaMetadata
+                            ?.data
+                            ?.id ?: return@forEach
                     updateFixProgress()
+                    val sagaMetadata = sagaUseCase.getSagaMetadata(sagaId).first() ?: return@forEach
                     timelineUseCase
-                        .generateFullLoreUpdateStream(latestSaga, timeline)
+                        .generateFullLoreUpdateStream(sagaMetadata, timeline.data)
                         .collect { state ->
                             handleStreamingState(state)
                         }
@@ -235,11 +241,19 @@ class LoreDebugViewModel
                 }
 
                 actsToFix.forEach { act ->
-                    val latestSaga = sagaUseCase.getSagaById(sagaId).first() ?: return@forEach
+                    val sagaId =
+                        _uiState.value.sagaMetadata
+                            ?.data
+                            ?.id ?: return@forEach
                     updateFixProgress()
-                    actUseCase.synthesizeActEvolutionStream(latestSaga, act).collect { state ->
-                        handleStreamingState(state)
-                    }
+                    val sagaMetadata = sagaUseCase.getSagaMetadata(sagaId).first() ?: return@forEach
+                    val actMetadata =
+                        sagaMetadata.acts.find { it.data.id == act.data.id } ?: return@forEach
+                    actUseCase
+                        .synthesizeActEvolutionStream(sagaMetadata, actMetadata)
+                        .collect { state ->
+                            handleStreamingState(state)
+                        }
                 }
 
                 _uiState.update { it.copy(isFixing = false, currentFixItem = 0) }
@@ -255,28 +269,28 @@ class LoreDebugViewModel
             content: Any,
             section: DebugSection,
         ) {
-            val saga = _uiState.value.sagaContent ?: return
-            _uiState.update { it.copy(generatingSections = it.generatingSections + sectionId) }
-            when (content) {
-                is ActContent -> {
-                    if (section == DebugSection.ACT_INTRODUCTION) {
-                        regenerateActIntroduction(content)
-                    } else {
-                        regenerateActConclusion(content)
+            viewModelScope.launch {
+                _uiState.update { it.copy(generatingSections = it.generatingSections + sectionId) }
+                when (content) {
+                    is ActMetadata -> {
+                        if (section == DebugSection.ACT_INTRODUCTION) {
+                            regenerateActIntroduction(content)
+                        } else {
+                            regenerateActConclusion(content)
+                        }
                     }
-                }
 
-                is ChapterContent -> {
-                    val act = saga.findAct(content.data.actId) ?: return
-                    if (section == DebugSection.CHAPTER_INTRODUCTION) {
-                        regenerateChapterIntroduction(content, act)
-                    } else {
-                        regenerateChapterConclusion(content)
+                    is ChapterMetadata -> {
+                        if (section == DebugSection.CHAPTER_INTRODUCTION) {
+                            regenerateChapterIntroduction(content)
+                        } else {
+                            regenerateChapterConclusion(content)
+                        }
                     }
-                }
 
-                is TimelineContent -> {
-                    regenerateTimeline(content)
+                    is TimelineMetadata -> {
+                        regenerateTimeline(content)
+                    }
                 }
             }
         }

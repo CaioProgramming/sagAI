@@ -13,6 +13,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface MessageDao {
     @Transaction
+    @Query("SELECT * FROM messages WHERE sagaId = :sagaId ORDER BY timestamp DESC")
+    fun getMessagesPagingSource(sagaId: Int): androidx.paging.PagingSource<Int, MessageContent>
+
+    @Transaction
     @Query("SELECT * FROM messages WHERE sagaId = :sagaId ORDER BY timestamp ASC")
     fun getMessages(sagaId: Int): Flow<List<MessageContent>>
 
@@ -28,8 +32,9 @@ interface MessageDao {
     @Update
     suspend fun updateMessage(message: Message)
 
+    @Transaction
     @Query("SELECT * FROM messages WHERE sagaId = :sagaId ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLastMessage(sagaId: Int): Message?
+    suspend fun getLastMessageWithContent(sagaId: Int): MessageContent?
 
     @Query("SELECT COUNT(id) FROM messages WHERE sagaId = :sagaId")
     fun getMessagesCount(sagaId: Int): Flow<Int>
