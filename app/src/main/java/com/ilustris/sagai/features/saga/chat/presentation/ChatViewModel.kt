@@ -25,6 +25,7 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
@@ -84,6 +85,7 @@ class ChatViewModel
         private val wikiMapper: WikiMapper,
         private val characterUseCase: CharacterUseCase,
         private val savedStateHandle: SavedStateHandle,
+        private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -667,6 +669,7 @@ class ChatViewModel
                             visualConfigService.getVisualConfig(sagaContent.data.genre)
                         Timber.tag("ChatViewModel").d("Fetched visual config: $visualConfig")
                         stateManager.updateVisualConfig(visualConfig)
+                        sagaThemeManager.updateTheme(sagaContent.data.genre)
 
                         val rules =
                             remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {

@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.media.SoundFxService
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -38,6 +39,7 @@ class SagaDetailViewModel
         private val visualConfigService: GenreVisualConfigService,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val soundFxService: SoundFxService,
+        private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
@@ -134,6 +136,7 @@ class SagaDetailViewModel
                         resume?.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
                             visualConfig.value = visualConfigService.getVisualConfig(data.saga.genre)
+                            sagaThemeManager.updateTheme(data.saga.genre)
 
                             loadInitialSection()
                             detailDrawer.value =

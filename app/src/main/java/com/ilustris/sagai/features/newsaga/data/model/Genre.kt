@@ -241,7 +241,7 @@ fun Genre.compiledColorPalette(): List<Color> =
 fun Genre.resolveColor(visualConfig: GenreVisualConfig?): Color = visualConfig?.primaryColor?.parseColor() ?: this.color
 
 @Composable
-fun Genre.resolveColor(): Color = resolveColor(LocalGenreVisualConfig.current)
+fun Genre.resolveColor(): Color = MaterialTheme.colorScheme.primary
 
 /** Resolve icon color from remote config. Falls back to enum property. */
 fun Genre.resolveIconColor(visualConfig: GenreVisualConfig?): Color = visualConfig?.iconColor?.parseColor() ?: this.iconColor

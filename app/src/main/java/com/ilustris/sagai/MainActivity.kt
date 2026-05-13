@@ -69,6 +69,7 @@ import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
 import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
@@ -84,6 +85,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var sideEffectService: SideEffectService
 
+    @Inject
+    lateinit var sagaThemeManager: SagaThemeManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -94,7 +98,9 @@ class MainActivity : ComponentActivity() {
         intent?.removeExtra("deepLink")
         Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")
         setContent {
-            SagAITheme {
+            val activeGenre by sagaThemeManager.currentGenre.collectAsState(initial = null)
+
+            SagAITheme(genre = activeGenre) {
                 val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
                 val isOnline by connectivityObserver.observe().collectAsState(initial = true)
 

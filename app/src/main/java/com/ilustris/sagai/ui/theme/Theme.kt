@@ -2,6 +2,7 @@ package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -23,19 +24,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,6 +51,8 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -75,32 +84,120 @@ private val LightColorScheme =
     )
 
 @Composable
-fun themeBrushColors() =
-    listOf(
+fun themeBrushColors(): List<Color> {
+    val genre = LocalSagaGenre.current
+    return genre?.colorPalette() ?: listOf(
         MaterialColor.Blue500,
         MaterialColor.BlueA700,
         MaterialColor.LightBlueA400,
     )
+}
+
+private const val THEME_ANIMATION_DURATION = 600
+
+/**
+ * CompositionLocal providing the currently active [Genre] from [SagaThemeManager].
+ * - On genre-immersed screens (SagaDetail, Chat): holds the saga's genre.
+ * - On genre-neutral screens (Home, NewSaga): holds null (brand defaults).
+ *
+ * Use [sagaShape], [sagaBrush], etc. to access genre-specific visuals
+ * without manually passing the genre around.
+ */
+val LocalSagaGenre = staticCompositionLocalOf<Genre?> { null }
 
 @Composable
 fun SagAITheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    genre: Genre? = null,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme =
-        when {
-            darkTheme -> DarkColorScheme
-            else -> LightColorScheme
-        }
+    val baseScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content,
+    // Target colors: genre-driven or brand defaults
+    val targetPrimary = genre?.color ?: baseScheme.primary
+    val targetSecondary = genre?.color?.copy(alpha = 0.7f) ?: baseScheme.secondary
+    val targetTertiary = genre?.color?.copy(alpha = 0.5f) ?: baseScheme.tertiary
+
+    // Smooth animated transitions
+    val animatedPrimary = animateColorAsState(
+        targetValue = targetPrimary,
+        animationSpec = tween(THEME_ANIMATION_DURATION),
+        label = "themePrimary",
     )
+    val animatedSecondary = animateColorAsState(
+        targetValue = targetSecondary,
+        animationSpec = tween(THEME_ANIMATION_DURATION),
+        label = "themeSecondary",
+    )
+    val animatedTertiary = animateColorAsState(
+        targetValue = targetTertiary,
+        animationSpec = tween(THEME_ANIMATION_DURATION),
+        label = "themeTertiary",
+    )
+
+    val colorScheme = baseScheme.copy(
+        primary = animatedPrimary.value,
+        secondary = animatedSecondary.value,
+        tertiary = animatedTertiary.value,
+    )
+
+    // Dynamic Typography: genre fonts baked into the theme
+    val dynamicTypography = remember(genre) {
+        if (genre == null) {
+            Typography
+        } else {
+            val headerFamily = genre.headerFont()
+            val bodyFamily = genre.bodyFont()
+            Typography(
+                displayLarge = Typography.displayLarge.copy(fontFamily = headerFamily),
+                displayMedium = Typography.displayMedium.copy(fontFamily = headerFamily),
+                displaySmall = Typography.displaySmall.copy(fontFamily = headerFamily),
+                headlineLarge = Typography.headlineLarge.copy(fontFamily = headerFamily),
+                headlineMedium = Typography.headlineMedium.copy(fontFamily = headerFamily),
+                headlineSmall = Typography.headlineSmall.copy(fontFamily = headerFamily),
+                titleLarge = Typography.titleLarge.copy(fontFamily = headerFamily),
+                titleMedium = Typography.titleMedium.copy(fontFamily = headerFamily),
+                titleSmall = Typography.titleSmall.copy(fontFamily = headerFamily),
+                bodyLarge = Typography.bodyLarge.copy(fontFamily = bodyFamily),
+                bodyMedium = Typography.bodyMedium.copy(fontFamily = bodyFamily),
+                bodySmall = Typography.bodySmall.copy(fontFamily = bodyFamily),
+                labelLarge = Typography.labelLarge.copy(fontFamily = bodyFamily),
+                labelMedium = Typography.labelMedium.copy(fontFamily = bodyFamily),
+                labelSmall = Typography.labelSmall.copy(fontFamily = bodyFamily),
+            )
+        }
+    }
+
+    CompositionLocalProvider(LocalSagaGenre provides genre) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = dynamicTypography,
+            content = content,
+        )
+    }
 }
+
+// ── Theme Extension Functions ─────────────────────────────────────────
+// Use these on genre-immersed screens instead of manual genre extensions.
+
+/**
+ * Returns the current genre's shape, or [MaterialTheme.shapes.medium] on neutral screens.
+ * Equivalent to `genre.shape()` but theme-driven.
+ */
+@Composable
+fun sagaShape(): Shape = LocalSagaGenre.current.shape()
+
+/**
+ * Returns a gradient [Brush] for the current genre, or the brand holographic gradient.
+ * Equivalent to `genre.gradient()` but theme-driven.
+ */
+@Composable
+fun sagaBrush(
+    animated: Boolean = false,
+    gradientType: GradientType = GradientType.LINEAR,
+): Brush = LocalSagaGenre.current.gradient(animated = animated, gradientType = gradientType)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

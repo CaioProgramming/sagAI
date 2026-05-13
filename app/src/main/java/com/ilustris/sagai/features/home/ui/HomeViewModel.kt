@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -42,6 +43,7 @@ class HomeViewModel
         private val segmentationHelper: ImageSegmentationHelper,
         private val stringResourceHelper: StringResourceHelper,
         private val visualConfigService: GenreVisualConfigService,
+        private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
         val sagas = homeUseCase.getSagas()
 
@@ -88,6 +90,7 @@ class HomeViewModel
         val genreVisualConfigService = visualConfigService
 
         init {
+            sagaThemeManager.resetTheme()
             checkDebug()
             getDynamicPrompts()
             loadVisualConfigs()
