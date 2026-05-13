@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.flow.Flow
 
 interface ActUseCase {
@@ -36,7 +38,7 @@ interface ActUseCase {
     ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
 
     fun synthesizeActEvolutionStream(
-        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
-        actContent: com.ilustris.sagai.features.home.data.model.ActMetadata,
+        saga: SagaContent,
+        actContent: ActContent,
     ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
 }

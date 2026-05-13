@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.characters.data.model.ArcSourceType
@@ -252,17 +253,15 @@ class ActUseCaseImpl
         }
 
         override fun synthesizeActEvolutionStream(
-            saga: SagaMetadata,
-            actMetadata: ActMetadata,
+            saga: SagaContent,
+            actContent: ActContent,
         ): Flow<StreamingState<GeneratedContent<Act>>> =
             flow {
                 try {
                     val conversationDirective =
                         genreConfigService.conversationBlueprint(saga.data.genre)
                     val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
-                    val actContent =
-                        fullSaga.acts.find { it.data.id == actMetadata.data.id }
-                            ?: fullSaga.acts.last()
+
                     val prompt =
                         ActPrompts.actSynthesisPrompt(
                             promptService = promptService,
@@ -330,7 +329,7 @@ class ActUseCaseImpl
                                         character?.let {
                                             characterUseCase.insertCharacterArc(
                                                 CharacterArc(
-                                                    characterId = it.id,
+                                                    characterId = it.data.id,
                                                     sourceId = actContent.data.id,
                                                     sourceType = ArcSourceType.ACT,
                                                     title = arcUpdate.arcTitle,

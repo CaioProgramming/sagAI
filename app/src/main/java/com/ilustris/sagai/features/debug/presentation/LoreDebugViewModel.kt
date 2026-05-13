@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.ChapterMetadata
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.TimelineMetadata
+import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -89,8 +90,12 @@ class LoreDebugViewModel
             val sectionId = "act_conclusion_${act.data.id}"
             viewModelScope.launch {
                 startGenerating(sectionId)
-                actUseCase.synthesizeActEvolutionStream(sagaMetadata, act).collectLatest { state ->
-                    handleStreamingState(state)
+                val fullSaga =
+                    sagaUseCase.getSagaById(sagaMetadata.data.id).first() ?: return@launch
+                fullSaga.findAct(act.data.id)?.let {
+                    actUseCase.synthesizeActEvolutionStream(fullSaga, it).collectLatest { state ->
+                        handleStreamingState(state)
+                    }
                 }
             }
         }
@@ -246,11 +251,11 @@ class LoreDebugViewModel
                             ?.data
                             ?.id ?: return@forEach
                     updateFixProgress()
-                    val sagaMetadata = sagaUseCase.getSagaMetadata(sagaId).first() ?: return@forEach
-                    val actMetadata =
-                        sagaMetadata.acts.find { it.data.id == act.data.id } ?: return@forEach
+                    val sagaContent = sagaUseCase.getSagaById(sagaId).first() ?: return@forEach
+                    val act = sagaContent.findAct(act.data.id) ?: return@forEach
+
                     actUseCase
-                        .synthesizeActEvolutionStream(sagaMetadata, actMetadata)
+                        .synthesizeActEvolutionStream(sagaContent, act)
                         .collect { state ->
                             handleStreamingState(state)
                         }

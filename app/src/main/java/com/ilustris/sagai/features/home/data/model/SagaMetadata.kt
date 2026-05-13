@@ -4,6 +4,8 @@ import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
@@ -91,7 +93,7 @@ data class ActMetadata(
                 if (showEvents) {
                     appendLine("EVENTS:")
                     appendLine(
-                        chapter.events.map { it.data }.com.ilustris.sagai.core.utils.normalizetoAIItems(
+                        chapter.events.map { it.data }.normalizetoAIItems(
                             com.ilustris.sagai.core.ai.prompts.LorePrompts.TIMELINE_EXCLUDED_FIELDS,
                         ),
                     )

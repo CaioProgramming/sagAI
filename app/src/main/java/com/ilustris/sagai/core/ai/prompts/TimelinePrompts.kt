@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
@@ -67,10 +68,13 @@ object TimelinePrompts {
                 storyContext = LorePrompts.storyContext(sagaContent, narrativeRules),
                 recentPagesSummary = recentEvents.toBulletList(),
                 newDialogueBurst =
-                    currentTimeline.messages
+                    sagaContent
+                        .flatMessages()
+                        .filter { it.message.timelineId == currentTimeline.data.id }
                         .map { it.message }
+                        .take(narrativeRules.loreUpdateLimit)
                         .normalizetoAIItems(ChatPrompts.messageExclusions),
-                genreInfo = "${sagaContent.data.genre.name} (${sagaContent.data.variationId ?: "Original"})",
+                genreInfo = "${sagaContent.data.genre.name}",
                 activeCharacters = charactersList,
                 narrativeStyle = conversationDirective,
                 existingWikis =

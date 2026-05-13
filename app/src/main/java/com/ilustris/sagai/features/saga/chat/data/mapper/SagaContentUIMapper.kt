@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.mapper
 
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.toSagaInfo
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
@@ -18,7 +19,7 @@ class SagaMetadataUIMapper
         private val timelineMapper: TimelineMapper,
     ) {
         fun computePendingAdvance(
-            saga: SagaMetadata,
+            saga: SagaContent,
             rules: NarrativeRules,
         ): PendingAdvance? =
             when (val step = NarrativeCheck.validateProgression(saga, rules)) {

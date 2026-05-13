@@ -632,8 +632,8 @@ class ChatViewModel
                 characterUseCase.getCharacterContent(characterId).collectLatest { character ->
                     stateManager.updateState { it.copy(mainCharacter = character) }
                 }
+            }
         }
-    }
 
         private fun observeSaga() =
             viewModelScope.launch(Dispatchers.IO) {
@@ -672,8 +672,10 @@ class ChatViewModel
 
                         val messages =
                             mapper.mapToActDisplayData(sagaContent, rules)
-
-                        val pendingAdvance = mapper.computePendingAdvance(sagaContent, rules)
+                        val pendingAdvance =
+                            sagaContentManager.getSagaContent()?.let {
+                                mapper.computePendingAdvance(it, rules)
+                            }
 
                         stateManager.updateState {
                             it.copy(
@@ -1014,7 +1016,7 @@ class ChatViewModel
                 viewModelScope.launch {
                     stateManager.updateSendingPending(true)
                     stateManager.updateLoading(true)
-                    val totalSteps = 70
+                    val totalSteps = 10
                     val delayStep = messageDelay.inWholeMilliseconds / totalSteps
                     for (i in 1..totalSteps) {
                         stateManager.updateSendingProgress(i.toFloat() / totalSteps)
