@@ -305,6 +305,14 @@ class ChatViewModel
             if (sagaId == null) {
                 return
             }
+            if (uiState.value.sagaContent
+                    ?.data
+                    ?.id
+                    ?.toString() == sagaId
+            ) {
+                Timber.d("initChat: Saga $sagaId already initialized, skipping.")
+                return
+            }
             stateManager.updateLoading(true)
             notificationManager.clearNotifications()
             lastActId = 0

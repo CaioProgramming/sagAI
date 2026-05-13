@@ -302,6 +302,17 @@ class SagaContentManagerImpl
         }
 
         override suspend fun loadSaga(sagaId: String) {
+            if (content.value
+                    ?.data
+                    ?.id
+                    ?.toString() == sagaId
+            ) {
+                Timber.d("loadSaga: Saga $sagaId already loaded, skipping full load.")
+                if (milestoneUpdate.value == null) {
+                    checkNarrativeProgression(content.value)
+                }
+                return
+            }
             sagaJob?.cancel()
             sagaJob =
                 managerScope.launch {
