@@ -113,14 +113,15 @@ fun SagaDetailInitialContent(
                                         if (sharedScope != null && visibilityScope != null) {
                                             with(sharedScope) {
                                                 Modifier.sharedBounds(
-                                                    rememberSharedContentState(key = "saga-title-${saga.id}"),
+                                                    rememberSharedContentState(key = "saga_${saga.id}_title"),
                                                     animatedVisibilityScope = visibilityScope,
                                                 )
                                             }
                                         } else {
                                             Modifier
                                         },
-                                    ).fillMaxWidth()
+                                    )
+                                    .fillMaxWidth()
                                     .align(Alignment.Center)
                                     .reactiveShimmer(true)
                                     .padding(8.dp),
@@ -148,14 +149,15 @@ fun SagaDetailInitialContent(
                                                         if (sharedScope != null && visibilityScope != null) {
                                                             with(sharedScope) {
                                                                 Modifier.sharedBounds(
-                                                                    rememberSharedContentState(key = "saga-cover-${saga.id}"),
+                                                                    rememberSharedContentState(key = "saga_${saga.id}_icon"),
                                                                     animatedVisibilityScope = visibilityScope,
                                                                 )
                                                             }
                                                         } else {
                                                             Modifier
                                                         },
-                                                    ).background(MaterialTheme.colorScheme.background)
+                                                    )
+                                                    .background(MaterialTheme.colorScheme.background)
                                                     .height(400.dp)
                                                     .fillMaxWidth(),
                                         ) {
@@ -189,7 +191,7 @@ fun SagaDetailInitialContent(
                                                                         with(sharedScope) {
                                                                             Modifier.sharedBounds(
                                                                                 rememberSharedContentState(
-                                                                                    key = "saga-title-${saga.id}",
+                                                                                    key = "saga_${saga.id}_title",
                                                                                 ),
                                                                                 animatedVisibilityScope = visibilityScope,
                                                                             )
@@ -197,7 +199,8 @@ fun SagaDetailInitialContent(
                                                                     } else {
                                                                         Modifier
                                                                     },
-                                                                ).fillMaxWidth()
+                                                                )
+                                                                .fillMaxWidth()
                                                                 .padding(8.dp),
                                                     )
                                                 }
@@ -235,7 +238,7 @@ fun SagaDetailInitialContent(
                                                                     with(sharedScope) {
                                                                         Modifier.sharedBounds(
                                                                             rememberSharedContentState(
-                                                                                key = "saga-title-${saga.id}",
+                                                                                key = "saga_${saga.id}_title",
                                                                             ),
                                                                             animatedVisibilityScope = visibilityScope,
                                                                         )
@@ -243,7 +246,8 @@ fun SagaDetailInitialContent(
                                                                 } else {
                                                                     Modifier
                                                                 },
-                                                            ).padding(8.dp),
+                                                            )
+                                                            .padding(8.dp),
                                                 )
                                             }
 
@@ -266,7 +270,7 @@ fun SagaDetailInitialContent(
                                                             with(sharedScope) {
                                                                 Modifier.sharedBounds(
                                                                     rememberSharedContentState(
-                                                                        key = "saga-cover-${saga.id}",
+                                                                        key = "saga_${saga.id}_icon",
                                                                     ),
                                                                     animatedVisibilityScope = visibilityScope,
                                                                 )
@@ -274,7 +278,8 @@ fun SagaDetailInitialContent(
                                                         } else {
                                                             Modifier
                                                         },
-                                                    ).padding(16.dp),
+                                                    )
+                                                    .padding(16.dp),
                                         ) {
                                             Image(
                                                 painterResource(genre.icon),
@@ -282,7 +287,8 @@ fun SagaDetailInitialContent(
                                                 Modifier
                                                     .clickable {
                                                         onAction(DetailAction.RegenerateIcon)
-                                                    }.size(100.dp)
+                                                    }
+                                                    .size(100.dp)
                                                     .gradientFill(
                                                         genre.resolveColor().gradientFade(),
                                                     ),
@@ -296,7 +302,7 @@ fun SagaDetailInitialContent(
                                                                 with(sharedScope) {
                                                                     Modifier.sharedBounds(
                                                                         rememberSharedContentState(
-                                                                            key = "saga-title-${saga.id}",
+                                                                            key = "saga_${saga.id}_title",
                                                                         ),
                                                                         animatedVisibilityScope = visibilityScope,
                                                                     )
@@ -304,7 +310,8 @@ fun SagaDetailInitialContent(
                                                             } else {
                                                                 Modifier
                                                             },
-                                                        ).padding(8.dp)
+                                                        )
+                                                        .padding(8.dp)
                                                         .fillMaxWidth()
                                                         .reactiveShimmer(
                                                             true,

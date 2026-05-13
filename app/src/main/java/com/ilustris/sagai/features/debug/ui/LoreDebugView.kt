@@ -122,21 +122,27 @@ fun LoreDebugView(
             if (it) {
                 AnimatedContent(saga) {
                     val icon = it?.data?.genre?.icon ?: R.drawable.ic_spark
-                    Image(
-                        painterResource(icon),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                        modifier =
-                            Modifier
-                                .size(150.dp)
-                                .reactiveShimmer(
-                                    true,
-                                    themeShimmer(),
-                                    1.seconds,
-                                    targetValue = 250f,
-                                    repeatMode = RepeatMode.Restart,
-                                ),
-                    )
+                    with(sharedTransitionScope) {
+                        Image(
+                            painterResource(icon),
+                            contentDescription = null,
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                            modifier =
+                                Modifier
+                                    .size(150.dp)
+                                    .sharedElement(
+                                        rememberSharedContentState(key = "saga_${saga?.data?.id}_icon"),
+                                        animatedVisibilityScope,
+                                    )
+                                    .reactiveShimmer(
+                                        true,
+                                        themeShimmer(),
+                                        1.seconds,
+                                        targetValue = 250f,
+                                        repeatMode = RepeatMode.Restart,
+                                    ),
+                        )
+                    }
                 }
             } else {
                 if (saga == null) {
@@ -164,9 +170,15 @@ fun LoreDebugView(
                                         .fillMaxWidth()
                                         .background(MaterialTheme.colorScheme.background)
                                         .padding(16.dp),
+                                titleModifier =
+                                    with(sharedTransitionScope) {
+                                        Modifier.sharedElement(
+                                            rememberSharedContentState(key = "saga_${saga.data.id}_title"),
+                                            animatedVisibilityScope,
+                                        )
+                                    },
                             )
                         }
-
                         item {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -380,10 +392,12 @@ fun StoryCard(
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     shape,
-                ).padding(8.dp)
+                )
+                .padding(8.dp)
                 .clickable {
                     isExpanded = !isExpanded
-                }.animateContentSize(tween(500, easing = EaseIn)),
+                }
+                .animateContentSize(tween(500, easing = EaseIn)),
     ) {
         val act = actContent.data
         val actNumber = saga.actNumber(act.id)
@@ -474,11 +488,13 @@ fun StoryCard(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .4f),
                             shape = shape,
-                        ).fillMaxWidth()
+                        )
+                        .fillMaxWidth()
                         .padding(8.dp)
                         .clickable {
                             chapterExpanded = !chapterExpanded
-                        }.animateContentSize(
+                        }
+                        .animateContentSize(
                             tween(300, easing = EaseIn),
                         ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -548,9 +564,11 @@ fun StoryCard(
                                     .background(
                                         MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                         shape = shape,
-                                    ).clickable {
+                                    )
+                                    .clickable {
                                         eventExpanded = !eventExpanded
-                                    }.fillMaxWidth()
+                                    }
+                                    .fillMaxWidth()
                                     .padding(8.dp)
                                     .animateContentSize(),
                             ) {
@@ -608,7 +626,8 @@ fun StoryCard(
                                                 .background(
                                                     MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                                     shape,
-                                                ).padding(8.dp),
+                                                )
+                                                .padding(8.dp),
                                     )
                                 }
                             }
@@ -624,7 +643,8 @@ fun StoryCard(
                                     .background(
                                         MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                         shape,
-                                    ).padding(8.dp),
+                                    )
+                                    .padding(8.dp),
                         )
 
                         TextButton(onClick = {
@@ -669,7 +689,8 @@ fun StoryCard(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .3f),
                             shape,
-                        ).padding(8.dp),
+                        )
+                        .padding(8.dp),
             )
 
             if (act.content.isNotEmpty()) {

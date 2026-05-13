@@ -72,7 +72,7 @@ fun SagaCharactersView(
                     titleModifier =
                         with(sharedTransitionScope) {
                             Modifier.sharedBounds(
-                                rememberSharedContentState(key = "saga-title-${sagaContent.data.id}"),
+                                rememberSharedContentState(key = "saga_${sagaContent.data.id}_title"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         },

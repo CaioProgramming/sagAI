@@ -220,8 +220,7 @@ fun ChatInputView(
         scrollState.animateScrollTo(scrollState.maxValue)
     }
 
-    val actualCharacter =
-        characters.find { it.id == selectedCharacter?.id } ?: content.mainCharacter
+    val actualCharacter = selectedCharacter ?: content.mainCharacter
     val genre = content.data.genre
     val resolvedColor = genre.resolveColor()
     val resolvedIconColor = genre.resolveIconColor()
@@ -394,7 +393,8 @@ fun ChatInputView(
                         } else {
                             drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
                         }
-                    }.border(1.dp, inputBrush, inputShape)
+                    }
+                    .border(1.dp, inputBrush, inputShape)
                     .background(bubbleColorState.value, inputShape),
         ) {
             AnimatedVisibility(currentTagInside != null) {
@@ -448,7 +448,8 @@ fun ChatInputView(
                                                     inputField,
                                                 ),
                                             )
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                             )
                         }
                     }
@@ -462,7 +463,8 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    ).fillMaxWidth()
+                    )
+                    .fillMaxWidth()
                     .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
@@ -495,6 +497,7 @@ fun ChatInputView(
                                     useFallback = true,
                                     modifier = Modifier.fillMaxSize(),
                                     borderSize = 1.dp,
+                                    innerPadding = 0.dp,
                                 )
                             }
 
@@ -541,7 +544,8 @@ fun ChatInputView(
                                                             .clickable {
                                                                 onSelectCharacter(character)
                                                                 characterMenu = false
-                                                            }.padding(8.dp),
+                                                            }
+                                                            .padding(8.dp),
                                                 ) {
                                                     CharacterAvatar(
                                                         character,
@@ -757,7 +761,8 @@ fun ChatInputView(
                                                         alpha = .1f,
                                                     ),
                                                     CircleShape,
-                                                ).clip(CircleShape)
+                                                )
+                                                .clip(CircleShape)
                                                 .clickable(currentTagInside == null) {
                                                     type.tag?.let {
                                                         onUpdateInput(
@@ -767,7 +772,8 @@ fun ChatInputView(
                                                             ),
                                                         )
                                                     }
-                                                }.size(24.dp)
+                                                }
+                                                .size(24.dp)
                                                 .padding(4.dp),
                                     )
                                 }
@@ -855,7 +861,8 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -865,6 +872,7 @@ fun ChatInputView(
                                             modifier = Modifier.size(20.dp),
                                             grainRadius = 0f,
                                             pixelation = 0f,
+                                            innerPadding = 1.dp,
                                         )
                                         Text(
                                             character.name,
@@ -886,17 +894,20 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            ).clip(CircleShape)
+                                            )
+                                            .clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -1020,16 +1031,19 @@ fun ChatInputView(
                                         Modifier
                                             .clip(
                                                 MaterialTheme.shapes.extraLarge,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor,
                                                 MaterialTheme.shapes.extraLarge,
-                                            ).clickable {
+                                            )
+                                            .clickable {
                                                 onUpdateInput(
                                                     escapeCursorFromTagAndClean(
                                                         inputField,
                                                     ),
                                                 )
-                                            }.padding(8.dp),
+                                            }
+                                            .padding(8.dp),
                                 ) {
                                     senderType.icon()?.let {
                                         Icon(
@@ -1132,17 +1146,20 @@ fun ChatInputView(
                                                                         1.dp,
                                                                         col.copy(alpha = .3f),
                                                                         CircleShape,
-                                                                    ).background(
+                                                                    )
+                                                                    .background(
                                                                         col.copy(alpha = .1f),
                                                                         CircleShape,
-                                                                    ).clip(CircleShape)
+                                                                    )
+                                                                    .clip(CircleShape)
                                                                     .clickable {
                                                                         handleCharacterSelection(
                                                                             character,
                                                                             inputField,
                                                                             onUpdateInput,
                                                                         )
-                                                                    }.padding(
+                                                                    }
+                                                                    .padding(
                                                                         horizontal = 12.dp,
                                                                         vertical = 6.dp,
                                                                     ),
@@ -1179,17 +1196,20 @@ fun ChatInputView(
                                                                         1.dp,
                                                                         resolvedColor.copy(alpha = .3f),
                                                                         CircleShape,
-                                                                    ).background(
+                                                                    )
+                                                                    .background(
                                                                         resolvedColor.copy(alpha = .1f),
                                                                         CircleShape,
-                                                                    ).clip(CircleShape)
+                                                                    )
+                                                                    .clip(CircleShape)
                                                                     .clickable {
                                                                         handleWikiSelection(
                                                                             wiki,
                                                                             inputField,
                                                                             onUpdateInput,
                                                                         )
-                                                                    }.padding(
+                                                                    }
+                                                                    .padding(
                                                                         horizontal = 12.dp,
                                                                         vertical = 6.dp,
                                                                     ),
@@ -1276,7 +1296,8 @@ fun ChatInputView(
                                                     .background(
                                                         resolvedColor.copy(alpha = .3f),
                                                         shape = MaterialTheme.shapes.extraLarge,
-                                                    ).padding(4.dp)
+                                                    )
+                                                    .padding(4.dp)
                                                     .clickable(currentTagInside == null) {
                                                         type.tag?.let {
                                                             onUpdateInput(
@@ -1302,7 +1323,8 @@ fun ChatInputView(
                                         .background(
                                             resolvedColor.copy(alpha = .3f),
                                             shape = MaterialTheme.shapes.extraLarge,
-                                        ).padding(4.dp)
+                                        )
+                                        .padding(4.dp)
                                         .clickable {
                                             onUpdateInput(
                                                 TextFieldValue(
@@ -1324,7 +1346,8 @@ fun ChatInputView(
                                         .background(
                                             resolvedColor.copy(alpha = .3f),
                                             shape = CircleShape,
-                                        ).padding(4.dp)
+                                        )
+                                        .padding(4.dp)
                                         .clickable {
                                             onUpdateInput(
                                                 TextFieldValue(

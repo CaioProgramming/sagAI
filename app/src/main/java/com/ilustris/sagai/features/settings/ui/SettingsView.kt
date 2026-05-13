@@ -156,16 +156,24 @@ fun SettingsView(
 
         if (isUserPro) {
             item {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .reactiveShimmer(true)
-                            .gradientFill(Brush.horizontalGradient(holographicGradient)),
-                ) {
-                    PremiumTitle()
+                with(sharedTransitionScope) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .reactiveShimmer(true)
+                                .gradientFill(Brush.horizontalGradient(holographicGradient)),
+                    ) {
+                        PremiumTitle(
+                            iconModifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    animatedVisibilityScope,
+                                ),
+                        )
+                    }
                 }
             }
         }

@@ -72,7 +72,7 @@ fun SagaWikiView(
                     titleModifier =
                         with(sharedTransitionScope) {
                             Modifier.sharedBounds(
-                                rememberSharedContentState(key = "saga-title-${sagaContent.id}"),
+                                rememberSharedContentState(key = "saga_${sagaContent.id}_title"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         },

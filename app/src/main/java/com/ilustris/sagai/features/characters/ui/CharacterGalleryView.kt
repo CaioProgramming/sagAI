@@ -129,18 +129,24 @@ fun CharactersGalleryContent(
                 }
 
                 items(characters, key = { character -> character.data.id }) { character ->
-
-                    CharacterYearbookItem(
-                        character = character.data,
-                        genre = genre,
-                        imageModifier = Modifier.size(100.dp),
-                        modifier =
-                            Modifier
-                                .clip(genre.shape())
-                                .clickable {
-                                    onOpenCharacter(character.data.id)
-                                },
-                    )
+                    with(sharedTransitionScope) {
+                        CharacterYearbookItem(
+                            character = character.data,
+                            genre = genre,
+                            imageModifier =
+                                Modifier
+                                    .sharedElement(
+                                        rememberSharedContentState(key = "character_${character.data.id}_icon"),
+                                        animatedVisibilityScope,
+                                    ).size(100.dp),
+                            modifier =
+                                Modifier
+                                    .clip(genre.shape())
+                                    .clickable {
+                                        onOpenCharacter(character.data.id)
+                                    },
+                        )
+                    }
                 }
 
                 if (relationships.isNotEmpty()) {

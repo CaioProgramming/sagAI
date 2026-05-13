@@ -59,6 +59,8 @@ fun SagaStoryReaderView(
                         SagaStoryReaderContent(
                             saga = currentSaga,
                             onBack = onBack,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = this@AnimatedContent,
                         )
                     }
                 }

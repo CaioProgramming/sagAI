@@ -142,6 +142,8 @@ fun CharacterDetailsContent(
             openEvent = openEvent,
             viewModel = viewModel,
             imagePalette = imagePalette,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 
@@ -179,6 +181,8 @@ fun CharacterDetailsContent(
 private fun CharacterDetailsLoaded(
     detailData: CharacterDetailData,
     viewModel: CharacterDetailsViewModel,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
     imagePalette: ImagePalette? = null,
     openEvent: (Timeline?) -> Unit = {},
 ) {
@@ -239,45 +243,56 @@ private fun CharacterDetailsLoaded(
                                     .fillMaxWidth()
                                     .fillParentMaxHeight(.6f),
                         ) {
-                            DepthLayout(
-                                imagePath = characterData.image,
-                                onLoadError = { imageError = true },
-                                modifier =
-                                    Modifier
-                                        .fillParentMaxHeight(.6f)
-                                        .fillMaxSize()
-                                        .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
-                                            viewModel.regenerate(
-                                                sagaInfo,
-                                                characterData,
-                                            )
-                                        },
-                                imageModifier =
-                                    Modifier
-                                        .clipToBounds()
-                                        .fillMaxSize()
-                                        .effectForGenre(
-                                            genre,
-                                        ).graphicsLayer(
-                                            translationY = 120f,
-                                        ),
-                            ) {
-                                Box(
-                                    Modifier
-                                        .align(Alignment.TopCenter)
-                                        .fillMaxSize()
-                                        .background(fadeGradientTop(adaptiveColor)),
+                            with(sharedTransitionScope) {
+                                DepthLayout(
+                                    imagePath = characterData.image,
+                                    onLoadError = { imageError = true },
+                                    modifier =
+                                        Modifier
+                                            .sharedBounds(
+                                                rememberSharedContentState(key = "character_${character.id}_icon"),
+                                                animatedVisibilityScope,
+                                            ).fillParentMaxHeight(.6f)
+                                            .fillMaxSize()
+                                            .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
+                                                viewModel.regenerate(
+                                                    sagaInfo,
+                                                    characterData,
+                                                )
+                                            },
+                                    imageModifier =
+                                        Modifier
+                                            .clipToBounds()
+                                            .fillMaxSize()
+                                            .effectForGenre(
+                                                genre,
+                                            ).graphicsLayer(
+                                                translationY = 120f,
+                                            ),
                                 ) {
-                                    genre.stylisedText(
-                                        text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
-                                        modifier =
-                                            Modifier
-                                                .align(Alignment.TopCenter)
-                                                .statusBarsPadding()
-                                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                                .gradientFill(Brush.verticalGradient(characterColor.darkerPalette()))
-                                                .reactiveShimmer(true, characterColor.shimmerize()),
-                                    )
+                                    Box(
+                                        Modifier
+                                            .align(Alignment.TopCenter)
+                                            .fillMaxSize()
+                                            .background(fadeGradientTop(adaptiveColor)),
+                                    ) {
+                                        genre.stylisedText(
+                                            text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
+                                            modifier =
+                                                Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .statusBarsPadding()
+                                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                                    .gradientFill(
+                                                        Brush.verticalGradient(
+                                                            characterColor.darkerPalette(),
+                                                        ),
+                                                    ).reactiveShimmer(
+                                                        true,
+                                                        characterColor.shimmerize(),
+                                                    ),
+                                        )
+                                    }
                                 }
                             }
 
@@ -349,7 +364,8 @@ private fun CharacterDetailsLoaded(
                                             sagaInfo,
                                             characterData,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -476,7 +492,8 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }

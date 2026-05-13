@@ -175,6 +175,13 @@ fun BookReaderView(
                         .align(Alignment.TopCenter)
                         .statusBarsPadding()
                         .fillMaxWidth(),
+                titleModifier =
+                    Modifier.sharedElement(
+                        rememberSharedContentState(
+                            key = "saga_${sagaId}_title",
+                        ),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    ),
                 onBackClick = onBack,
                 actionContent = {
                     if (state is BookReaderState.Ready) {

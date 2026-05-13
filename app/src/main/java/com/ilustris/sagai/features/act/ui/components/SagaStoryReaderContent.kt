@@ -28,11 +28,16 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.headerFont
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalFoundationApi::class,
+    androidx.compose.animation.ExperimentalSharedTransitionApi::class,
+)
 @Composable
 fun SagaStoryReaderContent(
     saga: SagaContent,
     onBack: () -> Unit,
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedContentScope,
 ) {
     val genre = saga.data.genre
     val acts = saga.acts
@@ -56,6 +61,13 @@ fun SagaStoryReaderContent(
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
                             .fillMaxWidth(),
+                    titleModifier =
+                        with(sharedTransitionScope) {
+                            Modifier.sharedElement(
+                                rememberSharedContentState(key = "saga_${saga.data.id}_title"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        },
                 )
             }
 

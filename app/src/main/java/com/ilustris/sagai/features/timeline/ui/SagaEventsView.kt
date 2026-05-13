@@ -67,7 +67,7 @@ fun SagaEventsView(
                     titleModifier =
                         with(sharedTransitionScope) {
                             Modifier.sharedBounds(
-                                rememberSharedContentState(key = "saga-title-${info.id}"),
+                                rememberSharedContentState(key = "saga_${info.id}_title"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                             )
                         },

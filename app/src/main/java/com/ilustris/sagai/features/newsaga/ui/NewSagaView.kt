@@ -137,17 +137,22 @@ fun NewSagaView(
         AnimatedContent(isEchoLoading) {
             if (it) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Image(
-                        painterResource(R.drawable.ic_spark),
-                        contentDescription = "Loading",
-                        modifier =
-                            Modifier
-                                .size(100.dp)
-                                .gradientFill(Brush.verticalGradient(holographicGradient))
-                                .reactiveShimmer(true)
-                                .levitate()
-                                .divineAura(),
-                    )
+                    with(sharedTransitionScope) {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            contentDescription = "Loading",
+                            modifier =
+                                Modifier
+                                    .size(100.dp)
+                                    .sharedElement(
+                                        rememberSharedContentState("spark_icon"),
+                                        animatedVisibilityScope,
+                                    ).gradientFill(Brush.verticalGradient(holographicGradient))
+                                    .reactiveShimmer(true)
+                                    .levitate()
+                                    .divineAura(),
+                        )
+                    }
                 }
             } else {
                 Box(
