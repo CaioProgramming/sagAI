@@ -23,10 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -49,7 +47,7 @@ class ReviewStartPage(
         var showText by remember {
             mutableStateOf(canAnimate.not())
         }
-        val genre = content.data.genre
+        content.data.genre
 
         LaunchedEffect(Unit) {
             delay(3.seconds)
@@ -72,7 +70,7 @@ class ReviewStartPage(
                             text = it,
                             style =
                                 MaterialTheme.typography.headlineLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     textAlign = TextAlign.Center,
                                     fontWeight = FontWeight.ExtraBold,
                                 ),
@@ -85,7 +83,7 @@ class ReviewStartPage(
                             text = it,
                             style =
                                 MaterialTheme.typography.labelLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     textAlign = TextAlign.Center,
                                     fontWeight = FontWeight.Medium,
                                 ),
@@ -109,7 +107,7 @@ class ReviewStartPage(
                     .effectForGenre(genre),
         ) {
             DynamicLinework(
-                color = genre.resolveColor(),
+                color = MaterialTheme.colorScheme.primary,
                 lineCount = lineCount,
                 strokeWidth = 4.dp,
                 enabled = true,

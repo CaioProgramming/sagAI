@@ -17,8 +17,7 @@ import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDe
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaInfo
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun TimelineCharacterAttachment(
@@ -35,7 +34,7 @@ fun TimelineCharacterAttachment(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(genre.shape())
+                .clip(sagaShape())
                 .clickable { onSelectReference(eventDetails.timeline) }
                 .padding(vertical = 12.dp, horizontal = 16.dp),
     ) {
@@ -55,7 +54,7 @@ fun TimelineCharacterAttachment(
                 text = eventDetails.character.name,
                 style =
                     MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Bold,
                     ),
             )
@@ -64,7 +63,7 @@ fun TimelineCharacterAttachment(
                 text = eventDetails.event.summary,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
                 modifier = Modifier.padding(top = 4.dp),
             )

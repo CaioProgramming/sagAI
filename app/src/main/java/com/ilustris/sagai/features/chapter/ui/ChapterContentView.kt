@@ -40,12 +40,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.TypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -92,10 +90,11 @@ fun ChapterContentView(
                 Modifier
                     .clickable {
                         viewModel.generateIcon(chapter.id)
-                    }.size(100.dp)
+                    }
+                    .size(100.dp)
                     .gradientFill(genre.gradient())
                     .padding(16.dp),
-                colorFilter = ColorFilter.tint(genre.resolveColor()),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
             )
         } else {
             var imageSize by remember {
@@ -177,7 +176,7 @@ fun ChapterContentView(
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Normal,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),

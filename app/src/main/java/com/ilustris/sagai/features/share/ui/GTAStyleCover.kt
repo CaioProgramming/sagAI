@@ -35,11 +35,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import kotlin.random.Random
 
@@ -102,8 +99,8 @@ fun GTAStyleCover(
     val chapterIcons = chapters.map { it.coverImage }
     val allIcons = remember(saga) { (listOf(mainIcon) + chapterIcons) }
     val genre = saga.data.genre
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     Box(
         modifier =
             Modifier
@@ -152,7 +149,7 @@ fun GTAStyleCover(
                 modifier = Modifier.fillMaxWidth(),
                 style =
                     MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = saga.data.genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
                         color = resolvedIconColor,
@@ -175,7 +172,7 @@ fun GTAStyleCover(
                 modifier = Modifier.fillMaxWidth(),
                 style =
                     MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = saga.data.genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
                         fontStyle = FontStyle.Italic,
@@ -193,7 +190,7 @@ fun GTAStyleCover(
                 caption,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
             )
             SagaTitle(textStyle = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(4.dp))

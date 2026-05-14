@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.saga.detail.ui
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
@@ -52,12 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
@@ -67,9 +64,10 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawe
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun SagaDetailView(
@@ -119,7 +117,7 @@ fun SagaDetailView(
         }
     }
 
-    CompositionLocalProvider(LocalGenreVisualConfig provides visualConfig) {
+    SagAITheme(visualConfig = visualConfig, genre = resume?.saga?.genre) {
         var lastNavigationTime by remember { mutableStateOf(0L) }
         val onAction: (DetailAction) -> Unit =
             remember(onCharacterDetails, onLoreDebug, viewModel) {
@@ -224,10 +222,10 @@ fun SagaDetailView(
                         onClick = {
                             viewModel.deleteSaga(it)
                         },
-                        shape = genre.shape(),
+                        shape = sagaShape(),
                         colors =
                             ButtonDefaults.buttonColors().copy(
-                                containerColor = genre.resolveColor(),
+                                containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = genre.iconColor,
                             ),
                     ) {
@@ -301,9 +299,10 @@ fun SagaDetailContentView(
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
-                        val genre = baseSaga.genre
-                        val brush = Brush.verticalGradient(genre.resolveColor().darkerPalette())
-                        val shape = genre.shape()
+                        baseSaga.genre
+                        val brush =
+                            Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette())
+                        val shape = sagaShape()
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                             ModalDrawerSheet(
                                 modifier =

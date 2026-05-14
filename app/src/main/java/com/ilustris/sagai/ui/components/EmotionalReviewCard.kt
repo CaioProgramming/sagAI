@@ -31,9 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 
 @Composable
@@ -50,7 +48,7 @@ fun EmotionalCard(
         modifier =
             modifier
                 .clip(cardShape)
-                .border(1.dp, genre.resolveColor().copy(alpha = .3f), cardShape)
+                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .3f), cardShape)
                 .background(MaterialTheme.colorScheme.background, cardShape)
                 .clickable { emotionExpanded = !emotionExpanded }
                 .animateContentSize()
@@ -69,14 +67,14 @@ fun EmotionalCard(
                 painterResource(R.drawable.ic_full_spark),
                 contentDescription = "Open emotion review",
                 modifier = Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(genre.resolveColor()),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
             )
 
             Text(
                 text = stringResource(R.string.emotional_card_title),
                 style =
                     MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
                     ),
@@ -92,7 +90,7 @@ fun EmotionalCard(
                         .padding(16.dp),
                 style =
                     MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Justify,
                     ),
             )

@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.newsaga.ui
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
@@ -72,8 +71,6 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
@@ -89,7 +86,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 
 @Composable
@@ -329,14 +326,13 @@ fun NewSagaView(
                             ) { ready ->
                                 if (ready) {
                                     AnimatedVisibility(isSaving.not()) {
-                                        val genre = lockedSaga?.genre
-                                        val buttonShape =
-                                            lockedSaga?.genre?.shape() ?: MaterialTheme.shapes.large
+                                        lockedSaga?.genre
+                                        val buttonShape = sagaShape()
                                         val color =
-                                            genre?.resolveColor()
+                                            MaterialTheme.colorScheme.primary
                                                 ?: MaterialTheme.colorScheme.primary
                                         val contentColor =
-                                            genre?.resolveIconColor()
+                                            MaterialTheme.colorScheme.secondary
                                                 ?: MaterialTheme.colorScheme.onPrimary
                                         Button(
                                             onClick = { viewModel.onAgenticAction(AgenticAction.SaveSaga) },
@@ -431,11 +427,11 @@ fun PromptBar(
     isLoading: Boolean,
     genre: Genre?,
 ) {
-    val shape = genre?.shape() ?: MaterialTheme.shapes.extraLarge
+    val shape = sagaShape() ?: MaterialTheme.shapes.extraLarge
     val themeBrush =
         Brush.horizontalGradient(genre?.colorPalette() ?: holographicGradient)
 
-    val primaryColor = genre?.resolveColor() ?: MaterialTheme.colorScheme.primary
+    val primaryColor = MaterialTheme.colorScheme.primary ?: MaterialTheme.colorScheme.primary
     Row(
         modifier =
             Modifier

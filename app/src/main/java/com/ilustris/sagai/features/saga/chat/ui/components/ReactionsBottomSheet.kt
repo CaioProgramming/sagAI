@@ -24,7 +24,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.chat.ThoughtBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -50,7 +49,7 @@ fun ReactionsBottomSheet(
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     textAlign = TextAlign.Center,
                     modifier =
@@ -75,7 +74,7 @@ fun ReactionsBottomSheet(
 
                     Text(
                         text = reaction.data.thought ?: "",
-                        style = MaterialTheme.typography.labelLarge.copy(fontFamily = genre.bodyFont()),
+                        style = MaterialTheme.typography.labelLarge.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         modifier =
                             Modifier
                                 .padding()
@@ -85,15 +84,17 @@ fun ReactionsBottomSheet(
                                     shape = thoughtBubbleShape,
                                     dashLength = 10.dp,
                                     gapLength = 5.dp,
-                                ).background(
+                                )
+                                .background(
                                     MaterialTheme.colorScheme.background.gradientFade(),
                                     thoughtBubbleShape,
-                                ).padding(8.dp),
+                                )
+                                .padding(8.dp),
                     )
 
                     Text(
                         reaction.data.emoji,
-                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         modifier =
                             Modifier
                                 .padding(bottom = 4.dp)
@@ -103,10 +104,12 @@ fun ReactionsBottomSheet(
                                     shape = CircleShape,
                                     dashLength = 4.dp,
                                     gapLength = 2.dp,
-                                ).background(
+                                )
+                                .background(
                                     MaterialTheme.colorScheme.background.gradientFade(),
                                     CircleShape,
-                                ).padding(4.dp),
+                                )
+                                .padding(4.dp),
                     )
 
                     CharacterAvatar(

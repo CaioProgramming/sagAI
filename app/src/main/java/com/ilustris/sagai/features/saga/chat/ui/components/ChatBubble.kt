@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
-
 import MessageStatus
 import ai.atick.material.MaterialColor
 import android.graphics.Matrix
@@ -92,8 +91,6 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -105,14 +102,13 @@ import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackSt
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.TypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.toEasing
 import java.io.File
 import kotlin.time.Duration
@@ -138,8 +134,8 @@ fun ChatBubble(
 ) {
     val message = messageContent.message
     val sender = message.senderType
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
     val isUser = messageContent.isUser(mainCharacter?.data)
     genre.cornerSize()
     val isAnimated = canAnimate && messageEffectsEnabled.not()
@@ -275,7 +271,8 @@ fun ChatBubble(
                                             ),
                                         )
                                     }
-                                }.size(avatarSize),
+                                }
+                                .size(avatarSize),
                         ) {
                             messageContent.character?.let { character ->
                                 AnimatedContent(
@@ -340,7 +337,8 @@ fun ChatBubble(
                                                     message,
                                                 ),
                                             )
-                                        }.size(24.dp)
+                                        }
+                                        .size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -360,7 +358,8 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             messageEffectsEnabled,
-                                        ).wrapContentSize()
+                                        )
+                                        .wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -374,10 +373,10 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                    sweepGradient(
-                                                                        palette,
+                                                                sweepGradient(
+                                                                    palette,
                                                                 ) as ShaderBrush
-                                                            ).createShader(size)
+                                                                    ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotationState.value,
@@ -393,8 +392,7 @@ fun ChatBubble(
                                                 brush = brush,
                                                 style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }
-                                        .background(
+                                        }.background(
                                             MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             bubbleShape,
                                         )
@@ -423,8 +421,7 @@ fun ChatBubble(
                                                             )
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     messageEffectsEnabled,
                                                 )
@@ -460,8 +457,7 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
                                                     )
@@ -635,7 +631,7 @@ fun ChatBubble(
                                                     style =
                                                         MaterialTheme.typography.bodySmall.copy(
                                                             fontWeight = FontWeight.Normal,
-                                                            fontFamily = genre.bodyFont(),
+                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                             color = textColor,
                                                         ),
                                                     modifier = Modifier.fillMaxWidth(),
@@ -666,7 +662,7 @@ fun ChatBubble(
                                                     style =
                                                         MaterialTheme.typography.bodySmall.copy(
                                                             fontWeight = FontWeight.Normal,
-                                                            fontFamily = genre.bodyFont(),
+                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                             fontStyle = fontStyle,
                                                             color = textColor,
                                                             textAlign = textAlign,
@@ -709,7 +705,7 @@ fun ChatBubble(
                                                 stringResource(R.string.try_again),
                                                 style =
                                                     MaterialTheme.typography.labelMedium.copy(
-                                                        fontFamily = genre.bodyFont(),
+                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                         fontWeight = FontWeight.Normal,
                                                     ),
                                                 modifier = Modifier.padding(start = 4.dp),
@@ -729,7 +725,7 @@ fun ChatBubble(
                                                 style =
                                                     MaterialTheme.typography.labelSmall.copy(
                                                         color = MaterialTheme.colorScheme.onBackground,
-                                                        fontFamily = genre.bodyFont(),
+                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                         fontWeight = FontWeight.Light,
                                                         textAlign = TextAlign.Start,
                                                     ),
@@ -840,7 +836,7 @@ fun ChatBubble(
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Normal,
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = resolvedIconColor,
                                     ),
                                 modifier =
@@ -930,7 +926,7 @@ private fun AudioGenButton(
             modifier =
                 Modifier
                     .alpha(.4f)
-                    .clip(genre.shape())
+                    .clip(sagaShape())
                     .gradientFill(genre.gradient())
                     .clickable {
                         onAction(
@@ -944,15 +940,15 @@ private fun AudioGenButton(
                 painterResource(R.drawable.ic_mic),
                 null,
                 Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(genre.resolveIconColor()),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
             )
             Text(
                 "Regenerate audio...",
                 style =
                     MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Normal,
-                        color = genre.resolveIconColor(),
+                        color = MaterialTheme.colorScheme.secondary,
                     ),
             )
         }
@@ -981,14 +977,14 @@ private fun ReasoningView(
                     Modifier
                         .size(12.dp)
                         .alpha(0.5f),
-                tint = genre.resolveIconColor(),
+                tint = MaterialTheme.colorScheme.secondary,
             )
             Text(
                 if (isExpanded) it else "See reasoning",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        color = genre.resolveIconColor().copy(alpha = .5f),
-                        fontFamily = genre.bodyFont(),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = .5f),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Light,
                     ),
             )
@@ -1008,8 +1004,8 @@ data class BubbleStyle(
     companion object {
         fun userBubble(
             genre: Genre,
-            backgroundColor: Color = genre.resolveColor(null),
-            textColor: Color = genre.resolveIconColor(null),
+            backgroundColor: Color,
+            textColor: Color,
         ) = BubbleStyle(
             backgroundColor = backgroundColor,
             textColor = textColor,
@@ -1022,8 +1018,8 @@ data class BubbleStyle(
         fun characterBubble(
             genre: Genre,
             canAnimate: Boolean,
-            backgroundColor: Color = genre.resolveColor(null).darker(.4f),
-            textColor: Color = genre.resolveIconColor(null),
+            backgroundColor: Color,
+            textColor: Color,
         ) = BubbleStyle(
             backgroundColor = backgroundColor,
             textColor = textColor,

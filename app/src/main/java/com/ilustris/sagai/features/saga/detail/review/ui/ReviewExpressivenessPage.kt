@@ -32,15 +32,12 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shimmerize
@@ -60,7 +57,7 @@ class ReviewExpressivenessPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val genre = content.data.genre
+        content.data.genre
         var showText by remember {
             mutableStateOf(false)
         }
@@ -109,7 +106,7 @@ class ReviewExpressivenessPage(
                             true,
                             shimmerColors = emotionalTone.first.color.shimmerize(),
                         ),
-                color = genre.resolveColor(),
+                color = MaterialTheme.colorScheme.primary,
                 onFinishDraw = {
                     coroutineScope.launch {
                         delay(1500)
@@ -129,7 +126,7 @@ class ReviewExpressivenessPage(
                                 title,
                                 style =
                                     MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         fontWeight = FontWeight.Bold,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -140,7 +137,7 @@ class ReviewExpressivenessPage(
                             emotionalTone.first.getTitle(),
                             style =
                                 MaterialTheme.typography.displayMedium.copy(
-                                    fontFamily = genre.headerFont(),
+                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     shadow =
@@ -158,7 +155,7 @@ class ReviewExpressivenessPage(
                             it.subtitle ?: emptyString(),
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Light,
                                     textAlign = TextAlign.Center,
                                 ),
@@ -175,7 +172,7 @@ class ReviewExpressivenessPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.resolveColor(),
+                            contentColor = MaterialTheme.colorScheme.primary,
                         ),
                 ) {
                     Text(stringResource(R.string.share))

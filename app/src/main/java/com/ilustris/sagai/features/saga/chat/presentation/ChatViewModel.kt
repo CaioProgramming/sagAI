@@ -57,9 +57,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -106,7 +104,6 @@ class ChatViewModel
 
         private var sagaObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
-        private var musicObserverJob: kotlinx.coroutines.Job? = null
         private var preferencesObserverJob: kotlinx.coroutines.Job? = null
         private var snackBarObserverJob: kotlinx.coroutines.Job? = null
         private var mediaObserverJob: kotlinx.coroutines.Job? = null
@@ -338,9 +335,6 @@ class ChatViewModel
 
             milestoneObserverJob?.cancel()
             milestoneObserverJob = observeMileStone()
-
-            musicObserverJob?.cancel()
-            musicObserverJob = observeAmbientMusicServiceControl()
 
             preferencesObserverJob?.cancel()
             preferencesObserverJob = observePreferences()
@@ -664,11 +658,6 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        // Fetch visual config for current genre
-                        val visualConfig =
-                            visualConfigService.getVisualConfig(sagaContent.data.genre)
-                        Timber.tag("ChatViewModel").d("Fetched visual config: $visualConfig")
-                        stateManager.updateVisualConfig(visualConfig)
                         sagaThemeManager.updateTheme(sagaContent.data.genre)
 
                         val rules =
@@ -788,44 +777,7 @@ class ChatViewModel
             }
         }
 
-        private fun observeAmbientMusicServiceControl() =
-            viewModelScope.launch(Dispatchers.IO) {
-                combine(
-                    sagaContentManager.ambientMusicFile,
-                    stateManager.uiState.map { it.sagaContent }.distinctUntilChanged(),
-                ) { musicFile, sagaContent ->
-                    musicFile
-                }.collectLatest { musicFile ->
-                    try {
-                        if (musicFile != null && musicFile.exists()) {
-                            Timber
-                                .tag(
-                                    "ChatViewModel",
-                                ).d("Ambient music available. Instructing SagaPlaybackService to play: ${musicFile.absolutePath}")
-                            val musicIntent =
-                                Intent(context, SagaPlaybackService::class.java).apply {
-                                    action = SagaPlaybackService.ACTION_START
-                                    putExtra(
-                                        SagaPlaybackService.EXTRA_MUSIC_PATH,
-                                        musicFile.absolutePath,
-                                    )
-                                }
-                            context.startService(musicIntent)
-                        } else {
-                            Timber
-                                .tag("ChatViewModel")
-                                .d("Music file not available. Instructing SagaPlaybackService to stop.")
-                            context.startService(
-                                Intent(context, SagaPlaybackService::class.java).apply {
-                                    action = SagaPlaybackService.ACTION_STOP
-                                },
-                            )
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
+        // Ambient music controlled by SagaThemeManager and MainActivity
 
         private var startTime: Long = 0L
 

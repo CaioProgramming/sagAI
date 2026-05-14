@@ -49,18 +49,14 @@ import com.ilustris.sagai.core.utils.sortCharactersContentByMessageCount
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -74,8 +70,8 @@ fun RelationsShareView(
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val genre = sagaContent.data.genre
-    val resolvedColor = genre.resolveColor()
-    genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    MaterialTheme.colorScheme.secondary
     val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val graphicsLayer = rememberGraphicsLayer()
@@ -108,14 +104,15 @@ fun RelationsShareView(
                 Modifier
                     .padding(16.dp)
                     .fillMaxSize()
-                    .clip(genre.shape())
+                    .clip(sagaShape())
                     .background(MaterialTheme.colorScheme.background)
                     .drawWithContent {
                         graphicsLayer.record {
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.clickable {
+                    }
+                    .clickable {
                         coroutineScope.launch {
                             viewModel.startSaving()
                             delay(1.seconds)
@@ -140,7 +137,7 @@ fun RelationsShareView(
                             sagaContent.data.title,
                             style =
                                 MaterialTheme.typography.headlineMedium.copy(
-                                    fontFamily = genre.headerFont(),
+                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                     brush = genre.gradient(),
                                     textAlign = TextAlign.Center,
                                     shadow = Shadow(resolvedColor, Offset(2f, 0f), 10f),
@@ -149,7 +146,8 @@ fun RelationsShareView(
                                 Modifier
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    ).padding(8.dp)
+                                    )
+                                    .padding(8.dp)
                                     .fillMaxWidth(),
                         )
                     }
@@ -211,7 +209,7 @@ fun RelationsShareView(
                                 it.text,
                                 style =
                                     MaterialTheme.typography.bodyLarge.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         shadow = Shadow(resolvedColor, Offset(5f, 0f), 2f),
                                         fontStyle = FontStyle.Italic,
                                         textAlign = TextAlign.Center,
@@ -237,7 +235,7 @@ fun RelationsShareView(
                                 shareText?.caption ?: emptyString(),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         textAlign = TextAlign.Center,
                                     ),
                             )

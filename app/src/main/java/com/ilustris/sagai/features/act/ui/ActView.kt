@@ -18,10 +18,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import kotlin.time.Duration.Companion.seconds
 
 private val DEFAULT_DELAY = 1.seconds
@@ -36,7 +34,7 @@ fun ActComponent(
     // Animation flags
 
     val chapters = remember { act.chapters }
-    val genre = remember { content.data.genre }
+    remember { content.data.genre }
 
     Column(modifier) {
         LazyRow(
@@ -50,7 +48,7 @@ fun ActComponent(
                     chapters.indexOf(it),
                     Modifier
                         .padding(12.dp)
-                        .clip(genre.shape())
+                        .clip(sagaShape())
                         .size(100.dp),
                     false,
                 )
@@ -61,7 +59,7 @@ fun ActComponent(
             actCount.toRoman(),
             style =
                 MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = content.data.genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 ),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -71,7 +69,7 @@ fun ActComponent(
             act.data.title,
             style =
                 MaterialTheme.typography.displaySmall.copy(
-                    fontFamily = content.data.genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     brush = content.data.genre.gradient(true),
                 ),
             textAlign = TextAlign.Center,
@@ -85,7 +83,7 @@ fun ActComponent(
             act.data.content,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = content.data.genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
@@ -100,7 +98,7 @@ fun ActComponent(
                 act.data.emotionalReview,
                 style =
                     MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = content.data.genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Start,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),

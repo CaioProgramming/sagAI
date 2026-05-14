@@ -15,10 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineViewContent
-import com.ilustris.sagai.ui.theme.headerFont
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -27,7 +25,7 @@ fun TimelineThreadList(
     modifier: Modifier = Modifier,
     onAction: (DetailAction) -> Unit = {},
 ) {
-    val genre = timelineContent.saga.genre
+    timelineContent.saga.genre
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -46,8 +44,8 @@ fun TimelineThreadList(
                         text = group.title,
                         style =
                             MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.headerFont(),
-                                color = genre.resolveColor(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Black,
                             ),
                     )

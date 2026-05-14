@@ -55,19 +55,15 @@ import com.ilustris.sagai.features.home.data.model.findChapter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
@@ -176,7 +172,7 @@ fun MilestoneBadge(
         enter = scaleIn(tween(600, easing = EaseInBounce)),
         exit = scaleOut(),
     ) {
-        val resolvedColor = genre.resolveColor()
+        val resolvedColor = MaterialTheme.colorScheme.primary
         ConstraintLayout(
             modifier =
                 modifier
@@ -193,8 +189,8 @@ fun MilestoneBadge(
                 labelText,
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.resolveIconColor(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.SemiBold,
                     ),
                 modifier =
@@ -211,7 +207,7 @@ fun MilestoneBadge(
                 count,
                 textStyle =
                     MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         brush = brush,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
@@ -224,10 +220,12 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }.background(
+                        }
+                        .background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        ).padding(4.dp)
+                        )
+                        .padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,
@@ -246,7 +244,7 @@ fun NewEventContent(
     val genre = saga.data.genre
     val brush =
         Brush.horizontalGradient(
-            genre.resolveColor().darkerPalette(
+            MaterialTheme.colorScheme.primary.darkerPalette(
                 factor = .25f,
             ),
         )

@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.debug.ui
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -70,16 +69,13 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeShimmer
 import com.ilustris.sagai.ui.theme.utils.toJsonAnnotatedString
 import kotlin.time.Duration.Companion.seconds
@@ -133,8 +129,7 @@ fun LoreDebugView(
                                     .sharedElement(
                                         rememberSharedContentState(key = "saga_${saga?.data?.id}_icon"),
                                         animatedVisibilityScope,
-                                    )
-                                    .reactiveShimmer(
+                                    ).reactiveShimmer(
                                         true,
                                         themeShimmer(),
                                         1.seconds,
@@ -225,7 +220,7 @@ fun LoreDebugView(
                                 Modifier
                                     .fillMaxWidth()
                                     .padding(32.dp),
-                            shape = genre.shape(),
+                            shape = sagaShape(),
                             enabled = !uiState.isFixing,
                         ) {
                             Text(
@@ -322,15 +317,15 @@ fun LoreDebugView(
                     Text(
                         "Amarrando a história...",
                         style = MaterialTheme.typography.titleLarge,
-                        fontFamily = genre.headerFont(),
-                        color = genre.resolveColor(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                        color = MaterialTheme.colorScheme.primary,
                     )
 
                     LinearProgressIndicator(
                         progress = { uiState.currentFixItem.toFloat() / uiState.fixItemsCount.toFloat() },
                         modifier = Modifier.fillMaxWidth(),
-                        color = genre.resolveColor(),
-                        trackColor = genre.resolveColor().copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                     )
 
                     Text(
@@ -362,9 +357,9 @@ fun StoryCard(
     onRegenerate: (Any, DebugSection) -> Unit,
 ) {
     val genre = saga.data.genre
-    val shape = genre.shape()
+    val shape = sagaShape()
     var isExpanded by remember { mutableStateOf(false) }
-    val genreColor = genre.resolveColor()
+    val genreColor = MaterialTheme.colorScheme.primary
     val borderColor by animateColorAsState(
         if (isExpanded) {
             genreColor
@@ -392,19 +387,17 @@ fun StoryCard(
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     shape,
-                )
-                .padding(8.dp)
+                ).padding(8.dp)
                 .clickable {
                     isExpanded = !isExpanded
-                }
-                .animateContentSize(tween(500, easing = EaseIn)),
+                }.animateContentSize(tween(500, easing = EaseIn)),
     ) {
         val act = actContent.data
         val actNumber = saga.actNumber(act.id)
         Text(
             stringResource(R.string.act_title, actNumber.toRoman()),
             style = MaterialTheme.typography.labelMedium,
-            fontFamily = genre.bodyFont(),
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
         )
 
@@ -412,10 +405,10 @@ fun StoryCard(
             Text(
                 act.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = genre.headerFont(),
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 fontWeight = if (act.narrativeGuide.isNullOrEmpty()) FontWeight.Bold else FontWeight.Normal,
                 textAlign = TextAlign.Center,
-                color = genre.resolveColor(),
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
             )
 
@@ -429,7 +422,7 @@ fun StoryCard(
                     Icon(
                         painterResource(R.drawable.ic_restore),
                         contentDescription = "Regenerate",
-                        tint = genre.resolveColor(),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -451,7 +444,7 @@ fun StoryCard(
                 Text(
                     it,
                     style = MaterialTheme.typography.labelSmall,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
                 )
@@ -465,7 +458,7 @@ fun StoryCard(
                 act.introduction,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Start,
-                fontFamily = genre.bodyFont(),
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             actContent.chapters.forEach { chapter ->
@@ -488,13 +481,11 @@ fun StoryCard(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .4f),
                             shape = shape,
-                        )
-                        .fillMaxWidth()
+                        ).fillMaxWidth()
                         .padding(8.dp)
                         .clickable {
                             chapterExpanded = !chapterExpanded
-                        }
-                        .animateContentSize(
+                        }.animateContentSize(
                             tween(300, easing = EaseIn),
                         ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -505,7 +496,7 @@ fun StoryCard(
                         stringResource(R.string.chapter_number_label, chapterNumber.toRoman()),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Normal,
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                     )
 
@@ -514,7 +505,7 @@ fun StoryCard(
                             chapter.data.title,
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = if (chapter.data.narrativeGuide.isNullOrEmpty()) FontWeight.Bold else FontWeight.Normal,
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             color = genreColor.copy(alpha = .7f),
                             modifier = Modifier.weight(1f),
                         )
@@ -564,11 +555,9 @@ fun StoryCard(
                                     .background(
                                         MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                         shape = shape,
-                                    )
-                                    .clickable {
+                                    ).clickable {
                                         eventExpanded = !eventExpanded
-                                    }
-                                    .fillMaxWidth()
+                                    }.fillMaxWidth()
                                     .padding(8.dp)
                                     .animateContentSize(),
                             ) {
@@ -583,7 +572,7 @@ fun StoryCard(
                                             saga.flatEvents().indexOf(event)
                                         }. ${event.data.title}",
                                         style = MaterialTheme.typography.labelLarge,
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         fontWeight = fontWeight,
                                         color = genreColor.copy(alpha = .7f),
                                         modifier = Modifier.weight(1f),
@@ -601,7 +590,7 @@ fun StoryCard(
                                         Icon(
                                             painterResource(R.drawable.ic_restore),
                                             contentDescription = "Regenerate",
-                                            tint = genre.resolveColor(),
+                                            tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(16.dp),
                                         )
                                     }
@@ -612,7 +601,7 @@ fun StoryCard(
                                         event.data.content,
                                         style = MaterialTheme.typography.labelMedium,
                                         textAlign = TextAlign.Start,
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
                                     )
 
@@ -626,8 +615,7 @@ fun StoryCard(
                                                 .background(
                                                     MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                                     shape,
-                                                )
-                                                .padding(8.dp),
+                                                ).padding(8.dp),
                                     )
                                 }
                             }
@@ -643,8 +631,7 @@ fun StoryCard(
                                     .background(
                                         MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                         shape,
-                                    )
-                                    .padding(8.dp),
+                                    ).padding(8.dp),
                         )
 
                         TextButton(onClick = {
@@ -689,8 +676,7 @@ fun StoryCard(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .3f),
                             shape,
-                        )
-                        .padding(8.dp),
+                        ).padding(8.dp),
             )
 
             if (act.content.isNotEmpty()) {
@@ -728,7 +714,7 @@ fun DebugSection(
     reasoning: String?,
     onRegenerate: () -> Unit,
 ) {
-    val resolvedColor = genre.resolveColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
     var isExpanded by remember { mutableStateOf(false) }
     Column(
         modifier =
@@ -743,7 +729,7 @@ fun DebugSection(
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Normal,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-            fontFamily = genre.bodyFont(),
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -754,7 +740,7 @@ fun DebugSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Normal,
                 color = resolvedColor,
-                fontFamily = genre.headerFont(),
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 modifier =
                     Modifier
                         .weight(1f)
@@ -789,7 +775,7 @@ fun DebugSection(
                 Text(
                     it,
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
                 )
@@ -801,7 +787,7 @@ fun DebugSection(
             Text(
                 content.ifEmpty { "Empty content" },
                 style = MaterialTheme.typography.bodyMedium,
-                fontFamily = genre.bodyFont(),
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 textAlign = TextAlign.Justify,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -809,7 +795,7 @@ fun DebugSection(
                 Text(
                     it.ifEmpty { "Empty content" }.toJsonAnnotatedString(),
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
                 )

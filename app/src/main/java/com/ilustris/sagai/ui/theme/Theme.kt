@@ -1,5 +1,4 @@
 package com.ilustris.sagai.ui.theme
-
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -29,8 +28,11 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -42,7 +44,6 @@ import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,6 +52,8 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 
@@ -103,74 +106,105 @@ private const val THEME_ANIMATION_DURATION = 600
  * Use [sagaShape], [sagaBrush], etc. to access genre-specific visuals
  * without manually passing the genre around.
  */
-val LocalSagaGenre = staticCompositionLocalOf<Genre?> { null }
+val LocalSagaGenre = compositionLocalOf<Genre?> { null }
+
+/**
+ * CompositionLocal providing the currently active [GenreVisualConfig] from [SagaThemeManager].
+ */
+val LocalGenreVisualConfig = compositionLocalOf<GenreVisualConfig?> { null }
 
 @Composable
 fun SagAITheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    sagaThemeManager: SagaThemeManager? = null,
     genre: Genre? = null,
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    visualConfig: GenreVisualConfig? = null,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    val activeGenreState: State<Genre?> =
+        if (sagaThemeManager != null) {
+            sagaThemeManager.currentGenre.collectAsState(initial = null)
+        } else {
+            remember(genre) { mutableStateOf(genre) }
+        }
+    val activeGenre = activeGenreState.value
+
+    val activeVisualConfigState =
+        if (sagaThemeManager != null) {
+            sagaThemeManager.visualConfig.collectAsState(initial = null)
+        } else {
+            remember(visualConfig) { mutableStateOf(visualConfig) }
+        }
+    val activeVisualConfig = activeVisualConfigState.value
+
     val baseScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     // Target colors: genre-driven or brand defaults
-    val targetPrimary = genre?.color ?: baseScheme.primary
-    val targetSecondary = genre?.color?.copy(alpha = 0.7f) ?: baseScheme.secondary
-    val targetTertiary = genre?.color?.copy(alpha = 0.5f) ?: baseScheme.tertiary
+    val targetPrimary = activeGenre?.color ?: baseScheme.primary
+    val targetSecondary = activeGenre?.color?.copy(alpha = 0.7f) ?: baseScheme.secondary
+    val targetTertiary = activeGenre?.color?.copy(alpha = 0.5f) ?: baseScheme.tertiary
+    val onPrimary = activeGenre?.iconColor ?: baseScheme.onPrimary
 
     // Smooth animated transitions
-    val animatedPrimary = animateColorAsState(
-        targetValue = targetPrimary,
-        animationSpec = tween(THEME_ANIMATION_DURATION),
-        label = "themePrimary",
-    )
-    val animatedSecondary = animateColorAsState(
-        targetValue = targetSecondary,
-        animationSpec = tween(THEME_ANIMATION_DURATION),
-        label = "themeSecondary",
-    )
-    val animatedTertiary = animateColorAsState(
-        targetValue = targetTertiary,
-        animationSpec = tween(THEME_ANIMATION_DURATION),
-        label = "themeTertiary",
-    )
+    val animatedPrimary =
+        animateColorAsState(
+            targetValue = targetPrimary,
+            animationSpec = tween(THEME_ANIMATION_DURATION),
+            label = "themePrimary",
+        )
+    val animatedSecondary =
+        animateColorAsState(
+            targetValue = targetSecondary,
+            animationSpec = tween(THEME_ANIMATION_DURATION),
+            label = "themeSecondary",
+        )
+    val animatedTertiary =
+        animateColorAsState(
+            targetValue = targetTertiary,
+            animationSpec = tween(THEME_ANIMATION_DURATION),
+            label = "themeTertiary",
+        )
 
-    val colorScheme = baseScheme.copy(
-        primary = animatedPrimary.value,
-        secondary = animatedSecondary.value,
-        tertiary = animatedTertiary.value,
-    )
+    val colorScheme =
+        baseScheme.copy(
+            primary = animatedPrimary.value,
+            secondary = animatedSecondary.value,
+            tertiary = animatedTertiary.value,
+            onPrimary = onPrimary,
+        )
 
     // Dynamic Typography: genre fonts baked into the theme
-    val dynamicTypography = remember(genre) {
-        if (genre == null) {
-            Typography
-        } else {
-            val headerFamily = genre.headerFont()
-            val bodyFamily = genre.bodyFont()
-            Typography(
-                displayLarge = Typography.displayLarge.copy(fontFamily = headerFamily),
-                displayMedium = Typography.displayMedium.copy(fontFamily = headerFamily),
-                displaySmall = Typography.displaySmall.copy(fontFamily = headerFamily),
-                headlineLarge = Typography.headlineLarge.copy(fontFamily = headerFamily),
-                headlineMedium = Typography.headlineMedium.copy(fontFamily = headerFamily),
-                headlineSmall = Typography.headlineSmall.copy(fontFamily = headerFamily),
-                titleLarge = Typography.titleLarge.copy(fontFamily = headerFamily),
-                titleMedium = Typography.titleMedium.copy(fontFamily = headerFamily),
-                titleSmall = Typography.titleSmall.copy(fontFamily = headerFamily),
-                bodyLarge = Typography.bodyLarge.copy(fontFamily = bodyFamily),
-                bodyMedium = Typography.bodyMedium.copy(fontFamily = bodyFamily),
-                bodySmall = Typography.bodySmall.copy(fontFamily = bodyFamily),
-                labelLarge = Typography.labelLarge.copy(fontFamily = bodyFamily),
-                labelMedium = Typography.labelMedium.copy(fontFamily = bodyFamily),
-                labelSmall = Typography.labelSmall.copy(fontFamily = bodyFamily),
-            )
+    val dynamicTypography =
+        remember(activeGenre) {
+            if (activeGenre == null) {
+                Typography
+            } else {
+                val headerFamily = activeGenre.headerFont()
+                val bodyFamily = activeGenre.bodyFont()
+                Typography(
+                    displayLarge = Typography.displayLarge.copy(fontFamily = headerFamily),
+                    displayMedium = Typography.displayMedium.copy(fontFamily = headerFamily),
+                    displaySmall = Typography.displaySmall.copy(fontFamily = headerFamily),
+                    headlineLarge = Typography.headlineLarge.copy(fontFamily = headerFamily),
+                    headlineMedium = Typography.headlineMedium.copy(fontFamily = headerFamily),
+                    headlineSmall = Typography.headlineSmall.copy(fontFamily = headerFamily),
+                    titleLarge = Typography.titleLarge.copy(fontFamily = headerFamily),
+                    titleMedium = Typography.titleMedium.copy(fontFamily = headerFamily),
+                    titleSmall = Typography.titleSmall.copy(fontFamily = headerFamily),
+                    bodyLarge = Typography.bodyLarge.copy(fontFamily = bodyFamily),
+                    bodyMedium = Typography.bodyMedium.copy(fontFamily = bodyFamily),
+                    bodySmall = Typography.bodySmall.copy(fontFamily = bodyFamily),
+                    labelLarge = Typography.labelLarge.copy(fontFamily = bodyFamily),
+                    labelMedium = Typography.labelMedium.copy(fontFamily = bodyFamily),
+                    labelSmall = Typography.labelSmall.copy(fontFamily = bodyFamily),
+                )
+            }
         }
-    }
 
-    CompositionLocalProvider(LocalSagaGenre provides genre) {
+    CompositionLocalProvider(
+        LocalSagaGenre provides activeGenre,
+        LocalGenreVisualConfig provides activeVisualConfig,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = dynamicTypography,

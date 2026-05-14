@@ -5,9 +5,9 @@
 )
 
 package com.ilustris.sagai.features.saga.chat.ui
-
 import android.Manifest
 import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
@@ -68,7 +68,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -109,7 +108,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
@@ -136,10 +134,7 @@ import com.ilustris.sagai.features.milestone.ui.MilestoneOverlay
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -172,7 +167,7 @@ import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.components.SnackAction
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -185,12 +180,12 @@ import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -233,7 +228,7 @@ fun ChatView(
             }
         }
 
-    CompositionLocalProvider(LocalGenreVisualConfig provides uiState.visualConfig) {
+    SagAITheme(visualConfig = uiState.visualConfig, genre = uiState.sagaContent?.data?.genre) {
         LaunchedEffect(uiState.sagaContent) {
             uiState.sagaContent?.let {
                 if (it.data.icon.isNotEmpty()) {
@@ -263,6 +258,19 @@ fun ChatView(
             lifecycleOwner.lifecycle.addObserver(viewModel)
             onDispose {
                 lifecycleOwner.lifecycle.removeObserver(viewModel)
+            }
+        }
+
+        BackHandler {
+            when {
+                drawerState.isOpen -> coroutineScope.launch { drawerState.close() }
+                showBackupSheet -> showBackupSheet = false
+                uiState.showAudioTranscript -> onAction(ChatUiAction.RequestAudioTranscript(false))
+                uiState.showShareSheet -> onAction(ChatUiAction.ShareConversation(false))
+                uiState.selectionState.isSelectionMode -> onAction(ChatUiAction.ClearSelection)
+                uiState.editingMessage != null -> onAction(ChatUiAction.CancelEdit)
+                uiState.snackBarMessage != null -> onAction(ChatUiAction.DismissSnackBar)
+                else -> onBack()
             }
         }
 
@@ -322,11 +330,7 @@ fun ChatView(
                                             modifier =
                                                 Modifier
                                                     .size(50.dp)
-                                                    .align(Alignment.Center)
-                                                    .sharedElement(
-                                                        rememberSharedContentState("spark_icon"),
-                                                        animatedVisibilityScope = animatedVisibilityScope,
-                                                    ),
+                                                    .align(Alignment.Center),
                                             duration = 1.seconds,
                                             blurRadius = 1.dp,
                                             tint = MaterialTheme.colorScheme.background,
@@ -343,7 +347,7 @@ fun ChatView(
                                         .align(Alignment.BottomCenter)
                                         .padding(16.dp)
                                         .fillMaxWidth()
-                                        .clip(content.data.genre.shape())
+                                        .clip(sagaShape())
                                         .clickable {
                                             if (snackBarMessage?.action == null) {
                                                 onAction(ChatUiAction.DismissSnackBar)
@@ -440,10 +444,6 @@ fun ChatView(
             }) {
                 requiredPermission = null
             }
-            uiState.sagaContent
-                ?.data
-                ?.genre
-                ?.colorPalette() ?: holographicGradient
 
             uiState.sagaContent?.let {
                 AnimatedVisibility(
@@ -457,7 +457,7 @@ fun ChatView(
                             Modifier
                                 .reactiveShimmer(
                                     true,
-                                    it.data.genre.shimmerColors(),
+                                    themeShimmer(),
                                     duration = 2.seconds,
                                 ).fillMaxSize(),
                     )
@@ -532,9 +532,17 @@ fun ChatContent(
             label = "loreUpdateProgress",
         )
 
+    BackHandler(enabled = showReactions != null || showDeleteConfirmDialog != null) {
+        if (showReactions != null) {
+            showReactions = null
+        } else {
+            showDeleteConfirmDialog = null
+        }
+    }
+
     val milestoneState = uiState.milestone
-    val resolvedColor = saga.genre.resolveColor()
-    val resolvedIconColor = saga.genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
 
     with(sharedTransitionScope) {
         AnimatedContent(
@@ -592,12 +600,9 @@ fun ChatContent(
                                 .align(Alignment.Center)
                                 .reactiveShimmer(
                                     uiState.isPlaying,
-                                    shimmerColors = saga.genre.shimmerColors(),
+                                    shimmerColors = themeShimmer(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).sharedElement(
-                                    rememberSharedContentState(key = "saga_${content.data.id}_genre_icon"),
-                                    animatedVisibilityScope = this@AnimatedContent,
                                 ).fillMaxSize(.5f)
                                 .alpha(.3f),
                     )
@@ -879,7 +884,7 @@ fun ChatContent(
                                         MaterialTheme.typography.labelLarge.copy(
                                             color = Color.White,
                                             fontWeight = FontWeight.Medium,
-                                            fontFamily = saga.genre.bodyFont(),
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                             textAlign = TextAlign.Center,
                                         ),
                                     maxLines = 1,
@@ -945,12 +950,7 @@ fun ChatContent(
                                             stringResource(it.title),
                                             it.subtitle,
                                             genre = saga.genre,
-                                            Modifier.sharedElement(
-                                                rememberSharedContentState(
-                                                    key = "saga_${saga.id}_spark",
-                                                ),
-                                                animatedVisibilityScope = this,
-                                            ),
+                                            Modifier,
                                         ) {
                                             onAction(ChatUiAction.DismissMilestone)
                                         }
@@ -980,12 +980,7 @@ fun ChatContent(
                                                         ),
                                                     ).reactiveShimmer(
                                                         uiState.isGenerating || uiState.isLoading,
-                                                        shimmerColors = saga.genre.shimmerColors(),
-                                                    ).sharedElement(
-                                                        rememberSharedContentState(
-                                                            key = "saga_${saga.id}_spark",
-                                                        ),
-                                                        animatedVisibilityScope = this,
+                                                        shimmerColors = themeShimmer(),
                                                     ),
                                         )
                                     }
@@ -999,7 +994,7 @@ fun ChatContent(
                                     stringResource(
                                         R.string.chat_view_subtitle,
                                         content
-                                            .actNumber(content.actNumber(content.currentActInfo?.data?.id))
+                                            .acts.size
                                             .toRoman(),
                                         content
                                             .chapterNumber(
@@ -1030,12 +1025,7 @@ fun ChatContent(
                                         }.fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
-                                    Modifier.sharedElement(
-                                        rememberSharedContentState(
-                                            key = "saga_${saga.id}_title",
-                                        ),
-                                        animatedVisibilityScope = this@AnimatedContent,
-                                    ),
+                                Modifier,
                                 actionContent = {
                                     AnimatedContent(topCharacters, transitionSpec = {
                                         slideInVertically() + fadeIn() togetherWith fadeOut()
@@ -1085,7 +1075,7 @@ fun ChatContent(
                             ) {
                                 val textStyle =
                                     MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = content.data.genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     )
                                 TextField(
                                     value = fakeMessageCountText,
@@ -1281,17 +1271,13 @@ fun SagaHeader(
                             imageModifier =
                                 Modifier
                                     .effectForGenre(saga.genre)
-                                    .selectiveColorHighlight(saga.genre.selectiveHighlight())
-                                    .sharedElement(
-                                        rememberSharedContentState(key = "saga_${saga.id}_icon"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                    ),
+                                    .selectiveColorHighlight(saga.genre.selectiveHighlight()),
                         ) {
                             Text(
                                 saga.title,
                                 style =
                                     MaterialTheme.typography.headlineLarge.copy(
-                                        fontFamily = saga.genre.headerFont(),
+                                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                     ),
                                 fontWeight = FontWeight.Normal,
                                 textAlign = TextAlign.Center,
@@ -1321,9 +1307,6 @@ fun SagaHeader(
                                     .effectForGenre(saga.genre)
                                     .selectiveColorHighlight(
                                         saga.genre.selectiveHighlight(),
-                                    ).sharedElement(
-                                        rememberSharedContentState(key = "saga_${saga.id}_icon"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
                                     ).fillMaxSize(),
                         )
                     }
@@ -1359,7 +1342,7 @@ fun SagaHeader(
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     color = textColor,
-                    fontFamily = saga.genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
             textAlign = TextAlign.Start,
             modifier =
@@ -1398,7 +1381,7 @@ fun ChatList(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val genre = saga.data.genre
-    val resolvedColor = genre.resolveColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
 
     LaunchedEffect(saga.flatMessages().size) {
         coroutineScope.launch {
@@ -1429,11 +1412,11 @@ fun ChatList(
                         text = it,
                         style =
                             MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Center,
                                 shadow =
                                     Shadow(
-                                        genre.resolveColor(),
+                                        MaterialTheme.colorScheme.primary,
                                         blurRadius = 10f,
                                     ),
                             ),
@@ -1470,7 +1453,7 @@ fun ChatList(
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             textAlign = TextAlign.Justify,
-                            fontFamily = saga.data.genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     modifier =
                         Modifier
@@ -1484,7 +1467,7 @@ fun ChatList(
                     stringResource(id = R.string.saga_ended_on, saga.data.endedAt.formatDate()),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = saga.data.genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     modifier = Modifier,
                 )
@@ -1582,7 +1565,7 @@ fun ChatList(
                         chapter.chapter.data.introduction,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Justify,
                             ),
                         modifier =
@@ -1605,7 +1588,7 @@ fun ChatList(
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 brush = genre.gradient(),
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 textAlign = TextAlign.Center,
                             ),
                         modifier =
@@ -1624,7 +1607,7 @@ fun ChatList(
                         act.content.data.introduction,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Justify,
                                 fontWeight = FontWeight.SemiBold,
                             ),
@@ -1650,7 +1633,7 @@ fun ChatList(
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             brush = genre.gradient(true),
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Center,
                         ),
                     modifier =

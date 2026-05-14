@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.newsaga.ui
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.scaleIn
@@ -63,7 +62,6 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveUrl
 import com.ilustris.sagai.features.newsaga.data.usecase.AgenticUIComponent
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
@@ -73,8 +71,6 @@ import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.CosmicEditorSheet
 import com.ilustris.sagai.ui.components.CosmicInputField
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
 
 val LocalSharedTransitionScope =
@@ -116,7 +112,7 @@ fun AgenticUIComponent.Render(
                     currentAgentMessage =
                         (this@Render as? AgenticUIComponent.AgentMessage)?.text
                             ?: "",
-                        onAction,
+                    onAction,
                 )
             }
         }
@@ -263,7 +259,7 @@ private fun IdeaPitchCard(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = gradient
-                }.border(1.dp, genre.resolveColor(), shape)
+                }.border(1.dp, MaterialTheme.colorScheme.primary, shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .clickable { onSelect() }
                 .padding(8.dp),
@@ -305,7 +301,7 @@ private fun LockedSagaCard(
     val shape = genre.shape(visualConfig)
     val brush = Brush.verticalGradient(genre.colorPalette(visualConfig))
     val genreColor = genre.resolveColor(visualConfig)
-    val iconColor = genre.resolveIconColor()
+    val iconColor = MaterialTheme.colorScheme.secondary
     var showEditor by remember { mutableStateOf(false) }
 
     Box(
@@ -368,7 +364,7 @@ private fun LockedSagaCard(
                 text = draft.title,
                 style =
                     MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     ),
@@ -382,7 +378,7 @@ private fun LockedSagaCard(
                 text = draft.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 modifier = Modifier.fillMaxWidth(),
@@ -523,11 +519,13 @@ private fun CharacterPitchCard(
                     1.dp,
                     genreColor.copy(alpha = 0.1f),
                     shape,
-                ).clip(shape)
+                )
+                .clip(shape)
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     shape,
-                ).clickable { onSelect() },
+                )
+                .clickable { onSelect() },
     ) {
         Box(
             modifier =
@@ -567,7 +565,7 @@ private fun CharacterPitchCard(
                 text = persona.name,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.Bold,
                     ),
                 maxLines = 1,
@@ -577,7 +575,7 @@ private fun CharacterPitchCard(
                 text = persona.gender.name.lowercase(),
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = genreColor,
                     ),
             )
@@ -585,7 +583,7 @@ private fun CharacterPitchCard(
                 text = persona.description,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                 maxLines = 3,
@@ -608,7 +606,7 @@ private fun LockedCharacterCard(
     val shape = genre.shape(visualConfig)
     val color = genre.resolveColor(visualConfig)
     val brush = Brush.verticalGradient(genre.colorPalette(visualConfig))
-    val iconColor = genre.resolveIconColor()
+    val iconColor = MaterialTheme.colorScheme.secondary
     var showEditor by remember { mutableStateOf(false) }
 
     val placeholders = LocalGenderPlaceholders.current
@@ -624,7 +622,8 @@ private fun LockedCharacterCard(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = brush
-                }.border(1.dp, color.copy(alpha = 0.1f), shape)
+                }
+                .border(1.dp, color.copy(alpha = 0.1f), shape)
                 .clip(shape)
                 .background(genre.color, shape)
                 .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
@@ -687,7 +686,7 @@ private fun LockedCharacterCard(
                 style =
                     MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     ),
@@ -701,7 +700,7 @@ private fun LockedCharacterCard(
                 text = persona.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 modifier = Modifier.fillMaxWidth(),
@@ -890,11 +889,13 @@ private fun EchoBubbleCard(
                     brush = genreBrush
                     radius = 5f
                     spread = 5f
-                }.clip(shape)
+                }
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.background)
                 .clickable {
                     onClick()
-                }.padding(8.dp),
+                }
+                .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {

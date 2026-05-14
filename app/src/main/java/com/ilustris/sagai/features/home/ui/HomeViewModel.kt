@@ -9,7 +9,6 @@ import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
-import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -43,9 +43,8 @@ class HomeViewModel
         private val segmentationHelper: ImageSegmentationHelper,
         private val stringResourceHelper: StringResourceHelper,
         private val visualConfigService: GenreVisualConfigService,
-        private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
-        val sagas = homeUseCase.getSagas()
+        val sagas: MutableStateFlow<List<SagaSummary>> = MutableStateFlow(emptyList())
 
         private val _showDebugButton = MutableStateFlow(false)
         val showDebugButton = _showDebugButton.asStateFlow()
@@ -63,9 +62,8 @@ class HomeViewModel
         private val _isLoading = MutableStateFlow<Boolean>(false)
         val isLoading = _isLoading.asStateFlow()
 
-        private val _isStarting = MutableStateFlow<Boolean>(true)
+        private val _isStarting = MutableStateFlow<Boolean>(sagas.value.isEmpty())
         val isStarting = _isStarting.asStateFlow()
-
         val loadingMessage = MutableStateFlow<String?>(null)
 
         private val _showRecoverSheet = MutableStateFlow(false)
@@ -90,10 +88,24 @@ class HomeViewModel
         val genreVisualConfigService = visualConfigService
 
         init {
-            sagaThemeManager.resetTheme()
+            Timber.d("HomeViewModel: init")
             checkDebug()
             getDynamicPrompts()
             loadVisualConfigs()
+            loadSagas()
+        }
+
+        private fun loadSagas() {
+            viewModelScope.launch(Dispatchers.IO) {
+                homeUseCase.getSagas().collect { sagaList ->
+                    sagas.emit(sagaList)
+                }
+            }
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            Timber.d("HomeViewModel: onCleared")
         }
 
         private fun loadVisualConfigs() {
@@ -201,6 +213,6 @@ class HomeViewModel
                 isBackingUp = true
                 homeUseCase.autoBackup()
                 isBackingUp = false
+            }
         }
-    }
     }

@@ -38,8 +38,6 @@ import androidx.compose.ui.text.drawText
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
 import kotlin.random.Random
@@ -2280,8 +2278,8 @@ fun Modifier.genreVfx(
 ): Modifier {
     if (genre == null) return this
     if (isPlaying.not()) return this
-    val finalPrimary = primaryColor ?: genre.resolveColor()
-    secondaryColor ?: genre.resolveIconColor()
+    val finalPrimary = primaryColor ?: MaterialTheme.colorScheme.primary
+    secondaryColor ?: MaterialTheme.colorScheme.secondary
 
     return when (genre) {
         Genre.FANTASY -> {
@@ -2315,7 +2313,7 @@ fun Modifier.genreVfx(
         Genre.HEROES -> {
             this
                 .levitate(yOffset = 10f)
-                .divineAura(auraColor = genre.resolveColor().lighter(.3f))
+                .divineAura(auraColor = MaterialTheme.colorScheme.primary.lighter(.3f))
                 .lightningStorm(lightningColor = finalPrimary.lighter(0.6f))
         }
 

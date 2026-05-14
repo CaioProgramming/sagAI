@@ -21,10 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun TimelineCommunityNote(
@@ -38,9 +36,9 @@ fun TimelineCommunityNote(
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(genre.shape())
+                .clip(sagaShape())
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, genre.shape())
+                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, sagaShape())
                 .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -60,7 +58,7 @@ fun TimelineCommunityNote(
                 text = stringResource(id = R.string.mascot_insight_label), // Needs to be added to strings.xml or used as literal
                 style =
                     MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
@@ -71,7 +69,7 @@ fun TimelineCommunityNote(
             text = emotionalReview,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     fontStyle = FontStyle.Italic,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
                 ),

@@ -37,7 +37,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @Composable
@@ -57,15 +57,18 @@ fun EmotionalProfileCard(
     Box(
         modifier
             .clip(
-                genre.shape(),
-            ).border(
+                sagaShape(),
+            )
+            .border(
                 1.dp,
                 MaterialTheme.colorScheme.onBackground.gradientFade(),
-                genre.shape(),
-            ).background(
+                sagaShape(),
+            )
+            .background(
                 MaterialTheme.colorScheme.surfaceContainer,
-                genre.shape(),
-            ).fillMaxWidth()
+                sagaShape(),
+            )
+            .fillMaxWidth()
             .height(200.dp)
             .clickable {
                 showEmotionalReview = true
@@ -92,7 +95,8 @@ fun EmotionalProfileCard(
                     .align(Alignment.BottomCenter)
                     .background(
                         fadeGradientBottom(),
-                    ).fillMaxWidth()
+                    )
+                    .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 24.dp),
         ) {
             Text(

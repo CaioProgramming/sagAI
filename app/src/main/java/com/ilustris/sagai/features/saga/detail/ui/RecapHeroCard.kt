@@ -16,12 +16,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.review.ui.DynamicCard
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.headerFont
 import kotlinx.coroutines.delay
 
 @Composable
@@ -63,15 +60,15 @@ fun RecapHeroCard(
         stats.last(),
         titleStyle =
             MaterialTheme.typography.headlineSmall.copy(
-                fontFamily = saga.genre.headerFont(),
-                color = genre.resolveIconColor(),
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                color = MaterialTheme.colorScheme.secondary,
             ),
         subtitleStyle =
             MaterialTheme.typography.labelMedium.copy(
-                fontFamily = saga.genre.bodyFont(),
-                color = genre.resolveIconColor(),
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                color = MaterialTheme.colorScheme.secondary,
             ),
-        lineColor = genre.resolveIconColor(),
+        lineColor = MaterialTheme.colorScheme.secondary,
         modifier =
             modifier
                 .background(

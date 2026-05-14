@@ -83,6 +83,7 @@ data class ChatUiState(
     val maxContentLength: Int = 2000,
     val relationships: List<RelationshipContent> = emptyList(),
     val currentMessageCount: Int = 0,
+    val showTitle: Boolean = false,
 )
 
 @Immutable

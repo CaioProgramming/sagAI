@@ -6,16 +6,15 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.services.GenreConfigService
-import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.file.ImageHelper
-import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toRoman
@@ -44,7 +43,6 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
-import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -81,7 +79,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -102,10 +99,9 @@ class SagaContentManagerImpl
         private val imageHelper: ImageHelper,
         private val messageUseCase: MessageUseCase,
         private val genreConfigService: GenreConfigService,
-        private val genreVisualConfigService: GenreVisualConfigService,
-        private val soundFxService: SoundFxService,
         private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
         private val messageDao: com.ilustris.sagai.features.saga.datasource.MessageDao,
+        private val sagaThemeManager: SagaThemeManager,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -122,9 +118,6 @@ class SagaContentManagerImpl
                 extraBufferCapacity = 1,
                 onBufferOverflow = BufferOverflow.DROP_OLDEST,
             )
-
-        override val ambientMusicFile = MutableStateFlow<File?>(null)
-        override val replySfxFile = MutableStateFlow<File?>(null)
 
         private val isProcessingNarrative = AtomicBoolean(false)
         private val _narrativeProcessingUiState = MutableStateFlow(false)
@@ -398,8 +391,7 @@ class SagaContentManagerImpl
                                     _sceneSummary.value = it
                                 }
 
-                                getAmbienceMusic(saga)
-                                getReplySfx(saga)
+                                sagaThemeManager.updateTheme(saga.data.genre)
 
                                 checkMessageNotifications(
                                     previousSaga,
@@ -478,7 +470,6 @@ class SagaContentManagerImpl
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
                 if (lastMessage.message.senderType == SenderType.CHARACTER) {
-                    playSoundFx()
                     updateSnackBar(
                         snackBar(
                             "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
@@ -488,68 +479,6 @@ class SagaContentManagerImpl
                             notificationStyle = NotificationStyle.CHAT
                         },
                     )
-                }
-            }
-        }
-
-        private fun playSoundFx() {
-            val selectedGenre = content.value?.data?.genre ?: return
-            managerScope.launch {
-                delay(300)
-                val visualConfig = genreVisualConfigService.getVisualConfig(selectedGenre)
-                val hapticPattern = selectedGenre.vibrationPattern(visualConfig)
-                soundFxService.playWithHaptics(hapticPattern)
-            }
-        }
-
-        private suspend fun getAmbienceMusic(saga: SagaMetadata) {
-            val genre = saga.data.genre
-            val fileUrl = genreConfigService.getGenreConfig(genre).ambientMusicUrl
-
-            if (fileUrl.isEmpty()) {
-                Timber.e("getAmbienceMusic: Invalid URL for ${genre.name}")
-                return
-            }
-
-            withContext(Dispatchers.IO) {
-                val extension = Uri.parse(fileUrl).path?.substringAfterLast(".", "mp3") ?: "mp3"
-                val newMusicFile = fileCacheService.getFile(fileUrl, extension)
-                if (newMusicFile?.absolutePath != ambientMusicFile.value?.absolutePath) {
-                    ambientMusicFile.emit(newMusicFile)
-                } else if (newMusicFile == null && ambientMusicFile.value != null) {
-                    ambientMusicFile.emit(null)
-                }
-            }
-        }
-
-        private suspend fun getReplySfx(saga: SagaMetadata) {
-            val genre = saga.data.genre
-            withContext(Dispatchers.IO) {
-                val sfxMap = remoteConfig.getJson<Map<String, String>>("reply_sfx_config")
-
-                if (sfxMap.isNullOrEmpty()) {
-                    Timber.w("getReplySfx: reply_sfx_config absent or empty")
-                    return@withContext
-                }
-
-                val finalUrl = sfxMap[genre.name] ?: sfxMap["DEFAULT"]
-                if (finalUrl.isNullOrEmpty()) {
-                    Timber.w("getReplySfx: No URL found for ${genre.name} or DEFAULT")
-                    if (replySfxFile.value != null) replySfxFile.emit(null)
-                    return@withContext
-                }
-
-                val extension = Uri.parse(finalUrl).path?.substringAfterLast(".", "mp3") ?: "mp3"
-                val sfxFile = fileCacheService.getFile(finalUrl, extension)
-
-                if (sfxFile?.absolutePath != replySfxFile.value?.absolutePath) {
-                    replySfxFile.emit(sfxFile)
-                    sfxFile?.let {
-                        soundFxService.prepare(it)
-                        Timber.d("getReplySfx: SFX updated for ${genre.name} — ${it.name}")
-                    }
-                } else if (sfxFile == null && replySfxFile.value != null) {
-                    replySfxFile.emit(null)
                 }
             }
         }
@@ -804,7 +733,7 @@ class SagaContentManagerImpl
                                     getSagaContent()!!,
                                     currentAct,
                                 ),
-                                context = contextString,
+                            context = contextString,
                             conversationStyle = style,
                             genre = saga.data.genre.name,
                         ).collect { state ->
@@ -973,7 +902,7 @@ class SagaContentManagerImpl
                     val narrativeStep =
                         NarrativeCheck.validateProgression(
                             getSagaContent()!!,
-                            fetchNarrativeRules()
+                            fetchNarrativeRules(),
                         )
                     Timber.d("checkNarrativeProgression: Step ${narrativeStep.javaClass.simpleName}")
 
@@ -1130,7 +1059,7 @@ class SagaContentManagerImpl
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 if (milestone != null && milestone !is SagaMilestone.Loading) {
                     isMilestoneActive.value = true
-                    playSoundFx()
+                    sagaThemeManager.playVfx()
                 }
                 milestoneUpdate.emit(milestone)
             }

@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.home.ui
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
@@ -84,7 +83,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
@@ -95,7 +93,6 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.premium.PremiumCard
@@ -108,14 +105,12 @@ import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -183,8 +178,7 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -429,8 +423,7 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -571,12 +564,10 @@ private fun ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 10f
                             spread = 5f
-                        }
-                        .background(
+                        }.background(
                             Brush.horizontalGradient(iridescentGradient),
                             MaterialTheme.shapes.large,
-                        )
-                        .fillMaxWidth(),
+                        ).fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -604,11 +595,11 @@ fun ChatCard(
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
 ) {
-    CompositionLocalProvider(LocalGenreVisualConfig provides visualConfig) {
+    SagAITheme(visualConfig = visualConfig, genre = saga.data.genre) {
         val sagaData = saga.data
         val genre = sagaData.genre
         val genreColor = genre.color
-        val genreBrush = genre.gradient()
+        val genreBrush = sagaBrush()
         with(sharedTransitionScope) {
             Column {
                 Row(
@@ -626,6 +617,7 @@ fun ChatCard(
                         saga.data.title
                             .first()
                             .uppercase(),
+                        visualConfig = visualConfig,
                         borderWidth = 1.dp,
                         modifier =
                             Modifier
@@ -644,7 +636,7 @@ fun ChatCard(
                     Spacer(modifier = Modifier.width(12.dp))
 
                     val color by animateColorAsState(
-                        if (saga.data.isEnded) sagaData.genre.resolveColor() else MaterialTheme.colorScheme.onBackground,
+                        if (saga.data.isEnded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
                     )
                     Column(
                         modifier =
@@ -655,7 +647,7 @@ fun ChatCard(
                             Text(
                                 text = sagaData.title,
                                 style = MaterialTheme.typography.titleMedium,
-                                fontFamily = saga.data.genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 color = color,
                                 modifier =
                                     Modifier
@@ -682,7 +674,7 @@ fun ChatCard(
                                     text = timeText,
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
-                                            fontFamily = saga.data.genre.bodyFont(),
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         ),
                                     color = color.copy(alpha = .6f),
                                 )
@@ -718,7 +710,7 @@ fun ChatCard(
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Normal,
-                                    fontFamily = saga.data.genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     textAlign = TextAlign.Start,
                                     color = color.copy(alpha = .6f),
                                 ),

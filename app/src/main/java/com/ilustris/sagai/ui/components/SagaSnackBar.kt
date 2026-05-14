@@ -39,11 +39,10 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun SagaSnackBar(
@@ -54,7 +53,7 @@ fun SagaSnackBar(
 ) {
     val mainColor = MaterialTheme.colorScheme.background
     val contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
-    val shape = genre?.shape() ?: RoundedCornerShape(10.dp)
+    val shape = sagaShape() ?: RoundedCornerShape(10.dp)
 
     AnimatedVisibility(
         snackBarState != null,
@@ -66,7 +65,7 @@ fun SagaSnackBar(
             Row(
                 Modifier
                     .dropShadow(
-                        shape = genre?.shape() ?: RoundedCornerShape(20.dp),
+                        shape = sagaShape() ?: RoundedCornerShape(20.dp),
                         shadow =
                             Shadow(
                                 radius = 10.dp,
@@ -113,7 +112,7 @@ fun SagaSnackBar(
                         MaterialTheme.typography.bodySmall.copy(
                             color = contentColor,
                         ),
-                    fontFamily = genre?.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Start,
                     modifier =
                         Modifier
@@ -127,7 +126,7 @@ fun SagaSnackBar(
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 color = contentColor,
-                                fontFamily = genre?.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                         modifier =
                             Modifier

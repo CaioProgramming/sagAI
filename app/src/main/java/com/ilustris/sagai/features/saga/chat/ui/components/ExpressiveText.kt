@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -15,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.LevitatingText
 import com.ilustris.sagai.ui.animations.ThinkingText
@@ -73,7 +71,6 @@ fun ExpressiveText(
     if (parsedMessage.segments.isEmpty()) {
         AnnotatedPlainText(
             text = text,
-            genre = genre,
             style = style,
             mainCharacter = mainCharacter,
             characters = characters,
@@ -96,7 +93,6 @@ fun ExpressiveText(
                 is TextSegment.Plain -> {
                     AnnotatedPlainText(
                         text = segment.text,
-                        genre = genre,
                         style = style,
                         mainCharacter = mainCharacter,
                         characters = characters,
@@ -142,7 +138,6 @@ fun ExpressiveText(
 @Composable
 private fun AnnotatedPlainText(
     text: String,
-    genre: Genre,
     style: TextStyle,
     mainCharacter: Character?,
     characters: List<Character>,
@@ -151,17 +146,20 @@ private fun AnnotatedPlainText(
     onAnnotationClick: (Any?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val genreColor = genre.resolveColor()
+    val genreColor = MaterialTheme.colorScheme.primary
+    val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
+    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
     val annotatedText =
         remember(text, characters, wiki) {
             buildWikiAndCharactersAnnotation(
                 text = text,
-                genre = genre,
                 mainCharacter = mainCharacter,
                 characters = characters,
                 wiki = wiki,
                 shadowColor = annotationBackgroundColor,
                 genreColor = genreColor,
+                headerFont = headerFont,
+                bodyFont = bodyFont,
             )
         }
 

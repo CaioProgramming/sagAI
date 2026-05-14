@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.characters.ui
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,16 +28,13 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.themeShimmer
 
 @Composable
 fun CharacterAvatar(
@@ -55,8 +51,8 @@ fun CharacterAvatar(
     grainRadius: Float? = null,
     pixelation: Float? = null,
 ) {
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     val characterColor = character.hexColor.hexToColor() ?: resolvedColor
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
@@ -83,7 +79,7 @@ fun CharacterAvatar(
 
     Box(
         modifier
-            .reactiveShimmer(isLoading, genre.shimmerColors())
+            .reactiveShimmer(isLoading, themeShimmer())
             .border(
                 borderSize,
                 borderBrush,
@@ -99,7 +95,7 @@ fun CharacterAvatar(
             character.name.first().uppercase(),
             style =
                 textStyle.copy(
-                    fontFamily = genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     brush =
                         Brush.verticalGradient(
                             characterColor.darkerPalette(factor = .2f),

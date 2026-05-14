@@ -37,8 +37,6 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
@@ -48,11 +46,9 @@ import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.components.CosmicBook
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun TimelineDrawer.renderDrawer(saga: Saga) {
@@ -76,12 +72,12 @@ fun TimelineDrawer.renderDrawer(saga: Saga) {
                     title,
                     style =
                         MaterialTheme.typography.headlineMedium.copy(
-                            fontFamily = genre.headerFont(),
-                            color = genre.resolveIconColor(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            color = MaterialTheme.colorScheme.secondary,
                             textAlign = TextAlign.Center,
                             shadow =
                                 Shadow(
-                                    genre.resolveColor(),
+                                    MaterialTheme.colorScheme.primary,
                                     Offset.Zero,
                                     15f,
                                 ),
@@ -91,10 +87,11 @@ fun TimelineDrawer.renderDrawer(saga: Saga) {
                             .fillMaxWidth()
                             .gradientFill(
                                 progressiveBrush(
-                                    genre.resolveColor(),
+                                    MaterialTheme.colorScheme.primary,
                                     progress,
                                 ),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 )
             }
         }
@@ -108,7 +105,7 @@ fun TimelineDrawer.renderDrawer(saga: Saga) {
                             .padding(vertical = 8.dp)
                             .gradientFill(
                                 progressiveBrush(
-                                    genre.resolveColor(),
+                                    MaterialTheme.colorScheme.primary,
                                     it.progress,
                                 ),
                             ),
@@ -126,7 +123,7 @@ fun TimelineDrawer.renderDrawer(saga: Saga) {
                         it.title,
                         style =
                             MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.ExtraBold,
                             ),
                         modifier = Modifier.padding(end = 8.dp),
@@ -141,7 +138,7 @@ fun TimelineDrawer.renderDrawer(saga: Saga) {
                         if (it.isComplete.not()) {
                             MaterialTheme.colorScheme.onBackground.copy(alpha = .4f)
                         } else {
-                            genre.resolveColor()
+                            MaterialTheme.colorScheme.primary
                         }
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -159,7 +156,7 @@ fun TimelineDrawer.renderDrawer(saga: Saga) {
                             it.title,
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = iconTint,
                                 ),
                         )
@@ -191,7 +188,7 @@ fun DetailSectionView.InitialSection.miniSection(
     val sectionStyle =
         MaterialTheme.typography.titleSmall.copy(
             fontWeight = FontWeight.SemiBold,
-            fontFamily = genre.bodyFont(),
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
 
     Column(
@@ -257,11 +254,12 @@ fun DetailSectionView.InitialSection.miniSection(
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
-                            .clip(genre.shape())
+                            .clip(sagaShape())
                             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
                             .clickable {
                                 onAction(DetailAction.OpenStoryReader)
-                            }.padding(16.dp),
+                            }
+                            .padding(16.dp),
                 ) {
                     Column(
                         horizontalAlignment = Alignment.Start,
@@ -274,7 +272,7 @@ fun DetailSectionView.InitialSection.miniSection(
                             "Read your story",
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.SemiBold,
                                 ),
                         )
@@ -282,7 +280,7 @@ fun DetailSectionView.InitialSection.miniSection(
                             "Read the story from start to beginning until now",
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 ),
                             modifier = Modifier.alpha(0.6f),
                         )
@@ -320,10 +318,11 @@ fun DetailSectionView.InitialSection.miniSection(
                         Column(
                             modifier =
                                 Modifier
-                                    .clip(genre.shape())
+                                    .clip(sagaShape())
                                     .clickable {
                                         onAction(DetailAction.OpenCharacter(char.data.id))
-                                    }.padding(8.dp),
+                                    }
+                                    .padding(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             CharacterAvatar(
@@ -337,7 +336,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Light,
                                         textAlign = TextAlign.Center,
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
                             )
                         }

@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.characters.ui.components
-
 import ai.atick.material.MaterialColor
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -7,15 +6,13 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.lighter
 
@@ -31,7 +28,6 @@ data class AnnotationStyleGroup(
 )
 
 fun transformTextWithContent(
-    genre: Genre,
     mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
@@ -39,11 +35,12 @@ fun transformTextWithContent(
     genreColor: Color,
     tagBackgroundColor: Color = MaterialColor.Gray500,
     textColor: Color = Color.Unspecified,
+    headerFont: FontFamily?,
+    bodyFont: FontFamily?,
 ): TransformedText {
     val (transformedText, offsetMapping) =
         transformExpressiveTags(
             text,
-            genre,
             tagBackgroundColor,
             textColor,
         )
@@ -53,12 +50,13 @@ fun transformTextWithContent(
         try {
             buildWikiAndCharactersAnnotationOnTransformed(
                 transformedText,
-                genre,
                 mainCharacter,
                 characters,
                 wiki,
                 genreColor,
                 tagBackgroundColor,
+                headerFont,
+                bodyFont,
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -74,7 +72,6 @@ fun transformTextWithContent(
  */
 private fun transformExpressiveTags(
     text: String,
-    genre: Genre,
     tagBackgroundColor: Color,
     textColor: Color,
 ): Pair<AnnotatedString, OffsetMapping> {
@@ -270,12 +267,13 @@ private fun transformExpressiveTags(
  */
 private fun buildWikiAndCharactersAnnotationOnTransformed(
     transformedAnnotatedString: AnnotatedString,
-    genre: Genre,
     mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
     genreColor: Color,
     shadowColor: Color,
+    headerFont: FontFamily?,
+    bodyFont: FontFamily?,
 ): AnnotatedString {
     val text = transformedAnnotatedString.text
     if (text.isEmpty()) return transformedAnnotatedString
@@ -284,9 +282,10 @@ private fun buildWikiAndCharactersAnnotationOnTransformed(
         charactersStyleRules(
             mainCharacter,
             characters,
-            genre,
             genreColor,
             shadowColor,
+            headerFont,
+            bodyFont,
         )
 
     val wikiRules =
@@ -349,15 +348,18 @@ fun buildCharactersAnnotatedString(
     text: String,
     mainCharacter: Character?,
     characters: List<Character>,
-    genre: Genre,
     genreColor: Color,
+    headerFont: FontFamily?,
+    bodyFont: FontFamily?,
 ) = buildAnnotatedString {
     val annotationRules =
         charactersStyleRules(
             mainCharacter,
             characters,
-            genre,
             genreColor,
+            Color.Black,
+            headerFont,
+            bodyFont,
         )
     val annotationStyleGroup =
         AnnotationStyleGroup(
@@ -373,9 +375,10 @@ fun buildCharactersAnnotatedString(
 fun charactersStyleRules(
     mainCharacter: Character?,
     characters: List<Character>,
-    genre: Genre,
     genreColor: Color,
     shadowColor: Color = Color.Black,
+    headerFont: FontFamily?,
+    bodyFont: FontFamily?,
 ): List<AnnotationRule> {
     val shadow =
         Shadow(
@@ -384,18 +387,16 @@ fun charactersStyleRules(
             offset = Offset(.5f, .3f),
         )
 
-    val headerFont = genre.headerFont()
-    val bodyFont = genre.bodyFont()
-
     return characters.flatMap { character ->
         val characterColor = character.hexColor.hexToColor() ?: genreColor.lighter(.3f)
         val font = if (character.id == mainCharacter?.id) headerFont else bodyFont
-        val span = SpanStyle(
-            fontWeight = FontWeight.Normal,
-            fontFamily = font,
-            shadow = shadow,
-            color = characterColor,
-        )
+        val span =
+            SpanStyle(
+                fontWeight = FontWeight.Normal,
+                shadow = shadow,
+                color = characterColor,
+                fontFamily = font,
+            )
 
         val nameVariations = mutableListOf<String>()
         nameVariations.add(character.name)
@@ -417,20 +418,22 @@ fun charactersStyleRules(
 
 fun buildWikiAndCharactersAnnotation(
     text: String,
-    genre: Genre,
     mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
     genreColor: Color,
     shadowColor: Color = Color.Black,
+    headerFont: FontFamily?,
+    bodyFont: FontFamily?,
 ): AnnotatedString {
     val charRules =
         charactersStyleRules(
             mainCharacter,
             characters,
-            genre,
             genreColor,
             shadowColor,
+            headerFont,
+            bodyFont,
         )
 
     val wikiRules =
@@ -465,11 +468,11 @@ fun buildWikiAndCharactersAnnotation(
                 if (rule != null) {
                     addStyle(rule.spanStyle, startIndex, endIndex)
                     val tag =
-                    if (rule.annotationValue.startsWith("character:")) "character_tag" else "wiki_tag"
-                addStringAnnotation(tag, rule.annotationValue, startIndex, endIndex)
+                        if (rule.annotationValue.startsWith("character:")) "character_tag" else "wiki_tag"
+                    addStringAnnotation(tag, rule.annotationValue, startIndex, endIndex)
+                }
             }
         }
-    }
 
     // Apply expressive tag styling on top
     return applyExpressiveTagStyling(baseAnnotation)
@@ -526,7 +529,10 @@ fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
     val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
 
     data class StyledSection(
-        val start: Int, val end: Int, val style: SpanStyle)
+        val start: Int,
+        val end: Int,
+        val style: SpanStyle,
+    )
     val styledSections = mutableListOf<StyledSection>()
 
     val allActionMatches = actionRegex.findAll(cleanText).toList()
@@ -554,7 +560,7 @@ fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
             StyledSection(
                 matchStart,
                 matchStart + content.length,
-                SpanStyle(fontStyle = FontStyle.Italic)
+                SpanStyle(fontStyle = FontStyle.Italic),
             ),
         )
         offset += "<narrator>".length + "</narrator>".length
@@ -580,7 +586,10 @@ fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString? =
         val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
 
         data class StyledSection(
-            val start: Int, val end: Int, val style: SpanStyle)
+            val start: Int,
+            val end: Int,
+            val style: SpanStyle,
+        )
         val styledSections = mutableListOf<StyledSection>()
 
         val allActionMatches = actionRegex.findAll(cleanText).toList()
@@ -592,7 +601,7 @@ fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString? =
                 StyledSection(
                     matchStart,
                     matchStart + content.length,
-                    SpanStyle(fontWeight = FontWeight.Bold)
+                    SpanStyle(fontWeight = FontWeight.Bold),
                 ),
             )
             offset += "<action>".length + "</action>".length
@@ -608,8 +617,8 @@ fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString? =
                 StyledSection(
                     matchStart,
                     matchStart + content.length,
-                    SpanStyle(fontStyle = FontStyle.Italic)
-                )
+                    SpanStyle(fontStyle = FontStyle.Italic),
+                ),
             )
             offset += "<narrator>".length + "</narrator>".length
         }

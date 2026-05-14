@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.home.ui.components
-
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,7 +32,6 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.ui.theme.bodyFont
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -80,7 +78,7 @@ fun CreateSagaCard(
                     MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Black,
                         letterSpacing = 3.sp,
-                        fontFamily = genre?.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
                 color = contentColor,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -114,7 +112,7 @@ fun CreateSagaCard(
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = genre?.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     color = genreColor,
                 ),
             color = genreColor,

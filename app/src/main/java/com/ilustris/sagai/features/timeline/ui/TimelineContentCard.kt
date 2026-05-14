@@ -46,19 +46,16 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
 
 @Composable
@@ -78,9 +75,9 @@ fun TimelineContentViewCard(
             modifier
                 .padding(16.dp)
                 .fillMaxWidth()
-                .border(1.dp, genre.resolveColor().gradientFade(), genre.shape())
-                .clip(genre.shape())
-                .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
+                .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), sagaShape())
+                .clip(sagaShape())
+                .background(MaterialTheme.colorScheme.surfaceContainer, sagaShape())
                 .clickable {
                     expanded = true
                 }.padding(16.dp),
@@ -100,7 +97,7 @@ fun TimelineContentViewCard(
                         .first()
                         .uppercase(),
                 borderWidth = 1.dp,
-                borderColor = genre.resolveColor(),
+                borderColor = MaterialTheme.colorScheme.primary,
                 modifier =
                     Modifier
                         .size(48.dp)
@@ -116,8 +113,8 @@ fun TimelineContentViewCard(
                     event.data.title,
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
-                            color = genre.resolveColor(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                         ),
                 )
@@ -129,7 +126,7 @@ fun TimelineContentViewCard(
                         .plus(stringResource(id = R.string.read_more)),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             fontWeight = FontWeight.Normal,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                         ),
@@ -147,7 +144,7 @@ fun TimelineContentViewCard(
                         TimelineActionItem(
                             icon = R.drawable.ic_note,
                             count = event.updatedWikis.size,
-                            color = genre.resolveColor(),
+                            color = MaterialTheme.colorScheme.primary,
                             genre = genre,
                         )
                     }
@@ -156,7 +153,7 @@ fun TimelineContentViewCard(
                         TimelineActionItem(
                             icon = R.drawable.ic_relationship,
                             count = event.updatedRelationshipDetails.size,
-                            color = genre.resolveColor(),
+                            color = MaterialTheme.colorScheme.primary,
                             genre = genre,
                         )
                     }
@@ -165,7 +162,7 @@ fun TimelineContentViewCard(
                         TimelineActionItem(
                             icon = R.drawable.ic_eye_mask,
                             count = event.newlyAppearedCharacters.size,
-                            color = genre.resolveColor(),
+                            color = MaterialTheme.colorScheme.primary,
                             genre = genre,
                         )
                     }
@@ -217,7 +214,7 @@ fun TimelineActionItem(
             count.toString(),
             style =
                 MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 ),
         )
@@ -245,7 +242,7 @@ fun ExpandedTimeline(
             style =
                 MaterialTheme.typography.labelMedium.copy(
                     fontWeight = FontWeight.Light,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Center,
                 ),
             modifier =
@@ -259,15 +256,15 @@ fun ExpandedTimeline(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .reactiveShimmer(true, genre.resolveColor().shimmerize()),
+                    .reactiveShimmer(true, MaterialTheme.colorScheme.primary.shimmerize()),
             style =
                 MaterialTheme.typography.headlineLarge.copy(
-                    fontFamily = genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     brush =
                         Brush.verticalGradient(
-                            genre.resolveColor().darkerPalette(),
+                            MaterialTheme.colorScheme.primary.darkerPalette(),
                         ),
                 ),
         )
@@ -276,7 +273,7 @@ fun ExpandedTimeline(
             event.data.content,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Start,
                 ),
         )
@@ -302,7 +299,7 @@ fun ExpandedTimeline(
                         .alpha(.7f),
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.Light,
@@ -315,7 +312,7 @@ fun ExpandedTimeline(
                 stringResource(R.string.new_characters_label),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),
@@ -326,7 +323,7 @@ fun ExpandedTimeline(
                     CharacterYearbookItem(
                         character = it,
                         genre = genre,
-                        modifier = Modifier.clip(genre.shape()),
+                        modifier = Modifier.clip(sagaShape()),
                     )
                 }
             }
@@ -337,7 +334,7 @@ fun ExpandedTimeline(
                 stringResource(R.string.saga_detail_section_title_wiki),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),
@@ -352,8 +349,8 @@ fun ExpandedTimeline(
                             Modifier
                                 .border(
                                     1.dp,
-                                    genre.resolveColor(),
-                                    genre.shape(),
+                                    MaterialTheme.colorScheme.primary,
+                                    sagaShape(),
                                 ).requiredWidthIn(max = 200.dp),
                     )
                 }
@@ -365,7 +362,7 @@ fun ExpandedTimeline(
                 stringResource(R.string.saga_detail_relationships_section_title),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Start,
                     ),

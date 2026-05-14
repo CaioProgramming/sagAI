@@ -34,11 +34,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -94,7 +91,7 @@ fun DefaultOverlay(
                 sparkModifier
                     .size(32.dp)
                     .genreVfx(genre),
-                colorFilter = ColorFilter.tint(genre.resolveColor()),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
             )
         }
 
@@ -106,7 +103,7 @@ fun DefaultOverlay(
             Text(
                 title,
                 style = MaterialTheme.typography.labelMedium,
-                fontFamily = genre.bodyFont(),
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(16.dp),
             )
@@ -121,7 +118,7 @@ fun DefaultOverlay(
                 subtitle,
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
-                fontFamily = genre.bodyFont(),
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -135,7 +132,7 @@ fun DefaultOverlay(
                 Text(
                     it,
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -155,8 +152,8 @@ fun DefaultOverlay(
                 shape = genre.bubble(isNarrator = true),
                 colors =
                     ButtonDefaults.elevatedButtonColors().copy(
-                        containerColor = genre.resolveColor(),
-                        contentColor = genre.resolveIconColor(),
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.secondary,
                     ),
             ) {
                 Text(stringResource(R.string.continue_button))

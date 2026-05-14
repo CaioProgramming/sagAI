@@ -59,7 +59,6 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileCard
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
@@ -67,15 +66,13 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -290,7 +287,7 @@ fun SagaDetailInitialContent(
                                                     }
                                                     .size(100.dp)
                                                     .gradientFill(
-                                                        genre.resolveColor().gradientFade(),
+                                                        MaterialTheme.colorScheme.primary.gradientFade(),
                                                     ),
                                             )
                                             genre.stylisedText(
@@ -381,7 +378,7 @@ fun SagaDetailInitialContent(
                                                 .padding(16.dp),
                                         style =
                                             MaterialTheme.typography.bodyLarge.copy(
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 textAlign = TextAlign.Justify,
                                             ),
                                     )
@@ -413,7 +410,7 @@ fun SagaDetailInitialContent(
                                         stringResource(R.string.starring),
                                         style =
                                             MaterialTheme.typography.headlineLarge.copy(
-                                                fontFamily = genre.headerFont(),
+                                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                                 textAlign = TextAlign.Start,
                                             ),
                                         modifier = Modifier.padding(16.dp),
@@ -421,7 +418,7 @@ fun SagaDetailInitialContent(
                                 }
 
                                 item(span = { GridItemSpan(columnCount) }) {
-                                    val shape = genre.shape()
+                                    val shape = sagaShape()
                                     var starringError by remember(it.data.id) {
                                         mutableStateOf(false)
                                     }
@@ -473,7 +470,7 @@ fun SagaDetailInitialContent(
                                                     Modifier
                                                         .size(100.dp)
                                                         .gradientFill(
-                                                            genre.resolveColor().gradientFade(),
+                                                            MaterialTheme.colorScheme.primary.gradientFade(),
                                                         ),
                                                 )
                                             }
@@ -501,7 +498,7 @@ fun SagaDetailInitialContent(
                                                 it.data.name,
                                                 style =
                                                     MaterialTheme.typography.headlineMedium.copy(
-                                                        fontFamily = genre.headerFont(),
+                                                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                                         color = genre.iconColor,
                                                     ),
                                             )
@@ -512,7 +509,7 @@ fun SagaDetailInitialContent(
                                                 overflow = TextOverflow.Ellipsis,
                                                 style =
                                                     MaterialTheme.typography.labelMedium.copy(
-                                                        fontFamily = genre.bodyFont(),
+                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                         color = genre.iconColor,
                                                     ),
                                             )
@@ -543,7 +540,7 @@ fun SagaDetailInitialContent(
                                                 text = saga.endMessage,
                                                 style =
                                                     MaterialTheme.typography.labelMedium.copy(
-                                                        fontFamily = genre.bodyFont(),
+                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                         fontWeight = FontWeight.Light,
                                                         fontStyle = FontStyle.Italic,
                                                         textAlign = TextAlign.Center,
@@ -573,10 +570,10 @@ fun SagaDetailInitialContent(
                                         onClick = {
                                             onAction(DetailAction.OpenLoreDebug)
                                         },
-                                        shape = genre.shape(),
+                                        shape = sagaShape(),
                                         colors =
                                             ButtonDefaults.buttonColors().copy(
-                                                containerColor = genre.resolveColor(),
+                                                containerColor = MaterialTheme.colorScheme.primary,
                                                 contentColor = genre.iconColor,
                                             ),
                                         modifier =
@@ -586,7 +583,7 @@ fun SagaDetailInitialContent(
                                     ) {
                                         Text(
                                             "Manage Story",
-                                            fontFamily = genre.bodyFont(),
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                             textAlign = TextAlign.Center,
                                         )
                                     }

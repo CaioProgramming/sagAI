@@ -24,14 +24,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaInfo
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
 fun TimelineThreadCard(
@@ -64,7 +61,7 @@ fun TimelineThreadCard(
                     genre = genre,
                     placeHolderChar = sagaInfo.title.first().uppercase(),
                     borderWidth = 1.dp,
-                    borderColor = genre.resolveColor(),
+                    borderColor = MaterialTheme.colorScheme.primary,
                     modifier =
                         Modifier
                             .size(48.dp)
@@ -93,8 +90,8 @@ fun TimelineThreadCard(
                     text = event.data.title,
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
-                            color = genre.resolveColor(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                         ),
                 )
@@ -103,7 +100,7 @@ fun TimelineThreadCard(
                     text = event.data.content,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = MaterialTheme.colorScheme.onSurface,
                         ),
                 )
@@ -111,7 +108,7 @@ fun TimelineThreadCard(
                 // Action Bar
                 TimelineThreadActionBar(
                     eventCard = eventCard,
-                    color = genre.resolveColor(),
+                    color = MaterialTheme.colorScheme.primary,
                     genre = genre,
                     onAction = onAction,
                 )
@@ -216,7 +213,7 @@ fun TimelineActionIcon(
             text = count.toString(),
             style =
                 MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 ),
         )
@@ -265,7 +262,7 @@ fun TimelineReplyItem(
                     Icon(
                         painter = painterResource(id = icon),
                         contentDescription = null,
-                        tint = genre.resolveColor(),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -274,9 +271,9 @@ fun TimelineReplyItem(
                     text = title,
                     style =
                         MaterialTheme.typography.labelLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             fontWeight = FontWeight.Bold,
-                            color = genre.resolveColor(),
+                            color = MaterialTheme.colorScheme.primary,
                         ),
                 )
             }
@@ -285,7 +282,7 @@ fun TimelineReplyItem(
                 text = content,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                     ),
                 modifier = Modifier.padding(top = 2.dp),

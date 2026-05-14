@@ -38,7 +38,6 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.emotional.ui.EmotionalProfileViewModel
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.presentation.EmotionalReviewViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -73,7 +72,7 @@ fun EmotionalSheet(
                         ),
                         shadow =
                             Shadow(
-                                color = genre.resolveColor(),
+                                color = MaterialTheme.colorScheme.primary,
                                 blurRadius = 10f,
                             ),
                     ),
@@ -88,7 +87,7 @@ fun EmotionalSheet(
             contentScale = ContentScale.Crop,
             colorFilter =
                 ColorFilter.tint(
-                    genre.resolveColor(),
+                    MaterialTheme.colorScheme.primary,
                     blendMode = BlendMode.Multiply,
                 ),
             modifier =

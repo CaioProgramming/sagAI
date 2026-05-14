@@ -26,11 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
 
 class ReviewPlaystylePage(
     override val content: SagaContent,
@@ -45,7 +42,7 @@ class ReviewPlaystylePage(
         onAction: (ReviewAction) -> Unit,
     ) {
         var showText by remember { mutableStateOf(false) }
-        val genre = content.data.genre
+        content.data.genre
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 verticalArrangement = Arrangement.Center,
@@ -61,18 +58,18 @@ class ReviewPlaystylePage(
                     label = playstyle.title ?: stringResource(R.string.playtime_title),
                     textStyle =
                         MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             fontWeight = FontWeight.Bold,
                             shadow =
                                 Shadow(
-                                    genre.resolveColor(),
+                                    MaterialTheme.colorScheme.primary,
                                     blurRadius = 1f,
                                     offset = Offset(5f, 0f),
                                 ),
                         ),
                     labelStyle =
                         MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     onAnimationFinished = {
                         showText = true
@@ -85,7 +82,7 @@ class ReviewPlaystylePage(
                             it,
                             style =
                                 MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Black,
                                     textAlign = TextAlign.Center,
                                 ),

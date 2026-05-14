@@ -21,34 +21,34 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun AnnotationTooltip(
     data: Any,
     genre: Genre,
-    shape: androidx.compose.ui.graphics.Shape = genre.shape(),
+    shape: androidx.compose.ui.graphics.Shape = sagaShape(),
 ) {
     Column(
         Modifier
             .padding(horizontal = 32.dp)
             .border(
                 1.dp,
-                Brush.verticalGradient(genre.resolveColor().darkerPalette(factor = .3f)),
+                Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette(factor = .3f)),
                 shape,
-            ).background(
+            )
+            .background(
                 Brush.verticalGradient(
                     MaterialTheme.colorScheme.surfaceContainer.darkerPalette(
                         factor = .3f,
                     ),
                 ),
                 shape,
-            ).padding(16.dp),
+            )
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
@@ -57,7 +57,8 @@ fun AnnotationTooltip(
         ) {
             when (data) {
                 is Character -> {
-                    val characterColor = data.hexColor.hexToColor() ?: genre.resolveColor()
+                    val characterColor =
+                        data.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary
 
                     CharacterAvatar(
                         data,
@@ -75,7 +76,7 @@ fun AnnotationTooltip(
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 brush = Brush.verticalGradient(characterColor.darkerPalette()),
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Bold,
                             ),
                     )
@@ -86,7 +87,7 @@ fun AnnotationTooltip(
                         text = data.emojiTag ?: emptyString(),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                     )
 
@@ -94,7 +95,7 @@ fun AnnotationTooltip(
                         text = data.title,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Bold,
                             ),
                     )
@@ -123,7 +124,7 @@ fun AnnotationTooltip(
             overflow = TextOverflow.Ellipsis,
             style =
                 MaterialTheme.typography.labelLarge.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
             textAlign = TextAlign.Start,
         )

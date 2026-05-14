@@ -42,10 +42,8 @@ import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -82,7 +80,7 @@ fun EmotionShareView(
                         .padding(32.dp)
                         .background(MaterialTheme.colorScheme.background)
                         .align(Alignment.Center)
-                        .clip(genre.shape())
+                        .clip(sagaShape())
                         .clickable {
                             coroutineScope.launch {
                                 delay(2.seconds)
@@ -104,7 +102,7 @@ fun EmotionShareView(
                     shareText?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             brush = genre.gradient(),
                         ),
                     modifier = Modifier.padding(vertical = 16.dp),
@@ -114,7 +112,7 @@ fun EmotionShareView(
                     shareText?.text ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                 )
 
@@ -129,7 +127,7 @@ fun EmotionShareView(
                         shareText?.caption ?: emptyString(),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Center,
                             ),
                     )

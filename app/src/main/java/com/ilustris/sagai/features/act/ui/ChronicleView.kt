@@ -36,12 +36,9 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.components.BookShelf
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.BookReaderKey
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
-import com.ilustris.sagai.ui.theme.headerFont
 
 /**
  * Chronicle shelf screen — shows the book collection for a saga and triggers generation
@@ -62,7 +59,7 @@ fun ChronicleView(
     val viewModel: ChronicleViewModel = hiltViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
-    val genre = saga.data.genre
+    saga.data.genre
 
     LaunchedEffect(initialActId) {
         viewModel.start(saga)
@@ -107,11 +104,11 @@ fun ChronicleView(
                     subtitle,
                     titleStyle =
                         MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         ),
                     subtitleStyle =
                         MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     modifier = Modifier.fillMaxWidth(),
                     titleModifier = titleModifier,
@@ -130,7 +127,7 @@ fun ChronicleView(
                     modifier = Modifier.fillMaxSize(),
                 ) { currentState ->
                     Box(modifier = Modifier.fillMaxSize()) {
-                        val starColor by animateColorAsState(genre.resolveColor())
+                        val starColor by animateColorAsState(MaterialTheme.colorScheme.primary)
                         StarryTextPlaceholder(
                             modifier = Modifier.fillMaxSize(),
                             starColor,

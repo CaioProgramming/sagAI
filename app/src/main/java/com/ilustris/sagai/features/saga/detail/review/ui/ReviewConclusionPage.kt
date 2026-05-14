@@ -31,11 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.share.domain.model.ShareType
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
@@ -108,7 +105,7 @@ class ReviewConclusionPage(
                             text = it.uppercase(),
                             style =
                                 MaterialTheme.typography.headlineLarge.copy(
-                                    fontFamily = genre.headerFont(),
+                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onBackground,
                                 ),
@@ -128,10 +125,10 @@ class ReviewConclusionPage(
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     shadow =
                                         Shadow(
-                                            genre.resolveColor(),
+                                            MaterialTheme.colorScheme.primary,
                                             Offset(5f, 0f),
                                             10f,
                                         ),
@@ -157,7 +154,7 @@ class ReviewConclusionPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.resolveColor(),
+                            contentColor = MaterialTheme.colorScheme.primary,
                         ),
                 ) {
                     Text(stringResource(R.string.share))

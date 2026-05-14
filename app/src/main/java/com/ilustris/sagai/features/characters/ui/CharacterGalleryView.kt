@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 
 package com.ilustris.sagai.features.characters.ui
-
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -51,14 +50,11 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipC
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.ui.components.RowHeader
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,11 +109,11 @@ fun CharactersGalleryContent(
                             subtitle,
                             titleStyle =
                                 MaterialTheme.typography.displaySmall.copy(
-                                    fontFamily = genre.headerFont(),
+                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 ),
                             subtitleStyle =
                                 MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 ),
                             modifier =
                                 Modifier
@@ -141,7 +137,7 @@ fun CharactersGalleryContent(
                                     ).size(100.dp),
                             modifier =
                                 Modifier
-                                    .clip(genre.shape())
+                                    .clip(sagaShape())
                                     .clickable {
                                         onOpenCharacter(character.data.id)
                                     },
@@ -155,7 +151,7 @@ fun CharactersGalleryContent(
                             stringResource(R.string.saga_detail_relationships_section_title),
                             textStyle =
                                 MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 ),
                         ) {}
                     }
@@ -228,7 +224,7 @@ private fun CharacterVerticalItem(
             useFallback = useFallback,
             textStyle =
                 MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 ),
             genre = genre,
             modifier =
@@ -240,7 +236,7 @@ private fun CharacterVerticalItem(
             text = character.name,
             style =
                 style.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp),
@@ -274,7 +270,7 @@ fun CharacterHorizontalView(
                 borderSize = borderSize,
                 textStyle =
                     MaterialTheme.typography.labelLarge.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     ),
                 genre = genre,
                 modifier =
@@ -286,9 +282,11 @@ fun CharacterHorizontalView(
                 text = character.name,
                 style =
                     style.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.W700,
-                        color = character.hexColor.hexToColor() ?: genre.resolveColor(),
+                        color =
+                            character.hexColor.hexToColor()
+                                ?: MaterialTheme.colorScheme.primary,
                     ),
                 textAlign = TextAlign.Start,
                 modifier = Modifier.weight(1f),

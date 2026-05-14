@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGroup
-import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
 fun WikiGroupedList(
@@ -46,7 +45,7 @@ fun WikiGroupedList(
                     group.title,
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Center,
                         ),
                     modifier =

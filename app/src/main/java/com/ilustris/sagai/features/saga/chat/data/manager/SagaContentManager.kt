@@ -13,14 +13,11 @@ import com.ilustris.sagai.ui.components.SnackBarState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import java.io.File
 
 interface SagaContentManager {
     val content: MutableStateFlow<com.ilustris.sagai.features.home.data.model.SagaMetadata?>
     val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
-    val ambientMusicFile: StateFlow<File?>
-    val replySfxFile: StateFlow<File?>
     val narrativeProcessingUiState: StateFlow<Boolean>
     val contentReasoning: MutableStateFlow<String?>
 

@@ -37,19 +37,15 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.ui.SagaBriefing
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -70,15 +66,15 @@ fun StorySheet(
     sagaBriefing?.let {
         val sagaContent = sagaBriefing.saga
         val genre = sagaContent.data.genre
-        val resolvedColor = genre.resolveColor()
-        val resolvedIconColor = genre.resolveIconColor()
+        val resolvedColor = MaterialTheme.colorScheme.primary
+        val resolvedIconColor = MaterialTheme.colorScheme.secondary
 
         ModalBottomSheet(
             onDismissRequest = { onDismiss() },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.background,
             dragHandle = { Box {} },
-            shape = genre.shape(),
+            shape = sagaShape(),
         ) {
             Box(
                 modifier =
@@ -187,7 +183,7 @@ fun StorySheet(
                         },
                         modifier =
                             Modifier
-                                .reactiveShimmer(true, genre.shimmerColors())
+                                .reactiveShimmer(true, themeShimmer())
                                 .fillMaxWidth()
                                 .padding(32.dp),
                         colors =
@@ -209,7 +205,7 @@ fun StoryPage(
     content: String,
     genre: Genre,
 ) {
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     Column(
         modifier =
             Modifier
@@ -221,7 +217,7 @@ fun StoryPage(
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            fontFamily = genre.headerFont(),
+            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
             color = resolvedIconColor,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 16.dp),
@@ -229,7 +225,7 @@ fun StoryPage(
         Text(
             text = content,
             style = MaterialTheme.typography.bodyLarge,
-            fontFamily = genre.bodyFont(),
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
             color = resolvedIconColor,
             textAlign = TextAlign.Start,
         )

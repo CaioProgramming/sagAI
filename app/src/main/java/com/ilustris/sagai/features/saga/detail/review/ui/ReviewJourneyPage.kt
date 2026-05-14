@@ -31,11 +31,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -69,7 +67,7 @@ class ReviewJourneyPage(
             }
         }
 
-        val genre = content.data.genre
+        content.data.genre
 
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
@@ -86,7 +84,7 @@ class ReviewJourneyPage(
                         it,
                         style =
                             MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center,
                             ),
@@ -114,7 +112,7 @@ class ReviewJourneyPage(
                         it,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Center,
                             ),
                         duration = 5.seconds,
@@ -135,7 +133,7 @@ class ReviewJourneyPage(
                         colors =
                             ButtonDefaults.elevatedButtonColors().copy(
                                 containerColor = MaterialTheme.colorScheme.onBackground,
-                                contentColor = genre.resolveColor(),
+                                contentColor = MaterialTheme.colorScheme.primary,
                             ),
                     ) {
                         Text(stringResource(R.string.share))

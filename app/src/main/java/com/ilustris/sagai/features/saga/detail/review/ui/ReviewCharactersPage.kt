@@ -42,13 +42,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
-import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -146,15 +143,15 @@ class ReviewCharactersPage(
                                         title,
                                         style =
                                             MaterialTheme.typography.titleLarge.copy(
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 fontWeight = FontWeight.Bold,
-                                                color = genre.resolveIconColor(),
+                                                color = MaterialTheme.colorScheme.secondary,
                                             ),
                                         modifier =
                                             Modifier
                                                 .padding(8.dp)
                                                 .background(
-                                                    genre.resolveColor(),
+                                                    MaterialTheme.colorScheme.primary,
                                                     shape = genre.bubble(isNarrator = true),
                                                 )
                                                 .padding(8.dp),
@@ -177,7 +174,7 @@ class ReviewCharactersPage(
                                         style =
                                             MaterialTheme.typography.titleLarge.copy(
                                                 fontWeight = FontWeight.Bold,
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                             ),
                                     )
 
@@ -200,7 +197,7 @@ class ReviewCharactersPage(
                                             style =
                                                 MaterialTheme.typography.headlineSmall.copy(
                                                     fontWeight = FontWeight.Bold,
-                                                    fontFamily = genre.bodyFont(),
+                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 ),
                                         )
 
@@ -211,7 +208,7 @@ class ReviewCharactersPage(
                                             ),
                                             style =
                                                 MaterialTheme.typography.bodyMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
+                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 ),
                                         )
                                     }
@@ -227,7 +224,7 @@ class ReviewCharactersPage(
                                         colors =
                                             ButtonDefaults.elevatedButtonColors().copy(
                                                 containerColor = MaterialTheme.colorScheme.onBackground,
-                                                contentColor = genre.resolveColor(),
+                                                contentColor = MaterialTheme.colorScheme.primary,
                                             ),
                                         modifier = Modifier.padding(vertical = 16.dp),
                                     ) {

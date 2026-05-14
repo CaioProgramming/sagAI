@@ -56,6 +56,7 @@ import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.SideEffectService
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
@@ -64,12 +65,12 @@ import com.ilustris.sagai.ui.navigation.FAQKey
 import com.ilustris.sagai.ui.navigation.HomeKey
 import com.ilustris.sagai.ui.navigation.Navigator
 import com.ilustris.sagai.ui.navigation.NewSagaKey
+import com.ilustris.sagai.ui.navigation.PlaythroughKey
 import com.ilustris.sagai.ui.navigation.ProfileKey
 import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
 import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
-import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
@@ -98,9 +99,9 @@ class MainActivity : ComponentActivity() {
         intent?.removeExtra("deepLink")
         Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")
         setContent {
-            val activeGenre by sagaThemeManager.currentGenre.collectAsState(initial = null)
-
-            SagAITheme(genre = activeGenre) {
+            Timber.d("MainActivity: setContent")
+            SagAITheme(sagaThemeManager = sagaThemeManager) {
+                Timber.d("MainActivity: SagAITheme block")
                 val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
                 val isOnline by connectivityObserver.observe().collectAsState(initial = true)
 
@@ -125,10 +126,60 @@ class MainActivity : ComponentActivity() {
                 val snackbarHostState = remember { SnackbarHostState() }
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
 
+                // Reset theme to brand defaults on genre-neutral screens
+                LaunchedEffect(currentKey) {
+                    val isNeutralScreen =
+                        currentKey is HomeKey ||
+                            currentKey is ProfileKey ||
+                            currentKey is FAQKey ||
+                            currentKey is NewSagaKey ||
+                            currentKey is AuditLogsKey ||
+                            currentKey is PlaythroughKey
+
+                    sagaThemeManager.setNeutral(isNeutralScreen)
+                }
+
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->
                         Timber.d("Received global side effect: $effect")
                         activeSideEffect = effect
+                    }
+                }
+
+                // Global Ambient Music Control
+                val ambientMusicFile by sagaThemeManager.ambientMusicFile.collectAsState()
+                LaunchedEffect(ambientMusicFile) {
+                    try {
+                        val file = ambientMusicFile
+                        if (file != null && file.exists()) {
+                            Timber.d("Global music update: Playing ${file.absolutePath}")
+                            val musicIntent =
+                                Intent(
+                                    applicationContext,
+                                    com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
+                                ).apply {
+                                    action =
+                                        com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_START
+                                    putExtra(
+                                        com.ilustris.sagai.core.media.SagaPlaybackService.EXTRA_MUSIC_PATH,
+                                        file.absolutePath,
+                                    )
+                                }
+                            startService(musicIntent)
+                        } else {
+                            Timber.d("Global music update: Stopping playback")
+                            startService(
+                                Intent(
+                                    applicationContext,
+                                    com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
+                                ).apply {
+                                    action =
+                                        com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_STOP
+                                },
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error updating global music playback")
                     }
                 }
 
@@ -171,18 +222,25 @@ class MainActivity : ComponentActivity() {
                         }) {
                             if (it) {
                                 SharedTransitionLayout {
+                                    val entryProvider =
+                                        remember(
+                                            navigator,
+                                            padding,
+                                            snackbarHostState,
+                                            this@SharedTransitionLayout,
+                                            this@AnimatedContent,
+                                        ) {
+                                            createSagaEntryProvider(
+                                                navigator,
+                                                padding,
+                                                snackbarHostState,
+                                                this@SharedTransitionLayout,
+                                                this@AnimatedContent,
+                                            )
+                                        }
                                     Box(modifier = Modifier.fillMaxSize()) {
                                         NavDisplay(
-                                            entries =
-                                                navigationState.toEntries(
-                                                    createSagaEntryProvider(
-                                                        navigator,
-                                                        padding,
-                                                        snackbarHostState,
-                                                        this@SharedTransitionLayout,
-                                                        this@AnimatedContent,
-                                                    ),
-                                                ),
+                                            entries = navigationState.toEntries(entryProvider),
                                             onBack = { navigator.goBack() },
                                         )
                                     }

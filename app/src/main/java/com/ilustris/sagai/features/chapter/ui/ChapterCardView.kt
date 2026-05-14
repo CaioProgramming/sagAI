@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.chapter.ui
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -30,16 +29,13 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun ChapterCardView(
@@ -49,12 +45,12 @@ fun ChapterCardView(
     modifier: Modifier,
     showTitle: Boolean = true,
 ) {
-    val shape = genre.shape()
+    val shape = sagaShape()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .clip(shape)
-                .border(1.dp, genre.resolveColor().gradientFade(), shape)
+                .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .fillMaxWidth()
                 .weight(1f),
@@ -83,7 +79,7 @@ fun ChapterCardView(
                 chapterIndex.toRoman(),
                 style =
                     MaterialTheme.typography.headlineMedium.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         textAlign = TextAlign.Center,
                         brush = genre.gradient(),
                     ),
@@ -101,7 +97,7 @@ fun ChapterCardView(
                 maxLines = 1,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                     ),
                 modifier =

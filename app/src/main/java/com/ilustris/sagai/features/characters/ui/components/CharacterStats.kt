@@ -14,7 +14,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.bodyFont
 
 @Composable
 fun CharacterStats(
@@ -74,7 +73,7 @@ fun VerticalLabel(
             value,
             style =
                 MaterialTheme.typography.titleSmall.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     color = contentColor,
@@ -85,7 +84,7 @@ fun VerticalLabel(
             label,
             style =
                 MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Center,
                     color = contentColor,
                 ),

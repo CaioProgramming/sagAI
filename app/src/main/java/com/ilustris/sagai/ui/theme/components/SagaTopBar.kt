@@ -24,10 +24,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -58,7 +55,7 @@ fun SagaTopBar(
                     Modifier
                         .reactiveShimmer(
                             isLoading,
-                            shimmerColors = genre?.shimmerColors() ?: themeShimmer(),
+                            shimmerColors = themeShimmer() ?: themeShimmer(),
                         ).clip(CircleShape)
                         .clickable {
                             onBackClick()
@@ -70,7 +67,7 @@ fun SagaTopBar(
         Column(
             modifier =
                 Modifier
-                    .reactiveShimmer(isLoading, genre?.shimmerColors() ?: themeShimmer())
+                    .reactiveShimmer(isLoading, themeShimmer() ?: themeShimmer())
                     .padding(horizontal = 8.dp)
                     .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -79,7 +76,7 @@ fun SagaTopBar(
                 title,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre?.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         brush =
                             Brush.verticalGradient(
                                 genre?.colorPalette() ?: holographicGradient,
@@ -90,7 +87,7 @@ fun SagaTopBar(
                     Modifier
                         .fillMaxWidth()
                         .then(titleModifier)
-                        .reactiveShimmer(isLoading, genre?.shimmerColors() ?: themeShimmer()),
+                        .reactiveShimmer(isLoading, themeShimmer() ?: themeShimmer()),
             )
 
             if (subtitle.isNotEmpty()) {
@@ -98,7 +95,7 @@ fun SagaTopBar(
                     subtitle,
                     style =
                         MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre?.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             fontWeight = FontWeight.Light,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                             textAlign = TextAlign.Center,

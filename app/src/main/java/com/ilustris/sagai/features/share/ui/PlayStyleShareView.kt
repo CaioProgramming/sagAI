@@ -51,8 +51,6 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
@@ -60,11 +58,9 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.headerFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -75,8 +71,8 @@ fun PlayStyleShareView(
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     val genre = remember(saga) { saga.genre }
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
@@ -120,12 +116,14 @@ fun PlayStyleShareView(
                                     viewModel.saveBitmap(bitmap, ShareType.PLAYSTYLE.name)
                                 }
                         }
-                    }.drawWithContent {
+                    }
+                    .drawWithContent {
                         graphicsLayer.record {
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.padding(8.dp)
+                    }
+                    .padding(8.dp)
                     .background(resolvedColor),
             ) {
                 Box(
@@ -161,7 +159,7 @@ fun PlayStyleShareView(
                                     shareText?.title ?: emptyString(),
                                     style =
                                         MaterialTheme.typography.labelMedium.copy(
-                                            fontFamily = genre.bodyFont(),
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                             color = resolvedIconColor,
                                             textAlign = TextAlign.Center,
                                             shadow =
@@ -180,7 +178,7 @@ fun PlayStyleShareView(
                                             .fillMaxWidth(),
                                     style =
                                         MaterialTheme.typography.displaySmall.copy(
-                                            fontFamily = genre.headerFont(),
+                                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                             textAlign = TextAlign.Center,
                                             brush =
                                                 Brush.verticalGradient(
@@ -200,7 +198,7 @@ fun PlayStyleShareView(
                             modifier = Modifier.align(Alignment.Center),
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = resolvedIconColor,
                                     textAlign = TextAlign.Center,
                                     fontStyle = FontStyle.Italic,
@@ -237,7 +235,7 @@ fun PlayStyleShareView(
                                 shareText?.title ?: emptyString(),
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = resolvedIconColor,
                                         textAlign = TextAlign.Center,
                                         shadow =
@@ -256,7 +254,7 @@ fun PlayStyleShareView(
                                         .fillMaxWidth(),
                                 style =
                                     MaterialTheme.typography.displaySmall.copy(
-                                        fontFamily = genre.headerFont(),
+                                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                         textAlign = TextAlign.Center,
                                         brush =
                                             Brush.verticalGradient(
@@ -273,7 +271,7 @@ fun PlayStyleShareView(
                                 shareText?.text ?: emptyString(),
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = resolvedIconColor,
                                         textAlign = TextAlign.Center,
                                         fontStyle = FontStyle.Italic,
@@ -312,7 +310,7 @@ fun PlayStyleShareView(
                             shareText?.caption ?: emptyString(),
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = resolvedIconColor,
                                 ),
                             modifier = Modifier.align(Alignment.CenterHorizontally),

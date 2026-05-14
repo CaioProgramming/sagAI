@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.characters.ui
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -63,8 +62,6 @@ import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCar
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -72,17 +69,15 @@ import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttac
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -126,7 +121,7 @@ fun CharacterDetailsContent(
 ) {
     val viewModel: CharacterDetailsViewModel = hiltViewModel()
     val genre = detailData.sagaInfo.genre
-    val resolvedColor = genre.resolveColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val imagePalette by viewModel.imagePalette.collectAsStateWithLifecycle()
@@ -154,7 +149,7 @@ fun CharacterDetailsContent(
         textStyle =
             MaterialTheme.typography.labelLarge.copy(
                 resolvedColor,
-                fontFamily = genre.bodyFont(),
+                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
             ),
         brushColors = genre.colorPalette(),
     )
@@ -189,8 +184,8 @@ private fun CharacterDetailsLoaded(
     val sagaInfo = detailData.sagaInfo
     val character = detailData.character
     val genre = sagaInfo.genre
-    val resolvedColor = genre.resolveColor()
-    genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    MaterialTheme.colorScheme.secondary
 
     val adaptiveColor by animateColorAsState(
         targetValue = imagePalette?.dominant ?: MaterialTheme.colorScheme.background,
@@ -328,7 +323,7 @@ private fun CharacterDetailsLoaded(
                                 characterData.profile.occupation,
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = adaptiveTextColor,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -344,7 +339,7 @@ private fun CharacterDetailsLoaded(
                                             ),
                                         style =
                                             MaterialTheme.typography.titleMedium.copy(
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 color = adaptiveTextColor,
                                                 textAlign = TextAlign.Center,
                                             ),
@@ -364,8 +359,7 @@ private fun CharacterDetailsLoaded(
                                             sagaInfo,
                                             characterData,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -383,7 +377,7 @@ private fun CharacterDetailsLoaded(
                                 characterData.profile.occupation,
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = characterColor,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -399,7 +393,7 @@ private fun CharacterDetailsLoaded(
                                             ),
                                         style =
                                             MaterialTheme.typography.titleMedium.copy(
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 color = characterColor.copy(alpha = 0.8f),
                                                 textAlign = TextAlign.Center,
                                             ),
@@ -427,7 +421,7 @@ private fun CharacterDetailsLoaded(
                             messageCount.toString(),
                             style =
                                 MaterialTheme.typography.displaySmall.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Normal,
                                     textAlign = TextAlign.Center,
                                     color = adaptiveTextColor,
@@ -442,7 +436,7 @@ private fun CharacterDetailsLoaded(
                             stringResource(id = R.string.messages_label),
                             style =
                                 MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Light,
                                     textAlign = TextAlign.Center,
                                     color = adaptiveTextColor,
@@ -465,7 +459,7 @@ private fun CharacterDetailsLoaded(
                             stringResource(R.string.character_form_title_backstory),
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = adaptiveTextColor,
                                 ),
                         )
@@ -483,7 +477,7 @@ private fun CharacterDetailsLoaded(
                                 text,
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         color = textColor,
                                     ),
                                 modifier =
@@ -492,8 +486,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }
@@ -509,7 +502,7 @@ private fun CharacterDetailsLoaded(
                             stringResource(R.string.personality_title),
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = adaptiveTextColor,
                                 ),
                         )
@@ -518,7 +511,7 @@ private fun CharacterDetailsLoaded(
                             characterData.profile.personality,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = adaptiveTextColor,
                                 ),
                         )
@@ -539,7 +532,7 @@ private fun CharacterDetailsLoaded(
                             stringResource(R.string.saga_detail_relationships_section_title),
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = adaptiveTextColor,
                                 ),
                             modifier =
@@ -583,7 +576,7 @@ private fun CharacterDetailsLoaded(
                             stringResource(R.string.saga_detail_timeline_section_title),
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color = adaptiveTextColor,
                                 ),
                             modifier =
@@ -606,7 +599,7 @@ private fun CharacterDetailsLoaded(
                             modifier =
                                 Modifier
                                     .padding(horizontal = 16.dp)
-                                    .clip(genre.shape()),
+                                    .clip(sagaShape()),
                         )
                     }
                 }
@@ -620,7 +613,7 @@ private fun CharacterDetailsLoaded(
                 "${characterData.name} ${characterData.lastName ?: emptyString()}",
                 style =
                     MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         textAlign = TextAlign.Center,
                         color = adaptiveTextColor,
                     ),

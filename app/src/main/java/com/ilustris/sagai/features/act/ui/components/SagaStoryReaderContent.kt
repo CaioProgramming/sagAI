@@ -24,9 +24,7 @@ import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.ui.components.EmotionalCard
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.headerFont
 
 @OptIn(
     ExperimentalFoundationApi::class,
@@ -78,7 +76,7 @@ fun SagaStoryReaderContent(
                         text = act.data.introduction,
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.2f,
                             ),
                         modifier =
@@ -113,7 +111,7 @@ fun SagaStoryReaderContent(
                             text = "Act Conclusion",
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = genre.headerFont(),
+                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                     fontWeight = FontWeight.Bold,
                                 ),
                             modifier = Modifier.padding(bottom = 8.dp),
@@ -122,7 +120,7 @@ fun SagaStoryReaderContent(
                             text = act.data.content,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2f,
                                 ),
                             modifier = Modifier.alpha(0.8f),

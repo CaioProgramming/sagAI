@@ -66,19 +66,16 @@ import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlin.math.abs
@@ -233,7 +230,12 @@ fun BookReader(
                     modifier =
                         Modifier
                             .size(24.dp)
-                            .gradientFill(progressiveBrush(genre.resolveColor(), readingProgress)),
+                            .gradientFill(
+                                progressiveBrush(
+                                    MaterialTheme.colorScheme.primary,
+                                    readingProgress,
+                                ),
+                            ),
                 )
 
                 AnimatedContent(pagerState.currentPage, transitionSpec = {
@@ -251,7 +253,7 @@ fun BookReader(
                                 text = "${it + 1}",
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
-                                        fontFamily = genre.headerFont(),
+                                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                         textAlign = TextAlign.Center,
                                     ),
                             )
@@ -265,12 +267,12 @@ fun BookReader(
                                 shape = RoundedCornerShape(genre.cornerSize()),
                                 colors =
                                     ButtonDefaults.textButtonColors().copy(
-                                        contentColor = genre.resolveColor(),
+                                        contentColor = MaterialTheme.colorScheme.primary,
                                     ),
                             ) {
                                 Text(
                                     "Read next volume",
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     style =
                                         MaterialTheme.typography.labelLarge.copy(
                                             shadow = Shadow(genre.color, blurRadius = 5f),
@@ -283,11 +285,11 @@ fun BookReader(
 
                 Text(
                     saga.data.title,
-                    fontFamily = genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     letterSpacing = 2.sp,
                     style =
                         MaterialTheme.typography.labelMedium.copy(
-                            color = genre.resolveColor(),
+                            color = MaterialTheme.colorScheme.primary,
                             textAlign = TextAlign.Center,
                         ),
                 )
@@ -308,7 +310,7 @@ fun BookCoverPage(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(genre.resolveColor()),
+                .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -324,7 +326,7 @@ fun BookCoverPage(
                 text = "VOL $volume",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = Color.White,
                         letterSpacing = 2.sp,
                     ),
@@ -338,7 +340,7 @@ fun BookCoverPage(
                     text = sagaTitle.uppercase(),
                     style =
                         MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             color = Color.White,
                             textAlign = TextAlign.Center,
                         ),
@@ -349,7 +351,7 @@ fun BookCoverPage(
                     text = actTitle,
                     style =
                         MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = Color.White,
                             textAlign = TextAlign.Center,
                         ),
@@ -370,7 +372,7 @@ fun BookCoverPage(
                 text = "\"$quote\"",
                 style =
                     MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = Color.White.copy(alpha = 0.8f),
                         textAlign = TextAlign.Center,
                         fontStyle = FontStyle.Italic,
@@ -402,15 +404,15 @@ fun ChapterStartPage(
                 Modifier
                     .size(50.dp)
                     .reactiveShimmer(true),
-            tint = genre.resolveColor(),
+            tint = MaterialTheme.colorScheme.primary,
         )
 
         AutoResizeText(
             text = title.uppercase(),
             style =
                 MaterialTheme.typography.headlineLarge.copy(
-                    fontFamily = genre.headerFont(),
-                    color = genre.resolveColor(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                 ),
             maxLines = 2,
@@ -438,7 +440,7 @@ fun ReaderPage(
             text = page.content,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     fontWeight = FontWeight.Normal,
                 ),
             textAlign = TextAlign.Start,
@@ -472,7 +474,7 @@ fun EndPaper(
     saga: SagaContent,
 ) {
     val genre = remember { saga.data.genre }
-    val genreColor = saga.data.genre.resolveColor()
+    val genreColor = MaterialTheme.colorScheme.primary
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -506,7 +508,7 @@ fun EndPaper(
                     MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         fontStyle = FontStyle.Italic,
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Light,
                         textAlign = TextAlign.Center,
                     ),
@@ -546,8 +548,8 @@ fun CharacterGridPage(
             text = genre.characterGridTitle().uppercase(),
             style =
                 MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = genre.headerFont(),
-                    color = genre.resolveColor(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                 ),
             maxLines = 1,
@@ -579,7 +581,7 @@ fun CharacterGridPage(
                         text = character.data.name,
                         style =
                             MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
                             ),

@@ -33,7 +33,6 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.theme.bodyFont
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -93,7 +92,7 @@ fun IntroductionOverlay(
                     text = "$title ${introduction.titleText}",
                     style =
                         MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             textAlign = TextAlign.Center,
                         ),
                     modifier = Modifier.fillMaxWidth(),
@@ -125,7 +124,7 @@ fun IntroductionOverlay(
                         it,
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Normal,
                                 textAlign = TextAlign.Center,
                             ),

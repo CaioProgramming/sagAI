@@ -22,9 +22,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGroup
 import com.ilustris.sagai.features.wiki.ui.WikiGroupedList
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
 fun WikiContent(
@@ -51,7 +49,7 @@ fun WikiContent(
                         title,
                         style =
                             MaterialTheme.typography.headlineLarge.copy(
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 textAlign = TextAlign.Center,
                             ),
                         modifier =
@@ -64,7 +62,7 @@ fun WikiContent(
                         subtitle,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Center,
                             ),
                         modifier =

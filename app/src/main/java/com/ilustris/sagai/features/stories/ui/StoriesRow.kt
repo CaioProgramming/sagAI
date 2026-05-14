@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,12 +25,11 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 
@@ -72,9 +70,7 @@ fun StoryItem(
     expanded: Boolean,
     visualConfig: GenreVisualConfig?,
 ) {
-    CompositionLocalProvider(
-        LocalGenreVisualConfig provides visualConfig,
-    ) {
+    SagAITheme(visualConfig = visualConfig, genre = saga.data.genre) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -122,6 +118,7 @@ fun StoryItem(
                     saga.data.title
                         .first()
                         .uppercase(),
+                    visualConfig = visualConfig,
                     borderWidth = 1.dp,
                     modifier =
                         Modifier
@@ -137,11 +134,9 @@ fun StoryItem(
                                     saga.data.genre.color
                                         .darker()
                                 spread = 10f
-                            }
-                            .fillMaxSize()
+                            }.fillMaxSize()
                             .clip(CircleShape)
-                            .clickable(enabled = !isLoading) { onStoryClicked(saga) }
-                            .effectForGenre(saga.data.genre),
+                            .clickable(enabled = !isLoading) { onStoryClicked(saga) },
                 )
             }
         }

@@ -39,12 +39,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.pulse
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -112,11 +109,11 @@ class ReviewIntroAnimationPage(
                             .size(iconSize)
                             .pulse(canAnimate)
                             .levitate(canAnimate),
-                        colorFilter = ColorFilter.tint(genre.resolveColor()),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                     )
                 }
 
-                val font = genre.bodyFont()
+                val font = MaterialTheme.typography.bodyLarge.fontFamily
 
                 AnimatedVisibility(
                     showContent,
@@ -179,8 +176,8 @@ class ReviewIntroAnimationPage(
                     StrokedText(
                         content.data.title,
                         MaterialTheme.typography.headlineLarge.copy(
-                            fontFamily = genre.headerFont(),
-                            color = genre.resolveColor(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            color = MaterialTheme.colorScheme.primary,
                         ),
                         textAlign = TextAlign.Center,
                         strokeColor = MaterialTheme.colorScheme.onBackground,
@@ -217,7 +214,7 @@ class ReviewIntroAnimationPage(
                         style =
                             MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                     )
 

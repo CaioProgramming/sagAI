@@ -48,7 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
@@ -189,7 +188,7 @@ fun PlaythroughView(
                                     text = currentState.data.title,
                                     style =
                                         MaterialTheme.typography.headlineMedium.copy(
-                                            fontFamily = it.headerFont(),
+                                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                             shadow =
                                                 Shadow(
                                                     genreColor,

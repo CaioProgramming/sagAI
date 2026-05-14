@@ -19,9 +19,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 
 @Composable
@@ -38,7 +35,7 @@ fun ObjectiveOverlay(
         modifier =
             Modifier
                 .background(MaterialTheme.colorScheme.background)
-                .background(fadeGradientTop(genre.resolveColor()))
+                .background(fadeGradientTop(MaterialTheme.colorScheme.primary))
                 .clickable {
                     onDismiss()
                 }
@@ -50,15 +47,15 @@ fun ObjectiveOverlay(
             painterResource(genre.icon),
             null,
             sparkModifier.size(32.dp),
-            colorFilter = ColorFilter.tint(genre.resolveIconColor()),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
         )
 
         Text(
             title,
             style =
                 MaterialTheme.typography.labelLarge.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = genre.resolveIconColor().copy(alpha = .7f),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = .7f),
                 ),
         )
 
@@ -66,8 +63,8 @@ fun ObjectiveOverlay(
             subtitle,
             style =
                 MaterialTheme.typography.bodyLarge.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = genre.resolveIconColor(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                    color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center,
                 ),
         )

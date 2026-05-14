@@ -75,10 +75,9 @@ import com.ilustris.sagai.features.newsaga.ui.LocalGenderPlaceholders
 import com.ilustris.sagai.features.newsaga.ui.LocalSharedTransitionScope
 import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.shimmerize
 import kotlinx.coroutines.launch
@@ -148,7 +147,7 @@ fun CosmicBook(
                 Modifier
                     .fillMaxSize()
                     .clip(shape)
-                    .background(genre.resolveColor())
+                    .background(MaterialTheme.colorScheme.primary)
                     .background(MaterialTheme.colorScheme.background.copy(alpha = .6f))
                     .border(1.dp, Color.LightGray.copy(alpha = 0.2f), shape)
                     .reactiveShimmer(isLoading, color.shimmerize()),
@@ -182,7 +181,7 @@ fun CosmicBook(
                             text = reasoning,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     lineHeight = 22.sp,
                                     color = MaterialTheme.colorScheme.onBackground,
                                     textAlign = TextAlign.Center,
@@ -236,7 +235,7 @@ fun CosmicBook(
                                                 Icon(
                                                     painter = painterResource(R.drawable.round_close_24),
                                                     contentDescription = "Close",
-                                                    tint = genre.resolveIconColor(),
+                                                    tint = MaterialTheme.colorScheme.secondary,
                                                     modifier = Modifier.size(24.dp),
                                                 )
                                             }
@@ -269,7 +268,7 @@ fun CosmicBook(
                                             text = book.draft.title,
                                             style =
                                                 MaterialTheme.typography.titleMedium.copy(
-                                                    fontFamily = genre.headerFont(),
+                                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                                     fontSize = 20.sp,
                                                     color = MaterialTheme.colorScheme.onBackground,
                                                     textAlign = TextAlign.Center,
@@ -285,7 +284,7 @@ fun CosmicBook(
                                             style =
                                                 MaterialTheme.typography.bodyMedium.copy(
                                                     lineHeight = 20.sp,
-                                                    fontFamily = genre.bodyFont(),
+                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                     color = MaterialTheme.colorScheme.onBackground,
                                                 ),
                                             modifier =
@@ -297,7 +296,7 @@ fun CosmicBook(
                                         Row(
                                             modifier =
                                                 Modifier
-                                                    .clip(genre.shape())
+                                                    .clip(sagaShape())
                                                     .clickable {
                                                         scope.launch {
                                                             pagerState.animateScrollToPage(1)
@@ -313,14 +312,14 @@ fun CosmicBook(
                                                     MaterialTheme.typography.labelMedium.copy(
                                                         fontWeight = FontWeight.SemiBold,
                                                         textAlign = TextAlign.End,
-                                                        color = genre.resolveIconColor(),
+                                                        color = MaterialTheme.colorScheme.secondary,
                                                     ),
                                             )
 
                                             Icon(
                                                 painterResource(R.drawable.round_arrow_forward_ios_24),
                                                 null,
-                                                tint = genre.resolveIconColor(),
+                                                tint = MaterialTheme.colorScheme.secondary,
                                                 modifier = Modifier.size(12.dp),
                                             )
                                         }
@@ -378,7 +377,7 @@ fun CosmicBook(
                                                         Icon(
                                                             painter = painterResource(R.drawable.round_close_24),
                                                             contentDescription = "Close",
-                                                            tint = genre.resolveIconColor(),
+                                                            tint = MaterialTheme.colorScheme.secondary,
                                                             modifier = Modifier.size(24.dp),
                                                         )
                                                     }
@@ -415,7 +414,7 @@ fun CosmicBook(
                                                 Row(
                                                     modifier =
                                                         Modifier
-                                                            .clip(genre.shape())
+                                                            .clip(sagaShape())
                                                             .clickable {
                                                                 scope.launch {
                                                                     pagerState.animateScrollToPage(0)
@@ -428,7 +427,7 @@ fun CosmicBook(
                                                     Icon(
                                                         painterResource(R.drawable.ic_back_left),
                                                         null,
-                                                        tint = genre.resolveIconColor(),
+                                                        tint = MaterialTheme.colorScheme.secondary,
                                                         modifier = Modifier.size(12.dp),
                                                     )
 
@@ -438,7 +437,7 @@ fun CosmicBook(
                                                             MaterialTheme.typography.labelMedium.copy(
                                                                 fontWeight = FontWeight.SemiBold,
                                                                 textAlign = TextAlign.End,
-                                                                color = genre.resolveIconColor(),
+                                                                color = MaterialTheme.colorScheme.secondary,
                                                             ),
                                                     )
                                                 }
@@ -571,7 +570,7 @@ private fun CharacterPageEntry(
 ) {
     val placeholders = LocalGenderPlaceholders.current
     val silhouetteUrl = placeholders.resolveUrl(genre, character.gender)
-    val color = genre.resolveColor()
+    val color = MaterialTheme.colorScheme.primary
     val borderColor = if (isSelected) color else color.copy(alpha = 0.1f)
     val borderStroke = if (isSelected) 2.dp else 1.dp
 
@@ -613,7 +612,7 @@ private fun CharacterPageEntry(
                 Icon(
                     painterResource(genre.icon),
                     null,
-                    tint = genre.resolveColor().copy(alpha = 0.3f),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                     modifier = Modifier.size(30.dp),
                 )
             }
@@ -625,7 +624,7 @@ private fun CharacterPageEntry(
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
             )
@@ -635,7 +634,7 @@ private fun CharacterPageEntry(
                 overflow = TextOverflow.Ellipsis,
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                     ),
             )
@@ -704,7 +703,7 @@ private fun ExpandedCharacterPage(
                 text = character.name,
                 style =
                     MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
@@ -719,7 +718,7 @@ private fun ExpandedCharacterPage(
                 text = character.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                     ),
                 modifier =

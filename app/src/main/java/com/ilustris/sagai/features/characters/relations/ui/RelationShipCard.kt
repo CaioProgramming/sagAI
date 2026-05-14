@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.characters.relations.ui
-
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -53,13 +52,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +71,7 @@ fun RelationShipCard(
     val shape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
 
     val visualConfig = LocalGenreVisualConfig.current
-    val brush = remember { content.getBrush(genre, visualConfig) }
+    val brush = content.getBrush(genre, visualConfig)
     Column(
         modifier =
             modifier
@@ -148,14 +144,14 @@ fun RelationShipCard(
 
             Text(
                 relation.title,
-                style = MaterialTheme.typography.titleMedium.copy(fontFamily = genre.bodyFont()),
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
 
             Text(
                 relation.description,
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                 textAlign = TextAlign.Start,
             )
         }
@@ -224,14 +220,14 @@ fun SingleRelationShipCard(
             )
             Text(
                 relation.title,
-                style = MaterialTheme.typography.titleMedium.copy(fontFamily = genre.bodyFont()),
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
             if (showText) {
                 Text(
                     relation.description,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -241,7 +237,7 @@ fun SingleRelationShipCard(
                     stringResource(id = R.string.updates_count, content.relationshipEvents.size),
                     style =
                         MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                 )
             }
@@ -311,18 +307,21 @@ fun RelationShipSheet(
         }
 
         stickyHeader {
+            val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
+            val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
             Text(
                 buildCharactersAnnotatedString(
                     "${firstCharacter.name} & ${secondCharacter.name}",
                     null,
                     listOf(firstCharacter, secondCharacter),
-                    genre,
-                    genre.resolveColor(),
+                    MaterialTheme.colorScheme.primary,
+                    headerFont,
+                    bodyFont,
                 ),
                 style =
                     MaterialTheme.typography.titleLarge
                         .copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Center,
                         ),
                 modifier =
@@ -359,8 +358,8 @@ fun RelationshipEventCard(
     val secondCharacter = content.characterTwo
     val charactersColors =
         listOf(
-            firstCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
-            secondCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
+            firstCharacter.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary,
+            secondCharacter.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary,
         )
     ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
         val (avatarsRow, relationshipCard, divider) = createRefs()
@@ -369,8 +368,8 @@ fun RelationshipEventCard(
         val brush =
             Brush.linearGradient(
                 listOf(
-                    firstCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
-                    secondCharacter.hexColor.hexToColor() ?: genre.resolveColor(),
+                    firstCharacter.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary,
+                    secondCharacter.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary,
                 ),
             )
 
@@ -399,7 +398,7 @@ fun RelationshipEventCard(
                 relationshipEvent.title,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                     ),
             )
@@ -408,7 +407,7 @@ fun RelationshipEventCard(
                 relationshipEvent.description,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Justify,
                     ),
                 modifier = Modifier.alpha(.6f),
@@ -464,7 +463,8 @@ fun RelationshipEventCard(
                             top.linkTo(relationshipCard.bottom)
                             end.linkTo(avatarsRow.end)
                             start.linkTo(avatarsRow.start)
-                        }.gradientFill(verticalBrush)
+                        }
+                        .gradientFill(verticalBrush)
                         .height(50.dp),
             )
         }

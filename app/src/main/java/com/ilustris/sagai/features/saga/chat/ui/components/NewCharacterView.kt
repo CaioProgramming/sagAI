@@ -22,7 +22,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.TypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
 
 @Composable
 fun NewCharacterView(
@@ -42,16 +41,19 @@ fun NewCharacterView(
                 it,
                 genre = genre,
                 modifier =
-                    Modifier.clip(CircleShape).size(75.dp).clickable {
-                        onSelectCharacter(it)
-                    },
+                    Modifier
+                        .clip(CircleShape)
+                        .size(75.dp)
+                        .clickable {
+                            onSelectCharacter(it)
+                        },
             )
 
             Text(
                 text = "${it.name} juntou-se a história.",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     ),
@@ -68,7 +70,7 @@ fun NewCharacterView(
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Normal,
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),

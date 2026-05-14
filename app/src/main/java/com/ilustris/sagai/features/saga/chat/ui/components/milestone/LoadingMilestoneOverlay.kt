@@ -17,20 +17,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.lighter
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shimmerize
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -60,18 +57,16 @@ fun LoadingMilestoneOverlay(
             Image(
                 painterResource(genre.icon),
                 null,
-                colorFilter = ColorFilter.tint(genre.resolveColor()),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                 modifier =
                     sparkModifier
                         .genreVfx(genre)
                         .padding(8.dp)
-                        .gradientFill(genre.gradient())
+                        .gradientFill(Brush.verticalGradient(genre.colorPalette()))
                         .size(
                             50.dp,
-                        )
-                        .reactiveShimmer(
+                        ).reactiveShimmer(
                             true,
-                            genre.resolveColor().lighter(.3f).shimmerize(),
                             duration = 4.seconds,
                             targetValue = 200f,
                             repeatMode = RepeatMode.Restart,
@@ -84,11 +79,11 @@ fun LoadingMilestoneOverlay(
                         it,
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Center,
                                 shadow =
                                     Shadow(
-                                        genre.resolveColor(),
+                                        MaterialTheme.colorScheme.primary,
                                         blurRadius = 5f,
                                     ),
                             ),

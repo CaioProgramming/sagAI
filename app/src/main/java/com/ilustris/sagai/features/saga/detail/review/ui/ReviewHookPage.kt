@@ -28,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.levitate
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
@@ -44,7 +43,7 @@ class ReviewHookPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val genre = content.data.genre
+        content.data.genre
         var showContent by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -74,7 +73,7 @@ class ReviewHookPage(
                         text = it,
                         style =
                             MaterialTheme.typography.headlineLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = MaterialTheme.colorScheme.onBackground,
                             ),
@@ -93,7 +92,7 @@ class ReviewHookPage(
                             text = it,
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                                 ),

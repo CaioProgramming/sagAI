@@ -39,18 +39,15 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.EmotionalCard
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun ActReader(
@@ -77,10 +74,10 @@ fun ActReader(
             ) {
                 androidx.compose.material3.Button(
                     onClick = onReadChronicles,
-                    shape = genre.shape(),
+                    shape = sagaShape(),
                     colors =
                         androidx.compose.material3.ButtonDefaults.buttonColors(
-                            containerColor = genre.resolveColor(),
+                            containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                 ) {
@@ -107,9 +104,9 @@ fun ActReader(
                     act.data.title,
                     style =
                         MaterialTheme.typography.headlineSmall.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Center,
-                            brush = Brush.verticalGradient(genre.resolveColor().darkerPalette()),
+                            brush = Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette()),
                         ),
                     modifier =
                         Modifier
@@ -124,7 +121,7 @@ fun ActReader(
                     act.data.introduction,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     modifier = Modifier.padding(16.dp),
                 )
@@ -159,7 +156,7 @@ fun ActReader(
                         "${(index + 1).toRoman()} - ${chapter.data.title}",
                         style =
                             MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 textAlign = TextAlign.Start,
                             ),
                         modifier =
@@ -172,7 +169,7 @@ fun ActReader(
                         chapter.data.introduction,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                     )
 
@@ -180,7 +177,7 @@ fun ActReader(
                         chapter.data.overview,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                     )
 
@@ -201,7 +198,7 @@ fun ActReader(
                     act.data.content,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     modifier = Modifier.padding(16.dp),
                 )
@@ -213,7 +210,7 @@ fun ActReader(
                         it,
                         style =
                             MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Normal,
                                 fontStyle = FontStyle.Italic,
                             ),
@@ -240,7 +237,7 @@ fun ActReader(
                 "Conclusão",
                 style =
                     MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         textAlign = TextAlign.Start,
                     ),
                 modifier =
@@ -255,7 +252,7 @@ fun ActReader(
                 endMessage,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Justify,
                     ),
                 modifier =
@@ -280,7 +277,7 @@ fun ActReader(
                     "Sobre você",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Start,
                         ),
                     modifier =
@@ -295,7 +292,7 @@ fun ActReader(
                     it,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             textAlign = TextAlign.Justify,
                         ),
                     modifier =
@@ -328,7 +325,7 @@ fun ActReadingContent(
                     "${sagaContent.chapterNumber(it.data).toRoman()} - ${it.data.title}",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Start,
                         ),
                     modifier =
@@ -362,7 +359,7 @@ fun ActReadingContent(
                     it.data.overview,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                 )
 
@@ -390,7 +387,7 @@ fun ActReadingContent(
                     act.data.content,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             textAlign = TextAlign.Justify,
                         ),
                 )
@@ -413,7 +410,7 @@ fun ActReadingContent(
                     "Conclusão",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Start,
                         ),
                     modifier =
@@ -428,7 +425,7 @@ fun ActReadingContent(
                     sagaContent.data.endMessage,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             textAlign = TextAlign.Justify,
                         ),
                     modifier =
@@ -453,7 +450,7 @@ fun ActReadingContent(
                         "Sobre você",
                         style =
                             MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 textAlign = TextAlign.Start,
                             ),
                         modifier =
@@ -468,7 +465,7 @@ fun ActReadingContent(
                         it,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Justify,
                             ),
                         modifier =
@@ -512,7 +509,7 @@ fun IntroductionPage(
             "Criado em ${createdAt.formatDate(DateFormatOption.DAY_OF_WEEK_DD_MM_YYYY)}",
             style =
                 MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
             textAlign = TextAlign.Center,
         )
@@ -522,7 +519,7 @@ fun IntroductionPage(
             style =
                 MaterialTheme.typography.displaySmall.copy(
                     textAlign = TextAlign.Center,
-                    fontFamily = genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     brush = genre.gradient(false),
                 ),
             modifier = Modifier.reactiveShimmer(true),
@@ -533,7 +530,7 @@ fun IntroductionPage(
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     textAlign = TextAlign.Justify,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
         )
     }

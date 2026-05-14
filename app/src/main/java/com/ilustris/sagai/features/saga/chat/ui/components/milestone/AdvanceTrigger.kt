@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -43,10 +42,8 @@ import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.vibrate
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientFill
 import kotlinx.coroutines.delay
@@ -64,7 +61,7 @@ fun AdvanceTrigger(
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val visualConfig = LocalGenreVisualConfig.current
-    val primaryColor = genre.resolveColor(visualConfig)
+    val primaryColor = MaterialTheme.colorScheme.primary
     val colors = genre.colorPalette(visualConfig)
 
     val progress by animateFloatAsState(
@@ -168,7 +165,7 @@ fun AdvanceTrigger(
                                 }.uppercase(),
                             style =
                                 MaterialTheme.typography.labelLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color =
                                         if (progress > 0.6f) {
                                             MaterialTheme.colorScheme.onPrimary
