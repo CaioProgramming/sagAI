@@ -111,7 +111,7 @@ fun MilestoneOverlay(
                         it,
                         saga.data,
                         sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = this,
+                        animatedVisibilityScope = animatedVisibilityScope,
                     ) {
                         onDismiss()
                     }

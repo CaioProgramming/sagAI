@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.material3.Scaffold
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.features.sos.presentation.SOSViewModel
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -25,20 +26,22 @@ class SOSActivity : ComponentActivity() {
 
         setContent {
             SagAITheme {
-                SOSScreen(
-                    errorMessage = errorMessage,
-                    isDatabaseError = isDatabaseError,
-                    exceptionClass = exceptionClass,
-                    viewModel = viewModel,
-                    onRestart = {
-                        val intent =
-                            Intent(this, MainActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                            }
-                        startActivity(intent)
-                        finish()
-                    },
-                )
+                Scaffold { _ ->
+                    SOSScreen(
+                        errorMessage = errorMessage,
+                        isDatabaseError = isDatabaseError,
+                        exceptionClass = exceptionClass,
+                        viewModel = viewModel,
+                        onRestart = {
+                            val intent =
+                                Intent(this, MainActivity::class.java).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                }
+                            startActivity(intent)
+                            finish()
+                        },
+                    )
+                }
             }
         }
     }

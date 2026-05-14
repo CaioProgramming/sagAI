@@ -19,14 +19,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -41,7 +37,6 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.detail.presentation.EmotionalReviewViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @Composable
 fun EmotionalSheet(
@@ -81,37 +76,39 @@ fun EmotionalSheet(
     }
 
     Box(Modifier.fillMaxSize()) {
-        AsyncImage(
-            emotionalIconUrl,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            colorFilter =
-                ColorFilter.tint(
-                    MaterialTheme.colorScheme.primary,
-                    blendMode = BlendMode.Multiply,
-                ),
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(.6f)
-                    .zoomAnimation()
-                    .clipToBounds(),
-        )
-
         Column(
             modifier =
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .background(fadeGradientBottom())
                     .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(.6f),
+            ) {
+                AsyncImage(
+                    emotionalIconUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier.fillMaxSize(),
+                )
+
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(fadeGradientBottom())
+                        .align(Alignment.BottomCenter),
+                )
+            }
+
             Text(
                 saga.emotionalProfile?.personaTitle ?: stringResource(R.string.inner_journey),
                 style =
-                    MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Black,
-                    ),
+                    MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(16.dp),
             )
 

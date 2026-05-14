@@ -23,9 +23,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaInfo
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
-import com.ilustris.sagai.features.home.data.model.toSaga
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
@@ -88,7 +86,7 @@ class SagaDetailUseCaseImpl
         override suspend fun fetchSaga(sagaId: Int) = sagaRepository.getSagaById(sagaId)
 
         override fun getSagaResume(sagaId: Int): Flow<SagaDetailResume> {
-            val sagaInfoFlow = sagaRepository.getSagaInfo(sagaId)
+            val sagaFlow = sagaRepository.getSaga(sagaId)
             val topCharactersFlow = characterDao.getTopCharacters(sagaId, 4)
             val wikisFlow = wikiDao.getLatestWikis(sagaId, 4)
             val latestEventFlow = timelineDao.getLatestEventBySaga(sagaId)
@@ -102,7 +100,7 @@ class SagaDetailUseCaseImpl
             val messagesCountFlow = messageDao.getMessagesCount(sagaId)
 
             return combine(
-                sagaInfoFlow,
+                sagaFlow,
                 topCharactersFlow,
                 wikisFlow,
                 latestEventFlow,
@@ -115,7 +113,7 @@ class SagaDetailUseCaseImpl
                 fullChaptersFlow,
                 messagesCountFlow,
             ) { flows: Array<Any?> ->
-                val sagaInfo = flows[0] as SagaInfo?
+                val saga = flows[0] as Saga?
                 val topCharacters = flows[1] as List<CharacterContent>
                 val wikis = flows[2] as List<Wiki>
                 val event = flows[3] as TimelineWithAct?
@@ -130,7 +128,7 @@ class SagaDetailUseCaseImpl
 
                 val narrativeRules = remoteConfigService.getNarrativeRules()
                 SagaDetailResume(
-                    saga = sagaInfo?.toSaga() ?: Saga(),
+                    saga = saga ?: Saga(),
                     starringCharacter = topCharacters.firstOrNull(),
                     topCharacters = topCharacters,
                     latestWikis = wikis,
@@ -142,7 +140,7 @@ class SagaDetailUseCaseImpl
                     eventsCount = timelineCount,
                     charactersCount = charCount,
                     messagesCount = messagesCount,
-                    playtime = sagaInfo?.playTimeMs ?: 0L,
+                    playtime = saga?.playTimeMs ?: 0L,
                     completedActsCount = acts.count { it.isComplete(narrativeRules) },
                     hasActs = acts.isNotEmpty(),
                 )

@@ -10,8 +10,12 @@ class Navigator(
 ) {
     fun navigate(route: NavKey) {
         if (route in state.backStacks.keys) {
-            // This is a top level route, just switch to it.
+            // This is a top level route, switch to it and clear its specific stack to prevent state bleeding.
             state.topLevelRoute = route
+            val stack = state.backStacks[route]
+            while (stack?.lastOrNull() != null && stack.lastOrNull() != route) {
+                stack.removeLastOrNull()
+            }
         } else {
             val currentStack = state.backStacks[state.topLevelRoute]
             if (currentStack?.lastOrNull() != route) {

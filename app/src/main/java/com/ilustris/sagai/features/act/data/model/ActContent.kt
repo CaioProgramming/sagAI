@@ -33,9 +33,9 @@ data class ActContent(
     val book: Book? = null,
 ) {
     fun isFull(
-        actLimit: Int,
+        chapterLimit: Int,
         rules: NarrativeRules,
-    ): Boolean = chapters.count { it.isComplete(rules) } >= actLimit
+    ): Boolean = chapters.count { it.isComplete(rules) } >= chapterLimit
 
     fun isComplete(rules: NarrativeRules): Boolean =
         isFull(rules.actUpdateLimit, rules) &&

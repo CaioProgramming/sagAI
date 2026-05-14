@@ -53,7 +53,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlin.random.Random
 
@@ -79,9 +78,13 @@ fun StarryLoader(
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
         ),
-    brushColors: List<Color> = holographicGradient,
+    brushColors: List<Color>? = null,
     useAsDialog: Boolean = true,
 ) {
+    val themeBrush =
+        com.ilustris.sagai.ui.theme
+            .themeBrushColors()
+    val finalBrushColors = brushColors ?: themeBrush
     val setBlur = LocalBlurState.current
     DisposableEffect(isLoading && useAsDialog) {
         setBlur(isLoading)
@@ -117,7 +120,8 @@ fun StarryLoader(
 
         val borderDraw: DrawScope.() -> Unit = {
             drawIntoCanvas { canvas ->
-                val shader = (Brush.sweepGradient(brushColors) as ShaderBrush).createShader(size)
+                val shader =
+                    (Brush.sweepGradient(finalBrushColors) as ShaderBrush).createShader(size)
                 val matrix = Matrix()
                 matrix.setRotate(rotation, size.width / 2, size.height / 2)
                 shader.setLocalMatrix(matrix)
@@ -152,7 +156,7 @@ fun StarryLoader(
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .reactiveShimmer(true, brushColors),
+                        .reactiveShimmer(true, finalBrushColors),
                 ) {
                     val starsAlpha by animateFloatAsState(
                         targetValue = if (loadingMessage == null) 1f else .5f,
@@ -164,7 +168,7 @@ fun StarryLoader(
                             Modifier
                                 .alpha(starsAlpha)
                                 .fillMaxSize(),
-                        starColor = brushColors.firstOrNull() ?: Color.White,
+                        starColor = finalBrushColors.firstOrNull() ?: Color.White,
                     )
 
                     Canvas(
@@ -228,7 +232,7 @@ fun StarryLoader(
                         Modifier
                             .alpha(starsAlpha)
                             .fillMaxSize()
-                            .gradientFill(Brush.verticalGradient(brushColors)),
+                            .gradientFill(Brush.verticalGradient(finalBrushColors)),
                     starColor = Color.White,
                 )
 

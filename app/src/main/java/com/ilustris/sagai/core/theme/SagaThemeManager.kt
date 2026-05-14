@@ -40,9 +40,9 @@ class SagaThemeManager
         private val genreConfigService: GenreConfigService,
         private val fileCacheService: FileCacheService,
         private val remoteConfig: RemoteConfigService,
-) {
-    private val _currentGenre = MutableStateFlow<Genre?>(null)
-    val currentGenre: StateFlow<Genre?> = _currentGenre.asStateFlow()
+    ) {
+        private val _currentGenre = MutableStateFlow<Genre?>(null)
+        val currentGenre: StateFlow<Genre?> = _currentGenre.asStateFlow()
 
         private val _visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
         val visualConfig: StateFlow<GenreVisualConfig?> = _visualConfig.asStateFlow()
@@ -73,8 +73,8 @@ class SagaThemeManager
         fun updateTheme(genre: Genre?) {
             if (isNeutralScreen && genre != null) {
                 Timber.w("Theme update ignored: currently on a neutral screen (Home, Profile, etc.)")
-            return
-        }
+                return
+            }
             if (_currentGenre.value == genre && _visualConfig.value != null) return
 
             _currentGenre.value = genre
@@ -135,20 +135,20 @@ class SagaThemeManager
 
         /** Triggers the current genre's VFX (Sound + Haptics). */
         fun playVfx() {
-        val genre = _currentGenre.value ?: return
-        val config = _visualConfig.value
-        managerScope.launch {
-            delay(300)
+            val genre = _currentGenre.value ?: return
+            val config = _visualConfig.value
+            managerScope.launch {
+                delay(300)
                 val hapticPattern = genre.vibrationPattern(config)
-            soundFxService.playWithHaptics(hapticPattern)
-            _vfxTrigger.emit(Unit)
+                soundFxService.playWithHaptics(hapticPattern)
+                _vfxTrigger.emit(Unit)
+            }
         }
-    }
 
-    /** Clear the active genre, reverting to the default brand identity. */
-    fun resetTheme() {
-        _currentGenre.value = null
-        _visualConfig.value = null
-        _ambientMusicFile.value = null
+        /** Clear the active genre, reverting to the default brand identity. */
+        fun resetTheme() {
+            _currentGenre.value = null
+            _visualConfig.value = null
+            _ambientMusicFile.value = null
     }
 }

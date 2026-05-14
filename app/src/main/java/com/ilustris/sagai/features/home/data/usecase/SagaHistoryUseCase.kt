@@ -1,9 +1,12 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import android.net.Uri
+import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaEnding
 import kotlinx.coroutines.flow.Flow
 
 interface SagaHistoryUseCase {
@@ -17,13 +20,9 @@ interface SagaHistoryUseCase {
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<String>
 
-    fun generateEndMessageStream(
-        saga: SagaContent,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>>
+    fun generateEndMessageStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<String>>>
 
-    fun generateSagaEndingStream(
-        saga: SagaContent,
-    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>>>
+    fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>>>
 
     suspend fun backupSaga(saga: SagaContent): RequestResult<RequestResult<Uri>>
 }

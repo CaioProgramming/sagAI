@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Typography
@@ -28,6 +30,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
@@ -56,6 +59,8 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -201,6 +206,22 @@ fun SagAITheme(
             }
         }
 
+    // Dynamic Shapes: genre shapes baked into the theme
+    activeGenre.shape(activeVisualConfig)
+    val cornerSize = activeVisualConfig?.cornerSizeDp
+    val dynamicShapes =
+        Shapes(
+            extraSmall =
+                cornerSize?.let { RoundedCornerShape(it * .1f) }
+                    ?: MaterialTheme.shapes.extraSmall,
+            small = cornerSize?.let { RoundedCornerShape(it * .2f) } ?: MaterialTheme.shapes.small,
+            medium =
+                cornerSize?.let { RoundedCornerShape(it * .3f) }
+                    ?: MaterialTheme.shapes.medium,
+            large = cornerSize?.let { RoundedCornerShape(it * .4f) } ?: MaterialTheme.shapes.large,
+            extraLarge = cornerSize?.let { RoundedCornerShape(it) } ?: MaterialTheme.shapes.large,
+        )
+
     CompositionLocalProvider(
         LocalSagaGenre provides activeGenre,
         LocalGenreVisualConfig provides activeVisualConfig,
@@ -208,10 +229,54 @@ fun SagAITheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = dynamicTypography,
+            shapes = dynamicShapes,
             content = content,
         )
     }
 }
+
+// ── Theme Extension Properties ─────────────────────────────────────────
+
+/**
+ * Access the current genre directly from the theme.
+ */
+val MaterialTheme.sagaGenre: Genre?
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalSagaGenre.current
+
+/**
+ * Access the current genre's visual configuration directly from the theme.
+ */
+val MaterialTheme.genreConfig: GenreVisualConfig?
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalGenreVisualConfig.current
+
+/**
+ * Returns the characteristic gradient brush for the current genre.
+ */
+val MaterialTheme.sagaBrush: Brush
+    @Composable
+    get() = sagaBrush()
+
+/**
+ * Returns the characteristic shape for the current genre.
+ */
+val MaterialTheme.sagaShape: Shape
+    @Composable
+    get() = sagaShape()
+
+/**
+ * Applies the genre's selective color highlight effect to this modifier.
+ */
+@Composable
+fun Modifier.sagaHighlight(): Modifier =
+    this.then(
+        selectiveColorHighlight(
+            LocalSagaGenre.current?.selectiveHighlight(LocalGenreVisualConfig.current),
+        ),
+    )
 
 // ── Theme Extension Functions ─────────────────────────────────────────
 // Use these on genre-immersed screens instead of manual genre extensions.

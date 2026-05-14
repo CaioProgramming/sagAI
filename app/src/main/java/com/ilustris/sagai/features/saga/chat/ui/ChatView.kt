@@ -134,7 +134,6 @@ import com.ilustris.sagai.features.milestone.ui.MilestoneOverlay
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -175,7 +174,6 @@ import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -184,6 +182,7 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaHighlight
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
@@ -542,7 +541,7 @@ fun ChatContent(
 
     val milestoneState = uiState.milestone
     val resolvedColor = MaterialTheme.colorScheme.primary
-    val resolvedIconColor = MaterialTheme.colorScheme.secondary
+    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
 
     with(sharedTransitionScope) {
         AnimatedContent(
@@ -570,14 +569,13 @@ fun ChatContent(
                             onAction(ChatUiAction.ContinueMilestone)
                         },
                         sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = this,
+                        animatedVisibilityScope = animatedVisibilityScope,
                     )
                 }
             } else {
                 Box(
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
-                        .background(resolvedColor.copy(alpha = .05f))
                         .imePadding(),
                 ) {
                     Image(
@@ -603,8 +601,8 @@ fun ChatContent(
                                     shimmerColors = themeShimmer(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).fillMaxSize(.5f)
-                                .alpha(.3f),
+                                ).size(100.dp)
+                                .alpha(.4f),
                     )
 
                     ConstraintLayout(
@@ -1271,7 +1269,7 @@ fun SagaHeader(
                             imageModifier =
                                 Modifier
                                     .effectForGenre(saga.genre)
-                                    .selectiveColorHighlight(saga.genre.selectiveHighlight()),
+                                    .sagaHighlight(),
                         ) {
                             Text(
                                 saga.title,
@@ -1305,9 +1303,8 @@ fun SagaHeader(
                                 Modifier
                                     .align(Alignment.Center)
                                     .effectForGenre(saga.genre)
-                                    .selectiveColorHighlight(
-                                        saga.genre.selectiveHighlight(),
-                                    ).fillMaxSize(),
+                                    .sagaHighlight()
+                                    .fillMaxSize(),
                         )
                     }
                 }
@@ -1704,9 +1701,6 @@ fun CharactersTopIcons(
                                 } else {
                                     (charactersToDisplay.size - 1 - index).toFloat()
                                 },
-                            ).sharedElement(
-                                rememberSharedContentState(key = "character_${character.id}_icon"),
-                                animatedVisibilityScope,
                             ).graphicsLayer(
                                 translationX = if (index > 0) (index * overlapAmountPx) else 0f,
                             ).clip(CircleShape)

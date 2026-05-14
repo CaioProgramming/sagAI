@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.sos.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +17,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,12 +28,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.sos.presentation.SOSViewModel
 
@@ -60,177 +60,125 @@ fun SOSScreen(
         }
     }
 
+    fun restartApp() {
+        if (isDatabaseError) {
+            showConfirmDialog = true
+        } else {
+            onRestart()
+        }
+    }
+
     Box(
         modifier =
             Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
-                        ),
-                    ),
-                ),
+                .fillMaxSize(),
     ) {
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_spark),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(50.dp),
+            )
+
             Text(
                 text = stringResource(R.string.unexpected_error),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
             )
 
-            Text(
-                text = exceptionClass,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier =
-                    Modifier
-                        .background(
-                            MaterialTheme.colorScheme.errorContainer,
-                            RoundedCornerShape(4.dp),
-                        ).padding(horizontal = 8.dp, vertical = 2.dp),
-            )
-
-            Spacer(modifier = Modifier.size(16.dp))
-
-            Text(
-                text =
-                    if (isDatabaseError) {
-                        "It seems your story chronicle has been corrupted. This can happen due to unexpected system failures."
-                    } else {
-                        "An unexpected error occurred in the tapestry of your sagas. We need to stabilize the system."
-                    },
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(modifier = Modifier.size(32.dp))
-
-            if (!state.isLoading) {
-                if (isDatabaseError) {
-                    // Saga Backups
-                    if (state.sagaBackups.isNotEmpty()) {
-                        Button(
-                            onClick = { viewModel.importSagaBackups() },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Icon(painterResource(R.drawable.ic_restore), contentDescription = null)
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text("Import ${state.sagaBackups.size} Sagas from Backup")
-                        }
-
-                        Spacer(modifier = Modifier.size(8.dp))
-                    }
-
-                    // Full DB Backup
-                    if (state.dbBackups.isNotEmpty()) {
-                        OutlinedButton(
-                            onClick = { viewModel.restoreFullDatabase(state.dbBackups.first()) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Text("Restore Full DB Auto-Backup")
-                        }
-
-                        Spacer(modifier = Modifier.size(8.dp))
-                    }
-
-                    OutlinedButton(
-                        onClick = { showConfirmDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors =
-                            ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error,
-                            ),
-                    ) {
-                        Text("Continue without Backup (Fresh Start)")
-                    }
-                } else {
-                    Button(
-                        onClick = onRestart,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                    ) {
-                        Icon(painterResource(R.drawable.ic_restore), contentDescription = null)
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Restart Application")
-                    }
-                }
-
-                state.error?.let {
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 3.dp,
-                    )
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Text(
-                        text = state.loadingMessage,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+            if (BuildConfig.DEBUG) {
+                Text(
+                    text = exceptionClass,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.errorContainer,
+                                RoundedCornerShape(4.dp),
+                            ).padding(horizontal = 8.dp, vertical = 2.dp),
+                )
             }
-        }
 
-        if (!state.isLoading) {
             Text(
-                text = errorMessage,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                text = "Vamos verificar o que aconteceu e você poderá voltar as suas sagas em breve.",
+                style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(32.dp),
             )
+
+            Button(onClick = {
+                restartApp()
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(R.string.continue_text),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
     }
 
     if (showConfirmDialog) {
         AlertDialog(
+            icon = {
+                AnimatedContent(state.isLoading) {
+                    if (it) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(40.dp),
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_spark),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(40.dp),
+                        )
+                    }
+                }
+            },
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Are you sure?") },
+            title = { Text("Deseja restaurar suas sagas antes de continuar?") },
             text = {
-                Text(
-                    "Continuing without a backup will permanently delete all your existing sagas and chronicles. This action cannot be undone.",
-                )
+                Column {
+                    Text(
+                        "Continuing without a backup will permanently delete all your existing sagas and chronicles. This action cannot be undone.",
+                    )
+
+                    state.error?.let {
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text(
+                            text = "Nao foi possivel restaurar suas sagas: $it",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showConfirmDialog = false
-                        viewModel.freshStart()
+                        viewModel.restoreFullDatabase(state.dbBackups.first())
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text("Delete Everything")
+                    Text("Restore sagas")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancel")
+                TextButton(onClick = {
+                    showConfirmDialog = false
+                    onRestart()
+                }) {
+                    Text("Continue")
                 }
             },
         )

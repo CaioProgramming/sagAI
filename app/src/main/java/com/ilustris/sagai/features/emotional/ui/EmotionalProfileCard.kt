@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,17 +59,14 @@ fun EmotionalProfileCard(
         modifier
             .clip(
                 sagaShape(),
-            )
-            .border(
+            ).border(
                 1.dp,
                 MaterialTheme.colorScheme.onBackground.gradientFade(),
                 sagaShape(),
-            )
-            .background(
+            ).background(
                 MaterialTheme.colorScheme.surfaceContainer,
                 sagaShape(),
-            )
-            .fillMaxWidth()
+            ).fillMaxWidth()
             .height(200.dp)
             .clickable {
                 showEmotionalReview = true
@@ -95,8 +93,7 @@ fun EmotionalProfileCard(
                     .align(Alignment.BottomCenter)
                     .background(
                         fadeGradientBottom(),
-                    )
-                    .fillMaxWidth()
+                    ).fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 24.dp),
         ) {
             Text(
@@ -119,8 +116,15 @@ fun EmotionalProfileCard(
     }
 
     if (showEmotionalReview) {
-        EmotionalSheet(saga, onDismiss = {
-            showEmotionalReview = false
-        })
+        ModalBottomSheet(
+            onDismissRequest = { showEmotionalReview = false },
+            containerColor = MaterialTheme.colorScheme.background,
+            shape = sagaShape(),
+            dragHandle = {},
+        ) {
+            EmotionalSheet(saga, onDismiss = {
+                showEmotionalReview = false
+            })
+        }
     }
 }

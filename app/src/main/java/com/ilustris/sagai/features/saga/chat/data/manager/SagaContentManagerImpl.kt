@@ -411,6 +411,7 @@ class SagaContentManagerImpl
                                 if (previousSaga == null) {
                                     if (saga.data.isEnded.not()) {
                                         saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
+                                            delay(1500)
                                             emitMilestone(SagaMilestone.Loading)
                                             emitMilestone(
                                                 SagaMilestone.Introduction(
@@ -690,8 +691,9 @@ class SagaContentManagerImpl
             executeRequest {
                 val saga = content.value ?: currentSaga
                 messageDao.getMessagesCount(saga.data.id).first()
-                val lastAct = saga.acts.lastOrNull()
-                if (lastAct?.isComplete(fetchNarrativeRules())?.not() == true) {
+                val rules = fetchNarrativeRules()
+                val lastAct = getSagaContent()?.currentActInfo
+                if (lastAct?.isComplete(rules)?.not() == true) {
                     sagaHistoryUseCase.updateSaga(
                         saga.data.copy(currentActId = lastAct.data.id),
                     )
@@ -1373,6 +1375,7 @@ class SagaContentManagerImpl
                         "Concluding your legend and weaving the final threads of fate..."
                     val style = genreConfigService.conversationBlueprint(saga.data.genre)
                     var generated: GeneratedContent<SagaEnding>? = null
+                    sagaHistoryUseCase.generateSagaEndingStream(fullSaga)
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(fullSaga),

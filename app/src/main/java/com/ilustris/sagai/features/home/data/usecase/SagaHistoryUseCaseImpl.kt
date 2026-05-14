@@ -6,10 +6,12 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +26,7 @@ class SagaHistoryUseCaseImpl
         private val genreConfigService: GenreConfigService,
         private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
         private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : SagaHistoryUseCase {
         override suspend fun getSagaById(sagaId: Int?): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
@@ -78,27 +81,43 @@ class SagaHistoryUseCaseImpl
                 }
             }
 
-        override fun generateSagaEndingStream(
-            saga: SagaContent,
-        ): Flow<StreamingState<GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>>> =
+        override fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>>> =
             kotlinx.coroutines.flow.flow {
                 try {
                     genreConfigService.getGenreConfig(saga.data.genre)
                     val conversationDirective =
                         genreConfigService.conversationBlueprint(saga.data.genre)
-                    gemmaClient
-                        .generateStreaming<GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>>(
-                            prompt =
-                                SagaPrompts.generateSagaEnding(
-                                    promptService,
-                                    saga,
-                                    conversationDirective,
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<SagaEnding>>(
+                                    prompt =
+                                        SagaPrompts.generateSagaEnding(
+                                            promptService,
+                                            saga,
+                                            conversationDirective,
+                                        ),
+                                    requireTranslation = true,
+                                    useCore = true,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                                 ),
-                            requireTranslation = true,
-                            useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
-                            blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
+                            "Generating saga ending... ",
+                            conversationDirective,
                         ).collect { state ->
+
+                            if (state is StreamingState.Success) {
+                                val ending = state.data.data
+                                sagaRepository.updateSaga(
+                                    saga.data.copy(
+                                        endMessage = ending.endingMessage,
+                                        emotionalProfile = ending.emotionalProfile,
+                                        emotionalReview = ending.endingMessage,
+                                        isEnded = true,
+                                        endedAt = System.currentTimeMillis(),
+                                    ),
+                                )
+                            }
                             emit(state)
                         }
                 } catch (e: Exception) {

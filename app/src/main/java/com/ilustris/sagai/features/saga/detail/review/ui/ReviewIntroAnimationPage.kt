@@ -40,12 +40,12 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewText
+import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
-import com.ilustris.sagai.ui.theme.pulse
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shake
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -84,8 +84,7 @@ class ReviewIntroAnimationPage(
                     .fillMaxWidth()
                     .animateContentSize(
                         tween(2000, easing = FastOutSlowInEasing),
-                    )
-                    .padding(16.dp),
+                    ).padding(16.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -107,8 +106,7 @@ class ReviewIntroAnimationPage(
                         null,
                         Modifier
                             .size(iconSize)
-                            .pulse(canAnimate)
-                            .levitate(canAnimate),
+                            .genreVfx(genre),
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                     )
                 }
@@ -173,20 +171,9 @@ class ReviewIntroAnimationPage(
                     exit = fadeOut(tween(delay)),
                     modifier = Modifier.padding(8.dp),
                 ) {
-                    StrokedText(
+                    genre.stylisedText(
                         content.data.title,
-                        MaterialTheme.typography.headlineLarge.copy(
-                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                            color = MaterialTheme.colorScheme.primary,
-                        ),
-                        textAlign = TextAlign.Center,
-                        strokeColor = MaterialTheme.colorScheme.onBackground,
-                        strokeWidth = 5f,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .shake(xOffset = 5f),
+                        fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                     )
                 }
             }
@@ -204,8 +191,7 @@ class ReviewIntroAnimationPage(
                             .gradientFill(genre.gradient())
                             .clickable {
                                 onAction(ReviewAction.Continue)
-                            }
-                            .levitate()
+                            }.levitate()
                             .reactiveShimmer(true),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {

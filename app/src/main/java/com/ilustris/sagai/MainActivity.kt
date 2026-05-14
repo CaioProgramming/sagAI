@@ -59,6 +59,7 @@ import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.ui.animations.glitch
 import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
@@ -74,6 +75,7 @@ import com.ilustris.sagai.ui.navigation.toEntries
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -137,6 +139,17 @@ class MainActivity : ComponentActivity() {
                             currentKey is PlaythroughKey
 
                     sagaThemeManager.setNeutral(isNeutralScreen)
+                }
+
+                val currentGenre by sagaThemeManager.currentGenre.collectAsState(initial = null)
+                var showGenreTransition by remember { mutableStateOf(false) }
+
+                LaunchedEffect(currentGenre) {
+                    if (currentGenre != null) {
+                        showGenreTransition = true
+                        delay(600)
+                        showGenreTransition = false
+                    }
                 }
 
                 LaunchedEffect(Unit) {
@@ -228,14 +241,12 @@ class MainActivity : ComponentActivity() {
                                             padding,
                                             snackbarHostState,
                                             this@SharedTransitionLayout,
-                                            this@AnimatedContent,
                                         ) {
                                             createSagaEntryProvider(
                                                 navigator,
                                                 padding,
                                                 snackbarHostState,
                                                 this@SharedTransitionLayout,
-                                                this@AnimatedContent,
                                             )
                                         }
                                     Box(modifier = Modifier.fillMaxSize()) {
@@ -243,6 +254,15 @@ class MainActivity : ComponentActivity() {
                                             entries = navigationState.toEntries(entryProvider),
                                             onBack = { navigator.goBack() },
                                         )
+
+                                        if (showGenreTransition) {
+                                            Box(
+                                                modifier =
+                                                    Modifier
+                                                        .fillMaxSize()
+                                                        .glitch(glitchFrequency = 0.4f),
+                                            )
+                                        }
                                     }
                                 }
                             } else {

@@ -20,6 +20,8 @@ interface SagaRepository {
 
     fun getSagaInfo(id: Int): Flow<SagaInfo?>
 
+    fun getSaga(id: Int): Flow<Saga?>
+
     fun getAllSagas(): Flow<List<Saga>>
 
     fun getPlaythroughData(): Flow<List<com.ilustris.sagai.features.playthrough.data.model.SagaPlaythrough>>

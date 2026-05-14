@@ -13,6 +13,7 @@ data class SagaInfo(
     val icon: String = "",
     val playTimeMs: Long = 0L,
     val description: String = "",
+    val isEnded: Boolean = false,
 )
 
 fun SagaInfo.toSaga() =
@@ -24,4 +25,5 @@ fun SagaInfo.toSaga() =
         icon = icon,
         playTimeMs = playTimeMs,
         description = description,
+        isEnded = isEnded,
     )

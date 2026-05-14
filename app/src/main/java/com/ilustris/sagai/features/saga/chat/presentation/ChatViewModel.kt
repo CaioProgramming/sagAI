@@ -251,7 +251,6 @@ class ChatViewModel
                     val pending = uiState.value.pendingAdvance ?: return
                     generationJob =
                         viewModelScope.launch(Dispatchers.IO) {
-                            stateManager.updatePendingAdvance(null)
                             sagaContentManager.advanceNarrative(pending)
                         }
                 }

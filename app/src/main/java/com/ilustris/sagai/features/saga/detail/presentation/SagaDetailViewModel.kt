@@ -129,11 +129,16 @@ class SagaDetailViewModel
                 return
             }
             fetchJob?.cancel()
+            sagaResume.value = null
+            visualConfig.value = null
+            cachedIconPath = null
+            cachedSegmentedImage = null
+            _initialSection.value = null
             showIntro.value = true
             fetchJob =
                 viewModelScope.launch {
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
-                        resume?.let { data ->
+                        resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
                             visualConfig.value = visualConfigService.getVisualConfig(data.saga.genre)
                             sagaThemeManager.updateTheme(data.saga.genre)

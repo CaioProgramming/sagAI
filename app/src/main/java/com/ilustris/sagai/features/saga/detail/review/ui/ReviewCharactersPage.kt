@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,9 +42,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.ui.theme.sagaBrush
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -128,8 +127,7 @@ class ReviewCharactersPage(
                                 .fillMaxWidth()
                                 .animateContentSize(
                                     tween(1000, easing = EaseIn),
-                                )
-                                .animateEnterExit(
+                                ).animateEnterExit(
                                     enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
                                     exit = slideOutVertically { it },
                                 ),
@@ -145,16 +143,8 @@ class ReviewCharactersPage(
                                             MaterialTheme.typography.titleLarge.copy(
                                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.secondary,
+                                                brush = sagaBrush(),
                                             ),
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .background(
-                                                    MaterialTheme.colorScheme.primary,
-                                                    shape = genre.bubble(isNarrator = true),
-                                                )
-                                                .padding(8.dp),
                                     )
                                 }
                             }
@@ -226,14 +216,10 @@ class ReviewCharactersPage(
                                                 containerColor = MaterialTheme.colorScheme.onBackground,
                                                 contentColor = MaterialTheme.colorScheme.primary,
                                             ),
-                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        modifier = Modifier.padding(16.dp),
                                     ) {
                                         Text(
                                             stringResource(R.string.share),
-                                            style =
-                                                MaterialTheme.typography.titleSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                ),
                                         )
                                     }
                                 }
