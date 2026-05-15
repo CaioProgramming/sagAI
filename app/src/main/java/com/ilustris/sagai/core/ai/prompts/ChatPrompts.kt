@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -105,6 +106,28 @@ object ChatPrompts {
             "narratorVoice",
         )
 
+    private fun characterResolutionProtocol(): String =
+        buildString {
+            appendLine("### Character Resolution Hierarchy")
+            appendLine("1. LOCAL: If the player addresses someone in CHARACTERS PRESENT, that character MUST respond.")
+            appendLine(
+                "2. GLOBAL: If the addressed name is in KNOWN CAST (NOT PRESENT) or the saga cast, use that character — do NOT set newCharacter.",
+            )
+            appendLine(
+                "3. DISCOVERY: Only set optional newCharacter when a genuinely NEW character enters and speaks for the first time.",
+            )
+            appendLine(
+                "4. CONTINUITY: Identify message.speakerName from the player turn. Do NOT respond as that same character.",
+            )
+            appendLine()
+            appendLine("newCharacter rules (when DISCOVERY applies):")
+            appendLine("- Omit newCharacter (null) in most replies.")
+            appendLine("- name MUST match message.speakerName.")
+            appendLine("- discoveryContext: voice, role, how they entered, dialogue seed for profile generation.")
+            appendLine("- Never for NARRATOR senderType.")
+            appendLine("- Never if the speaker already exists in the cast.")
+        }
+
     val CHARACTER_EXCLUSIONS =
         listOf(
             "id",
@@ -128,43 +151,28 @@ object ChatPrompts {
         sceneSummary: SceneSummary?,
         conversationDirective: String,
         updateLimit: Int,
+        characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
     ): String {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
                 saga.findCharacter(it)
-            }
+            } ?: emptyList()
 
-        val nonMainCharacters =
-            charactersInScene
-                ?.filter { it.data.id != saga.mainCharacter?.data?.id }
-                ?.map { it.data }
-                ?: emptyList()
-
-        val relationshipsBlock =
-            charactersInScene?.joinToString("\n") { characterContent ->
-                "- ${characterContent.data.name}: ${
-                    characterContent.summarizeRelationships(
-                        1,
-                    )
-                }"
-            } ?: ""
-
-        val externalCharactersIds = charactersInScene?.map { it.data.id } ?: emptyList()
-        val externalCharacters = saga.getCharacters(true).filter { it.id !in externalCharactersIds }
-        val externalCharactersContent =
-            externalCharacters
-                .map {
-                    it.copy(
-                        backstory = it.backstory,
-                        knowledge = it.knowledge?.takeLast(10) ?: emptyList(),
-                    )
-                }.normalizetoAIItems(CHARACTER_EXCLUSIONS)
+        val sceneCharacterIds = charactersInScene.map { it.data.id }.toSet()
+        val externalCharacters =
+            saga.getCharacters(true).filter { it.id !in sceneCharacterIds }
 
         val argsMap =
             mutableMapOf(
                 "sceneContext" to (sceneSummary?.toAINormalize() ?: "No context founded"),
-                "charactersPresent" to CharacterPrompts.charactersOverview(nonMainCharacters),
-                "relationshipsBlock" to relationshipsBlock,
+                "charactersPresent" to
+                    CharacterPrompts.sceneCharactersContext(
+                        characters = charactersInScene,
+                        arcsByCharacterId = characterArcsById,
+                        protagonist = saga.mainCharacter,
+                    ),
+                "relationshipsBlock" to "",
+                "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
                 "conversationHistory" to conversationHistory(updateLimit, saga),
                 "actDirective" to
                     promptService.buildRemotePrompt(
@@ -172,17 +180,17 @@ object ChatPrompts {
                         emptyMap(),
                     ),
                 "sagaMainContext" to SagaPrompts.mainContext(saga),
-                "externalCharacters" to externalCharactersContent,
                 "conversationDirective" to conversationDirective,
                 "latestMessage" to message.toAINormalize(messageExclusions),
                 "genreConversationSoul" to conversationDirective,
+                "characterResolutionProtocol" to characterResolutionProtocol(),
                 "reactionProtocol" to
                     buildString {
                         appendLine("### 🎭 EMOTIONAL REACTION PROTOCOL 🎭")
                         appendLine(
                             "Along with the message, you MUST generate emotional reactions for ALL other characters present in the scene.",
                         )
-                        if (charactersInScene.isNullOrEmpty().not()) {
+                        if (charactersInScene.isNotEmpty()) {
                             appendLine("Characters present to react: ${charactersInScene.joinToString { it.data.name }}")
                             appendLine("Each character reaction must contain their NAME, an Emoji, and a hidden Thought.")
                         } else {

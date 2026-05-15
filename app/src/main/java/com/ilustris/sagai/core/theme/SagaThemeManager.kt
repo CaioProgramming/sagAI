@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
+import com.ilustris.sagai.ui.components.SagaSnackBarMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,6 +53,11 @@ class SagaThemeManager
 
         private val _vfxTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
         val vfxTrigger: SharedFlow<Unit> = _vfxTrigger.asSharedFlow()
+
+        private val _snackBarMessage = MutableStateFlow<SagaSnackBarMessage?>(null)
+        val snackBarMessage: StateFlow<SagaSnackBarMessage?> = _snackBarMessage.asStateFlow()
+
+        private var snackBarDismissJob: Job? = null
 
         private val managerJob = Job()
         private val managerScope = CoroutineScope(Dispatchers.Main + managerJob)
@@ -133,14 +139,13 @@ class SagaThemeManager
             }
         }
 
-        /** Triggers the current genre's VFX (Sound + Haptics). */
+        /** Triggers the current genre's VFX (sound + vibration pattern from visual config). */
         fun playVfx() {
             val genre = _currentGenre.value ?: return
-            val config = _visualConfig.value
             managerScope.launch {
                 delay(300)
-                val hapticPattern = genre.vibrationPattern(config)
-                soundFxService.playWithHaptics(hapticPattern)
+                val pattern = genre.vibrationPattern(_visualConfig.value)
+                soundFxService.playWithHaptics(pattern)
                 _vfxTrigger.emit(Unit)
             }
         }
@@ -150,5 +155,27 @@ class SagaThemeManager
             _currentGenre.value = null
             _visualConfig.value = null
             _ambientMusicFile.value = null
+        }
+
+        fun showSnackBar(
+            message: String,
+            action: Pair<String, () -> Unit>? = null,
+            durationMs: Long = 10_000L,
+        ) {
+            snackBarDismissJob?.cancel()
+            _snackBarMessage.value = SagaSnackBarMessage(message = message, action = action)
+            if (durationMs > 0) {
+                snackBarDismissJob =
+                    managerScope.launch {
+                        delay(durationMs)
+                        dismissSnackBar()
+                    }
+            }
+        }
+
+        fun dismissSnackBar() {
+            snackBarDismissJob?.cancel()
+        snackBarDismissJob = null
+        _snackBarMessage.value = null
     }
 }

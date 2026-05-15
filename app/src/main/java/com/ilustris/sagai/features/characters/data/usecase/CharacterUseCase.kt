@@ -42,12 +42,14 @@ interface CharacterUseCase {
         sagaContent: SagaContent,
         description: String,
         sceneSummary: SceneSummary? = null,
+        candidateName: String? = null,
     ): RequestResult<Character>
 
     suspend fun generateCharacterStream(
         sagaContent: SagaContent,
         description: String,
         sceneSummary: SceneSummary? = null,
+        candidateName: String? = null,
     ): Flow<StreamingState<GeneratedContent<Character>>>
 
     suspend fun createSmartZoom(character: Character): RequestResult<Unit>

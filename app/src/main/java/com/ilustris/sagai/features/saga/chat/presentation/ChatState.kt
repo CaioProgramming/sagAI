@@ -16,15 +16,14 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
-import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.domain.TimelineCardContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiGroup
-import com.ilustris.sagai.ui.components.SnackBarState
 
 sealed class ChatState {
     data object Loading : ChatState()
@@ -51,7 +50,6 @@ data class ChatUiState(
     val isLoading: Boolean = false,
     val isPlaying: Boolean = false,
     val audioPlaybackState: AudioPlaybackState? = null,
-    val snackBarMessage: SnackBarState? = null,
     val suggestions: List<Suggestion> = emptyList(),
     val loreUpdateProgress: Float = 0f,
     val selectedCharacter: Character? = null,
@@ -77,7 +75,7 @@ data class ChatUiState(
     val showMessageOptions: Message? = null,
     val visualConfig: GenreVisualConfig? = null,
     val onboardingType: OnboardingType? = null,
-    val pendingAdvance: PendingAdvance? = null,
+    val narrativeUiState: NarrativeUiState = NarrativeUiState(),
     val reasoningChunk: String? = null,
     val wikiGroups: List<WikiGroup> = emptyList(),
     val maxContentLength: Int = 2000,

@@ -29,7 +29,7 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.components.NotificationStyle
-import com.ilustris.sagai.ui.components.SnackBarState
+import com.ilustris.sagai.ui.components.SagaNotificationEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -171,31 +171,28 @@ class ChatNotificationManagerImpl
 
         private fun chatDeepLink(sagaId: String): String = "saga://chat/$sagaId/false"
 
-        fun sendSnackBarNotification(
-            saga: SagaContent,
-            snackBarState: SnackBarState,
+        override fun sendSnackBarNotification(
+            saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+            event: SagaNotificationEvent,
         ) {
-            if (appLifecycleManager.isAppInForeground.value || snackBarState.showInUi) {
-                Timber.i(
-                    "App is in foreground or notification is UI-only. Skipping notification.",
-                )
+            if (appLifecycleManager.isAppInForeground.value) {
+                Timber.i("App is in foreground. Skipping background notification.")
                 return
             }
 
             Timber.i(
-                "App is in background. Sending notification with style: ${snackBarState.notificationStyle}",
+                "App is in background. Sending notification with style: ${event.style}",
             )
 
             val formatChatDeepLink = "saga://chat/${saga.data.id}/false"
 
-            when (snackBarState.notificationStyle) {
+            when (event.style) {
                 NotificationStyle.CHAT -> {
                     /*sendChatNotification(
-                        saga = saga,
+                        saga = saga.data,
                         title = saga.data.title,
-
-                        message = snackBarState.message,
-                        largeIcon = snackBarState.largeIcon,
+                        message = event.message,
+                        largeIcon = event.largeIcon,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
                     )*/
                 }
@@ -203,8 +200,8 @@ class ChatNotificationManagerImpl
                 NotificationStyle.DEFAULT -> {
                     sendToNotificationChannel(
                         title = saga.data.title,
-                        content = snackBarState.message,
-                        largeIcon = snackBarState.largeIcon,
+                        content = event.message,
+                        largeIcon = event.largeIcon,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
                         genreColor = saga.data.genre.resolveColor(null),
                         smallIconResId = R.drawable.ic_spark,
@@ -214,8 +211,8 @@ class ChatNotificationManagerImpl
 
                 NotificationStyle.MINIMAL -> {
                     sendMinimalNotification(
-                        saga = saga,
-                        message = snackBarState.message,
+                        saga = saga.data,
+                        message = event.message,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
                     )
                 }
@@ -290,7 +287,7 @@ class ChatNotificationManagerImpl
         }
 
         private fun sendMinimalNotification(
-            saga: SagaContent,
+            saga: Saga,
             message: String,
             pendingIntent: PendingIntent?,
         ) {
@@ -298,12 +295,12 @@ class ChatNotificationManagerImpl
                 NotificationCompat
                     .Builder(context, CHAT_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_spark)
-                    .setContentTitle(saga.data.title)
+                    .setContentTitle(saga.title)
                     .setContentText(message)
                     .setPriority(NotificationCompat.PRIORITY_LOW)
                     .setContentIntent(pendingIntent)
                     .setColor(
-                        saga.data.genre
+                        saga.genre
                             .resolveColor(null)
                             .toArgb(),
                     ).setAutoCancel(true)

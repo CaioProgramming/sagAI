@@ -71,7 +71,7 @@ class SafetyClient
                         ?.firstOrNull()
                         ?.content
                         ?.parts
-                        ?.firstOrNull()
+                        ?.lastOrNull()
                         ?.text
 
                 val sanitizedJson = responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)

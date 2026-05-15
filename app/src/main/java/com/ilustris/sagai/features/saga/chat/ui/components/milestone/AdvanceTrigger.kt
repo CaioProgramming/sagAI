@@ -1,4 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -42,7 +43,8 @@ import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.vibrate
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
+import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -51,12 +53,13 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AdvanceTrigger(
-    pendingAdvance: PendingAdvance,
+    action: NarrativeAction,
     genre: Genre,
     onAdvance: () -> Unit,
     modifier: Modifier = Modifier,
     isGenerating: Boolean,
 ) {
+    val actionUi = action.toUi()
     var isHolding by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val view = LocalView.current
@@ -114,7 +117,8 @@ fun AdvanceTrigger(
                                 color = primaryColor
                                 spread = 15f * progress
                                 brush = genreBrush
-                            }.clip(shape)
+                            }
+                            .clip(shape)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onPress = {
@@ -123,11 +127,11 @@ fun AdvanceTrigger(
 
                                         val holdJob =
                                             scope.launch {
-                                                delay(1000) // Vibrate after 1 second
+                                                delay(1000)
                                                 if (isHolding) {
                                                     view.context.vibrate(longArrayOf(0, 60))
                                                 }
-                                                delay(500) // Complete at 1.5 seconds
+                                                delay(500)
                                                 if (isHolding) {
                                                     view.context.vibrate(longArrayOf(0, 400))
                                                     onAdvance()
@@ -145,7 +149,6 @@ fun AdvanceTrigger(
                             },
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        // Progress Background
                         Box(
                             modifier =
                                 Modifier
@@ -159,9 +162,9 @@ fun AdvanceTrigger(
                         Text(
                             text =
                                 if (isHolding) {
-                                    stringResource(pendingAdvance.holdingTextRes)
+                                    stringResource(actionUi.holdingTextRes)
                                 } else {
-                                    stringResource(pendingAdvance.titleRes)
+                                    stringResource(actionUi.titleRes)
                                 }.uppercase(),
                             style =
                                 MaterialTheme.typography.labelLarge.copy(

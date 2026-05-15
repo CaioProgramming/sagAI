@@ -59,6 +59,13 @@ import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
+import com.ilustris.sagai.features.characters.ui.components.CharacterAbilitiesSection
+import com.ilustris.sagai.features.characters.ui.components.CharacterAppearanceSection
+import com.ilustris.sagai.features.characters.ui.components.CharacterArcTimeline
+import com.ilustris.sagai.features.characters.ui.components.CharacterDetailDivider
+import com.ilustris.sagai.features.characters.ui.components.CharacterDetailSection
+import com.ilustris.sagai.features.characters.ui.components.CharacterDetailText
+import com.ilustris.sagai.features.characters.ui.components.CharacterKnowledgeList
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -200,6 +207,7 @@ private fun CharacterDetailsLoaded(
     val characterEvents = detailData.events
     val characterRelations = detailData.relationships
     val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
+    val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
 
     // Lite wrapper to satisfy legacy components that still need SagaContent
     val liteSagaContent =
@@ -247,7 +255,8 @@ private fun CharacterDetailsLoaded(
                                             .sharedBounds(
                                                 rememberSharedContentState(key = "character_${character.id}_icon"),
                                                 animatedVisibilityScope,
-                                            ).fillParentMaxHeight(.6f)
+                                            )
+                                            .fillParentMaxHeight(.6f)
                                             .fillMaxSize()
                                             .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
                                                 viewModel.regenerate(
@@ -261,7 +270,8 @@ private fun CharacterDetailsLoaded(
                                             .fillMaxSize()
                                             .effectForGenre(
                                                 genre,
-                                            ).graphicsLayer(
+                                            )
+                                            .graphicsLayer(
                                                 translationY = 120f,
                                             ),
                                 ) {
@@ -282,7 +292,8 @@ private fun CharacterDetailsLoaded(
                                                         Brush.verticalGradient(
                                                             characterColor.darkerPalette(),
                                                         ),
-                                                    ).reactiveShimmer(
+                                                    )
+                                                    .reactiveShimmer(
                                                         true,
                                                         characterColor.shimmerize(),
                                                     ),
@@ -359,7 +370,8 @@ private fun CharacterDetailsLoaded(
                                             sagaInfo,
                                             characterData,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -486,36 +498,76 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 16.dp),
+                                        )
+                                        .padding(vertical = 16.dp),
                             )
                         }
                     }
                 }
 
                 item {
-                    Column(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                    ) {
-                        Text(
-                            stringResource(R.string.personality_title),
-                            style =
-                                MaterialTheme.typography.titleLarge.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    color = adaptiveTextColor,
-                                ),
-                        )
-
-                        Text(
-                            characterData.profile.personality,
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    color = adaptiveTextColor,
-                                ),
-                        )
+                    if (characterData.profile.personality.isNotBlank()) {
+                        CharacterDetailSection(
+                            title = stringResource(R.string.personality_title),
+                            contentColor = adaptiveTextColor,
+                        ) {
+                            CharacterDetailText(
+                                text = characterData.profile.personality,
+                                contentColor = adaptiveTextColor,
+                            )
+                        }
                     }
+                }
+
+                if (characterArcs.isNotEmpty()) {
+                    item { CharacterDetailDivider() }
+                    item {
+                        CharacterDetailSection(
+                            title = stringResource(R.string.character_details_arcs_title),
+                            contentColor = adaptiveTextColor,
+                        ) {
+                            CharacterArcTimeline(
+                                arcs = characterArcs,
+                                contentColor = adaptiveTextColor,
+                                accentColor = characterColor,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
+                        }
+                    }
+                }
+
+                characterData.knowledge
+                    ?.filter { it.isNotBlank() }
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { knowledge ->
+                        item { CharacterDetailDivider() }
+                        item {
+                            CharacterDetailSection(
+                                title = stringResource(R.string.character_details_knowledge_title),
+                                contentColor = adaptiveTextColor,
+                            ) {
+                                CharacterKnowledgeList(
+                                    knowledge = knowledge,
+                                    contentColor = adaptiveTextColor,
+                                    accentColor = characterColor,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                        }
+                    }
+
+                item {
+                    CharacterAppearanceSection(
+                        character = characterData,
+                        contentColor = adaptiveTextColor,
+                    )
+                }
+
+                item {
+                    CharacterAbilitiesSection(
+                        character = characterData,
+                        contentColor = adaptiveTextColor,
+                    )
                 }
 
                 if (characterRelations.isNotEmpty()) {

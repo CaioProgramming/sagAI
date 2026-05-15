@@ -211,13 +211,13 @@ fun DrawShape(
 
 @Composable
 fun Genre?.cornerSize(visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current): Dp {
-    if (visualConfig != null && visualConfig.cornerSizeDp >= 0f) return visualConfig.cornerSizeDp.dp
+    if (visualConfig != null && visualConfig.cornerSizeDp > 0f) return visualConfig.cornerSizeDp.dp
     return when (this) {
         Genre.CYBERPUNK -> 20.dp
         Genre.FANTASY -> 16.dp
         Genre.HORROR -> 4.dp
         Genre.HEROES -> 14.dp
-        Genre.CRIME -> 4.dp
+        Genre.CRIME -> 18.dp
         Genre.SHINOBI -> 10.dp
         Genre.SPACE_OPERA -> 24.dp
         Genre.COWBOY -> 12.dp

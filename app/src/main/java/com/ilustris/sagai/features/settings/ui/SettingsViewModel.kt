@@ -4,12 +4,16 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +29,7 @@ class SettingsViewModel
     @Inject
     constructor(
         private val settingsUseCase: SettingsUseCase,
+        private val visualConfigService: GenreVisualConfigService,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
@@ -44,6 +49,9 @@ class SettingsViewModel
 
         val sagaStorageInfo = settingsUseCase.getSagas()
 
+        private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
+        val visualConfigs = _visualConfigs.asStateFlow()
+
         private val _storageBreakdown = MutableStateFlow(StorageBreakdown(0L, 0L, 0L))
         val storageBreakdown = _storageBreakdown.asStateFlow()
         val isLoading = MutableStateFlow(false)
@@ -57,6 +65,24 @@ class SettingsViewModel
             checkUserPro()
             loadStorageBreakdown()
             checkHasSagasWithChapters()
+            loadVisualConfigs()
+        }
+
+        private fun loadVisualConfigs() {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaStorageInfo.collect { storageList ->
+                    val genres = storageList.map { it.data.genre }.distinct()
+                    val configs = _visualConfigs.value.toMutableMap()
+                    genres.forEach { genre ->
+                        if (!configs.containsKey(genre)) {
+                            visualConfigService.getVisualConfig(genre)?.let {
+                                configs[genre] = it
+                                _visualConfigs.emit(configs.toMap())
+                            }
+                        }
+                }
+            }
+        }
         }
 
         fun checkHasSagasWithChapters() {

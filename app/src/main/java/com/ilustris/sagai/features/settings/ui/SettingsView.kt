@@ -72,11 +72,13 @@ import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 
 @Composable
 fun SettingsView(
@@ -106,6 +108,7 @@ fun SettingsView(
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
     val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
+    val visualConfigs by viewModel.visualConfigs.collectAsStateWithLifecycle()
     val breakdown by viewModel.storageBreakdown.collectAsStateWithLifecycle()
 
     var showClearDialog by remember { mutableStateOf(false) }
@@ -335,21 +338,29 @@ fun SettingsView(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            val saga = remember { info.data }
-                            AvatarTimelineIcon(
-                                saga.icon,
-                                false,
-                                saga.genre,
-                                placeHolderChar = saga.title.first().uppercase(),
-                                modifier =
-                                    Modifier
-                                        .size(32.dp)
-                                        .border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.onBackground.gradientFade(),
-                                            CircleShape,
-                                        ),
-                            )
+                            val saga = remember(info.data.id) { info.data }
+                            val visualConfig = visualConfigs[saga.genre]
+                            SagAITheme(visualConfig = visualConfig, genre = saga.genre) {
+                                val genreColor = saga.genre.color
+                                val genreBrush = sagaBrush()
+                                AvatarTimelineIcon(
+                                    saga.icon,
+                                    false,
+                                    saga.genre,
+                                    placeHolderChar = saga.title.first().uppercase(),
+                                    visualConfig = visualConfig,
+                                    borderWidth = 1.dp,
+                                    modifier =
+                                        Modifier
+                                            .dropShadow(CircleShape) {
+                                                radius = 5f
+                                                color = genreColor
+                                                brush = genreBrush
+                                                spread = 5f
+                                            }.size(32.dp)
+                                            .selectiveColorHighlight(saga.genre),
+                                )
+                            }
 
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(4.dp),

@@ -12,6 +12,7 @@ data class OnboardingArgs(
 object OnboardingPrompts {
     const val ONBOARDING_BLUEPRINT = "onboarding_blueprint"
     const val DEFAULT_ROLE_BLUEPRINT = "onboarding_default_role"
+    const val ONBOARDING_FALLBACKS = "onboarding_fallbacks"
 
     suspend fun getOnboardingPrompt(
         promptService: PromptService,

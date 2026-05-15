@@ -2,7 +2,6 @@ package com.ilustris.sagai.ui.navigation
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.SnackbarHostState
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.ilustris.sagai.BuildConfig
@@ -28,7 +27,6 @@ import com.ilustris.sagai.features.timeline.ui.SagaEventsView
 fun createSagaEntryProvider(
     navigator: Navigator,
     padding: PaddingValues,
-    snackbarHostState: SnackbarHostState,
     sharedTransitionScope: SharedTransitionScope,
 ) = entryProvider {
     entry<HomeKey> {

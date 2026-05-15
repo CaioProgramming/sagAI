@@ -29,6 +29,7 @@ import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.home.data.model.currentEventInfo
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -43,6 +44,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
+import com.ilustris.sagai.features.saga.chat.data.model.toGenerationDescription
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
@@ -50,8 +52,6 @@ import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import com.ilustris.sagai.ui.components.SnackBarState
-import com.ilustris.sagai.ui.components.snackBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -114,6 +114,7 @@ class ChatViewModel
         private var topCharacterObserverJob: kotlinx.coroutines.Job? = null
         private var fullWikiObserverJob: kotlinx.coroutines.Job? = null
         private var generationJob: kotlinx.coroutines.Job? = null
+        private var narrativeObserverJob: kotlinx.coroutines.Job? = null
 
         init {
             // State initialized by ChatStateManager
@@ -211,10 +212,6 @@ class ChatViewModel
                     checkSaga()
                 }
 
-                is ChatUiAction.DismissSnackBar -> {
-                    dismissSnackBar()
-                }
-
                 is ChatUiAction.EnableBackup -> {
                     enableBackup(action.uri)
                 }
@@ -248,10 +245,9 @@ class ChatViewModel
                 }
 
                 is ChatUiAction.AdvanceNarrative -> {
-                    val pending = uiState.value.pendingAdvance ?: return
                     generationJob =
                         viewModelScope.launch(Dispatchers.IO) {
-                            sagaContentManager.advanceNarrative(pending)
+                            sagaContentManager.advanceNarrative()
                         }
                 }
 
@@ -286,15 +282,6 @@ class ChatViewModel
             }
 
         private var loadFinished = false
-
-        private fun updateSnackBar(snackBarState: SnackBarState) {
-            viewModelScope.launch(Dispatchers.IO) {
-                stateManager.updateSnackBar(snackBarState)
-                delay(10.seconds)
-                stateManager.updateSnackBar(null)
-                stateManager.updateLoading(false)
-            }
-        }
 
         fun initChat(
             sagaId: String?,
@@ -339,13 +326,16 @@ class ChatViewModel
             preferencesObserverJob = observePreferences()
 
             snackBarObserverJob?.cancel()
-            snackBarObserverJob = observeSnackBarUpdates()
+            snackBarObserverJob = observeNotificationUpdates()
 
             mediaObserverJob?.cancel()
             mediaObserverJob = observeMediaState()
 
             processingObserverJob?.cancel()
             processingObserverJob = observeProcessingState()
+
+            narrativeObserverJob?.cancel()
+            narrativeObserverJob = observeNarrativeState()
 
             sceneSummaryObserverJob?.cancel()
             sceneSummaryObserverJob = observeSceneSummary()
@@ -391,6 +381,13 @@ class ChatViewModel
                 }
             }
 
+        private fun observeNarrativeState() =
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.narrativeUiState.collect { narrativeState ->
+                    stateManager.updateNarrativeUiState(narrativeState)
+                }
+            }
+
         private fun observeSceneSummary() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.sceneSummary.collect { summary ->
@@ -426,21 +423,14 @@ class ChatViewModel
                 }
             }
 
-        fun observeSnackBarUpdates() =
+        fun observeNotificationUpdates() =
             viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.snackBarUpdate.collect { state ->
-                    state?.let { snackBarState ->
-                        if (snackBarState.showInUi) {
-                            updateSnackBar(snackBarState)
-                        }
-
+                sagaContentManager.notificationUpdate.collect { event ->
+                    event?.let { notificationEvent ->
                         uiState.value.sagaContent?.let { currentSaga ->
-                            notificationManager.sendNotification(
-                                saga = currentSaga.data,
-                                title = currentSaga.data.title,
-                                content = snackBarState.message,
-                                smallIcon = snackBarState.icon,
-                                largeIcon = null,
+                            notificationManager.sendSnackBarNotification(
+                                saga = currentSaga,
+                                event = notificationEvent,
                             )
                         }
                     }
@@ -463,12 +453,11 @@ class ChatViewModel
 
                 settingsUseCase.backupEnabled().collect {
                     if (it.not()) {
-                        updateSnackBar(
-                            snackBarState =
-                                snackBar(context.getString(R.string.backup_disabled_notification)) {
-                                    action {
-                                        configureBackup()
-                                    }
+                        sagaThemeManager.showSnackBar(
+                            message = context.getString(R.string.backup_disabled_notification),
+                            action =
+                                context.getString(R.string.configure) to {
+                                    enableBackup(null)
                                 },
                         )
                     }
@@ -597,12 +586,8 @@ class ChatViewModel
                     messageUseCase.updateMessage(previousMessage.message.copy(status = MessageStatus.ERROR))
                 }
 
-                updateSnackBar(
-                    snackBar(context.getString(R.string.message_deleted_regenerate)) {
-                        action {
-                            // No specific action needed for now, as the previous message is now in error state
-                        }
-                    },
+                sagaThemeManager.showSnackBar(
+                    context.getString(R.string.message_deleted_regenerate),
                 )
             }
         }
@@ -671,18 +656,12 @@ class ChatViewModel
 
                         val messages =
                             mapper.mapToActDisplayData(sagaContent, rules)
-                        val pendingAdvance =
-                            sagaContentManager.getSagaContent()?.let {
-                                mapper.computePendingAdvance(it, rules)
-                            }
-
                         stateManager.updateState {
                             it.copy(
                                 sagaContent = sagaContent,
                                 messages = messages,
                                 chatState = ChatState.Success,
                                 isLoading = if (loadFinished) it.isLoading else false,
-                                pendingAdvance = pendingAdvance,
                                 activeGenre = sagaContent.data.genre,
                                 flatEvents = sagaContent.flatEvents().map { it.data },
                                 characters = sagaContent.characters,
@@ -698,6 +677,7 @@ class ChatViewModel
                         // Only validate character updates when messages changed
                         if (messagesChanged) {
                             validateCharacterMessageUpdates(sagaContent)
+                            sagaContentManager.checkNarrativeProgression(sagaContent)
                         }
 
                         updateProgress(sagaContent)
@@ -761,9 +741,12 @@ class ChatViewModel
                             1f
                         }
 
-                        sagaContent.getCurrentTimeLine() != null -> {
+                        sagaContent.currentEventInfo != null || sagaContent.getCurrentTimeLine() != null -> {
                             val updateLimit = rules.loreUpdateLimit ?: 10
-                            val messageCount = sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
+                            val messageCount =
+                                sagaContent.currentEventInfo?.messages?.size
+                                    ?: sagaContent.getCurrentTimeLine()?.messages?.size
+                                    ?: 0
                             val maxCount = updateLimit
                             messageCount.toFloat() / maxCount.toFloat()
                         }
@@ -861,10 +844,6 @@ class ChatViewModel
                     )
                 }
             }
-        }
-
-        fun dismissSnackBar() {
-            stateManager.updateSnackBar(null)
         }
 
         fun sendInput(
@@ -1101,14 +1080,12 @@ class ChatViewModel
                             )
                         }
                     }.onFailureAsync {
-                        updateSnackBar(
-                            snackBar(
-                                "Ocorreu um erro ao salvar a mensagem",
-                            ) {
-                                action {
-                                    resendMessage(message)
-                                }
-                            },
+                        sagaThemeManager.showSnackBar(
+                            message = "Ocorreu um erro ao salvar a mensagem",
+                            action =
+                                context.getString(R.string.try_again) to {
+                                    retryAiResponse(message)
+                                },
                         )
                         stateManager.updateState { s -> s.copy(typoFixMessage = null) }
                         updateLoading(false)
@@ -1124,7 +1101,6 @@ class ChatViewModel
         private fun updateLoading(isLoading: Boolean) {
             viewModelScope.launch {
                 stateManager.updateLoading(isLoading)
-                sagaContentManager.setProcessing(isLoading)
             }
         }
 
@@ -1192,45 +1168,29 @@ class ChatViewModel
                             stateManager.updateState { it.copy(reasoningChunk = null) }
                             messageUseCase.updateMessage(newMessage.message.copy(status = MessageStatus.OK))
                             val generatedMessage = streamingState.data.message
-                            val speakerName = generatedMessage.speakerName
-                            val characterExists =
-                                saga.findCharacter(
-                                    speakerName ?: generatedMessage.speakerName,
-                                ) != null
+                            streamingState.data.newCharacter?.let { discovery ->
+                                if (generatedMessage.senderType == SenderType.NARRATOR) return@let
 
-                            if (speakerName != null &&
-                                !characterExists &&
-                                generatedMessage.senderType != SenderType.NARRATOR
-                            ) {
-                                val contextDescription =
-                                    buildString {
-                                        appendLine("Character name: $speakerName")
-                                        appendLine("Character context on story:")
-                                        appendLine("The user said: ${message.text}")
-                                        appendLine("And the new character replied: ${generatedMessage.text}")
-                                    }
-                                val character =
-                                    sagaContentManager
-                                        .generateCharacter(
-                                            contextDescription,
-                                            sceneSummary = sceneSummary,
-                                        )
-                                character.onFailureAsync {
-                                    updateSnackBar(
-                                        snackBar(
+                                sagaContentManager
+                                    .generateCharacter(
+                                        discovery.toGenerationDescription(
+                                            message,
+                                            generatedMessage,
+                                        ),
+                                        sceneSummary = sceneSummary,
+                                        candidateName = discovery.name,
+                                    ).onFailureAsync {
+                                        sagaThemeManager.showSnackBar(
                                             message = "Ocorreu um erro ao criar o personagem",
-                                        ) {
-                                            action {
-                                                retryCharacter(
-                                                    contextDescription,
-                                                    generatedMessage,
-                                                )
-                                            }
-                                        },
-                                    )
-                                }
-
-                                character
+                                            action =
+                                                context.getString(R.string.try_again) to {
+                                                    requestNewCharacter(
+                                                        discovery.name,
+                                                        generatedMessage,
+                                                    )
+                                                },
+                                        )
+                                    }
                             }
 
                             messageUseCase.updateMessage(
@@ -1245,6 +1205,9 @@ class ChatViewModel
                                     sagaContentManager.updateSummary(it)
                                 }
                                 updateLoading(false)
+                                sagaContentManager.checkNarrativeProgression(
+                                    uiState.value.sagaContent,
+                                )
                             }
                         }
 
@@ -1265,14 +1228,12 @@ class ChatViewModel
                                     ),
                                 )
                             } else {
-                                updateSnackBar(
-                                    snackBar(
-                                        context.getString(R.string.message_reply_error),
-                                    ) {
-                                        action {
-                                            resendMessage(message)
-                                        }
-                                    },
+                                sagaThemeManager.showSnackBar(
+                                    message = context.getString(R.string.message_reply_error),
+                                    action =
+                                        context.getString(R.string.try_again) to {
+                                            retryAiResponse(message)
+                                        },
                                 )
                                 messageUseCase.updateMessage(
                                     message.copy(
@@ -1294,15 +1255,17 @@ class ChatViewModel
                 sagaContentManager
                     .generateCharacter(
                         contextDescription,
+                        candidateName = message.speakerName,
                     ).onFailureAsync {
-                        updateSnackBar(
-                            snackBar(
-                                message = "Ocorreu um erro ao criar o personagem",
-                            ) {
-                                action {
-                                    retryCharacter(contextDescription, message)
-                                }
-                            },
+                        sagaThemeManager.showSnackBar(
+                            message = "Ocorreu um erro ao criar o personagem",
+                            action =
+                                context.getString(R.string.try_again) to {
+                                    requestNewCharacter(
+                                        message.speakerName ?: "",
+                                        message,
+                                    )
+                                },
                         )
                     }.onSuccessAsync {
                         messageUseCase.updateMessage(

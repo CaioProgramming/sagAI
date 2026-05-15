@@ -97,17 +97,9 @@ class HomeUseCaseImpl
         private fun processSagaContent(
             content: List<com.ilustris.sagai.features.home.data.model.SagaSummary>,
         ): List<com.ilustris.sagai.features.home.data.model.SagaSummary> =
-            content.sortedWith(
-                compareBy<com.ilustris.sagai.features.home.data.model.SagaSummary> { saga ->
-                    saga.data.isEnded
-                }.thenByDescending { saga ->
-                    if (saga.data.isEnded) {
-                        saga.data.endedAt
-                    } else {
-                        saga.lastMessageTime ?: saga.data.createdAt
-                    }
-                },
-            )
+            content.sortedByDescending { saga ->
+                saga.lastMessageTime ?: saga.data.createdAt
+            }
 
         override suspend fun autoBackup(): RequestResult<Unit> =
             executeRequest {

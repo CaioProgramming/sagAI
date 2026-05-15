@@ -1,7 +1,6 @@
 package com.ilustris.sagai.ui.components
 
 import android.graphics.Bitmap
-import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
@@ -16,8 +15,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,41 +24,53 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.shadow.Shadow
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.sagaShape
 
+data class SagaSnackBarMessage(
+    val message: String,
+    val action: Pair<String, () -> Unit>? = null,
+)
+
+/** Background notification payload (not shown in the global toast UI). */
+data class SagaNotificationEvent(
+    val message: String,
+    val icon: Bitmap? = null,
+    val largeIcon: Bitmap? = null,
+    val style: NotificationStyle = NotificationStyle.DEFAULT,
+)
+
+enum class NotificationStyle {
+    DEFAULT,
+    CHAT,
+    MINIMAL,
+}
+
 @Composable
 fun SagaSnackBar(
-    snackBarState: SnackBarState?,
+    snackBarMessage: SagaSnackBarMessage?,
     genre: Genre?,
-    modifier: Modifier,
-    onAction: (SnackAction) -> Unit,
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit = {},
 ) {
     val mainColor = MaterialTheme.colorScheme.background
     val contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
     val shape = sagaShape() ?: RoundedCornerShape(10.dp)
 
     AnimatedVisibility(
-        snackBarState != null,
+        visible = snackBarMessage != null,
         modifier = modifier,
         enter = slideInVertically { -it } + fadeIn(tween(500)),
-        slideOutVertically { it },
+        exit = slideOutVertically { it },
     ) {
-        snackBarState?.let { snackBar ->
+        snackBarMessage?.let { snackBar ->
             Row(
                 Modifier
                     .dropShadow(
@@ -73,56 +82,34 @@ fun SagaSnackBar(
                                 color = mainColor.darker(),
                                 offset = DpOffset.Zero,
                             ),
-                    ).clip(shape)
+                    )
+                    .clip(shape)
                     .border(
                         1.dp,
                         genre?.gradient() ?: Brush.verticalGradient(holographicGradient),
                         shape,
-                    ).background(
-                        mainColor,
-                        shape,
-                    ).fillMaxWidth()
-                    .animateContentSize(
-                        animationSpec = tween(200, easing = EaseIn),
-                    ).padding(8.dp),
+                    ).background(mainColor, shape)
+                    .fillMaxWidth()
+                    .animateContentSize(animationSpec = tween(200, easing = EaseIn))
+                    .clickable(enabled = snackBar.action == null) { onDismiss() }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                val resource = snackBar.icon
-                val colorFilter = if (resource == null) ColorFilter.tint(contentColor) else null
-                val shape = if (resource !is Painter) CircleShape else shape
-
-                AsyncImage(
-                    resource,
-                    null,
-                    colorFilter = colorFilter,
-                    placeholder = painterResource(R.drawable.ic_spark),
-                    error = painterResource(R.drawable.ic_spark),
-                    modifier =
-                        Modifier
-                            .size(24.dp)
-                            .padding(4.dp)
-                            .clip(shape),
-                )
-
                 Text(
                     snackBar.message,
                     style =
-
                         MaterialTheme.typography.bodySmall.copy(
                             color = contentColor,
                         ),
                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     textAlign = TextAlign.Start,
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .weight(1f),
+                    modifier = Modifier.weight(1f),
                 )
 
-                snackBar.action?.let { snackAction ->
+                snackBar.action?.let { (label, onClick) ->
                     Text(
-                        stringResource(snackAction.actionRes ?: R.string.empty),
+                        label,
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 color = contentColor,
@@ -130,107 +117,14 @@ fun SagaSnackBar(
                             ),
                         modifier =
                             Modifier
-                                .padding(8.dp)
                                 .clip(shape)
                                 .clickable {
-                                    onAction(snackAction)
-                                },
+                                    onClick()
+                                    onDismiss()
+                                }.padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
         }
     }
-}
-
-fun snackBar(
-    message: String,
-    builder: SnackBarBuilder.() -> Unit = {},
-): SnackBarState = SnackBarBuilder(message).apply(builder).build()
-
-class SnackBarBuilder(
-    private val message: String,
-) {
-    var icon: Bitmap? = null
-    var largeIcon: Bitmap? = null
-    var showInUi: Boolean = true
-    var notificationStyle: NotificationStyle = NotificationStyle.DEFAULT
-    private var snackAction: SnackAction? = null
-
-    fun build(): SnackBarState =
-        SnackBarState(
-            icon = icon,
-            largeIcon = largeIcon,
-            message = message,
-            action = snackAction,
-            showInUi = showInUi,
-            notificationStyle = notificationStyle,
-        )
-
-    fun action(builder: SnackActionBuilder.() -> Unit) {
-        snackAction = SnackActionBuilder().apply(builder).action
-    }
-}
-
-class SnackActionBuilder {
-    internal var action: SnackAction? = null
-        private set
-
-    fun resendMessage(message: Message) {
-        action = SnackAction.ResendMessage(message)
-    }
-
-    fun openDetails(data: Any) {
-        action = SnackAction.OpenDetails(data)
-    }
-
-    fun retryCharacter(
-        description: String,
-        message: Message,
-    ) {
-        action = SnackAction.RetryCharacter(description, message)
-    }
-
-    fun revaluateSaga() {
-        action = SnackAction.RevaluateSaga
-    }
-
-    fun configureBackup() {
-        action = SnackAction.EnableBackup
-    }
-}
-
-data class SnackBarState(
-    val icon: Bitmap? = null,
-    val largeIcon: Bitmap? = null,
-    val message: String,
-    val action: SnackAction? = null,
-    val showInUi: Boolean = true,
-    val notificationStyle: NotificationStyle = NotificationStyle.DEFAULT,
-)
-
-enum class NotificationStyle {
-    DEFAULT, // Uses BigTextStyle for general notifications
-    CHAT, // Uses MessagingStyle for chat messages
-    MINIMAL, // Simple notification without special styling
-}
-
-sealed class SnackAction(
-    @StringRes val actionRes: Int? = null,
-) {
-    data class ResendMessage(
-        val message: Message,
-    ) : SnackAction(R.string.try_again)
-
-    data class OpenDetails(
-        val data: Any,
-    ) : SnackAction(R.string.see_more)
-
-    data class RetryCharacter(
-        val description: String,
-        val message: Message,
-    ) : SnackAction(R.string.try_again)
-
-    data object RevaluateSaga : SnackAction(R.string.try_again)
-
-    data object EnableBackup : SnackAction(R.string.configure)
 }

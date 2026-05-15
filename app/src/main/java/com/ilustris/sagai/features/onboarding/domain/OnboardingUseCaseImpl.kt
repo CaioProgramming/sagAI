@@ -55,14 +55,24 @@ class OnboardingUseCaseImpl
 
                 val prompt = OnboardingPrompts.getOnboardingPrompt(promptService, config, persona)
                 val content =
-                    gemmaClient.generate<OnboardingContent>(
-                        prompt = prompt,
-                        requirement = GemmaClient.ModelRequirement.LOW,
-                        blueprintKey = OnboardingPrompts.ONBOARDING_BLUEPRINT,
-                    )
+                    runCatching {
+                        gemmaClient.generate<OnboardingContent>(
+                            prompt = prompt,
+                            requirement = GemmaClient.ModelRequirement.LOW,
+                            blueprintKey = OnboardingPrompts.ONBOARDING_BLUEPRINT,
+                        )
+                    }.getOrNull()
 
-                content!!
+                content ?: getFallbackContent(type)
             }
+
+        private suspend fun getFallbackContent(type: OnboardingType): OnboardingContent {
+            val fallbacks =
+                remoteConfigService.getJson<Map<String, OnboardingContent>>(
+                    OnboardingPrompts.ONBOARDING_FALLBACKS,
+                )
+            return fallbacks?.get(type.name) ?: OnboardingContent()
+    }
 
         override suspend fun markSeen(type: OnboardingType) {
             if (type == OnboardingType.GAMEPLAY_GUIDE) return

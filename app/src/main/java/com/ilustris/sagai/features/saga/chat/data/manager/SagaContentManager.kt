@@ -6,10 +6,10 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.components.SnackBarState
+import com.ilustris.sagai.ui.components.SagaNotificationEvent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,20 +19,22 @@ interface SagaContentManager {
     val sceneSummary: StateFlow<SceneSummary?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val narrativeProcessingUiState: StateFlow<Boolean>
+    val narrativeUiState: StateFlow<NarrativeUiState>
     val contentReasoning: MutableStateFlow<String?>
 
-    var snackBarUpdate: MutableStateFlow<SnackBarState?>
+    var notificationUpdate: MutableStateFlow<SagaNotificationEvent?>
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
     val isOnboardingVisible: MutableStateFlow<Boolean>
 
-    suspend fun advanceNarrative(pendingAdvance: PendingAdvance)
+    suspend fun advanceNarrative()
 
     suspend fun loadSaga(sagaId: String)
 
     suspend fun generateCharacter(
         description: String,
         sceneSummary: SceneSummary? = null,
+        candidateName: String? = null,
     ): RequestResult<Character>
 
     suspend fun generateCharacterImage(character: Character): RequestResult<Character>

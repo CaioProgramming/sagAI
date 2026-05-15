@@ -15,7 +15,9 @@ import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
@@ -49,6 +51,7 @@ class MessageUseCaseImpl
         private val messageRepository: MessageRepository,
         private val reactionRepository: ReactionRepository,
         private val characterRepository: CharacterRepository,
+        private val characterUseCase: CharacterUseCase,
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
         private val audioGenClient: AudioGenClient,
@@ -189,6 +192,7 @@ class MessageUseCaseImpl
 
                     val sagaContent =
                         sagaRepository.getSagaById(saga.data.id).first() as SagaContent
+                    val characterArcsById = loadCharacterArcsForScene(sagaContent, sceneSummary)
                     val generateStream =
                         gemmaClient.generateStreaming<AIReply>(
                             prompt =
@@ -199,6 +203,7 @@ class MessageUseCaseImpl
                                     sceneSummary = sceneSummary,
                                     conversationDirective = conversationDirective,
                                     updateLimit = narrativeRules.loreUpdateLimit,
+                                    characterArcsById = characterArcsById,
                                 ),
                             blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
                             userInteraction = true,
@@ -215,12 +220,30 @@ class MessageUseCaseImpl
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val reply = state.data
+                                reply.newCharacter?.let { discovery ->
+                                    val speaker = reply.message.speakerName
+                                    if (speaker != null &&
+                                        !speaker.equals(
+                                            discovery.name,
+                                            ignoreCase = true,
+                                        )
+                                    ) {
+                                        Timber.w(
+                                            "AIReply newCharacter.name (${discovery.name}) " +
+                                                "does not match message.speakerName ($speaker)",
+                                        )
+                                    }
+                                }
                                 val savedMessage =
                                     messageRepository.saveMessage(
                                         reply.message.copy(
                                             sagaId = saga.data.id,
                                             timelineId = saga.getCurrentTimeLine()!!.data.id,
-                                            characterId = sagaContent.findCharacter(reply.message.speakerName)?.data?.id,
+                                            characterId =
+                                                sagaContent
+                                                    .findCharacter(reply.message.speakerName)
+                                                    ?.data
+                                                    ?.id,
                                             status = MessageStatus.OK,
                                             timestamp = System.currentTimeMillis(),
                                         ),
@@ -440,4 +463,21 @@ class MessageUseCaseImpl
                 generateAudio(saga, message, characterReference)
             }
         }
+
+        private suspend fun loadCharacterArcsForScene(
+            saga: SagaContent,
+            sceneSummary: SceneSummary?,
+        ): Map<Int, List<CharacterArc>> {
+            val characterIds =
+                sceneSummary
+                    ?.charactersPresent
+                    ?.mapNotNull { saga.findCharacter(it)?.data?.id }
+                    .orEmpty()
+            if (characterIds.isEmpty()) return emptyMap()
+
+            return characterIds
+                .associateWith { characterId ->
+                    characterUseCase.getCharacterArcs(characterId).first()
+            }.filterValues { it.isNotEmpty() }
+    }
     }

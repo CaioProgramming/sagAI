@@ -151,10 +151,7 @@ fun DefaultOverlay(
                 },
                 shape = genre.bubble(isNarrator = true),
                 colors =
-                    ButtonDefaults.elevatedButtonColors().copy(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.secondary,
-                    ),
+                    ButtonDefaults.elevatedButtonColors(),
             ) {
                 Text(stringResource(R.string.continue_button))
             }

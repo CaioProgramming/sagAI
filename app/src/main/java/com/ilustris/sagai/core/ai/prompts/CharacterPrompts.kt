@@ -5,8 +5,11 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -144,7 +147,7 @@ object CharacterPrompts {
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
-    fun charactersOverview(characters: List<com.ilustris.sagai.features.characters.data.model.Character>): String =
+    fun charactersOverview(characters: List<Character>): String =
         buildString {
             val characterExclusions =
                 listOf(
@@ -167,6 +170,76 @@ object CharacterPrompts {
             characters.forEach { character ->
                 appendLine(character.name)
                 appendLine(character.toAINormalize(characterExclusions))
+            }
+        }
+
+    const val SCENE_KNOWLEDGE_LIMIT = 6
+    const val SCENE_ARC_LIMIT = 2
+    const val SCENE_ARC_CONTENT_MAX_CHARS = 400
+    const val SCENE_RELATION_THRESHOLD = 2
+
+    fun offSceneCharacterNames(characters: List<Character>): String =
+        if (characters.isEmpty()) {
+            "No other characters in this saga."
+        } else {
+            characters.joinToString(", ") { it.fullName() }
+        }
+
+    fun sceneCharacterContext(
+        character: CharacterContent,
+        arcs: List<CharacterArc> = emptyList(),
+        protagonist: CharacterContent? = null,
+        knowledgeLimit: Int = SCENE_KNOWLEDGE_LIMIT,
+        arcLimit: Int = SCENE_ARC_LIMIT,
+        relationThreshold: Int = SCENE_RELATION_THRESHOLD,
+    ): String =
+        buildString {
+            val data = character.data
+            appendLine("### ${data.fullName()}")
+            if (data.profile.occupation.isNotBlank()) {
+                appendLine("Role: ${data.profile.occupation}")
+            }
+            if (data.profile.personality.isNotBlank()) {
+                appendLine("Personality: ${data.profile.personality}")
+            }
+            data.knowledge
+                ?.filter { it.isNotBlank() }
+                ?.takeLast(knowledgeLimit)
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { facts ->
+                    appendLine("Known facts:")
+                    facts.forEach { appendLine("  - $it") }
+                }
+            arcs
+                .takeLast(arcLimit)
+                .forEach { arc ->
+                    val excerpt = arc.content.take(SCENE_ARC_CONTENT_MAX_CHARS)
+                    val suffix = if (arc.content.length > SCENE_ARC_CONTENT_MAX_CHARS) "..." else ""
+                    appendLine("Story beat [${arc.title}]: $excerpt$suffix")
+                }
+            protagonist
+                ?.takeIf { it.data.id != data.id }
+                ?.let { main ->
+                    character.findRelationship(main.data.id)?.let { relation ->
+                        appendLine(relation.summarizeRelation(relationThreshold))
+                    }
+                }
+        }
+
+    fun sceneCharactersContext(
+        characters: List<CharacterContent>,
+        arcsByCharacterId: Map<Int, List<CharacterArc>> = emptyMap(),
+        protagonist: CharacterContent? = null,
+    ): String =
+        if (characters.isEmpty()) {
+            "No characters identified in the current scene."
+        } else {
+            characters.joinToString("\n\n") { character ->
+                sceneCharacterContext(
+                    character = character,
+                    arcs = arcsByCharacterId[character.data.id].orEmpty(),
+                    protagonist = protagonist,
+                )
             }
         }
 
@@ -261,7 +334,7 @@ object CharacterPrompts {
     suspend fun characterLoreGeneration(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         timeline: Timeline,
-        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        characters: List<Character>,
     ): String {
         val args =
             CharacterLoreArgs(
@@ -281,7 +354,7 @@ object CharacterPrompts {
     @Suppress("ktlint:standard:max-line-length")
     suspend fun findNickNames(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        characters: List<Character>,
         messages: List<Message>,
         timeline: Timeline,
         saga: Saga,
@@ -379,7 +452,7 @@ object CharacterPrompts {
     suspend fun knowledgeUpdatePrompt(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         event: Timeline,
-        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        characters: List<Character>,
     ): String {
         val args =
             KnowledgeUpdateArgs(

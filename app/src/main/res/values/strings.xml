@@ -186,6 +186,8 @@
     <string name="home_debug_session_icon_desc">Debug Session</string>
     <string name="home_start_debug_session_title">Start Debug Session</string>
     <string name="home_test_with_fake_messages_subtitle">Test with fake messages.</string>
+    <string name="home_completed_sagas_title">Completed journeys</string>
+    <string name="home_trophy_overflow">+%d</string>
     <string name="home_create_new_saga_title">Create new saga</string>
     <string name="home_create_new_saga_subtitle">Create a new adventure and discover what the future holds for you.</string>
     <string name="chat_card_unknown_character">Unknown</string>
@@ -353,6 +355,19 @@
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
     <string name="character_details_aka">aka: %s</string>
+    <string name="character_details_arcs_title">Story Arc</string>
+    <string name="character_details_knowledge_title">What they know</string>
+    <string name="character_details_appearance_title">Appearance</string>
+    <string name="character_details_abilities_title">Abilities</string>
+    <string name="character_details_skills">Skills &amp; proficiencies</string>
+    <string name="character_details_talents">Signature talents</string>
+    <string name="character_details_jawline">Jawline</string>
+    <string name="character_details_build">Build &amp; posture</string>
+    <string name="character_details_skin">Skin</string>
+    <string name="character_details_distinctive">Distinctive features</string>
+    <string name="character_details_carried_items">Carried items</string>
+    <string name="character_arc_source_chapter">Chapter</string>
+    <string name="character_arc_source_act">Act</string>
     <string name="read_more" translatable="false">...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
     <string name="character_events">Character events</string>
@@ -435,20 +450,25 @@
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
     <!-- Narrative Milestones -->
-    <string name="advance_new_event">Continue Story</string>
-    <string name="releasing_event">Preparing next event...</string>
-    <string name="advance_new_chapter">Next Chapter</string>
-    <string name="releasing_chapter">Starting next chapter...</string>
-    <string name="advance_new_chapter_introduction">Enter Chapter</string>
-    <string name="releasing_chapter_introduction">Entering chapter...</string>
-    <string name="advance_new_act">Next Act</string>
-    <string name="releasing_act">Starting next Act...</string>
-    <string name="advance_new_act_introduction">Enter Act</string>
-    <string name="releasing_act_introduction">Entering act...</string>
-    <string name="advance_start_story">Begin Adventure</string>
-    <string name="releasing_start_story">Manifesting the world...</string>
-    <string name="advance_saga_ending">Reach the Conclusion</string>
-    <string name="releasing_ending">Writing the final words...</string>
+    <string name="advance_evolve_timeline">Evolve the scene</string>
+    <string name="releasing_evolve_timeline">Generating scene consequences...</string>
+    <string name="advance_close_chapter">Close chapter</string>
+    <string name="releasing_close_chapter">Summarizing this chapter...</string>
+    <string name="advance_open_chapter">Open new chapter</string>
+    <string name="releasing_open_chapter">Creating chapter...</string>
+    <string name="advance_close_act">Close act</string>
+    <string name="releasing_close_act">Concluding this act...</string>
+    <string name="advance_create_act">Start new act</string>
+    <string name="releasing_create_act">Creating new act...</string>
+    <string name="advance_new_chapter_introduction">View chapter intro</string>
+    <string name="releasing_chapter_introduction">Preparing chapter intro...</string>
+    <string name="advance_new_act_introduction">View act intro</string>
+    <string name="releasing_act_introduction">Preparing act intro...</string>
+    <string name="advance_start_story">Start new scene</string>
+    <string name="releasing_start_story">Creating the scene...</string>
+    <string name="releasing_close_scene">Closing current scene...</string>
+    <string name="advance_saga_ending">Conclude the saga</string>
+    <string name="releasing_ending">Writing the finale...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>

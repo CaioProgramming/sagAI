@@ -23,7 +23,7 @@ interface CharacterDao {
 
     @Transaction
     @Query("SELECT * FROM Characters WHERE id = :id LIMIT 1")
-    fun getCharacterContent(id: Int): Flow<CharacterContent>
+    fun getCharacterContent(id: Int): Flow<CharacterContent?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCharacter(character: Character): Long

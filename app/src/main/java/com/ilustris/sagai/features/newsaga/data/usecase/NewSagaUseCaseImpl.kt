@@ -314,7 +314,6 @@ class NewSagaUseCaseImpl
                         identity,
                     ),
                     requireTranslation = true,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 

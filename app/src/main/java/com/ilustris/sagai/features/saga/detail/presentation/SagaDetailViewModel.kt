@@ -7,12 +7,10 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
-import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
@@ -38,7 +36,6 @@ class SagaDetailViewModel
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val visualConfigService: GenreVisualConfigService,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
-        private val soundFxService: SoundFxService,
         private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
@@ -103,12 +100,8 @@ class SagaDetailViewModel
         }
 
         private fun playSoundFx() {
-            val selectedGenre = sagaResume.value?.saga?.genre ?: return
             viewModelScope.launch {
-                delay(300)
-                val visualConfig = visualConfigService.getVisualConfig(selectedGenre)
-                val hapticPattern = selectedGenre.vibrationPattern(visualConfig)
-                soundFxService.playWithHaptics(hapticPattern)
+                sagaThemeManager.playVfx()
             }
         }
 

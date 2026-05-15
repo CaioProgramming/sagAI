@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,9 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,8 +58,8 @@ import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.ui.animations.glitch
 import com.ilustris.sagai.ui.components.BlurProvider
+import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
 import com.ilustris.sagai.ui.navigation.HomeKey
@@ -73,6 +72,7 @@ import com.ilustris.sagai.ui.navigation.findNavKey
 import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -125,8 +125,8 @@ class MainActivity : ComponentActivity() {
                         .lastOrNull()
                         ?.let { navigationState.backStacks[it]?.lastOrNull() } ?: HomeKey
 
-                val snackbarHostState = remember { SnackbarHostState() }
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
+                val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
 
                 // Reset theme to brand defaults on genre-neutral screens
                 LaunchedEffect(currentKey) {
@@ -217,15 +217,6 @@ class MainActivity : ComponentActivity() {
                             Modifier
                                 .background(MaterialTheme.colorScheme.background)
                                 .fillMaxSize(),
-                        snackbarHost = {
-                            SnackbarHost(hostState = snackbarHostState) {
-                                Snackbar(
-                                    it,
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(15.dp),
-                                )
-                            }
-                        },
                         bottomBar = {
                             // SagaBottomNavigation(navController, route)
                         },
@@ -239,13 +230,11 @@ class MainActivity : ComponentActivity() {
                                         remember(
                                             navigator,
                                             padding,
-                                            snackbarHostState,
                                             this@SharedTransitionLayout,
                                         ) {
                                             createSagaEntryProvider(
                                                 navigator,
                                                 padding,
-                                                snackbarHostState,
                                                 this@SharedTransitionLayout,
                                             )
                                         }
@@ -255,14 +244,18 @@ class MainActivity : ComponentActivity() {
                                             onBack = { navigator.goBack() },
                                         )
 
-                                        if (showGenreTransition) {
-                                            Box(
-                                                modifier =
-                                                    Modifier
-                                                        .fillMaxSize()
-                                                        .glitch(glitchFrequency = 0.4f),
-                                            )
-                                        }
+                                        SagaSnackBar(
+                                            snackBarMessage = globalSnackBar,
+                                            genre = currentGenre,
+                                            modifier =
+                                                Modifier
+                                                    .align(Alignment.BottomCenter)
+                                                    .navigationBarsPadding()
+                                                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                                                    .fillMaxWidth()
+                                                    .clip(sagaShape()),
+                                            onDismiss = { sagaThemeManager.dismissSnackBar() },
+                                        )
                                     }
                                 }
                             } else {

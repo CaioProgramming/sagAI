@@ -34,7 +34,7 @@ sealed class SagaMilestone(
         val messageText: String? = null,
         val sagaContent: SagaContent,
     ) : SagaMilestone(
-            R.string.advance_new_event,
+            R.string.advance_evolve_timeline,
             timeline.title,
             messageText,
             extraContent = { NewEventContent(sagaContent, timeline.id, emotionalMascot) },
@@ -97,6 +97,13 @@ sealed class SagaMilestone(
         )
 
     data object Loading : SagaMilestone(
+        title = 0,
+        subtitle = "",
+        delay = 0.seconds,
+        isIntrusive = true,
+    )
+
+    data object TitleSplash : SagaMilestone(
         title = 0,
         subtitle = "",
         delay = 0.seconds,

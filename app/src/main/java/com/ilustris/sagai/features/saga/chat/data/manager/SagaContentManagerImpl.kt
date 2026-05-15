@@ -19,10 +19,8 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterProfile
@@ -31,7 +29,6 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.ChapterMetadata
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.home.data.model.chapterNumber
@@ -47,20 +44,25 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
+import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
-import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import com.ilustris.sagai.ui.components.NotificationStyle
-import com.ilustris.sagai.ui.components.SnackBarState
-import com.ilustris.sagai.ui.components.snackBar
+import com.ilustris.sagai.ui.components.SagaNotificationEvent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +104,8 @@ class SagaContentManagerImpl
         private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
         private val messageDao: com.ilustris.sagai.features.saga.datasource.MessageDao,
         private val sagaThemeManager: SagaThemeManager,
+        private val narrativeCoordinator: NarrativeCoordinator,
+        private val narrativeActionExecutor: NarrativeActionExecutor,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -124,12 +128,15 @@ class SagaContentManagerImpl
         override val narrativeProcessingUiState: StateFlow<Boolean> =
             _narrativeProcessingUiState.asStateFlow()
 
+        override val narrativeUiState: StateFlow<NarrativeUiState> = narrativeCoordinator.uiState
+
         private var sagaJob: kotlinx.coroutines.Job? = null
         private var loadingObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
 
-        override var snackBarUpdate: MutableStateFlow<SnackBarState?> = MutableStateFlow(null)
+        override var notificationUpdate: MutableStateFlow<SagaNotificationEvent?> =
+            MutableStateFlow(null)
 
         private var isDebugModeEnabled: Boolean = false
         private val isProcessing = AtomicBoolean(false)
@@ -152,122 +159,95 @@ class SagaContentManagerImpl
 
         override suspend fun setProcessing(bool: Boolean) {
             isProcessing.set(bool)
-            setNarrativeProcessingStatus(bool)
-            Timber.i("Processing mode ${if (bool) "enabled" else "disabled"}")
+            Timber.i("Message processing mode ${if (bool) "enabled" else "disabled"}")
         }
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
-        override suspend fun advanceNarrative(pendingAdvance: PendingAdvance) {
-            val currentSaga = content.value ?: return
-            Timber.d("Manually advancing narrative: ${pendingAdvance.javaClass.simpleName}")
+        override suspend fun advanceNarrative() {
+            val action = narrativeCoordinator.uiState.value.pendingAction ?: return
+            Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
+            narrativeCoordinator.onUserAdvanceRequested(action)
+            executeNarrativeAction(action, isRetry = false)
+        }
 
-            var action: RequestResult<Any>? = null
-            startProcessing {
-                action =
-                    when (pendingAdvance) {
-                        is PendingAdvance.NewEvent -> {
-                            val timeline = pendingAdvance.timeline
-                            updateTimeline(
-                                currentSaga,
-                                timeline,
+        private suspend fun executeNarrativeAction(
+            action: NarrativeAction,
+            isRetry: Boolean,
+        ) {
+            val sagaMetadata = content.value ?: return
+            setNarrativeProcessingStatus(true)
+            narrativeCoordinator.markProcessing(true)
+            try {
+                val result =
+                    narrativeActionExecutor.execute(
+                        action,
+                        buildExecutionEnvironment(),
+                    )
+                narrativeCoordinator.onActionCompleted(action, result)
+                when (result) {
+                    is NarrativeExecutionResult.Success -> {
+                        handlePostAction(sagaMetadata, action, result.value)
+                        awaitMilestoneDismissalIfNeeded()
+                        requestNarrativeProgression(isRetry = false)
+                    }
+
+                    is NarrativeExecutionResult.Failure -> {
+                        Timber.e("Failed narrative action: ${result.message}")
+                        emitMilestone(null)
+                        if (isRetry) {
+                            sagaThemeManager.showSnackBar(
+                                result.message,
+                                context.getString(R.string.try_again) to {
+                                    managerScope.launch {
+                                        narrativeCoordinator.clearError()
+                                        executeNarrativeAction(action, isRetry = true)
+                                    }
+                                },
                             )
-                        }
-
-                        is PendingAdvance.NewChapter -> {
-                            updateChapter(
-                                currentSaga,
-                                pendingAdvance.chapter,
-                            )
-                        }
-
-                        is PendingAdvance.NewAct -> {
-                            val act = pendingAdvance.act
-                            updateAct(act)
-                        }
-
-                        is PendingAdvance.StartAct -> {
-                            createAct(currentSaga)
-                        }
-
-                        is PendingAdvance.NewActIntroduction -> {
-                            val act = pendingAdvance.act
-                            generateActIntroduction(act)
-                        }
-
-                        is PendingAdvance.NewChapterIntroduction -> {
-                            val chapter = pendingAdvance.chapter
-                            generateChapterIntroduction(chapter)
-                        }
-
-                        is PendingAdvance.StartChapter -> {
-                            val act = pendingAdvance.act
-                            startChapter(act)
-                        }
-
-                        is PendingAdvance.StartStory -> {
-                            val chapter = pendingAdvance.chapter
-                            startTimeline(chapter)
-                        }
-
-                        is PendingAdvance.SagaEnding -> {
-                            generateEnding(currentSaga)
+                        } else {
+                            executeNarrativeAction(action, isRetry = true)
                         }
                     }
-            }
-
-            action
-                ?.onSuccessAsync {
-                    val step =
-                        when (pendingAdvance) {
-                            is PendingAdvance.NewEvent -> {
-                                NarrativeStep.GenerateTimeLine(pendingAdvance.timeline)
-                            }
-
-                            is PendingAdvance.NewChapter -> {
-                                NarrativeStep.GenerateChapter(pendingAdvance.chapter)
-                            }
-
-                            is PendingAdvance.NewAct -> {
-                                NarrativeStep.GenerateAct(pendingAdvance.act)
-                            }
-
-                            is PendingAdvance.StartAct -> {
-                                NarrativeStep.StartAct
-                            }
-
-                            is PendingAdvance.NewActIntroduction -> {
-                                NarrativeStep.GenerateActIntroduction(
-                                    pendingAdvance.act,
-                                )
-                            }
-
-                            is PendingAdvance.NewChapterIntroduction -> {
-                                NarrativeStep.GenerateChapterIntroduction(
-                                    pendingAdvance.chapter,
-                                )
-                            }
-
-                            is PendingAdvance.StartChapter -> {
-                                NarrativeStep.StartChapter(pendingAdvance.act)
-                            }
-
-                            is PendingAdvance.StartStory -> {
-                                NarrativeStep.StartTimeline(pendingAdvance.chapter)
-                            }
-
-                            is PendingAdvance.SagaEnding -> {
-                                NarrativeStep.GenerateSagaEnding(
-                                    pendingAdvance.saga,
-                                )
-                            }
-                        }
-                    validatePostAction(currentSaga, step, action.success)
-                }?.onFailureAsync {
-                    Timber.e("Failed to advance narrative: ${it.message}")
-                    emitMilestone(null)
-                    checkNarrativeProgression(currentSaga, true)
                 }
+            } catch (e: Exception) {
+                Timber.e(e, "Unexpected error executing narrative action")
+                narrativeCoordinator.onActionCompleted(
+                    action,
+                    NarrativeExecutionResult.Failure(e.message ?: "Unknown error"),
+                )
+                emitMilestone(null)
+            } finally {
+                narrativeCoordinator.markProcessing(false)
+                setNarrativeProcessingStatus(false)
+            }
+        }
+
+        private fun buildExecutionEnvironment() =
+            NarrativeExecutionEnvironment(
+                getSagaMetadata = { content.value },
+                getSagaContent = { getSagaContent() },
+                fetchNarrativeRules = { fetchNarrativeRules() },
+                onReasoningChunk = { chunk -> contentReasoning.value = chunk },
+                dismissMilestone = { dismissMilestone() },
+                isDebugMode = { isDebugModeEnabled },
+                getMessageCount = { sagaId -> messageDao.getMessagesCount(sagaId).first() },
+            )
+
+        private fun buildEvaluationContext(): NarrativeEvaluationContext {
+            val milestone = milestoneUpdate.value
+            return NarrativeEvaluationContext(
+                isOnboardingVisible = isOnboardingVisible.value,
+                isMilestoneActive = isMilestoneActive.value,
+                isNarrativeProcessing = isProcessingNarrative.get(),
+                hasActiveMilestoneOverlay = milestone?.isIntrusive == true,
+            )
+        }
+
+        private suspend fun awaitMilestoneDismissalIfNeeded() {
+            if (isMilestoneActive.value) {
+                isMilestoneActive.first { !it }
+            }
         }
 
         override suspend fun updatePlaytime(
@@ -346,7 +326,7 @@ class SagaContentManagerImpl
                                         }
                                     }
                                 Timber.e(e, "loadSaga: Room Flow error for saga $sagaId — ${e.message}")
-                                updateSnackBar(snackBar(readableMessage))
+                                sagaThemeManager.showSnackBar(readableMessage)
                                 content.value = null
                                 setNarrativeProcessingStatus(false)
                             }.collectLatest { saga ->
@@ -409,10 +389,10 @@ class SagaContentManagerImpl
                                 validateCharacters(saga)
 
                                 if (previousSaga == null) {
+                                    emitMilestone(SagaMilestone.TitleSplash)
+                                    delay(TITLE_SPLASH_DURATION)
                                     if (saga.data.isEnded.not()) {
                                         saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
-                                            delay(1500)
-                                            emitMilestone(SagaMilestone.Loading)
                                             emitMilestone(
                                                 SagaMilestone.Introduction(
                                                     type = IntroductionType.RESUME,
@@ -429,9 +409,9 @@ class SagaContentManagerImpl
                                                     sceneSummary = it,
                                                 ),
                                             )
-                                        } ?: run {
-                                            emitMilestone(null)
-                                        }
+                                        } ?: emitMilestone(null)
+                                    } else {
+                                        emitMilestone(null)
                                     }
                                 }
                             }
@@ -471,14 +451,13 @@ class SagaContentManagerImpl
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
                 if (lastMessage.message.senderType == SenderType.CHARACTER) {
-                    updateSnackBar(
-                        snackBar(
-                            "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
-                        ) {
-                            showInUi = false
-                            icon = charIcon
-                            notificationStyle = NotificationStyle.CHAT
-                        },
+                    emitNotification(
+                        SagaNotificationEvent(
+                            message =
+                                "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
+                            icon = charIcon,
+                            style = NotificationStyle.CHAT,
+                        ),
                     )
                 }
             }
@@ -502,66 +481,11 @@ class SagaContentManagerImpl
 
         private suspend fun fetchNarrativeRules() = remoteConfig.getNarrativeRules()
 
-        private suspend fun startChapter(act: ActContent) =
-            executeRequest {
-                setNarrativeProcessingStatus(true)
-                val currentSaga = getSagaContent() ?: error("Saga content not available")
-                val latestAct =
-                    currentSaga.acts.find { it.data.id == act.data.id } ?: act
-
-                val lastChapter = latestAct.chapters.lastOrNull()
-                if (lastChapter?.isComplete(fetchNarrativeRules())?.not() == true) {
-                    actUseCase.updateAct(latestAct.data.copy(currentChapterId = lastChapter.data.id))
-                    throw IllegalArgumentException("Chapter is already set at this act")
-                }
-                chapterUseCase.saveChapter(Chapter(actId = latestAct.data.id))
-            }
-
-        private suspend fun updateChapter(
-            saga: SagaMetadata,
-            chapter: ChapterContent,
-        ) = executeRequest {
-            dismissMilestone()
-            var generated: GeneratedContent<Chapter>? = null
-            val contextString = "Synthesizing chapter progression and weaving plot threads..."
-            val style = genreConfigService.conversationBlueprint(saga.data.genre)
-
-            reasoningSynthesizerService
-                .synthesizeReasoning(
-                    sourceFlow = chapterUseCase.synthesizeChapterEvolutionStream(chapter.data.id),
-                    context = contextString,
-                    conversationStyle = style,
-                    genre = saga.data.genre.name,
-                ).collect { state ->
-                    when (state) {
-                        is StreamingState.Reasoning -> {
-                            contentReasoning.value = state.chunk
-                        }
-
-                        is StreamingState.Success -> {
-                            generated = state.data
-                            contentReasoning.value = null
-                        }
-
-                        is StreamingState.Error -> {
-                            contentReasoning.value = null
-                            error(state.message)
-                        }
-                    }
-                }
-
-            generated ?: error("Failed to generate chapter synthesis")
-        }
-
         override suspend fun reviewWiki(wikiItems: List<Wiki>) {
             val saga = content.value ?: return
             startProcessing {
                 wikiUseCase.mergeWikis(saga, wikiItems).onSuccessAsync {
-                    updateSnackBar(
-                        SnackBarState(
-                            message = context.getString(R.string.wiki_updated),
-                        ),
-                    )
+                    sagaThemeManager.showSnackBar(context.getString(R.string.wiki_updated))
                 }
             }
         }
@@ -595,7 +519,7 @@ class SagaContentManagerImpl
             uri?.let {
                 backupService.enableBackup(it)
             } ?: run {
-                snackBarUpdate.emit(snackBar(context.getString(R.string.backup_disabled)))
+                sagaThemeManager.showSnackBar(context.getString(R.string.backup_disabled))
             }
         }
 
@@ -609,224 +533,9 @@ class SagaContentManagerImpl
                     )
             }
 
-        private suspend fun startTimeline(currentChapter: ChapterContent) =
-            executeRequest {
-                val lastTimeline = currentChapter.events.lastOrNull()
-                if (lastTimeline?.isComplete(fetchNarrativeRules())?.not() == true) {
-                    chapterUseCase.updateChapter(
-                        currentChapter.data.copy(
-                            currentEventId = lastTimeline.data.id,
-                        ),
-                    )
-                    throw IllegalArgumentException("Timeline already set at this chapter")
-                }
-                timelineUseCase.saveTimeline(
-                    Timeline(
-                        chapterId = currentChapter.data.id,
-                    ),
-                )
-            }
-
-        private suspend fun endTimeline(currentChapter: ChapterContent) =
-            executeRequest {
-                chapterUseCase
-                    .updateChapter(
-                        currentChapter.data.copy(
-                            currentEventId = null,
-                        ),
-                    )
-                setProcessing(false)
-            }
-
-        private suspend fun updateTimeline(
-            saga: SagaMetadata,
-            content: TimelineContent,
-        ) = executeRequest {
-            messageDao.getMessagesCount(saga.data.id).first()
-            if (content.isComplete(fetchNarrativeRules())) {
-                endTimeline(
-                    getSagaContent()?.currentActInfo?.currentChapterInfo
-                        ?: error("Current chapter not found"),
-                )
-                error("Timeline already completed")
-            } else {
-                dismissMilestone()
-                var generated: GeneratedContent<Timeline>? = null
-                val contextString = "Evaluating actions and shaping consequences..."
-                val style = genreConfigService.conversationBlueprint(saga.data.genre)
-
-                reasoningSynthesizerService
-                    .synthesizeReasoning(
-                        sourceFlow =
-                            timelineUseCase.generateFullLoreUpdateStream(
-                                saga,
-                                content.data,
-                            ),
-                        context = contextString,
-                        conversationStyle = style,
-                        genre = saga.data.genre.name,
-                    ).collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                contentReasoning.value = state.chunk
-                            }
-
-                            is StreamingState.Success -> {
-                                generated = state.data
-                                contentReasoning.value = null
-                            }
-
-                            is StreamingState.Error -> {
-                                contentReasoning.value = null
-                                error(state.message)
-                            }
-                        }
-                    }
-
-                generated ?: error("Failed to generate timeline update")
-            }
-        }
-
-        private suspend fun createAct(currentSaga: SagaMetadata) =
-            executeRequest {
-                val saga = content.value ?: currentSaga
-                messageDao.getMessagesCount(saga.data.id).first()
-                val rules = fetchNarrativeRules()
-                val lastAct = getSagaContent()?.currentActInfo
-                if (lastAct?.isComplete(rules)?.not() == true) {
-                    sagaHistoryUseCase.updateSaga(
-                        saga.data.copy(currentActId = lastAct.data.id),
-                    )
-                    error("Act is already set at this saga")
-                }
-                actUseCase
-                    .saveAct(
-                        Act(
-                            sagaId = saga.data.id,
-                        ),
-                    )
-            }
-
-        private suspend fun updateAct(currentAct: ActContent) =
-            executeRequest {
-                val saga = content.value!!
-                Timber.d("updating act(${saga.currentActInfo?.data?.id})")
-                if (isDebugModeEnabled) {
-                    Timber.i("[DEBUG MODE] Generating fake act update data for saga ${saga.data.id}")
-                    GeneratedContent(
-                        Act(
-                            id = currentAct.data.id,
-                            title = "Updated Act ${saga.acts.size}",
-                            content = "This act was updated in debug mode.",
-                            sagaId = saga.data.id,
-                        ),
-                        "Fake act finished!",
-                    )
-                } else {
-                    dismissMilestone()
-                    var generated: GeneratedContent<Act>? = null
-                    val contextString = "Judging the player's choices and concluding the act..."
-                    val style = genreConfigService.conversationBlueprint(saga.data.genre)
-
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            sourceFlow =
-                                actUseCase.synthesizeActEvolutionStream(
-                                    getSagaContent()!!,
-                                    currentAct,
-                                ),
-                            context = contextString,
-                            conversationStyle = style,
-                            genre = saga.data.genre.name,
-                        ).collect { state ->
-                            when (state) {
-                                is StreamingState.Reasoning -> {
-                                    contentReasoning.value = state.chunk
-                                }
-
-                                is StreamingState.Success -> {
-                                    generated = state.data
-                                    contentReasoning.value = null
-                                }
-
-                                is StreamingState.Error -> {
-                                    contentReasoning.value = null
-                                    error(state.message)
-                                }
-                            }
-                        }
-
-                    generated ?: error("Failed to generate act synthesis")
-                }
-            }
-
         private suspend fun endAct(saga: SagaMetadata) =
             executeRequest {
                 sagaHistoryUseCase.updateSaga(saga.data.copy(currentActId = null)).asSuccess()
-            }
-
-        private suspend fun generateActIntroduction(currentAct: ActContent) =
-            executeRequest {
-                val saga = content.value!!
-                var finalAct: GeneratedContent<Act>? = null
-                actUseCase
-                    .generateActIntroductionStream(saga, currentAct.data)
-                    .let { flow ->
-                        reasoningSynthesizerService.synthesizeReasoning(
-                            sourceFlow = flow,
-                            context = "Generating act introduction for ${saga.data.title}",
-                            conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                            genre = saga.data.genre.name,
-                        )
-                    }.collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                contentReasoning.value = state.chunk
-                            }
-
-                            is StreamingState.Success -> {
-                                finalAct = state.data
-                            }
-
-                            is StreamingState.Error -> {
-                                throw Exception(state.message)
-                            }
-                        }
-                    }
-                contentReasoning.value = null
-                finalAct!!
-            }
-
-        private suspend fun generateChapterIntroduction(currentChapter: ChapterContent) =
-            executeRequest {
-                val saga = content.value!!
-                var finalChapter: GeneratedContent<Chapter>? = null
-                chapterUseCase
-                    .generateChapterIntroductionStream(currentChapter.data.id)
-                    .let { flow ->
-                        reasoningSynthesizerService.synthesizeReasoning(
-                            sourceFlow = flow,
-                            context = "Generating chapter introduction for ${currentChapter.data.title}",
-                            conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                            genre = saga.data.genre.name,
-                        )
-                    }.collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                contentReasoning.value = state.chunk
-                            }
-
-                            is StreamingState.Success -> {
-                                finalChapter = state.data
-                            }
-
-                            is StreamingState.Error -> {
-                                throw Exception(state.message)
-                            }
-                        }
-                    }
-                contentReasoning.value = null
-                finalChapter!!
             }
 
         private fun observeMilestone() =
@@ -835,8 +544,8 @@ class SagaContentManagerImpl
                     Timber.d("observeMilestone:\n$it")
                     if (it == null) {
                         Timber.i("observeMilestone: No milestone checking story...")
-                        checkNarrativeProgression(content.value)
-                        return@collectLatest
+                        narrativeCoordinator.markMilestoneDismissed()
+                        requestNarrativeProgression()
                     }
                 }
             }
@@ -846,7 +555,7 @@ class SagaContentManagerImpl
                 narrativeProcessingUiState.collectLatest {
                     Timber.d("observeLoading: $it")
                     if (it.not() && milestoneUpdate.value == null) {
-                        checkNarrativeProgression(content.value)
+                        requestNarrativeProgression()
                     }
                 }
             }
@@ -865,122 +574,72 @@ class SagaContentManagerImpl
             isRetrying: Boolean,
         ) {
             managerScope.launch {
-                if (progressionMutex.isLocked) {
-                    Timber.i("checkNarrativeProgression: already in progress, skipping.")
-                    return@launch
+                requestNarrativeProgression(isRetry = isRetrying, fallbackSaga = saga)
+            }
+        }
+
+        private suspend fun requestNarrativeProgression(
+            isRetry: Boolean = false,
+            fallbackSaga: SagaMetadata? = null,
+        ) {
+            if (progressionMutex.isLocked) {
+                Timber.i("requestNarrativeProgression: already in progress, queueing reevaluation.")
+                narrativeCoordinator.schedulePendingReevaluation()
+                return
+            }
+
+            if (isOnboardingVisible.value) {
+                Timber.i("requestNarrativeProgression: onboarding visible, skipping.")
+                return
+            }
+
+            progressionMutex.withLock {
+                val currentSaga = content.value ?: fallbackSaga ?: return@withLock
+
+                if (isProcessingNarrative.get()) {
+                    Timber.i("requestNarrativeProgression: narrative processing, skipping.")
+                    return@withLock
                 }
 
-                if (isOnboardingVisible.value) {
-                    Timber.i("checkNarrativeProgression: onboarding visible, skipping.")
-                    return@launch
+                Timber.d("Starting narrative progression check #${++progressionCounter}")
+
+                if (currentSaga.mainCharacter == null && isDebugModeEnabled) {
+                    generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
+                        sagaHistoryUseCase.updateSaga(currentSaga.data.copy(mainCharacterId = newCharacter.id))
+                    }
+                    return@withLock
                 }
 
-                progressionMutex.withLock {
-                    val currentSaga = content.value ?: saga ?: return@withLock
+                val sagaContent = getSagaContent() ?: return@withLock
+                val rules = fetchNarrativeRules()
+                messageDao.getMessagesCount(currentSaga.data.id).first()
 
-                    if (isProcessingNarrative.get() || isProcessing.get()) {
-                        Timber.i("Narrative check: currently processing, skipping recursive check.")
-                        return@withLock
-                    }
+                val uiState =
+                    narrativeCoordinator.reevaluate(
+                        saga = sagaContent,
+                        rules = rules,
+                        context = buildEvaluationContext(),
+                    )
 
-                    if (milestoneUpdate.value != null && milestoneUpdate.value !is SagaMilestone.Loading &&
-                        milestoneUpdate.value !is SagaMilestone.Introduction
-                    ) {
-                        Timber.i("checkNarrativeProgression: milestone active waiting for user interaction")
-                        return@withLock
-                    }
+                val autoAction = NarrativeCheck.validateProgression(sagaContent, rules)
+                if (uiState.phase is NarrativePhase.BackgroundProcessing &&
+                    autoAction is NarrativeAction.CloseTimeline
+                ) {
+                    Timber.d("Auto-executing CloseTimeline")
+                    narrativeCoordinator.onBackgroundTaskStarted(BackgroundTask.ClosingScene)
+                    executeNarrativeAction(autoAction, isRetry = isRetry)
+                }
 
-                    Timber.d("Starting narrative progression check #${++progressionCounter}")
-
-                    if (currentSaga.mainCharacter == null && isDebugModeEnabled) {
-                        generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
-                            sagaHistoryUseCase.updateSaga(currentSaga.data.copy(mainCharacterId = newCharacter.id))
-                        }
-                        return@withLock
-                    }
-
-                    messageDao.getMessagesCount(currentSaga.data.id).first()
-
-                    val narrativeStep =
-                        NarrativeCheck.validateProgression(
-                            getSagaContent()!!,
-                            fetchNarrativeRules(),
-                        )
-                    Timber.d("checkNarrativeProgression: Step ${narrativeStep.javaClass.simpleName}")
-
-                    if (narrativeStep == NarrativeStep.NoActionNeeded) {
-                        setProcessing(false)
-                        return@withLock
-                    }
-
-                    var action: RequestResult<Any>? = null
-                    startProcessing {
-                        action =
-                            when (narrativeStep) {
-                                is NarrativeStep.GenerateTimeLine,
-                                is NarrativeStep.GenerateChapter,
-                                is NarrativeStep.GenerateAct,
-                                is NarrativeStep.GenerateSagaEnding,
-                                is NarrativeStep.GenerateActIntroduction,
-                                is NarrativeStep.GenerateChapterIntroduction,
-                                is NarrativeStep.StartTimeline,
-                                -> {
-                                    Timber.i(
-                                        "checkNarrativeProgression: Milestone ${narrativeStep.javaClass.simpleName} detected. Waiting for user interaction.",
-                                    )
-                                    setProcessing(false)
-                                    return@startProcessing
-                                }
-
-                                is NarrativeStep.StartAct,
-                                is NarrativeStep.StartChapter,
-                                -> {
-                                    Timber.i(
-                                        "checkNarrativeProgression: ${narrativeStep.javaClass.simpleName} detected. Waiting for user interaction.",
-                                    )
-                                    setProcessing(false)
-                                    return@startProcessing
-                                }
-
-                                is NarrativeStep.EndTimeLine -> {
-                                    endTimeline(narrativeStep.currentChapterContent)
-                                }
-
-                                NarrativeStep.NoActionNeeded -> {
-                                    skipNarrative()
-                                }
-                            }
-                    }
-
-                    action
-                        ?.onSuccessAsync {
-                            validatePostAction(currentSaga, narrativeStep, action.success)
-                        }?.onFailureAsync {
-                            emitMilestone(null)
-                            if (isRetrying) {
-                                updateSnackBar(
-                                    snackBar(context.getString(R.string.unexpected_error)) {
-                                        action { revaluateSaga() }
-                                    },
-                                )
-                            } else {
-                                checkNarrativeProgression(currentSaga, true)
-                            }
-                        }
+                if (narrativeCoordinator.consumePendingReevaluation()) {
+                    requestNarrativeProgression(isRetry = false)
                 }
             }
         }
 
-        private fun updateSnackBar(state: SnackBarState) {
-            CoroutineScope(Dispatchers.IO).launch {
-                snackBarUpdate.emit(state)
-                delay(10.seconds)
-                resetSnackBar()
+        private fun emitNotification(event: SagaNotificationEvent) {
+            managerScope.launch {
+                notificationUpdate.emit(event)
             }
-        }
-
-        private fun resetSnackBar() {
-            snackBarUpdate.value = null
         }
 
         override suspend fun regenerateTimeline(
@@ -996,16 +655,12 @@ class SagaContentManagerImpl
             }
         }
 
-        private suspend fun skipNarrative() =
-            executeRequest {
-                Timber.i("skipNarrative: No action needed skipping narrative")
-            }
-
         override val isMilestoneActive = MutableStateFlow(false)
 
         override fun dismissMilestone() {
             isMilestoneActive.value = false
             milestoneUpdate.value = null
+            narrativeCoordinator.markMilestoneDismissed()
         }
 
         override suspend fun continueMilestone() {
@@ -1033,13 +688,19 @@ class SagaContentManagerImpl
 
             dismissMilestone()
             when (milestone) {
-                is SagaMilestone.Introduction -> {
+                is SagaMilestone.Introduction,
+                is SagaMilestone.TitleSplash,
+                -> {
                     doNothing()
                 }
 
                 is SagaMilestone.NewEvent -> {
-                    getSagaContent()?.currentActInfo?.currentChapterInfo?.let {
-                        endTimeline(it)
+                    getSagaContent()?.currentActInfo?.currentChapterInfo?.let { chapter ->
+                        managerScope.launch {
+                            val closeAction = NarrativeAction.CloseTimeline(chapter)
+                            narrativeCoordinator.onBackgroundTaskStarted(BackgroundTask.ClosingScene)
+                            executeNarrativeAction(closeAction, isRetry = false)
+                        }
                     }
                 }
 
@@ -1059,8 +720,13 @@ class SagaContentManagerImpl
 
         private fun emitMilestone(milestone: SagaMilestone?) =
             CoroutineScope(Dispatchers.Main.immediate).launch {
-                if (milestone != null && milestone !is SagaMilestone.Loading) {
+                if (milestone != null &&
+                    milestone !is SagaMilestone.Loading &&
+                    milestone !is SagaMilestone.TitleSplash &&
+                    milestone.isIntrusive
+                ) {
                     isMilestoneActive.value = true
+                    narrativeCoordinator.markMilestoneActive()
                     sagaThemeManager.playVfx()
                 }
                 milestoneUpdate.emit(milestone)
@@ -1074,53 +740,31 @@ class SagaContentManagerImpl
             setProcessing(false)
         }
 
-        private suspend fun validatePostAction(
+        private suspend fun handlePostAction(
             saga: SagaMetadata,
-            step: NarrativeStep,
-            result: RequestResult.Success<Any>,
+            action: NarrativeAction,
+            resultValue: Any?,
         ) {
-            try {
-                if (isMilestoneActive.value) {
-                    Timber.d("Waiting for milestone dismissal...")
-                    isMilestoneActive.first { !it }
-                    Timber.d("Milestone dismissed, resuming narrative.")
-                    proceedWithPostAction(saga, step, result)
-                } else {
-                    proceedWithPostAction(saga, step, result)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                setNarrativeProcessingStatus(false)
-                milestoneUpdate.emit(null)
-            }
-        }
-
-        private suspend fun proceedWithPostAction(
-            saga: SagaMetadata,
-            step: NarrativeStep,
-            result: RequestResult.Success<Any>,
-        ) {
-            Timber.d("validatePostAction: performing next step $step")
-            when (step) {
-                is NarrativeStep.StartAct -> {
-                    (result.value as? Act)?.let { data ->
-                        startProcessing {
-                            val currentSaga = content.value ?: saga
-                            if (currentSaga.data.currentActId != saga.data.currentActId && currentSaga.data.currentActId != null) {
-                                Timber.w("StartAct: Saga currentActId already updated. Skipping.")
-                                return@startProcessing
-                            }
+            Timber.d("handlePostAction: performing post action for $action")
+            when (action) {
+                NarrativeAction.CreateAct -> {
+                    (resultValue as? Act)?.let { data ->
+                        val latest = content.value?.data ?: saga.data
+                        if (latest.currentActId != data.id) {
+                            Timber.w(
+                                "CreateAct: aligning saga.currentActId (${latest.currentActId}) to new act ${data.id}",
+                            )
                             sagaHistoryUseCase.updateSaga(
-                                saga.data.copy(currentActId = data.id),
+                                latest.copy(currentActId = data.id),
                             )
                         }
                         backupSaga()
                     }
                 }
 
-                is NarrativeStep.GenerateActIntroduction -> {
-                    val generatedContent = result.value as? GeneratedContent<Act>
-                    val act = generatedContent?.data ?: result.value as? Act
+                is NarrativeAction.GenerateActIntro -> {
+                    val generatedContent = resultValue as? GeneratedContent<Act>
+                    val act = generatedContent?.data ?: resultValue as? Act
                     val message = generatedContent?.finalMessage
                     act?.let { a ->
                         emitMilestone(
@@ -1135,26 +779,24 @@ class SagaContentManagerImpl
                     }
                 }
 
-                is NarrativeStep.StartChapter -> {
-                    val currentAct = content.value?.currentActInfo ?: saga.currentActInfo!!
-                    (result.value as? Chapter)?.let { chapter ->
-                        startProcessing {
-                            if (saga.currentChapterInfo != null && saga.currentChapterInfo!!.data.id != chapter.id) {
-                                Timber.w("Chapter already set and different from generated one. Skipping update.")
-                                return@startProcessing
-                            }
-                            actUseCase.updateAct(
-                                currentAct.data.copy(currentChapterId = chapter.id),
-                            )
+                is NarrativeAction.CreateChapter -> {
+                    val currentAct = content.value?.currentActInfo ?: saga.currentActInfo ?: return
+                    (resultValue as? Chapter)?.let { chapter ->
+                        if (saga.currentChapterInfo != null &&
+                            saga.currentChapterInfo!!.data.id != chapter.id
+                        ) {
+                            Timber.w("CreateChapter: Chapter already set and different. Skipping update.")
+                            return
                         }
-                    } ?: run {
-                        dismissMilestone()
-                    }
+                        actUseCase.updateAct(
+                            currentAct.data.copy(currentChapterId = chapter.id),
+                        )
+                    } ?: dismissMilestone()
                 }
 
-                is NarrativeStep.GenerateChapterIntroduction -> {
-                    val generatedContent = result.value as? GeneratedContent<Chapter>
-                    val chapterUpdate = generatedContent?.data ?: result.value as? Chapter
+                is NarrativeAction.GenerateChapterIntro -> {
+                    val generatedContent = resultValue as? GeneratedContent<Chapter>
+                    val chapterUpdate = generatedContent?.data ?: resultValue as? Chapter
                     val message = generatedContent?.finalMessage
                     chapterUpdate?.let { c ->
                         emitMilestone(
@@ -1166,58 +808,43 @@ class SagaContentManagerImpl
                                 messageText = message,
                             ),
                         )
-                    } ?: run {
-                        dismissMilestone()
-                    }
+                    } ?: dismissMilestone()
                 }
 
-                is NarrativeStep.StartTimeline -> {
-                    (result.value as? Timeline)?.let {
+                is NarrativeAction.CreateTimeline -> {
+                    (resultValue as? Timeline)?.let { timeline ->
                         chapterUseCase.updateChapter(
                             saga.currentChapterInfo!!.data.copy(
-                                currentEventId = (it).id,
+                                currentEventId = timeline.id,
                             ),
                         )
-                        startProcessing {
-                            val objective =
-                                timelineUseCase
-                                    .getTimelineObjective(content.value!!, it)
-                                    .getSuccess()
-
-                            objective?.let {
-                                emitMilestone(SagaMilestone.CurrentObjective(it))
-                            } ?: run {
-                                dismissMilestone()
-                            }
-                        }
-                    } ?: run {
-                        dismissMilestone()
-                    }
+                        val objective =
+                            timelineUseCase
+                                .getTimelineObjective(content.value!!, timeline)
+                                .getSuccess()
+                        objective?.let {
+                            emitMilestone(SagaMilestone.CurrentObjective(it))
+                        } ?: dismissMilestone()
+                    } ?: dismissMilestone()
                 }
 
-                is NarrativeStep.GenerateTimeLine -> {
-                    val generatedContent =
-                        result.value as? GeneratedContent<Timeline>
-                    val timeline = generatedContent?.data ?: result.value as? Timeline
+                is NarrativeAction.EvolveTimeline -> {
+                    val generatedContent = resultValue as? GeneratedContent<Timeline>
+                    val timeline = generatedContent?.data ?: resultValue as? Timeline
                     val message = generatedContent?.finalMessage
                     timeline?.let { t ->
-                        updateSnackBar(
-                            SnackBarState(
-                                message =
-                                    context.getString(
-                                        R.string.timeline_updated,
-                                        t.title,
-                                    ),
+                        sagaThemeManager.showSnackBar(
+                            context.getString(
+                                R.string.timeline_updated,
+                                t.title,
                             ),
                         )
-
                         val mascotIcon =
                             emotionalUseCase
                                 .getEmotionalMascot(
                                     saga.data,
                                     saga.findTimeline(t.id)?.data,
                                 ).getSuccess()
-
                         val fullSaga = getSagaContent()
                         fullSaga?.let {
                             emitMilestone(
@@ -1229,98 +856,36 @@ class SagaContentManagerImpl
                                 ),
                             )
                         }
-                        getSagaContent()?.currentActInfo?.currentChapterInfo?.let {
-                            endTimeline(it)
-                        }
-                    } ?: run {
-                        dismissMilestone()
-                    }
+                    } ?: dismissMilestone()
                 }
 
-                is NarrativeStep.GenerateChapter -> {
-                    val generatedContent =
-                        result.value as? GeneratedContent<Chapter>
-                    val chapter = generatedContent?.data ?: result.value as? Chapter
+                is NarrativeAction.GenerateChapter -> {
+                    val generatedContent = resultValue as? GeneratedContent<Chapter>
+                    val chapter = generatedContent?.data ?: resultValue as? Chapter
                     val message = generatedContent?.finalMessage
                     chapter?.let { c ->
-                        emitMilestone(SagaMilestone.ChapterFinished(c, message, getSagaContent()!!))
-                    } ?: run {
-                        dismissMilestone()
-                    }
+                        getSagaContent()?.let { fullSaga ->
+                            emitMilestone(SagaMilestone.ChapterFinished(c, message, fullSaga))
+                        }
+                    } ?: dismissMilestone()
                 }
 
-                is NarrativeStep.GenerateAct -> {
-                    val generatedContent =
-                        result.value as? GeneratedContent<Act>
-                    val act = generatedContent?.data ?: result.value as? Act
+                is NarrativeAction.GenerateAct -> {
+                    val generatedContent = resultValue as? GeneratedContent<Act>
+                    val act = generatedContent?.data ?: resultValue as? Act
                     val message = generatedContent?.finalMessage
                     act?.let { a ->
                         emitMilestone(SagaMilestone.ActFinished(a, message))
-                    } ?: run {
-                        dismissMilestone()
-                    }
+                    } ?: dismissMilestone()
                 }
 
-                is NarrativeStep.NoActionNeeded -> {
-                    checkObjective()
-                }
-
-                else -> {
-                    setNarrativeProcessingStatus(false)
+                is NarrativeAction.CloseTimeline,
+                is NarrativeAction.GenerateEnding,
+                -> {
+                    doNothing()
                 }
             }
         }
-
-        private suspend fun clearInvalidContent() {
-            val saga = content.value ?: return
-            messageDao.getMessagesCount(saga.data.id).first()
-            val act = saga.currentActInfo ?: return
-            val rules = fetchNarrativeRules()
-            val invalidActs =
-                saga.acts.filter {
-                    it.data.id != act.data.id && it.isComplete(rules).not()
-                }
-            invalidActs.forEach {
-                actUseCase.deleteAct(it.data)
-            }
-
-            act.let { currentAct ->
-                val currentChapter = saga.currentChapterInfo
-                val invalidChapters =
-                    currentAct.chapters.filter {
-                        it.data.id != currentChapter?.data?.id && it.isComplete(rules).not()
-                    }
-                invalidChapters.forEach {
-                    chapterUseCase.deleteChapter(it.data)
-                }
-
-                currentChapter?.let { chapterMetadata ->
-                    val currentEvent = saga.currentEventInfo
-
-                    val invalidEvents =
-                        chapterMetadata.events.filter {
-                            it.data.id != currentEvent?.data?.id &&
-                                it
-                                    .isComplete(rules)
-                                    .not()
-                        }
-
-                    Timber.w("Invalid events -> ${invalidEvents.size} ")
-
-                    invalidEvents.forEach {
-                        timelineUseCase.deleteTimeline(it.data)
-                    }
-                }
-            }
-        }
-
-        private suspend fun checkObjective(showMilestone: Boolean = false) =
-            executeRequest {
-                val saga = content.value ?: return@executeRequest null
-                saga.currentActInfo ?: return@executeRequest null
-
-                clearInvalidContent()
-            }
 
         override suspend fun getCurrentObjective(sceneSummary: SceneSummary) {
             val saga = content.value ?: return
@@ -1354,70 +919,10 @@ class SagaContentManagerImpl
             }
         }
 
-        private suspend fun createEndingMessage(saga: SagaMetadata) =
-            executeRequest {
-                if (isDebugModeEnabled) {
-                    sendDebugMessage("Generating debug end message")
-                    val message = "Congratulations on completing this saga!"
-                    sagaHistoryUseCase
-                        .updateSaga(
-                            saga.data.copy(
-                                endMessage = message,
-                                isEnded = true,
-                                endedAt = System.currentTimeMillis(),
-                            ),
-                        ).asSuccess()
-                } else {
-                    dismissMilestone()
-                    val fullSaga =
-                        sagaHistoryUseCase.getSagaById(saga.data.id).first() as SagaContent
-                    val contextString =
-                        "Concluding your legend and weaving the final threads of fate..."
-                    val style = genreConfigService.conversationBlueprint(saga.data.genre)
-                    var generated: GeneratedContent<SagaEnding>? = null
-                    sagaHistoryUseCase.generateSagaEndingStream(fullSaga)
-                    reasoningSynthesizerService
-                        .synthesizeReasoning(
-                            sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(fullSaga),
-                            context = contextString,
-                            conversationStyle = style,
-                            genre = saga.data.genre.name,
-                        ).collect { state ->
-                            when (state) {
-                                is StreamingState.Reasoning -> {
-                                    contentReasoning.value = state.chunk
-                                }
-
-                                is StreamingState.Success -> {
-                                    generated = state.data as? GeneratedContent<SagaEnding>
-                                    contentReasoning.value = null
-                                }
-
-                                is StreamingState.Error -> {
-                                    contentReasoning.value = null
-                                    error(state.message)
-                                }
-                            }
-                        }
-
-                    val ending = generated?.data ?: error("Failed to generate ending")
-                    emitMilestone(null)
-                    sagaHistoryUseCase
-                        .updateSaga(
-                            saga.data.copy(
-                                endMessage = ending.endingMessage,
-                                isEnded = true,
-                                endedAt = System.currentTimeMillis(),
-                                emotionalProfile = ending.emotionalProfile,
-                                emotionalReview = ending.emotionalProfile.emotionalContent,
-                            ),
-                        )
-                }
-            }
-
         override suspend fun generateCharacter(
             description: String,
             sceneSummary: SceneSummary?,
+            candidateName: String?,
         ): RequestResult<Character> =
 
             executeRequest {
@@ -1455,6 +960,7 @@ class SagaContentManagerImpl
                                         currentSaga,
                                         description,
                                         sceneSummary ?: _sceneSummary.value,
+                                        candidateName = candidateName,
                                     ),
                                 context = contextString,
                                 conversationStyle = style,
@@ -1480,12 +986,10 @@ class SagaContentManagerImpl
                         val generatedCharacter =
                             generated?.data ?: error("Failed to generate character")
 
-                        updateSnackBar(
-                            snackBar(
-                                context.getString(
-                                    R.string.new_character_message,
-                                    generatedCharacter.name,
-                                ),
+                        sagaThemeManager.showSnackBar(
+                            context.getString(
+                                R.string.new_character_message,
+                                generatedCharacter.name,
                             ),
                         )
 
@@ -1534,12 +1038,11 @@ class SagaContentManagerImpl
                 }
             }
 
-        suspend fun generateEnding(saga: SagaMetadata) = createEndingMessage(saga)
-
         override fun stopProcessing() {
             Timber.i("Stopping all narrative processing")
             setNarrativeProcessingStatus(false)
             isProcessing.set(false)
+            narrativeCoordinator.reset()
             emitMilestone(null)
         }
 
@@ -1575,8 +1078,12 @@ class SagaContentManagerImpl
 
                 is StreamingState.Error -> {
                     contentReasoning.value = null
-                    updateSnackBar(snackBar(state.message))
+                    sagaThemeManager.showSnackBar(state.message)
                 }
             }
+        }
+
+        private companion object {
+            val TITLE_SPLASH_DURATION = 2.5.seconds
         }
     }

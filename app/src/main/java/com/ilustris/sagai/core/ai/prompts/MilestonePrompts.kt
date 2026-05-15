@@ -35,7 +35,10 @@ object MilestonePrompts {
             return rewriteIntroduction(promptService, milestone, saga, identity)
         }
 
-        if (milestone is SagaMilestone.CurrentObjective || milestone is SagaMilestone.Loading) {
+        if (milestone is SagaMilestone.CurrentObjective ||
+            milestone is SagaMilestone.Loading ||
+            milestone is SagaMilestone.TitleSplash
+        ) {
             return null
         }
 

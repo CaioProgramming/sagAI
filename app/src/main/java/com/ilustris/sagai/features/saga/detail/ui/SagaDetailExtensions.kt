@@ -200,7 +200,7 @@ fun DetailSectionView.InitialSection.miniSection(
     ) {
         when (section) {
             RequestSection.ACTS -> {
-                if (resume.generatedBooks.isEmpty()) return@Column
+                if (resume.completedActsCount < 1) return@Column
                 RowHeader(
                     title = stringResource(R.string.the_chronicles),
                     textStyle = sectionStyle,

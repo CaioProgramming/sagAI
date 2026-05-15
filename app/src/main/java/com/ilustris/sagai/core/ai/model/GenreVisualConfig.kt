@@ -27,7 +27,7 @@ data class GenreVisualConfig(
     // ── Shape ────────────────────────────────────────────────────────
     @SerializedName("cornerSizeDp")
     val cornerSizeDp: Float = 0f,
-    // ── Haptics ─────────────────────────────────────────────────────
+    // ── Haptics (waveform in ms, tuned per genre SFX — see Remote Config) ──
     @SerializedName("vibrationPattern")
     val vibrationPattern: List<Long> = emptyList(),
     // ── Selective Highlight Filter ──────────────────────────────────

@@ -232,12 +232,25 @@ class CharacterUseCaseImpl
                 repository.updateCharacter(newCharacter)
             }
 
+        private fun assertCharacterNotAlreadyInSaga(
+            sagaContent: SagaContent,
+            candidateName: String?,
+        ) {
+            val name = candidateName?.trim().orEmpty()
+            if (name.isBlank()) return
+            sagaContent.findCharacter(name)?.let {
+                error("Character already exists")
+        }
+    }
+
         override suspend fun generateCharacter(
             sagaContent: SagaContent,
             description: String,
             sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
+            candidateName: String?,
         ): RequestResult<Character> =
             executeRequest {
+                assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
                 val bannedNames = repository.getAllCharacterNames()
                 // Generate theme color first to pass to AI for appearance guidance
                 val themeColor = getRandomColorHex()
@@ -308,9 +321,11 @@ class CharacterUseCaseImpl
             sagaContent: SagaContent,
             description: String,
             sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
+            candidateName: String?,
         ): Flow<StreamingState<GeneratedContent<Character>>> =
             flow {
                 try {
+                    assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
                     val bannedNames = repository.getAllCharacterNames()
                     val themeColor = getRandomColorHex()
                     val config =

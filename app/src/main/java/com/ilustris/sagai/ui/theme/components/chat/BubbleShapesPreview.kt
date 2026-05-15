@@ -85,6 +85,15 @@ fun BubbleShapePreviewItem(
                 )
             }
 
+            Genre.CRIME, Genre.PUNK_ROCK -> {
+                CurvedChatBubbleShape(
+                    cornerRadius = if (genre == Genre.CRIME) 18.dp else cornerSize,
+                    tailWidth = 8.dp,
+                    tailHeight = 8.dp,
+                    tailAlignment = tailAlignment,
+                )
+            }
+
             else -> {
                 CurvedChatBubbleShape(
                     cornerRadius = cornerSize,

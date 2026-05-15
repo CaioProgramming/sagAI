@@ -33,7 +33,8 @@ class SagaIdeationService
                 requirement = GemmaClient.ModelRequirement.HIGH,
                 temperatureRandomness = 1f,
                 filterOutputFields = listOf("id", "variationId"),
-            blueprintKey = NewSagaPrompts.SAAGA_IDEATION_PROCESS)
+                blueprintKey = NewSagaPrompts.SAAGA_IDEATION_PROCESS,
+            )
         }
 
         suspend fun suggestUniverseEchoes() =
@@ -46,7 +47,6 @@ class SagaIdeationService
                     )
                 gemmaClient.generate<UniverseSuggestions>(
                     blueprint,
-                    requirement = GemmaClient.ModelRequirement.LOW,
                     temperatureRandomness = 1f,
                     blueprintKey = NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
                 )!!
@@ -86,6 +86,7 @@ class SagaIdeationService
                         "image",
                         "emojified",
                     ),
-            blueprintKey = NewSagaPrompts.SACRED_BINDING_BLUEPRINT)
+                blueprintKey = NewSagaPrompts.SACRED_BINDING_BLUEPRINT,
+            )
         }
     }

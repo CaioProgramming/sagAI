@@ -21,39 +21,33 @@ fun CharacterStats(
     genre: Genre,
     contentColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified,
 ) {
+    val traits = character.details.physicalTraits
+    val stats =
+        buildList {
+            if (traits.gender.isNotBlank()) {
+                add(traits.gender to "Gênero")
+            }
+            if (traits.height > 0) {
+                add("${traits.height.toInt()}cm" to "Altura")
+            }
+            if (traits.weight > 0) {
+                add("${traits.weight.toInt()}kg" to "Peso")
+            }
+            if (traits.race.isNotBlank()) {
+                add(traits.race to "Raça")
+            }
+            if (traits.ethnicity.isNotBlank()) {
+                add(traits.ethnicity to "Etnia")
+            }
+        }
+
+    if (stats.isEmpty()) return
+
     LazyRow(modifier = Modifier.padding(16.dp)) {
-        item {
-            VerticalLabel(
-                character.details.physicalTraits.gender,
-                "Gênero",
-                genre,
-                contentColor,
-            )
-        }
-        item {
-            VerticalLabel(
-                "${character.details.physicalTraits.height}cm",
-                "Altura",
-                genre,
-                contentColor,
-            )
-        }
-        item {
-            VerticalLabel(
-                "${character.details.physicalTraits.weight}kg",
-                "Peso",
-                genre,
-                contentColor,
-            )
-        }
-        item { VerticalLabel(character.details.physicalTraits.race, "Raça", genre, contentColor) }
-        item {
-            VerticalLabel(
-                character.details.physicalTraits.ethnicity,
-                "Etnia",
-                genre,
-                contentColor,
-            )
+        stats.forEach { (value, label) ->
+            item {
+                VerticalLabel(value, label, genre, contentColor)
+            }
         }
     }
 }

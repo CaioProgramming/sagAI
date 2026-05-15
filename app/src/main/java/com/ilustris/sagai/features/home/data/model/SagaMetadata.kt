@@ -212,6 +212,39 @@ val SagaMetadata.currentEventInfo
 
 fun SagaMetadata.findTimeline(timelineId: Int) = flatEvents().find { it.data.id == timelineId }
 
+/**
+ * Act and chapter ordinals (1-based) where the latest chat message lives. Matches what the user
+ * actually sees when [Saga.currentActId] / [Act.currentChapterId] are stale after refactors or
+ * partial updates.
+ */
+fun SagaMetadata.actAndChapterOrdinalsFromLatestMessage(): Pair<Int, Int>? {
+    val msgs = flatMessages()
+    if (msgs.isEmpty()) return null
+    val timeline =
+        findTimeline(msgs.maxBy { it.message.timestamp }.message.timelineId) ?: return null
+    val chapterId = timeline.data.chapterId
+    val actId = flatChapters().find { it.data.id == chapterId }?.data?.actId ?: return null
+    val actOrd = actNumber(actId).takeIf { it > 0 } ?: return null
+    val chapterOrd = chapterNumber(chapterId).takeIf { it > 0 } ?: return null
+    return actOrd to chapterOrd
+}
+
+fun SagaMetadata.actAndChapterOrdinalsFromProgressPointers(): Pair<Int, Int>? {
+    val actId =
+        data.currentActId
+            ?: currentActInfo?.data?.id
+            ?: return null
+    val actOrd = actNumber(actId).takeIf { it > 0 } ?: return null
+    val chapterId = currentChapterInfo?.data?.id ?: return null
+    val chapterOrd = chapterNumber(chapterId).takeIf { it > 0 } ?: return null
+    return actOrd to chapterOrd
+}
+
+fun SagaMetadata.subtitleActAndChapterOrdinals(): Pair<Int, Int> =
+    actAndChapterOrdinalsFromLatestMessage()
+        ?: actAndChapterOrdinalsFromProgressPointers()
+        ?: (1 to 1)
+
 fun SagaMetadata.toSagaInfo() =
     SagaInfo(
         id = data.id,

@@ -56,6 +56,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -112,11 +113,6 @@ private const val THEME_ANIMATION_DURATION = 600
  * without manually passing the genre around.
  */
 val LocalSagaGenre = compositionLocalOf<Genre?> { null }
-
-/**
- * CompositionLocal providing the currently active [GenreVisualConfig] from [SagaThemeManager].
- */
-val LocalGenreVisualConfig = compositionLocalOf<GenreVisualConfig?> { null }
 
 @Composable
 fun SagAITheme(
@@ -206,21 +202,20 @@ fun SagAITheme(
             }
         }
 
-    // Dynamic Shapes: genre shapes baked into the theme
-    activeGenre.shape(activeVisualConfig)
-    val cornerSize = activeVisualConfig?.cornerSizeDp
+    // Dynamic Shapes: corner radii from remote config or genre defaults (buttons use extraLarge, etc.)
+    val genreCornerSize = activeGenre?.cornerSize(activeVisualConfig)
     val dynamicShapes =
-        Shapes(
-            extraSmall =
-                cornerSize?.let { RoundedCornerShape(it * .1f) }
-                    ?: MaterialTheme.shapes.extraSmall,
-            small = cornerSize?.let { RoundedCornerShape(it * .2f) } ?: MaterialTheme.shapes.small,
-            medium =
-                cornerSize?.let { RoundedCornerShape(it * .3f) }
-                    ?: MaterialTheme.shapes.medium,
-            large = cornerSize?.let { RoundedCornerShape(it * .4f) } ?: MaterialTheme.shapes.large,
-            extraLarge = cornerSize?.let { RoundedCornerShape(it) } ?: MaterialTheme.shapes.large,
-        )
+        remember(activeGenre, activeVisualConfig, genreCornerSize) {
+            genreCornerSize?.let { corner ->
+                Shapes(
+                    extraSmall = RoundedCornerShape(corner * 0.1f),
+                    small = RoundedCornerShape(corner * 0.2f),
+                    medium = RoundedCornerShape(corner * 0.3f),
+                    large = RoundedCornerShape(corner * 0.4f),
+                    extraLarge = RoundedCornerShape(corner),
+                )
+            }
+        }
 
     CompositionLocalProvider(
         LocalSagaGenre provides activeGenre,
@@ -229,7 +224,7 @@ fun SagAITheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = dynamicTypography,
-            shapes = dynamicShapes,
+            shapes = dynamicShapes ?: MaterialTheme.shapes,
             content = content,
         )
     }

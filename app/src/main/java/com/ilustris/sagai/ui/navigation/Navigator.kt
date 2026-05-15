@@ -10,7 +10,6 @@ class Navigator(
 ) {
     fun navigate(route: NavKey) {
         if (route in state.backStacks.keys) {
-            // This is a top level route, switch to it and clear its specific stack to prevent state bleeding.
             state.topLevelRoute = route
             val stack = state.backStacks[route]
             while (stack?.lastOrNull() != null && stack.lastOrNull() != route) {
@@ -24,7 +23,14 @@ class Navigator(
         }
     }
 
+    fun canGoBack(): Boolean {
+        val currentStack = state.backStacks[state.topLevelRoute] ?: return false
+        return currentStack.size > 1
+    }
+
     fun goBack() {
+        if (!canGoBack()) return
+
         val currentStack =
             state.backStacks[state.topLevelRoute]
                 ?: error("Stack for ${state.topLevelRoute} not found")

@@ -30,9 +30,10 @@ fun Genre?.bubble(
     visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
 ): Shape {
     val cornerSize = cornerSize(visualConfig)
-    val tailW = if (isNarrator) 0.dp else tailWidth
-    val tailH = if (isNarrator) 0.dp else tailHeight
     if (this == null) return MaterialTheme.shapes.medium
+    if (isNarrator) return RoundedCornerShape(cornerSize)
+    val tailW = tailWidth
+    val tailH = tailHeight
     return when (this) {
         Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
@@ -63,7 +64,7 @@ fun Genre?.bubble(
 
         Genre.CRIME -> {
             CurvedChatBubbleShape(
-                cornerRadius = 0.dp, // Crime is Noir, sharp corners
+                cornerRadius = cornerSize,
                 tailWidth = tailW,
                 tailHeight = tailH,
                 tailAlignment = tailAlignment,
@@ -114,16 +115,12 @@ fun Genre?.bubble(
         }
 
         else -> {
-            if (isNarrator) {
-                RoundedCornerShape(cornerSize)
-            } else {
-                CurvedChatBubbleShape(
-                    cornerRadius = cornerSize,
-                    tailWidth = tailW,
-                    tailHeight = tailH,
-                    tailAlignment = tailAlignment,
-                )
-            }
+            CurvedChatBubbleShape(
+                cornerRadius = cornerSize,
+                tailWidth = tailW,
+                tailHeight = tailH,
+                tailAlignment = tailAlignment,
+            )
         }
     }
 }

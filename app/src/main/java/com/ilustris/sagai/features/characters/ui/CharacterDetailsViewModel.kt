@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -30,6 +31,7 @@ class CharacterDetailsViewModel
         val imageReasoning = MutableStateFlow<String?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
+        val characterArcs = MutableStateFlow<List<CharacterArc>>(emptyList())
         val characterDetailState = MutableStateFlow<CharacterDetailState?>(null)
         val isSummarizing = MutableStateFlow(false)
         val isEnriching = MutableStateFlow(false)
@@ -40,6 +42,9 @@ class CharacterDetailsViewModel
 
         /** Job for the active character detail collection — cancelled on re-entry. */
         private var detailJob: Job? = null
+
+        /** Job for character arcs collection — cancelled on re-entry. */
+        private var arcsJob: Job? = null
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -52,14 +57,23 @@ class CharacterDetailsViewModel
 
             // Cancel any in-flight collection from a previous character.
             detailJob?.cancel()
+            arcsJob?.cancel()
             currentCharacterId = characterId
 
             // Reset state so the UI never flashes stale data from the old character.
             characterDetailData.value = null
             characterResume.value = null
+            characterArcs.value = emptyList()
             characterDetailState.value = null
             imagePalette.value = null
             messageCount.value = 0
+
+            arcsJob =
+                viewModelScope.launch(Dispatchers.IO) {
+                    characterUseCase.getCharacterArcs(characterId).collect { arcs ->
+                        characterArcs.value = arcs
+                    }
+                }
 
             detailJob =
                 viewModelScope.launch(Dispatchers.IO) {

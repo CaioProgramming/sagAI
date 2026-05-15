@@ -11,6 +11,10 @@ import android.os.VibratorManager
 import timber.log.Timber
 import java.io.File
 
+/**
+ * Plays short genre reply SFX via [SoundPool] and optional haptics via [vibrationPattern]
+ * from Remote Config (per-genre waveforms tuned to match each SFX).
+ */
 class SoundFxService(
     private val context: Context,
 ) {
@@ -42,7 +46,7 @@ class SoundFxService(
 
     private var loadedSoundId: Int = 0
 
-    private fun isRingerNormal(): Boolean = audioManager.ringerMode == AudioManager.RINGER_MODE_NORMAL
+    private fun isSoundPlaybackAllowed(): Boolean = audioManager.ringerMode != AudioManager.RINGER_MODE_SILENT
 
     fun prepare(file: File) {
         if (loadedSoundId != 0) soundPool.unload(loadedSoundId)
@@ -63,8 +67,8 @@ class SoundFxService(
             Timber.tag(tag).d("play() skipped — not loaded")
             return
         }
-        if (!isRingerNormal()) {
-            Timber.tag(tag).d("play() skipped — ringer silent/vibrate")
+        if (!isSoundPlaybackAllowed()) {
+            Timber.tag(tag).d("play() skipped — ringer silent")
             return
         }
         val streamId = soundPool.play(loadedSoundId, 1f, 1f, 1, 0, 1f)

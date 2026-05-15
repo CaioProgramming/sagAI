@@ -8,7 +8,6 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -22,12 +21,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
+/** Retained for [com.ilustris.sagai.features.stories.ui.StorySheet]; no longer used from home. */
 data class SagaBriefing(
     val saga: SagaContent,
     val briefing: StoryDailyBriefing,
@@ -40,7 +39,6 @@ class HomeViewModel
     constructor(
         private val homeUseCase: HomeUseCase,
         private val backupService: BackupService,
-        private val segmentationHelper: ImageSegmentationHelper,
         private val stringResourceHelper: StringResourceHelper,
         private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
@@ -70,17 +68,6 @@ class HomeViewModel
         val showRecoverSheet = _showRecoverSheet.asStateFlow()
 
         val billingState = homeUseCase.billingState
-
-        private val _briefingCache = mutableMapOf<Int, SagaBriefing>()
-
-        private val _selectedSaga = MutableStateFlow<SagaSummary?>(null)
-        val selectedSaga = _selectedSaga.asStateFlow()
-
-        private val _storyBriefing = MutableStateFlow<SagaBriefing?>(null)
-        val storyBriefing = _storyBriefing.asStateFlow()
-
-        private val _loadingStoryId = MutableStateFlow<Int?>(null)
-        val loadingStoryId = _loadingStoryId.asStateFlow()
 
         private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
         val visualConfigs = _visualConfigs.asStateFlow()
@@ -122,36 +109,6 @@ class HomeViewModel
                         }
                     }
                 }
-            }
-        }
-
-        fun getBriefing(saga: SagaSummary) {
-            viewModelScope.launch(Dispatchers.IO) {
-                _loadingStoryId.emit(saga.data.id)
-                if (_briefingCache.containsKey(saga.data.id)) {
-                    _storyBriefing.emit(_briefingCache[saga.data.id])
-                    _selectedSaga.emit(saga)
-                    _loadingStoryId.emit(null)
-                } else {
-                    homeUseCase.getSagaContent(saga.data.id).firstOrNull()?.let { sagaContent ->
-                        homeUseCase.generateStoryBriefing(sagaContent).onSuccessAsync {
-                            val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
-                            val briefingState =
-                                SagaBriefing(sagaContent, it, iconSegmentation.getSuccess())
-                            _briefingCache[saga.data.id] = briefingState
-                            _storyBriefing.emit(briefingState)
-                            _selectedSaga.emit(saga)
-                        }
-                    }
-                    _loadingStoryId.emit(null)
-                }
-            }
-        }
-
-        fun clearSelectedSaga() {
-            viewModelScope.launch {
-                _selectedSaga.emit(null)
-                _storyBriefing.emit(null)
             }
         }
 

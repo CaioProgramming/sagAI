@@ -92,6 +92,7 @@ import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
+import com.ilustris.sagai.features.home.ui.components.TrophyShelf
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
@@ -99,8 +100,6 @@ import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.settings.ui.SettingsView
-import com.ilustris.sagai.features.stories.ui.StoriesRow
-import com.ilustris.sagai.features.stories.ui.StorySheet
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -143,9 +142,6 @@ fun HomeView(
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
-    val selectedSaga by viewModel.selectedSaga.collectAsStateWithLifecycle()
-    val storyBriefing by viewModel.storyBriefing.collectAsStateWithLifecycle()
-    val loadingStoryId by viewModel.loadingStoryId.collectAsStateWithLifecycle()
     val visualConfigs by viewModel.visualConfigs.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -178,7 +174,8 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).reactiveShimmer(
+                                )
+                                .reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -224,14 +221,20 @@ fun HomeView(
                                 val isPremium =
                                     billingState is BillingService.BillingState.SignatureEnabled
 
+                                val visibleSagas =
+                                    if (showDebugButton.not()) {
+                                        sagas.filter { !it.data.isDebug }
+                                    } else {
+                                        sagas
+                                    }
+
                                 ChatList(
-                                    sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+                                    sagas = visibleSagas,
                                     padding = padding,
                                     showDebugButton = showDebugButton,
                                     dynamicNewSagaTexts = dynamicNewSagaTexts,
                                     isLoadingDynamicPrompts = isLoadingDynamicPrompts,
                                     isPremium = isPremium,
-                                    loadingStoryId = loadingStoryId,
                                     visualConfigs = visualConfigs,
                                     animatedContentScope = this@AnimatedContent,
                                     sharedTransitionScope = sharedTransitionScope,
@@ -267,9 +270,6 @@ fun HomeView(
                                             drawerState.open()
                                         }
                                     },
-                                    onStoryClicked = {
-                                        viewModel.getBriefing(it)
-                                    },
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
@@ -302,16 +302,6 @@ fun HomeView(
         })
     }
 
-    val showBriefing = storyBriefing != null
-    if (showBriefing) {
-        StorySheet(storyBriefing, onDismiss = {
-            viewModel.clearSelectedSaga()
-        }, onContinue = {
-            navToSaga(selectedSaga!!.data.id.toString(), selectedSaga!!.data.isDebug)
-            viewModel.clearSelectedSaga()
-        })
-    }
-
     StarryLoader(
         isLoading,
         loadingMessage,
@@ -330,7 +320,6 @@ private fun ChatList(
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
-    loadingStoryId: Int? = null,
     visualConfigs: Map<Genre, GenreVisualConfig> = emptyMap(),
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
@@ -338,12 +327,14 @@ private fun ChatList(
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
-    onStoryClicked: (SagaSummary) -> Unit = {},
     createFakeSaga: () -> Unit = {},
     openPremiumSheet: () -> Unit = {},
     openSettings: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
+    val activeSagas = remember(sagas) { sagas.filter { !it.data.isEnded } }
+    val completedSagas = remember(sagas) { sagas.filter { it.data.isEnded } }
+
     LazyColumn(
         state = listState,
         modifier =
@@ -379,7 +370,8 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             openPremiumSheet()
-                                        }.wrapContentWidth()
+                                        }
+                                        .wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -423,7 +415,8 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -463,12 +456,10 @@ private fun ChatList(
         }
 
         item {
-            StoriesRow(
-                sagas = sagas,
-                loadingStoryId = loadingStoryId,
-                onStoryClicked = onStoryClicked,
-                listState.canScrollBackward.not(),
+            TrophyShelf(
+                completedSagas = completedSagas,
                 visualConfigs = visualConfigs,
+                onCompletedSagaClicked = { onSelectSaga(it.data) },
             )
         }
 
@@ -483,7 +474,8 @@ private fun ChatList(
         }
 
         items(
-            sagas,
+            activeSagas,
+            key = { it.data.id },
         ) {
             ChatCard(
                 it,
@@ -564,10 +556,12 @@ private fun ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 10f
                             spread = 5f
-                        }.background(
+                        }
+                        .background(
                             Brush.horizontalGradient(iridescentGradient),
                             MaterialTheme.shapes.large,
-                        ).fillMaxWidth(),
+                        )
+                        .fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -624,12 +618,14 @@ fun ChatCard(
                                 .sharedElement(
                                     rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
                                     animatedContentScope,
-                                ).dropShadow(CircleShape) {
+                                )
+                                .dropShadow(CircleShape) {
                                     radius = if (saga.data.isEnded) 10f else 5f
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }.size(50.dp)
+                                }
+                                .size(50.dp)
                                 .selectiveColorHighlight(saga.data.genre),
                     )
 
@@ -654,7 +650,8 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        ).weight(1f),
+                                        )
+                                        .weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime
