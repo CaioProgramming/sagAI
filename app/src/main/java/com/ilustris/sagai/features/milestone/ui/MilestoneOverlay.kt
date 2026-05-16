@@ -61,7 +61,6 @@ import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.DefaultOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.TitleSplashOverlay
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.mascot.MascotEmotionFace
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -125,10 +124,6 @@ fun MilestoneOverlay(
                         titleModifier,
                         contentReasoning = reasoningChunk,
                     )
-                }
-
-                is SagaMilestone.TitleSplash -> {
-                    TitleSplashOverlay(saga = saga.data)
                 }
 
                 else -> {
@@ -225,12 +220,10 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }
-                        .background(
+                        }.background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        )
-                        .padding(4.dp)
+                        ).padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,

@@ -184,13 +184,12 @@ fun SagaMetadata.flatEvents() = acts.flatMap { it.chapters.flatMap { it.events }
 
 fun SagaMetadata.flatWikis() = acts.flatMap { it.chapters.flatMap { it.events.flatMap { it.updatedWikis } } }
 
-fun SagaMetadata.getCurrentTimeLine() =
-    acts
-        .lastOrNull()
-        ?.chapters
-        ?.lastOrNull()
-        ?.events
-        ?.lastOrNull()
+/**
+ * Timeline that is actively selected for chat: derived from [Chapter.currentEventId] on the current
+ * chapter only. Null when no event is selected (even if older events exist)—so the narrative layer
+ * can show [CreateTimeline] without leaking messages onto a previous scene.
+ */
+fun SagaMetadata.getCurrentTimeLine(): TimelineMetadata? = currentEventInfo
 
 val SagaMetadata.currentActInfo
     get() =
@@ -206,8 +205,10 @@ val SagaMetadata.currentChapterInfo
 val SagaMetadata.currentEventInfo
     get() =
         currentChapterInfo?.let { chapter ->
-            chapter.events.find { it.data.id == chapter.data.currentEventId }
-                ?: chapter.events.lastOrNull()
+            val activeEventId =
+                chapter.data.currentEventId
+                    ?: return@let null
+            chapter.events.find { it.data.id == activeEventId }
         }
 
 fun SagaMetadata.findTimeline(timelineId: Int) = flatEvents().find { it.data.id == timelineId }

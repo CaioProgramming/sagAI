@@ -36,8 +36,7 @@ object MilestonePrompts {
         }
 
         if (milestone is SagaMilestone.CurrentObjective ||
-            milestone is SagaMilestone.Loading ||
-            milestone is SagaMilestone.TitleSplash
+            milestone is SagaMilestone.Loading
         ) {
             return null
         }

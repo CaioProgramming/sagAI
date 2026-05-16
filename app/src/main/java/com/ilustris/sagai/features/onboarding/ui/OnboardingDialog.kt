@@ -197,7 +197,7 @@ private fun OnboardingContentSheet(
         sheetState = sheetState,
         shape = shape,
         dragHandle = null,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
     ) {
         Box(
             modifier =

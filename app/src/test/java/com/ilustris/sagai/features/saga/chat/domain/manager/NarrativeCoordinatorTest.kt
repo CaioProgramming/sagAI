@@ -1,10 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
-import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -12,20 +9,12 @@ import org.junit.Test
 
 class NarrativeCoordinatorTest {
     private val coordinator = NarrativeCoordinator()
-    private val rules = NarrativeRules()
 
     @Test
     fun `reevaluate exposes user action`() {
-        val saga =
-            SagaContent(
-                data = Saga(id = 1, title = "Saga"),
-                acts = emptyList(),
-            )
-
         val state =
             coordinator.reevaluate(
-                saga = saga,
-                rules = rules,
+                nextResolvedAction = NarrativeAction.CreateAct,
                 context = NarrativeEvaluationContext(),
             )
 
@@ -35,13 +24,11 @@ class NarrativeCoordinatorTest {
 
     @Test
     fun `reevaluate skips when onboarding visible`() {
-        val saga = SagaContent(data = Saga(id = 1, title = "Saga"))
-        coordinator.reevaluate(saga, rules, NarrativeEvaluationContext())
+        coordinator.reevaluate(NarrativeAction.CreateAct, NarrativeEvaluationContext())
         val initial = coordinator.uiState.value
 
         coordinator.reevaluate(
-            saga,
-            rules,
+            NarrativeAction.CreateAct,
             NarrativeEvaluationContext(isOnboardingVisible = true),
         )
 
@@ -66,13 +53,11 @@ class NarrativeCoordinatorTest {
 
     @Test
     fun `milestone blocks pending action`() {
-        val saga = SagaContent(data = Saga(id = 1, title = "Saga"), acts = emptyList())
         coordinator.markMilestoneActive()
 
         val state =
             coordinator.reevaluate(
-                saga,
-                rules,
+                nextResolvedAction = NarrativeAction.CreateAct,
                 context =
                     NarrativeEvaluationContext(
                         isMilestoneActive = true,

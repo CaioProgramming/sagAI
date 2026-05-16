@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -54,6 +55,8 @@ import androidx.compose.ui.window.DialogWindowProvider
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlin.random.Random
 
 private data class WarpStar(
@@ -81,10 +84,7 @@ fun StarryLoader(
     brushColors: List<Color>? = null,
     useAsDialog: Boolean = true,
 ) {
-    val themeBrush =
-        com.ilustris.sagai.ui.theme
-            .themeBrushColors()
-    val finalBrushColors = brushColors ?: themeBrush
+    val brush = themeBrushColors()
     val setBlur = LocalBlurState.current
     DisposableEffect(isLoading && useAsDialog) {
         setBlur(isLoading)
@@ -121,7 +121,7 @@ fun StarryLoader(
         val borderDraw: DrawScope.() -> Unit = {
             drawIntoCanvas { canvas ->
                 val shader =
-                    (Brush.sweepGradient(finalBrushColors) as ShaderBrush).createShader(size)
+                    (Brush.sweepGradient(brush) as ShaderBrush).createShader(size)
                 val matrix = Matrix()
                 matrix.setRotate(rotation, size.width / 2, size.height / 2)
                 shader.setLocalMatrix(matrix)
@@ -156,7 +156,7 @@ fun StarryLoader(
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .reactiveShimmer(true, finalBrushColors),
+                        .reactiveShimmer(true, themeShimmer()),
                 ) {
                     val starsAlpha by animateFloatAsState(
                         targetValue = if (loadingMessage == null) 1f else .5f,
@@ -168,7 +168,7 @@ fun StarryLoader(
                             Modifier
                                 .alpha(starsAlpha)
                                 .fillMaxSize(),
-                        starColor = finalBrushColors.firstOrNull() ?: Color.White,
+                        starColor = Color.White,
                     )
 
                     Canvas(
@@ -195,7 +195,15 @@ fun StarryLoader(
                             message?.let {
                                 Text(
                                     it,
-                                    style = textStyle,
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            textAlign = TextAlign.Center,
+                                            shadow =
+                                                Shadow(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    blurRadius = 5f,
+                                                ),
+                                        ),
                                     modifier = Modifier.alpha(.6f),
                                 )
                             }
@@ -212,7 +220,15 @@ fun StarryLoader(
                             sub?.let {
                                 Text(
                                     it,
-                                    style = subtitleStyle,
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            textAlign = TextAlign.Center,
+                                            shadow =
+                                                Shadow(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    blurRadius = 5f,
+                                                ),
+                                                ),
                                     modifier = Modifier.padding(top = 8.dp),
                                 )
                             }
@@ -232,7 +248,7 @@ fun StarryLoader(
                         Modifier
                             .alpha(starsAlpha)
                             .fillMaxSize()
-                            .gradientFill(Brush.verticalGradient(finalBrushColors)),
+                            .gradientFill(Brush.verticalGradient(themeShimmer())),
                     starColor = Color.White,
                 )
 
@@ -257,7 +273,15 @@ fun StarryLoader(
                         message?.let {
                             Text(
                                 it,
-                                style = textStyle,
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        textAlign = TextAlign.Center,
+                                        shadow =
+                                            Shadow(
+                                                MaterialTheme.colorScheme.primary,
+                                            blurRadius = 5f
+                                        ),
+                                            ),
                             )
                         }
                     }
@@ -273,7 +297,15 @@ fun StarryLoader(
                         sub?.let {
                             Text(
                                 it,
-                                style = subtitleStyle,
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        textAlign = TextAlign.Center,
+                                        shadow =
+                                            Shadow(
+                                                MaterialTheme.colorScheme.primary,
+                                            blurRadius = 5f
+                                        ),
+                                            ),
                                 modifier = Modifier.padding(top = 8.dp),
                             )
                         }

@@ -29,12 +29,14 @@ fun SagaWikiView(
     onBack: () -> Unit,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
+    /** When false, this composable does not consume the system back gesture (e.g. wiki shown in a closed drawer slot). */
+    interceptSystemBack: Boolean = true,
     viewModel: WikiViewModel = hiltViewModel(),
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
     val groups by viewModel.wikiGroups.collectAsStateWithLifecycle()
 
-    BackHandler {
+    BackHandler(enabled = interceptSystemBack) {
         onBack()
     }
 

@@ -54,8 +54,7 @@ fun ObjectiveOverlay(
             title,
             style =
                 MaterialTheme.typography.labelLarge.copy(
-                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    color = MaterialTheme.colorScheme.secondary.copy(alpha = .7f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = .7f),
                 ),
         )
 

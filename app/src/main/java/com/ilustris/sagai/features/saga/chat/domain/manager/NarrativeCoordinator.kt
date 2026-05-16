@@ -1,7 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
-import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,8 +18,7 @@ class NarrativeCoordinator
         private var lastCompletedAction: NarrativeAction? = null
 
         fun reevaluate(
-            saga: SagaContent,
-            rules: NarrativeRules,
+            nextResolvedAction: NarrativeAction?,
             context: NarrativeEvaluationContext,
         ): NarrativeUiState {
             if (context.isOnboardingVisible) {
@@ -56,7 +53,7 @@ class NarrativeCoordinator
             }
 
             val newState =
-                when (val nextAction = NarrativeCheck.validateProgression(saga, rules)) {
+                when (val nextAction = nextResolvedAction) {
                     null -> {
                         NarrativeUiState(
                             phase = NarrativePhase.Playing,

@@ -39,6 +39,8 @@ import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 class SagaDetailUseCaseImpl
@@ -99,51 +101,62 @@ class SagaDetailUseCaseImpl
             val fullChaptersFlow = chapterDao.getChaptersBySaga(sagaId)
             val messagesCountFlow = messageDao.getMessagesCount(sagaId)
 
-            return combine(
-                sagaFlow,
-                topCharactersFlow,
-                wikisFlow,
-                latestEventFlow,
-                booksFlow,
-                chaptersCountFlow,
-                timelineCountFlow,
-                actsFlow,
-                charactersCountFlow,
-                chaptersInfoFlow,
-                fullChaptersFlow,
-                messagesCountFlow,
-            ) { flows: Array<Any?> ->
-                val saga = flows[0] as Saga?
-                val topCharacters = flows[1] as List<CharacterContent>
-                val wikis = flows[2] as List<Wiki>
-                val event = flows[3] as TimelineWithAct?
-                val books = flows[4] as List<Book>
-                val chaptersCount = flows[5] as Int
-                val timelineCount = flows[6] as Int
-                val acts = flows[7] as List<ActContent>
-                val charCount = flows[8] as Int
-                val chapters = flows[9] as List<ChapterInfo>
-                val fullChapters = flows[10] as List<ChapterContent>
-                val messagesCount = flows[11] as Int
+            return sagaFlow.flatMapLatest { saga ->
+                val mainCharacterFlow =
+                    saga
+                        ?.mainCharacterId
+                        ?.let { characterDao.getCharacterContent(it) }
+                        ?: flowOf(null)
 
-                val narrativeRules = remoteConfigService.getNarrativeRules()
-                SagaDetailResume(
-                    saga = saga ?: Saga(),
-                    starringCharacter = topCharacters.firstOrNull(),
-                    topCharacters = topCharacters,
-                    latestWikis = wikis,
-                    latestEvent = event,
-                    generatedBooks = books,
-                    chapters = chapters,
-                    fullChapters = fullChapters,
-                    chaptersCount = chaptersCount,
-                    eventsCount = timelineCount,
-                    charactersCount = charCount,
-                    messagesCount = messagesCount,
-                    playtime = saga?.playTimeMs ?: 0L,
-                    completedActsCount = acts.count { it.isComplete(narrativeRules) },
-                    hasActs = acts.isNotEmpty(),
-                )
+                combine(
+                    flowOf(saga),
+                    mainCharacterFlow,
+                    topCharactersFlow,
+                    wikisFlow,
+                    latestEventFlow,
+                    booksFlow,
+                    chaptersCountFlow,
+                    timelineCountFlow,
+                    actsFlow,
+                    charactersCountFlow,
+                    chaptersInfoFlow,
+                    fullChaptersFlow,
+                    messagesCountFlow,
+                ) { flows: Array<Any?> ->
+                    val sagaValue = flows[0] as Saga?
+                    val mainCharacterContent = flows[1] as CharacterContent?
+                    val topCharacters = flows[2] as List<CharacterContent>
+                    val wikis = flows[3] as List<Wiki>
+                    val event = flows[4] as TimelineWithAct?
+                    val books = flows[5] as List<Book>
+                    val chaptersCount = flows[6] as Int
+                    val timelineCount = flows[7] as Int
+                    val acts = flows[8] as List<ActContent>
+                    val charCount = flows[9] as Int
+                    val chapters = flows[10] as List<ChapterInfo>
+                    val fullChapters = flows[11] as List<ChapterContent>
+                    val messagesCount = flows[12] as Int
+
+                    val narrativeRules = remoteConfigService.getNarrativeRules()
+                    SagaDetailResume(
+                        saga = sagaValue ?: Saga(),
+                        starringCharacter =
+                            mainCharacterContent ?: topCharacters.firstOrNull(),
+                        topCharacters = topCharacters,
+                        latestWikis = wikis,
+                        latestEvent = event,
+                        generatedBooks = books,
+                        chapters = chapters,
+                        fullChapters = fullChapters,
+                        chaptersCount = chaptersCount,
+                        eventsCount = timelineCount,
+                        charactersCount = charCount,
+                        messagesCount = messagesCount,
+                        playtime = sagaValue?.playTimeMs ?: 0L,
+                        completedActsCount = acts.count { it.isComplete(narrativeRules) },
+                        hasActs = acts.isNotEmpty(),
+                    )
+                }
             }
         }
 

@@ -26,7 +26,7 @@ class MilestoneUseCaseImpl
                     "Generating congrats message for ${milestone.javaClass.simpleName}",
                 )
 
-                if (milestone is SagaMilestone.Loading || milestone is SagaMilestone.TitleSplash) {
+                if (milestone is SagaMilestone.Loading) {
                     error("Loading and TitleSplash don't need message")
                 }
 

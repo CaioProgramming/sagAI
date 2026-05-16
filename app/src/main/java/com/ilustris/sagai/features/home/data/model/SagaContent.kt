@@ -304,6 +304,30 @@ fun SagaContent.generateActLevelEmotionalFlowText(): String {
     }
 }
 
+fun SagaContent.toNarrativeMetadata(): SagaMetadata =
+    SagaMetadata(
+        data = data,
+        acts =
+            acts.map { act ->
+                ActMetadata(
+                    data = act.data,
+                    chapters =
+                        act.chapters.map { chapter ->
+                            ChapterMetadata(
+                                data = chapter.data,
+                                events =
+                                    chapter.events.map { event ->
+                                        TimelineMetadata(
+                                            data = event.data,
+                                            messages = event.messages,
+                                        )
+                                    },
+                            )
+                        },
+                )
+            },
+    )
+
 fun SagaContent.hasMoreThanOneChapter() = flatChapters().size > 1
 
 fun SagaContent.rankMainCharacterEmotionalTones(): List<Pair<EmotionalTone, Int>> {

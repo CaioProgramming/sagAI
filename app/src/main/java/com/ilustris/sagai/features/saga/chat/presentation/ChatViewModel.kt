@@ -29,7 +29,6 @@ import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
-import com.ilustris.sagai.features.home.data.model.currentEventInfo
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -741,12 +740,10 @@ class ChatViewModel
                             1f
                         }
 
-                        sagaContent.currentEventInfo != null || sagaContent.getCurrentTimeLine() != null -> {
+                        sagaContent.getCurrentTimeLine() != null -> {
                             val updateLimit = rules.loreUpdateLimit ?: 10
                             val messageCount =
-                                sagaContent.currentEventInfo?.messages?.size
-                                    ?: sagaContent.getCurrentTimeLine()?.messages?.size
-                                    ?: 0
+                                sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
                             val maxCount = updateLimit
                             messageCount.toFloat() / maxCount.toFloat()
                         }

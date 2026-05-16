@@ -102,13 +102,6 @@ sealed class SagaMilestone(
         delay = 0.seconds,
         isIntrusive = true,
     )
-
-    data object TitleSplash : SagaMilestone(
-        title = 0,
-        subtitle = "",
-        delay = 0.seconds,
-        isIntrusive = true,
-    )
 }
 
 enum class LoadingType {

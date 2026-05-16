@@ -47,6 +47,7 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionMaterializer
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
@@ -389,7 +390,6 @@ class SagaContentManagerImpl
                                 validateCharacters(saga)
 
                                 if (previousSaga == null) {
-                                    emitMilestone(SagaMilestone.TitleSplash)
                                     delay(TITLE_SPLASH_DURATION)
                                     if (saga.data.isEnded.not()) {
                                         saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
@@ -614,20 +614,29 @@ class SagaContentManagerImpl
                 val rules = fetchNarrativeRules()
                 messageDao.getMessagesCount(currentSaga.data.id).first()
 
+                val intent = NarrativeCheck.validateProgressionMetadata(currentSaga, rules)
+                val hydrated =
+                    intent?.let { NarrativeActionMaterializer.materialize(it, sagaContent) }
+                if (intent != null && hydrated == null) {
+                    Timber.w(
+                        "requestNarrativeProgression: metadata implies progression (${intent.javaClass.simpleName}) but SagaContent hydration failed.",
+                    )
+                    narrativeCoordinator.schedulePendingReevaluation()
+                    return@withLock
+                }
+
                 val uiState =
                     narrativeCoordinator.reevaluate(
-                        saga = sagaContent,
-                        rules = rules,
+                        nextResolvedAction = hydrated,
                         context = buildEvaluationContext(),
                     )
 
-                val autoAction = NarrativeCheck.validateProgression(sagaContent, rules)
                 if (uiState.phase is NarrativePhase.BackgroundProcessing &&
-                    autoAction is NarrativeAction.CloseTimeline
+                    hydrated is NarrativeAction.CloseTimeline
                 ) {
                     Timber.d("Auto-executing CloseTimeline")
                     narrativeCoordinator.onBackgroundTaskStarted(BackgroundTask.ClosingScene)
-                    executeNarrativeAction(autoAction, isRetry = isRetry)
+                    executeNarrativeAction(hydrated, isRetry = isRetry)
                 }
 
                 if (narrativeCoordinator.consumePendingReevaluation()) {
@@ -689,7 +698,6 @@ class SagaContentManagerImpl
             dismissMilestone()
             when (milestone) {
                 is SagaMilestone.Introduction,
-                is SagaMilestone.TitleSplash,
                 -> {
                     doNothing()
                 }
@@ -722,7 +730,6 @@ class SagaContentManagerImpl
             CoroutineScope(Dispatchers.Main.immediate).launch {
                 if (milestone != null &&
                     milestone !is SagaMilestone.Loading &&
-                    milestone !is SagaMilestone.TitleSplash &&
                     milestone.isIntrusive
                 ) {
                     isMilestoneActive.value = true
