@@ -1,11 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,22 +15,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestonePhase
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestonePhaseVisibility
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestoneTransitions
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.advanceAfter
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.milestoneTypewriterDuration
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.rememberMilestonePhaseController
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -47,92 +48,129 @@ fun IntroductionOverlay(
 ) {
     val message = introduction.introduction
     val genre = saga.genre
-    var showContent by remember { mutableStateOf(false) }
-    var showTypewriter by remember { mutableStateOf(false) }
-    var animationComplete by remember { mutableStateOf(false) }
+    val phaseController = rememberMilestonePhaseController(MilestonePhase.Hero)
+    val coroutineScope = rememberCoroutineScope()
 
-    val title =
-        if (introduction.type == IntroductionType.ACT) {
-            stringResource(
-                R.string.act_title_template,
-                introduction.number,
-            )
-        } else {
-            stringResource(R.string.chapter_title_template, introduction.number)
+    val headlineLabel =
+        when (introduction.type) {
+            IntroductionType.ACT -> {
+                stringResource(R.string.act_title_template, introduction.number) +
+                    " ${introduction.titleText}"
+            }
+
+            IntroductionType.CHAPTER -> {
+                stringResource(R.string.chapter_title_template, introduction.number) +
+                    " ${introduction.titleText}"
+            }
+
+            IntroductionType.RESUME -> {
+                stringResource(R.string.introduction_milestone)
+            }
         }
 
-    LaunchedEffect(message) {
-        if (message != null) {
-            showContent = true
-            delay(1.seconds)
-            showTypewriter = true
-            delay(5.seconds)
-            animationComplete = true
-        }
+    LaunchedEffect(Unit) {
+        phaseController.advance(MilestonePhase.Hero)
+        phaseController.advanceAfter(
+            coroutineScope,
+            hold = 1.2.seconds,
+            to = MilestonePhase.Headline,
+        )
     }
 
-    LaunchedEffect(animationComplete) {
-        if (animationComplete) {
-            delay(2.seconds)
+    LaunchedEffect(phaseController.currentPhase) {
+        if (phaseController.currentPhase == MilestonePhase.Headline && message.isBlank()) {
+            delay(1.5.seconds)
             onComplete()
         }
     }
 
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier =
                 Modifier
-                    .animateContentSize()
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
         ) {
-            AnimatedVisibility(showContent) {
+            MilestonePhaseVisibility(
+                visible = phaseController.isAtLeast(MilestonePhase.Hero),
+                enter = MilestoneTransitions.fadeEnter,
+            ) {
+                with(sharedTransitionScope) {
+                    genre.stylisedText(
+                        text = saga.title,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                                .sharedElement(
+                                    rememberSharedContentState(
+                                        key = "saga_${saga.id}_title",
+                                    ),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
+                    )
+                }
+            }
+
+            MilestonePhaseVisibility(
+                visible = phaseController.isAtLeast(MilestonePhase.Headline),
+                enter = MilestoneTransitions.labelEnter,
+            ) {
                 Text(
-                    text = "$title ${introduction.titleText}",
+                    text = headlineLabel.trim(),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             textAlign = TextAlign.Center,
                         ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
-            with(sharedTransitionScope) {
-                genre.stylisedText(
-                    text = saga.title,
                     modifier =
                         Modifier
-                            .padding(8.dp)
                             .fillMaxWidth()
-                            .sharedElement(
-                                rememberSharedContentState(
-                                    key = "saga_${saga.id}_title",
-                                ),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            ),
+                            .padding(top = 16.dp),
                 )
             }
 
-            message?.let {
-                AnimatedVisibility(
-                    visible = showTypewriter,
-                    enter = fadeIn(tween(300)),
+            LaunchedEffect(phaseController.currentPhase, message) {
+                if (
+                    phaseController.currentPhase == MilestonePhase.Headline &&
+                    message.isNotBlank()
                 ) {
-                    Text(
-                        it,
+                    delay(800)
+                    phaseController.advance(MilestonePhase.Body)
+                }
+            }
+
+            if (message.isNotBlank()) {
+                MilestonePhaseVisibility(
+                    visible = phaseController.isAtLeast(MilestonePhase.Body),
+                    enter = MilestoneTransitions.fadeEnter,
+                ) {
+                    SimpleTypewriterText(
+                        text = message,
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                fontWeight = FontWeight.Normal,
                                 textAlign = TextAlign.Center,
                             ),
-                        textAlign = TextAlign.Center,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(top = 24.dp, bottom = 16.dp),
+                        duration = milestoneTypewriterDuration(message),
+                        onAnimationFinished = {
+                            coroutineScope.launch {
+                                delay(1.5.seconds)
+                                onComplete()
+                            }
+                        },
                     )
                 }
             }
