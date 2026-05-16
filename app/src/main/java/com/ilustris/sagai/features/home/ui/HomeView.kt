@@ -94,6 +94,7 @@ import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
 import com.ilustris.sagai.features.home.ui.components.TrophyShelf
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.premium.PremiumCard
@@ -104,7 +105,6 @@ import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.iridescentGradient
@@ -174,8 +174,7 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -370,8 +369,7 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             openPremiumSheet()
-                                        }
-                                        .wrapContentWidth()
+                                        }.wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -415,8 +413,7 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -556,12 +553,10 @@ private fun ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 10f
                             spread = 5f
-                        }
-                        .background(
+                        }.background(
                             Brush.horizontalGradient(iridescentGradient),
                             MaterialTheme.shapes.large,
-                        )
-                        .fillMaxWidth(),
+                        ).fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -594,6 +589,7 @@ fun ChatCard(
         val genre = sagaData.genre
         val genreColor = genre.color
         val genreBrush = sagaBrush()
+        Brush.sweepGradient(genre.colorPalette(visualConfig))
         with(sharedTransitionScope) {
             Column {
                 Row(
@@ -604,30 +600,32 @@ fun ChatCard(
                             .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    AvatarTimelineIcon(
-                        saga.data.icon,
-                        saga.data.isEnded,
-                        saga.data.genre,
-                        saga.data.title
-                            .first()
-                            .uppercase(),
-                        visualConfig = visualConfig,
-                        borderWidth = 1.dp,
+                    Box(
                         modifier =
                             Modifier
                                 .sharedElement(
                                     rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
                                     animatedContentScope,
-                                )
-                                .dropShadow(CircleShape) {
-                                    radius = if (saga.data.isEnded) 10f else 5f
+                                ).dropShadow(CircleShape) {
+                                    radius = 5f
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }
-                                .size(50.dp)
-                                .selectiveColorHighlight(saga.data.genre),
-                    )
+                                }.size(50.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AvatarTimelineIcon(
+                            saga.data.icon,
+                            saga.data.isEnded,
+                            saga.data.genre,
+                            saga.data.title
+                                .first()
+                                .uppercase(),
+                            visualConfig = visualConfig,
+                            borderWidth = 1.dp,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
 
                     Spacer(modifier = Modifier.width(12.dp))
 
@@ -650,8 +648,7 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        )
-                                        .weight(1f),
+                                        ).weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime

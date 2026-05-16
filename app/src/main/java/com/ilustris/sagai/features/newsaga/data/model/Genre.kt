@@ -9,6 +9,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
+import com.ilustris.sagai.ui.theme.holographicGradient
 
 enum class
 Genre(
@@ -119,7 +120,7 @@ fun Genre.shimmerColors(): List<Color> = shimmerColors(LocalGenreVisualConfig.cu
 
 fun Genre.colorPalette(visualConfig: GenreVisualConfig?): List<Color> {
     val remotePalette = visualConfig?.colorPalette?.mapNotNull { it.parseColor() } ?: emptyList()
-    return remotePalette.ifEmpty { compiledColorPalette() }
+    return remotePalette.ifEmpty { holographicGradient }
 }
 
 fun Genre.subtitle(): String =

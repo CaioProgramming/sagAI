@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,12 +39,13 @@ import coil3.request.crossfade
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.features.timeline.ui.components.TimelineThreadList
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -119,11 +119,12 @@ fun AvatarTimelineIcon(
     modifier: Modifier = Modifier,
     visualConfig: GenreVisualConfig? = null,
 ) {
+    val brushColors = genre.colorPalette(visualConfig)
     Box(
         modifier =
             modifier
                 .background(
-                    Brush.verticalGradient(backgroundColor.darkerPalette(factor = .25f)),
+                    backgroundColor.darker(.4f),
                     CircleShape,
                 ),
         contentAlignment = Alignment.Center,
@@ -131,10 +132,7 @@ fun AvatarTimelineIcon(
         AutoResizeText(
             text = placeHolderChar,
             style =
-                MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                ),
+                MaterialTheme.typography.titleLarge,
             modifier = Modifier.alpha(.3f),
         )
 
@@ -152,7 +150,7 @@ fun AvatarTimelineIcon(
                     Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
-                        .border(borderWidth, borderColor, CircleShape)
+                        .border(borderWidth, Brush.verticalGradient(brushColors), CircleShape)
                         .effectForGenre(genre, visualConfig)
                         .selectiveColorHighlight(genre.selectiveHighlight(visualConfig)),
             )

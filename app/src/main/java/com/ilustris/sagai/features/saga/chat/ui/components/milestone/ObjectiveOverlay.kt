@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,12 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,32 +37,32 @@ fun ObjectiveOverlay(
                 .background(fadeGradientTop(MaterialTheme.colorScheme.primary))
                 .clickable {
                     onDismiss()
-                }
-                .statusBarsPadding()
+                }.statusBarsPadding()
                 .fillMaxWidth()
                 .padding(16.dp),
     ) {
-        Image(
+        Icon(
             painterResource(genre.icon),
             null,
             sparkModifier.size(32.dp),
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
+            tint = MaterialTheme.colorScheme.onPrimary,
         )
 
         Text(
             title,
             style =
-                MaterialTheme.typography.labelLarge.copy(
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = .7f),
+                MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    textAlign = TextAlign.Center,
                 ),
         )
 
         Text(
             subtitle,
             style =
-                MaterialTheme.typography.bodyLarge.copy(
+                MaterialTheme.typography.labelMedium.copy(
                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,
                 ),
         )

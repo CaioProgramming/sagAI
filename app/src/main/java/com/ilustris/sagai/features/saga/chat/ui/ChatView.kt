@@ -514,8 +514,7 @@ fun ChatContent(
                                     shimmerColors = themeShimmer(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                )
-                                .size(100.dp)
+                                ).size(100.dp)
                                 .alpha(.4f),
                     )
 
@@ -523,8 +522,7 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay) = createRefs()
@@ -679,8 +677,7 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }
-                                .fillMaxWidth()
+                                }.fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -980,6 +977,8 @@ fun ChatContent(
 
                         AnimatedVisibility(
                             uiState.milestone is SagaMilestone.CurrentObjective,
+                            enter = fadeIn() + slideInVertically { +it },
+                            exit = fadeOut() + slideOutVertically { it },
                             modifier =
                                 Modifier.constrainAs(objectiveOverlay) {
                                     top.linkTo(parent.top)
@@ -1063,8 +1062,7 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    )
-                                                    .size(32.dp)
+                                                    ).size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1662,8 +1660,7 @@ fun CharactersTopIcons(
                             )
                             .graphicsLayer(
                                 translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                            )
-                            .clip(CircleShape)
+                            ).clip(CircleShape)
                             .size(24.dp)
                             .clickable { onCharacterSelected(character) },
                 )
