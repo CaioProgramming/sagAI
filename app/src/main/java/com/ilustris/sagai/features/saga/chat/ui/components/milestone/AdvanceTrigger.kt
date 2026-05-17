@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,28 +44,29 @@ import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.vibrate
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
+import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
 fun AdvanceTrigger(
-    pendingAdvance: PendingAdvance,
+    action: NarrativeAction,
     genre: Genre,
     onAdvance: () -> Unit,
     modifier: Modifier = Modifier,
     isGenerating: Boolean,
 ) {
+    val actionUi = action.toUi()
     var isHolding by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val view = LocalView.current
     val visualConfig = LocalGenreVisualConfig.current
-    val primaryColor = genre.resolveColor(visualConfig)
+    val primaryColor = MaterialTheme.colorScheme.primary
     val colors = genre.colorPalette(visualConfig)
 
     val progress by animateFloatAsState(
@@ -104,7 +106,7 @@ fun AdvanceTrigger(
             ) {
                 val genreBrush = Brush.linearGradient(colors)
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    color = MaterialTheme.colorScheme.background,
                     shape = shape,
                     tonalElevation = if (isHolding) 8.dp else 2.dp,
                     modifier =
@@ -113,11 +115,12 @@ fun AdvanceTrigger(
                             .height(50.dp)
                             .scale(scale)
                             .dropShadow(shape) {
-                                radius = 30f * progress
+                                radius = 35f * progress
                                 color = primaryColor
-                                spread = 15f * progress
+                                spread = 20f * progress
                                 brush = genreBrush
-                            }.clip(shape)
+                            }.border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
+                            .clip(shape)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onPress = {
@@ -126,11 +129,11 @@ fun AdvanceTrigger(
 
                                         val holdJob =
                                             scope.launch {
-                                                delay(1000) // Vibrate after 1 second
+                                                delay(1000)
                                                 if (isHolding) {
                                                     view.context.vibrate(longArrayOf(0, 60))
                                                 }
-                                                delay(500) // Complete at 1.5 seconds
+                                                delay(500)
                                                 if (isHolding) {
                                                     view.context.vibrate(longArrayOf(0, 400))
                                                     onAdvance()
@@ -148,7 +151,6 @@ fun AdvanceTrigger(
                             },
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        // Progress Background
                         Box(
                             modifier =
                                 Modifier
@@ -162,13 +164,13 @@ fun AdvanceTrigger(
                         Text(
                             text =
                                 if (isHolding) {
-                                    stringResource(pendingAdvance.holdingTextRes)
+                                    stringResource(actionUi.holdingTextRes)
                                 } else {
-                                    stringResource(pendingAdvance.titleRes)
+                                    stringResource(actionUi.titleRes)
                                 }.uppercase(),
                             style =
                                 MaterialTheme.typography.labelLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color =
                                         if (progress > 0.6f) {
                                             MaterialTheme.colorScheme.onPrimary

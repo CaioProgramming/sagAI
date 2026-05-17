@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.faq.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -53,7 +52,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.faq.data.model.FAQCategory
 import com.ilustris.sagai.features.faq.data.model.FAQContent
@@ -65,11 +63,13 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 @Composable
 fun FAQView(
     viewModel: FAQViewModel = hiltViewModel(),
-    navHostController: NavHostController,
+    onBack: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val state by viewModel.faqState.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
-    SharedTransitionLayout {
+    with(sharedTransitionScope) {
         AnimatedContent(state, transitionSpec = {
             fadeIn() + slideInVertically() togetherWith fadeOut() + slideOutVertically()
         }) { faqState ->
@@ -160,7 +160,7 @@ fun FAQView(
                             onQueryChange = viewModel::updateQuery,
                             onAskAi = viewModel::askAi,
                         ) {
-                            navHostController.popBackStack()
+                            onBack()
                         }
                     }
                 }

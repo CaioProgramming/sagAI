@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.timeline.data.repository
 
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 import kotlinx.coroutines.flow.Flow
 
 interface TimelineRepository {
@@ -14,4 +15,5 @@ interface TimelineRepository {
 
     suspend fun updateTimeline(timeline: Timeline)
 
+    fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>>
 }

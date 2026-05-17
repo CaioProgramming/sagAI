@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.chapter.data.source
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class ChapterDaoImpl
@@ -16,7 +15,7 @@ class ChapterDaoImpl
 
         override suspend fun saveChapter(chapter: Chapter): Long = chapterDao.saveChapter(chapter)
 
-        override fun updateChapter(chapter: Chapter) = chapterDao.updateChapter(chapter)
+        override suspend fun updateChapter(chapter: Chapter) = chapterDao.updateChapter(chapter)
 
         override suspend fun deleteChapter(chapter: Chapter) {
             chapterDao.deleteChapter(chapter)
@@ -26,7 +25,17 @@ class ChapterDaoImpl
             chapterDao.deleteChapterById(chapterId)
         }
 
+        override fun getChaptersInfoBySaga(sagaId: Int) = chapterDao.getChaptersInfoBySaga(sagaId)
+
         override suspend fun deleteAllChapters() {
             chapterDao.deleteAllChapters()
         }
+
+        override fun getChaptersCount(sagaId: Int) = chapterDao.getChaptersCount(sagaId)
+
+        override fun getChaptersBySaga(sagaId: Int) = chapterDao.getChaptersBySaga(sagaId)
+
+        override suspend fun getChapterContentById(chapterId: Int) = chapterDao.getChapterContentById(chapterId)
+
+        override suspend fun getChapterById(chapterId: Int) = chapterDao.getChapterById(chapterId)
     }

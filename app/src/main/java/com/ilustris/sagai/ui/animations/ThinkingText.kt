@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,7 +20,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 
 /**
  * Text composable with interactive star reveal animation for thought tags
@@ -102,7 +102,7 @@ fun ThinkingText(
                                 textAlpha = 1f
                                 onRevealed()
                             },
-                    starColor = genre.resolveIconColor(),
+                    starColor = MaterialTheme.colorScheme.secondary,
                     starCount = text.length,
                 )
             }

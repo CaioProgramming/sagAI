@@ -29,11 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
 
 class ReviewSummaryPage(
     override val content: SagaContent,
@@ -46,8 +42,8 @@ class ReviewSummaryPage(
         onAction: (ReviewAction) -> Unit,
     ) {
         val genre = content.data.genre
-        val resolvedColor = genre.resolveColor()
-        val resolvedIconColor = genre.resolveIconColor()
+        val resolvedColor = MaterialTheme.colorScheme.primary
+        val resolvedIconColor = MaterialTheme.colorScheme.secondary
         val review = content.data.review ?: return
 
         val stageTypes =
@@ -73,7 +69,7 @@ class ReviewSummaryPage(
                 text = stringResource(id = R.string.review_summary_title),
                 style =
                     MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Black,
                     ),
                 textAlign = TextAlign.Center,
@@ -170,14 +166,14 @@ class ReviewSummaryPage(
                         subtitle = subtitle,
                         titleStyle =
                             MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 fontWeight = FontWeight.Black,
                                 textAlign = TextAlign.Center,
                                 color = colorCombo.second,
                             ),
                         subtitleStyle =
                             MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center,
                                 color = colorCombo.second,
@@ -190,7 +186,8 @@ class ReviewSummaryPage(
                                 .background(
                                     colorCombo.first,
                                     genre.bubble(isNarrator = true),
-                                ).clickable {
+                                )
+                                .clickable {
                                     onAction(ReviewAction.Navigate(stage))
                                 },
                     )

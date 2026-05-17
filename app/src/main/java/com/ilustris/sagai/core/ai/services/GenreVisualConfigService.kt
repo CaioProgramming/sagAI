@@ -19,7 +19,8 @@ class GenreVisualConfigService(
 ) {
     private val cache = mutableMapOf<Genre, GenreVisualConfig?>()
 
-    suspend fun getVisualConfig(genre: Genre): GenreVisualConfig? {
+    suspend fun getVisualConfig(genre: Genre?): GenreVisualConfig? {
+        if (genre == null) return null
         Timber.tag("GenreVisualConfigService").d("Requesting config for $genre")
         if (cache.containsKey(genre) && cache[genre] != null) {
             Timber.tag("GenreVisualConfigService").d("Returning cached config for $genre")

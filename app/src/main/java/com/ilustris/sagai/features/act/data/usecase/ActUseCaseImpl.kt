@@ -2,9 +2,11 @@ package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
@@ -12,19 +14,36 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.act.data.repository.ActRepository
+import com.ilustris.sagai.features.characters.data.model.ArcSourceType
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.home.data.model.currentActInfo
+import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class ActUseCaseImpl
     @Inject
     constructor(
         private val actRepository: ActRepository,
+        private val wikiUseCase: WikiUseCase,
+        private val characterUseCase: CharacterUseCase,
+        private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
         private val remoteConfigService: RemoteConfigService,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -41,8 +60,8 @@ class ActUseCaseImpl
         }
 
         override suspend fun generateAct(
-            saga: SagaContent,
-            actContent: ActContent,
+            saga: SagaMetadata,
+            actContent: ActMetadata,
         ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
@@ -57,6 +76,7 @@ class ActUseCaseImpl
                                 "introduction",
                             ),
                         useCore = true,
+                        blueprintKey = ActPrompts.ACT_CONCLUSION_BLUEPRINT,
                     )!!
 
                 updateAct(
@@ -71,22 +91,26 @@ class ActUseCaseImpl
             }
 
         override fun generateActStream(
-            saga: SagaContent,
-            actContent: ActContent,
-        ) = kotlinx.coroutines.flow.flow {
+            saga: SagaMetadata,
+            actContent: ActMetadata,
+        ) = flow {
             try {
                 val titlePrompt = generateActPrompt(saga)
-                gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>(
-                        prompt = titlePrompt,
-                        filterOutputFields =
-                            listOf(
-                                "id",
-                                "sagaId",
-                                "currentChapterId",
-                                "introduction",
+                reasoningSynthesizerService
+                    .synthesizeReasoning(
+                        gemmaClient
+                            .generateStreaming<GeneratedContent<Act>>(
+                                prompt = titlePrompt,
+                                filterOutputFields =
+                                    listOf(
+                                        "id",
+                                        "sagaId",
+                                        "currentChapterId",
+                                        "introduction",
+                                    ),
+                                useCore = true,
                             ),
-                        useCore = true,
+                        "Generating new act...",
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -103,7 +127,7 @@ class ActUseCaseImpl
                                     )
                                 emit(
                                     StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        GeneratedContent(
                                             updatedAct,
                                             state.data.finalMessage,
                                         ),
@@ -133,64 +157,72 @@ class ActUseCaseImpl
             }
         }
 
-        private suspend fun generateActPrompt(saga: SagaContent): String {
-            val narrativeRules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+        private suspend fun generateActPrompt(sagaMetadata: SagaMetadata): String {
+            remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
+            val sagaId = sagaMetadata.data.id
+            val fullSaga = sagaRepository.getSagaById(sagaId).first() as SagaContent
 
-            val genreConfig = genreConfigService.getGenreConfig(saga.data.genre)
+            genreConfigService.getGenreConfig(sagaMetadata.data.genre)
             return ActPrompts.generateActConclusion(
                 promptService,
-                saga,
-                saga.currentActInfo!!,
-                narrativeRules,
-                genreConfig,
+                fullSaga,
+                fullSaga.acts.find { it.data.id == sagaMetadata.currentActInfo?.data?.id }
+                    ?: fullSaga.acts.last(),
+                genreConfigService.conversationBlueprint(
+                    sagaMetadata.data.genre,
+                ),
             )
         }
 
         override suspend fun generateActIntroduction(
-            saga: SagaContent,
+            saga: SagaMetadata,
             act: Act,
         ) = executeRequest {
-            val isFirst = saga.acts.isEmpty()
-            if (isFirst) null else saga.acts.last()
+            saga.acts.isEmpty()
 
             genreConfigService.getGenreConfig(saga.data.genre)
+            val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
             val prompt =
                 ActPrompts.actIntroductionPrompt(
                     promptService = promptService,
-                    saga = saga,
+                    saga = fullSaga,
                     narrativeRules = remoteConfigService.getNarrativeRules(),
                     conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                 )
 
             val intro =
-                gemmaClient.generate<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
+                gemmaClient.generate<GeneratedContent<String>>(
                     prompt,
                     useCore = true,
+                    blueprintKey = ActPrompts.ACT_INTRODUCTION_BLUEPRINT,
                 )!!
             val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
-            com.ilustris.sagai.core.ai.model
-                .GeneratedContent(updatedAct, intro.finalMessage)
+            GeneratedContent(updatedAct, intro.finalMessage)
         }
 
         override fun generateActIntroductionStream(
-            saga: SagaContent,
+            saga: SagaMetadata,
             act: Act,
-        ) = kotlinx.coroutines.flow.flow {
+        ) = flow {
             try {
+                val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
                 val prompt =
                     ActPrompts.actIntroductionPrompt(
                         promptService = promptService,
-                        saga = saga,
+                        saga = fullSaga,
                         narrativeRules = remoteConfigService.getNarrativeRules(),
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
-
-                gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
-                        prompt = prompt,
-                        requireTranslation = true,
-                        useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                reasoningSynthesizerService
+                    .synthesizeReasoning(
+                        gemmaClient
+                            .generateStreaming<GeneratedContent<String>>(
+                                prompt = prompt,
+                                requireTranslation = true,
+                                useCore = true,
+                                requirement = GemmaClient.ModelRequirement.HIGH,
+                            ),
+                        "Starting a new act...",
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -198,7 +230,7 @@ class ActUseCaseImpl
                                 val updatedAct = updateAct(act.copy(introduction = introContent.data))
                                 emit(
                                     StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        GeneratedContent(
                                             updatedAct,
                                             introContent.finalMessage,
                                         ),
@@ -213,10 +245,124 @@ class ActUseCaseImpl
                             is StreamingState.Reasoning -> {
                                 emit(StreamingState.Reasoning(state.chunk))
                             }
+                        }
                     }
-                }
-        } catch (e: Exception) {
-            emit(StreamingState.Error(e.message ?: "Unknown error"))
+            } catch (e: Exception) {
+                emit(StreamingState.Error(e.message ?: "Unknown error"))
+            }
         }
-    }
+
+        override fun synthesizeActEvolutionStream(
+            saga: SagaContent,
+            actContent: ActContent,
+        ): Flow<StreamingState<GeneratedContent<Act>>> =
+            flow {
+                try {
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
+
+                    val prompt =
+                        ActPrompts.actSynthesisPrompt(
+                            promptService = promptService,
+                            saga = fullSaga,
+                            act = actContent,
+                            narrativeRules = remoteConfigService.getNarrativeRules(),
+                            conversationDirective = conversationDirective,
+                        )
+
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
+                                    prompt = prompt,
+                                    blueprintKey = ActPrompts.ACT_SYNTHESIS_BLUEPRINT,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                ),
+                            "Finishing story act",
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val synthesis = state.data.data
+
+                                    // 1. Update Act details & Narrative Guide
+                                    val updatedAct =
+                                        updateAct(
+                                            actContent.data.copy(
+                                                title = synthesis.actTitle,
+                                                introduction = synthesis.actIntroduction,
+                                                content = synthesis.actContent,
+                                                narrativeGuide = synthesis.narrativeGuide,
+                                                emotionalReview = synthesis.emotionalReview,
+                                            ),
+                                        )
+
+                                    // 2. Save Landmark Wikis
+                                    synthesis.landmarkWikis.forEach { wikiUpdate ->
+                                        val existingWiki =
+                                            fullSaga.wikis.find {
+                                                it.title.equals(
+                                                    wikiUpdate.title,
+                                                    true,
+                                                )
+                                            }
+                                        val wikiToSave =
+                                            Wiki(
+                                                id = existingWiki?.id ?: 0,
+                                                title = wikiUpdate.title,
+                                                content = wikiUpdate.content,
+                                                type = wikiUpdate.type,
+                                                emojiTag = wikiUpdate.emojiTag,
+                                                sagaId = saga.data.id,
+                                                isFeatured = true,
+                                            )
+                                        if (existingWiki != null) {
+                                            wikiUseCase.updateWiki(wikiToSave)
+                                        } else {
+                                            wikiUseCase.saveWiki(wikiToSave)
+                                        }
+                                    }
+
+                                    // 3. Save Character Arcs
+                                    synthesis.characterArcs.forEach { arcUpdate ->
+                                        val character = saga.findCharacter(arcUpdate.characterName)
+                                        character?.let {
+                                            characterUseCase.insertCharacterArc(
+                                                CharacterArc(
+                                                    characterId = it.data.id,
+                                                    sourceId = actContent.data.id,
+                                                    sourceType = ArcSourceType.ACT,
+                                                    title = arcUpdate.arcTitle,
+                                                    content = arcUpdate.arcContent,
+                                                ),
+                                            )
+                                        }
+                                    }
+                                    synthesis.finalWorldState?.let {
+                                        sagaRepository.updateSaga(saga.data.copy(worldState = it))
+                                    }
+
+                                    emit(
+                                        StreamingState.Success(
+                                            GeneratedContent(
+                                                updatedAct,
+                                                state.data.finalMessage,
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(StreamingState.Error(state.message, state.throwable))
+                                }
+
+                                is StreamingState.Reasoning -> {
+                                    emit(StreamingState.Reasoning(state.chunk))
+                                }
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Act synthesis failed", e))
+                }
+            }
     }

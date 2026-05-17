@@ -29,25 +29,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import kotlin.random.Random
 
@@ -100,19 +89,18 @@ private fun rememberRandomShape(): Shape = remember { RandomTrapezoidShape() }
 
 @Composable
 fun GTAStyleCover(
-    sagaContent: SagaContent,
+    saga: SagaContent,
     title: String,
     subtitle: String,
     caption: String,
 ) {
-    val saga = sagaContent.data
-    val chapters = sagaContent.flatChapters().map { it.data }
-    val mainIcon = saga.icon
+    val chapters = saga.flatChapters().map { it.data }
+    val mainIcon = saga.data.icon
     val chapterIcons = chapters.map { it.coverImage }
-    val allIcons = remember { (listOf(mainIcon) + chapterIcons) }
-    val genre = saga.genre
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val allIcons = remember(saga) { (listOf(mainIcon) + chapterIcons) }
+    val genre = saga.data.genre
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     Box(
         modifier =
             Modifier
@@ -161,7 +149,7 @@ fun GTAStyleCover(
                 modifier = Modifier.fillMaxWidth(),
                 style =
                     MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = saga.genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
                         color = resolvedIconColor,
@@ -175,7 +163,7 @@ fun GTAStyleCover(
             )
 
             genre.stylisedText(
-                saga.title,
+                saga.data.title,
                 fontSize = MaterialTheme.typography.headlineMedium.fontSize,
             )
 
@@ -184,7 +172,7 @@ fun GTAStyleCover(
                 modifier = Modifier.fillMaxWidth(),
                 style =
                     MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = saga.genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Medium,
                         fontStyle = FontStyle.Italic,
@@ -202,49 +190,10 @@ fun GTAStyleCover(
                 caption,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
             )
             SagaTitle(textStyle = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(4.dp))
         }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 600)
-@Composable
-fun GTAStyleCoverPreview() {
-    val saga =
-        Saga(
-            id = 1,
-            title = "Cosmic Odyssey",
-            icon = "https://picsum.photos/seed/saga/800/600",
-            genre = Genre.SPACE_OPERA,
-        )
-    val chapters =
-        (1..9).map {
-            Chapter(
-                id = it,
-                title = "Chapter $it",
-                coverImage = "https://picsum.photos/seed/chapter$it/400/300",
-                actId = 1,
-            )
-        }
-    val sagaContent =
-        SagaContent(
-            data = saga,
-            acts =
-                listOf(
-                    ActContent(
-                        data = Act(id = 1, title = "Act 1", sagaId = 1),
-                        chapters =
-                            chapters.map {
-                                ChapterContent(data = it, events = emptyList())
-                            },
-                    ),
-                ),
-        )
-
-    SagAITheme {
-        GTAStyleCover(sagaContent = sagaContent, "No one gets to see this yet", "Your destiny awaits", "A universe in your hands.")
     }
 }

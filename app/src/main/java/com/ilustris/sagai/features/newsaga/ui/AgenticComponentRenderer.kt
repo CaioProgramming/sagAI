@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.newsaga.ui
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.scaleIn
@@ -57,13 +56,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveUrl
 import com.ilustris.sagai.features.newsaga.data.usecase.AgenticUIComponent
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
@@ -72,9 +71,8 @@ import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.CosmicEditorSheet
 import com.ilustris.sagai.ui.components.CosmicInputField
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
 
 val LocalSharedTransitionScope =
@@ -113,6 +111,9 @@ fun AgenticUIComponent.Render(
                     lockedSaga,
                     lockedCharacter,
                     isAgentLoading,
+                    currentAgentMessage =
+                        (this@Render as? AgenticUIComponent.AgentMessage)?.text
+                            ?: "",
                     onAction,
                 )
             }
@@ -246,12 +247,14 @@ private fun IdeaPitchCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val genre = idea.genre
-    val shape = MaterialTheme.shapes.large
-    val color = genre.resolveColor(visual)
-    val gradient = Brush.verticalGradient(genre.colorPalette(visual))
+    SagAITheme(genre = idea.genre) {
+        val genre = idea.genre
+        val activeVisual = LocalGenreVisualConfig.current ?: visual
+        val shape = MaterialTheme.shapes.large
+        val color = genre.resolveColor(activeVisual)
+        val gradient = Brush.verticalGradient(genre.colorPalette(activeVisual))
 
-    Column(
+        Column(
         modifier =
             modifier
                 .padding(8.dp)
@@ -260,7 +263,8 @@ private fun IdeaPitchCard(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = gradient
-                }.border(1.dp, genre.resolveColor(), shape)
+                }
+                .border(1.dp, MaterialTheme.colorScheme.primary, shape)
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .clickable { onSelect() }
                 .padding(8.dp),
@@ -288,6 +292,7 @@ private fun IdeaPitchCard(
             modifier = Modifier.fillMaxWidth(),
         )
     }
+    }
 }
 
 @Composable
@@ -298,11 +303,13 @@ private fun LockedSagaCard(
     onUnlock: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val genre = draft.genre
-    val shape = genre.shape(visualConfig)
-    val brush = Brush.verticalGradient(genre.colorPalette(visualConfig))
-    val genreColor = genre.resolveColor(visualConfig)
-    val iconColor = genre.resolveIconColor()
+    SagAITheme(genre = draft.genre) {
+        val genre = draft.genre
+        val activeConfig = LocalGenreVisualConfig.current ?: visualConfig
+        val shape = genre.shape(activeConfig)
+        val brush = Brush.verticalGradient(genre.colorPalette(activeConfig))
+        val genreColor = genre.resolveColor(activeConfig)
+        val iconColor = MaterialTheme.colorScheme.secondary
     var showEditor by remember { mutableStateOf(false) }
 
     Box(
@@ -315,7 +322,8 @@ private fun LockedSagaCard(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = brush
-                }.border(1.dp, genreColor.copy(alpha = 0.1f), shape)
+                }
+                .border(1.dp, genreColor.copy(alpha = 0.1f), shape)
                 .clip(shape)
                 .background(genre.color, shape)
                 .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
@@ -365,7 +373,7 @@ private fun LockedSagaCard(
                 text = draft.title,
                 style =
                     MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     ),
@@ -379,7 +387,7 @@ private fun LockedSagaCard(
                 text = draft.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 modifier = Modifier.fillMaxWidth(),
@@ -418,6 +426,7 @@ private fun LockedSagaCard(
             },
             onDismiss = { showEditor = false },
         )
+        }
     }
 }
 
@@ -499,8 +508,9 @@ private fun CharacterPitchCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    SagAITheme(genre = genreVisuals.first) {
     val genre = genreVisuals.first
-    val visualConfig = genreVisuals.second
+        val visualConfig = LocalGenreVisualConfig.current ?: genreVisuals.second
     val placeholders = LocalGenderPlaceholders.current
     val silhouetteUrl = placeholders.resolveUrl(genre, persona.gender)
     val shape = genre.shape(visualConfig)
@@ -516,15 +526,18 @@ private fun CharacterPitchCard(
                     this.spread = 5f
                     this.brush =
                         Brush.verticalGradient(genre.colorPalette(visualConfig))
-                }.border(
+                }
+                .border(
                     1.dp,
                     genreColor.copy(alpha = 0.1f),
                     shape,
-                ).clip(shape)
+                )
+                .clip(shape)
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     shape,
-                ).clickable { onSelect() },
+                )
+                .clickable { onSelect() },
     ) {
         Box(
             modifier =
@@ -564,7 +577,7 @@ private fun CharacterPitchCard(
                 text = persona.name,
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.Bold,
                     ),
                 maxLines = 1,
@@ -574,7 +587,7 @@ private fun CharacterPitchCard(
                 text = persona.gender.name.lowercase(),
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = genreColor,
                     ),
             )
@@ -582,12 +595,13 @@ private fun CharacterPitchCard(
                 text = persona.description,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                 maxLines = 3,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
+        }
         }
     }
 }
@@ -600,12 +614,13 @@ private fun LockedCharacterCard(
     onUnlock: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    SagAITheme(genre = genreVisuals.first) {
     val genre = genreVisuals.first
-    val visualConfig = genreVisuals.second
+        val visualConfig = LocalGenreVisualConfig.current ?: genreVisuals.second
     val shape = genre.shape(visualConfig)
     val color = genre.resolveColor(visualConfig)
     val brush = Brush.verticalGradient(genre.colorPalette(visualConfig))
-    val iconColor = genre.resolveIconColor()
+    val iconColor = MaterialTheme.colorScheme.secondary
     var showEditor by remember { mutableStateOf(false) }
 
     val placeholders = LocalGenderPlaceholders.current
@@ -621,7 +636,8 @@ private fun LockedCharacterCard(
                     this.radius = 10f
                     this.spread = 5f
                     this.brush = brush
-                }.border(1.dp, color.copy(alpha = 0.1f), shape)
+                }
+                .border(1.dp, color.copy(alpha = 0.1f), shape)
                 .clip(shape)
                 .background(genre.color, shape)
                 .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
@@ -684,7 +700,7 @@ private fun LockedCharacterCard(
                 style =
                     MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     ),
@@ -698,7 +714,7 @@ private fun LockedCharacterCard(
                 text = persona.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 modifier = Modifier.fillMaxWidth(),
@@ -736,7 +752,8 @@ private fun LockedCharacterCard(
                 )
             },
             onDismiss = { showEditor = false },
-        )
+            )
+    }
     }
 }
 
@@ -746,6 +763,7 @@ fun LibraryPager(
     lockedSaga: SagaDraft?,
     lockedCharacter: CharacterInfo?,
     isAgentLoading: Boolean,
+    currentAgentMessage: String? = null,
     onAction: (AgenticAction) -> Unit,
 ) {
     val pagerState =
@@ -776,12 +794,15 @@ fun LibraryPager(
             val bookEntry = books[pageIdx]
             val isOpened = bookEntry.first.draft.id == lockedSaga?.id
 
+            SagAITheme(genre = bookEntry.first.draft.genre) {
+                val bookVisual = LocalGenreVisualConfig.current ?: bookEntry.second
             CosmicBook(
                 book = bookEntry.first,
-                visualConfig = bookEntry.second,
+                    visualConfig = bookVisual,
                 isOpened = isOpened,
                 lockedCharacter = lockedCharacter,
                 isLoading = isAgentLoading && (lockedSaga?.id == bookEntry.first.draft.id),
+                reasoning = if (isAgentLoading && (lockedSaga?.id == bookEntry.first.draft.id)) currentAgentMessage else null,
                 onToggle = {
                     if (isOpened) {
                         onAction(AgenticAction.UnlockSaga)
@@ -794,7 +815,8 @@ fun LibraryPager(
                     Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
-            )
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -871,10 +893,12 @@ private fun EchoBubbleCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val genre = echo.genre
-    val color = genre.resolveColor(visualConfig)
+    SagAITheme(genre = echo.genre) {
+        val genre = echo.genre
+        val activeVisual = LocalGenreVisualConfig.current ?: visualConfig
+        val color = genre.resolveColor(activeVisual)
     val shape = MaterialTheme.shapes.extraLarge
-    val genreBrush = Brush.linearGradient(genre.colorPalette(visualConfig))
+        val genreBrush = Brush.linearGradient(genre.colorPalette(activeVisual))
 
     Row(
         modifier =
@@ -885,11 +909,13 @@ private fun EchoBubbleCard(
                     brush = genreBrush
                     radius = 5f
                     spread = 5f
-                }.clip(shape)
+                }
+                .clip(shape)
                 .background(MaterialTheme.colorScheme.background)
                 .clickable {
                     onClick()
-                }.padding(8.dp),
+                }
+                .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -904,6 +930,7 @@ private fun EchoBubbleCard(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
+    }
     }
 }
 

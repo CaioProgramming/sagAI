@@ -18,8 +18,6 @@ data class GenreConfig(
     val appearanceGuidelines: String = "",
     @SerializedName("colorPalette")
     val colorPalette: String = "",
-    @SerializedName("conversationDirective")
-    val conversationDirective: String = "",
     @SerializedName("nameDirective")
     val nameDirective: String = "",
     @SerializedName("reviewerStrictness")

@@ -32,33 +32,29 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 
 @Composable
 fun CharacterCard(
     character: CharacterContent,
-    sagaContent: SagaContent,
+    saga: Saga,
     modifier: Modifier = Modifier,
     segmentedImage: Bitmap? = null,
     originalImage: Bitmap? = null,
     shareText: ShareText? = null,
     showWatermark: Boolean = false,
 ) {
-    val genre = remember { sagaContent.data.genre }
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val genre = remember(saga) { saga.genre }
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     val characterColor =
         remember(character, resolvedColor) { character.data.hexColor.hexToColor() ?: resolvedColor }
 
@@ -83,7 +79,7 @@ fun CharacterCard(
                     modifier = Modifier.align(Alignment.TopCenter),
                     style =
                         MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Center,
                             brush =
                                 Brush.verticalGradient(
@@ -102,7 +98,7 @@ fun CharacterCard(
                 modifier = Modifier.align(Alignment.Center),
                 style =
                     MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = resolvedIconColor,
                         textAlign = TextAlign.Center,
                         shadow =
@@ -146,7 +142,7 @@ fun CharacterCard(
                     shareText?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.labelLarge.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = resolvedIconColor,
                             textAlign = TextAlign.Center,
                             shadow =
@@ -164,7 +160,7 @@ fun CharacterCard(
                             .fillMaxWidth(),
                     style =
                         MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             textAlign = TextAlign.Center,
                             brush =
                                 Brush.verticalGradient(
@@ -182,7 +178,7 @@ fun CharacterCard(
                     shareText?.text ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = resolvedIconColor,
                             textAlign = TextAlign.Center,
                             fontStyle = FontStyle.Italic,
@@ -210,7 +206,7 @@ private fun ShareBottomWaterMark(
     shareText: ShareText?,
     modifier: Modifier = Modifier,
 ) {
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     Column(modifier) {
         Image(
             painter = painterResource(R.drawable.ic_spark),
@@ -226,7 +222,7 @@ private fun ShareBottomWaterMark(
             shareText?.caption ?: emptyString(),
             style =
                 MaterialTheme.typography.labelMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     color = resolvedIconColor,
                 ),
             modifier = Modifier.align(Alignment.CenterHorizontally),

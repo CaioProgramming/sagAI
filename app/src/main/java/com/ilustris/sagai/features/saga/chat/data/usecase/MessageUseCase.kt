@@ -2,8 +2,7 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -15,8 +14,12 @@ import kotlinx.coroutines.flow.Flow
 interface MessageUseCase {
     suspend fun getMessages(sagaId: Int): Flow<List<MessageContent>>
 
+    fun getMessagesPagingSource(sagaId: Int): androidx.paging.PagingSource<Int, MessageContent>
+
+    fun getMessagesCount(sagaId: Int): Flow<Int>
+
     suspend fun saveMessage(
-        saga: SagaContent,
+        saga: SagaMetadata,
         message: Message,
         isFromUser: Boolean,
         sceneSummary: SceneSummary?,
@@ -27,7 +30,7 @@ interface MessageUseCase {
     suspend fun getLastMessage(sagaId: Int): Message?
 
     suspend fun generateMessage(
-        saga: SagaContent,
+        saga: SagaMetadata,
         message: MessageContent,
         sceneSummary: SceneSummary?,
     ): Flow<StreamingState<AIReply>>
@@ -39,35 +42,35 @@ interface MessageUseCase {
     fun isInDebugMode(): Boolean
 
     suspend fun checkMessageTypo(
-        saga: SagaContent,
+        saga: SagaMetadata,
         message: String,
     ): RequestResult<TypoFix?>
 
-    suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?>
+    suspend fun getSceneContext(saga: SagaMetadata): RequestResult<SceneSummary?>
 
     suspend fun generateReaction(
-        saga: SagaContent,
+        saga: SagaMetadata,
         message: Message,
         sceneSummary: SceneSummary?,
     ): RequestResult<Unit>
 
     suspend fun analyzeMessageTone(
-        saga: SagaContent,
+        saga: SagaMetadata,
         message: Message,
         isFromUser: Boolean,
     ): RequestResult<EmotionalTone?>
 
     suspend fun generateAudio(
-        saga: SagaContent,
+        saga: SagaMetadata,
         savedMessage: Message,
-        characterReference: CharacterContent?,
+        characterReference: com.ilustris.sagai.features.characters.data.model.Character?,
     ): RequestResult<Unit>
 
     suspend fun generateExtraContent(
-        saga: SagaContent,
+        saga: SagaMetadata,
         message: Message,
         sceneSummary: SceneSummary?,
-        characterReference: CharacterContent?,
+        characterReference: com.ilustris.sagai.features.characters.data.model.Character?,
         generateAudio: Boolean,
         isFromUser: Boolean,
     )

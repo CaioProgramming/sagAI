@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.bodyFont
 
 @Composable
 fun DeleteConfirmationDialog(
@@ -43,7 +42,8 @@ fun DeleteConfirmationDialog(
                         .background(
                             MaterialTheme.colorScheme.surface,
                             shape = genre.bubble(isNarrator = true),
-                        ).padding(16.dp),
+                        )
+                        .padding(16.dp),
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -54,7 +54,7 @@ fun DeleteConfirmationDialog(
                         text = stringResource(R.string.delete_message_title),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                     )
 
@@ -62,7 +62,7 @@ fun DeleteConfirmationDialog(
                         text = stringResource(R.string.delete_message_description),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             ),
                     )
 
@@ -83,7 +83,7 @@ fun DeleteConfirmationDialog(
                                 text = stringResource(R.string.cancel),
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
                             )
                         }
@@ -102,7 +102,7 @@ fun DeleteConfirmationDialog(
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
                             )
                         }

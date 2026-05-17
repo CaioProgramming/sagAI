@@ -24,7 +24,7 @@ class NewCharacterUseCaseImpl
                         promptService,
                         sagaContext,
                     ),
-                )!!
+                blueprintKey = CharacterPrompts.CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT)!!
             }
 
         override suspend fun replyCharacterForm(
@@ -49,7 +49,7 @@ class NewCharacterUseCaseImpl
                             sagaContext = sagaContext,
                         ),
                         requireTranslation = true,
-                    )!!
+                    blueprintKey = CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT)!!
 
                 response
             }
@@ -65,7 +65,7 @@ class NewCharacterUseCaseImpl
                         characterInfo,
                         newGenre,
                     ),
-                )!!
+                blueprintKey = CharacterPrompts.CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT)!!
             }
 
         override suspend fun refineCharacterDraft(
@@ -88,6 +88,6 @@ class NewCharacterUseCaseImpl
                         appearanceGuidelines,
                     ),
                     requireTranslation = true,
-                )!!
+                blueprintKey = CharacterPrompts.CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT)!!
             }
     }

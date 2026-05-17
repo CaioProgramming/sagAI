@@ -18,22 +18,27 @@ interface ActUseCase {
     suspend fun deleteActsForSaga(sagaId: Int)
 
     suspend fun generateAct(
-        saga: SagaContent,
-        actContent: ActContent,
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        actContent: com.ilustris.sagai.features.home.data.model.ActMetadata,
     ): RequestResult<Act>
 
     fun generateActStream(
-        saga: SagaContent,
-        actContent: ActContent,
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        actContent: com.ilustris.sagai.features.home.data.model.ActMetadata,
     ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
 
     suspend fun generateActIntroduction(
-        saga: SagaContent,
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
         act: Act,
     ): RequestResult<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>
 
     fun generateActIntroductionStream(
-        saga: SagaContent,
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
         act: Act,
+    ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
+
+    fun synthesizeActEvolutionStream(
+        saga: SagaContent,
+        actContent: ActContent,
     ): Flow<com.ilustris.sagai.core.ai.StreamingState<com.ilustris.sagai.core.ai.model.GeneratedContent<Act>>>
 }

@@ -11,32 +11,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.review.ui.DynamicCard
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.darkerPalette
 import kotlinx.coroutines.delay
 
 @Composable
 fun RecapHeroCard(
-    saga: SagaContent,
+    saga: Saga,
+    chaptersCount: Int,
+    charactersCount: Int,
+    messagesCount: Int,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
     val stats =
         listOf(
-            stringResource(R.string.recap_messages_sent, saga.flatMessages().size),
-            stringResource(R.string.recap_characters_found, saga.characters.size),
-            stringResource(R.string.recap_chapters_lived, saga.flatChapters().size),
+            stringResource(R.string.recap_messages_sent, messagesCount),
+            stringResource(R.string.recap_characters_found, charactersCount),
+            stringResource(R.string.recap_chapters_lived, chaptersCount),
             stringResource(R.string.recap_revisit_now),
         )
     var currentIndex by remember { mutableStateOf(0) }
@@ -49,35 +48,32 @@ fun RecapHeroCard(
     }
 
     val shape =
-        saga.data.genre.bubble(
+        saga.genre.bubble(
             tailAlignment = BubbleTailAlignment.BottomRight,
             tailWidth = 0.dp,
             tailHeight = 0.dp,
         )
 
-    val genre = saga.data.genre
+    saga.genre
 
     DynamicCard(
         stringResource(R.string.recap_your_journey),
         stats.last(),
         titleStyle =
             MaterialTheme.typography.headlineSmall.copy(
-                fontFamily = saga.data.genre.headerFont(),
-                color = genre.resolveIconColor(),
+                color = MaterialTheme.colorScheme.onPrimary,
             ),
         subtitleStyle =
             MaterialTheme.typography.labelMedium.copy(
-                fontFamily = saga.data.genre.bodyFont(),
-                color = genre.resolveIconColor(),
+                color = MaterialTheme.colorScheme.onPrimary,
             ),
-        lineColor = genre.resolveIconColor(),
+        lineColor = MaterialTheme.colorScheme.onPrimary,
         modifier =
             modifier
                 .background(
-                    genre.colorPalette().random(),
+                    Brush.verticalGradient(MaterialTheme.colorScheme.primary.darkerPalette(factor = .3f)),
                     shape,
-                )
-                .clip(shape)
+                ).clip(shape)
                 .clickable {
                     onClick()
                 },

@@ -29,6 +29,9 @@ data class Wiki(
     @ColumnInfo(index = true)
     val sagaId: Int,
     val timelineId: Int? = null,
+    val isFeatured: Boolean = false,
+    @ColumnInfo(index = true)
+    val chapterId: Int? = null,
 )
 
 enum class WikiType {

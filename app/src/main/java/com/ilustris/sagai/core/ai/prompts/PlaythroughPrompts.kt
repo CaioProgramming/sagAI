@@ -1,21 +1,30 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import com.ilustris.sagai.features.playthrough.data.model.SagaPlaythrough
 
 object PlaythroughPrompts {
-    fun extractPlaythroughReview(sagas: List<SagaContent>) =
+    fun extractPlaythroughReview(sagas: List<SagaPlaythrough>) =
         buildString {
             val emotionalSummary =
                 buildString {
-                    appendLine(
-                        sagas.joinToString {
-                            buildString {
-                                append(it.emotionalSummary())
-                                appendLine("playTimeMs: ${it.data.playTimeMs}")
+                    sagas.forEach { sagaPlaythrough ->
+                        val saga = sagaPlaythrough.data
+                        appendLine("Saga: ${saga.title} (${saga.genre})")
+                        appendLine("Playtime: ${saga.playTimeMs}ms")
+                        if (saga.isEnded && saga.emotionalProfile != null) {
+                            appendLine("Final Emotional Profile: ${saga.emotionalProfile.emotionalContent}")
+                            appendLine("Dominant Tone: ${saga.emotionalProfile.dominantTone}")
+                        } else {
+                            appendLine("Ongoing Story Emotional Patterns:")
+                            sagaPlaythrough.acts.forEach { actPlaythrough ->
+                                actPlaythrough.data.emotionalReview?.let { appendLine("- Act Review: $it") }
+                                actPlaythrough.chapters.forEach { chapter ->
+                                    chapter.emotionalReview?.let { appendLine("  - Chapter Review: $it") }
+                                }
                             }
-                        },
-                    )
+                        }
+                        appendLine()
+                    }
                 }
             appendLine("You are an insightful narrative psychologist who reads between the lines of a player's storytelling choices.")
             appendLine(

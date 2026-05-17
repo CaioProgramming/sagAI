@@ -1,11 +1,13 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.Flow
 
 sealed class ReviewState {
@@ -23,35 +25,26 @@ sealed class ReviewState {
 }
 
 interface SagaDetailUseCase {
-    suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga>
+    suspend fun regenerateSagaIcon(sagaId: Int): RequestResult<Saga>
+
+    fun regenerateSagaIconStream(sagaId: Int): Flow<StreamingState<Saga>>
 
     suspend fun fetchSaga(sagaId: Int): Flow<SagaContent?>
+
+    fun getSagaResume(sagaId: Int): Flow<SagaDetailResume>
 
     suspend fun deleteSaga(saga: Saga)
 
     suspend fun resetReview(content: SagaContent)
 
-    suspend fun createEmotionalConclusion(currentSaga: SagaContent): RequestResult<Saga>
+    suspend fun createEmotionalConclusion(sagaId: Int): RequestResult<Saga>
 
     suspend fun generateTimelineContent(
-        saga: SagaContent,
+        saga: SagaMetadata,
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
 
-    suspend fun reviewWiki(
-        currentsaga: SagaContent,
-        wikis: List<Wiki>,
-    )
-
     fun getBackupEnabled(): Flow<Boolean>
 
-    suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
-
-    suspend fun generateSagaResume(saga: SagaContent): RequestResult<String>
-
-    suspend fun generateCharactersInsight(saga: SagaContent): RequestResult<String>
-
-    suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String>
-
-    suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String>
+    suspend fun generateStoryBriefing(sagaId: Int): RequestResult<StoryDailyBriefing>
 }

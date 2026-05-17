@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 interface MessageRepository {
     suspend fun getMessages(sagaId: Int): Flow<List<MessageContent>>
 
+    fun getMessagesPagingSource(sagaId: Int): androidx.paging.PagingSource<Int, MessageContent>
+
     suspend fun saveMessage(message: Message): Message
 
     suspend fun deleteMessage(messageId: Long)
@@ -16,4 +18,6 @@ interface MessageRepository {
     suspend fun updateMessage(message: Message): Message
 
     suspend fun getLastMessage(sagaId: Int): Message?
+
+    fun getMessagesCount(sagaId: Int): Flow<Int>
 }

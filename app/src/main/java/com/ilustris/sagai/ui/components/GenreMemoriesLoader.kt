@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -33,7 +34,6 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.ui.theme.cornerSize
 import kotlinx.coroutines.delay
 
@@ -73,7 +73,9 @@ fun GenreMemoriesLoader(
             items(configs, key = { it }) { genre ->
                 GenreMemoryItem(
                     genreConfig = genre,
-                    modifier = Modifier.padding(4.dp).animateItem(),
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .animateItem(),
                 )
             }
         }
@@ -101,7 +103,7 @@ private fun GenreMemoryItem(
     CompositionLocalProvider(
         LocalGenreVisualConfig provides genreConfig.second,
     ) {
-        val color = genre.resolveColor()
+        val color = MaterialTheme.colorScheme.primary
         val shape = RoundedCornerShape(genre.cornerSize())
 
         AsyncImage(
@@ -115,7 +117,8 @@ private fun GenreMemoryItem(
                         this.color = color.copy(alpha = glowAlpha)
                         this.radius = 15f
                         this.spread = 5f
-                    }.clip(shape)
+                    }
+                    .clip(shape)
                     .background(color)
                     .fillMaxSize(),
         )

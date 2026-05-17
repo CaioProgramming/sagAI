@@ -1,9 +1,13 @@
 {
-  "version": 5,
+  "version": 4,
   "categories": [
     {
       "title": "Welcome to Sagas",
       "items": [
+        {
+          "question": "Wait, I thought this was 'SagAI'?",
+          "answer": "Good eye! We've evolved. 'Sagas' is the final, epic name for our platform. It's the same AI-powered storytelling you love, just with a name that better fits the legendary tales you're creating."
+        },
         {
           "question": "What exactly is Sagas?",
           "answer": "Sagas is your personal AI co-author and Art Director. You don't just 'play' a game; you live an evolving story across different genres, where your choices literally shape the world, characters, and even the art you see."
@@ -22,24 +26,12 @@
           "answer": "Stories are divided into Acts and Chapters. As you interact, the AI recaps previous events into a 'Saga Resume' and generates new introductions to keep the narrative tight. You can also manually start a 'New Chapter' to summarize current events and move to the next phase of your journey."
         },
         {
-          "question": "How do I express actions or thoughts?",
-          "answer": "You can use tags! Type <action>jumps</action> for physical moves, <think>secrets</think> for internal monologue, or <narrator>meanwhile</narrator> for world details. Or just use the buttons above your keyboard!"
-        },
-        {
-          "question": "Can I edit my messages?",
-          "answer": "Yes, but only the most recent one. This keeps the timeline intact and prevents 'time travel' paradoxes where changing the past would confuse the AI's current response."
-        },
-        {
-          "question": "Can I delete messages?",
-          "answer": "Absolutely. You can delete any message to clean up your story. Just tap on the message options. If you delete the last message, you can try again!"
+          "question": "What's the difference between 'Talk', 'Think', and 'Action'?",
+          "answer": "'Talk' is what your character says aloud to NPCs. 'Think' is internal—only you (and the narrator) know these secrets. 'Action' describes physical movements that change the scene. NPCs react differently based on which one you choose!"
         },
         {
           "question": "Can I add more characters?",
           "answer": "Yes! Use the 'New Character' action to introduce allies, rivals, or mysterious strangers. You can even describe their appearance and backstory, and the AI will remember them throughout the saga."
-        },
-        {
-          "question": "What is Saga Wrapped?",
-          "answer": "When your story reaches a conclusion, we generate a special 'Saga Wrapped' — a stylish, shareable retrospective of your journey, your character's stats, and your best moments."
         }
       ]
     },
@@ -61,10 +53,6 @@
         {
           "question": "Why is the top of the images usually empty?",
           "answer": "That's by design! We want your saga covers and character cards to look amazing as wallpapers. The 'Saga Master' keeps the main subject in the lower 2/3 of the frame so your phone's clock and notifications don't block the art."
-        },
-        {
-          "question": "What are those full-screen story transitions?",
-          "answer": "Those are Cinematic Milestones! They mark major shifts in your story, like new Acts or Chapters, giving you a moment to breathe and appreciate the evolving narrative with punchy, AI-curated summaries."
         }
       ]
     },

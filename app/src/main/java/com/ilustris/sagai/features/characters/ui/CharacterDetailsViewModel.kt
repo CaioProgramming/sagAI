@@ -3,35 +3,27 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.usecase.PaletteUseCase
-import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
+import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
+import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
-import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class CharacterDetailsViewModel
     @Inject
     constructor(
-        private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val characterUseCase: CharacterUseCase,
-        private val billingService: BillingService,
         private val paletteUseCase: PaletteUseCase,
     ) : ViewModel() {
-        val saga = MutableStateFlow<SagaContent?>(null)
-        val character = MutableStateFlow<CharacterContent?>(null)
+        val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
@@ -39,63 +31,110 @@ class CharacterDetailsViewModel
         val imageReasoning = MutableStateFlow<String?>(null)
 
         val characterResume = MutableStateFlow<String?>(null)
+        val characterArcs = MutableStateFlow<List<CharacterArc>>(emptyList())
+        val characterDetailState = MutableStateFlow<CharacterDetailState?>(null)
         val isSummarizing = MutableStateFlow(false)
+        val isEnriching = MutableStateFlow(false)
         val showPremiumSheet = MutableStateFlow(false)
+
+        /** Tracks the currently loaded character to prevent stale data from previous loads. */
+        private var currentCharacterId: Int? = null
+
+        /** Job for the active character detail collection — cancelled on re-entry. */
+        private var detailJob: Job? = null
+
+        /** Job for character arcs collection — cancelled on re-entry. */
+        private var arcsJob: Job? = null
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
-        fun loadSagaAndCharacter(
-            sagaId: String?,
-            characterId: Int?,
-        ) {
-            if (sagaId == null) return
+        fun loadCharacterDetails(characterId: Int?) {
             if (characterId == null) return
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect { sagaContent ->
-                    saga.value = sagaContent
-                    val foundCharacter =
-                        sagaContent?.characters?.find { char -> char.data.id == characterId.toInt() }
-                    character.value = foundCharacter
-                    messageCount.value =
-                        sagaContent
-                            ?.flatMessages()
-                            ?.filterCharacterMessages(foundCharacter?.data)
-                            ?.size ?: 0
+            // Guard: skip if we're already loading this exact character.
+            if (characterId == currentCharacterId) return
 
-                    if (sagaContent != null && foundCharacter != null && characterResume.value == null) {
-                        generateResume(sagaContent, foundCharacter)
+            // Cancel any in-flight collection from a previous character.
+            detailJob?.cancel()
+            arcsJob?.cancel()
+            currentCharacterId = characterId
+
+            // Reset state so the UI never flashes stale data from the old character.
+            characterDetailData.value = null
+            characterResume.value = null
+            characterArcs.value = emptyList()
+            characterDetailState.value = null
+            imagePalette.value = null
+            messageCount.value = 0
+
+            arcsJob =
+                viewModelScope.launch(Dispatchers.IO) {
+                    characterUseCase.getCharacterArcs(characterId).collect { arcs ->
+                        characterArcs.value = arcs
                     }
                 }
+
+            detailJob =
+                viewModelScope.launch(Dispatchers.IO) {
+                    characterUseCase.getCharacterDetailData(characterId).collect { data ->
+                        characterDetailData.value = data
+                        data?.let {
+                            messageCount.value = it.messageCount
+                            if (characterResume.value == null) {
+                                generateResume(it)
+                            }
+                            if (characterDetailState.value == null) {
+                                loadEnrichment(it)
+                            }
+                            if (imagePalette.value == null && it.character.image.isNotEmpty()) {
+                                extractPalette(it.character.image)
+                            }
+                        }
+                    }
+                }
+        }
+
+        private fun extractPalette(imageUrl: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val palette = paletteUseCase.extractPalette(imageUrl)
+                imagePalette.value = palette.getSuccess()
             }
         }
 
-        private fun generateResume(
-            sagaContent: SagaContent,
-            characterContent: CharacterContent,
-        ) {
-            characterResume.value = characterContent.data.backstory
+        private fun loadEnrichment(detailData: CharacterDetailData) {
             viewModelScope.launch(Dispatchers.IO) {
-                isSummarizing.value = true
-                characterUseCase
-                    .generateCharacterResume(characterContent, sagaContent)
-                    .onSuccessAsync {
-                        characterResume.emit(it)
-                        isSummarizing.value = false
-                    }.onFailure {
-                        isSummarizing.value = false
-                        characterResume.value = characterContent.data.backstory
-                        if (it is BillingService.PremiumException) {
-                            showPremiumSheet.value = true
-                        }
-                        Timber.e("Error generating character resume: ${it.message}")
-                    }
+            /* isEnriching.value = true
+             characterUseCase
+                 .enrichCharacter(detailData.character, detailData.sagaInfo.toSaga())
+                 .onSuccessAsync {
+                     characterDetailState.emit(it)
+                     isEnriching.value = false
+                 }
+                 .onFailure {
+                     isEnriching.value = false
+                 }*/
             }
+        }
+
+        private fun generateResume(detailData: CharacterDetailData) {
+            characterResume.value =
+                buildString {
+                    appendLine(detailData.character.backstory)
+                }
+        /*viewModelScope.launch(Dispatchers.IO) {
+            isSummarizing.value = true
+            characterUseCase
+                .generateCharacterResume(detailData.character, detailData.sagaInfo.toSaga())
+                .onSuccessAsync {
+                    characterResume.emit(it)
+                    isSummarizing.value = false
+                }
+        }*/
         }
 
         fun regenerate(
-            sagaContent: SagaContent,
+            sagaInfo: CharacterSagaInfo,
             selectedCharacter: Character,
         ) {
             isGenerating.value = true
@@ -106,7 +145,7 @@ class CharacterDetailsViewModel
                 characterUseCase
                     .generateCharacterImageStream(
                         selectedCharacter,
-                        sagaContent.data,
+                        sagaInfo.toSaga(),
                     ).collect { state ->
                         when (state) {
                             is com.ilustris.sagai.core.ai.StreamingState.Reasoning -> {
@@ -123,35 +162,9 @@ class CharacterDetailsViewModel
                                 isGenerating.value = false
                                 loadingMessage.value = null
                                 imageReasoning.value = null
-                                if (state.throwable is BillingService.PremiumException) {
-                                    showPremiumSheet.value = true
-                                }
                             }
                         }
                     }
-            }
-        }
-
-        fun init(
-            characterId: Int?,
-            sagaContent: SagaContent,
-        ) {
-            val characterContent = sagaContent.findCharacter(characterId)
-            val canGenerateResume = character.value != characterContent
-            viewModelScope.launch(Dispatchers.IO) {
-                character.value = characterContent
-                characterContent?.let {
-                    if (canGenerateResume) {
-                        generateResume(sagaContent, it)
-                    }
-                    if (it.data.image.isNotEmpty()) {
-                        val palette = paletteUseCase.extractPalette(it.data.image)
-                        Timber.d("Extracted palette: ${palette.toAINormalize()}")
-                        imagePalette.value = palette.getSuccess()
-                    } else {
-                        imagePalette.value = null
-                    }
-                }
             }
         }
     }

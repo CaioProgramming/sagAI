@@ -40,32 +40,44 @@ fun Class<*>.toSchema(
             )
         }
 
-        Int::class.java, Integer::class.java -> {
+        Int::class.java, Integer::class.java, Integer::class.java -> {
             Schema.integer(
                 nullable = nullable,
             )
         }
 
-        Long::class.java -> {
+        Long::class.java, java.lang.Long::class.java -> {
             Schema.long(
                 nullable = nullable,
             )
         }
 
-        Boolean::class.java -> {
+        Boolean::class.java, java.lang.Boolean::class.java -> {
             Schema.boolean(
                 nullable = nullable,
             )
         }
 
-        Double::class.java -> {
+        Double::class.java, java.lang.Double::class.java -> {
             Schema.double(
                 nullable = nullable,
             )
         }
 
-        Float::class.java -> {
+        Float::class.java, java.lang.Float::class.java -> {
             Schema.float(
+                nullable = nullable,
+            )
+        }
+
+        Byte::class.java, java.lang.Byte::class.java, Short::class.java, java.lang.Short::class.java -> {
+            Schema.integer(
+                nullable = nullable,
+            )
+        }
+
+        Char::class.java, Character::class.java -> {
+            Schema.string(
                 nullable = nullable,
             )
         }
@@ -140,15 +152,23 @@ private fun toJsonMapObject(
 ): Any {
     when {
         clazz.isEnum -> return clazz.enumConstants?.joinToString(" | ") ?: "PLACEHOLDER_ENUM"
+
         clazz == String::class.java -> return "PLACEHOLDER_STRING"
-        clazz == Int::class.java || clazz == Integer::class.java -> return 999
-        clazz == Boolean::class.java -> return false
-        clazz == Double::class.java -> return 0.0
-        clazz == Float::class.java -> return 0.0
-        clazz == Long::class.java -> return 999
-        clazz == Byte::class.java -> return 0
-        clazz == Short::class.java -> return 0
-        clazz == Char::class.java -> return "PLACEHOLDER_CHAR"
+
+        clazz == Int::class.java || clazz == Integer::class.java || clazz == Integer::class.java || clazz == Long::class.java ||
+            clazz == java.lang.Long::class.java -> return 999
+
+        clazz == Boolean::class.java || clazz == java.lang.Boolean::class.java -> return false
+
+        clazz == Double::class.java || clazz == java.lang.Double::class.java -> return 0.0
+
+        clazz == Float::class.java || clazz == java.lang.Float::class.java -> return 0.0
+
+        clazz == Byte::class.java || clazz == java.lang.Byte::class.java -> return 0
+
+        clazz == Short::class.java || clazz == java.lang.Short::class.java -> return 0
+
+        clazz == Char::class.java || clazz == Character::class.java -> return "PLACEHOLDER_CHAR"
     }
 
     if (visited.contains(clazz)) return "circular_reference_detected"
@@ -257,6 +277,16 @@ fun Any.toPromptVariables(): Map<String, String> {
 
 fun doNothing() {
 }
+
+private fun Class<*>.isBoxedPrimitive(): Boolean =
+    this == Integer::class.java ||
+        this == java.lang.Long::class.java ||
+        this == java.lang.Double::class.java ||
+        this == java.lang.Float::class.java ||
+        this == java.lang.Boolean::class.java ||
+        this == java.lang.Byte::class.java ||
+        this == java.lang.Short::class.java ||
+        this == Character::class.java
 
 enum class DateFormatOption(
     val pattern: String,
@@ -699,7 +729,7 @@ private fun getRecursiveFields(
     clazz: Class<*>,
     visited: MutableSet<Class<*>> = mutableSetOf(),
 ): Map<String, Class<*>> {
-    if (clazz in visited || clazz.isPrimitive || clazz == String::class.java || clazz.isEnum) return emptyMap()
+    if (clazz in visited || clazz.isPrimitive || clazz == String::class.java || clazz.isEnum || clazz.isBoxedPrimitive()) return emptyMap()
     visited.add(clazz)
     val fields = mutableMapOf<String, Class<*>>()
     clazz.declaredFields.forEach { field ->

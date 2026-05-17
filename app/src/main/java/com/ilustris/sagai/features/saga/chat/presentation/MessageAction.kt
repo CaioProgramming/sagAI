@@ -1,6 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 
@@ -14,7 +14,7 @@ sealed class MessageAction {
     ) : MessageAction()
 
     data class ClickCharacter(
-        val character: CharacterContent?,
+        val character: Character?,
     ) : MessageAction()
 
     data class RegenerateAudio(

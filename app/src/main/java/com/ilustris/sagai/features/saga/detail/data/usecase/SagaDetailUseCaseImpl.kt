@@ -1,32 +1,47 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
-import com.ilustris.sagai.features.act.data.usecase.ActUseCase
-import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.act.data.model.Book
+import com.ilustris.sagai.features.act.data.source.ActDao
+import com.ilustris.sagai.features.act.data.source.BookDao
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
+import com.ilustris.sagai.features.chapter.data.source.ChapterDao
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.saga.datasource.MessageDao
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
+import com.ilustris.sagai.features.timeline.data.source.TimelineDao
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.source.WikiDao
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class SagaDetailUseCaseImpl
     @Inject
@@ -36,20 +51,114 @@ class SagaDetailUseCaseImpl
         private val textGenClient: GemmaClient,
         private val timelineUseCase: TimelineUseCase,
         private val emotionalUseCase: EmotionalUseCase,
-        private val chapterUseCase: ChapterUseCase,
-        private val actUseCase: ActUseCase,
         private val wikiUseCase: WikiUseCase,
         private val backupService: BackupService,
         private val genreConfigService: GenreConfigService,
         private val promptService: PromptService,
         private val remoteConfigService: RemoteConfigService,
+        private val characterDao: CharacterDao,
+        private val wikiDao: WikiDao,
+        private val timelineDao: TimelineDao,
+        private val bookDao: BookDao,
+        private val chapterDao: ChapterDao,
+        private val actDao: ActDao,
+        private val messageDao: MessageDao,
     ) : SagaDetailUseCase {
-        override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> {
-            val topCharacters = listOf(saga.mainCharacter!!.data)
+        override suspend fun regenerateSagaIcon(sagaId: Int): RequestResult<Saga> {
+            val saga =
+                sagaRepository.getSagaById(sagaId).first()
+                    ?: return Exception("Saga not found").asError()
+            val topCharacters = saga.mainCharacter?.let { listOf(it.data) } ?: emptyList()
             return sagaRepository.generateSagaIcon(saga.data, topCharacters)
         }
 
+        override fun regenerateSagaIconStream(sagaId: Int): Flow<StreamingState<Saga>> =
+            kotlinx.coroutines.flow.flow {
+                val saga = sagaRepository.getSagaById(sagaId).first()
+                if (saga == null) {
+                    emit(StreamingState.Error("Saga not found"))
+                    return@flow
+                }
+                val topCharacters = saga.mainCharacter?.let { listOf(it.data) } ?: emptyList()
+                sagaRepository.generateSagaIconStream(saga.data, topCharacters).collect {
+                    emit(it)
+                }
+            }
+
         override suspend fun fetchSaga(sagaId: Int) = sagaRepository.getSagaById(sagaId)
+
+        override fun getSagaResume(sagaId: Int): Flow<SagaDetailResume> {
+            val sagaFlow = sagaRepository.getSaga(sagaId)
+            val topCharactersFlow = characterDao.getTopCharacters(sagaId, 4)
+            val wikisFlow = wikiDao.getLatestWikis(sagaId, 4)
+            val latestEventFlow = timelineDao.getLatestEventBySaga(sagaId)
+            val booksFlow = bookDao.getBooksBySaga(sagaId)
+            val chaptersCountFlow = chapterDao.getChaptersCount(sagaId)
+            val timelineCountFlow = timelineDao.getTimelineCountBySaga(sagaId)
+            val actsFlow = actDao.getActContentsForSaga(sagaId)
+            val charactersCountFlow = characterDao.getCharactersCount(sagaId)
+            val chaptersInfoFlow = chapterDao.getChaptersInfoBySaga(sagaId)
+            val fullChaptersFlow = chapterDao.getChaptersBySaga(sagaId)
+            val messagesCountFlow = messageDao.getMessagesCount(sagaId)
+
+            return sagaFlow.flatMapLatest { saga ->
+                val mainCharacterFlow =
+                    saga
+                        ?.mainCharacterId
+                        ?.let { characterDao.getCharacterContent(it) }
+                        ?: flowOf(null)
+
+                combine(
+                    flowOf(saga),
+                    mainCharacterFlow,
+                    topCharactersFlow,
+                    wikisFlow,
+                    latestEventFlow,
+                    booksFlow,
+                    chaptersCountFlow,
+                    timelineCountFlow,
+                    actsFlow,
+                    charactersCountFlow,
+                    chaptersInfoFlow,
+                    fullChaptersFlow,
+                    messagesCountFlow,
+                ) { flows: Array<Any?> ->
+                    val sagaValue = flows[0] as Saga?
+                    val mainCharacterContent = flows[1] as CharacterContent?
+                    val topCharacters = flows[2] as List<CharacterContent>
+                    val wikis = flows[3] as List<Wiki>
+                    val event = flows[4] as TimelineWithAct?
+                    val books = flows[5] as List<Book>
+                    val chaptersCount = flows[6] as Int
+                    val timelineCount = flows[7] as Int
+                    val acts = flows[8] as List<ActContent>
+                    val charCount = flows[9] as Int
+                    val chapters = flows[10] as List<ChapterInfo>
+                    val fullChapters = flows[11] as List<ChapterContent>
+                    val messagesCount = flows[12] as Int
+
+                    val narrativeRules = remoteConfigService.getNarrativeRules()
+                    SagaDetailResume(
+                        saga = sagaValue ?: Saga(),
+                        starringCharacter =
+                            mainCharacterContent ?: topCharacters.firstOrNull(),
+                        topCharacters = topCharacters,
+                        latestWikis = wikis,
+                        latestEvent = event,
+                        generatedBooks = books,
+                        chapters = chapters,
+                        fullChapters = fullChapters,
+                        chaptersCount = chaptersCount,
+                        eventsCount = timelineCount,
+                        charactersCount = charCount,
+                        messagesCount = messagesCount,
+                        playtime = sagaValue?.playTimeMs ?: 0L,
+                        completedActsCount = acts.count { it.isComplete(narrativeRules) },
+                        hasActs = acts.isNotEmpty(),
+                    )
+                }
+            }
+        }
 
         override suspend fun deleteSaga(saga: Saga) {
             fileHelper.deletePath(saga.id)
@@ -57,63 +166,39 @@ class SagaDetailUseCaseImpl
         }
 
         override suspend fun resetReview(content: SagaContent) {
-            sagaRepository.updateChat(
+            sagaRepository.updateSaga(
                 content.data.copy(
                     review = null,
                 ),
             )
         }
 
-        override suspend fun createEmotionalConclusion(currentSaga: SagaContent) =
+        override suspend fun createEmotionalConclusion(sagaId: Int): RequestResult<Saga> =
             executeRequest {
-                val unReviewedTimelines =
-                    currentSaga.flatEvents().filter { it.data.emotionalReview.isNullOrEmpty() }
-                val unReviewedChapters =
-                    currentSaga.flatChapters().filter { it.data.emotionalReview.isNullOrEmpty() }
-                val unReviewedActs =
-                    currentSaga.acts.filter { it.data.emotionalReview.isNullOrEmpty() }
-
-                unReviewedTimelines.forEach {
-                    timelineUseCase.generateTimeline(currentSaga, it)
-                }
-
-                unReviewedChapters.forEach {
-                    chapterUseCase.generateChapter(currentSaga, it)
-                }
-
-                unReviewedActs.forEach {
-                    actUseCase.generateAct(currentSaga, it)
-                }
-
-                delay(3.seconds)
-
+                val saga = sagaRepository.getSagaById(sagaId).first()!!
                 val request =
-                    emotionalUseCase.generateEmotionalConclusion(currentSaga).getSuccess()!!
+                    emotionalUseCase.generateEmotionalConclusion(saga).getSuccess()!!
 
                 sagaRepository
-                    .updateChat(
-                        currentSaga.data.copy(
-                            emotionalReview = request,
+                    .updateSaga(
+                        saga.data.copy(
+                            emotionalProfile = request.emotionalProfile,
+                            emotionalReview = request.emotionalProfile.emotionalContent,
                         ),
                     )
+                sagaRepository.getSagaById(sagaId).first()!!.data
             }
 
         override suspend fun generateTimelineContent(
-            saga: SagaContent,
+            saga: SagaMetadata,
             timelineContent: TimelineContent,
-        ) = timelineUseCase.generateTimelineContent(saga, timelineContent)
-
-        override suspend fun reviewWiki(
-            currentsaga: SagaContent,
-            wikis: List<Wiki>,
-        ) {
-            wikiUseCase.mergeWikis(currentsaga, wikis)
-        }
+        ): RequestResult<Unit> = timelineUseCase.generateTimelineContent(saga, timelineContent.data)
 
         override fun getBackupEnabled() = backupService.backupEnabled()
 
-        override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
+        override suspend fun generateStoryBriefing(sagaId: Int): RequestResult<StoryDailyBriefing> =
             executeRequest {
+                val saga = sagaRepository.getSagaById(sagaId).first()!!
                 val prompt =
                     SagaPrompts.generateStoryBriefing(
                         promptService,
@@ -121,69 +206,5 @@ class SagaDetailUseCaseImpl
                         genreConfigService.conversationBlueprint(saga.data.genre),
                     )
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
-            }
-
-        override suspend fun generateSagaResume(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val narrativeRules = remoteConfigService.getNarrativeRules()
-
-                if (saga.completedChapters(narrativeRules) < 1) {
-                    return@executeRequest saga.data.description
-                }
-                val prompt =
-                    SagaPrompts.sagaResume(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
-                ) ?: saga.data.description
-            }
-
-        override suspend fun generateCharactersInsight(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val prompt =
-                    SagaPrompts.charactersInsight(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                ) ?: ""
-            }
-
-        override suspend fun generateWikiInsight(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                if (saga.wikis.isEmpty()) return@executeRequest ""
-                val prompt =
-                    SagaPrompts.wikiInsight(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                ) ?: ""
-            }
-
-        override suspend fun generateTimelineInsight(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val narrativeRules = remoteConfigService.getNarrativeRules()
-                if (saga.completedEvents(narrativeRules) > 3) return@executeRequest ""
-                val prompt =
-                    SagaPrompts.timelineInsight(
-                        promptService,
-                        saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
-                textGenClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
-                ) ?: ""
             }
     }

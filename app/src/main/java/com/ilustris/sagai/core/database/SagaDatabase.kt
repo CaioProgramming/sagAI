@@ -3,15 +3,21 @@ package com.ilustris.sagai.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.ilustris.sagai.core.database.converters.BookConverters
 import com.ilustris.sagai.core.database.converters.EnumConverters
 import com.ilustris.sagai.core.database.converters.IntListConverter
+import com.ilustris.sagai.core.database.converters.StringListConverter
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.source.ActDao
+import com.ilustris.sagai.features.act.data.source.BookDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
+import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.source.CharacterEventDao
@@ -39,16 +45,23 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Wiki::class,
         Timeline::class,
         Act::class,
+        Book::class,
         CharacterEvent::class,
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
         Reaction::class,
         AIAuditLog::class,
+        CharacterArc::class,
     ],
-    version = 9,
+    version = 17,
     exportSchema = true,
 )
-@TypeConverters(IntListConverter::class, EnumConverters::class)
+@TypeConverters(
+    IntListConverter::class,
+    EnumConverters::class,
+    StringListConverter::class,
+    BookConverters::class,
+)
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
 
@@ -64,6 +77,8 @@ abstract class SagaDatabase : RoomDatabase() {
 
     abstract fun actDao(): ActDao
 
+    abstract fun bookDao(): BookDao
+
     abstract fun characterEventDao(): CharacterEventDao
 
     abstract fun characterRelationDao(): CharacterRelationDao
@@ -73,4 +88,10 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun reactionDao(): ReactionDao
 
     abstract fun aiAuditLogDao(): AIAuditLogDao
+
+    abstract fun characterArcDao(): CharacterArcDao
+
+    companion object {
+        const val NAME = "SagaDatabase"
+    }
 }

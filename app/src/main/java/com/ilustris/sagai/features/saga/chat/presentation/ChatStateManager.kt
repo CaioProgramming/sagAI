@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.saga.chat.presentation.model.PendingAdvance
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,10 +13,6 @@ class ChatStateManager {
 
     fun updateState(updater: (ChatUiState) -> ChatUiState) {
         _uiState.update(updater)
-    }
-
-    fun updateSnackBar(snackBarState: com.ilustris.sagai.ui.components.SnackBarState?) {
-        _uiState.update { it.copy(snackBarMessage = snackBarState) }
     }
 
     fun updateLoading(loading: Boolean) {
@@ -84,7 +80,7 @@ class ChatStateManager {
         }
     }
 
-    fun updateCharacter(content: CharacterContent?) {
+    fun updateCharacter(content: Character?) {
         _uiState.update {
             it.copy(selectedCharacter = content)
         }
@@ -130,7 +126,23 @@ class ChatStateManager {
         _uiState.update { it.copy(onboardingType = type) }
     }
 
-    fun updatePendingAdvance(pendingAdvance: PendingAdvance?) {
-        _uiState.update { it.copy(pendingAdvance = pendingAdvance) }
+    fun updateNarrativeUiState(narrativeUiState: NarrativeUiState) {
+        _uiState.update { it.copy(narrativeUiState = narrativeUiState) }
+    }
+
+    fun updateWikiGroups(wikiGroups: List<com.ilustris.sagai.features.wiki.data.model.WikiGroup>) {
+        _uiState.update { it.copy(wikiGroups = wikiGroups) }
+    }
+
+    fun updateTopCharacters(characters: List<Character>) {
+        _uiState.update { it.copy(topCharacters = characters) }
+    }
+
+    fun updateCharacters(characters: List<Character>) {
+        _uiState.update { it.copy(characters = characters) }
+    }
+
+    fun updateWikis(wikis: List<com.ilustris.sagai.features.wiki.data.model.Wiki>) {
+        _uiState.update { it.copy(wikis = wikis) }
     }
 }

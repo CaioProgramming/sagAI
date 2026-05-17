@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.newsaga.ui.presentation
 
+import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.ui.navigation.Routes
 
 data class CreateSagaState(
     val isLoading: Boolean = false,
@@ -12,7 +12,6 @@ data class CreateSagaState(
 
 sealed interface Effect {
     data class Navigate(
-        val route: Routes,
-        val arguments: Map<String, String>,
+        val key: NavKey,
     ) : Effect
 }

@@ -3,9 +3,9 @@ package com.ilustris.sagai.features.timeline.domain
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 import kotlinx.coroutines.flow.Flow
 
 interface TimelineUseCase {
@@ -14,23 +14,18 @@ interface TimelineUseCase {
     suspend fun getTimeline(id: String): Flow<Timeline>
 
     suspend fun generateFullLoreUpdate(
-        saga: SagaContent,
-        timelineContent: TimelineContent,
+        saga: SagaMetadata,
+        timeline: Timeline,
     ): RequestResult<Unit>
 
     fun generateFullLoreUpdateStream(
-        saga: SagaContent,
-        timelineContent: TimelineContent,
+        saga: SagaMetadata,
+        timeline: Timeline,
     ): Flow<StreamingState<GeneratedContent<Timeline>>>
 
-    suspend fun generateTimeline(
-        saga: SagaContent,
-        currentTimeline: TimelineContent,
-    ): RequestResult<Timeline>
-
     fun generateTimelineStream(
-        saga: SagaContent,
-        currentTimeline: TimelineContent,
+        saga: SagaMetadata,
+        currentTimeline: Timeline,
     ): Flow<StreamingState<GeneratedContent<Timeline>>>
 
     suspend fun saveTimeline(timeline: Timeline): Timeline
@@ -40,12 +35,14 @@ interface TimelineUseCase {
     suspend fun deleteTimeline(timeline: Timeline)
 
     suspend fun getTimelineObjective(
-        saga: SagaContent,
-        timelineContent: Timeline,
+        saga: SagaMetadata,
+        timeline: Timeline,
     ): RequestResult<Timeline>
 
     suspend fun generateTimelineContent(
-        saga: SagaContent,
-        timelineContent: TimelineContent,
+        saga: SagaMetadata,
+        timeline: Timeline,
     ): RequestResult<Unit>
+
+    fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>>
 }

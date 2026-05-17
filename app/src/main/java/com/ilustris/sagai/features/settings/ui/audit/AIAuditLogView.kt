@@ -1,8 +1,9 @@
 package com.ilustris.sagai.features.settings.ui.audit
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.scaleIn
@@ -70,8 +71,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -85,8 +86,10 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AIAuditLogView(
-    navController: NavHostController,
+    onBack: () -> Unit,
     viewModel: AIAuditLogViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val logs by viewModel.filteredLogs.collectAsState()
     val statusFilter by viewModel.statusFilter.collectAsState()
@@ -119,7 +122,7 @@ fun AIAuditLogView(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = { onBack() },
                     modifier =
                         Modifier
                             .padding(top = 16.dp)
@@ -201,6 +204,8 @@ fun AIAuditLogView(
             PipelineInsightCard(
                 insight = pipelineInsight,
                 isLoading = isPipelineInsightLoading,
+                sharedTransitionScope = sharedTransitionScope,
+                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
         item {
@@ -381,6 +386,7 @@ fun AuditLogItem(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         text = log.dataType,
@@ -402,48 +408,119 @@ fun AuditLogItem(
                                 .border(1.dp, statusColor, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
-                }
 
-                if (!log.blueprintKey.isNullOrEmpty()) {
-                    Text(
-                        text = log.blueprintKey,
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Medium,
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                    RoundedCornerShape(4.dp),
-                                )
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                                .padding(8.dp),
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "${log.model} • ${dateFormat.format(Date(log.timestamp))}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
-                        modifier = Modifier.alpha(.7f),
-                    )
+                    androidx.compose.foundation.layout
+                        .Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "• ${String.format("%.1fs", log.responseTime / 1000.0)}",
+                        text = String.format("%.1fs", log.responseTime / 1000.0),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = responseTimeColor,
                             ),
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (!log.blueprintKey.isNullOrEmpty()) {
+                        Text(
+                            text = log.blueprintKey,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(vertical = 4.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                        RoundedCornerShape(4.dp),
+                                    )
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    .padding(8.dp),
+                        )
+                    }
+
+                    Text(
+                        text = "• ${dateFormat.format(Date(log.timestamp))}",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
+                        modifier = Modifier.alpha(.7f),
+                    )
+                }
+
+                val formattedModel = log.model.replace("models/", "")
+                Text(
+                    text = formattedModel,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
+                    modifier = Modifier.alpha(.7f),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+
+                if (!log.usedTools.isNullOrEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_settings),
+                            contentDescription = "Tools used",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        )
+                        log.usedTools.forEach { tool ->
+                            Text(
+                                text = tool,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier =
+                                    Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
                             )
+                        }
+                    }
+                }
+
+                if (!log.safetyStatus.isNullOrEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        val safeguard =
+                            runCatching {
+                                SafeGuard.valueOf(
+                                    log.safetyStatus ?: "OK",
+                                )
+                            }.getOrDefault(SafeGuard.OK)
+                        val color = safeguard.color(MaterialTheme.colorScheme)
+                        Icon(
+                            painter = painterResource(safeguard.iconRes),
+                            contentDescription = "Safety Status",
+                            modifier = Modifier.size(12.dp),
+                            tint = color,
+                        )
+                        Text(
+                            text = log.safetyStatus ?: "OK",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = color,
+                            modifier =
+                                Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(color.copy(alpha = 0.1f))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                 }
             }
 
@@ -651,8 +728,10 @@ fun JsonCodeBlock(jsonString: String) {
 fun PipelineInsightCard(
     insight: String?,
     isLoading: Boolean,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
-    SharedTransitionLayout {
+    with(sharedTransitionScope) {
         AnimatedContent(insight) {
             if (it == null) {
                 Box(
@@ -669,7 +748,7 @@ fun PipelineInsightCard(
                             Modifier
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
-                                    this@AnimatedContent,
+                                    animatedVisibilityScope,
                                 )
                                 .size(50.dp)
                                 .reactiveShimmer(

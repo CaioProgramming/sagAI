@@ -43,7 +43,6 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.chat.ThoughtBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -100,7 +99,7 @@ fun ReactionsView(
 
                     Text(
                         text = reaction.data.thought ?: "",
-                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
+                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         modifier =
                             Modifier
                                 .padding(8.dp)

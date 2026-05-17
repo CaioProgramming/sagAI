@@ -1,101 +1,67 @@
 {
-  "version": 5,
+  "version": 2,
   "categories": [
     {
-      "title": "Welcome to Sagas",
+      "title": "The Basics",
       "items": [
         {
-          "question": "What exactly is Sagas?",
-          "answer": "Sagas is your personal AI co-author and Art Director. You don't just 'play' a game; you live an evolving story across different genres, where your choices literally shape the world, characters, and even the art you see."
+          "question": "What exactly is SagAI?",
+          "answer": "Think of SagAI as your Dungeon Master, co-author, and illustrator rolled into one. It's an AI 'Saga Master' that helps you play through interactive stories. You pick the genre and the vibe, and it weaves the narrative, controls the NPCs, and generates the art."
         },
         {
-          "question": "Why do I need an internet connection?",
-          "answer": "Your stories are huge! While your progress is saved on your device, the heavy lifting—the 'Saga Master' brain and the 'Art Director' systems—lives in a powerful cloud to ensure every response and image is unique to your prompt."
+          "question": "Is this a game or a book?",
+          "answer": "Yes. (Okay, helpful, right?) It's an interactive novel where *you* are the main character. You can play it like an RPG—making choices, fighting bad guys, and romancing NPCs—or use it to brainstorm and outline a serious story."
         }
       ]
     },
     {
-      "title": "Mastering the Art",
+      "title": "Storytelling Secrets",
       "items": [
         {
-          "question": "How does the story progress?",
-          "answer": "Stories are divided into Acts and Chapters. As you interact, the AI recaps previous events into a 'Saga Resume' and generates new introductions to keep the narrative tight. You can also manually start a 'New Chapter' to summarize current events and move to the next phase of your journey."
+          "question": "Why are the NPCs ignoring my thoughts?",
+          "answer": "Because they aren't mind readers! (Unless they actually *are* mind readers in your story). If you send a message as a 'Thought', only *you* and the Narrator know it. To get a reaction, you need to 'Say' something or 'Do' an action that they can see."
         },
         {
-          "question": "How do I express actions or thoughts?",
-          "answer": "You can use tags! Type <action>jumps</action> for physical moves, <think>secrets</think> for internal monologue, or <narrator>meanwhile</narrator> for world details. Or just use the buttons above your keyboard!"
+          "question": "How do I make the story sound better?",
+          "answer": "Lean into the genre! Our AI changes its voice based on what you picked. In **Fantasy**, it loves poetic, Renaissance-style language ('Verily!'). In **Cyberpunk**, it speaks in gritty street slang. In **Horror**, it gets... well, creepy. Matching your own writing style to the genre helps the AI stay in character."
         },
         {
-          "question": "Can I edit my messages?",
-          "answer": "Yes, but only the most recent one. This keeps the timeline intact and prevents 'time travel' paradoxes where changing the past would confuse the AI's current response."
-        },
-        {
-          "question": "Can I delete messages?",
-          "answer": "Absolutely. You can delete any message to clean up your story. Just tap on the message options. If you delete the last message, you can try again!"
-        },
-        {
-          "question": "Can I add more characters?",
-          "answer": "Yes! Use the 'New Character' action to introduce allies, rivals, or mysterious strangers. You can even describe their appearance and backstory, and the AI will remember them throughout the saga."
-        },
-        {
-          "question": "What is Saga Wrapped?",
-          "answer": "When your story reaches a conclusion, we generate a special 'Saga Wrapped' — a stylish, shareable retrospective of your journey, your character's stats, and your best moments."
+          "question": "Can I introduce new characters?",
+          "answer": "Absolutely. Just mention them! If you say, 'I call my old friend, Captain Zephyr,' the AI will look for him. If he doesn't exist yet, it will create him on the fly based on your description. Radical diversity is encouraged—give them cool scars, neon hair, or a mysterious past!"
         }
       ]
     },
     {
-      "title": "The Visual Experience",
+      "title": "Art & Visuals (The Secret Sauce)",
       "items": [
         {
-          "question": "How is the art style decided?",
-          "answer": "It's built into the DNA of the genre! Fantasy uses Classical Oil Paintings, Cyberpunk is 80s Anime Cel-shaded, Horror is 32-bit Pixel Art, aud Heroes has a Dynamic Comic Book look. Punk Rock features a sketch-like, hand-drawn aesthetic with vibrant green accents."
+          "question": "Why does my Fantasy art look like an oil painting?",
+          "answer": "That's on purpose! For **Fantasy**, our artist AI is obsessed with the 'Renaissance Oil Painting' look. It hates modern digital art. To get the best results, describe things like 'brushstrokes', 'golden light', and 'flowing fabrics'."
         },
         {
-          "question": "What's the 'Punk Rock' theme?",
-          "answer": "It's our newest genre! Think Gorillaz meets Scott Pilgrim. It features a sketch-like, hand-drawn aesthetic with vibrant green accents and a rebellious attitude. Perfect for stories about underground bands and urban adventures."
+          "question": "Why is my Punk Rock character a cartoon?",
+          "answer": "Punk Rock plays by different rules! It uses a specific 'Gorillaz-esque' 2D cartoon style with bold outlines and flat colors. Realistic descriptions won't work well here—think 'music video animation' instead of 'photo'."
         },
         {
-          "question": "How does image generation work?",
-          "answer": "Our 'Art Director AI' translates your story context into technical prompts. It controls cinematic parameters like 'Angle', 'Lens', and 'Framing' (e.g., Close-ups vs. Full Shots). Images are designed to be full-bleed and vertically biased, making them perfect for your phone's lock screen!"
+          "question": "My Shinobi story is black and white!",
+          "answer": "Correct! The **Shinobi** genre uses a strictly monochrome 'Sumi-e Ink Wash' style with only a single accent color (usually Crimson Red). It's designed to look like ancient Japanese art."
         },
         {
-          "question": "Why is the top of the images usually empty?",
-          "answer": "That's by design! We want your saga covers and character cards to look amazing as wallpapers. The 'Saga Master' keeps the main subject in the lower 2/3 of the frame so your phone's clock and notifications don't block the art."
-        },
-        {
-          "question": "What are those full-screen story transitions?",
-          "answer": "Those are Cinematic Milestones! They mark major shifts in your story, like new Acts or Chapters, giving you a moment to breathe and appreciate the evolving narrative with punchy, AI-curated summaries."
+          "question": "Any tips for better character portraits?",
+          "answer": "Details matter! The AI looks for specific things like 'hairstyle', 'distinguishing marks' (scars, tattoos), and 'clothing'. Also, the framing matters—if you ask for a 'Close-up', don't expect to see their cool new boots!"
         }
       ]
     },
     {
-      "title": "Sagas Pro & Payments",
+      "title": "Troubleshooting",
       "items": [
         {
-          "question": "Why is Sagas a paid/subscription service?",
-          "answer": "Creating high-quality AI art and maintaining a complex narrative brain is computationally expensive. Every message and image uses cloud-based GPUs. Sagas Pro helps us cover these server costs while funding the development of new genres and features."
+          "question": "The story got stuck or isn't moving forward.",
+          "answer": "Sometimes the AI is too polite and waits for you. Try a 'Narrative Leap'—type something like 'Turn the page', 'Skip to the next morning', or 'Suddenly, an explosion rocks the ship!' to force the plot forward."
         },
         {
-          "question": "What do I get with Sagas Pro?",
-          "answer": "Pro users unlock all premium genres, unlimited active sagas, higher-quality image generation, and the 'Smart Fix' feature which enriches your writing with AI-powered suggestions."
-        }
-      ]
-    },
-    {
-      "title": "Privacy & Data",
-      "items": [
-        {
-          "question": "Is my story data private?",
-          "answer": "Absolutely. Your characters and saga history are your own. We only collect anonymous technical metrics (like which genres are played most or if a bug occurs) to improve the app. We don't collect personal data like names or emails."
-        }
-      ]
-    },
-    {
-      "title": "Future Visions",
-      "items": [
-        {
-          "question": "Is Multiplayer coming?",
-          "answer": "It's on our roadmap! We're dreaming of a day when you and your friends can join the same saga and interact in real-time. Stay tuned!"
+          "question": "The AI output cut off.",
+          "answer": "It happens to the best of us. Just type 'Continue' or 'Go on', and it should pick up right where it left off."
         }
       ]
     }

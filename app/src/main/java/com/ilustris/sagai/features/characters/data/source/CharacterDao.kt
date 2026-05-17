@@ -4,14 +4,26 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
+import com.ilustris.sagai.features.characters.data.model.CharacterWithRelations
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CharacterDao {
     @Query("SELECT * FROM Characters ORDER BY id ASC")
     fun getAllCharacters(): Flow<List<Character>>
+
+    @Transaction
+    @Query("SELECT * FROM Characters WHERE sagaId = :sagaId ORDER BY id ASC")
+    fun getCharactersBySaga(sagaId: Int): Flow<List<CharacterContent>>
+
+    @Transaction
+    @Query("SELECT * FROM Characters WHERE id = :id LIMIT 1")
+    fun getCharacterContent(id: Int): Flow<CharacterContent?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCharacter(character: Character): Long
@@ -33,4 +45,38 @@ interface CharacterDao {
 
     @Query("SELECT TRIM(name || ' ' || IFNULL(lastName, '')) FROM Characters")
     suspend fun getAllCharacterNames(): List<String>
+
+    /**
+     * Fetches a [Character] with its events, relationships, and message count.
+     * Does NOT load the parent Saga — use [getSagaInfoForCharacter] for the lightweight projection.
+     */
+    @Transaction
+    @Query(
+        "SELECT *, (SELECT COUNT(*) FROM messages WHERE characterId = Characters.id) as messageCount FROM Characters WHERE id = :characterId LIMIT 1",
+    )
+    fun getCharacterWithRelations(characterId: Int): Flow<CharacterWithRelations?>
+
+    /**
+     * Lightweight projection of the Saga entity, loading only the fields needed by the character details page.
+     */
+    @Query("SELECT id, genre, variationId, title, icon FROM sagas WHERE id = :sagaId LIMIT 1")
+    suspend fun getSagaInfoForCharacter(sagaId: Int): CharacterSagaInfo?
+
+    @Transaction
+    @Query(
+        """
+        SELECT *, (SELECT COUNT(*) FROM messages WHERE characterId = Characters.id) as messageCount 
+        FROM Characters 
+        WHERE sagaId = :sagaId 
+        ORDER BY messageCount DESC 
+        LIMIT :limit
+        """,
+    )
+    fun getTopCharacters(
+        sagaId: Int,
+        limit: Int,
+    ): Flow<List<CharacterContent>>
+
+    @Query("SELECT COUNT(*) FROM Characters WHERE sagaId = :sagaId")
+    fun getCharactersCount(sagaId: Int): Flow<Int>
 }

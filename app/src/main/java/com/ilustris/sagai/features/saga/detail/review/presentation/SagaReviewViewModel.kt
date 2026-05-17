@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.usecase.ReviewState
-import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.review.domain.SagaReviewUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +27,22 @@ class SagaReviewViewModel
 
         private val _loadingMessage = MutableStateFlow<String?>(null)
         val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
+
+        private val _sagaContent = MutableStateFlow<SagaContent?>(null)
+        val sagaContent: StateFlow<SagaContent?> = _sagaContent.asStateFlow()
+
+        fun loadSaga(sagaId: Int) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaRepository.getSagaById(sagaId).collectLatest {
+                    _sagaContent.value = it
+                    it?.let { content ->
+                        if (content.data.review == null) {
+                            createReview(content)
+                        }
+                    }
+            }
+        }
+    }
 
         fun createReview(saga: SagaContent) {
             if (saga.data.review != null) return
@@ -56,7 +71,7 @@ class SagaReviewViewModel
 
         fun resetReview(saga: SagaContent) {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaRepository.updateChat(saga.data.copy(review = null))
+                sagaRepository.updateSaga(saga.data.copy(review = null))
                 createReview(saga)
             }
         }

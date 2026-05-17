@@ -21,7 +21,7 @@ import com.ilustris.sagai.features.newsaga.data.usecase.AgenticUIComponent.IdeaP
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaCreationState
-import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.ui.navigation.ChatKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -33,8 +33,8 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import timber.log.Timber
+import javax.inject.Inject
 
 internal data class LoadingState(
     val message: String,
@@ -592,12 +592,7 @@ class NewSagaViewModel
         private fun navigateToSaga(saga: Saga) {
             effect.value =
                 Effect.Navigate(
-                    route = Routes.CHAT,
-                    arguments =
-                        mapOf(
-                            "sagaId" to saga.id.toString(),
-                            "isDebug" to false.toString(),
-                        ),
+                    key = ChatKey(saga.id.toString(), false),
                 )
         }
     }

@@ -23,11 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.components.chat.ThoughtBubbleShape
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -36,7 +34,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 @Composable
 fun ReactionsBottomSheet(
     message: MessageContent,
-    content: SagaContent,
+    content: com.ilustris.sagai.features.home.data.model.SagaMetadata,
     onDismiss: () -> Unit,
 ) {
     val genre = content.data.genre
@@ -51,7 +49,7 @@ fun ReactionsBottomSheet(
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                     textAlign = TextAlign.Center,
                     modifier =
@@ -76,7 +74,7 @@ fun ReactionsBottomSheet(
 
                     Text(
                         text = reaction.data.thought ?: "",
-                        style = MaterialTheme.typography.labelLarge.copy(fontFamily = genre.bodyFont()),
+                        style = MaterialTheme.typography.labelLarge.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         modifier =
                             Modifier
                                 .padding()
@@ -96,7 +94,7 @@ fun ReactionsBottomSheet(
 
                     Text(
                         reaction.data.emoji,
-                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = MaterialTheme.typography.bodyLarge.fontFamily),
                         modifier =
                             Modifier
                                 .padding(bottom = 4.dp)

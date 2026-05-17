@@ -2,10 +2,10 @@ package com.ilustris.sagai.features.timeline.data.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineWithAct
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
 import javax.inject.Inject
-import kotlin.getValue
 
 class TimelineRepositoryImpl
     @Inject
@@ -34,4 +34,5 @@ class TimelineRepositoryImpl
 
         override suspend fun updateTimeline(timeline: Timeline) = timelineDao.updateTimeline(timeline)
 
+        override fun getTimelineWithActBySaga(sagaId: Int): Flow<List<TimelineWithAct>> = timelineDao.getTimelineWithActBySaga(sagaId)
     }

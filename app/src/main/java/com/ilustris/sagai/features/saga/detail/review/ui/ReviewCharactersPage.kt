@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,13 +41,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
-import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
-import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.sagaBrush
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -131,8 +127,7 @@ class ReviewCharactersPage(
                                 .fillMaxWidth()
                                 .animateContentSize(
                                     tween(1000, easing = EaseIn),
-                                )
-                                .animateEnterExit(
+                                ).animateEnterExit(
                                     enter = slideInVertically(tween(1500, easing = EaseIn)) { -it },
                                     exit = slideOutVertically { it },
                                 ),
@@ -146,18 +141,10 @@ class ReviewCharactersPage(
                                         title,
                                         style =
                                             MaterialTheme.typography.titleLarge.copy(
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 fontWeight = FontWeight.Bold,
-                                                color = genre.resolveIconColor(),
+                                                brush = sagaBrush(),
                                             ),
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .background(
-                                                    genre.resolveColor(),
-                                                    shape = genre.bubble(isNarrator = true),
-                                                )
-                                                .padding(8.dp),
                                     )
                                 }
                             }
@@ -177,7 +164,7 @@ class ReviewCharactersPage(
                                         style =
                                             MaterialTheme.typography.titleLarge.copy(
                                                 fontWeight = FontWeight.Bold,
-                                                fontFamily = genre.bodyFont(),
+                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                             ),
                                     )
 
@@ -200,7 +187,7 @@ class ReviewCharactersPage(
                                             style =
                                                 MaterialTheme.typography.headlineSmall.copy(
                                                     fontWeight = FontWeight.Bold,
-                                                    fontFamily = genre.bodyFont(),
+                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 ),
                                         )
 
@@ -211,7 +198,7 @@ class ReviewCharactersPage(
                                             ),
                                             style =
                                                 MaterialTheme.typography.bodyMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
+                                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                                 ),
                                         )
                                     }
@@ -227,16 +214,12 @@ class ReviewCharactersPage(
                                         colors =
                                             ButtonDefaults.elevatedButtonColors().copy(
                                                 containerColor = MaterialTheme.colorScheme.onBackground,
-                                                contentColor = genre.resolveColor(),
+                                                contentColor = MaterialTheme.colorScheme.primary,
                                             ),
-                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        modifier = Modifier.padding(16.dp),
                                     ) {
                                         Text(
                                             stringResource(R.string.share),
-                                            style =
-                                                MaterialTheme.typography.titleSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                ),
                                         )
                                     }
                                 }

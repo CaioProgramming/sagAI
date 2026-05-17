@@ -1,5 +1,4 @@
 package com.ilustris.sagai.ui.theme
-
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.Easing
@@ -89,15 +88,19 @@ fun TypewriterText(
             onTextUpdate(text.take(charIndex))
         }
     }
+    val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
+    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
 
     val wikiAnnotation =
         buildWikiAndCharactersAnnotation(
             currentText,
-            genre,
             mainCharacter,
             characters,
             wiki,
-            MaterialTheme.colorScheme.background,
+            MaterialTheme.colorScheme.primary,
+            Color.Black,
+            headerFont,
+            bodyFont,
         )
     ClickableText(
         text = wikiAnnotation,

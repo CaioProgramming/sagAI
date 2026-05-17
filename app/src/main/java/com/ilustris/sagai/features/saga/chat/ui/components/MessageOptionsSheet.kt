@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
-import com.ilustris.sagai.ui.theme.bodyFont
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +50,10 @@ fun MessageOptionsSheet(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).padding(bottom = 32.dp),
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (isLastMessage && isSafeToEdit) {
@@ -122,7 +124,7 @@ private fun OptionItem(
                     MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = color,
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
                 modifier = Modifier.weight(1f),
             )

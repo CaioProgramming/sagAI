@@ -5,8 +5,11 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -91,6 +94,7 @@ object CharacterPrompts {
     const val CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT = "conversational_character_reply_blueprint"
     const val KNOWLEDGE_UPDATE_BLUEPRINT = "knowledge_update_blueprint"
     const val REFINE_CHARACTER_DRAFT_BLUEPRINT = "refine_character_draft_blueprint"
+    const val CHARACTER_ENRICHMENT_BLUEPRINT = "character_enrichment_blueprint"
 
     suspend fun conversationalCharacterReply(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
@@ -143,7 +147,7 @@ object CharacterPrompts {
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
-    fun charactersOverview(characters: List<com.ilustris.sagai.features.characters.data.model.Character>): String =
+    fun charactersOverview(characters: List<Character>): String =
         buildString {
             val characterExclusions =
                 listOf(
@@ -166,6 +170,76 @@ object CharacterPrompts {
             characters.forEach { character ->
                 appendLine(character.name)
                 appendLine(character.toAINormalize(characterExclusions))
+            }
+        }
+
+    const val SCENE_KNOWLEDGE_LIMIT = 6
+    const val SCENE_ARC_LIMIT = 2
+    const val SCENE_ARC_CONTENT_MAX_CHARS = 400
+    const val SCENE_RELATION_THRESHOLD = 2
+
+    fun offSceneCharacterNames(characters: List<Character>): String =
+        if (characters.isEmpty()) {
+            "No other characters in this saga."
+        } else {
+            characters.joinToString(", ") { it.fullName() }
+        }
+
+    fun sceneCharacterContext(
+        character: CharacterContent,
+        arcs: List<CharacterArc> = emptyList(),
+        protagonist: CharacterContent? = null,
+        knowledgeLimit: Int = SCENE_KNOWLEDGE_LIMIT,
+        arcLimit: Int = SCENE_ARC_LIMIT,
+        relationThreshold: Int = SCENE_RELATION_THRESHOLD,
+    ): String =
+        buildString {
+            val data = character.data
+            appendLine("### ${data.fullName()}")
+            if (data.profile.occupation.isNotBlank()) {
+                appendLine("Role: ${data.profile.occupation}")
+            }
+            if (data.profile.personality.isNotBlank()) {
+                appendLine("Personality: ${data.profile.personality}")
+            }
+            data.knowledge
+                ?.filter { it.isNotBlank() }
+                ?.takeLast(knowledgeLimit)
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { facts ->
+                    appendLine("Known facts:")
+                    facts.forEach { appendLine("  - $it") }
+                }
+            arcs
+                .takeLast(arcLimit)
+                .forEach { arc ->
+                    val excerpt = arc.content.take(SCENE_ARC_CONTENT_MAX_CHARS)
+                    val suffix = if (arc.content.length > SCENE_ARC_CONTENT_MAX_CHARS) "..." else ""
+                    appendLine("Story beat [${arc.title}]: $excerpt$suffix")
+                }
+            protagonist
+                ?.takeIf { it.data.id != data.id }
+                ?.let { main ->
+                    character.findRelationship(main.data.id)?.let { relation ->
+                        appendLine(relation.summarizeRelation(relationThreshold))
+                    }
+                }
+        }
+
+    fun sceneCharactersContext(
+        characters: List<CharacterContent>,
+        arcsByCharacterId: Map<Int, List<CharacterArc>> = emptyMap(),
+        protagonist: CharacterContent? = null,
+    ): String =
+        if (characters.isEmpty()) {
+            "No characters identified in the current scene."
+        } else {
+            characters.joinToString("\n\n") { character ->
+                sceneCharacterContext(
+                    character = character,
+                    arcs = arcsByCharacterId[character.data.id].orEmpty(),
+                    protagonist = protagonist,
+                )
             }
         }
 
@@ -260,7 +334,7 @@ object CharacterPrompts {
     suspend fun characterLoreGeneration(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         timeline: Timeline,
-        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        characters: List<Character>,
     ): String {
         val args =
             CharacterLoreArgs(
@@ -270,7 +344,7 @@ object CharacterPrompts {
                     ),
                 charactersContext =
                     characters.toAINormalize(
-                        fieldsToExclude = ChatPrompts.characterExclusions,
+                        fieldsToExclude = ChatPrompts.CHARACTER_EXCLUSIONS,
                     ),
             )
 
@@ -280,7 +354,7 @@ object CharacterPrompts {
     @Suppress("ktlint:standard:max-line-length")
     suspend fun findNickNames(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        characters: List<Character>,
         messages: List<Message>,
         timeline: Timeline,
         saga: Saga,
@@ -296,7 +370,7 @@ object CharacterPrompts {
                             "chapterId",
                         ),
                     ),
-                charactersList = characters.normalizetoAIItems(ChatPrompts.characterExclusions),
+                charactersList = characters.normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
                 recentMessages = messages.normalizetoAIItems(messageExclusions),
             )
 
@@ -320,7 +394,7 @@ object CharacterPrompts {
                     ),
                 charactersList =
                     saga.getCharacters().toAINormalize(
-                        ChatPrompts.characterExclusions,
+                        ChatPrompts.CHARACTER_EXCLUSIONS,
                     ),
             )
 
@@ -378,12 +452,12 @@ object CharacterPrompts {
     suspend fun knowledgeUpdatePrompt(
         promptService: com.ilustris.sagai.core.ai.services.PromptService,
         event: Timeline,
-        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        characters: List<Character>,
     ): String {
         val args =
             KnowledgeUpdateArgs(
                 eventContext = event.toAINormalize(listOf("id", "chapterId")),
-                charactersContext = characters.normalizetoAIItems(ChatPrompts.characterExclusions),
+                charactersContext = characters.normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
             )
 
         return promptService.buildRemotePrompt(KNOWLEDGE_UPDATE_BLUEPRINT, args)
@@ -403,5 +477,24 @@ object CharacterPrompts {
             )
 
         return promptService.buildRemotePrompt(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
+
+        suspend fun characterEnrichmentPrompt(
+            promptService: com.ilustris.sagai.core.ai.services.PromptService,
+            character: CharacterContent,
+            saga: SagaContent,
+        ): String {
+            val args =
+                CharacterResumeArgs(
+                    sagaContext = SagaPrompts.mainContext(saga, character),
+                    characterIdentity = character.data.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+                    journeyEvents =
+                        character.events
+                            .takeLast(10)
+                            .joinToString("\n") { "- ${it.event.summary}" },
+                    relationships = character.summarizeRelationships(),
+                    toneStyle = saga.data.genre.name,
+                )
+            return promptService.buildRemotePrompt(CHARACTER_ENRICHMENT_BLUEPRINT, args)
+        }
     }
 }

@@ -47,8 +47,6 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -56,7 +54,6 @@ import com.ilustris.sagai.features.saga.chat.domain.model.rankMentions
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.title
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
@@ -64,7 +61,6 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.solidGradient
 import ir.ehsannarmani.compose_charts.ColumnChart
@@ -85,11 +81,11 @@ import ir.ehsannarmani.compose_charts.models.PopupProperties
 @Composable
 fun ReviewDetails(saga: SagaContent) {
     val genre = saga.data.genre
-    genre.resolveColor()
-    genre.resolveIconColor()
+    MaterialTheme.colorScheme.primary
+    MaterialTheme.colorScheme.secondary
     val brush = genre.gradient()
-    val bodyFont = genre.bodyFont()
-    val headerFont = genre.headerFont()
+    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
+    val headerFont = MaterialTheme.typography.headlineSmall.fontFamily
     val messageCount =
         remember {
             saga.flatMessages().count()
@@ -160,7 +156,7 @@ fun ReviewDetails(saga: SagaContent) {
                 saga.data.description,
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 modifier = Modifier.padding(16.dp),
@@ -173,7 +169,7 @@ fun ReviewDetails(saga: SagaContent) {
                     it.introduction?.content?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
                     modifier = Modifier.padding(16.dp),
@@ -214,7 +210,7 @@ fun ReviewDetails(saga: SagaContent) {
                     it.playstyle?.content?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
                     modifier = Modifier.padding(16.dp),
@@ -302,7 +298,7 @@ fun ReviewDetails(saga: SagaContent) {
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Light,
                                         textAlign = TextAlign.Center,
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
                             )
                         }
@@ -328,7 +324,7 @@ fun ReviewDetails(saga: SagaContent) {
                     stringResource(R.string.saga_detail_relationships_section_title),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
                     modifier = Modifier.padding(16.dp),
@@ -340,7 +336,7 @@ fun ReviewDetails(saga: SagaContent) {
                     items(saga.relationships) { relation ->
                         RelationShipCard(
                             content = relation,
-                            saga = saga,
+                            saga = saga.data,
                             modifier =
                                 Modifier
                                     .padding(16.dp)
@@ -366,7 +362,7 @@ fun ReviewDetails(saga: SagaContent) {
                     "Horário mais jogado",
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
                     modifier = Modifier.padding(16.dp),
@@ -437,7 +433,7 @@ fun ReviewDetails(saga: SagaContent) {
                         "Sobre você",
                         style =
                             MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 color = MaterialTheme.colorScheme.onBackground,
                             ),
                         modifier = Modifier.padding(16.dp),
@@ -471,8 +467,8 @@ private fun CharactersChart(
     genre: Genre,
     modifier: Modifier,
 ) {
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
 
     val data =
         remember(resolvedColor, resolvedIconColor) {
@@ -527,7 +523,7 @@ private fun CharactersChart(
                     cornerRadius = cornerSize,
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = resolvedIconColor,
                         ),
                     contentBuilder = { dataIndex, valueIndex, value ->
@@ -540,7 +536,7 @@ private fun CharactersChart(
                     true,
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             color = MaterialTheme.colorScheme.onBackground,
                         ),
                 ),
@@ -549,7 +545,7 @@ private fun CharactersChart(
                     true,
                     textStyle =
                         MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                 ),
             indicatorProperties =
@@ -587,8 +583,8 @@ private fun MessagesRankChart(
             it.first.title()
         }
     val cornerSize = genre.cornerSize()
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     RowChart(
         modifier = modifier,
         data =
@@ -623,7 +619,7 @@ private fun MessagesRankChart(
                 true,
                 textStyle =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
             ),
@@ -631,7 +627,7 @@ private fun MessagesRankChart(
             LabelProperties(
                 textStyle =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 enabled = true,
@@ -642,7 +638,7 @@ private fun MessagesRankChart(
                 cornerRadius = cornerSize,
                 textStyle =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = resolvedIconColor,
                     ),
             ),
@@ -671,12 +667,12 @@ private fun HourRankChart(
 ) {
     val label =
         MaterialTheme.typography.labelMedium.copy(
-            fontFamily = genre.bodyFont(),
+            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
     val palette = genre.colorPalette()
     val cornerSize = genre.cornerSize()
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     LineChart(
         modifier = modifier,
         data =
@@ -715,7 +711,7 @@ private fun HourRankChart(
                 enabled = true,
                 textStyle =
                     MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
             ),
@@ -734,7 +730,7 @@ private fun HourRankChart(
                 padding = 16.dp,
                 textStyle =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                     ),
             ),

@@ -57,7 +57,6 @@ import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.lighter
 
 @Composable
@@ -293,7 +292,7 @@ fun Genre.stylisedText(
     val style =
         MaterialTheme.typography.displaySmall.copy(
             textAlign = TextAlign.Center,
-            fontFamily = headerFont(),
+            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
             fontWeight = FontWeight.Normal,
         )
     when (this) {
@@ -476,7 +475,7 @@ fun Genre.stylisedText(
                         .genreVfx(this)
                         .padding(8.dp),
                 fontSize = (fontSize.value * 0.8f).sp,
-                fontFamily = this.headerFont(),
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 primaryColor = resolvedColor,
                 secondaryColor = resolvedIconColor,
             )
@@ -488,7 +487,7 @@ fun Genre.stylisedText(
                 text = text,
                 modifier = modifier,
                 fontSize = fontSize,
-                fontFamily = this.headerFont(),
+                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 topColor = palette.first(),
                 bottomColor = palette.last(),
             )

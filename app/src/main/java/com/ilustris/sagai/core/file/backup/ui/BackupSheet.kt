@@ -34,6 +34,10 @@ fun BackupSheet(
         PermissionService.rememberBackupLauncher {
             viewModel.saveBackupFolder(it, displayBackups)
         }
+    val importLauncher =
+        PermissionService.rememberDatabaseImportLauncher {
+            it?.let { viewModel.importDatabase(it) }
+        }
 
     AnimatedContent(state) {
         when (it) {
@@ -47,8 +51,11 @@ fun BackupSheet(
                         it.message,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(32.dp).fillMaxWidth(),
-                    )
+                        modifier =
+                            Modifier
+                                .padding(32.dp)
+                                .fillMaxWidth(),
+                            )
                 }
             }
             is BackupUiState.Loading -> StarryLoader(true, it.message, textStyle = MaterialTheme.typography.labelMedium)
@@ -73,10 +80,14 @@ fun BackupSheet(
                     onRequestRestore = {
                         viewModel.restoreDatabase(it)
                     },
+                    onImportFromFile = {
+                        importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
+                    },
                     onDismiss = {
                         viewModel.dismiss()
                         onDismiss()
-                })
+                    },
+                )
             }
         }
     }

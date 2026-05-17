@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.playthrough.data.model.PlayThroughData
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class PlaythroughUseCaseImpl
@@ -16,10 +15,7 @@ class PlaythroughUseCaseImpl
         private val sagaRepository: SagaRepository,
         private val textGenClient: GemmaClient,
     ) : PlaythroughUseCase {
-        override fun availableSagas() =
-            sagaRepository.getChats().map {
-                it.filter { saga -> saga.data.playTimeMs > 0L || saga.data.isEnded }
-            }
+        override fun availableSagas() = sagaRepository.getPlaythroughData()
 
         override suspend fun invoke(): RequestResult<PlayThroughData> =
             executeRequest {

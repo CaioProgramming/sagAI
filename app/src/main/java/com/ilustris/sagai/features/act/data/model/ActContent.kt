@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 
 data class ActContent(
     @Embedded
@@ -24,11 +25,17 @@ data class ActContent(
         entity = Chapter::class,
     )
     val chapters: List<ChapterContent> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "actId",
+        entity = Book::class,
+    )
+    val book: Book? = null,
 ) {
     fun isFull(
-        actLimit: Int,
+        chapterLimit: Int,
         rules: NarrativeRules,
-    ): Boolean = chapters.count { it.isComplete(rules) } >= actLimit
+    ): Boolean = chapters.count { it.isComplete(rules) } >= chapterLimit
 
     fun isComplete(rules: NarrativeRules): Boolean =
         isFull(rules.actUpdateLimit, rules) &&
@@ -72,14 +79,14 @@ data class ActContent(
             )
             appendLine("CHAPTERS: ")
             chapters.forEach { chapter ->
-                val isLastChapter = chapter == chapters.last()
+                chapter == chapters.last()
                 appendLine(chapters.indexOf(chapter) + 1)
-                append(
+                appendLine(
                     chapter.data.toAINormalize(LorePrompts.CHAPTER_EXCLUDED_FIELDS),
                 )
                 appendLine()
-                if (showEvents && isLastChapter) {
-                    appendLine("LATEST CHAPTER EVENTS:")
+                if (showEvents) {
+                    appendLine("CHAPTER EVENTS:")
                     appendLine(
                         chapter.events.map { it.data }.normalizetoAIItems(
                             LorePrompts.TIMELINE_EXCLUDED_FIELDS,
@@ -87,6 +94,15 @@ data class ActContent(
                     )
                 }
             }
-            appendLine("]")
         }
+
+    fun getChapterCovers(): List<String> = chapters.map { it.data.coverImage }.filter { it.isNotEmpty() }
+
+    fun getPresentCharacters(allCharacters: List<CharacterContent>): List<CharacterContent> {
+        val characterIds =
+            chapters
+                .flatMap { it.events.flatMap { it.messages.map { it.message.characterId } } }
+                .toSet()
+        return allCharacters.filter { it.data.id in characterIds }
+    }
 }

@@ -127,7 +127,7 @@
     <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
     <string name="saga_detail_delete_button">Excluir</string>
     <string name="saga_detail_cancel_button">Cancelar</string>
-    <string name="saga_drawer_act_prefix">Ato %s</string>
+    <string name="saga_drawer_act_prefix">Vol. %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
     <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
     <string name="saga_detail_progress_title">Sua jornada</string>
@@ -139,8 +139,8 @@
     <string name="saga_detail_section_subtitle_chapters">%d capítulos</string>
     <string name="saga_detail_section_title_wiki">Wiki</string>
     <string name="saga_detail_section_subtitle_wiki">%d itens</string>
-    <string name="saga_detail_section_title_acts">Atos</string>
-    <string name="saga_detail_section_subtitle_acts">%d atos</string>
+    <string name="saga_detail_section_title_acts">Volumes</string>
+    <string name="saga_detail_section_subtitle_acts">%d volumes</string>
     <string name="saga_detail_status_ended">Finalizado em %s</string>
     <string name="saga_detail_status_created">Criado em %s</string>
     <string name="saga_detail_journey_of">A jornada de</string>
@@ -153,7 +153,7 @@
     <string name="saga_detail_view_timeline_action">Ver Linha do tempo</string>
     <string name="saga_detail_view_wiki_action">Ver wiki</string>
     <string name="saga_detail_view_chapters_action">Ver capítulos</string>
-    <string name="saga_detail_view_acts_action">Ver atos</string>
+    <string name="saga_detail_view_acts_action">Ver volumes</string>
     <string name="saga_detail_no_events_placeholder">Nenhum evento registrado</string>
     <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
     <string name="saga_detail_delete_saga_button">Excluir Saga</string>
@@ -161,6 +161,8 @@
     <string name="home_debug_session_icon_desc">Sessão de Depuração</string>
     <string name="home_start_debug_session_title">Iniciar Sessão de Depuração</string>
     <string name="home_test_with_fake_messages_subtitle">Testar com mensagens falsas.</string>
+    <string name="home_completed_sagas_title">Jornadas concluídas</string>
+    <string name="home_trophy_overflow">+%d</string>
     <string name="home_create_new_saga_title">Criar nova saga</string>
     <string name="home_create_new_saga_subtitle">Crie uma nova aventura e deixe a IA te guiar.</string>
 
@@ -180,7 +182,7 @@
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
     <string name="notification_title">Nova mensagem em %s</string>
-    <string name="notification_playing_act">Jogando ato %s</string>
+    <string name="notification_playing_act">Jogando volume %s</string>
     <string name="saga_detail_relationships_section_title">Relacionamentos</string>
     <string name="character_tooltip_empty_message">Descreva seu herói para revelar o cartão — nome, traços e um vislumbre da história.</string>
     <string name="starring">Estrelando</string>
@@ -244,7 +246,7 @@
     <string name="timeline_generated_successfully">Evento %s finalizado.</string>
     <string name="chapter_finished">Capítulo %s finalizado.</string>
     <string name="timeline_updated">Evento %s atualizado.</string>
-    <string name="act_finished">Ato %s finalizado</string>
+    <string name="act_finished">Volume %s finalizado</string>
     <string name="unexpected_error">Ocorreu um erro inesperado</string>
 
     <string name="smart_fix_description">Receba sugestões automáticas de correção por IA com base na sua história e tema. As sugestões ajudam a enriquecer o vocabulário e a adicionar profundidade à narrativa.</string>
@@ -270,7 +272,7 @@
     <string name="review_event_label">Revisar evento</string>
     <string name="share_character_cd">Compartilhar personagem</string>
     <string name="messages_label">Mensagens</string>
-    <string name="act_title">Ato %s</string>
+    <string name="act_title">Volume %s</string>
     <string name="chapter_title">Capítulo %s</string>
     <string name="pro_label">Pro</string>
     <string name="themes_title">Temas</string>
@@ -299,13 +301,13 @@
     <string name="no_messages_cd">Nenhuma mensagem</string>
     <string name="saga_ended_on">Sua saga chegou ao fim em %s</string>
     <string name="chapter_title_template">Capítulo %s</string>
-    <string name="act_title_template">Ato %s</string>
+    <string name="act_title_template">Volume %s</string>
     <string name="restore_sagas">Restaurar histórias</string>
     <string name="import_saga">Importar saga</string>
     <string name="import_saga_description">Você pode importar sagas exportadas e recuperar seu histórico.</string>
     <string name="updates_count">%d Atualizações</string>
     <string name="last_update">Última atualização</string>
-    <string name="chat_view_subtitle">Ato %1$s - Capítulo %2$s</string>
+    <string name="chat_view_subtitle">Volume %1$s · Capítulo %2$s</string>
     <string name="continue_to_play">Continue a explorar suas sagas para saber mais sobre seu estilo de jogo</string>
     <string name="backup_enabled_label">Backup Ativado</string>
     <string name="backup_disabled_label">Backup Desativado</string>
@@ -318,6 +320,19 @@
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
     <string name="character_details_aka">vulgo: %s</string>
+    <string name="character_details_arcs_title">Arco narrativo</string>
+    <string name="character_details_knowledge_title">O que sabe</string>
+    <string name="character_details_appearance_title">Aparência</string>
+    <string name="character_details_abilities_title">Habilidades</string>
+    <string name="character_details_skills">Habilidades e proficiências</string>
+    <string name="character_details_talents">Talentos únicos</string>
+    <string name="character_details_jawline">Maxilar</string>
+    <string name="character_details_build">Corpo e postura</string>
+    <string name="character_details_skin">Pele</string>
+    <string name="character_details_distinctive">Traços distintivos</string>
+    <string name="character_details_carried_items">Itens carregados</string>
+    <string name="character_arc_source_chapter">Capítulo</string>
+    <string name="character_arc_source_act">Volume</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
     <string name="smart_fix_button">Refinar</string>
     <string name="message_effects">Efeitos de Mensagem</string>
@@ -343,15 +358,15 @@
 
     <string name="story_sheet_button_continue_saga">Continuar Saga</string>
     <string name="story_sheet_title_previously_on">Anteriormente em %s</string>
-    <string name="story_sheet_title_history_continues">A história continua</string>
+    <string name="story_sheet_title_history_continues">A Lenda Continua</string>
 
     <!-- Global Notifications -->
     <string name="notification_new_message">Nova Mensagem</string>
     <string name="notification_new_message_content">%s enviou uma nova mensagem</string>
     <string name="notification_new_chapter">Novo Capítulo</string>
     <string name="notification_new_chapter_content">Capítulo %s começou!</string>
-    <string name="notification_new_act">Novo Ato</string>
-    <string name="notification_new_act_content">Ato %1$s: %2$s</string>
+    <string name="notification_new_act">Novo volume</string>
+    <string name="notification_new_act_content">Volume %1$s: %2$s</string>
     <string name="notification_new_character">Novo Personagem</string>
     <string name="notification_new_character_content">%s entrou para a história!</string>
     <string name="notification_timeline_event">Atualização da Linha do Tempo</string>
@@ -378,7 +393,7 @@
     <string name="recover_backup_sheet_description">Encontramos algumas histórias perdidas, que tal recuperarmos?</string>
     <string name="recover_backup_sheet_button_recover_all">Restaurar todas as histórias</string>
     <string name="smart_notification_fallback">Eu estava pensando em nossa história, vamos continuar quando você tiver tempo.</string>
-    <string name="notification_progress_subtext">%1$d%% • Ato %2$s de %3$s</string>
+    <string name="notification_progress_subtext">%1$d%% • Volume %2$s de %3$s</string>
     <string name="mic_permission_title">Permissão de gravar áudio</string>
     <string name="show_transcription">Ver transcrição</string>
     <string name="your_playthrough_subtitle">Descubra seu estilo de joogo</string>
@@ -400,21 +415,26 @@
     <string name="settings_help_center_title">Ajuda e feedback</string>
     <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
 
-    <!-- Marcos de Narrativa -->
-    <string name="advance_new_event">Novo Evento</string>
-    <string name="releasing_event">Canalizando o próximo evento...</string>
-    <string name="advance_new_chapter">Novo Capítulo</string>
-    <string name="releasing_chapter">Forjando o próximo capítulo...</string>
-    <string name="advance_new_chapter_introduction">Entrar no Capítulo</string>
-    <string name="releasing_chapter_introduction">Virando a página...</string>
-    <string name="advance_new_act">Novo Ato</string>
-    <string name="releasing_act">Iniciando o próximo Ato...</string>
-    <string name="advance_new_act_introduction">Iniciar Ato</string>
-    <string name="releasing_act_introduction">As cortinas estão subindo...</string>
-    <string name="advance_start_story">Iniciar História</string>
-    <string name="releasing_start_story">Iniciando a jornada...</string>
-    <string name="advance_saga_ending">O Fim</string>
-    <string name="releasing_ending">Encerrando esta Saga...</string>
+    <!-- Marcos de Narrativa (evento = checkpoint, capítulo = fase, ato = volume) -->
+    <string name="advance_evolve_timeline">Novo evento</string>
+    <string name="releasing_evolve_timeline">Registrando este evento...</string>
+    <string name="advance_close_chapter">Concluir fase</string>
+    <string name="releasing_close_chapter">Resumindo esta fase...</string>
+    <string name="advance_open_chapter">Continuar jornada</string>
+    <string name="releasing_open_chapter">Seguindo para a próxima fase...</string>
+    <string name="advance_close_act">Completar volume</string>
+    <string name="releasing_close_act">Consolidando este volume...</string>
+    <string name="advance_create_act">Novo volume</string>
+    <string name="releasing_create_act">Continuando sua história...</string>
+    <string name="advance_new_chapter_introduction">Ver abertura da fase</string>
+    <string name="releasing_chapter_introduction">Preparando a abertura...</string>
+    <string name="advance_new_act_introduction">Ver abertura do volume</string>
+    <string name="releasing_act_introduction">Preparando a abertura...</string>
+    <string name="advance_start_story">Continuar história</string>
+    <string name="releasing_start_story">Preparando o próximo evento...</string>
+    <string name="releasing_close_scene">Salvando este evento...</string>
+    <string name="advance_saga_ending">Escrever o desfecho</string>
+    <string name="releasing_ending">Escrevendo o desfecho...</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>
@@ -474,9 +494,9 @@
     <string name="milestone_fallback_chapter_finished_crime">Caso encerrado!</string>
     <string name="milestone_fallback_chapter_finished_punk_rock">A música acabou. Próxima faixa!</string>
 
-    <!-- Act Fallbacks -->
+    <!-- Volume Fallbacks -->
     <string name="milestone_fallback_act_finished_fantasy">Uma era termina, um novo tempo começa!</string>
-    <string name="milestone_fallback_act_finished_cyberpunk">Ato encerrado. Subindo de nível!</string>
+    <string name="milestone_fallback_act_finished_cyberpunk">Volume concluído. Subindo de nível!</string>
     <string name="milestone_fallback_act_finished_space_opera">Setor conquistado!</string>
     <string name="milestone_fallback_act_finished_horror">Você escapou do pesadelo!</string>
     <string name="milestone_fallback_act_finished_cowboy">Território reivindicado!</string>
@@ -626,4 +646,28 @@
     <!-- Errors -->
     <string name="error_cosmic_interruption">Interrupção Cósmica</string>
     <string name="error_retry_align">Tentar Alinhar Novamente</string>
+    <string name="read_chronicles">Ler Crônicas</string>
+    <string name="the_chronicles">As Crônicas</string>
+    <string name="the_chronicle_awaits">A Crônica Aguarda</string>
+    <string name="read_volume">Ler Volume %s</string>
+    <string name="read_next_volume">Ler próximo volume</string>
+    <string name="volume_conclusion">Conclusão do volume</string>
+    <string name="reveal_volume">Revelar Volume %s</string>
+    <string name="see_story">Ver história</string>
+    <string name="see_protagonists">Ver protagonistas</string>
+    <string name="volume">Volume</string>
+    <string name="writing">Escrevendo…</string>
+    <string name="chronicle_placeholder">Este capítulo da sua lenda ainda não foi tecido na Grande Biblioteca. Convide o Cronista para registrar seus feitos.</string>
+    <string name="weave_chronicle">Tecer a Crônica</string>
+    <string name="concluding_volume">Vol. %s</string>
+    <string name="saga_continues">A Saga Continua</string>
+    <string name="chronicle_end">As crônicas registraram tudo o que aconteceu… por enquanto.</string>
+    <!-- Guardrails -->
+    <string name="guardrail_blocked_title">Não foi possível processar</string>
+    <string name="guardrail_blocked_message">Sua mensagem viola nossas políticas de segurança e não pode ser processada. Tente reformular seu texto.</string>
+    <string name="guardrail_age_title">Conteúdo Restrito</string>
+    <string name="guardrail_age_message">Este conteúdo não é apropriado para a sua idade verificada.</string>
+    <string name="guardrail_explicit_title">Conteúdo Explícito Detectado</string>
+    <string name="guardrail_explicit_message">Sua mensagem contém conteúdo sexual ou gráfico explícito que é proibido para todos os usuários. Por favor, mantenha um ambiente seguro.</string>
+    <string name="guardrail_dismiss">Entendi</string>
 </resources>

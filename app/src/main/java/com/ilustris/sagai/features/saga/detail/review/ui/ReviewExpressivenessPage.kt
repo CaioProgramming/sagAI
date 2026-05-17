@@ -31,16 +31,11 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
-import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.saga.detail.data.model.ReviewStage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.VibeShapeDrawing
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shimmerize
@@ -60,7 +55,7 @@ class ReviewExpressivenessPage(
         canAnimate: Boolean,
         onAction: (ReviewAction) -> Unit,
     ) {
-        val genre = content.data.genre
+        content.data.genre
         var showText by remember {
             mutableStateOf(false)
         }
@@ -79,14 +74,10 @@ class ReviewExpressivenessPage(
         val emotionalTone =
             remember {
                 content
-                    .flatMessages()
-                    .filter { it.character == content.mainCharacter }
-                    .rankEmotionalTone()
-                    .ifEmpty {
-                        listOf(
-                            EmotionalTone.NEUTRAL to emptyList(),
-                        )
-                    }.first()
+                    .flatEvents()
+                    .map { it.emotionalRanking() }
+                    .first()
+                    .first()
             }
 
         Column(
@@ -98,25 +89,27 @@ class ReviewExpressivenessPage(
                         tween(1200, easing = LinearOutSlowInEasing),
                     ).fillMaxWidth(),
         ) {
-            VibeShapeDrawing(
-                emotionalTone = emotionalTone.first,
-                strokeWidth = 4.dp,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .reactiveShimmer(
-                            true,
-                            shimmerColors = emotionalTone.first.color.shimmerize(),
-                        ),
-                color = genre.resolveColor(),
-                onFinishDraw = {
-                    coroutineScope.launch {
-                        delay(1500)
-                        showText = true
-                    }
-                },
-            )
+            emotionalTone.first?.let {
+                VibeShapeDrawing(
+                    emotionalTone = it,
+                    strokeWidth = 4.dp,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .reactiveShimmer(
+                                true,
+                                shimmerColors = it.color.shimmerize(),
+                            ),
+                    color = MaterialTheme.colorScheme.primary,
+                    onFinishDraw = {
+                        coroutineScope.launch {
+                            delay(1500)
+                            showText = true
+                        }
+                    },
+                )
+            }
 
             AnimatedVisibility(showText, modifier = Modifier.padding(16.dp)) {
                 stage.content?.let {
@@ -129,36 +122,38 @@ class ReviewExpressivenessPage(
                                 title,
                                 style =
                                     MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = genre.bodyFont(),
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                         fontWeight = FontWeight.Bold,
                                         textAlign = TextAlign.Center,
                                     ),
                             )
                         }
 
-                        AutoResizeText(
-                            emotionalTone.first.getTitle(),
-                            style =
-                                MaterialTheme.typography.displayMedium.copy(
-                                    fontFamily = genre.headerFont(),
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center,
-                                    shadow =
-                                        Shadow(
-                                            emotionalTone.first.color,
-                                            offset = Offset(2f, 2f),
-                                            blurRadius = 10f,
-                                        ),
-                                ),
-                            modifier =
-                                Modifier.levitate(),
-                        )
+                        emotionalTone.first?.let {
+                            AutoResizeText(
+                                it.getTitle(),
+                                style =
+                                    MaterialTheme.typography.displayMedium.copy(
+                                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center,
+                                        shadow =
+                                            Shadow(
+                                                it.color,
+                                                offset = Offset(2f, 2f),
+                                                blurRadius = 10f,
+                                            ),
+                                    ),
+                                modifier =
+                                    Modifier.levitate(),
+                            )
+                        }
 
                         Text(
                             it.subtitle ?: emptyString(),
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Light,
                                     textAlign = TextAlign.Center,
                                 ),
@@ -175,7 +170,7 @@ class ReviewExpressivenessPage(
                     colors =
                         ButtonDefaults.elevatedButtonColors().copy(
                             containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = genre.resolveColor(),
+                            contentColor = MaterialTheme.colorScheme.primary,
                         ),
                 ) {
                     Text(stringResource(R.string.share))

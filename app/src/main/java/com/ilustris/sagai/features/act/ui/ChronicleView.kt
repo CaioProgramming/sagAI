@@ -1,0 +1,141 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
+
+package com.ilustris.sagai.features.act.ui
+
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.R
+import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.act.ui.components.BookShelf
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.navigation.BookReaderKey
+import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
+
+/**
+ * Chronicle shelf screen — shows the book collection for a saga and triggers generation
+ * when a book hasn't been written yet. Once a book is ready it emits a navigation event
+ * consumed by [onOpenBook], which pushes [BookReaderView] onto the back stack.
+ */
+@Composable
+fun ChronicleView(
+    title: String,
+    subtitle: String,
+    saga: SagaContent,
+    acts: List<ActContent>,
+    initialActId: Int? = null,
+    titleModifier: Modifier = Modifier,
+    onClose: () -> Unit,
+    onOpenBook: (BookReaderKey) -> Unit,
+) {
+    val viewModel: ChronicleViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
+    saga.data.genre
+
+    LaunchedEffect(initialActId) {
+        viewModel.start(saga)
+        if (initialActId != null) {
+            viewModel.selectBookById(saga, initialActId)
+        }
+    }
+
+    // Navigation event — emitted when generation completes or a book already exists
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { key ->
+            onOpenBook(key)
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .statusBarsPadding()
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    IconButton(
+                        onClick = { onClose() },
+                        modifier = Modifier.clip(CircleShape),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.ic_back_left),
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                }
+
+                LargeHorizontalHeader(
+                    title,
+                    subtitle,
+                    titleStyle =
+                        MaterialTheme.typography.displaySmall.copy(
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                        ),
+                    subtitleStyle =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
+                    titleModifier = titleModifier,
+                )
+            }
+
+            SharedTransitionLayout(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    val starColor by animateColorAsState(MaterialTheme.colorScheme.primary)
+                    val generating = state as? ChronicleState.Generating
+
+                    StarryTextPlaceholder(
+                        modifier = Modifier.fillMaxSize(),
+                        starColor,
+                    )
+                    BookShelf(
+                        saga = saga,
+                        acts = acts,
+                        selectedBook = null,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        onBookSelected = viewModel::selectBook,
+                        isLoading = generating != null,
+                        reasoning = generating?.message,
+                        generatingActTitle = generating?.actTitle,
+                        visualConfig = visualConfig,
+                    )
+                }
+            }
+        }
+    }
+}

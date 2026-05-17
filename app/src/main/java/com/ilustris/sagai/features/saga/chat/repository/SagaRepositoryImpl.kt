@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ImageType
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
@@ -18,6 +17,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import javax.inject.Inject
 
 class SagaRepositoryImpl
@@ -37,7 +37,19 @@ class SagaRepositoryImpl
 
         override fun getChats(): Flow<List<SagaContent>> = sagaDao.getSagaContent()
 
-        override fun getSagaById(id: Int) = sagaDao.getSagaContent(id)
+        override fun getSagaSummaries() = sagaDao.getSagaSummaries()
+
+        override fun getAllSagas() = sagaDao.getAllSagas()
+
+        override fun getPlaythroughData() = sagaDao.getPlaythroughData()
+
+        override fun getSagaById(id: Int?) = if (id != null) sagaDao.getSagaContent(id) else emptyFlow()
+
+        override fun getSagaMetadata(id: Int) = sagaDao.getSagaMetadata(id)
+
+        override fun getSagaInfo(id: Int) = sagaDao.getSagaInfo(id)
+
+        override fun getSaga(id: Int) = sagaDao.getSaga(id)
 
         override suspend fun saveChat(saga: Saga) =
             saga.copy(
@@ -47,7 +59,7 @@ class SagaRepositoryImpl
                         .toInt(),
             )
 
-        override suspend fun updateChat(saga: Saga): Saga {
+        override suspend fun updateSaga(saga: Saga): Saga {
             sagaDao.updateSaga(saga)
             return saga
         }
@@ -84,7 +96,7 @@ class SagaRepositoryImpl
                     path = "${saga.id}",
                 )
 
-            updateChat(saga.copy(icon = file!!.absolutePath))
+            updateSaga(saga.copy(icon = file!!.absolutePath))
         }
 
         override fun generateSagaIconStream(
@@ -114,7 +126,8 @@ class SagaRepositoryImpl
                                             data = state.data.data,
                                             path = "${saga.id}",
                                         )
-                                    val updatedSaga = updateChat(saga.copy(icon = file!!.absolutePath))
+                                    val updatedSaga =
+                                        updateSaga(saga.copy(icon = file!!.absolutePath))
                                     emit(StreamingState.Success(updatedSaga))
                                 }
 
@@ -153,7 +166,7 @@ class SagaRepositoryImpl
                 )
                 appendLine()
                 appendLine("Story context: ")
-                appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
+                appendLine(saga.description)
                 appendLine(
                     "FINAL MANDATE: Create a balanced composition with the main character are clearly visible and integrated.",
                 )

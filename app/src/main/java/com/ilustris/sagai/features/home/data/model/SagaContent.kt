@@ -73,6 +73,15 @@ data class SagaContent(
     fun completedEvents(narrativeRules: NarrativeRules) = flatEvents().count { it.isComplete(narrativeRules) }
 }
 
+fun SagaContent.toSagaInfo() =
+    SagaInfo(
+        id = data.id,
+        title = data.title,
+        genre = data.genre,
+        variationId = data.variationId,
+        icon = data.icon,
+)
+
 fun SagaContent.historySummary() =
     acts.joinToString(";\n---\n") {
         "${acts.indexOf(it) + 1} - ${it.actSummary(it == acts.last())}"
@@ -101,7 +110,7 @@ fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id =
 
 fun SagaContent.findChapter(chapterId: Int) = flatChapters().find { it.data.id == chapterId }
 
-fun SagaContent.findAct(actId: Int) = acts.find { it.data.id == actId }
+fun SagaContent.findAct(actId: Int?) = acts.find { it.data.id == actId }
 
 fun SagaContent.findCharacter(characterId: Int?) = characters.find { it.data.id == characterId }
 
@@ -294,6 +303,30 @@ fun SagaContent.generateActLevelEmotionalFlowText(): String {
         }
     }
 }
+
+fun SagaContent.toNarrativeMetadata(): SagaMetadata =
+    SagaMetadata(
+        data = data,
+        acts =
+            acts.map { act ->
+                ActMetadata(
+                    data = act.data,
+                    chapters =
+                        act.chapters.map { chapter ->
+                            ChapterMetadata(
+                                data = chapter.data,
+                                events =
+                                    chapter.events.map { event ->
+                                        TimelineMetadata(
+                                            data = event.data,
+                                            messages = event.messages,
+                                        )
+                                    },
+                            )
+                        },
+                )
+            },
+    )
 
 fun SagaContent.hasMoreThanOneChapter() = flatChapters().size > 1
 

@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.emotional.data.model.EmotionalProfile
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 
@@ -40,6 +41,8 @@ data class Saga(
     val endMessage: String = "",
     @Embedded
     val review: Review? = null,
+    @Embedded(prefix = "emotional_")
+    val emotionalProfile: EmotionalProfile? = null,
     @ColumnInfo(defaultValue = "")
     val emotionalReview: String? = null,
     @ColumnInfo(defaultValue = "0")
@@ -48,4 +51,6 @@ data class Saga(
     val narratorVoice: String? = null,
     @ColumnInfo(index = true)
     val variationId: String? = null,
+    @ColumnInfo(defaultValue = "")
+    val worldState: String? = null,
 )

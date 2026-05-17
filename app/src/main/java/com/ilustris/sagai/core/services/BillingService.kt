@@ -12,6 +12,7 @@ import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
+import com.ilustris.sagai.core.data.SideEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,7 @@ class BillingService
         context: Context,
         private val remoteConfigService: RemoteConfigService,
         private val firebaseInstallationService: FirebaseInstallationService,
+        private val sideEffectService: SideEffectService,
     ) {
         val state = MutableStateFlow<BillingState?>(null)
 
@@ -133,6 +135,7 @@ class BillingService
             if (isPremium() || (bypass && BuildConfig.DEBUG)) {
                 block()
             } else {
+                sideEffectService.emit(SideEffect.ShowPremiumOnboarding)
                 throw PremiumException(firebaseInstallationService.getCurrentInstallationId())
             }
 

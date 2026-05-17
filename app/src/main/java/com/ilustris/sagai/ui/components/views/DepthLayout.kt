@@ -30,6 +30,7 @@ fun DepthLayout(
     backgroundImageModifier: Modifier = imageModifier,
     foregroundImageModifier: Modifier = imageModifier,
     viewModel: DepthLayoutViewModel = hiltViewModel(),
+    onLoadError: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
     val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
@@ -69,6 +70,11 @@ fun DepthLayout(
                 AsyncImage(
                     model = imagePath,
                     contentDescription = null,
+                    onState = { state ->
+                        if (state is coil3.compose.AsyncImagePainter.State.Error) {
+                            onLoadError()
+                        }
+                    },
                     modifier = backgroundImageModifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )

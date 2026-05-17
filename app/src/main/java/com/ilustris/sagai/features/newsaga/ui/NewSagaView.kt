@@ -1,9 +1,10 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.newsaga.ui
-
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -63,15 +64,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
@@ -81,21 +80,22 @@ import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
-import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.FluidGradient
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 
 @Composable
 fun NewSagaView(
-    navHostController: NavHostController,
+    onBack: () -> Unit = {},
+    onNavigate: (NavKey) -> Unit = {},
     viewModel: NewSagaViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val isReadyToSave by viewModel.isReadyToSave.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -116,11 +116,7 @@ fun NewSagaView(
     LaunchedEffect(effect) {
         when (effect) {
             is Effect.Navigate -> {
-                navHostController.navigateToRoute(
-                    (effect as Effect.Navigate).route,
-                    arguments = (effect as Effect.Navigate).arguments,
-                    popUpToRoute = Routes.NEW_SAGA,
-                )
+                onNavigate((effect as Effect.Navigate).key)
             }
 
             else -> {
@@ -138,17 +134,22 @@ fun NewSagaView(
         AnimatedContent(isEchoLoading) {
             if (it) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Image(
-                        painterResource(R.drawable.ic_spark),
-                        contentDescription = "Loading",
-                        modifier =
-                            Modifier
-                                .size(100.dp)
-                                .gradientFill(Brush.verticalGradient(holographicGradient))
-                                .reactiveShimmer(true)
-                                .levitate()
-                                .divineAura(),
-                    )
+                    with(sharedTransitionScope) {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            contentDescription = "Loading",
+                            modifier =
+                                Modifier
+                                    .size(100.dp)
+                                    .sharedElement(
+                                        rememberSharedContentState("spark_icon"),
+                                        animatedVisibilityScope,
+                                    ).gradientFill(Brush.verticalGradient(holographicGradient))
+                                    .reactiveShimmer(true)
+                                    .levitate()
+                                    .divineAura(),
+                        )
+                    }
                 }
             } else {
                 Box(
@@ -195,7 +196,7 @@ fun NewSagaView(
                         AnimatedVisibility(!isSaving) {
                             TopBarContent(
                                 modifier = Modifier.fillMaxWidth(),
-                                navigateBack = { navHostController.popBackStack() },
+                                navigateBack = { onBack() },
                             )
                         }
 
@@ -211,6 +212,7 @@ fun NewSagaView(
                                 lockedSaga = lockedSaga,
                                 lockedCharacter = lockedCharacter,
                                 isAgentLoading = isAgentLoading || isSaving,
+                                currentAgentMessage = currentAgentMessage,
                                 onAction = viewModel::onAgenticAction,
                             )
                         }
@@ -234,8 +236,9 @@ fun NewSagaView(
                                 CosmicBook(
                                     book = it.first,
                                     visualConfig = it.second,
-                                    isOpened = false,
+                                    isOpened = true,
                                     isLoading = true,
+                                    reasoning = currentAgentMessage,
                                     onToggle = {},
                                     onAction = {},
                                     modifier =
@@ -323,14 +326,13 @@ fun NewSagaView(
                             ) { ready ->
                                 if (ready) {
                                     AnimatedVisibility(isSaving.not()) {
-                                        val genre = lockedSaga?.genre
-                                        val buttonShape =
-                                            lockedSaga?.genre?.shape() ?: MaterialTheme.shapes.large
+                                        lockedSaga?.genre
+                                        val buttonShape = sagaShape()
                                         val color =
-                                            genre?.resolveColor()
+                                            MaterialTheme.colorScheme.primary
                                                 ?: MaterialTheme.colorScheme.primary
                                         val contentColor =
-                                            genre?.resolveIconColor()
+                                            MaterialTheme.colorScheme.secondary
                                                 ?: MaterialTheme.colorScheme.onPrimary
                                         Button(
                                             onClick = { viewModel.onAgenticAction(AgenticAction.SaveSaga) },
@@ -425,11 +427,11 @@ fun PromptBar(
     isLoading: Boolean,
     genre: Genre?,
 ) {
-    val shape = genre?.shape() ?: MaterialTheme.shapes.extraLarge
+    val shape = sagaShape() ?: MaterialTheme.shapes.extraLarge
     val themeBrush =
         Brush.horizontalGradient(genre?.colorPalette() ?: holographicGradient)
 
-    val primaryColor = genre?.resolveColor() ?: MaterialTheme.colorScheme.primary
+    val primaryColor = MaterialTheme.colorScheme.primary ?: MaterialTheme.colorScheme.primary
     Row(
         modifier =
             Modifier

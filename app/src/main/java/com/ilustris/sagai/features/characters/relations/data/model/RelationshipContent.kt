@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.characters.relations.data.model
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
 import androidx.room.Embedded
 import androidx.room.Relation
@@ -7,8 +9,6 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.hexToColor
 
@@ -39,6 +39,7 @@ data class RelationshipContent(
             characterOne
         }
 
+    @Composable
     fun getBrush(
         genre: Genre,
         visualConfig: GenreVisualConfig? = null,
@@ -47,8 +48,8 @@ data class RelationshipContent(
         val secondCharacter = characterTwo
         val charactersColors =
             listOf(
-                firstCharacter.hexColor.hexToColor() ?: genre.resolveColor(visualConfig),
-                secondCharacter.hexColor.hexToColor() ?: genre.colorPalette(visualConfig).last(),
+                firstCharacter.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary,
+                secondCharacter.hexColor.hexToColor() ?: MaterialTheme.colorScheme.secondary,
             )
         return Brush.linearGradient(
             charactersColors,

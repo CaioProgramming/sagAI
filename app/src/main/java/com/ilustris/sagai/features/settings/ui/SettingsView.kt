@@ -5,8 +5,8 @@ package com.ilustris.sagai.features.settings.ui
 import ai.atick.material.MaterialColor
 import android.Manifest
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,11 +56,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.permissions.PermissionComponent
@@ -69,25 +67,29 @@ import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSe
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
-import com.ilustris.sagai.features.playthrough.PlaythroughSheet
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.navigateToRoute
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 
 @Composable
 fun SettingsView(
-    navController: NavHostController? = null,
+    onBack: () -> Unit = {},
+    navToFAQ: () -> Unit = {},
+    navToAuditLogs: () -> Unit = {},
+    navToPlaythrough: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
     onOpenPremiumOnboarding: () -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle(false)
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
@@ -122,16 +124,12 @@ fun SettingsView(
     var showBackups by remember { mutableStateOf(true) }
 
     val exportLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/x-sqlite3"),
-        ) { uri ->
+        PermissionService.rememberDatabaseExportLauncher { uri ->
             uri?.let { viewModel.exportDatabase(it) }
         }
 
     val importLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
-        ) { uri ->
+        PermissionService.rememberDatabaseImportLauncher { uri ->
             uri?.let { viewModel.importDatabase(it) }
         }
     LazyColumn(
@@ -160,32 +158,29 @@ fun SettingsView(
 
         if (isUserPro) {
             item {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .reactiveShimmer(true)
-                            .gradientFill(Brush.horizontalGradient(holographicGradient)),
-                ) {
-                    PremiumTitle()
+                with(sharedTransitionScope) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .reactiveShimmer(true)
+                                .gradientFill(Brush.horizontalGradient(holographicGradient)),
+                    ) {
+                        PremiumTitle(
+                            iconModifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    animatedVisibilityScope,
+                                ),
+                        )
+                    }
                 }
             }
         }
 
         item {
-            val totalPlaytime by viewModel.totalPlaytime.collectAsStateWithLifecycle()
-            var showPlaythroughSheet by remember { mutableStateOf(false) }
-
-            val hours = totalPlaytime / 3600000
-            val minutes = (totalPlaytime % 3600000) / 60000
-            if (hours > 0) {
-                stringResource(R.string.playtime_format_hours, hours, minutes)
-            } else {
-                stringResource(R.string.playtime_format_minutes, minutes)
-            }
-
             Column(
                 modifier =
                     Modifier
@@ -196,21 +191,17 @@ fun SettingsView(
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .clickable {
-                            showPlaythroughSheet = true
-                        }
-                        .padding(16.dp),
+                        ).clickable {
+                            navToPlaythrough()
+                        }.padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -237,12 +228,6 @@ fun SettingsView(
                     }
                 }
             }
-
-            if (showPlaythroughSheet) {
-                PlaythroughSheet(
-                    onDismiss = { showPlaythroughSheet = false },
-                )
-            }
         }
 
         item {
@@ -253,8 +238,7 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(12.dp),
+                        ).padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -295,11 +279,9 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .clickable {
+                            ).clickable {
                                 viewModel.clearCache()
-                            }
-                            .padding(16.dp),
+                            }.padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -347,8 +329,7 @@ fun SettingsView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -356,21 +337,30 @@ fun SettingsView(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            val saga = remember { info.data }
-                            AvatarTimelineIcon(
-                                saga.icon,
-                                false,
-                                saga.genre,
-                                placeHolderChar = saga.title.first().uppercase(),
-                                modifier =
-                                    Modifier
-                                        .size(32.dp)
-                                        .border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.onBackground.gradientFade(),
-                                            CircleShape,
-                                        ),
-                            )
+                            val saga = remember(info.data.id) { info.data }
+                            SagAITheme(genre = saga.genre) {
+                                val visualConfig =
+                                    com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig.current
+                                val genreColor = saga.genre.color
+                                val genreBrush = sagaBrush()
+                                AvatarTimelineIcon(
+                                    saga.icon,
+                                    false,
+                                    saga.genre,
+                                    placeHolderChar = saga.title.first().uppercase(),
+                                    visualConfig = visualConfig,
+                                    borderWidth = 1.dp,
+                                    modifier =
+                                        Modifier
+                                            .dropShadow(CircleShape) {
+                                                radius = 5f
+                                                color = genreColor
+                                                brush = genreBrush
+                                                spread = 5f
+                                            }.size(32.dp)
+                                            .selectiveColorHighlight(saga.genre),
+                                )
+                            }
 
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -433,8 +423,7 @@ fun SettingsView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    )
-                    .padding(8.dp),
+                    ).padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PreferencesContainer(
@@ -620,15 +609,14 @@ fun SettingsView(
                 true,
                 showSwitch = false,
                 onClickSwitch = {
-                    navController?.navigateToRoute(Routes.FAQ)
+                    navToFAQ()
                 },
                 modifier =
                     Modifier
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .padding(8.dp),
+                        ).padding(8.dp),
             )
         }
 
@@ -690,7 +678,7 @@ fun SettingsView(
         item {
             Button(
                 onClick = {
-                    importLauncher.launch(arrayOf("application/x-sqlite3"))
+                    importLauncher.launch(PermissionService.SQLITE_MIME_TYPES)
                 },
                 colors = ButtonDefaults.textButtonColors(),
                 shape = RoundedCornerShape(15.dp),
@@ -731,7 +719,7 @@ fun SettingsView(
         if (com.ilustris.sagai.BuildConfig.DEBUG) {
             item {
                 Button(
-                    onClick = { navController?.navigateToRoute(Routes.AUDIT_LOGS) },
+                    onClick = { navToAuditLogs() },
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -877,10 +865,4 @@ fun LegendDot(
             Text(value, style = MaterialTheme.typography.labelSmall, modifier = Modifier.alpha(.5f))
         }
     }
-}
-
-@Preview
-@Composable
-fun SettingsViewPreview() {
-    SettingsView()
 }

@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 interface HomeUseCase {
     val billingState: MutableStateFlow<BillingService.BillingState?>
 
-    fun getSagas(): Flow<List<SagaContent>>
+    fun getSagas(): Flow<List<com.ilustris.sagai.features.home.data.model.SagaSummary>>
+
+    fun getSagaContent(sagaId: Int): Flow<SagaContent?>
 
     suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt>
 
@@ -24,4 +26,6 @@ interface HomeUseCase {
     suspend fun recoverSaga(sagaContent: RestorableSaga): RequestResult<SagaContent>
 
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
+
+    suspend fun autoBackup(): RequestResult<Unit>
 }

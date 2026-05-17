@@ -75,15 +75,12 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
@@ -272,7 +269,7 @@ fun ReviewTextDisplay(
                 text = it,
                 style =
                     MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
@@ -291,7 +288,7 @@ fun ReviewTextDisplay(
                 text = it,
                 style =
                     MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
                     ),
@@ -372,8 +369,8 @@ fun HeroSummaryCard(
             text = content.data.title.uppercase(),
             style =
                 MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = genre.headerFont(),
-                    color = genre.resolveColor(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                    color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                 ),
             strokeColor = MaterialTheme.colorScheme.background,
@@ -394,7 +391,7 @@ fun HeroSummaryCard(
                     "TOP PERSONAGENS",
                     style =
                         MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             fontWeight = FontWeight.Bold,
                             color = contentColor.copy(alpha = 0.7f),
                             textAlign = TextAlign.Start,
@@ -410,7 +407,7 @@ fun HeroSummaryCard(
                         "$position ${it.first.name}",
                         style =
                             MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Black,
                                 color = contentColor,
                             ),
@@ -431,7 +428,7 @@ fun HeroSummaryCard(
                         "LADO EMOCIONAL",
                         style =
                             MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = contentColor.copy(alpha = 0.7f),
                             ),
@@ -446,7 +443,7 @@ fun HeroSummaryCard(
                             "$position ${tone.first.getTitle()}",
                             style =
                                 MaterialTheme.typography.labelLarge.copy(
-                                    fontFamily = genre.bodyFont(),
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     fontWeight = FontWeight.Black,
                                     color = contentColor,
                                 ),
@@ -474,7 +471,7 @@ fun HeroSummaryCard(
                     "Tempo de jogo",
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             fontWeight = FontWeight.Medium,
                             color = contentColor,
                         ),
@@ -485,7 +482,7 @@ fun HeroSummaryCard(
                     playTime,
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             fontWeight = FontWeight.Bold,
                             color = contentColor,
                         ),
@@ -506,7 +503,7 @@ fun HeroSummaryCard(
                         "Emoção definitiva",
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.Medium,
                                 color = contentColor,
                             ),
@@ -519,7 +516,7 @@ fun HeroSummaryCard(
                         emotionalRank.first().first.getTitle(),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.headerFont(),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = contentColor,
                             ),
@@ -536,7 +533,7 @@ fun HeroSummaryCard(
             null,
             colorFilter =
                 androidx.compose.ui.graphics.ColorFilter
-                    .tint(genre.resolveColor()),
+                    .tint(MaterialTheme.colorScheme.primary),
             modifier =
                 Modifier
                     .size(32.dp)
@@ -603,7 +600,7 @@ private fun SummaryMetricItem(
             text = label,
             style =
                 MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                 ),
@@ -612,7 +609,7 @@ private fun SummaryMetricItem(
             text = value,
             style =
                 MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = genre.headerFont(),
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 ),
@@ -872,7 +869,7 @@ fun ArchetypeMiniCard(
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         DynamicLinework(
-            color = genre.resolveColor().copy(alpha = 0.2f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
             lineCount = 3,
             modifier = Modifier.fillMaxSize(.5f),
         )
@@ -882,7 +879,7 @@ fun ArchetypeMiniCard(
                 text = title,
                 style =
                     MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.Black,
                     ),
                 maxLines = 2,
@@ -892,7 +889,7 @@ fun ArchetypeMiniCard(
                 text = subtitle,
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     ),
                 maxLines = 2,
@@ -944,8 +941,11 @@ fun ReviewTopCharacterContent(
                     .fillMaxHeight(heightFill)
                     .padding(imagePadding)
                     .clip(genre.bubble(isNarrator = true))
-                    .border(2.dp, genre.resolveColor(), genre.bubble(isNarrator = true))
-                    .effectForGenre(genre),
+                    .border(
+                        2.dp,
+                        MaterialTheme.colorScheme.primary,
+                        genre.bubble(isNarrator = true),
+                    ).effectForGenre(genre),
         )
 
         subtitle?.let {
@@ -960,7 +960,7 @@ fun ReviewTopCharacterContent(
                     subtitle,
                     style =
                         MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             textAlign = TextAlign.Center,
                         ),
                     modifier = Modifier.padding(top = 16.dp),
@@ -979,12 +979,12 @@ fun ReviewTopCharacterContent(
                 character.name,
                 style =
                     MaterialTheme.typography.displayMedium.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         shadow =
                             Shadow(
                                 (
                                     character.hexColor.hexToColor()
-                                        ?: genre.resolveColor()
+                                        ?: MaterialTheme.colorScheme.primary
                                 ),
                                 offset = Offset(2f, 2f),
                                 blurRadius = 10f,
@@ -1000,7 +1000,10 @@ fun ReviewTopCharacterContent(
                     slideInVertically(tween(1500, easing = EaseIn)) { -it },
             exit = slideOutVertically { it } + fadeOut(),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 CounterText(
                     messageCount,
                     onAnimationFinished = {
@@ -1008,7 +1011,7 @@ fun ReviewTopCharacterContent(
                     },
                     textStyle =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                         ),
@@ -1018,7 +1021,7 @@ fun ReviewTopCharacterContent(
                     stringResource(R.string.messages_label),
                     style =
                         MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                             fontWeight = FontWeight.Medium,
                         ),
                 )
@@ -1041,7 +1044,7 @@ fun ReviewLoadingPage(
         contentAlignment = Alignment.Center,
     ) {
         DynamicLinework(
-            color = genre.resolveColor().copy(alpha = 0.3f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
             lineCount = 10,
         )
 
@@ -1054,7 +1057,7 @@ fun ReviewLoadingPage(
                 text = "Checking out the beautiful mess we made...",
                 style =
                     MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
@@ -1066,9 +1069,9 @@ fun ReviewLoadingPage(
                 text = sagaTitle,
                 style =
                     MaterialTheme.typography.headlineMedium.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         fontWeight = FontWeight.ExtraBold,
-                        color = genre.resolveColor(),
+                        color = MaterialTheme.colorScheme.primary,
                     ),
                 textAlign = TextAlign.Center,
             )
@@ -1078,7 +1081,7 @@ fun ReviewLoadingPage(
             StoryProgressIndicator(
                 progress = 0.5f,
                 modifier = Modifier.fillMaxWidth(0.6f),
-                color = genre.resolveColor(),
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }

@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -62,7 +61,7 @@ fun NarratorBox(
                     narratorShape,
                 ).border(
                     1.dp,
-                    genre.resolveColor().gradientFade(),
+                    MaterialTheme.colorScheme.primary.gradientFade(),
                     narratorShape,
                 ).padding(8.dp),
     ) {

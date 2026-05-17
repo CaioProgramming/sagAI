@@ -36,29 +36,27 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun EmotionShareView(
-    saga: SagaContent,
+    saga: Saga,
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
-    val genre = remember { saga.data.genre }
+    val genre = remember { saga.genre }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
@@ -82,7 +80,7 @@ fun EmotionShareView(
                         .padding(32.dp)
                         .background(MaterialTheme.colorScheme.background)
                         .align(Alignment.Center)
-                        .clip(genre.shape())
+                        .clip(sagaShape())
                         .clickable {
                             coroutineScope.launch {
                                 delay(2.seconds)
@@ -90,19 +88,21 @@ fun EmotionShareView(
                                     viewModel.saveBitmap(bitmap, ShareType.EMOTIONS.name)
                                 }
                             }
-                        }.drawWithContent {
+                        }
+                        .drawWithContent {
                             graphicsLayer.record {
                                 this@drawWithContent.drawContent()
                             }
                             drawLayer(graphicsLayer)
-                        }.fillMaxWidth()
+                        }
+                        .fillMaxWidth()
                         .padding(24.dp),
             ) {
                 Text(
                     shareText?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             brush = genre.gradient(),
                         ),
                     modifier = Modifier.padding(vertical = 16.dp),
@@ -112,7 +112,7 @@ fun EmotionShareView(
                     shareText?.text ?: emptyString(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         ),
                 )
 
@@ -127,7 +127,7 @@ fun EmotionShareView(
                         shareText?.caption ?: emptyString(),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 textAlign = TextAlign.Center,
                             ),
                     )

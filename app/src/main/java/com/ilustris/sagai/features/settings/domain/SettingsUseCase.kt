@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.file.FileManager
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionStatus
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.settings.ui.SagaStorageInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -70,6 +71,8 @@ interface SettingsUseCase {
     fun getMusicEnabled(): Flow<Boolean>
 
     suspend fun setMusicEnabled(enabled: Boolean)
+
+    fun getSagasOnly(): Flow<List<Saga>>
 }
 
 class SettingsUseCaseImpl
@@ -135,7 +138,7 @@ class SettingsUseCaseImpl
         override suspend fun isUserPro(): Boolean = billingService.isPremium()
 
         override fun getSagas() =
-            sagaRepository.getChats().map {
+            sagaRepository.getSagaSummaries().map {
                 fileManager.fetchSagasStorage(it.map { saga -> saga.data })
             }
 
@@ -151,17 +154,16 @@ class SettingsUseCaseImpl
 
         override suspend fun hasSagasWithChapters(): Boolean =
             withContext(Dispatchers.IO) {
-                val sagas = sagaRepository.getChats().firstOrNull() ?: return@withContext false
-                sagas.any { saga ->
-                    saga.acts.any { act -> act.chapters.isNotEmpty() }
-                }
+                val sagas =
+                    sagaRepository.getSagaSummaries().firstOrNull() ?: return@withContext false
+                sagas.any { saga -> saga.chaptersCount > 1 }
             }
 
         override suspend fun exportDatabase(destinationUri: Uri): RequestResult<Unit> =
             executeRequest {
                 database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
 
-                val dbFile = context.getDatabasePath("SagaDatabase")
+                val dbFile = context.getDatabasePath(SagaDatabase.NAME)
                 if (!dbFile.exists()) error("Database file not found")
 
                 context.contentResolver.openOutputStream(destinationUri, "w")?.use { output ->
@@ -173,28 +175,34 @@ class SettingsUseCaseImpl
 
         override suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit> =
             executeRequest {
-                val backupResult = databaseBackupService.createBackup()
-                if (backupResult.isFailure) {
-                    error("Failed to create backup before import: ${backupResult.exceptionOrNull()?.message}")
-                }
-
-                database.close()
-
-                val dbFile = context.getDatabasePath("SagaDatabase")
-                val walFile = java.io.File(dbFile.path + "-wal")
-                val shmFile = java.io.File(dbFile.path + "-shm")
-
-                walFile.delete()
-                shmFile.delete()
-
-                context.contentResolver.openInputStream(sourceUri)?.use { input ->
-                    dbFile.outputStream().use { output ->
-                        input.copyTo(output)
+                withContext(Dispatchers.IO) {
+                    val backupResult = databaseBackupService.createBackup()
+                    if (backupResult.isFailure) {
+                        error(
+                            "Failed to create backup before import: ${backupResult.exceptionOrNull()?.message}",
+                        )
                     }
-                } ?: error("Could not open input stream for source URI")
+
+                    database.close()
+
+                    val dbFile = context.getDatabasePath(SagaDatabase.NAME)
+                    val walFile = java.io.File(dbFile.path + "-wal")
+                    val shmFile = java.io.File(dbFile.path + "-shm")
+
+                    if (walFile.exists()) walFile.delete()
+                    if (shmFile.exists()) shmFile.delete()
+
+                    context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                        dbFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    } ?: error("Could not open input stream for source URI")
+                }
             }
 
         override suspend fun clearPreferences() {
             dataStorePreferences.clearAll()
         }
+
+        override fun getSagasOnly(): Flow<List<Saga>> = sagaRepository.getAllSagas()
     }

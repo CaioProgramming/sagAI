@@ -17,11 +17,13 @@ import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
+import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -47,6 +49,8 @@ class GemmaClient
     @Inject
     constructor(
         private val remoteConfigService: RemoteConfigService,
+        val safetyClient: SafetyClient,
+        val sideEffectService: SideEffectService,
         val geminiApiService: GeminiApiService,
         val promptService: PromptService,
         @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
@@ -78,9 +82,31 @@ class GemmaClient
 
         suspend fun modelName(requirement: ModelRequirement): String {
             val tierConfig =
-                remoteConfigService.getJson<Map<String, String>>("model_tier_config") ?: emptyMap()
-            val modelName = tierConfig[requirement.name]
-            return modelName!!
+                remoteConfigService.getJson<Map<String, Any>>("model_configs") ?: emptyMap()
+            return when (val config = tierConfig[requirement.name]) {
+                is String -> {
+                    config.replace("models/", "")
+                }
+
+                is Map<*, *> -> {
+                    val enabled = config["enabled"] as? Boolean ?: true
+                    if (!enabled) {
+                        throw ModelOutageException(
+                            requirement,
+                            config["model"] as? String ?: "unknown",
+                        )
+                    }
+                    val model =
+                        config["model"] as? String
+                            ?: error("Model name not found in config for ${requirement.name}")
+                    model.replace("models/", "")
+                }
+
+                else -> {
+                    Timber.e("Invalid model configuration for ${requirement.name}: $config")
+                    error("Invalid model configuration for ${requirement.name}")
+                }
+            }
         }
 
         suspend fun coreKey() =
@@ -104,17 +130,24 @@ class GemmaClient
          */
         suspend inline fun <reified T> generate(
             prompt: String,
+            userInteraction: Boolean = false,
             references: List<ImageReference?> = emptyList(),
             temperatureRandomness: Float = .5f,
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
-            requirement: ModelRequirement = ModelRequirement.LOW,
+            requirement: ModelRequirement = ModelRequirement.MEDIUM,
             blueprintKey: String? = null,
             logEnabled: Boolean = true,
         ): T? =
             withContext(Dispatchers.IO) {
+                if (userInteraction) {
+                    val safetyStatus = safetyClient.checkSafety(prompt)
+                    if (safetyStatus != SafeGuard.OK) {
+                        throw GuardrailsException(safetyStatus)
+                    }
+                }
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
                     if (logEnabled) Timber.w("Applying reactive delay due to high token count in last request.")
                     retryDelay = 5
@@ -130,7 +163,7 @@ class GemmaClient
                     if (logEnabled) Timber.i("generate: Core calls don't require delay.")
                 }
 
-                val maxAttempts = if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+                val maxAttempts = MAX_RETRIES + 1
                 val startTime = System.currentTimeMillis()
 
                 for (currentAttempt in 1..maxAttempts) {
@@ -172,41 +205,22 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
-                            val tier = requirement.name.lowercase()
-                            val coreRemoteKey = "core_${tier}_blueprint"
+                            requirement.name.lowercase()
                             val corePrompt =
-                                try {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = coreRemoteKey,
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                } catch (e: Exception) {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = "core_blueprint",
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                }
+                                promptService.buildRemotePrompt(
+                                    remoteConfigKey = "core_blueprint",
+                                    variables =
+                                        mapOf(
+                                            "language" to getLanguage(requireTranslation),
+                                            "type" to T::class.java.simpleName,
+                                            "structure" to structure,
+                                            "formattingRule" to formattingRule,
+                                            "task" to prompt,
+                                        ),
+                                    logEnabled = false,
+                                )
 
-                            val fullPrompt =
-                                buildString {
-                                    appendLine(prompt)
-                                    appendLine()
-                                    appendLine(corePrompt)
-                                }
+                            val fullPrompt = corePrompt
 
                             val promptLength =
                                 fullPrompt.length +
@@ -321,6 +335,8 @@ class GemmaClient
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
                                 val duration = System.currentTimeMillis() - startTime
+                                val safetyStatus =
+                                    if (e is GuardrailsException) e.status.name else null
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
@@ -329,6 +345,7 @@ class GemmaClient
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                         responseTime = duration,
+                                        safetyStatus = safetyStatus,
                                     ),
                                 )
                             } catch (logEx: Exception) {
@@ -336,7 +353,12 @@ class GemmaClient
                             }
                         }
                         if (logEnabled) {
-                            Timber.tag(this@GemmaClient::class.java.simpleName).e("Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}")
+                            Timber
+                                .tag(
+                                    this@GemmaClient::class.java.simpleName,
+                                ).e(
+                                    "Error in Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                                )
                         }
 
                         // Check if it's a parsing error (no delay needed) or network error (delay recommended)
@@ -366,27 +388,49 @@ class GemmaClient
 
                                 errorResponse.error?.details?.forEach { detail ->
                                     detail.violations?.forEach { violation ->
-                                        Timber.tag(this@GemmaClient::class.java.simpleName).w("Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})")
+                                        Timber
+                                            .tag(
+                                                this@GemmaClient::class.java.simpleName,
+                                            ).w(
+                                                "Quota Violation: ${violation.quotaId} - ${violation.quotaMetric} (Value: ${violation.quotaValue})",
+                                            )
                                     }
                                 }
 
                                 if (extractedDelay != null) {
-                                    Timber.tag(this@GemmaClient::class.java.simpleName).i("Extracted precise delay from error: $extractedDelay seconds")
+                                    Timber
+                                        .tag(
+                                            this@GemmaClient::class.java.simpleName,
+                                        ).i("Extracted precise delay from error: $extractedDelay seconds")
                                 }
                             } catch (parseEx: Exception) {
                                 Timber.tag(this@GemmaClient::class.java.simpleName).e("Failed to parse error body: ${parseEx.message}")
                             }
                         }
 
+                        val isNetworkError = e is java.io.IOException
                         if (currentAttempt < maxAttempts) {
                             val delayToApply =
-                                if (isParsingError) 0L else (extractedDelay ?: RETRY_DELAY.toLong())
+                                when {
+                                    isParsingError -> 0L
+
+                                    isNetworkError -> 2L
+
+                                    // Quick retry for DNS/Network hiccups
+                                    else -> (extractedDelay ?: RETRY_DELAY.toLong())
+                                }
 
                             if (delayToApply > 0) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).w("Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...")
+                                Timber
+                                    .tag(
+                                        this@GemmaClient::class.java.simpleName,
+                                    ).w("Retrying HIGH priority request in $delayToApply seconds due to ${e.javaClass.simpleName}...")
                                 delay(delayToApply.seconds)
                             } else {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).w("Retrying immediately due to parsing error (${e.javaClass.simpleName})...")
+                                Timber
+                                    .tag(
+                                        this@GemmaClient::class.java.simpleName,
+                                    ).w("Retrying immediately due to parsing error (${e.javaClass.simpleName})...")
                             }
                         } else {
                             // Final failure
@@ -418,12 +462,19 @@ class GemmaClient
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
-            requirement: ModelRequirement = ModelRequirement.LOW,
+            requirement: ModelRequirement = ModelRequirement.MEDIUM,
             blueprintKey: String? = null,
+            userInteraction: Boolean = false,
             logEnabled: Boolean = true,
         ): Flow<StreamingState<T>> =
             flow {
                 try {
+                    if (userInteraction) {
+                        val safetyStatus = safetyClient.checkSafety(prompt)
+                        if (safetyStatus != SafeGuard.OK) {
+                            throw GuardrailsException(safetyStatus)
+                        }
+                    }
                     if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
                         Timber.w("Applying reactive delay due to high token count in last request.")
                         retryDelay = 5
@@ -439,8 +490,7 @@ class GemmaClient
                         if (logEnabled) Timber.i("generateStreaming: Core calls don't require delay.")
                     }
 
-                    val maxAttempts =
-                        if (requirement == ModelRequirement.HIGH) MAX_RETRIES + 1 else 1
+                    val maxAttempts = MAX_RETRIES + 1
                     val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
@@ -481,34 +531,19 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
-                            val tier = requirement.name.lowercase()
-                            val coreRemoteKey = "core_${tier}_blueprint"
+                            requirement.name.lowercase()
                             val corePrompt =
-                                try {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = coreRemoteKey,
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                } catch (e: Exception) {
-                                    promptService.buildRemotePrompt(
-                                        remoteConfigKey = "core_blueprint",
-                                        variables =
-                                            mapOf(
-                                                "language" to getLanguage(requireTranslation),
-                                                "type" to T::class.java.simpleName,
-                                                "structure" to structure,
-                                                "formattingRule" to formattingRule,
-                                            ),
-                                        logEnabled = false,
-                                    )
-                                }
+                                promptService.buildRemotePrompt(
+                                    remoteConfigKey = "core_blueprint",
+                                    variables =
+                                        mapOf(
+                                            "language" to getLanguage(requireTranslation),
+                                            "type" to T::class.java.simpleName,
+                                            "structure" to structure,
+                                            "formattingRule" to formattingRule,
+                                        ),
+                                    logEnabled = false,
+                                )
 
                             val fullPrompt =
                                 buildString {
@@ -641,7 +676,14 @@ class GemmaClient
                             return@flow
                         } catch (e: Exception) {
                             if (logEnabled) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}")
+                                Timber
+                                    .tag(
+                                        this@GemmaClient::class.java.simpleName,
+                                    ).e(
+                                        "Error in Stream Generation($model) Attempt $currentAttempt/$maxAttempts: ${e.javaClass.simpleName} - ${e.message}",
+                                    )
+
+                                e.printStackTrace()
                             }
 
                             val isParsingError =
@@ -668,18 +710,35 @@ class GemmaClient
                                 }
                             }
 
+                            val isNetworkError = e is java.io.IOException
                             if (currentAttempt < maxAttempts) {
                                 val delayToApply =
-                                    if (isParsingError) {
-                                        0L
-                                    } else {
-                                        (
-                                            extractedDelay
-                                                ?: RETRY_DELAY.toLong()
-                                        )
+                                    when {
+                                        isParsingError -> 0L
+
+                                        isNetworkError -> 2L
+
+                                        // Quick retry for DNS/Network hiccups
+                                        else -> (extractedDelay ?: RETRY_DELAY.toLong())
                                     }
                                 if (delayToApply > 0) delay(delayToApply.seconds)
                             } else {
+                                if (logEnabled && BuildConfig.DEBUG) {
+                                    val duration = System.currentTimeMillis() - startTime
+                                    val safetyStatus =
+                                        if (e is GuardrailsException) e.status.name else null
+                                    aiAuditLogDao.insertLog(
+                                        AIAuditLog(
+                                            model = model,
+                                            blueprintKey = blueprintKey,
+                                            dataType = T::class.java.simpleName,
+                                            status = "ERROR",
+                                            errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                            responseTime = duration,
+                                            safetyStatus = safetyStatus,
+                                        ),
+                                    )
+                                }
                                 if (!isParsingError) {
                                     retryDelay = extractedDelay?.toInt()
                                         ?: retryDelay?.let { if (it > 30) it / 2 else it + it } ?: 2
@@ -707,12 +766,11 @@ class GemmaClient
                     contents = listOf(GeminiContent(parts = parts)),
                     generationConfig = GeminiGenerationConfig(temperature = temperatureRandomness),
                 )
-            val formattedModel = model.replace("models/", "")
             return requestMutexes.getOrPut(model) { Mutex() }.withLock {
                 try {
                     val response =
                         geminiApiService.generateContent(
-                            model = formattedModel,
+                            model = model,
                             apiKey = apiConfig(false),
                             request = geminiRequest,
                         )

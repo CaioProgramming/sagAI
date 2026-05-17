@@ -78,7 +78,6 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingPage
@@ -149,7 +148,7 @@ fun OnboardingDialog(
                     .reactiveShimmer(true)
                     .background(
                         fadeGradientBottom(
-                            genre?.resolveColor() ?: MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary ?: MaterialTheme.colorScheme.primary,
                         ),
                     ).fillMaxWidth()
                     .align(Alignment.BottomCenter)
@@ -198,7 +197,7 @@ private fun OnboardingContentSheet(
         sheetState = sheetState,
         shape = shape,
         dragHandle = null,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
     ) {
         Box(
             modifier =

@@ -31,4 +31,6 @@ data class Act(
     val sagaId: Int? = null,
     @ColumnInfo(index = true)
     val currentChapterId: Int? = null,
+    @ColumnInfo(defaultValue = "")
+    val narrativeGuide: String? = null,
 )

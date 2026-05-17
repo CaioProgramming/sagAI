@@ -41,8 +41,13 @@ uiUnit = "1.9.4"
 uiGraphics = "1.9.4"
 playServicesMlkitSubjectSegmentation = "16.0.0-beta1"
 timber = "5.0.1"
+ageSignals = "0.0.3"
+nav3Core = "1.0.0"
+lifecycleViewmodelNav3 = "2.10.0-rc01"
+paging = "3.3.6"
 
 [libraries]
+play-age-signals = { group = "com.google.android.play", name = "age-signals", version.ref = "ageSignals" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-media = { module = "androidx.media:media", version.ref = "media" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
@@ -112,6 +117,13 @@ androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", ve
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 play-services-mlkit-subject-segmentation = { group = "com.google.android.gms", name = "play-services-mlkit-subject-segmentation", version.ref = "playServicesMlkitSubjectSegmentation" }
 jakewharton-timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.8.0" }
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
+androidx-room-paging = { module = "androidx.room:room-paging", version = "2.7.1" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -123,3 +135,4 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 androidx-room = { id = "androidx.room", version= "2.7.1"}
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

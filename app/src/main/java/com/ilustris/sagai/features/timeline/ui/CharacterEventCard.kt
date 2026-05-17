@@ -21,10 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 @Composable
 fun CharacterEventCard(
@@ -33,11 +31,11 @@ fun CharacterEventCard(
     modifier: Modifier = Modifier,
 ) {
     val character = remember { characterEvent.character }
-    val shape = genre.shape()
+    val shape = sagaShape()
     Column(
         modifier
             .clip(shape)
-            .border(1.dp, genre.resolveColor(), shape)
+            .border(1.dp, MaterialTheme.colorScheme.primary, shape)
             .padding(4.dp)
             .background(
                 MaterialTheme.colorScheme.surfaceContainer,
@@ -53,7 +51,7 @@ fun CharacterEventCard(
             CharacterAvatar(
                 character,
                 genre = genre,
-                borderColor = character.hexColor.hexToColor() ?: genre.resolveColor(),
+                borderColor = character.hexColor.hexToColor() ?: MaterialTheme.colorScheme.primary,
                 useFallback = true,
                 borderSize = 1.dp,
                 modifier = Modifier.size(48.dp),
@@ -64,7 +62,7 @@ fun CharacterEventCard(
                 modifier = Modifier.weight(1f),
                 style =
                     MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         fontWeight = FontWeight.SemiBold,
                     ),
             )
@@ -74,7 +72,7 @@ fun CharacterEventCard(
             characterEvent.event.summary,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
             modifier = Modifier.alpha(.7f),
         )

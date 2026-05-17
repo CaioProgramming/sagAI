@@ -20,6 +20,8 @@ data class Chapter(
     @ColumnInfo(index = true)
     val actId: Int,
     val featuredCharacters: List<Int> = emptyList(),
+    @ColumnInfo(defaultValue = "")
+    val narrativeGuide: String? = null,
 ) {
     fun isEmpty() = title.isEmpty() && overview.isEmpty()
 }

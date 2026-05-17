@@ -147,7 +147,7 @@ class NewSagaUseCaseImpl
 
         override suspend fun updateSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
-                sagaRepository.updateChat(saga)
+                sagaRepository.updateSaga(saga)
             }
 
         override suspend fun deleteSaga(saga: Saga): RequestResult<Unit> = sagaRepository.deleteChat(saga).asSuccess()
@@ -167,6 +167,7 @@ class NewSagaUseCaseImpl
                         config.variations ?: mapOf(),
                         identity,
                     ),
+                    userInteraction = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
                     filterOutputFields =
                         listOf(
@@ -182,6 +183,7 @@ class NewSagaUseCaseImpl
                             "review",
                             "emotionalReview",
                         ),
+                    blueprintKey = NewSagaPrompts.CONVERSATIONAL_SAGA_REPLY_BLUEPRINT,
                 )!!
             }
 
@@ -220,7 +222,9 @@ class NewSagaUseCaseImpl
                             availableVariations = config.variations ?: mapOf(),
                             identity = identity,
                         ),
+                        userInteraction = true,
                         requireTranslation = true,
+                        blueprintKey = NewSagaPrompts.INITIAL_SAGA_KICKOFF_BLUEPRINT,
                     )!!
 
                 response
@@ -228,7 +232,7 @@ class NewSagaUseCaseImpl
 
         override suspend fun generateIntroduction(): RequestResult<SagaCreationGen> =
             executeRequest {
-                gemmaClient.generate(NewSagaPrompts.introPrompt(promptService))!!
+                gemmaClient.generate(NewSagaPrompts.introPrompt(promptService), blueprintKey = NewSagaPrompts.CREATION_INTRO_BLUEPRINT)!!
             }
 
         override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen> =
@@ -310,7 +314,6 @@ class NewSagaUseCaseImpl
                         identity,
                     ),
                     requireTranslation = true,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -345,13 +348,12 @@ class NewSagaUseCaseImpl
         ): Flow<AgenticFlowResponse> =
             flow {
                 try {
-                    val targetLanguage = getSessionLanguage()
+                    getSessionLanguage()
                     if (lockedSaga == null) {
                         reasoningSynthesizerService
                             .synthesizeReasoning(
                                 sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt),
                                 context = "Curating your cosmic library",
-                                targetLanguage = targetLanguage,
                             ).collect { streamingState ->
                                 when (streamingState) {
                                     is StreamingState.Reasoning -> {
@@ -401,7 +403,7 @@ class NewSagaUseCaseImpl
                                     ),
                                 context = "Creating characters for the saga",
                                 conversationStyle = conversationStyle,
-                                targetLanguage = targetLanguage,
+                                genre = lockedSaga.genre.name,
                             ).collect { streamingState ->
                                 when (streamingState) {
                                     is StreamingState.Reasoning -> {
@@ -448,7 +450,7 @@ class NewSagaUseCaseImpl
             flow {
                 try {
                     val identity = genreConfigService.conversationBlueprint(sagaDraft.genre)
-                    val targetLanguage = getSessionLanguage()
+                    getSessionLanguage()
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
@@ -460,7 +462,7 @@ class NewSagaUseCaseImpl
                                 ),
                             context = "Sealing the Sacred Contract for ${sagaDraft.title}",
                             conversationStyle = identity,
-                            targetLanguage = targetLanguage,
+                            genre = sagaDraft.genre.name,
                         ).collect { streamingState ->
                             when (streamingState) {
                                 is StreamingState.Reasoning -> {

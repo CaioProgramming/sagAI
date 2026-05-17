@@ -3,8 +3,8 @@ package com.ilustris.sagai.features.playthrough
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.playthrough.data.model.PlayThroughData
+import com.ilustris.sagai.features.playthrough.data.model.SagaPlaythrough
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +17,7 @@ sealed class PlaythroughUiState {
 
     data class Success(
         val data: PlayThroughData,
-        val completedSagas: List<SagaContent>,
+        val completedSagas: List<SagaPlaythrough>,
     ) : PlaythroughUiState()
 
     data class Empty(

@@ -3,7 +3,9 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.model.ChapterConclusionContext
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -27,9 +29,16 @@ data class ChapterGenerationArgs(
     val narrativeStyle: String,
 )
 
+data class ChapterSynthesisArgs(
+    val chapterContext: String,
+    val characterIndex: String,
+    val narrativeStyle: String,
+)
+
 object ChapterPrompts {
     const val CHAPTER_GENERATION_BLUEPRINT = "chapter_generation_blueprint"
     const val CHAPTER_INTRODUCTION_BLUEPRINT = "chapter_introduction_blueprint"
+    const val CHAPTER_SYNTHESIS_BLUEPRINT = "chapter_synthesis_blueprint"
 
     val CHAPTER_EXCLUSIONS =
         listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
@@ -90,35 +99,20 @@ object ChapterPrompts {
 
         val promptDataContext =
             ChapterConclusionContext(
-                sagaData = sagaContent.data,
-                mainCharacter = sagaContent.mainCharacter?.data,
+                sagaData = sagaContent.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+                mainCharacter = sagaContent.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
                 eventsOfThisChapter =
                     currentChapterContent.events
-                        .filter {
-                            it.isComplete(
-                                rules,
-                            )
-                        }.map { it.data },
-                previousChaptersInCurrentAct = currentChapters.map { it.data },
-                previousActData = previousAct?.data,
+                        .map { it.data }
+                        .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
+                previousChaptersInCurrentAct =
+                    currentChapters
+                        .map { it.data }
+                        .normalizetoAIItems(CHAPTER_EXCLUSIONS),
+                previousActData = previousAct?.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS),
             )
 
-        val includedFields =
-            listOf(
-                "sagaData",
-                "mainCharacter",
-                "previousActData",
-                "previousChaptersInCurrentAct",
-                "eventsOfThisChapter",
-                "title",
-                "description",
-                "content",
-                "genre",
-                "name",
-                "backstory",
-            )
-
-        val chapterContext = promptDataContext.toJsonFormatIncludingFields(includedFields)
+        val chapterContext = promptDataContext.toJsonFormat()
 
         val args =
             ChapterGenerationArgs(
@@ -128,5 +122,53 @@ object ChapterPrompts {
             )
 
         return promptService.buildRemotePrompt(CHAPTER_GENERATION_BLUEPRINT, args)
+    }
+
+    suspend fun chapterSynthesisPrompt(
+        promptService: PromptService,
+        saga: SagaContent,
+        chapter: ChapterContent,
+        narrativeRules: NarrativeRules,
+        conversationDirective: String,
+    ): String {
+        val chapterAct = saga.findChapterAct(chapter.data)
+        val isFirstAct =
+            saga.acts
+                .firstOrNull()
+                ?.data
+                ?.id == chapterAct?.data?.id
+
+        val previousAct =
+            if (isFirstAct) {
+                null
+            } else {
+                val currentIndex = saga.acts.indexOfFirst { it.data.id == chapterAct?.data?.id }
+                if (currentIndex > 0) saga.acts[currentIndex - 1] else null
+            }
+
+        val synthesisContext =
+            ChapterConclusionContext(
+                sagaData = saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+                mainCharacter = saga.mainCharacter?.data?.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+                eventsOfThisChapter =
+                    chapter.events
+                        .map { it.data }
+                        .normalizetoAIItems(LorePrompts.TIMELINE_EXCLUDED_FIELDS),
+                previousChaptersInCurrentAct =
+                    (chapterAct?.chapters ?: emptyList())
+                        .filter { it.data.id != chapter.data.id }
+                        .map { it.data }
+                        .normalizetoAIItems(CHAPTER_EXCLUSIONS),
+                previousActData = previousAct?.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS),
+            )
+
+        val args =
+            ChapterSynthesisArgs(
+                chapterContext = synthesisContext.toJsonFormat(),
+                characterIndex = SagaPrompts.charactersSummary(saga),
+                narrativeStyle = conversationDirective,
+            )
+
+        return promptService.buildRemotePrompt(CHAPTER_SYNTHESIS_BLUEPRINT, args)
     }
 }

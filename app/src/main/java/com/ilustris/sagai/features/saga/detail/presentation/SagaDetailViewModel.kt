@@ -3,26 +3,21 @@ package com.ilustris.sagai.features.saga.detail.presentation
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.State
-import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
-import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,13 +32,12 @@ class SagaDetailViewModel
     @Inject
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
-        private val imageSegmentationHelper: ImageSegmentationHelper,
-        private val visualConfigService: GenreVisualConfigService,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
+        private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
-        private val _state = MutableStateFlow<State>(State.Loading)
+        private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
-        val saga = MutableStateFlow<SagaContent?>(null)
+        val sagaResume = MutableStateFlow<SagaDetailResume?>(null)
         val isGenerating = MutableStateFlow(false)
         val showIntro = MutableStateFlow(false)
         private val _loadingMessage = MutableStateFlow<String?>(null)
@@ -52,76 +46,101 @@ class SagaDetailViewModel
 
         val showPremiumSheet = MutableStateFlow(false)
 
-        val originalBitmap = MutableStateFlow<Bitmap?>(null)
-        val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
-
-        val sagaResume = MutableStateFlow<String?>(null)
-        val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
-        private val _actualSection = MutableStateFlow<DetailSectionView?>(null)
-        val actualSection = _actualSection.asStateFlow()
+        private val _initialSection = MutableStateFlow<DetailSectionView.InitialSection?>(null)
+        val initialSection = _initialSection.asStateFlow()
 
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
 
-        private val sectionCache = mutableMapOf<RequestSection, DetailSectionView>()
-        private var sectionJob: Job? = null
+        private var cachedSegmentedImage: Pair<Bitmap, Bitmap>? = null
+        private var cachedIconPath: String? = null
+        private var initialSectionJob: kotlinx.coroutines.Job? = null
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
 
-        fun loadSection(requestSection: RequestSection) {
-            val currentSaga = saga.value ?: return
-
-            if (sectionCache.containsKey(requestSection)) {
-                _actualSection.value = sectionCache[requestSection]
-                return
-            }
-
-            sectionJob?.cancel()
-
-            sectionJob =
+        fun loadInitialSection() {
+            val resume = sagaResume.value ?: return
+            initialSectionJob?.cancel()
+            initialSectionJob =
                 viewModelScope.launch {
-                    _state.value = State.Loading
+                    val saga = resume.saga
+                    if (cachedIconPath != saga.icon) {
+                        cachedIconPath = saga.icon
+                        cachedSegmentedImage = null
+                    }
+
                     sagaDetailUIMapper
                         .buildSection(
-                            currentSaga,
-                            requestSection,
+                            resume = resume,
+                            section = RequestSection.START,
+                            existingSegmentedImage = cachedSegmentedImage,
                         ).onSuccess { mappedSection ->
-                            sectionCache[requestSection] = mappedSection
-                            _actualSection.value = mappedSection
-                            _state.value = State.Success(currentSaga)
+                            val section = mappedSection as DetailSectionView.InitialSection
+                            _initialSection.value =
+                                if (cachedSegmentedImage != null) {
+                                    section.copy(segmentedImage = cachedSegmentedImage)
+                                } else {
+                                    cachedSegmentedImage = section.segmentedImage
+                                    section
+                                }
+                            if (_state.value !is State.Success) {
+                                playSoundFx()
+                            }
+
+                            _state.value = State.Success(resume.saga)
                         }.onFailureAsync {
                             _state.emit(State.Error(emptyString()))
                         }
                 }
         }
 
+        private fun playSoundFx() {
+            viewModelScope.launch {
+                sagaThemeManager.playVfx()
+            }
+        }
+
         fun handleAction(detailAction: DetailAction) {
             viewModelScope.launch {
                 when (detailAction) {
-                    DetailAction.Delete -> deleteSaga(saga.value?.data)
-                    is DetailAction.OpenSection -> loadSection(detailAction.section)
+                    DetailAction.Delete -> deleteSaga(sagaResume.value?.saga)
                     DetailAction.RegenerateIcon -> regenerateIcon()
                     else -> doNothing()
                 }
             }
         }
 
-        fun fetchSagaDetails(sagaId: String) {
-            showIntro.value = true
-            viewModelScope.launch(Dispatchers.IO) {
-                _state.value = State.Loading
-                sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
-                    saga?.let { data ->
-                        this@SagaDetailViewModel.saga.value = data
-                        visualConfig.value = visualConfigService.getVisualConfig(data.data.genre)
+        private var fetchJob: kotlinx.coroutines.Job? = null
 
-                        loadSection(RequestSection.START)
-                        detailDrawer.value = sagaDetailUIMapper.buildDrawer(saga)
-                        launchIntroSequence()
+        fun fetchSagaDetails(sagaId: Int) {
+            if (sagaResume.value?.saga?.id == sagaId) {
+                return
+            }
+            fetchJob?.cancel()
+            sagaResume.value = null
+            cachedIconPath = null
+            cachedSegmentedImage = null
+            _initialSection.value = null
+            showIntro.value = true
+            fetchJob =
+                viewModelScope.launch {
+                    sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
+                        resume.let { data ->
+                            this@SagaDetailViewModel.sagaResume.value = data
+                            sagaThemeManager.updateTheme(data.saga.genre)
+
+                            loadInitialSection()
+                            detailDrawer.value =
+                                sagaDetailUIMapper.buildDrawer(
+                                    data.saga,
+                                    data.fullChapters,
+                                    data.completedActsCount,
+                                )
+                            launchIntroSequence()
+                        }
                     }
                 }
-            }
         }
 
         fun deleteSaga(saga: Saga?) {
@@ -136,31 +155,29 @@ class SagaDetailViewModel
         }
 
         fun regenerateIcon() {
-            val currentSaga = saga.value ?: return
+            val currentSagaId = sagaResume.value?.saga?.id ?: return
             isGenerating.value = true
             _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
-                    .regenerateSagaIcon(
-                        currentSaga,
-                    ).onFailure {
-                        if (it is BillingService.PremiumException) {
-                            showPremiumSheet.value = true
+                    .regenerateSagaIconStream(currentSagaId)
+                    .collect { state ->
+                        when (state) {
+                            is StreamingState.Reasoning -> {
+                                _loadingMessage.value = state.chunk
+                            }
+
+                            is StreamingState.Success -> {
+                                isGenerating.value = false
+                                _loadingMessage.value = null
+                            }
+
+                            is StreamingState.Error -> {
+                                isGenerating.value = false
+                                _loadingMessage.value = "Error regenerating icon: ${state.message}"
+                            }
                         }
                     }
-                isGenerating.value = false
-                _loadingMessage.value = null
-            }
-        }
-
-        fun generateTimelineContent(timelineContent: TimelineContent) {
-            val currentSaga = saga.value ?: return
-            viewModelScope.launch {
-                isGenerating.value = true
-                _loadingMessage.value = "Generating timeline content..."
-                sagaDetailUseCase.generateTimelineContent(currentSaga, timelineContent)
-                isGenerating.value = false
-                _loadingMessage.value = null
             }
         }
 
@@ -168,17 +185,6 @@ class SagaDetailViewModel
             viewModelScope.launch {
                 delay(2.seconds)
                 showIntro.value = false
-            }
-        }
-
-        fun reviewWiki(wikis: List<Wiki>) {
-            val currentsaga = saga.value ?: return
-            viewModelScope.launch {
-                isGenerating.emit(true)
-                _loadingMessage.value = "Reviewing wiki entries..."
-                sagaDetailUseCase.reviewWiki(currentsaga, wikis)
-                isGenerating.emit(false)
-                _loadingMessage.value = null
             }
         }
     }

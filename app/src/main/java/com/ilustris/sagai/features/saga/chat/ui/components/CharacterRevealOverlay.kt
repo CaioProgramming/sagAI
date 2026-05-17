@@ -35,10 +35,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.share.ui.CharacterCard
 import com.ilustris.sagai.ui.components.LocalBlurState
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -120,7 +118,7 @@ fun CharacterRevealOverlay(
                         "Um novo personagem juntou-se a história!",
                         style =
                             MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 fontWeight = FontWeight.SemiBold,
                                 textAlign = TextAlign.Center,
                             ),
@@ -134,7 +132,7 @@ fun CharacterRevealOverlay(
                     ) {
                         CharacterCard(
                             character = character,
-                            sagaContent = sagaContent,
+                            saga = sagaContent.data,
                             modifier =
                                 Modifier
                                     .fillMaxSize()
@@ -147,7 +145,7 @@ fun CharacterRevealOverlay(
                                     )
                                     .clip(shape)
                                     .border(1.dp, revealGradient, shape)
-                                    .background(genre.resolveColor(), shape),
+                                    .background(MaterialTheme.colorScheme.primary, shape),
                             showWatermark = false,
                         )
                     }

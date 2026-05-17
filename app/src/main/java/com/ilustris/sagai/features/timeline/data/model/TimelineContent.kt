@@ -70,14 +70,18 @@ data class TimelineContent(
             updatedWikis.isEmpty()
 
     fun emotionalRanking() =
-        messages
-            .filter { it.message.emotionalTone != null }
-            .groupBy { it.message.emotionalTone }
-            .mapNotNull {
-                it.key to it.value.size
-            }.sortedBy {
-                it.second
-            }
+        if (data.emotionalTone != null) {
+            listOf(data.emotionalTone to 1)
+        } else {
+            messages
+                .filter { it.message.emotionalTone != null }
+                .groupBy { it.message.emotionalTone }
+                .mapNotNull {
+                    it.key to it.value.size
+                }.sortedByDescending {
+                    it.second
+                }
+        }
 
     fun statsSummary() =
         buildList {

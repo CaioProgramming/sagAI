@@ -27,7 +27,7 @@ data class GenreVisualConfig(
     // ── Shape ────────────────────────────────────────────────────────
     @SerializedName("cornerSizeDp")
     val cornerSizeDp: Float = 0f,
-    // ── Haptics ─────────────────────────────────────────────────────
+    // ── Haptics (waveform in ms, tuned per genre SFX — see Remote Config) ──
     @SerializedName("vibrationPattern")
     val vibrationPattern: List<Long> = emptyList(),
     // ── Selective Highlight Filter ──────────────────────────────────
@@ -44,6 +44,11 @@ data class GenreVisualConfig(
     val backgroundUrl: String = "",
     @SerializedName("imageUrl")
     val imageUrl: String = "",
+    // ── Remote fonts (Catbox / direct HTTPS URLs) ───────────────────
+    @SerializedName("headerFontUrl")
+    val headerFontUrl: String = "",
+    @SerializedName("bodyFontUrl")
+    val bodyFontUrl: String = "",
 )
 
 /**

@@ -27,13 +27,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.Typography
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradientFade
 
 @Composable
@@ -52,7 +50,7 @@ fun WikiCard(
             modifier
                 .border(
                     width = 1.dp,
-                    brush = genre.resolveColor().gradientFade(),
+                    brush = MaterialTheme.colorScheme.primary.gradientFade(),
                     shape = shape,
                 ).clip(shape)
                 .clickable {
@@ -67,7 +65,7 @@ fun WikiCard(
             style =
                 Typography.bodyLarge.copy(
                     fontWeight = FontWeight.SemiBold,
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                 ),
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -76,7 +74,7 @@ fun WikiCard(
                 text = wiki.content,
                 style =
                     Typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     ),
                 color = MaterialTheme.colorScheme.onBackground,
             )

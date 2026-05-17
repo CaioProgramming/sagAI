@@ -14,6 +14,7 @@ import com.ilustris.sagai.ui.theme.components.chat.CowboysChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.PunkRockChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
@@ -29,9 +30,10 @@ fun Genre?.bubble(
     visualConfig: GenreVisualConfig? = LocalGenreVisualConfig.current,
 ): Shape {
     val cornerSize = cornerSize(visualConfig)
-    val tailW = if (isNarrator) 0.dp else tailWidth
-    val tailH = if (isNarrator) 0.dp else tailHeight
     if (this == null) return MaterialTheme.shapes.medium
+    if (isNarrator) return RoundedCornerShape(cornerSize)
+    val tailW = tailWidth
+    val tailH = tailHeight
     return when (this) {
         Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
@@ -43,40 +45,37 @@ fun Genre?.bubble(
         }
 
         Genre.HEROES -> {
-            if (isNarrator) {
-                RoundedCornerShape(cornerSize)
-            } else {
-                when (tailAlignment) {
-                    BubbleTailAlignment.BottomLeft -> {
-                        RoundedCornerShape(
-                            topStart = cornerSize.plus(5.dp),
-                            topEnd = cornerSize.plus(5.dp),
-                            bottomStart = 0.dp,
-                            bottomEnd = 0.dp,
-                        )
-                    }
-
-                    BubbleTailAlignment.BottomRight -> {
-                        RoundedCornerShape(
-                            topStart = cornerSize.plus(5.dp),
-                            topEnd = cornerSize.plus(5.dp),
-                            bottomStart = 0.dp,
-                            bottomEnd = 0.dp,
-                        )
-                    }
-                }
-            }
+            HeroesChatBubbleShape(
+                tailWidth = tailW,
+                tailHeight = tailH,
+                tailAlignment = tailAlignment,
+                skew = cornerSize,
+            )
         }
 
         Genre.SHINOBI -> {
-            RoundedCornerShape(cornerSize)
+            ShinobiChatBubbleShape(
+                cornerRadius = cornerSize,
+                tailWidth = tailW,
+                tailHeight = tailH,
+                tailAlignment = tailAlignment,
+            )
+        }
+
+        Genre.CRIME -> {
+            CurvedChatBubbleShape(
+                cornerRadius = cornerSize,
+                tailWidth = tailW,
+                tailHeight = tailH,
+                tailAlignment = tailAlignment,
+            )
         }
 
         Genre.HORROR -> {
             HorrorChatBubbleShape(
                 pixelSize = cornerSize,
                 tailAlignment = tailAlignment,
-                drawTail = false,
+                drawTail = !isNarrator,
             )
         }
 
@@ -92,6 +91,8 @@ fun Genre?.bubble(
         Genre.SPACE_OPERA -> {
             SpaceChatBubbleShape(
                 tailAlignment = tailAlignment,
+                cutSize = cornerSize / 2,
+                largeCutSize = cornerSize,
             )
         }
 
@@ -114,16 +115,12 @@ fun Genre?.bubble(
         }
 
         else -> {
-            if (isNarrator) {
-                RoundedCornerShape(cornerSize)
-            } else {
-                CurvedChatBubbleShape(
-                    cornerRadius = cornerSize,
-                    tailWidth = tailW,
-                    tailHeight = tailH,
-                    tailAlignment = tailAlignment,
-                )
-            }
+            CurvedChatBubbleShape(
+                cornerRadius = cornerSize,
+                tailWidth = tailW,
+                tailHeight = tailH,
+                tailAlignment = tailAlignment,
+            )
         }
     }
 }

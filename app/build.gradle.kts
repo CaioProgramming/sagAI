@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.androidx.room)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.google.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -122,6 +123,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.guava)
     implementation(libs.androidx.room.testing)
+    implementation(libs.androidx.room.paging)
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.compose.charts)
@@ -156,6 +160,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.play.services.mlkit.subject.segmentation)
     implementation(libs.jakewharton.timber)
+    implementation(libs.play.age.signals)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -163,4 +168,13 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+    implementation(libs.androidx.room.paging)
 }

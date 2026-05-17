@@ -1,5 +1,4 @@
 package com.ilustris.sagai.features.characters.ui
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,12 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,24 +18,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.themeShimmer
 
 @Composable
 fun CharacterAvatar(
@@ -57,8 +51,8 @@ fun CharacterAvatar(
     grainRadius: Float? = null,
     pixelation: Float? = null,
 ) {
-    val resolvedColor = genre.resolveColor()
-    val resolvedIconColor = genre.resolveIconColor()
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.secondary
     val characterColor = character.hexColor.hexToColor() ?: resolvedColor
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
@@ -85,7 +79,7 @@ fun CharacterAvatar(
 
     Box(
         modifier
-            .reactiveShimmer(isLoading, genre.shimmerColors())
+            .reactiveShimmer(isLoading, themeShimmer())
             .border(
                 borderSize,
                 borderBrush,
@@ -97,22 +91,34 @@ fun CharacterAvatar(
                 CircleShape,
             ),
     ) {
-        var painterState by remember {
-            mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
-        }
+        androidx.compose.material3.Text(
+            character.name.first().uppercase(),
+            style =
+                textStyle.copy(
+                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                    brush =
+                        Brush.verticalGradient(
+                            characterColor.darkerPalette(factor = .2f),
+                        ),
+                ),
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.align(Alignment.Center),
+        )
+
         AsyncImage(
-            model = character.image,
+            model =
+                ImageRequest
+                    .Builder(LocalContext.current)
+                    .data(character.image)
+                    .crossfade(true)
+                    .build(),
             contentDescription = character.name,
             contentScale = ContentScale.Crop,
-            error = null,
-            onError = {
-                painterState = it
-            },
             modifier =
                 Modifier
                     .clip(CircleShape)
                     .background(
-                        characterColor,
+                        characterColor.copy(alpha = 0.4f),
                         CircleShape,
                     ).fillMaxSize()
                     .effectForGenre(
@@ -129,21 +135,5 @@ fun CharacterAvatar(
                         transformOrigin = TransformOrigin.Center
                     }.clipToBounds(),
         )
-
-        if (painterState is AsyncImagePainter.State.Error) {
-            Text(
-                character.name.first().uppercase(),
-                style =
-                    textStyle.copy(
-                        fontFamily = genre.headerFont(),
-                        brush =
-                            Brush.verticalGradient(
-                                characterColor.darkerPalette(factor = .2f),
-                            ),
-                    ),
-                fontWeight = FontWeight.Black,
-                modifier = Modifier.align(Alignment.Center),
-            )
-        }
     }
 }

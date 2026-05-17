@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,26 +24,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.hasMoreThanOneChapter
-import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
+import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 
 @Composable
 fun StoriesRow(
-    sagas: List<SagaContent>,
+    sagas: List<SagaSummary>,
     loadingStoryId: Int?,
-    onStoryClicked: (SagaContent) -> Unit,
+    onStoryClicked: (SagaSummary) -> Unit,
     isAtTop: Boolean,
-    visualConfigs: Map<Genre, GenreVisualConfig>,
 ) {
-    val eligibleSagas = sagas.filter { it.data.isEnded.not() && it.hasMoreThanOneChapter() }
+    val eligibleSagas = sagas.filter { it.data.isEnded.not() && it.chaptersCount > 1 }
     if (eligibleSagas.isNotEmpty()) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             LazyRow(
@@ -57,7 +51,6 @@ fun StoriesRow(
                         isLoading = loadingStoryId == saga.data.id,
                         onStoryClicked = onStoryClicked,
                         expanded = isAtTop,
-                        visualConfig = visualConfigs[saga.data.genre],
                     )
                 }
             }
@@ -67,15 +60,13 @@ fun StoriesRow(
 
 @Composable
 fun StoryItem(
-    saga: SagaContent,
+    saga: SagaSummary,
     isLoading: Boolean,
-    onStoryClicked: (SagaContent) -> Unit,
+    onStoryClicked: (SagaSummary) -> Unit,
     expanded: Boolean,
-    visualConfig: GenreVisualConfig?,
 ) {
-    CompositionLocalProvider(
-        LocalGenreVisualConfig provides visualConfig,
-    ) {
+    SagAITheme(genre = saga.data.genre) {
+        val visualConfig = com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig.current
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -123,6 +114,7 @@ fun StoryItem(
                     saga.data.title
                         .first()
                         .uppercase(),
+                    visualConfig = visualConfig,
                     borderWidth = 1.dp,
                     modifier =
                         Modifier
@@ -130,9 +122,9 @@ fun StoryItem(
                             .dropShadow(CircleShape) {
                                 radius =
                                     if (isLoading) {
-                                        15f
+                                        20f
                                     } else {
-                                        5f
+                                        10f
                                     }
                                 color =
                                     saga.data.genre.color
@@ -140,8 +132,7 @@ fun StoryItem(
                                 spread = 10f
                             }.fillMaxSize()
                             .clip(CircleShape)
-                            .clickable(enabled = !isLoading) { onStoryClicked(saga) }
-                            .effectForGenre(saga.data.genre),
+                            .clickable(enabled = !isLoading) { onStoryClicked(saga) },
                 )
             }
         }

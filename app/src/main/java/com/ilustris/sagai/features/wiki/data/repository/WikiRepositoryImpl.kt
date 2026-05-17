@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.wiki.data.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.features.wiki.data.source.WikiDao
+import com.ilustris.sagai.features.wiki.data.model.WikiWithChapter
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
 import javax.inject.Inject
@@ -17,6 +17,8 @@ class WikiRepositoryImpl
         }
 
         override fun getWikisBySaga(sagaId: Int): Flow<List<Wiki>> = wikiDao.getWikisBySaga(sagaId)
+
+        override fun getWikisWithChapter(sagaId: Int): Flow<List<WikiWithChapter>> = wikiDao.getWikisWithChapter(sagaId)
 
         override suspend fun getWikiById(wikiId: Int): Wiki? = wikiDao.getWikiById(wikiId)
 

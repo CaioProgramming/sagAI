@@ -1,20 +1,13 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.audio
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,10 +37,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 
 /**
  * Audio player component for chat bubbles.
@@ -80,7 +72,10 @@ fun AudioMessagePlayer(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().animateContentSize(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -125,7 +120,7 @@ fun AudioMessagePlayer(
                 text = audioPlaybackState?.formattedCurrentPosition ?: "0:00",
                 style =
                     MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                         color = contentColor.copy(alpha = .5f),
                     ),
             )
@@ -137,7 +132,7 @@ fun AudioMessagePlayer(
             text = text,
             style =
                 MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = genre.bodyFont(),
+                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                     fontWeight = FontWeight.Normal,
                     color = contentColor,
                     textAlign = TextAlign.Start,
@@ -145,7 +140,7 @@ fun AudioMessagePlayer(
             modifier =
                 Modifier
                     .padding(8.dp)
-                    .clip(genre.shape())
+                    .clip(sagaShape())
                     .clickable {
                         showTranscription = showTranscription.not()
                     }.fillMaxWidth()

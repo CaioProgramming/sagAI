@@ -5,7 +5,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,10 +27,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.headerFont
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.pager.PagerState
 import com.ilustris.sagai.ui.theme.cornerSize
+import kotlinx.coroutines.launch
 
 @Composable
 fun StoryIndicator(
@@ -30,14 +36,15 @@ fun StoryIndicator(
     pageCount: Int,
     sagaTitle: String,
     genre: Genre,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
     Column(modifier = modifier) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             repeat(pageCount) { index ->
                 val isSelected = index <= pagerState.currentPage
@@ -47,33 +54,35 @@ fun StoryIndicator(
                     label = "progressAnimation",
                 )
                 Box(
-                    modifier = Modifier
-                        .clickable {
-                            if (pagerState.currentPage != index) {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(
-                                        index,
-                                        animationSpec = tween(500),
-                                    )
+                    modifier =
+                        Modifier
+                            .clickable {
+                                if (pagerState.currentPage != index) {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(
+                                            index,
+                                            animationSpec = tween(500),
+                                        )
+                                    }
                                 }
-                            }
-                        }
-                        .weight(1f)
-                        .padding(horizontal = 2.dp)
-                        .height(3.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.onBackground.copy(
-                                alpha = progress,
+                            }.weight(1f)
+                            .padding(horizontal = 2.dp)
+                            .height(3.dp)
+                            .background(
+                                color =
+                                    MaterialTheme.colorScheme.onBackground.copy(
+                                        alpha = progress,
+                                    ),
+                                shape = RoundedCornerShape(genre.cornerSize()),
                             ),
-                            shape = RoundedCornerShape(genre.cornerSize()),
-                        ),
                 )
             }
         }
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
@@ -85,10 +94,11 @@ fun StoryIndicator(
             )
             Text(
                 sagaTitle,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontFamily = genre.headerFont(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                ),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    ),
             )
         }
     }

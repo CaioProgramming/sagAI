@@ -4,17 +4,14 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -22,9 +19,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
+/** Retained for [com.ilustris.sagai.features.stories.ui.StorySheet]; no longer used from home. */
 data class SagaBriefing(
     val saga: SagaContent,
     val briefing: StoryDailyBriefing,
@@ -37,11 +36,9 @@ class HomeViewModel
     constructor(
         private val homeUseCase: HomeUseCase,
         private val backupService: BackupService,
-        private val segmentationHelper: ImageSegmentationHelper,
         private val stringResourceHelper: StringResourceHelper,
-        private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
-        val sagas = homeUseCase.getSagas()
+        val sagas: MutableStateFlow<List<SagaSummary>> = MutableStateFlow(emptyList())
 
         private val _showDebugButton = MutableStateFlow(false)
         val showDebugButton = _showDebugButton.asStateFlow()
@@ -58,9 +55,8 @@ class HomeViewModel
         private val _isLoading = MutableStateFlow<Boolean>(false)
         val isLoading = _isLoading.asStateFlow()
 
-        private val _isStarting = MutableStateFlow<Boolean>(true)
+        private val _isStarting = MutableStateFlow<Boolean>(sagas.value.isEmpty())
         val isStarting = _isStarting.asStateFlow()
-
         val loadingMessage = MutableStateFlow<String?>(null)
 
         private val _showRecoverSheet = MutableStateFlow(false)
@@ -68,70 +64,24 @@ class HomeViewModel
 
         val billingState = homeUseCase.billingState
 
-        private val _briefingCache = mutableMapOf<Int, SagaBriefing>()
-
-        private val _selectedSaga = MutableStateFlow<SagaContent?>(null)
-        val selectedSaga = _selectedSaga.asStateFlow()
-
-        private val _storyBriefing = MutableStateFlow<SagaBriefing?>(null)
-        val storyBriefing = _storyBriefing.asStateFlow()
-
-        private val _loadingStoryId = MutableStateFlow<Int?>(null)
-        val loadingStoryId = _loadingStoryId.asStateFlow()
-
-        private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
-        val visualConfigs = _visualConfigs.asStateFlow()
-
-        val genreVisualConfigService = visualConfigService
-
         init {
+            Timber.d("HomeViewModel: init")
             checkDebug()
             getDynamicPrompts()
-            loadVisualConfigs()
+            loadSagas()
         }
 
-        private fun loadVisualConfigs() {
+        private fun loadSagas() {
             viewModelScope.launch(Dispatchers.IO) {
-                sagas.collect { sagaList ->
-                    val genres = sagaList.map { it.data.genre }.distinct()
-                    val configs = _visualConfigs.value.toMutableMap()
-                    genres.forEach { genre ->
-                        if (!configs.containsKey(genre)) {
-                            visualConfigService.getVisualConfig(genre)?.let {
-                                configs[genre] = it
-                                _visualConfigs.emit(configs.toMap())
-                            }
-                        }
-                    }
+                homeUseCase.getSagas().collect { sagaList ->
+                    sagas.emit(sagaList)
                 }
             }
         }
 
-        fun getBriefing(saga: SagaContent) {
-            viewModelScope.launch(Dispatchers.IO) {
-                _loadingStoryId.emit(saga.data.id)
-                if (_briefingCache.containsKey(saga.data.id)) {
-                    _storyBriefing.emit(_briefingCache[saga.data.id])
-                    _selectedSaga.emit(saga)
-                    _loadingStoryId.emit(null)
-                } else {
-                    homeUseCase.generateStoryBriefing(saga).onSuccessAsync {
-                        val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
-                        val briefingState = SagaBriefing(saga, it, iconSegmentation.getSuccess())
-                        _briefingCache[saga.data.id] = briefingState
-                        _storyBriefing.emit(briefingState)
-                        _selectedSaga.emit(saga)
-                    }
-                    _loadingStoryId.emit(null)
-                }
-            }
-        }
-
-        fun clearSelectedSaga() {
-            viewModelScope.launch {
-                _selectedSaga.emit(null)
-                _storyBriefing.emit(null)
-            }
+        override fun onCleared() {
+            super.onCleared()
+            Timber.d("HomeViewModel: onCleared")
         }
 
         fun checkForBackups() {
@@ -147,15 +97,23 @@ class HomeViewModel
 
         private fun getDynamicPrompts() {
             viewModelScope.launch {
-                val result =
-                    homeUseCase.requestDynamicCall().getSuccess() ?: DynamicSagaPrompt(
-                        stringResourceHelper.getString(R.string.home_create_new_saga_title),
-                        stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
-                    )
-                _dynamicNewSagaTexts.emit(result)
-                if (_isStarting.value) {
-                    _isStarting.emit(false)
-                }
+                homeUseCase
+                    .requestDynamicCall()
+                    .onSuccessAsync {
+                        _dynamicNewSagaTexts.emit(it)
+                        if (_isStarting.value) {
+                            _isStarting.emit(false)
+                        }
+                    }.onFailureAsync {
+                        _dynamicNewSagaTexts.value =
+                            DynamicSagaPrompt(
+                                stringResourceHelper.getString(R.string.home_create_new_saga_title),
+                                stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
+                            )
+                        if (_isStarting.value) {
+                            _isStarting.emit(false)
+                        }
+                    }
             }
         }
 
@@ -173,6 +131,17 @@ class HomeViewModel
                     delay(3.seconds)
                     _startDebugSaga.emit(null)
                 }
+            }
+        }
+
+        private var isBackingUp = false
+
+        fun autoBackup() {
+            if (isBackingUp) return
+            viewModelScope.launch(Dispatchers.IO) {
+                isBackingUp = true
+                homeUseCase.autoBackup()
+                isBackingUp = false
             }
         }
     }

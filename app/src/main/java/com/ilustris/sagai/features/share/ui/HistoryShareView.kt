@@ -29,7 +29,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.sagaShape
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -64,7 +64,7 @@ fun HistoryShareView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clip(genre.shape())
+                        .clip(sagaShape())
                         .padding(24.dp)
                         .clickable {
                             coroutineScope.launch {
@@ -92,7 +92,7 @@ fun HistoryShareView(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.generateShareText(saga, ShareType.HISTORY)
+        viewModel.generateShareText(saga.data, ShareType.HISTORY)
     }
 
     LaunchedEffect(isLoading) {

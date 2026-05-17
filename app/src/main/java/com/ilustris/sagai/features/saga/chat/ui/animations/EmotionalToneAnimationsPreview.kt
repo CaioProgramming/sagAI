@@ -33,7 +33,6 @@ import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
-import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 
 @Preview(showBackground = true)
@@ -48,17 +47,17 @@ fun EmotionalToneAnimationsPreview() {
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .constrainAs(grid) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    bottom.linkTo(button.top, margin = 8.dp)
-                    height = Dimension.fillToConstraints
-                }
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .constrainAs(grid) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(button.top, margin = 8.dp)
+                        height = Dimension.fillToConstraints
+                    }.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             items(EmotionalTone.entries) { tone ->
                 AnimationPreviewItem(
@@ -68,7 +67,7 @@ fun EmotionalToneAnimationsPreview() {
                     shape = bubbleShape,
                     onClick = {
                         selectedTone = if (selectedTone == tone) null else tone
-                    }
+                    },
                 )
             }
         }
@@ -78,13 +77,14 @@ fun EmotionalToneAnimationsPreview() {
                 globalAnimationTrigger = !globalAnimationTrigger
                 selectedTone = null // Reset individual selection
             },
-            modifier = Modifier
-                .constrainAs(button) {
-                    start.linkTo(parent.start, margin = 16.dp)
-                    end.linkTo(parent.end, margin = 16.dp)
-                    bottom.linkTo(parent.bottom, margin = 16.dp)
-                    width = Dimension.fillToConstraints
-                }
+            modifier =
+                Modifier
+                    .constrainAs(button) {
+                        start.linkTo(parent.start, margin = 16.dp)
+                        end.linkTo(parent.end, margin = 16.dp)
+                        bottom.linkTo(parent.bottom, margin = 16.dp)
+                        width = Dimension.fillToConstraints
+                    },
         ) {
             Text(if (globalAnimationTrigger) "Reset All" else "Animate All")
         }
@@ -97,17 +97,18 @@ fun AnimationPreviewItem(
     isGloballyAnimated: Boolean,
     isSelected: Boolean,
     shape: Shape,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     // Randomly select a genre for visual variety
-    val genre = remember { Genre.entries.random() }
+    remember { Genre.entries.random() }
     val shouldAnimate = isGloballyAnimated || isSelected
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick() },
     ) {
         Text(
             text = tone.name,
@@ -115,28 +116,29 @@ fun AnimationPreviewItem(
             modifier = Modifier.padding(bottom = 8.dp),
         )
 
-
         // Get genre-specific bubble shape
 
         Box(
-            modifier = Modifier
-                .size(140.dp, 80.dp)
-                .emotionalEntrance(tone, shouldAnimate)
-                .clip(shape)
-                .background(
-                    color = tone.color.copy(alpha = 0.8f)
-                ),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(140.dp, 80.dp)
+                    .emotionalEntrance(tone, shouldAnimate)
+                    .clip(shape)
+                    .background(
+                        color = tone.color.copy(alpha = 0.8f),
+                    ),
+            contentAlignment = Alignment.Center,
         ) {
             // Use regular Text instead of TypewriterText to avoid animation conflicts
             Text(
                 text = "Sample\nMessage",
                 color = Color.White,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = genre.bodyFont()
-                ),
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                    ),
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(8.dp),
             )
         }
 
@@ -145,7 +147,7 @@ fun AnimationPreviewItem(
                 text = "Tap again to reset",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
     }

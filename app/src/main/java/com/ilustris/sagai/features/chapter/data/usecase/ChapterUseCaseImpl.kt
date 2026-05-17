@@ -4,10 +4,12 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
@@ -15,13 +17,27 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
+import com.ilustris.sagai.features.characters.data.model.ArcSourceType
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.fullName
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -31,13 +47,25 @@ class ChapterUseCaseImpl
         private val chapterRepository: ChapterRepository,
         private val timelineRepository: TimelineRepository,
         private val wikiUseCase: WikiUseCase,
+        private val characterUseCase: CharacterUseCase,
+        private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
         private val promptService: PromptService,
         private val genreConfigService: GenreConfigService,
         private val remoteConfigService: RemoteConfigService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
+        private val actRepository: com.ilustris.sagai.features.act.data.repository.ActRepository,
     ) : ChapterUseCase {
+        private suspend fun fetchContext(chapterId: Int): Pair<SagaContent, ChapterContent> {
+            val chapterContent =
+                chapterRepository.getChapterContentById(chapterId) ?: error("Chapter not found")
+            val act = actRepository.getActById(chapterContent.data.actId) ?: error("Act not found")
+            val saga = sagaRepository.getSagaById(act.sagaId ?: 0).first() ?: error("Saga not found")
+            return saga to chapterContent
+        }
+
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
         override suspend fun deleteChapter(chapter: Chapter) = chapterRepository.deleteChapter(chapter)
@@ -48,128 +76,121 @@ class ChapterUseCaseImpl
 
         override suspend fun deleteAllChapters() = chapterRepository.deleteAllChapters()
 
-        override suspend fun generateChapter(
-            saga: SagaContent,
-            chapterContent: ChapterContent,
-        ) = executeRequest {
-            val genChapter =
-                gemmaClient
-                    .generate<Chapter>(
-                        prompt =
-                            generateChapterPrompt(
-                                saga = saga,
-                                currentChapter = chapterContent,
-                            ),
-                        filterOutputFields =
-                            listOf(
-                                "id",
-                                "currentEventId",
-                                "coverImage",
-                                "createdAt",
-                                "actId",
-                            ),
-                        requireTranslation = true,
-                        useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                    )!!
+        override fun getChaptersInfoBySaga(sagaId: Int) = chapterRepository.getChaptersInfoBySaga(sagaId)
 
-            updateChapter(
-                chapterContent.data.copy(
-                    title = genChapter.title,
-                    overview = genChapter.overview,
-                    introduction = genChapter.introduction,
-                    featuredCharacters = genChapter.featuredCharacters.take(3),
-                    emotionalReview = genChapter.emotionalReview,
-                    currentEventId = null,
-                ),
-            )
-        }
+        override suspend fun generateChapter(chapterId: Int) =
+            executeRequest {
+                val (saga, chapterContent) = fetchContext(chapterId)
+                val genChapter =
+                    gemmaClient
+                        .generate<Chapter>(
+                            prompt =
+                                generateChapterPrompt(
+                                    saga = saga,
+                                    currentChapter = chapterContent,
+                                ),
+                            filterOutputFields =
+                                listOf(
+                                    "id",
+                                    "currentEventId",
+                                    "coverImage",
+                                    "createdAt",
+                                    "actId",
+                                ),
+                            requireTranslation = true,
+                            useCore = true,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                        )!!
 
-        override fun generateChapterStream(
-            saga: SagaContent,
-            chapterContent: ChapterContent,
-        ) = kotlinx.coroutines.flow.flow {
-            try {
-                gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<Chapter>>(
-                        prompt =
-                            generateChapterPrompt(
-                                saga = saga,
-                                currentChapter = chapterContent,
-                            ),
-                        filterOutputFields =
-                            listOf(
-                                "id",
-                                "currentEventId",
-                                "coverImage",
-                                "createdAt",
-                                "actId",
-                            ),
-                        requireTranslation = true,
-                        useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                    ).collect { state ->
-                        when (state) {
-                            is StreamingState.Success -> {
+                val updatedChapter =
+                    updateChapter(
+                        chapterContent.data.copy(
+                            title = genChapter.title,
+                            overview = genChapter.overview,
+                            introduction = chapterContent.data.introduction, // Keep existing introduction
+                            featuredCharacters = genChapter.featuredCharacters.take(2),
+                            emotionalReview = genChapter.emotionalReview,
+                            currentEventId = null,
+                        ),
+                    )
+                CoroutineScope(Dispatchers.IO).launch {
+                    generateChapterCover(chapterId)
+                }
+                updatedChapter
+            }
+
+        override suspend fun generateChapterStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
+                try {
+                    val (saga, chapterContent) = fetchContext(chapterId)
+                    gemmaClient
+                        .generateStreaming<GeneratedContent<Chapter>>(
+                            prompt =
+                                generateChapterPrompt(
+                                    saga = saga,
+                                    currentChapter = chapterContent,
+                                ),
+                            filterOutputFields =
+                                listOf(
+                                    "id",
+                                    "currentEventId",
+                                    "coverImage",
+                                    "createdAt",
+                                    "actId",
+                                ),
+                            requireTranslation = true,
+                            useCore = true,
+                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                        ).collect { state ->
+                            if (state is StreamingState.Success) {
                                 val genChapter = state.data.data
                                 val updatedChapter =
                                     updateChapter(
-                                        chapterContent.data.copy(
-                                            title = genChapter.title,
-                                            overview = genChapter.overview,
-                                            introduction = genChapter.introduction,
-                                            featuredCharacters = genChapter.featuredCharacters.take(3),
-                                            emotionalReview = genChapter.emotionalReview,
-                                            currentEventId = null,
+                                        genChapter.copy(
+                                            id = chapterContent.data.id,
+                                            currentEventId = chapterContent.data.currentEventId,
+                                            actId = chapterContent.data.actId,
+                                            coverImage = chapterContent.data.coverImage,
+                                            introduction = chapterContent.data.introduction,
+                                            createdAt = chapterContent.data.createdAt,
                                         ),
                                     )
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    generateChapterCover(updatedChapter.id)
+                                }
                                 emit(
                                     StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        GeneratedContent(
                                             updatedChapter,
                                             state.data.finalMessage,
                                         ),
                                     ),
                                 )
-                            }
-
-                            is StreamingState.Error -> {
-                                emit(
-                                    StreamingState.Error(
-                                        state.message,
-                                    ),
-                                )
-                            }
-
-                            is StreamingState.Reasoning -> {
-                                emit(
-                                    StreamingState.Reasoning(
-                                        state.chunk,
-                                    ),
-                                )
+                            } else {
+                                emit(state)
                             }
                         }
-                    }
-            } catch (e: Exception) {
-                emit(StreamingState.Error(e.message ?: "Unknown error"))
-            }
-        }
-
-        override suspend fun reviewChapter(
-            saga: SagaContent,
-            chapterContent: ChapterContent,
-        ) = executeRequest {
-            cleanUpEmptyTimeLines(chapterContent)
-            val chapterWikis = chapterContent.events.map { it.updatedWikis }.flatten()
-            if (chapterWikis.size > 10) {
-                wikiUseCase.mergeWikis(saga, chapterWikis)
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
+                }
             }
 
-            generateChapter(
-                saga = saga,
-                chapterContent = chapterContent,
-            ).getSuccess()!!
-        }
+        override suspend fun reviewChapter(chapterId: Int) =
+            executeRequest {
+                val (saga, chapterContent) = fetchContext(chapterId)
+                cleanUpEmptyTimeLines(chapterContent)
+                val chapterWikis = chapterContent.events.map { it.updatedWikis }.flatten()
+                val metadata =
+                    sagaRepository.getSagaMetadata(saga.data.id).first()
+                        ?: error("Metadata not found")
+                wikiUseCase.mergeWikis(metadata, chapterWikis)
+
+                generateChapter(
+                    chapterId = chapterId,
+                ).getSuccess()!!
+            }
 
         private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
             val rules = remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
@@ -185,11 +206,9 @@ class ChapterUseCaseImpl
         }
 
         @OptIn(PublicPreviewAPI::class)
-        override suspend fun generateChapterCover(
-            chapter: ChapterContent,
-            saga: SagaContent,
-        ): RequestResult<Chapter> =
+        override suspend fun generateChapterCover(chapterId: Int): RequestResult<Chapter> =
             executeRequest {
+                val (saga, chapter) = fetchContext(chapterId)
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
 
@@ -199,53 +218,11 @@ class ChapterUseCaseImpl
                             genre = saga.data.genre,
                             imageReference = null,
                             context =
-                                buildString {
-                                    appendLine("### MANDATORY MULTI-CHARACTER SCENE")
-                                    appendLine("The following characters are ESSENTIAL to this scene.")
-                                    append("[")
-                                    append(characters.filterNotNull().joinToString { it.data.name })
-                                    append("]")
-                                    appendLine("You MUST integrate ALL of them into the artwork.")
-                                    appendLine("Strictly respect their descriptions, physical traits, and relative positions.")
-                                    appendLine()
-                                    appendLine("#### SUBJECTS DETAILS:")
-                                    appendLine(
-                                        characters.mapNotNull { it?.data }.toAINormalize(
-                                            listOf(
-                                                "id",
-                                                "image",
-                                                "sagaId",
-                                                "joinedAt",
-                                                "emojified",
-                                                "hexColor",
-                                                "firstSceneId",
-                                                "carriedItems",
-                                                "smartZoom",
-                                                "knowledge",
-                                                "nicknames",
-                                            ),
-                                        ),
-                                    )
-                                    appendLine()
-                                    appendLine("#### CHARACTER RELATIONSHIPS (COMPOSITIONAL HINTS):")
-                                    characters
-                                        .filter {
-                                            it?.data?.id != saga.mainCharacter?.data?.id
-                                        }.forEach {
-                                            val character = it ?: return@forEach
-                                            appendLine(
-                                                "• ${saga.mainCharacter?.data?.name} & ${character.data.name}: ${
-                                                    saga.mainCharacter
-                                                        ?.findRelationship(character.data.id)
-                                                        ?.summarizeRelation(1)
-                                                }",
-                                            )
-                                        }
-                                    appendLine()
-                                    appendLine(
-                                        "FINAL MANDATE: Do not focus on just one character. Balance the composition to show the interaction and presence of EVERY subject listed.",
-                                    )
-                                },
+                                buildCoverPromptContext(
+                                    chapter.data.narrativeGuide,
+                                    characters,
+                                    saga,
+                                ),
                             imageType = ImageType.COVER,
                             variationId = saga.data.variationId,
                         )
@@ -268,6 +245,107 @@ class ChapterUseCaseImpl
                 chapterRepository.updateChapter(newChapter)
             }
 
+        @OptIn(PublicPreviewAPI::class)
+        override suspend fun generateChapterCoverStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
+                try {
+                    val (saga, chapter) = fetchContext(chapterId)
+                    val characters =
+                        chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
+
+                    imagenClient
+                        .generateIntegratedImageStream(
+                            genre = saga.data.genre,
+                            imageReference = null,
+                            context =
+                                buildCoverPromptContext(
+                                    chapter.data.narrativeGuide,
+                                    characters,
+                                    saga,
+                                ),
+                            imageType = ImageType.COVER,
+                            variationId = saga.data.variationId,
+                        ).collect { state ->
+                            if (state is StreamingState.Success) {
+                                val bitmap = state.data.data
+                                val coverFile =
+                                    fileHelper.saveFile(
+                                        chapter.data.title,
+                                        bitmap,
+                                        path = "${saga.data.id}/chapters/",
+                                    ) ?: error("Failed to save chapter cover")
+
+                                val newChapter = chapter.data.copy(coverImage = coverFile.path)
+                                val updated = chapterRepository.updateChapter(newChapter)
+                                emit(
+                                    StreamingState.Success(
+                                        GeneratedContent(
+                                            updated,
+                                            state.data.finalMessage,
+                                        ),
+                                    ),
+                                )
+                            } else {
+                                emit(state as StreamingState<GeneratedContent<Chapter>>)
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Error generating chapter cover stream"))
+                }
+            }
+
+        private fun buildCoverPromptContext(
+            narrativeContext: String?,
+            characters: List<CharacterContent?>,
+            saga: SagaContent,
+        ): String =
+            buildString {
+                val duo = characters.filterNotNull().take(2)
+                appendLine("### THE ARTBOOK DUO")
+                appendLine("This is a focused character study. Capture the intimate tension and presence of exactly these two individuals.")
+                append("[")
+                appendLine(
+                    duo.joinToString {
+                        buildString {
+                            appendLine(it.data.fullName())
+                            appendLine(it.data.profile.toAINormalize())
+                            appendLine(
+                                it.data.details.physicalTraits
+                                    .toAINormalize(),
+                            )
+                            appendLine(
+                                it.data.details.clothing
+                                    .toAINormalize(),
+                            )
+                        }
+                    },
+                )
+                append("]")
+
+                if (duo.size > 1) {
+                    appendLine()
+                    appendLine("#### CORE RELATIONSHIP (COMPOSITIONAL FOCUS):")
+                    val char1 = duo[0]
+                    val char2 = duo[1]
+                    appendLine(
+                        "• ${char1.data.name} & ${char2.data.name}: ${
+                            char1.findRelationship(char2.data.id)?.summarizeRelation(1)
+                                ?: "Complex dynamic connection."
+                        }",
+                    )
+                }
+
+                narrativeContext?.let {
+                    appendLine("Narrative moment: ")
+                    appendLine(narrativeContext)
+                }
+
+                appendLine()
+                appendLine(
+                    "FINAL ARTBOOK MANDATE: Prioritize the emotional interaction or shared silence between these subjects. No crowded compositions. Focus on character fidelity and the art style.",
+                )
+            }
+
         private suspend fun generateChapterPrompt(
             saga: SagaContent,
             currentChapter: ChapterContent,
@@ -283,78 +361,182 @@ class ChapterUseCaseImpl
         }
 
         override suspend fun generateChapterIntroduction(
-            saga: SagaContent,
-            chapter: Chapter,
-            act: ActContent,
+            sagaId: Int,
+            chapterContent: Chapter,
         ) = executeRequest {
+            val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
             genreConfigService.getGenreConfig(saga.data.genre)
             val prompt =
                 ChapterPrompts.chapterIntroductionPrompt(
                     promptService = promptService,
                     sagaContent = saga,
-                    currentChapter = chapter,
+                    currentChapter = chapterContent,
                     conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                 )
             val intro =
-                gemmaClient.generate<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
+                gemmaClient.generate<GeneratedContent<String>>(
                     prompt,
                     requireTranslation = true,
                     useCore = true,
                     requirement = GemmaClient.ModelRequirement.HIGH,
+                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
                 )!!
-            val updated = chapter.copy(introduction = intro.data)
+            val updated = chapterContent.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
-            com.ilustris.sagai.core.ai.model
-                .GeneratedContent(updatedChapter, intro.finalMessage)
+            GeneratedContent(updatedChapter, intro.finalMessage)
         }
 
-        override fun generateChapterIntroductionStream(
-            saga: SagaContent,
-            chapterContent: Chapter,
-            act: ActContent,
-        ) = kotlinx.coroutines.flow.flow {
-            try {
-                val prompt =
-                    ChapterPrompts.chapterIntroductionPrompt(
-                        promptService = promptService,
-                        sagaContent = saga,
-                        currentChapter = chapterContent,
-                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
-                    )
+        override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
+                try {
+                    val (saga, chapter) = fetchContext(chapterId)
+                    val chapterContent = chapter.data
+                    val prompt =
+                        ChapterPrompts.chapterIntroductionPrompt(
+                            promptService = promptService,
+                            sagaContent = saga,
+                            currentChapter = chapterContent,
+                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        )
 
-                gemmaClient
-                    .generateStreaming<com.ilustris.sagai.core.ai.model.GeneratedContent<String>>(
-                        prompt = prompt,
-                        requireTranslation = true,
-                        useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                    ).collect { state ->
-                        when (state) {
-                            is StreamingState.Success -> {
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<String>>(
+                                    prompt = prompt,
+                                    requireTranslation = true,
+                                    useCore = true,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                                ),
+                            "Generating chapter introduction...",
+                        ).collect { state ->
+                            if (state is StreamingState.Success) {
                                 val introContent = state.data
                                 val updatedChapter =
                                     updateChapter(chapterContent.copy(introduction = introContent.data))
                                 emit(
                                     StreamingState.Success(
-                                        com.ilustris.sagai.core.ai.model.GeneratedContent(
+                                        GeneratedContent(
                                             updatedChapter,
                                             introContent.finalMessage,
                                         ),
                                     ),
                                 )
-                            }
-
-                            is StreamingState.Error -> {
-                                emit(StreamingState.Error(state.message))
-                            }
-
-                            is StreamingState.Reasoning -> {
-                                emit(StreamingState.Reasoning(state.chunk))
+                            } else {
+                                emit(state as StreamingState<GeneratedContent<Chapter>>)
                             }
                         }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Unknown error"))
                 }
-        } catch (e: Exception) {
-            emit(StreamingState.Error(e.message ?: "Unknown error"))
-        }
-    }
+            }
+
+        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+            flow {
+                try {
+                    val (saga, chapterContent) = fetchContext(chapterId)
+                    val conversationDirective =
+                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val prompt =
+                        ChapterPrompts.chapterSynthesisPrompt(
+                            promptService = promptService,
+                            saga = saga,
+                            chapter = chapterContent,
+                            narrativeRules = remoteConfigService.getNarrativeRules(),
+                            conversationDirective = conversationDirective,
+                        )
+
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            gemmaClient
+                                .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
+                                    prompt = prompt,
+                                    blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
+                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                ),
+                            "Generating new chapter...",
+                        ).collect { state ->
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val synthesis = state.data.data
+
+                                    // 1. Update Chapter details & Narrative Guide
+                                    val updatedChapter =
+                                        updateChapter(
+                                            synthesis.chapter.copy(
+                                                id = chapterContent.data.id,
+                                                currentEventId = chapterContent.data.currentEventId,
+                                                actId = chapterContent.data.actId,
+                                                coverImage = chapterContent.data.coverImage,
+                                                createdAt = chapterContent.data.createdAt,
+                                            ),
+                                        )
+
+                                    // 2. Save Landmark Wikis
+                                    synthesis.landmarkWikis.forEach { wikiUpdate ->
+                                        val existingWiki =
+                                            saga.wikis.find { it.title.equals(wikiUpdate.title, true) }
+                                        val wikiToSave =
+                                            Wiki(
+                                                id = existingWiki?.id ?: 0,
+                                                title = wikiUpdate.title,
+                                                content = wikiUpdate.content,
+                                                type = wikiUpdate.type,
+                                                emojiTag = wikiUpdate.emojiTag,
+                                                sagaId = saga.data.id,
+                                                chapterId = chapterContent.data.id,
+                                                isFeatured = true,
+                                            )
+                                        if (existingWiki != null) {
+                                            wikiUseCase.updateWiki(wikiToSave)
+                                        } else {
+                                            wikiUseCase.saveWiki(wikiToSave)
+                                        }
+                                    }
+
+                                    // 3. Save Character Arcs
+                                    synthesis.characterArcs.forEach { arcUpdate ->
+                                        val character = saga.findCharacter(arcUpdate.characterName)
+                                        character?.let {
+                                            characterUseCase.insertCharacterArc(
+                                                CharacterArc(
+                                                    characterId = it.data.id,
+                                                    sourceId = chapterContent.data.id,
+                                                    sourceType = ArcSourceType.CHAPTER,
+                                                    title = arcUpdate.arcTitle,
+                                                    content = arcUpdate.arcContent,
+                                                ),
+                                            )
+                                        }
+                                    }
+
+                                    // 4. Update Global World State
+                                    synthesis.worldStateUpdate?.let {
+                                        sagaRepository.updateSaga(saga.data.copy(worldState = it))
+                                    }
+
+                                    emit(
+                                        StreamingState.Success(
+                                            GeneratedContent(
+                                                updatedChapter,
+                                                state.data.finalMessage,
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(StreamingState.Error(state.message, state.throwable))
+                                }
+
+                                is StreamingState.Reasoning -> {
+                                    emit(StreamingState.Reasoning(state.chunk))
+                                }
+                            }
+                        }
+                } catch (e: Exception) {
+                    emit(StreamingState.Error(e.message ?: "Chapter synthesis failed", e))
+                }
+            }
     }

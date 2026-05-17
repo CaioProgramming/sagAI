@@ -1,7 +1,10 @@
 package com.ilustris.sagai.core.media
 
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.media.audiofx.HapticGenerator
+import android.os.Build
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +20,9 @@ class MediaPlayerManagerImpl
     ) : MediaPlayerManager {
         override var mediaPlayer: MediaPlayer? = null
             private set
+
+        private var hapticGenerator: HapticGenerator? = null
+
         private val _isPlaying = MutableStateFlow(false)
         override val isPlaying: StateFlow<Boolean> = _isPlaying
 
@@ -45,11 +51,15 @@ class MediaPlayerManagerImpl
                     mediaPlayer =
                         MediaPlayer().apply {
                             val audioAttributes =
-                                android.media.AudioAttributes
+                                AudioAttributes
                                     .Builder()
-                                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                                    .build()
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                                    .apply {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                            setHapticChannelsMuted(false)
+                                        }
+                                    }.build()
                             setAudioAttributes(audioAttributes)
                         }
                 }
@@ -57,6 +67,21 @@ class MediaPlayerManagerImpl
                 mediaPlayer?.apply {
                     Timber.d("Resetting MediaPlayer.")
                     reset()
+
+                    // Initialize HapticGenerator if supported
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && HapticGenerator.isAvailable()) {
+                        try {
+                            hapticGenerator?.release()
+                            hapticGenerator =
+                                HapticGenerator.create(audioSessionId).apply {
+                                    enabled = true
+                                }
+                            Timber.i("HapticGenerator initialized for session: $audioSessionId")
+                        } catch (e: Exception) {
+                            Timber.e(e, "Failed to initialize HapticGenerator")
+                        }
+                    }
+
                     Timber.d("Setting data source: ${file.absolutePath}")
                     setDataSource(file.absolutePath)
                     isLooping = looping
@@ -138,6 +163,8 @@ class MediaPlayerManagerImpl
         }
 
         override fun release() {
+            hapticGenerator?.release()
+            hapticGenerator = null
             mediaPlayer?.let {
                 try {
                     if (it.isPlaying) {

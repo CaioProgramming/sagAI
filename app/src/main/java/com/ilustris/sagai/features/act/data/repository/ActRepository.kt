@@ -13,4 +13,6 @@ interface ActRepository {
 
     // New method
     fun getActContent(actId: Int): Flow<ActContent?>
+
+    suspend fun getActById(actId: Int): Act?
 }

@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.chat.repository
 import android.net.Uri
 import androidx.core.net.toUri
 import com.ilustris.sagai.core.data.RequestResult
-import timber.log.Timber
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
@@ -36,6 +35,7 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import kotlinx.coroutines.flow.first
+import timber.log.Timber
 import javax.inject.Inject
 
 interface SagaBackupService {
@@ -95,7 +95,7 @@ class SagaBackupServiceImpl
             Timber.d("Recovering images[${imageResources.size}]...")
             val savedImages = backupService.saveExtractedImages(newSaga.data.id, imageResources)
 
-            sagaRepository.updateChat(
+            sagaRepository.updateSaga(
                 newSaga.data.copy(
                     icon =
                         savedImages.find { it.first == sagaContent.data.icon }?.second

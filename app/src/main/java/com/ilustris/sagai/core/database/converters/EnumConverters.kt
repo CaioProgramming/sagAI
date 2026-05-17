@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.database.converters
 
 import MessageStatus
 import androidx.room.TypeConverter
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 
 /**
@@ -34,5 +35,18 @@ object EnumConverters {
             null
         } else {
             runCatching { MessageStatus.valueOf(value) }.getOrDefault(MessageStatus.OK)
+        }
+
+    @TypeConverter
+    @JvmStatic
+    fun emotionalToneToString(value: EmotionalTone?): String? = value?.name
+
+    @TypeConverter
+    @JvmStatic
+    fun stringToEmotionalTone(value: String?): EmotionalTone? =
+        if (value == null) {
+            null
+        } else {
+            EmotionalTone.getTone(value)
         }
 }
