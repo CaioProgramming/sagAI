@@ -15,14 +15,16 @@ import android.text.TextPaint
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
+import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.theme.GenreFontService
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.model.BookPage
 import com.ilustris.sagai.features.act.ui.PageItem
+import com.ilustris.sagai.features.act.ui.components.ChapterDropCap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.bodyFontResource
-import com.ilustris.sagai.ui.theme.headerFontResource
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
@@ -31,6 +33,8 @@ class PDFGenerator
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
+        private val genreFontService: GenreFontService,
+        private val genreVisualConfigService: GenreVisualConfigService,
     ) {
         fun generateBookPDF(
             book: Book,
@@ -41,12 +45,9 @@ class PDFGenerator
             val pdfDocument = PdfDocument()
             val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 Size
 
-            val headerTypeface =
-                genre.headerFontResource()?.let { ResourcesCompat.getFont(context, it) }
-                    ?: Typeface.DEFAULT
-            val bodyTypeface =
-                genre.bodyFontResource()?.let { ResourcesCompat.getFont(context, it) }
-                    ?: Typeface.DEFAULT
+            val visualConfig = runBlocking { genreVisualConfigService.getVisualConfig(genre) }
+            val (headerTypeface, bodyTypeface) =
+                runBlocking { genreFontService.getTypefaces(genre, visualConfig) }
             val genreColor = genre.color.toArgb()
             val iconColor = genre.iconColor.toArgb()
 
@@ -99,6 +100,7 @@ class PDFGenerator
                             headerTypeface,
                             bodyTypeface,
                             genreColor,
+                            showDropCap = item.showDropCap,
                         )
                         pdfDocument.finishPage(contentPage)
                         globalPageCount++
@@ -129,7 +131,7 @@ class PDFGenerator
 
             val sharesDir = File(context.cacheDir, "shares")
             if (!sharesDir.exists()) sharesDir.mkdirs()
-            val file = File(sharesDir, "${book.actTitle.replace(" ", "_")}.pdf")
+            val file = File(sharesDir, "${sanitizePdfFileName(book.actTitle)}.pdf")
 
             return try {
                 pdfDocument.writeTo(FileOutputStream(file))
@@ -341,6 +343,7 @@ class PDFGenerator
             headerTypeface: Typeface,
             bodyTypeface: Typeface,
             genreColor: Int,
+            showDropCap: Boolean,
         ) {
             val paint = Paint()
             paint.color = Color.WHITE
@@ -348,28 +351,58 @@ class PDFGenerator
 
             val margin = 60f
             val contentWidth = 595f - (margin * 2)
-
-            // Chapter title header removed for "pure story" experience
+            val contentTop = 80f
+            val lineSpacing = 1.4f
+            val gapPx = 20f
 
             val bodyPaint =
                 TextPaint().apply {
                     color = Color.BLACK
-                    typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
+                    typeface = bodyTypeface
                     textSize = 14f
                     isAntiAlias = true
                     letterSpacing = 0.01f
                 }
 
-            val bodyLayout =
-                StaticLayout.Builder
-                    .obtain(page.content, 0, page.content.length, bodyPaint, contentWidth.toInt())
-                    .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                    .setLineSpacing(0f, 1.4f) // Increased line spacing for better readability
-                    .build()
+            val headerPaint =
+                TextPaint().apply {
+                    color = Color.BLACK
+                    typeface = headerTypeface
+                    isAntiAlias = true
+                }
 
             canvas.save()
-            canvas.translate(margin, 80f) // Started lower for clean look
-            bodyLayout.draw(canvas)
+            canvas.translate(margin, contentTop)
+
+            val dropCapSplit =
+                if (showDropCap) ChapterDropCap.split(page.content) else null
+            if (dropCapSplit != null) {
+                ChapterDropCap.drawOnCanvas(
+                    canvas = canvas,
+                    split = dropCapSplit,
+                    startX = 0f,
+                    startY = 0f,
+                    contentWidth = contentWidth,
+                    headerPaint = headerPaint,
+                    bodyPaint = bodyPaint,
+                    gapPx = gapPx,
+                    lineSpacingMultiplier = lineSpacing,
+                )
+            } else {
+                val bodyLayout =
+                    StaticLayout.Builder
+                        .obtain(
+                            page.content,
+                            0,
+                            page.content.length,
+                            bodyPaint,
+                            contentWidth.toInt(),
+                        ).setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                        .setLineSpacing(0f, lineSpacing)
+                        .build()
+                bodyLayout.draw(canvas)
+            }
+
             canvas.restore()
 
             // Footer Icon & Page Number
@@ -636,4 +669,11 @@ class PDFGenerator
             }
             return inSampleSize
         }
+
+    /** Keeps spaces; strips only characters illegal in file names. */
+        private fun sanitizePdfFileName(title: String): String =
+            title
+                .trim()
+                .replace(Regex("""[/\\:*?"<>|]"""), "")
+                .ifBlank { "book" }
     }

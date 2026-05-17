@@ -416,7 +416,7 @@
     <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
 
     <!-- Marcos de Narrativa (evento = checkpoint, capítulo = fase, ato = volume) -->
-    <string name="advance_evolve_timeline">Avançar evento</string>
+    <string name="advance_evolve_timeline">Novo evento</string>
     <string name="releasing_evolve_timeline">Registrando este evento...</string>
     <string name="advance_close_chapter">Concluir fase</string>
     <string name="releasing_close_chapter">Resumindo esta fase...</string>

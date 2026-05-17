@@ -17,6 +17,11 @@ import javax.inject.Singleton
 @Retention(AnnotationRetention.BINARY)
 annotation class GeminiRetrofit
 
+/** OkHttp client for binary downloads (fonts, audio) — no body logging. */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class DownloadOkHttpClient
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -39,6 +44,20 @@ object NetworkModule {
         }
         logger.intercept(chain)
         }
+
+    @Provides
+    @Singleton
+    @DownloadOkHttpClient
+    fun provideDownloadOkHttpClient(): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .retryOnConnectionFailure(true)
+            .build()
 
     @Provides
     @Singleton

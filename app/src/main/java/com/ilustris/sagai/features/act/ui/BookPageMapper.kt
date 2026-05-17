@@ -17,6 +17,7 @@ sealed class PageItem {
     data class Content(
         val chapterTitle: String,
         val page: BookPage,
+        val showDropCap: Boolean = false,
     ) : PageItem()
 
     data class Illustration(
@@ -83,8 +84,14 @@ class BookPageMapper
                         }
                     }
                     // Body pages
-                    chapter.pages.forEach { page ->
-                        add(PageItem.Content(chapter.title, page))
+                    chapter.pages.forEachIndexed { pageIndex, page ->
+                        add(
+                            PageItem.Content(
+                                chapterTitle = chapter.title,
+                                page = page,
+                                showDropCap = pageIndex == 0,
+                            ),
+                        )
                     }
                 }
 

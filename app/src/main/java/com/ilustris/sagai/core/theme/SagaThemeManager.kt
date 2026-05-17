@@ -1,7 +1,6 @@
 package com.ilustris.sagai.core.theme
 
 import android.net.Uri
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.file.FileCacheService
@@ -29,8 +28,8 @@ import javax.inject.Singleton
 
 /**
  * Centralized singleton that manages the global immersive saga experience.
- * Controls genre-specific themes (colors, typography), visual configurations (shaders, palettes),
- * and media triggers (VFX, ambient music).
+ * Controls immersive session state: active genre, ambient music, SFX, and VFX.
+ * Visual config and fonts are loaded by [com.ilustris.sagai.ui.theme.SagAITheme].
  */
 @Singleton
 class SagaThemeManager
@@ -44,9 +43,6 @@ class SagaThemeManager
     ) {
         private val _currentGenre = MutableStateFlow<Genre?>(null)
         val currentGenre: StateFlow<Genre?> = _currentGenre.asStateFlow()
-
-        private val _visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
-        val visualConfig: StateFlow<GenreVisualConfig?> = _visualConfig.asStateFlow()
 
         private val _ambientMusicFile = MutableStateFlow<File?>(null)
         val ambientMusicFile: StateFlow<File?> = _ambientMusicFile.asStateFlow()
@@ -81,7 +77,7 @@ class SagaThemeManager
                 Timber.w("Theme update ignored: currently on a neutral screen (Home, Profile, etc.)")
                 return
             }
-            if (_currentGenre.value == genre && _visualConfig.value != null) return
+            if (_currentGenre.value == genre && genre != null) return
 
             _currentGenre.value = genre
             if (genre != null) {
@@ -95,18 +91,10 @@ class SagaThemeManager
 
         private suspend fun fetchConfigs(genre: Genre) {
             try {
-                // 1. Fetch Visual Config
-                val visual = visualConfigService.getVisualConfig(genre)
-                _visualConfig.value = visual
-                Timber.d("SagaThemeManager: Visual config updated for $genre")
-
-                // 2. Prepare Ambient Music
                 getAmbienceMusic(genre)
-
-                // 3. Prepare Reply SFX
                 getReplySfx(genre)
             } catch (e: Exception) {
-                Timber.e(e, "SagaThemeManager: Error fetching configs for $genre")
+                Timber.e(e, "SagaThemeManager: Error fetching media configs for $genre")
             }
         }
 
@@ -144,7 +132,8 @@ class SagaThemeManager
             val genre = _currentGenre.value ?: return
             managerScope.launch {
                 delay(300)
-                val pattern = genre.vibrationPattern(_visualConfig.value)
+                val visual = visualConfigService.getVisualConfig(genre)
+                val pattern = genre.vibrationPattern(visual)
                 soundFxService.playWithHaptics(pattern)
                 _vfxTrigger.emit(Unit)
             }
@@ -153,7 +142,6 @@ class SagaThemeManager
         /** Clear the active genre, reverting to the default brand identity. */
         fun resetTheme() {
             _currentGenre.value = null
-            _visualConfig.value = null
             _ambientMusicFile.value = null
         }
 

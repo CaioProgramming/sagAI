@@ -4,8 +4,6 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.utils.StringResourceHelper
@@ -14,7 +12,6 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +37,6 @@ class HomeViewModel
         private val homeUseCase: HomeUseCase,
         private val backupService: BackupService,
         private val stringResourceHelper: StringResourceHelper,
-        private val visualConfigService: GenreVisualConfigService,
     ) : ViewModel() {
         val sagas: MutableStateFlow<List<SagaSummary>> = MutableStateFlow(emptyList())
 
@@ -50,8 +46,7 @@ class HomeViewModel
         private val _startDebugSaga = MutableStateFlow<Saga?>(null)
         val startDebugSaga = _startDebugSaga.asStateFlow()
 
-        private val _dynamicNewSagaTexts =
-            MutableStateFlow<Pair<DynamicSagaPrompt?, GenreVisualConfig?>?>(null)
+        private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
         val dynamicNewSagaTexts = _dynamicNewSagaTexts.asStateFlow()
 
         private val _backupAvailable = MutableStateFlow(false)
@@ -69,16 +64,10 @@ class HomeViewModel
 
         val billingState = homeUseCase.billingState
 
-        private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
-        val visualConfigs = _visualConfigs.asStateFlow()
-
-        val genreVisualConfigService = visualConfigService
-
         init {
             Timber.d("HomeViewModel: init")
             checkDebug()
             getDynamicPrompts()
-            loadVisualConfigs()
             loadSagas()
         }
 
@@ -93,23 +82,6 @@ class HomeViewModel
         override fun onCleared() {
             super.onCleared()
             Timber.d("HomeViewModel: onCleared")
-        }
-
-        private fun loadVisualConfigs() {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagas.collect { sagaList ->
-                    val genres = sagaList.map { it.data.genre }.distinct()
-                    val configs = _visualConfigs.value.toMutableMap()
-                    genres.forEach { genre ->
-                        if (!configs.containsKey(genre)) {
-                            visualConfigService.getVisualConfig(genre)?.let {
-                                configs[genre] = it
-                                _visualConfigs.emit(configs.toMap())
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         fun checkForBackups() {
@@ -128,7 +100,7 @@ class HomeViewModel
                 homeUseCase
                     .requestDynamicCall()
                     .onSuccessAsync {
-                        _dynamicNewSagaTexts.emit(it to genreVisualConfigService.getVisualConfig(it.genre))
+                        _dynamicNewSagaTexts.emit(it)
                         if (_isStarting.value) {
                             _isStarting.emit(false)
                         }
@@ -137,7 +109,7 @@ class HomeViewModel
                             DynamicSagaPrompt(
                                 stringResourceHelper.getString(R.string.home_create_new_saga_title),
                                 stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
-                            ) to null
+                            )
                         if (_isStarting.value) {
                             _isStarting.emit(false)
                         }

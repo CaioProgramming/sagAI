@@ -2,18 +2,18 @@ package com.ilustris.sagai.core.file
 
 import android.content.Context
 import android.graphics.Bitmap
-import kotlinx.coroutines.Dispatchers // Added for IO Context
-import kotlinx.coroutines.withContext // Added for IO Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream // Added for InputStream
-import java.net.HttpURLConnection // Added for HttpURLConnection
-import java.net.URL // Added for URL
 import java.security.MessageDigest
 
 class FileCacheService(
     private val context: Context,
+    private val downloadClient: OkHttpClient,
 ) {
     private val cacheDirName = "file_cache"
 
@@ -36,25 +36,35 @@ class FileCacheService(
     }
 
     fun getCachedFile(
-        musicUrl: String,
+        url: String,
         extension: String,
     ): File? {
-        val fileName = generateFileName(musicUrl, extension)
-        val file = File(getFileCacheDir(), fileName)
-        return if (file.exists() && file.length() > 0) {
-            file
-        } else {
-            null
+        val file = cacheFileFor(url, extension)
+        return if (file.exists() && file.length() > 0) file else null
+    }
+
+    fun invalidateCachedFile(
+        url: String,
+        extension: String,
+    ) {
+        val file = cacheFileFor(url, extension)
+        if (file.exists()) {
+            file.delete()
+            Timber.d("Invalidated cache file: ${file.name}")
         }
     }
 
+    private fun cacheFileFor(
+        url: String,
+        extension: String,
+    ): File = File(getFileCacheDir(), generateFileName(url, extension))
+
     fun saveFileToCache(
-        musicUrl: String,
+        url: String,
         data: ByteArray,
         extension: String,
     ): File? {
-        val fileName = generateFileName(musicUrl, extension)
-        val file = File(getFileCacheDir(), fileName)
+        val file = cacheFileFor(url, extension)
         return try {
             FileOutputStream(file).use { outputStream ->
                 outputStream.write(data)
@@ -62,12 +72,12 @@ class FileCacheService(
             if (file.exists() && file.length() > 0) {
                 file
             } else {
-                if (file.exists()) file.delete() // Clean up if file is empty after write attempt
+                if (file.exists()) file.delete()
                 null
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to save file to cache: ${file.absolutePath}")
-            if (file.exists()) file.delete() // Clean up on exception
+            if (file.exists()) file.delete()
             null
         }
     }
@@ -108,49 +118,78 @@ class FileCacheService(
 
         Timber.d("File not in cache. Downloading from: $url")
         return try {
-            // Ensure network operations are on a background thread
-            val downloadedData: ByteArray? =
-                withContext(Dispatchers.IO) {
-                    var connection: HttpURLConnection? = null
-                    var inputStream: InputStream? = null
-                    try {
-                        val connectionUrl = URL(url)
-                        connection = connectionUrl.openConnection() as HttpURLConnection
-                        connection.connectTimeout = 15000 // 15 seconds
-                        connection.readTimeout = 15000 // 15 seconds
-                        connection.requestMethod = "GET"
-                        connection.connect()
-
-                        if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                            inputStream = connection.inputStream
-                            inputStream.readBytes()
-                        } else {
-                            Timber.e(
-                                "Download failed: Server responded with code ${connection.responseCode} for URL $url",
-                            )
-                            null
-                        }
-                    } catch (e: Exception) {
-                        Timber.e(e, "Download failed for URL $url")
-                        null
-                    } finally {
-                        inputStream?.close()
-                        connection?.disconnect()
-                    }
-                }
-
-            if (downloadedData != null && downloadedData.isNotEmpty()) {
-                Timber.d("Download successful, ${downloadedData.size} bytes received.")
-                saveFileToCache(url, downloadedData, desiredExtension)
-            } else {
-                Timber.e("Downloaded data is null or empty for URL $url.")
-                null
+            withContext(Dispatchers.IO) {
+                downloadToCache(url, desiredExtension)
             }
         } catch (e: Exception) {
-            // Catch any unexpected errors during the process
             Timber.e(e, "Exception in getFile for URL $url")
             null
         }
+    }
+
+    private fun downloadToCache(
+        url: String,
+        extension: String,
+    ): File? {
+        val dest = cacheFileFor(url, extension)
+        val temp = File(dest.parentFile, "${dest.name}.part")
+
+        repeat(MAX_DOWNLOAD_ATTEMPTS) { attempt ->
+            temp.delete()
+            try {
+                val request =
+                    Request
+                        .Builder()
+                        .url(url)
+                        .get()
+                        .header("User-Agent", DOWNLOAD_USER_AGENT)
+                        .header("Accept", "*/*")
+                        .build()
+
+                downloadClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        Timber.e(
+                            "Download failed: HTTP ${response.code} for $url (attempt ${attempt + 1})",
+                        )
+                        return@repeat
+                    }
+
+                    val body = response.body
+                    if (body == null) {
+                        Timber.e("Download failed: empty body for $url (attempt ${attempt + 1})")
+                        return@repeat
+                    }
+
+                    body.byteStream().use { input ->
+                        FileOutputStream(temp).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    val bytes = temp.length()
+                    if (bytes <= 0L) {
+                        Timber.e("Download failed: 0 bytes written for $url (attempt ${attempt + 1})")
+                        temp.delete()
+                        return@repeat
+                    }
+
+                    if (dest.exists()) dest.delete()
+                    if (!temp.renameTo(dest)) {
+                        temp.copyTo(dest, overwrite = true)
+                        temp.delete()
+                    }
+
+                    Timber.d("Download successful: $bytes bytes → ${dest.absolutePath}")
+                    return dest
+                }
+            } catch (e: Exception) {
+                temp.delete()
+                Timber.e(e, "Download failed for $url (attempt ${attempt + 1})")
+            }
+        }
+
+        if (dest.exists() && dest.length() == 0L) dest.delete()
+        return null
     }
 
     fun clearCache() {
@@ -159,5 +198,10 @@ class FileCacheService(
             val deleted = cacheDir.deleteRecursively()
             Timber.d("Cache cleared: $deleted")
         }
+    }
+
+    companion object {
+        private const val MAX_DOWNLOAD_ATTEMPTS = 2
+        private const val DOWNLOAD_USER_AGENT = "Sagas/1.0 (Android; +https://ilustris.com)"
     }
 }

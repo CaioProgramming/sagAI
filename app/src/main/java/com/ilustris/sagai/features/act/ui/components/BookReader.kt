@@ -179,6 +179,7 @@ fun BookReader(
                                 ReaderPage(
                                     chapterTitle = item.chapterTitle,
                                     page = item.page,
+                                    showDropCap = item.showDropCap,
                                     genre = genre,
                                     titleModifier =
                                         Modifier.sharedElement(
@@ -426,6 +427,7 @@ fun ChapterStartPage(
 fun ReaderPage(
     chapterTitle: String,
     page: BookPage,
+    showDropCap: Boolean,
     genre: Genre,
     titleModifier: Modifier,
 ) {
@@ -438,14 +440,9 @@ fun ReaderPage(
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Spacer(Modifier.height(100.dp))
-        Text(
+        ChapterDropCapText(
             text = page.content,
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    fontWeight = FontWeight.Normal,
-                ),
-            textAlign = TextAlign.Start,
+            showDropCap = showDropCap,
         )
         Spacer(Modifier.height(100.dp))
     }
@@ -521,7 +518,10 @@ fun EndPaper(
             )
 
             SagaTitle(
-                textStyle = MaterialTheme.typography.labelLarge,
+                textStyle =
+                    MaterialTheme.typography.labelLarge.copy(
+                        fontFamily = MaterialTheme.typography.headlineMedium.fontFamily,
+                    ),
                 modifier =
                     Modifier
                         .alpha(signAlpha)

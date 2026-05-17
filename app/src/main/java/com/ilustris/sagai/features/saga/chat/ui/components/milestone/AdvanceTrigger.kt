@@ -8,6 +8,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +48,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -104,7 +106,7 @@ fun AdvanceTrigger(
             ) {
                 val genreBrush = Brush.linearGradient(colors)
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    color = MaterialTheme.colorScheme.background,
                     shape = shape,
                     tonalElevation = if (isHolding) 8.dp else 2.dp,
                     modifier =
@@ -113,11 +115,11 @@ fun AdvanceTrigger(
                             .height(50.dp)
                             .scale(scale)
                             .dropShadow(shape) {
-                                radius = 30f * progress
+                                radius = 35f * progress
                                 color = primaryColor
-                                spread = 15f * progress
+                                spread = 20f * progress
                                 brush = genreBrush
-                            }
+                            }.border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
                             .clip(shape)
                             .pointerInput(Unit) {
                                 detectTapGestures(

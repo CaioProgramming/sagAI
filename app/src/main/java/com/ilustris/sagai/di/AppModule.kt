@@ -350,7 +350,8 @@ object AppModule {
     @Singleton
     fun bindsFileCacheService(
         @ApplicationContext context: Context,
-    ) = FileCacheService(context)
+        @DownloadOkHttpClient downloadClient: okhttp3.OkHttpClient,
+    ) = FileCacheService(context, downloadClient)
 
     @Provides
     fun bindsWikiMapper(stringResourceHelper: StringResourceHelper) =
@@ -555,14 +556,6 @@ object AppModule {
             genreConfigService,
             remoteConfigService,
         )
-
-    @Provides
-    @Singleton
-    fun providePDFGenerator(
-        @ApplicationContext context: Context,
-    ): com.ilustris.sagai.features.share.domain.PDFGenerator =
-        com.ilustris.sagai.features.share.domain
-            .PDFGenerator(context)
 
     @Provides
     @Singleton

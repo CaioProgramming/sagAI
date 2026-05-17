@@ -82,7 +82,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
@@ -142,7 +142,6 @@ fun HomeView(
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
-    val visualConfigs by viewModel.visualConfigs.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.checkForBackups()
@@ -174,7 +173,8 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).reactiveShimmer(
+                                )
+                                .reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -234,7 +234,6 @@ fun HomeView(
                                     dynamicNewSagaTexts = dynamicNewSagaTexts,
                                     isLoadingDynamicPrompts = isLoadingDynamicPrompts,
                                     isPremium = isPremium,
-                                    visualConfigs = visualConfigs,
                                     animatedContentScope = this@AnimatedContent,
                                     sharedTransitionScope = sharedTransitionScope,
                                     onCreateNewChat = {
@@ -315,11 +314,10 @@ private fun ChatList(
     sagas: List<SagaSummary>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
-    dynamicNewSagaTexts: Pair<DynamicSagaPrompt?, GenreVisualConfig?>?,
+    dynamicNewSagaTexts: DynamicSagaPrompt?,
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
-    visualConfigs: Map<Genre, GenreVisualConfig> = emptyMap(),
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
@@ -369,7 +367,8 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             openPremiumSheet()
-                                        }.wrapContentWidth()
+                                        }
+                                        .wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -413,7 +412,8 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -455,7 +455,6 @@ private fun ChatList(
         item {
             TrophyShelf(
                 completedSagas = completedSagas,
-                visualConfigs = visualConfigs,
                 onCompletedSagaClicked = { onSelectSaga(it.data) },
             )
         }
@@ -476,7 +475,6 @@ private fun ChatList(
         ) {
             ChatCard(
                 it,
-                visualConfigs[it.data.genre],
                 Modifier
                     .animateItem()
                     .clickable {
@@ -553,10 +551,12 @@ private fun ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 10f
                             spread = 5f
-                        }.background(
+                        }
+                        .background(
                             Brush.horizontalGradient(iridescentGradient),
                             MaterialTheme.shapes.large,
-                        ).fillMaxWidth(),
+                        )
+                        .fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -579,14 +579,14 @@ private fun ChatList(
 @Composable
 fun ChatCard(
     saga: SagaSummary,
-    visualConfig: GenreVisualConfig? = null,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
 ) {
-    SagAITheme(visualConfig = visualConfig, genre = saga.data.genre) {
+    SagAITheme(genre = saga.data.genre) {
         val sagaData = saga.data
         val genre = sagaData.genre
+        val visualConfig = LocalGenreVisualConfig.current
         val genreColor = genre.color
         val genreBrush = sagaBrush()
         Brush.sweepGradient(genre.colorPalette(visualConfig))
@@ -606,12 +606,14 @@ fun ChatCard(
                                 .sharedElement(
                                     rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
                                     animatedContentScope,
-                                ).dropShadow(CircleShape) {
+                                )
+                                .dropShadow(CircleShape) {
                                     radius = 5f
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }.size(50.dp),
+                                }
+                                .size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -648,7 +650,8 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        ).weight(1f),
+                                        )
+                                        .weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime
@@ -787,7 +790,7 @@ fun HomeViewPreview() {
                                 DynamicSagaPrompt(
                                     "Dynamic Title Preview",
                                     "Dynamic Subtitle Preview",
-                                ) to null,
+                                ),
                             isLoadingDynamicPrompts = false,
                         )
                     }

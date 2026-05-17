@@ -4,8 +4,6 @@ import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
-import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
@@ -34,7 +32,6 @@ class SagaDetailViewModel
     @Inject
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
-        private val visualConfigService: GenreVisualConfigService,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel() {
@@ -49,7 +46,6 @@ class SagaDetailViewModel
 
         val showPremiumSheet = MutableStateFlow(false)
 
-        val visualConfig = MutableStateFlow<GenreVisualConfig?>(null)
         private val _initialSection = MutableStateFlow<DetailSectionView.InitialSection?>(null)
         val initialSection = _initialSection.asStateFlow()
 
@@ -123,7 +119,6 @@ class SagaDetailViewModel
             }
             fetchJob?.cancel()
             sagaResume.value = null
-            visualConfig.value = null
             cachedIconPath = null
             cachedSegmentedImage = null
             _initialSection.value = null
@@ -133,7 +128,6 @@ class SagaDetailViewModel
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
                         resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
-                            visualConfig.value = visualConfigService.getVisualConfig(data.saga.genre)
                             sagaThemeManager.updateTheme(data.saga.genre)
 
                             loadInitialSection()

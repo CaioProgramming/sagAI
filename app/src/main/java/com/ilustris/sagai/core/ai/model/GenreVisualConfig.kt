@@ -44,6 +44,11 @@ data class GenreVisualConfig(
     val backgroundUrl: String = "",
     @SerializedName("imageUrl")
     val imageUrl: String = "",
+    // ── Remote fonts (Catbox / direct HTTPS URLs) ───────────────────
+    @SerializedName("headerFontUrl")
+    val headerFontUrl: String = "",
+    @SerializedName("bodyFontUrl")
+    val bodyFontUrl: String = "",
 )
 
 /**

@@ -19,7 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
@@ -34,12 +34,12 @@ import com.ilustris.sagai.ui.theme.levitate
 fun TrophyPinItem(
     saga: SagaSummary,
     avatarSize: Dp,
-    visualConfig: GenreVisualConfig?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SagAITheme(visualConfig = visualConfig, genre = saga.data.genre) {
+    SagAITheme(genre = saga.data.genre) {
         val genre = saga.data.genre
+        val visualConfig = LocalGenreVisualConfig.current
         val genreColor = genre.color
         val borderBrush = Brush.verticalGradient(genre.colorPalette(visualConfig))
 
@@ -60,7 +60,8 @@ fun TrophyPinItem(
                             radius = 15f
                             color = genreColor
                             spread = 5f
-                        }.border(1.dp, borderBrush, CircleShape)
+                        }
+                        .border(1.dp, borderBrush, CircleShape)
                         .clip(CircleShape)
                         .background(genreColor.darker(.2f), CircleShape),
             ) {
@@ -108,7 +109,8 @@ fun TrophyOverflowPinItem(
                             Brush
                                 .linearGradient(holographicGradient)
                         spread = 4f
-                    }.clip(CircleShape)
+                    }
+                    .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         1.dp,

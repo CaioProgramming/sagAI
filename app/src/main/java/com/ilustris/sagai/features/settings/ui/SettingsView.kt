@@ -108,7 +108,6 @@ fun SettingsView(
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
     val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
-    val visualConfigs by viewModel.visualConfigs.collectAsStateWithLifecycle()
     val breakdown by viewModel.storageBreakdown.collectAsStateWithLifecycle()
 
     var showClearDialog by remember { mutableStateOf(false) }
@@ -339,8 +338,9 @@ fun SettingsView(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             val saga = remember(info.data.id) { info.data }
-                            val visualConfig = visualConfigs[saga.genre]
-                            SagAITheme(visualConfig = visualConfig, genre = saga.genre) {
+                            SagAITheme(genre = saga.genre) {
+                                val visualConfig =
+                                    com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig.current
                                 val genreColor = saga.genre.color
                                 val genreBrush = sagaBrush()
                                 AvatarTimelineIcon(

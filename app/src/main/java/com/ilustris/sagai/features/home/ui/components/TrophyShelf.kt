@@ -17,9 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.SagaSummary
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val trophyRowSpacing = 20.dp
 private val trophyRowVerticalPadding = 6.dp
@@ -27,7 +25,6 @@ private val trophyRowVerticalPadding = 6.dp
 @Composable
 fun TrophyShelf(
     completedSagas: List<SagaSummary>,
-    visualConfigs: Map<Genre, GenreVisualConfig>,
     onCompletedSagaClicked: (SagaSummary) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -82,7 +79,6 @@ fun TrophyShelf(
                                 TrophyPinItem(
                                     saga = entry.saga,
                                     avatarSize = avatarSizeForIndex(globalIndex),
-                                    visualConfig = visualConfigs[entry.saga.data.genre],
                                     onClick = { onCompletedSagaClicked(entry.saga) },
                                     modifier =
                                         Modifier

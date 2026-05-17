@@ -2,14 +2,9 @@
 
 package com.ilustris.sagai.features.act.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -120,31 +115,25 @@ fun ChronicleView(
                     .fillMaxWidth()
                     .weight(1f),
             ) {
-                AnimatedContent(
-                    targetState = state,
-                    label = "ShelfTransition",
-                    transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
-                    modifier = Modifier.fillMaxSize(),
-                ) { currentState ->
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        val starColor by animateColorAsState(MaterialTheme.colorScheme.primary)
-                        StarryTextPlaceholder(
-                            modifier = Modifier.fillMaxSize(),
-                            starColor,
-                        )
-                        BookShelf(
-                            saga = saga,
-                            acts = acts,
-                            selectedBook = null,
-                            sharedTransitionScope = this@SharedTransitionLayout,
-                            animatedContentScope = this@AnimatedContent,
-                            onBookSelected = viewModel::selectBook,
-                            isLoading = currentState is ChronicleState.Generating,
-                            reasoning = (currentState as? ChronicleState.Generating)?.message,
-                            generatingActTitle = (currentState as? ChronicleState.Generating)?.actTitle,
-                            visualConfig = visualConfig,
-                        )
-                    }
+                Box(modifier = Modifier.fillMaxSize()) {
+                    val starColor by animateColorAsState(MaterialTheme.colorScheme.primary)
+                    val generating = state as? ChronicleState.Generating
+
+                    StarryTextPlaceholder(
+                        modifier = Modifier.fillMaxSize(),
+                        starColor,
+                    )
+                    BookShelf(
+                        saga = saga,
+                        acts = acts,
+                        selectedBook = null,
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        onBookSelected = viewModel::selectBook,
+                        isLoading = generating != null,
+                        reasoning = generating?.message,
+                        generatingActTitle = generating?.actTitle,
+                        visualConfig = visualConfig,
+                    )
                 }
             }
         }

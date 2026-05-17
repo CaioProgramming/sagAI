@@ -102,46 +102,47 @@ class MainActivity : ComponentActivity() {
         Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")
         setContent {
             Timber.d("MainActivity: setContent")
-            SagAITheme(sagaThemeManager = sagaThemeManager) {
-                Timber.d("MainActivity: SagAITheme block")
-                val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
-                val isOnline by connectivityObserver.observe().collectAsState(initial = true)
+            val connectivityObserver = remember { ConnectivityObserver(applicationContext) }
+            val isOnline by connectivityObserver.observe().collectAsState(initial = true)
 
-                val navigationState =
-                    rememberNavigationState(
-                        startRoute = HomeKey,
-                        topLevelRoutes =
-                            setOf(
-                                HomeKey,
-                                ProfileKey,
-                                FAQKey,
-                                NewSagaKey,
-                                AuditLogsKey,
-                            ),
-                    )
-                val navigator = remember { Navigator(navigationState) }
-                val currentKey =
-                    navigationState.stacksInUse
-                        .lastOrNull()
-                        ?.let { navigationState.backStacks[it]?.lastOrNull() } ?: HomeKey
+            val navigationState =
+                rememberNavigationState(
+                    startRoute = HomeKey,
+                    topLevelRoutes =
+                        setOf(
+                            HomeKey,
+                            ProfileKey,
+                            FAQKey,
+                            NewSagaKey,
+                            AuditLogsKey,
+                        ),
+                )
+            val navigator = remember { Navigator(navigationState) }
+            val currentKey =
+                navigationState.stacksInUse
+                    .lastOrNull()
+                    ?.let { navigationState.backStacks[it]?.lastOrNull() } ?: HomeKey
+
+            val isNeutralScreen =
+                currentKey is HomeKey ||
+                    currentKey is ProfileKey ||
+                    currentKey is FAQKey ||
+                    currentKey is NewSagaKey ||
+                    currentKey is AuditLogsKey ||
+                    currentKey is PlaythroughKey
+
+            val currentGenre by sagaThemeManager.currentGenre.collectAsState(initial = null)
+            val themeGenre = if (isNeutralScreen) null else currentGenre
+
+            LaunchedEffect(isNeutralScreen) {
+                sagaThemeManager.setNeutral(isNeutralScreen)
+            }
+
+            SagAITheme(genre = themeGenre) {
+                Timber.d("MainActivity: SagAITheme block")
 
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
-
-                // Reset theme to brand defaults on genre-neutral screens
-                LaunchedEffect(currentKey) {
-                    val isNeutralScreen =
-                        currentKey is HomeKey ||
-                            currentKey is ProfileKey ||
-                            currentKey is FAQKey ||
-                            currentKey is NewSagaKey ||
-                            currentKey is AuditLogsKey ||
-                            currentKey is PlaythroughKey
-
-                    sagaThemeManager.setNeutral(isNeutralScreen)
-                }
-
-                val currentGenre by sagaThemeManager.currentGenre.collectAsState(initial = null)
                 var showGenreTransition by remember { mutableStateOf(false) }
 
                 LaunchedEffect(currentGenre) {

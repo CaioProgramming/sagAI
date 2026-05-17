@@ -30,12 +30,14 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +49,7 @@ import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,9 +60,12 @@ import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
-import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.core.theme.ResolvedGenreFonts
+import com.ilustris.sagai.core.theme.rememberGenreThemeServices
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.resolveColor
+import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 
@@ -105,9 +111,9 @@ fun themeBrushColors(): List<Color> {
 private const val THEME_ANIMATION_DURATION = 600
 
 /**
- * CompositionLocal providing the currently active [Genre] from [SagaThemeManager].
+ * CompositionLocal providing the currently active [Genre].
  * - On genre-immersed screens (SagaDetail, Chat): holds the saga's genre.
- * - On genre-neutral screens (Home, NewSaga): holds null (brand defaults).
+ * - On genre-neutral screens (Home shell): holds null (brand defaults).
  *
  * Use [sagaShape], [sagaBrush], etc. to access genre-specific visuals
  * without manually passing the genre around.
@@ -116,35 +122,43 @@ val LocalSagaGenre = compositionLocalOf<Genre?> { null }
 
 @Composable
 fun SagAITheme(
-    sagaThemeManager: SagaThemeManager? = null,
     genre: Genre? = null,
-    visualConfig: GenreVisualConfig? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val activeGenreState: State<Genre?> =
-        if (sagaThemeManager != null) {
-            sagaThemeManager.currentGenre.collectAsState(initial = null)
-        } else {
-            remember(genre) { mutableStateOf(genre) }
-        }
-    val activeGenre = activeGenreState.value
+    val themeServices = rememberGenreThemeServices()
+    val activeGenre = genre
 
-    val activeVisualConfigState =
-        if (sagaThemeManager != null) {
-            sagaThemeManager.visualConfig.collectAsState(initial = null)
+    var activeVisualConfig by remember(activeGenre) { mutableStateOf<GenreVisualConfig?>(null) }
+
+    LaunchedEffect(activeGenre) {
+        activeVisualConfig =
+            activeGenre?.let { themeServices.visualConfigService.getVisualConfig(it) }
+    }
+
+    LaunchedEffect(activeGenre, activeVisualConfig) {
+        val g = activeGenre ?: return@LaunchedEffect
+        val config = activeVisualConfig ?: return@LaunchedEffect
+        themeServices.fontService.ensureLoaded(g, config)
+    }
+
+    val genreForFonts = activeGenre
+    val resolvedFonts by
+        if (genreForFonts != null) {
+            themeServices.fontService.fontsFor(genreForFonts).collectAsState()
         } else {
-            remember(visualConfig) { mutableStateOf(visualConfig) }
+            remember { mutableStateOf<ResolvedGenreFonts?>(null) }
         }
-    val activeVisualConfig = activeVisualConfigState.value
 
     val baseScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    // Target colors: genre-driven or brand defaults
-    val targetPrimary = activeGenre?.color ?: baseScheme.primary
-    val targetSecondary = activeGenre?.color?.copy(alpha = 0.7f) ?: baseScheme.secondary
-    val targetTertiary = activeGenre?.color?.copy(alpha = 0.5f) ?: baseScheme.tertiary
-    val onPrimary = activeGenre?.iconColor ?: baseScheme.onPrimary
+    // Target colors: remote config when available, else compiled genre defaults
+    val targetPrimary = activeGenre?.resolveColor(activeVisualConfig) ?: baseScheme.primary
+    val targetSecondary =
+        activeGenre?.resolveColor(activeVisualConfig)?.copy(alpha = 0.7f) ?: baseScheme.secondary
+    val targetTertiary =
+        activeGenre?.resolveColor(activeVisualConfig)?.copy(alpha = 0.5f) ?: baseScheme.tertiary
+    val onPrimary = activeGenre?.resolveIconColor(activeVisualConfig) ?: baseScheme.onPrimary
 
     // Smooth animated transitions
     val animatedPrimary =
@@ -174,14 +188,14 @@ fun SagAITheme(
             onPrimary = onPrimary,
         )
 
-    // Dynamic Typography: genre fonts baked into the theme
+    // Dynamic Typography: remote fonts when loaded, else system default
     val dynamicTypography =
-        remember(activeGenre) {
+        remember(activeGenre, resolvedFonts) {
             if (activeGenre == null) {
                 Typography
             } else {
-                val headerFamily = activeGenre.headerFont()
-                val bodyFamily = activeGenre.bodyFont()
+                val headerFamily = resolvedFonts?.header ?: FontFamily.Default
+                val bodyFamily = resolvedFonts?.body ?: FontFamily.Default
                 Typography(
                     displayLarge = Typography.displayLarge.copy(fontFamily = headerFamily),
                     displayMedium = Typography.displayMedium.copy(fontFamily = headerFamily),

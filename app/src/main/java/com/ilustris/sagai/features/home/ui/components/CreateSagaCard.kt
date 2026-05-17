@@ -28,32 +28,57 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.ui.theme.SagAITheme
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun CreateSagaCard(
     modifier: Modifier = Modifier,
-    dynamicNewSagaTexts: Pair<DynamicSagaPrompt?, GenreVisualConfig?>,
+    dynamicNewSagaTexts: DynamicSagaPrompt?,
+    onCreateNewChat: () -> Unit,
+) {
+    val genre = dynamicNewSagaTexts?.genre
+    if (genre != null) {
+        SagAITheme(genre = genre) {
+            CreateSagaCardContent(
+                modifier = modifier,
+                dynamicNewSagaTexts = dynamicNewSagaTexts,
+                onCreateNewChat = onCreateNewChat,
+            )
+        }
+    } else {
+        CreateSagaCardContent(
+            modifier = modifier,
+            dynamicNewSagaTexts = dynamicNewSagaTexts,
+            onCreateNewChat = onCreateNewChat,
+        )
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun CreateSagaCardContent(
+    modifier: Modifier = Modifier,
+    dynamicNewSagaTexts: DynamicSagaPrompt?,
     onCreateNewChat: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.medium
-    val genre = dynamicNewSagaTexts.first?.genre
-    val genreColor =
-        genre?.resolveColor(dynamicNewSagaTexts.second) ?: MaterialTheme.colorScheme.primary
-    val contentColor =
-        genre?.resolveIconColor(dynamicNewSagaTexts.second) ?: MaterialTheme.colorScheme.onPrimary
+    val genre = dynamicNewSagaTexts?.genre
+    val visualConfig = LocalGenreVisualConfig.current
+    val genreColor = genre?.resolveColor(visualConfig) ?: MaterialTheme.colorScheme.primary
+    val contentColor = genre?.resolveIconColor(visualConfig) ?: MaterialTheme.colorScheme.onPrimary
     val containerColor = MaterialTheme.colorScheme.background
     val title =
-        remember {
-            dynamicNewSagaTexts.first?.title
+        remember(dynamicNewSagaTexts) {
+            dynamicNewSagaTexts?.title
         }
     val subtitle =
-        remember {
-            dynamicNewSagaTexts.first?.subtitle
+        remember(dynamicNewSagaTexts) {
+            dynamicNewSagaTexts?.subtitle
         }
     Column(
         modifier =

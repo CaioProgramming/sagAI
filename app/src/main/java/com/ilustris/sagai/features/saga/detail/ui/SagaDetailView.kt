@@ -99,7 +99,6 @@ fun SagaDetailView(
     var showReview by remember { mutableStateOf(false) }
     var showEmotionalReview by remember { mutableStateOf(false) }
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
-    val visualConfig by viewModel.visualConfig.collectAsStateWithLifecycle()
     val drawer by viewModel.detailDrawer.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
 
@@ -117,7 +116,7 @@ fun SagaDetailView(
         }
     }
 
-    SagAITheme(visualConfig = visualConfig, genre = resume?.saga?.genre) {
+    SagAITheme(genre = resume?.saga?.genre) {
         var lastNavigationTime by remember { mutableStateOf(0L) }
         val onAction: (DetailAction) -> Unit =
             remember(onCharacterDetails, onLoreDebug, viewModel) {
