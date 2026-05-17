@@ -1,22 +1,20 @@
 package com.ilustris.sagai.features.characters.data.usecase
 
-import android.content.Context
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
-import com.ilustris.sagai.core.file.GenreReferenceHelper
-import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -38,11 +36,11 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -61,19 +59,12 @@ class CharacterUseCaseImpl
         private val characterArcDao: CharacterArcDao,
         private val characterRelationUseCase: CharacterRelationUseCase,
         private val imagenClient: ImagenClient,
-        private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
-        private val imageCropHelper: ImageCropHelper,
-        private val genreReferenceHelper: GenreReferenceHelper,
-        private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
-        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
-        private val genreConfigService: com.ilustris.sagai.core.ai.services.GenreConfigService,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
-        @param:ApplicationContext
-        private val context: Context,
+        private val genreConfigService: GenreConfigService,
+        private val promptService: PromptService,
+        private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
@@ -240,13 +231,13 @@ class CharacterUseCaseImpl
             if (name.isBlank()) return
             sagaContent.findCharacter(name)?.let {
                 error("Character already exists")
+            }
         }
-    }
 
         override suspend fun generateCharacter(
             sagaContent: SagaContent,
             description: String,
-            sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
+            sceneSummary: SceneSummary?,
             candidateName: String?,
         ): RequestResult<Character> =
             executeRequest {
@@ -320,7 +311,7 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacterStream(
             sagaContent: SagaContent,
             description: String,
-            sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary?,
+            sceneSummary: SceneSummary?,
             candidateName: String?,
         ): Flow<StreamingState<GeneratedContent<Character>>> =
             flow {
@@ -344,22 +335,29 @@ class CharacterUseCaseImpl
                             sceneSummary,
                         )
 
-                    gemmaClient
-                        .generateStreaming<GeneratedContent<Character>>(
-                            prompt,
-                            useCore = true,
-                            filterOutputFields =
-                                listOf(
-                                    "id",
-                                    "image",
-                                    "joinedAt",
-                                    "sagaId",
-                                    "smartZoom",
-                                    "voice",
-                                    "hexColor",
-                                    "firstSceneId",
-                                ),
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                    val request =
+                        gemmaClient
+                            .generateStreaming<GeneratedContent<Character>>(
+                                prompt,
+                                useCore = true,
+                                filterOutputFields =
+                                    listOf(
+                                        "id",
+                                        "image",
+                                        "joinedAt",
+                                        "sagaId",
+                                        "smartZoom",
+                                        "voice",
+                                        "hexColor",
+                                        "firstSceneId",
+                                    ),
+                                requirement = GemmaClient.ModelRequirement.HIGH,
+                            )
+
+                    reasoningSynthesizerService
+                        .synthesizeReasoning(
+                            request,
+                            "Bringing character to the story...",
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val newCharacter = state.data.data

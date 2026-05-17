@@ -10,7 +10,6 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
@@ -43,7 +42,6 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
@@ -57,6 +55,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
+import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -69,7 +68,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,14 +94,11 @@ class SagaContentManagerImpl
         private val timelineUseCase: TimelineUseCase,
         private val actUseCase: ActUseCase,
         private val emotionalUseCase: EmotionalUseCase,
-        private val fileCacheService: FileCacheService,
         private val remoteConfig: RemoteConfigService,
         private val backupService: BackupService,
         private val imageHelper: ImageHelper,
-        private val messageUseCase: MessageUseCase,
         private val genreConfigService: GenreConfigService,
-        private val reasoningSynthesizerService: com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService,
-        private val messageDao: com.ilustris.sagai.features.saga.datasource.MessageDao,
+        private val messageDao: MessageDao,
         private val sagaThemeManager: SagaThemeManager,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
@@ -390,7 +385,6 @@ class SagaContentManagerImpl
                                 validateCharacters(saga)
 
                                 if (previousSaga == null) {
-                                    delay(TITLE_SPLASH_DURATION)
                                     if (saga.data.isEnded.not()) {
                                         saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
                                             emitMilestone(
@@ -957,21 +951,14 @@ class SagaContentManagerImpl
                     } else {
                         var generated: GeneratedContent<Character>? =
                             null
-                        val contextString = "Evaluating potential characters for the story..."
-                        val style = genreConfigService.conversationBlueprint(currentSaga.data.genre)
-
-                        reasoningSynthesizerService
-                            .synthesizeReasoning(
-                                sourceFlow =
-                                    characterUseCase.generateCharacterStream(
-                                        currentSaga,
-                                        description,
-                                        sceneSummary ?: _sceneSummary.value,
-                                        candidateName = candidateName,
-                                    ),
-                                context = contextString,
-                                conversationStyle = style,
-                                genre = currentSaga.data.genre.name,
+                        "Evaluating potential characters for the story..."
+                        genreConfigService.conversationBlueprint(currentSaga.data.genre)
+                        characterUseCase
+                            .generateCharacterStream(
+                                currentSaga,
+                                description,
+                                sceneSummary ?: _sceneSummary.value,
+                                candidateName = candidateName,
                             ).collect { state ->
                                 when (state) {
                                     is StreamingState.Reasoning -> {
@@ -1003,7 +990,7 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewCharacter(
                                 generatedCharacter,
-                                generated?.finalMessage,
+                                generated.finalMessage,
                                 saga = currentSaga.data,
                             ),
                         )

@@ -10,14 +10,12 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GuardrailsException
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SagaPlaybackService
@@ -75,13 +73,11 @@ class ChatViewModel
         private val settingsUseCase: SettingsUseCase,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val scheduledNotificationService: ScheduledNotificationService,
-        private val visualConfigService: GenreVisualConfigService,
         private val remoteConfigService: RemoteConfigService,
         private val mapper: SagaMetadataUIMapper,
         private val wikiUseCase: WikiUseCase,
         private val wikiMapper: WikiMapper,
         private val characterUseCase: CharacterUseCase,
-        private val savedStateHandle: SavedStateHandle,
         private val sagaThemeManager: SagaThemeManager,
     ) : ViewModel(),
         DefaultLifecycleObserver {

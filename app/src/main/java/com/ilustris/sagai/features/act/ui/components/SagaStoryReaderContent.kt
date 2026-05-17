@@ -108,7 +108,7 @@ fun SagaStoryReaderContent(
                                 .fillMaxWidth(),
                     ) {
                         Text(
-                            text = "Act Conclusion",
+                            text = stringResource(R.string.volume_conclusion),
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,

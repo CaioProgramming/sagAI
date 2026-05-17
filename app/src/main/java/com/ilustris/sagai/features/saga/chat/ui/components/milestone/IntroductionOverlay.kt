@@ -12,18 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestonePhase
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestonePhaseVisibility
@@ -51,34 +47,19 @@ fun IntroductionOverlay(
     val phaseController = rememberMilestonePhaseController(MilestonePhase.Hero)
     val coroutineScope = rememberCoroutineScope()
 
-    val headlineLabel =
-        when (introduction.type) {
-            IntroductionType.ACT -> {
-                stringResource(R.string.act_title_template, introduction.number) +
-                    " ${introduction.titleText}"
-            }
-
-            IntroductionType.CHAPTER -> {
-                stringResource(R.string.chapter_title_template, introduction.number) +
-                    " ${introduction.titleText}"
-            }
-
-            IntroductionType.RESUME -> {
-                stringResource(R.string.introduction_milestone)
-            }
-        }
-
     LaunchedEffect(Unit) {
         phaseController.advance(MilestonePhase.Hero)
-        phaseController.advanceAfter(
-            coroutineScope,
-            hold = 1.2.seconds,
-            to = MilestonePhase.Headline,
-        )
+        if (message.isNotBlank()) {
+            phaseController.advanceAfter(
+                coroutineScope,
+                hold = 1.2.seconds,
+                to = MilestonePhase.Body,
+            )
+        }
     }
 
     LaunchedEffect(phaseController.currentPhase) {
-        if (phaseController.currentPhase == MilestonePhase.Headline && message.isBlank()) {
+        if (phaseController.currentPhase == MilestonePhase.Hero && message.isBlank()) {
             delay(1.5.seconds)
             onComplete()
         }
@@ -109,42 +90,8 @@ fun IntroductionOverlay(
                         modifier =
                             Modifier
                                 .padding(8.dp)
-                                .fillMaxWidth()
-                                .sharedElement(
-                                    rememberSharedContentState(
-                                        key = "saga_${saga.id}_title",
-                                    ),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                ),
+                                .fillMaxWidth(),
                     )
-                }
-            }
-
-            MilestonePhaseVisibility(
-                visible = phaseController.isAtLeast(MilestonePhase.Headline),
-                enter = MilestoneTransitions.labelEnter,
-            ) {
-                Text(
-                    text = headlineLabel.trim(),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                )
-            }
-
-            LaunchedEffect(phaseController.currentPhase, message) {
-                if (
-                    phaseController.currentPhase == MilestonePhase.Headline &&
-                    message.isNotBlank()
-                ) {
-                    delay(800)
-                    phaseController.advance(MilestonePhase.Body)
                 }
             }
 

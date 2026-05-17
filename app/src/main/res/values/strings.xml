@@ -151,7 +151,7 @@
     <string name="saga_detail_delete_confirmation_message">Are you sure you want to delete this saga? This action cannot be undone.</string>
     <string name="saga_detail_delete_button">Delete</string>
     <string name="saga_detail_cancel_button">Cancel</string>
-    <string name="saga_drawer_act_prefix">Act %s</string>
+    <string name="saga_drawer_act_prefix">Vol. %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
     <string name="saga_drawer_events_since_last_chapter">%d events in chapter.</string>
     <string name="saga_detail_progress_title">Your journey</string>
@@ -163,8 +163,8 @@
     <string name="saga_detail_section_subtitle_chapters">%d chapters</string>
     <string name="saga_detail_section_title_wiki">Wiki</string>
     <string name="saga_detail_section_subtitle_wiki">%d items</string>
-    <string name="saga_detail_section_title_acts">Acts</string>
-    <string name="saga_detail_section_subtitle_acts">%d acts</string>
+    <string name="saga_detail_section_title_acts">Volumes</string>
+    <string name="saga_detail_section_subtitle_acts">%d volumes</string>
     <string name="saga_detail_status_ended">Finished on %s</string>
     <string name="saga_detail_status_created">Created on %s</string>
     <string name="saga_detail_journey_of">The journey of</string>
@@ -177,7 +177,7 @@
     <string name="saga_detail_view_timeline_action">View Timeline</string>
     <string name="saga_detail_view_wiki_action">View wiki</string>
     <string name="saga_detail_view_chapters_action">View chapters</string>
-    <string name="saga_detail_view_acts_action">View acts</string>
+    <string name="saga_detail_view_acts_action">View volumes</string>
     <string name="saga_detail_no_events_placeholder">No events recorded</string>
     <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
     <string name="saga_detail_delete_saga_button">Delete Saga</string>
@@ -205,7 +205,7 @@
     <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
     <string name="continue_text">continue</string>
     <string name="notification_title">New message on %s</string>
-    <string name="notification_playing_act">Playing act %s</string>
+    <string name="notification_playing_act">Playing Volume %s</string>
     <string name="notification_action_pause" translatable="false">Pause</string>
     <string name="notification_action_play" translatable="false">Play</string>
     <string name="saga_detail_relationships_section_title">Relationships</string>
@@ -279,7 +279,7 @@
     <string name="empty" translatable="false" />
     <string name="timeline_generated_successfully">Timeline %s finished.</string>
     <string name="timeline_updated">Timeline %s updated.</string>
-    <string name="act_finished">Act %s finished.</string>
+    <string name="act_finished">Volume %s finished.</string>
     <string name="unexpected_error">Sorry an unexpected error has occurred.</string>
     <string name="message_reply_error">Error while replying message.</string>
     <string name="configure">Configure</string>
@@ -305,7 +305,7 @@
     <string name="review_event_label">Review event</string>
     <string name="share_character_cd">Share character</string>
     <string name="messages_label">Messages</string>
-    <string name="act_title">Act %s</string>
+    <string name="act_title">Volume %s</string>
     <string name="chapter_title">Chapter %s</string>
     <string name="pro_label">Pro</string>
     <string name="themes_title">Themes</string>
@@ -334,14 +334,14 @@
     <string name="no_messages_cd">No messages</string>
     <string name="saga_ended_on">Your saga ended on %s</string>
     <string name="chapter_title_template">Chapter %s</string>
-    <string name="act_title_template">Act %s</string>
+    <string name="act_title_template">Volume %s</string>
     <string name="restore_sagas">Restore sagas</string>
     <string name="import_saga">Import Saga</string>
     <string name="import_saga_description">You can import exported sagas and recover your history.</string>
     <string name="not_available" translatable="false">---</string>
     <string name="updates_count">%d Updates</string>
     <string name="last_update">Last update</string>
-    <string name="chat_view_subtitle">Act %1$s - Chapter %2$s</string>
+    <string name="chat_view_subtitle">Volume %1$s · Chapter %2$s</string>
     <string name="continue_to_play">Continue exploring your sagas to discover more about your play style!</string>
 
     <string name="backup_enabled_label">Backup Enabled</string>
@@ -367,7 +367,7 @@
     <string name="character_details_distinctive">Distinctive features</string>
     <string name="character_details_carried_items">Carried items</string>
     <string name="character_arc_source_chapter">Chapter</string>
-    <string name="character_arc_source_act">Act</string>
+    <string name="character_arc_source_act">Volume</string>
     <string name="read_more" translatable="false">...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
     <string name="character_events">Character events</string>
@@ -405,8 +405,8 @@
     <string name="notification_new_message_content">%s sent a new message</string>
     <string name="notification_new_chapter">New Chapter</string>
     <string name="notification_new_chapter_content">Chapter %s has begun!</string>
-    <string name="notification_new_act">New Act</string>
-    <string name="notification_new_act_content">Act %1$s: %2$s</string>
+    <string name="notification_new_act">New Volume</string>
+    <string name="notification_new_act_content">Volume %1$s: %2$s</string>
     <string name="notification_new_character">New Character</string>
     <string name="notification_new_character_content">%s joined the story!</string>
     <string name="notification_timeline_event">Timeline Update</string>
@@ -414,7 +414,7 @@
     <string name="notification_milestone">Milestone Reached</string>
     <string name="notification_milestone_content">You reached a new milestone!</string>
     <string name="smart_notification_fallback">I was thinking about our story, let\'s continue when you have time.</string>
-    <string name="notification_progress_subtext">%1$d%% • Act %2$s of %3$s</string>
+    <string name="notification_progress_subtext">%1$d%% • Volume %2$s of %3$s</string>
     <string name="mic_permission_title">Record audio permission</string>
     <string name="mic_permission_description">To enchance your experience with audio transcriptions, enable the mic permission</string>
 
@@ -449,25 +449,25 @@
     <!-- Settings Help Center -->
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
-    <!-- Narrative Milestones -->
-    <string name="advance_evolve_timeline">Evolve the scene</string>
-    <string name="releasing_evolve_timeline">Generating scene consequences...</string>
-    <string name="advance_close_chapter">Close chapter</string>
-    <string name="releasing_close_chapter">Summarizing this chapter...</string>
-    <string name="advance_open_chapter">Open new chapter</string>
-    <string name="releasing_open_chapter">Creating chapter...</string>
-    <string name="advance_close_act">Close act</string>
-    <string name="releasing_close_act">Concluding this act...</string>
-    <string name="advance_create_act">Start new act</string>
-    <string name="releasing_create_act">Creating new act...</string>
-    <string name="advance_new_chapter_introduction">View chapter intro</string>
-    <string name="releasing_chapter_introduction">Preparing chapter intro...</string>
-    <string name="advance_new_act_introduction">View act intro</string>
-    <string name="releasing_act_introduction">Preparing act intro...</string>
-    <string name="advance_start_story">Start new scene</string>
-    <string name="releasing_start_story">Creating the scene...</string>
-    <string name="releasing_close_scene">Closing current scene...</string>
-    <string name="advance_saga_ending">Conclude the saga</string>
+    <!-- Narrative Milestones (event = checkpoint, chapter = phase, act = volume) -->
+    <string name="advance_evolve_timeline">Advance event</string>
+    <string name="releasing_evolve_timeline">Recording this event...</string>
+    <string name="advance_close_chapter">Complete phase</string>
+    <string name="releasing_close_chapter">Wrapping up this phase...</string>
+    <string name="advance_open_chapter">Continue journey</string>
+    <string name="releasing_open_chapter">Moving to the next phase...</string>
+    <string name="advance_close_act">Complete volume</string>
+    <string name="releasing_close_act">Wrapping up this volume...</string>
+    <string name="advance_create_act">New volume</string>
+    <string name="releasing_create_act">Continuing your story...</string>
+    <string name="advance_new_chapter_introduction">See phase opening</string>
+    <string name="releasing_chapter_introduction">Preparing the opening...</string>
+    <string name="advance_new_act_introduction">See volume opening</string>
+    <string name="releasing_act_introduction">Preparing the opening...</string>
+    <string name="advance_start_story">Continue story</string>
+    <string name="releasing_start_story">Setting up the next event...</string>
+    <string name="releasing_close_scene">Saving this event...</string>
+    <string name="advance_saga_ending">Write the finale</string>
     <string name="releasing_ending">Writing the finale...</string>
 
     <!-- Milestone Overlay -->
@@ -528,9 +528,9 @@
     <string name="milestone_fallback_chapter_finished_crime">Case closed!</string>
     <string name="milestone_fallback_chapter_finished_punk_rock">Song\'s over. Next track!</string>
 
-    <!-- Act Fallbacks -->
+    <!-- Volume Fallbacks -->
     <string name="milestone_fallback_act_finished_fantasy">An age ends, a new era dawns!</string>
-    <string name="milestone_fallback_act_finished_cyberpunk">Act terminated. Level up!</string>
+    <string name="milestone_fallback_act_finished_cyberpunk">Volume complete. Level up!</string>
     <string name="milestone_fallback_act_finished_space_opera">Sector conquered!</string>
     <string name="milestone_fallback_act_finished_horror">You escaped the nightmare!</string>
     <string name="milestone_fallback_act_finished_cowboy">Territory claimed!</string>
@@ -648,6 +648,8 @@
     <string name="the_chronicles">The Chronicles</string>
     <string name="the_chronicle_awaits">The Chronicle Awaits</string>
     <string name="read_volume">Read Volume %s</string>
+    <string name="read_next_volume">Read next volume</string>
+    <string name="volume_conclusion">Volume conclusion</string>
     <string name="reveal_volume">Reveal Volume %s</string>
     <string name="see_story">See story</string>
     <string name="see_protagonists">See protagonists</string>

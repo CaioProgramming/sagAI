@@ -54,12 +54,14 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.BookPage
 import com.ilustris.sagai.features.act.ui.PageItem
@@ -271,7 +273,7 @@ fun BookReader(
                                     ),
                             ) {
                                 Text(
-                                    "Read next volume",
+                                    stringResource(R.string.read_next_volume),
                                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     style =
                                         MaterialTheme.typography.labelLarge.copy(
