@@ -72,6 +72,13 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_5_6 =
+        object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Schemas v5 and v6 share the same identity hash; no DDL changes required.
+            }
+        }
+
     val MIGRATION_6_7 =
         object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -166,7 +173,23 @@ object DatabaseMigrations {
                 )
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_books_actId` ON `books` (`actId`)")
 
-                // 2. Strip legacy book columns from acts table
+                // 2. Migrate embedded book data from acts into books (legacy columns from v12–15)
+                db.execSQL(
+                    """
+                    INSERT INTO `books` (`actId`, `actTitle`, `sagaTitle`, `coverQuote`, `chapters`, `authorNote`)
+                    SELECT
+                        `id`,
+                        COALESCE(`book_actTitle`, ''),
+                        COALESCE(`book_sagaTitle`, ''),
+                        COALESCE(`book_coverQuote`, ''),
+                        COALESCE(`book_pages`, ''),
+                        `book_authorNote`
+                    FROM `acts`
+                    WHERE `book_pages` IS NOT NULL AND TRIM(`book_pages`) != ''
+                    """.trimIndent(),
+                )
+
+                // 3. Strip legacy book columns from acts table
                 db.execSQL(
                     "CREATE TABLE `acts_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `content` TEXT NOT NULL, `introduction` TEXT NOT NULL DEFAULT '', `emotionalReview` TEXT DEFAULT '', `sagaId` INTEGER, `currentChapterId` INTEGER, FOREIGN KEY(`currentChapterId`) REFERENCES `Chapter`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
                 )
@@ -176,7 +199,7 @@ object DatabaseMigrations {
                 db.execSQL("DROP TABLE `acts`")
                 db.execSQL("ALTER TABLE `acts_new` RENAME TO `acts`")
 
-                // 3. Re-create indices
+                // 4. Re-create indices
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_acts_sagaId` ON `acts` (`sagaId`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_acts_currentChapterId` ON `acts` (`currentChapterId`)")
             }
@@ -228,6 +251,7 @@ object DatabaseMigrations {
             MIGRATION_2_3,
             MIGRATION_3_4,
             MIGRATION_4_5,
+            MIGRATION_5_6,
             MIGRATION_6_7,
             MIGRATION_7_8,
             MIGRATION_8_9,

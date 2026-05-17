@@ -57,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterAbilitiesSection
@@ -71,6 +72,8 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
+import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -161,10 +164,6 @@ fun CharacterDetailsContent(
         brushColors = genre.colorPalette(),
     )
 
-    // TODO: Share sheet will be refactored with its own ViewModel to fetch required data independently.
-    // val shareCharacter by remember { mutableStateOf(false) }
-    // if (shareCharacter) { ... }
-
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     if (showPremiumSheet) {
         OnboardingDialog(
@@ -208,6 +207,7 @@ private fun CharacterDetailsLoaded(
     val characterRelations = detailData.relationships
     val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
     val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
+    var showCharacterShare by remember { mutableStateOf(false) }
 
     // Lite wrapper to satisfy legacy components that still need SagaContent
     val liteSagaContent =
@@ -317,7 +317,8 @@ private fun CharacterDetailsLoaded(
                                         Modifier
                                             .padding(top = 16.dp)
                                             .size(24.dp)
-                                            .clip(CircleShape),
+                                            .clip(CircleShape)
+                                            .clickable { showCharacterShare = true },
                                     colorFilter = ColorFilter.tint(characterColor),
                                 )
                             }
@@ -679,5 +680,18 @@ private fun CharacterDetailsLoaded(
                         .fillMaxWidth(),
             )
         }
+
+        val shareCharacterContent =
+            remember(characterData, characterEvents) {
+                CharacterContent(data = characterData, events = characterEvents)
+            }
+
+        ShareSheet(
+            saga = sagaInfo.toSaga(),
+            isVisible = showCharacterShare,
+            shareType = ShareType.CHARACTER,
+            character = shareCharacterContent,
+            onDismiss = { showCharacterShare = false },
+        )
     }
 }

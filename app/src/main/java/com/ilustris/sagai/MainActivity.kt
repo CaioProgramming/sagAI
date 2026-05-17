@@ -49,6 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.data.SideEffect
@@ -69,6 +70,7 @@ import com.ilustris.sagai.ui.navigation.PlaythroughKey
 import com.ilustris.sagai.ui.navigation.ProfileKey
 import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
+import com.ilustris.sagai.ui.navigation.isSameDestinationAs
 import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -76,6 +78,7 @@ import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -197,18 +200,35 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                LaunchedEffect(navigator, initialDeepLinkString) {
-                    if (initialDeepLinkString.isNullOrBlank()) {
-                        return@LaunchedEffect
-                    }
-                    Timber.d("Handling initial deep link: $initialDeepLinkString")
+                fun resolveCurrentKey(): NavKey =
+                    navigationState.stacksInUse
+                        .lastOrNull()
+                        ?.let { navigationState.backStacks[it]?.lastOrNull() }
+                        ?: HomeKey
+
+                fun navigateDeepLink(deepLink: String) {
+                    if (deepLink.isBlank()) return
+                    Timber.d("Handling deep link: $deepLink")
                     try {
-                        val key = initialDeepLinkString.findNavKey()
-                        if (currentKey != key && key != null) {
+                        val key = deepLink.findNavKey() ?: return
+                        val activeKey = resolveCurrentKey()
+                        if (!key.isSameDestinationAs(activeKey)) {
                             navigator.navigate(key)
+                        } else {
+                            Timber.d("Deep link ignored — already on $activeKey")
                         }
                     } catch (e: Exception) {
-                        Timber.e(e, "Error navigating with initial deep link: $initialDeepLinkString")
+                        Timber.e(e, "Error navigating with deep link: $deepLink")
+                    }
+                }
+
+                LaunchedEffect(navigator, initialDeepLinkString) {
+                    initialDeepLinkString?.let { navigateDeepLink(it) }
+                }
+
+                LaunchedEffect(navigator) {
+                    deepLinkChannel.receiveAsFlow().collect { deepLink ->
+                        navigateDeepLink(deepLink)
                     }
                 }
 

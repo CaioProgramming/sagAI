@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,7 +32,13 @@ fun ShareSheet(
 
     val content by viewModel.sagaContent.collectAsStateWithLifecycle()
 
-    if (isVisible && content != null) {
+    LaunchedEffect(isVisible, saga.id, shareType, character?.data?.id) {
+        if (isVisible) {
+            viewModel.generateShareText(saga, shareType, character)
+        }
+    }
+
+    if (isVisible) {
         Dialog(
             onDismissRequest = {
                 viewModel.deleteSavedFile()
@@ -41,6 +48,7 @@ fun ShareSheet(
             AnimatedContent(
                 shareType,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "share_sheet",
             ) {
                 when (it) {
                     ShareType.PLAYSTYLE -> {
@@ -61,8 +69,8 @@ fun ShareSheet(
                     }
 
                     ShareType.HISTORY -> {
-                        content?.let {
-                            HistoryShareView(it, viewModel)
+                        content?.let { sagaContent ->
+                            HistoryShareView(sagaContent, viewModel)
                         }
                     }
 
@@ -71,8 +79,8 @@ fun ShareSheet(
                     }
 
                     ShareType.RELATIONS -> {
-                        content?.let {
-                            RelationsShareView(it, viewModel)
+                        content?.let { sagaContent ->
+                            RelationsShareView(sagaContent, viewModel)
                         }
                     }
 

@@ -78,6 +78,29 @@ data class BookReaderKey(
     val initialActId: Int,
 ) : NavKey
 
+/**
+ * Whether [other] represents the same screen the user is already on (ignores debug flags, etc.).
+ */
+fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
+    if (other == null) return false
+    if (this == other) return true
+    return when {
+        this is ChatKey && other is ChatKey -> sagaId == other.sagaId
+        this is SagaDetailKey && other is SagaDetailKey -> sagaId == other.sagaId
+        this is SagaCharactersKey && other is SagaCharactersKey -> sagaId == other.sagaId
+        this is SagaWikiKey && other is SagaWikiKey -> sagaId == other.sagaId
+        this is SagaEventsKey && other is SagaEventsKey -> sagaId == other.sagaId
+        this is SagaActsKey && other is SagaActsKey -> sagaId == other.sagaId
+        this is SagaStoryReaderKey && other is SagaStoryReaderKey -> sagaId == other.sagaId
+        this is SagaChaptersKey && other is SagaChaptersKey -> sagaId == other.sagaId
+        this is CharacterDetailKey && other is CharacterDetailKey -> characterId == other.characterId
+        this is LoreDebugKey && other is LoreDebugKey -> sagaId == other.sagaId
+        this is BookReaderKey && other is BookReaderKey ->
+            sagaId == other.sagaId && initialActId == other.initialActId
+        else -> false
+    }
+}
+
 fun String.findNavKey(): NavKey? {
     val sanitized = this.substringBeforeLast("/")
     return when {
