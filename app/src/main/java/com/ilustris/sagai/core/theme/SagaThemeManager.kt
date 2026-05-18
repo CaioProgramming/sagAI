@@ -60,6 +60,9 @@ class SagaThemeManager
 
         private var isNeutralScreen: Boolean = true
 
+        /** Genre requested while still on a neutral screen (Home, etc.) — applied when leaving neutral. */
+        private var pendingGenre: Genre? = null
+
         /**
          * Updates the neutrality state of the manager.
          * When neutral, any attempt to set a genre is ignored, and the theme is reset.
@@ -67,32 +70,55 @@ class SagaThemeManager
         fun setNeutral(isNeutral: Boolean) {
             this.isNeutralScreen = isNeutral
             if (isNeutral) {
+                pendingGenre = null
                 resetTheme()
+            } else {
+                pendingGenre?.let { genre ->
+                    pendingGenre = null
+                    updateTheme(genre)
+                }
             }
         }
 
-        /** Set the active genre. The root theme will animate to its colors and fetch configurations. */
-        fun updateTheme(genre: Genre?) {
+        /**
+         * Set the active genre. Fetches ambient music and reply SFX from Remote Config.
+         * @param playEntryVfx When true, plays genre SFX + haptics after configs are loaded (screen entry).
+         */
+        fun updateTheme(
+            genre: Genre?,
+            playEntryVfx: Boolean = false,
+        ) {
             if (isNeutralScreen && genre != null) {
-                Timber.w("Theme update ignored: currently on a neutral screen (Home, Profile, etc.)")
+                pendingGenre = genre
+                Timber.d("SagaThemeManager: Theme queued for $genre (neutral screen)")
                 return
             }
-            if (_currentGenre.value == genre && genre != null) return
+            pendingGenre = null
+
+            val sameGenre = _currentGenre.value == genre && genre != null
+            val needsMediaRefresh = _ambientMusicFile.value == null
+            if (sameGenre && !needsMediaRefresh && !playEntryVfx) return
 
             _currentGenre.value = genre
             if (genre != null) {
                 managerScope.launch {
-                    fetchConfigs(genre)
+                    fetchConfigs(genre, playEntryVfx)
                 }
             } else {
                 resetTheme()
             }
         }
 
-        private suspend fun fetchConfigs(genre: Genre) {
+        private suspend fun fetchConfigs(
+            genre: Genre,
+            playEntryVfx: Boolean = false,
+        ) {
             try {
                 getAmbienceMusic(genre)
                 getReplySfx(genre)
+                if (playEntryVfx) {
+                    playVfxInternal()
+                }
             } catch (e: Exception) {
                 Timber.e(e, "SagaThemeManager: Error fetching media configs for $genre")
             }
@@ -129,14 +155,22 @@ class SagaThemeManager
 
         /** Triggers the current genre's VFX (sound + vibration pattern from visual config). */
         fun playVfx() {
-            val genre = _currentGenre.value ?: return
-            managerScope.launch {
-                delay(300)
-                val visual = visualConfigService.getVisualConfig(genre)
-                val pattern = genre.vibrationPattern(visual)
-                soundFxService.playWithHaptics(pattern)
-                _vfxTrigger.emit(Unit)
+            if (_currentGenre.value == null) {
+                Timber.w("SagaThemeManager: playVfx skipped — no active genre")
+                return
             }
+            managerScope.launch {
+                playVfxInternal()
+            }
+        }
+
+        private suspend fun playVfxInternal() {
+            val genre = _currentGenre.value ?: return
+            delay(300)
+            val visual = visualConfigService.getVisualConfig(genre)
+            val pattern = genre.vibrationPattern(visual)
+            soundFxService.playWithHaptics(pattern)
+            _vfxTrigger.emit(Unit)
         }
 
         /** Clear the active genre, reverting to the default brand identity. */

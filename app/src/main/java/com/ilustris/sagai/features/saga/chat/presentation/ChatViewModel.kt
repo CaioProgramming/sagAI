@@ -53,6 +53,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -84,6 +86,9 @@ class ChatViewModel
         private val stateManager = ChatStateManager()
         val uiState = stateManager.uiState
 
+        private val _genreVfxPulse = MutableStateFlow(false)
+        val genreVfxPulse = _genreVfxPulse.asStateFlow()
+
         val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024)
         private var audioProgressJob: kotlinx.coroutines.Job? = null
         private val audioMediaPlayerManager: MediaPlayerManager = MediaPlayerManagerImpl(context)
@@ -112,7 +117,13 @@ class ChatViewModel
         private var narrativeObserverJob: kotlinx.coroutines.Job? = null
 
         init {
-            // State initialized by ChatStateManager
+            viewModelScope.launch {
+                sagaThemeManager.vfxTrigger.collect {
+                    _genreVfxPulse.value = true
+                    delay(2.seconds)
+                    _genreVfxPulse.value = false
+                }
+            }
         }
 
         fun handleAction(action: ChatUiAction) {
@@ -637,7 +648,11 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        sagaThemeManager.updateTheme(sagaContent.data.genre)
+                        val isFirstLoad = !loadFinished
+                        sagaThemeManager.updateTheme(
+                            sagaContent.data.genre,
+                            playEntryVfx = isFirstLoad,
+                        )
 
                         val rules =
                             remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {

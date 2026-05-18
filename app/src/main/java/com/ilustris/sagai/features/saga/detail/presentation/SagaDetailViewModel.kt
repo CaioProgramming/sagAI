@@ -84,21 +84,11 @@ class SagaDetailViewModel
                                     cachedSegmentedImage = section.segmentedImage
                                     section
                                 }
-                            if (_state.value !is State.Success) {
-                                playSoundFx()
-                            }
-
                             _state.value = State.Success(resume.saga)
                         }.onFailureAsync {
                             _state.emit(State.Error(emptyString()))
                         }
                 }
-        }
-
-        private fun playSoundFx() {
-            viewModelScope.launch {
-                sagaThemeManager.playVfx()
-            }
         }
 
         fun handleAction(detailAction: DetailAction) {
@@ -128,7 +118,7 @@ class SagaDetailViewModel
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
                         resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
-                            sagaThemeManager.updateTheme(data.saga.genre)
+                            sagaThemeManager.updateTheme(data.saga.genre, playEntryVfx = true)
 
                             loadInitialSection()
                             detailDrawer.value =
