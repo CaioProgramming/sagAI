@@ -722,13 +722,12 @@ class SagaContentManagerImpl
 
         private fun emitMilestone(milestone: SagaMilestone?) =
             CoroutineScope(Dispatchers.Main.immediate).launch {
-                if (milestone != null &&
-                    milestone !is SagaMilestone.Loading &&
-                    milestone.isIntrusive
-                ) {
+                if (milestone != null && milestone.isIntrusive) {
                     isMilestoneActive.value = true
                     narrativeCoordinator.markMilestoneActive()
-                    sagaThemeManager.playVfx()
+                    if (milestone.shouldPlaySoundFx) {
+                        sagaThemeManager.playVfx()
+                    }
                 }
                 milestoneUpdate.emit(milestone)
             }

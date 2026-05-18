@@ -648,11 +648,7 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        val isFirstLoad = !loadFinished
-                        sagaThemeManager.updateTheme(
-                            sagaContent.data.genre,
-                            playEntryVfx = isFirstLoad,
-                        )
+                        sagaThemeManager.updateTheme(sagaContent.data.genre)
 
                         val rules =
                             remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
