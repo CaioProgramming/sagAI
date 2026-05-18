@@ -94,6 +94,17 @@ sealed class SagaMilestone(
         delay = 0.seconds,
         isIntrusive = true,
     )
+
+    /** Whether this milestone should trigger genre SFX + haptics. */
+    val shouldPlaySoundFx: Boolean
+        get() =
+            when (this) {
+                is Loading,
+                is NewEvent,
+                is CurrentObjective,
+                -> false
+                else -> isIntrusive
+            }
 }
 
 enum class LoadingType {

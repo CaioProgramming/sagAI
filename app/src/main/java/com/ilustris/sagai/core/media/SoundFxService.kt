@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.media.SoundPool
 import android.os.Build
 import android.os.VibrationEffect
+import android.os.SystemClock
 import android.os.Vibrator
 import android.os.VibratorManager
 import timber.log.Timber
@@ -46,7 +47,27 @@ class SoundFxService(
 
     private var loadedSoundId: Int = 0
 
+    /** Prevents overlapping / back-to-back plays (entry VFX + milestone, rapid emits). */
+    private val playDebounceMs = 750L
+
+    @Volatile
+    private var lastPlayAtMs = 0L
+
+    private val playLock = Any()
+
     private fun isSoundPlaybackAllowed(): Boolean = audioManager.ringerMode != AudioManager.RINGER_MODE_SILENT
+
+    private fun tryAcquirePlaySlot(): Boolean {
+        synchronized(playLock) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastPlayAtMs < playDebounceMs) {
+                Timber.tag(tag).d("play debounced (${now - lastPlayAtMs}ms since last)")
+                return false
+            }
+            lastPlayAtMs = now
+            return true
+        }
+    }
 
     fun prepare(file: File) {
         if (loadedSoundId != 0) soundPool.unload(loadedSoundId)
@@ -63,16 +84,8 @@ class SoundFxService(
     }
 
     fun play() {
-        if (loadedSoundId == 0) {
-            Timber.tag(tag).d("play() skipped — not loaded")
-            return
-        }
-        if (!isSoundPlaybackAllowed()) {
-            Timber.tag(tag).d("play() skipped — ringer silent")
-            return
-        }
-        val streamId = soundPool.play(loadedSoundId, 1f, 1f, 1, 0, 1f)
-        Timber.tag(tag).d(if (streamId == 0) "SFX not ready yet" else "SFX playing")
+        if (!tryAcquirePlaySlot()) return
+        playLoadedSound("play()")
     }
 
     fun vibrate(pattern: LongArray) {
@@ -87,8 +100,24 @@ class SoundFxService(
     }
 
     fun playWithHaptics(pattern: LongArray?) {
-        play()
-        pattern?.let { vibrate(it) }
+        if (!tryAcquirePlaySlot()) return
+        if (playLoadedSound("playWithHaptics")) {
+            pattern?.let { vibrate(it) }
+        }
+    }
+
+    private fun playLoadedSound(caller: String): Boolean {
+        if (loadedSoundId == 0) {
+            Timber.tag(tag).d("$caller skipped — not loaded")
+            return false
+        }
+        if (!isSoundPlaybackAllowed()) {
+            Timber.tag(tag).d("$caller skipped — ringer silent")
+            return false
+        }
+        val streamId = soundPool.play(loadedSoundId, 1f, 1f, 1, 0, 1f)
+        Timber.tag(tag).d(if (streamId == 0) "SFX not ready yet" else "SFX playing ($caller)")
+        return streamId != 0
     }
 
     fun release() {
