@@ -200,6 +200,7 @@ fun ChatView(
     animatedVisibilityScope: AnimatedContentScope,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val genreVfxPulse by viewModel.genreVfxPulse.collectAsStateWithLifecycle()
     val context = LocalActivity.current
     val activity = LocalActivity.current
     var requiredPermission by remember { mutableStateOf<String?>(null) }
@@ -300,6 +301,7 @@ fun ChatView(
                                         onAction = onAction,
                                         padding = padding,
                                         isDebug = isDebug,
+                                        genreVfxPulse = genreVfxPulse,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
                                     )
@@ -431,6 +433,7 @@ fun ChatContent(
     onAction: (ChatUiAction) -> Unit,
     padding: PaddingValues = PaddingValues(),
     isDebug: Boolean = false,
+    genreVfxPulse: Boolean = false,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
@@ -890,7 +893,10 @@ fun ChatContent(
                                     Modifier
                                         .genreVfx(
                                             saga.genre,
-                                            isPlaying = uiState.isGenerating || uiState.isLoading,
+                                            isPlaying =
+                                                uiState.isGenerating ||
+                                                    uiState.isLoading ||
+                                                    genreVfxPulse,
                                         )
                                         .size(32.dp)
                                         .clip(CircleShape)
