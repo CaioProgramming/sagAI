@@ -57,6 +57,9 @@ class SagaDetailViewModel
         private var cachedIconPath: String? = null
         private var initialSectionJob: kotlinx.coroutines.Job? = null
 
+        /** One entry SFX per detail visit — cleared when the screen is hidden. */
+        private var pendingEntryVfxSagaId: Int? = null
+
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
         }
@@ -120,8 +123,15 @@ class SagaDetailViewModel
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
                         resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
-                            if (sagaImmersiveSession.isSagaActive(sagaId)) {
-                                sagaThemeManager.updateTheme(data.saga.genre, playEntryVfx = true)
+                            if (sagaImmersiveSession.isOwnerOnTop("saga_detail")) {
+                                val playEntryVfx = pendingEntryVfxSagaId == sagaId
+                                sagaThemeManager.updateTheme(
+                                    data.saga.genre,
+                                    playEntryVfx = playEntryVfx,
+                                )
+                                if (playEntryVfx) {
+                                    pendingEntryVfxSagaId = null
+                                }
                             }
 
                             loadInitialSection()
@@ -177,10 +187,12 @@ class SagaDetailViewModel
 
         fun onDetailScreenVisible(sagaId: Int) {
             sagaImmersiveSession.push("saga_detail", sagaId)
+            pendingEntryVfxSagaId = sagaId
         }
 
         fun onDetailScreenHidden() {
             sagaImmersiveSession.pop("saga_detail")
+            pendingEntryVfxSagaId = null
         }
 
         private fun launchIntroSequence() {
@@ -191,6 +203,7 @@ class SagaDetailViewModel
         }
 
         override fun onCleared() {
+            pendingEntryVfxSagaId = null
             super.onCleared()
             sagaImmersiveSession.pop("saga_detail")
         }

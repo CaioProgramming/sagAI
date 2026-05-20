@@ -28,6 +28,8 @@ import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.core.data.isFlowCancellation
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -675,6 +677,9 @@ class GemmaClient
                             retryDelay = null
                             return@flow
                         } catch (e: Exception) {
+                            if (e.isFlowCancellation()) {
+                                throw e
+                            }
                             if (logEnabled) {
                                 Timber
                                     .tag(
@@ -749,6 +754,9 @@ class GemmaClient
                         }
                     }
                 } catch (e: Exception) {
+                    if (e.isFlowCancellation()) {
+                        throw e
+                    }
                     emit(StreamingState.Error(e.message ?: "Unknown error", e))
                 }
             }.flowOn(Dispatchers.IO)

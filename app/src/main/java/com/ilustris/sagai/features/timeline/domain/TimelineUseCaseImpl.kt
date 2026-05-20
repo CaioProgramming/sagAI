@@ -29,6 +29,7 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -236,6 +237,9 @@ class TimelineUseCaseImpl
                         }
                     }
             } catch (e: Exception) {
+                if (e is CancellationException) {
+                    throw e
+                }
                 emit(
                     StreamingState
                         .Error(e.message ?: "Unknown error"),
@@ -309,6 +313,9 @@ class TimelineUseCaseImpl
                         }
                     }
             } catch (e: Exception) {
+                if (e is CancellationException) {
+                    throw e
+                }
                 emit(
                     StreamingState
                         .Error(e.message ?: "Unknown error"),

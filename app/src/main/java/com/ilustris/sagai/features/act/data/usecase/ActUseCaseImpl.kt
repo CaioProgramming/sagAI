@@ -362,6 +362,9 @@ class ActUseCaseImpl
                             }
                         }
                 } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) {
+                        throw e
+                    }
                     emit(StreamingState.Error(e.message ?: "Act synthesis failed", e))
                 }
             }

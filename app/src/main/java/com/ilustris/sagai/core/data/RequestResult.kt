@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.data
 
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.coroutines.CancellationException
 
 // Changed: Only one generic type for Success
 sealed class RequestResult<out R> {
@@ -67,6 +68,13 @@ sealed class RequestResult<out R> {
         }
 }
 
+/** Flow/coroutine cancellation — not a user-visible failure. */
+fun Throwable.isFlowCancellation(): Boolean =
+    this is CancellationException ||
+        this::class.simpleName == "ChildCancelledException" ||
+        message?.contains("child flow", ignoreCase = true) == true ||
+        message?.contains("scoped flow was cancelled", ignoreCase = true) == true
+
 // asSuccess remains largely the same
 fun <R> R.asSuccess(): RequestResult.Success<R> = RequestResult.Success(this)
 
@@ -86,5 +94,8 @@ suspend fun <R> executeRequest(
     try {
         block().asSuccess()
     } catch (e: Exception) {
+        if (e.isFlowCancellation()) {
+            throw e
+        }
         e.asError(reportCrash)
     }

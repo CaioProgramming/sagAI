@@ -35,4 +35,7 @@ class SagaImmersiveSession
         }
 
         fun isSagaActive(sagaId: Int): Boolean = stack.lastOrNull()?.second == sagaId
+
+        /** True when [owner] is the topmost visible saga screen (not buried under Chat, etc.). */
+        fun isOwnerOnTop(owner: String): Boolean = stack.lastOrNull()?.first == owner
     }

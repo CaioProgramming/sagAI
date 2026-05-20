@@ -629,7 +629,7 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        if (sagaImmersiveSession.isSagaActive(sagaContent.data.id)) {
+                        if (sagaImmersiveSession.isOwnerOnTop("chat")) {
                             sagaThemeManager.updateTheme(sagaContent.data.genre)
                         }
 

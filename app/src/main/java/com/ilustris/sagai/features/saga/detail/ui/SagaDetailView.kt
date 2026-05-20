@@ -120,9 +120,11 @@ fun SagaDetailView(
     SagAITheme(genre = resume?.saga?.genre) {
         var lastNavigationTime by remember { mutableStateOf(0L) }
         val onAction: (DetailAction) -> Unit =
-            remember(onCharacterDetails, onLoreDebug, viewModel) {
+            remember(onBack, onCharacterDetails, onLoreDebug, viewModel) {
                 { action ->
                     when (action) {
+                        DetailAction.Back -> onBack()
+
                         DetailAction.OpenReview -> {
                             showReview = true
                         }

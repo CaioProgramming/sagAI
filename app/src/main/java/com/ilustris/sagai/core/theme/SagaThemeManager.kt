@@ -9,6 +9,8 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.ui.components.SagaSnackBarMessage
+import android.os.SystemClock
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,6 +65,14 @@ class SagaThemeManager
         /** Genre requested while still on a neutral screen (Home, etc.) — applied when leaving neutral. */
         private var pendingGenre: Genre? = null
 
+        private var themeFetchJob: Job? = null
+
+        private var lastEntryVfxGenre: Genre? = null
+
+        private var lastEntryVfxAtMs = 0L
+
+        private val entryVfxMinIntervalMs = 2_000L
+
         /**
          * Updates the neutrality state of the manager.
          * When neutral, any attempt to set a genre is ignored, and the theme is reset.
@@ -101,26 +111,44 @@ class SagaThemeManager
 
             _currentGenre.value = genre
             if (genre != null) {
-                managerScope.launch {
-                    fetchConfigs(genre, playEntryVfx)
-                }
+                themeFetchJob?.cancel()
+                themeFetchJob =
+                    managerScope.launch {
+                        try {
+                            val playEntry = playEntryVfx && shouldPlayEntryVfx(genre)
+                            fetchConfigs(genre, playEntry)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            Timber.e(e, "SagaThemeManager: Error fetching media configs for $genre")
+                        }
+                    }
             } else {
+                themeFetchJob?.cancel()
+                themeFetchJob = null
                 resetTheme()
             }
+        }
+
+        private fun shouldPlayEntryVfx(genre: Genre): Boolean {
+            val now = SystemClock.elapsedRealtime()
+            if (lastEntryVfxGenre == genre && now - lastEntryVfxAtMs < entryVfxMinIntervalMs) {
+                Timber.d("SagaThemeManager: entry VFX skipped (debounced for $genre)")
+                return false
+            }
+            lastEntryVfxGenre = genre
+            lastEntryVfxAtMs = now
+            return true
         }
 
         private suspend fun fetchConfigs(
             genre: Genre,
             playEntryVfx: Boolean = false,
         ) {
-            try {
-                getAmbienceMusic(genre)
-                getReplySfx(genre)
-                if (playEntryVfx) {
-                    playVfxInternal()
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "SagaThemeManager: Error fetching media configs for $genre")
+            getAmbienceMusic(genre)
+            getReplySfx(genre)
+            if (playEntryVfx) {
+                playVfxInternal()
             }
         }
 
@@ -175,6 +203,10 @@ class SagaThemeManager
 
         /** Clear the active genre, reverting to the default brand identity. */
         fun resetTheme() {
+            themeFetchJob?.cancel()
+            themeFetchJob = null
+            lastEntryVfxGenre = null
+            lastEntryVfxAtMs = 0L
             _currentGenre.value = null
             _ambientMusicFile.value = null
         }

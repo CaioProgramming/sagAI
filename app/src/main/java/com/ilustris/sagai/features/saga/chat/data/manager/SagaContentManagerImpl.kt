@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -209,6 +210,9 @@ class SagaContentManagerImpl
                     }
                 }
             } catch (e: Exception) {
+                if (e.isFlowCancellation()) {
+                    throw e
+                }
                 Timber.e(e, "Unexpected error executing narrative action")
                 narrativeCoordinator.onActionCompleted(
                     action,
@@ -369,7 +373,7 @@ class SagaContentManagerImpl
                                     _sceneSummary.value = it
                                 }
 
-                                if (sagaImmersiveSession.isSagaActive(saga.data.id)) {
+                                if (sagaImmersiveSession.isOwnerOnTop("chat")) {
                                     sagaThemeManager.updateTheme(saga.data.genre)
                                 }
 
@@ -1123,7 +1127,9 @@ class SagaContentManagerImpl
 
                 is StreamingState.Error -> {
                     contentReasoning.value = null
-                    sagaThemeManager.showSnackBar(state.message)
+                    if (!state.isFlowCancellation()) {
+                        sagaThemeManager.showSnackBar(state.message)
+                    }
                 }
             }
         }
