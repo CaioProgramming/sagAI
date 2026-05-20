@@ -249,6 +249,11 @@ fun ChatView(
             onBack()
         }
 
+        DisposableEffect(sagaId) {
+            viewModel.onChatScreenVisible(sagaId)
+            onDispose { viewModel.onChatScreenHidden() }
+        }
+
         DisposableEffect(lifecycleOwner, viewModel) {
             lifecycleOwner.lifecycle.addObserver(viewModel)
             onDispose {

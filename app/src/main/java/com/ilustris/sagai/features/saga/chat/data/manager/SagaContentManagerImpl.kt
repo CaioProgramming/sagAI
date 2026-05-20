@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
@@ -100,6 +101,7 @@ class SagaContentManagerImpl
         private val genreConfigService: GenreConfigService,
         private val messageDao: MessageDao,
         private val sagaThemeManager: SagaThemeManager,
+        private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
         @ApplicationContext
@@ -367,7 +369,9 @@ class SagaContentManagerImpl
                                     _sceneSummary.value = it
                                 }
 
-                                sagaThemeManager.updateTheme(saga.data.genre)
+                                if (sagaImmersiveSession.isSagaActive(saga.data.id)) {
+                                    sagaThemeManager.updateTheme(saga.data.genre)
+                                }
 
                                 checkMessageNotifications(
                                     previousSaga,
@@ -728,8 +732,58 @@ class SagaContentManagerImpl
                     if (milestone.shouldPlaySoundFx) {
                         sagaThemeManager.playVfx()
                     }
+                    milestoneBackgroundNotification(milestone)?.let { emitNotification(it) }
                 }
                 milestoneUpdate.emit(milestone)
+            }
+
+        private fun milestoneBackgroundNotification(milestone: SagaMilestone): SagaNotificationEvent? =
+            when (milestone) {
+                is SagaMilestone.ChapterFinished ->
+                    SagaNotificationEvent(
+                        message =
+                            context.getString(
+                                R.string.notification_new_chapter_content,
+                                milestone.chapter.title,
+                            ),
+                        style = NotificationStyle.DEFAULT,
+                    )
+
+                is SagaMilestone.ActFinished ->
+                    SagaNotificationEvent(
+                        message =
+                            context.getString(
+                                R.string.notification_new_act_content,
+                                milestone.act.title,
+                                milestone.act.title,
+                            ),
+                        style = NotificationStyle.DEFAULT,
+                    )
+
+                is SagaMilestone.NewEvent ->
+                    SagaNotificationEvent(
+                        message =
+                            context.getString(
+                                R.string.notification_timeline_event_content,
+                                milestone.timeline.title,
+                            ),
+                        style = NotificationStyle.DEFAULT,
+                    )
+
+                is SagaMilestone.NewCharacter -> {
+                    val name =
+                        "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
+                    SagaNotificationEvent(
+                        message =
+                            context.getString(
+                                R.string.notification_new_character_content,
+                                name,
+                            ),
+                        style = NotificationStyle.DEFAULT,
+                    )
+                }
+
+                else -> null
             }
 
         private suspend fun startProcessing(block: suspend () -> Unit) {

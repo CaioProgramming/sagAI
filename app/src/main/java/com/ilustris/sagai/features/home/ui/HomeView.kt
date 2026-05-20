@@ -115,6 +115,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
+/** Theme and ambient audio are owned by [com.ilustris.sagai.MainActivity] + [com.ilustris.sagai.core.theme.SagaThemeManager], not this screen. */
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable

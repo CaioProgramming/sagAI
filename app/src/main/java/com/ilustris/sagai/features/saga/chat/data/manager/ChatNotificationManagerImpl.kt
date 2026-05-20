@@ -188,20 +188,20 @@ class ChatNotificationManagerImpl
 
             when (event.style) {
                 NotificationStyle.CHAT -> {
-                    /*sendChatNotification(
+                    sendChatNotification(
                         saga = saga.data,
                         title = saga.data.title,
+                        character = null,
                         message = event.message,
-                        largeIcon = event.largeIcon,
-                        pendingIntent = createPendingIntent(formatChatDeepLink),
-                    )*/
+                        largeIcon = event.icon ?: event.largeIcon,
+                    )
                 }
 
                 NotificationStyle.DEFAULT -> {
                     sendToNotificationChannel(
                         title = saga.data.title,
                         content = event.message,
-                        largeIcon = event.largeIcon,
+                        largeIcon = event.largeIcon ?: event.icon,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
                         genreColor = saga.data.genre.resolveColor(null),
                         smallIconResId = R.drawable.ic_spark,

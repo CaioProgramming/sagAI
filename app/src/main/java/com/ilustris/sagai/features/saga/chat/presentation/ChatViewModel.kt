@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import MessageStatus
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.LruCache
@@ -18,11 +17,11 @@ import com.ilustris.sagai.core.ai.GuardrailsException
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
-import com.ilustris.sagai.core.media.SagaPlaybackService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -81,6 +80,7 @@ class ChatViewModel
         private val wikiMapper: WikiMapper,
         private val characterUseCase: CharacterUseCase,
         private val sagaThemeManager: SagaThemeManager,
+        private val sagaImmersiveSession: SagaImmersiveSession,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -93,7 +93,6 @@ class ChatViewModel
         private var audioProgressJob: kotlinx.coroutines.Job? = null
         private val audioMediaPlayerManager: MediaPlayerManager = MediaPlayerManagerImpl(context)
         var isForeground = true
-        private val messageDelay = 7.seconds
         private var sendJob: kotlinx.coroutines.Job? = null
 
         private var lastActId: Int = 0
@@ -432,14 +431,13 @@ class ChatViewModel
         fun observeNotificationUpdates() =
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.notificationUpdate.collect { event ->
-                    event?.let { notificationEvent ->
-                        uiState.value.sagaContent?.let { currentSaga ->
-                            notificationManager.sendSnackBarNotification(
-                                saga = currentSaga,
-                                event = notificationEvent,
-                            )
-                        }
-                    }
+                    val notificationEvent = event ?: return@collect
+                    if (!uiState.value.notificationsEnabled) return@collect
+                    val currentSaga = uiState.value.sagaContent ?: return@collect
+                    notificationManager.sendSnackBarNotification(
+                        saga = currentSaga,
+                        event = notificationEvent,
+                    )
                 }
             }
 
@@ -648,7 +646,9 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        sagaThemeManager.updateTheme(sagaContent.data.genre)
+                        if (sagaImmersiveSession.isSagaActive(sagaContent.data.id)) {
+                            sagaThemeManager.updateTheme(sagaContent.data.genre)
+                        }
 
                         val rules =
                             remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: run {
@@ -763,7 +763,15 @@ class ChatViewModel
             }
         }
 
-        // Ambient music controlled by SagaThemeManager and MainActivity
+        // Ambient music: SagaThemeManager + MainActivity (not tied to Activity lifecycle — Nav 3 keeps Chat in backstack)
+
+        fun onChatScreenVisible(sagaId: String) {
+            sagaId.toIntOrNull()?.let { sagaImmersiveSession.push("chat", it) }
+        }
+
+        fun onChatScreenHidden() {
+            sagaImmersiveSession.pop("chat")
+        }
 
         private var startTime: Long = 0L
 
@@ -771,21 +779,10 @@ class ChatViewModel
             super.onResume(owner)
             startTime = System.currentTimeMillis()
             scheduledNotificationService.cancelScheduledNotifications()
-            Timber.tag("ChatViewModel").d("Lifecycle: onResume. Informing service to resume.")
-            context.startService(
-                Intent(context, SagaPlaybackService::class.java).apply {
-                    action = SagaPlaybackService.ACTION_RESUME
-                },
-            )
         }
 
         override fun onStop(owner: LifecycleOwner) {
             super.onStop(owner)
-            context.startService(
-                Intent(context, SagaPlaybackService::class.java).apply {
-                    action = SagaPlaybackService.ACTION_STOP
-                },
-            )
             val saga = uiState.value.sagaContent
             if (saga != null) {
                 viewModelScope.launch(Dispatchers.IO) {
@@ -796,12 +793,6 @@ class ChatViewModel
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
-            Timber.tag("ChatViewModel").d("Lifecycle: onPause called. Informing service to pause.")
-            context.startService(
-                Intent(context, SagaPlaybackService::class.java).apply {
-                    action = SagaPlaybackService.ACTION_PAUSE
-                },
-            )
             isForeground = false
             viewModelScope.launch(Dispatchers.IO) {
                 if (startTime != 0L) {
@@ -820,12 +811,7 @@ class ChatViewModel
 
         override fun onCleared() {
             super.onCleared()
-            Timber.tag("ChatViewModel").d("onCleared called. Killing music service.")
-            context.startService(
-                Intent(context, SagaPlaybackService::class.java).apply {
-                    action = SagaPlaybackService.ACTION_STOP
-                },
-            )
+            sagaImmersiveSession.pop("chat")
             audioMediaPlayerManager.release()
         }
 
@@ -854,15 +840,6 @@ class ChatViewModel
             userConfirmed: Boolean = false,
             isAudio: Boolean = false,
         ) {
-            if (uiState.value.isSendingPending) {
-                sendJob?.cancel()
-                sendJob = null
-                stateManager.updateSendingPending(false)
-                stateManager.updateSendingProgress(0f)
-                stateManager.updateLoading(false)
-                return
-            }
-
             val text = uiState.value.inputValue
             uiState.value.senderType
 
@@ -917,15 +894,12 @@ class ChatViewModel
                             }
 
                             TypoStatus.FIX -> {
-                                delay(5.seconds)
-                                if (uiState.value.typoFixMessage != null) {
-                                    stateManager.updateInput(
-                                        TextFieldValue(
-                                            it.suggestedText ?: uiState.value.inputValue.text,
-                                        ),
-                                    )
-                                    startPendingSend(isAudio)
-                                }
+                                stateManager.updateInput(
+                                    TextFieldValue(
+                                        it.suggestedText ?: uiState.value.inputValue.text,
+                                    ),
+                                )
+                                startPendingSend(isAudio)
                             }
 
                             TypoStatus.ENHANCEMENT -> {
@@ -957,25 +931,9 @@ class ChatViewModel
                     status = MessageStatus.LOADING,
                 )
 
-            sendJob =
-                viewModelScope.launch {
-                    stateManager.updateSendingPending(true)
-                    stateManager.updateLoading(true)
-                    val totalSteps = 10
-                    val delayStep = messageDelay.inWholeMilliseconds / totalSteps
-                    for (i in 1..totalSteps) {
-                        stateManager.updateSendingProgress(i.toFloat() / totalSteps)
-                        delay(delayStep)
-                    }
-                    stateManager.updateSendingPending(false)
-                    stateManager.updateSendingProgress(0f)
-                    val isActuallyAudio = isAudio || uiState.value.isAudioInput
-                    stateManager.updateAudioInput(false)
-                    generationJob =
-                        viewModelScope.launch {
-                            sendMessage(message, true, null, isActuallyAudio)
-                        }
-                }
+            val isActuallyAudio = isAudio || uiState.value.isAudioInput
+            stateManager.updateAudioInput(false)
+            sendMessage(message, true, null, isActuallyAudio)
         }
 
         private fun checkTypo(isAudio: Boolean = false) {
@@ -1007,10 +965,7 @@ class ChatViewModel
                             stateManager.updateInput(
                                 TextFieldValue(it.suggestedText ?: uiState.value.inputValue.text),
                             )
-                            delay(5.seconds)
-                            if (uiState.value.typoFixMessage != null) {
-                                sendInput(userConfirmed = true, isAudio = isAudio)
-                            }
+                            sendInput(userConfirmed = true, isAudio = isAudio)
                         }
                     }
                 }
@@ -1023,7 +978,10 @@ class ChatViewModel
             sceneSummary: SceneSummary?,
             isAudio: Boolean,
         ) {
-            viewModelScope.launch(Dispatchers.IO) {
+            sendJob?.cancel()
+            sendJob =
+                viewModelScope.launch(Dispatchers.IO) {
+                stateManager.updateLoading(true)
                 val saga = uiState.value.sagaContent ?: return@launch
                 val characterReference = saga.findCharacter(message.speakerName)
 
@@ -1056,7 +1014,6 @@ class ChatViewModel
                         resetSuggestions()
                         stateManager.updateInput(TextFieldValue())
 
-                        stateManager.updateLoading(true)
                         viewModelScope.launch(Dispatchers.IO) {
                             val sceneSummaryData =
                                 if (isFromUser) {

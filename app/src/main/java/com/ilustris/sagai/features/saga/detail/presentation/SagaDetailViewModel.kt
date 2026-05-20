@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
@@ -34,6 +35,7 @@ class SagaDetailViewModel
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val sagaThemeManager: SagaThemeManager,
+        private val sagaImmersiveSession: SagaImmersiveSession,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
@@ -118,7 +120,9 @@ class SagaDetailViewModel
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
                         resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
-                            sagaThemeManager.updateTheme(data.saga.genre, playEntryVfx = true)
+                            if (sagaImmersiveSession.isSagaActive(sagaId)) {
+                                sagaThemeManager.updateTheme(data.saga.genre, playEntryVfx = true)
+                            }
 
                             loadInitialSection()
                             detailDrawer.value =
@@ -171,10 +175,23 @@ class SagaDetailViewModel
             }
         }
 
+        fun onDetailScreenVisible(sagaId: Int) {
+            sagaImmersiveSession.push("saga_detail", sagaId)
+        }
+
+        fun onDetailScreenHidden() {
+            sagaImmersiveSession.pop("saga_detail")
+        }
+
         private fun launchIntroSequence() {
             viewModelScope.launch {
                 delay(2.seconds)
                 showIntro.value = false
             }
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            sagaImmersiveSession.pop("saga_detail")
         }
     }

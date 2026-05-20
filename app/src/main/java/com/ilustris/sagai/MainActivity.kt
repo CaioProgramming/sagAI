@@ -33,12 +33,16 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -163,9 +167,46 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                // Pause/resume ambient when the app backgrounds (not when Nav 3 swaps screens).
+                val lifecycleOwner = LocalLifecycleOwner.current
+                var hasAmbientTrack by remember { mutableStateOf(false) }
+                DisposableEffect(lifecycleOwner) {
+                    val observer =
+                        object : DefaultLifecycleObserver {
+                            override fun onPause(owner: LifecycleOwner) {
+                                if (!hasAmbientTrack) return
+                                startService(
+                                    Intent(
+                                        applicationContext,
+                                        com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
+                                    ).apply {
+                                        action =
+                                            com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_PAUSE
+                                    },
+                                )
+                            }
+
+                            override fun onResume(owner: LifecycleOwner) {
+                                if (!hasAmbientTrack) return
+                                startService(
+                                    Intent(
+                                        applicationContext,
+                                        com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
+                                    ).apply {
+                                        action =
+                                            com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_RESUME
+                                    },
+                                )
+                            }
+                        }
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
+
                 // Global Ambient Music Control
                 val ambientMusicFile by sagaThemeManager.ambientMusicFile.collectAsState()
                 LaunchedEffect(ambientMusicFile) {
+                    hasAmbientTrack = ambientMusicFile != null && ambientMusicFile?.exists() == true
                     try {
                         val file = ambientMusicFile
                         if (file != null && file.exists()) {
