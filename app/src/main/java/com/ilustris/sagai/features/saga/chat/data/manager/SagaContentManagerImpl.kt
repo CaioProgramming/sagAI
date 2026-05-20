@@ -449,14 +449,12 @@ class SagaContentManagerImpl
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
                 if (lastMessage.message.senderType == SenderType.CHARACTER) {
-                    emitNotification(
-                        SagaNotificationEvent(
-                            message =
-                                "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
-                            icon = charIcon,
-                            style = NotificationStyle.CHAT,
-                        ),
-                    )
+                    notificationEvent(
+                        message =
+                            "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
+                        icon = charIcon,
+                        style = NotificationStyle.CHAT,
+                    )?.let { emitNotification(it) }
                 }
             }
         }
@@ -643,6 +641,22 @@ class SagaContentManagerImpl
             }
         }
 
+        private fun notificationEvent(
+            message: String,
+            style: NotificationStyle,
+            icon: android.graphics.Bitmap? = null,
+        ): SagaNotificationEvent? {
+            val saga = content.value ?: return null
+            return SagaNotificationEvent(
+                sagaId = saga.data.id,
+                sagaTitle = saga.data.title,
+                genre = saga.data.genre,
+                message = message,
+                icon = icon,
+                style = style,
+            )
+        }
+
         private fun emitNotification(event: SagaNotificationEvent) {
             managerScope.launch {
                 notificationUpdate.emit(event)
@@ -737,54 +751,38 @@ class SagaContentManagerImpl
                 milestoneUpdate.emit(milestone)
             }
 
-        private fun milestoneBackgroundNotification(milestone: SagaMilestone): SagaNotificationEvent? =
-            when (milestone) {
-                is SagaMilestone.ChapterFinished ->
-                    SagaNotificationEvent(
-                        message =
-                            context.getString(
-                                R.string.notification_new_chapter_content,
-                                milestone.chapter.title,
-                            ),
-                        style = NotificationStyle.DEFAULT,
-                    )
+        private fun milestoneBackgroundNotification(milestone: SagaMilestone): SagaNotificationEvent? {
+            val message =
+                when (milestone) {
+                    is SagaMilestone.ChapterFinished ->
+                        context.getString(
+                            R.string.notification_new_chapter_content,
+                            milestone.chapter.title,
+                        )
 
-                is SagaMilestone.ActFinished ->
-                    SagaNotificationEvent(
-                        message =
-                            context.getString(
-                                R.string.notification_new_act_content,
-                                milestone.act.title,
-                                milestone.act.title,
-                            ),
-                        style = NotificationStyle.DEFAULT,
-                    )
+                    is SagaMilestone.ActFinished ->
+                        context.getString(
+                            R.string.notification_new_act_content,
+                            milestone.act.title,
+                            milestone.act.title,
+                        )
 
-                is SagaMilestone.NewEvent ->
-                    SagaNotificationEvent(
-                        message =
-                            context.getString(
-                                R.string.notification_timeline_event_content,
-                                milestone.timeline.title,
-                            ),
-                        style = NotificationStyle.DEFAULT,
-                    )
+                    is SagaMilestone.NewEvent ->
+                        context.getString(
+                            R.string.notification_timeline_event_content,
+                            milestone.timeline.title,
+                        )
 
-                is SagaMilestone.NewCharacter -> {
-                    val name =
-                        "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
-                    SagaNotificationEvent(
-                        message =
-                            context.getString(
-                                R.string.notification_new_character_content,
-                                name,
-                            ),
-                        style = NotificationStyle.DEFAULT,
-                    )
+                    is SagaMilestone.NewCharacter -> {
+                        val name =
+                            "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
+                        context.getString(R.string.notification_new_character_content, name)
+                    }
+
+                    else -> return null
                 }
-
-                else -> null
-            }
+            return notificationEvent(message, NotificationStyle.DEFAULT)
+        }
 
         private suspend fun startProcessing(block: suspend () -> Unit) {
             if (isProcessing.get().not()) {

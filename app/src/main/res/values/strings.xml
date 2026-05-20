@@ -205,6 +205,7 @@
     <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
     <string name="continue_text">continue</string>
     <string name="notification_title">New message on %s</string>
+    <string name="notification_open_chat">Open</string>
     <string name="notification_playing_act">Playing Volume %s</string>
     <string name="notification_action_pause" translatable="false">Pause</string>
     <string name="notification_action_play" translatable="false">Play</string>

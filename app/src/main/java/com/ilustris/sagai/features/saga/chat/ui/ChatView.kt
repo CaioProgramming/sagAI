@@ -250,7 +250,7 @@ fun ChatView(
         }
 
         DisposableEffect(sagaId) {
-            viewModel.onChatScreenVisible(sagaId)
+            sagaId?.let { viewModel.onChatScreenVisible(it) }
             onDispose { viewModel.onChatScreenHidden() }
         }
 

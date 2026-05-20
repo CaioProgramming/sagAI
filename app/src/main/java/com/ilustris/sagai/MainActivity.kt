@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
@@ -60,10 +62,13 @@ import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.SideEffectService
+import com.ilustris.sagai.core.navigation.SagaNavigationTracker
+import com.ilustris.sagai.core.notifications.SagaNotificationRouter
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
+import com.ilustris.sagai.ui.components.SagaInAppNotificationBanner
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
@@ -97,6 +102,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
+
+    @Inject
+    lateinit var sagaNotificationRouter: SagaNotificationRouter
+
+    @Inject
+    lateinit var sagaNavigationTracker: SagaNavigationTracker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -145,11 +156,20 @@ class MainActivity : ComponentActivity() {
                 sagaThemeManager.setNeutral(isNeutralScreen)
             }
 
+            LaunchedEffect(currentKey) {
+                sagaNavigationTracker.update(currentKey)
+            }
+
+            LaunchedEffect(Unit) {
+                sagaNotificationRouter.start()
+            }
+
             SagAITheme(genre = themeGenre) {
                 Timber.d("MainActivity: SagAITheme block")
 
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
+                val inAppNotification by sagaNotificationRouter.inAppNotification.collectAsState()
                 var showGenreTransition by remember { mutableStateOf(false) }
 
                 LaunchedEffect(currentGenre) {
@@ -304,6 +324,22 @@ class MainActivity : ComponentActivity() {
                                         NavDisplay(
                                             entries = navigationState.toEntries(entryProvider),
                                             onBack = { navigator.goBack() },
+                                        )
+
+                                        SagaInAppNotificationBanner(
+                                            notification = inAppNotification,
+                                            onOpen = { deepLink ->
+                                                navigateDeepLink(deepLink)
+                                                sagaNotificationRouter.dismissInApp()
+                                            },
+                                            onDismiss = { sagaNotificationRouter.dismissInApp() },
+                                            modifier =
+                                                Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .zIndex(2f)
+                                                    .statusBarsPadding()
+                                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                                    .fillMaxWidth(),
                                         )
 
                                         SagaSnackBar(

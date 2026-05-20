@@ -104,7 +104,6 @@ class ChatViewModel
         private var sagaObserverJob: kotlinx.coroutines.Job? = null
         private var milestoneObserverJob: kotlinx.coroutines.Job? = null
         private var preferencesObserverJob: kotlinx.coroutines.Job? = null
-        private var snackBarObserverJob: kotlinx.coroutines.Job? = null
         private var mediaObserverJob: kotlinx.coroutines.Job? = null
         private var processingObserverJob: kotlinx.coroutines.Job? = null
         private var sceneSummaryObserverJob: kotlinx.coroutines.Job? = null
@@ -330,9 +329,6 @@ class ChatViewModel
             preferencesObserverJob?.cancel()
             preferencesObserverJob = observePreferences()
 
-            snackBarObserverJob?.cancel()
-            snackBarObserverJob = observeNotificationUpdates()
-
             mediaObserverJob?.cancel()
             mediaObserverJob = observeMediaState()
 
@@ -425,19 +421,6 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 wikiUseCase.getWikisBySaga(sagaId).collectLatest { wikis ->
                     stateManager.updateWikis(wikis)
-                }
-            }
-
-        fun observeNotificationUpdates() =
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.notificationUpdate.collect { event ->
-                    val notificationEvent = event ?: return@collect
-                    if (!uiState.value.notificationsEnabled) return@collect
-                    val currentSaga = uiState.value.sagaContent ?: return@collect
-                    notificationManager.sendSnackBarNotification(
-                        saga = currentSaga,
-                        event = notificationEvent,
-                    )
                 }
             }
 
