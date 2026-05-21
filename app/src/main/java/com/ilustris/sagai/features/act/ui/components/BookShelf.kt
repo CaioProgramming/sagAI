@@ -46,6 +46,7 @@ import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
+import com.ilustris.sagai.ui.components.BookGenerationReasoning
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.levitate
@@ -156,40 +157,6 @@ private fun SharedTransitionScope.GeneratingBookFocus(
             visualConfig = visualConfig,
             modifier = Modifier.padding(top = 24.dp),
         )
-    }
-}
-
-@Composable
-private fun BookGenerationReasoning(
-    reasoning: String?,
-    genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
-    visualConfig: GenreVisualConfig,
-    modifier: Modifier = Modifier,
-) {
-    AnimatedContent(
-        targetState = reasoning,
-        label = "BookGenerationReasoning",
-        transitionSpec = {
-            fadeIn(tween(300)) togetherWith fadeOut(tween(200))
-        },
-        modifier = modifier.fillMaxWidth(),
-    ) { text ->
-        if (text != null) {
-            Text(
-                text = text,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        lineHeight = 22.sp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .reactiveShimmer(true, genre.shimmerColors(visualConfig)),
-            )
-        }
     }
 }
 

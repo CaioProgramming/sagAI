@@ -125,6 +125,7 @@ fun HomeView(
     navToProfile: () -> Unit,
     navToFAQ: () -> Unit,
     navToAuditLogs: () -> Unit,
+    navToPlaythrough: () -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -204,6 +205,10 @@ fun HomeView(
                                             },
                                             navToFAQ = navToFAQ,
                                             navToAuditLogs = navToAuditLogs,
+                                            navToPlaythrough = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                navToPlaythrough()
+                                            },
                                             sharedTransitionScope = sharedTransitionScope,
                                             animatedVisibilityScope = animatedVisibilityScope,
                                             onOpenPremiumOnboarding = {

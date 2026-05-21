@@ -126,6 +126,7 @@ import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.subtitleActAndChapterOrdinals
 import com.ilustris.sagai.features.home.data.model.toInfo
 import com.ilustris.sagai.features.milestone.ui.MilestoneOverlay
@@ -693,6 +694,7 @@ fun ChatContent(
                         )
 
                         val narrativeState = uiState.narrativeUiState
+                        val hasActiveTimeline = content.getCurrentTimeLine() != null
                         val bottomInputState =
                             when {
                                 narrativeState.showAdvanceTrigger &&
@@ -705,8 +707,13 @@ fun ChatContent(
                                     BottomInputState.Background(narrativeState.backgroundTask!!)
                                 }
 
-                                else -> {
+                                hasActiveTimeline &&
+                                    !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Chat
+                                }
+
+                                else -> {
+                                    BottomInputState.Unavailable
                                 }
                             }
 
@@ -746,7 +753,8 @@ fun ChatContent(
 
                                 BottomInputState.Chat -> {
                                     AnimatedVisibility(
-                                        uiState.chatState !is ChatState.Loading &&
+                                        hasActiveTimeline &&
+                                            uiState.chatState !is ChatState.Loading &&
                                             saga.isDebug.not() && saga.isEnded.not() &&
                                             !uiState.selectionState.isSelectionMode,
                                         enter = slideInVertically(),
@@ -779,6 +787,8 @@ fun ChatContent(
                                         )
                                     }
                                 }
+
+                                BottomInputState.Unavailable -> Unit
                             }
                         }
 
@@ -1427,18 +1437,6 @@ fun ChatList(
             }
         }
         actList.forEach { act ->
-
-            if (act.isComplete) {
-                item(key = "act-${act.content.data.id}") {
-                    ActComponent(
-                        act.content,
-                        saga.acts.indexOf(act.content) + 1,
-                        saga,
-                        modifier = Modifier,
-                    )
-                }
-            }
-
             act.chapters.forEach { chapter ->
 
                 if (chapter.isComplete) {
@@ -1552,6 +1550,17 @@ fun ChatList(
                 }
             }
 
+            if (act.hasConclusionContent()) {
+                item(key = "act-${act.content.data.id}-conclusion") {
+                    ActComponent(
+                        act.content,
+                        saga.acts.indexOf(act.content) + 1,
+                        saga,
+                        modifier = Modifier,
+                    )
+                }
+            }
+
             if (act.content.data.introduction
                     .isNotEmpty()
             ) {
@@ -1572,28 +1581,30 @@ fun ChatList(
                 }
             }
 
-            item(key = "act-${act.content.data.id}-title") {
-                val title =
-                    act.content.data.title
-                        .ifEmpty {
-                            stringResource(
-                                id = R.string.act_title_template,
-                                saga.actNumber(act.content.data.id).toRoman(),
-                            )
-                        }
-                Text(
-                    title,
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            brush = genre.gradient(true),
-                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                )
+            if (!act.hasConclusionContent()) {
+                item(key = "act-${act.content.data.id}-title") {
+                    val title =
+                        act.content.data.title
+                            .ifEmpty {
+                                stringResource(
+                                    id = R.string.act_title_template,
+                                    saga.actNumber(act.content.data.id).toRoman(),
+                                )
+                            }
+                    Text(
+                        title,
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                brush = genre.gradient(true),
+                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                    )
+                }
             }
         }
         item(key = "saga-${saga.data.id}-header") {
@@ -1612,6 +1623,12 @@ fun ChatList(
     }
 }
 
+/** Act synthesis body shown in chat after its chapters (see [ChatList] item order with [reverseLayout]). */
+private fun ActDisplayData.hasConclusionContent(): Boolean {
+    val data = content.data
+    return data.content.isNotBlank() || !data.emotionalReview.isNullOrBlank()
+}
+
 private sealed interface BottomInputState {
     data object Chat : BottomInputState
 
@@ -1622,6 +1639,9 @@ private sealed interface BottomInputState {
     data class Background(
         val task: BackgroundTask,
     ) : BottomInputState
+
+    /** No active timeline and no narrative advance/background UI — chat input must stay hidden. */
+    data object Unavailable : BottomInputState
 }
 
 @Composable

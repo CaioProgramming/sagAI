@@ -60,10 +60,6 @@ class GemmaClient
         @PublishedApi
         internal val requestMutexes = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
 
-        @PublishedApi
-        @Volatile
-        internal var retryDelay: Int? = null
-
         @Volatile
         var lastTokenCount: Int = 0
 
@@ -72,7 +68,23 @@ class GemmaClient
             const val INPUT_TOKEN_LIMIT = 15000
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
             const val MAX_RETRIES = 2
-            const val RETRY_DELAY = 20
+
+            /** Fallback when the API omits RetryInfo on rate-limit responses. */
+            const val DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3L
+
+            const val NETWORK_RETRY_SECONDS = 2L
+
+            fun retryDelaySeconds(
+                e: Exception,
+                isParsingError: Boolean,
+                extractedDelay: Long?,
+            ): Long =
+                when {
+                    isParsingError -> 0L
+                    extractedDelay != null -> extractedDelay
+                    e is java.io.IOException -> NETWORK_RETRY_SECONDS
+                    else -> DEFAULT_RATE_LIMIT_RETRY_SECONDS
+                }
         }
 
         enum class ModelRequirement {
@@ -150,20 +162,7 @@ class GemmaClient
                         throw GuardrailsException(safetyStatus)
                     }
                 }
-                if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
-                    if (logEnabled) Timber.w("Applying reactive delay due to high token count in last request.")
-                    retryDelay = 5
-                    delay((retryDelay ?: 5).seconds)
-                }
                 val model = modelName(requirement)
-                if (useCore.not()) {
-                    retryDelay?.let {
-                        if (logEnabled) Timber.e("generate: Trying delay $retryDelay seconds to avoid rate limit.")
-                        delay(it.seconds)
-                    }
-                } else {
-                    if (logEnabled) Timber.i("generate: Core calls don't require delay.")
-                }
 
                 val maxAttempts = MAX_RETRIES + 1
                 val startTime = System.currentTimeMillis()
@@ -282,7 +281,6 @@ class GemmaClient
                             }
 
                             lastTokenCount = response.usageMetadata?.promptTokenCount ?: 0
-                            retryDelay = null
                             if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
                                 lastTokenCount = 0
                             }
@@ -410,17 +408,9 @@ class GemmaClient
                             }
                         }
 
-                        val isNetworkError = e is java.io.IOException
                         if (currentAttempt < maxAttempts) {
                             val delayToApply =
-                                when {
-                                    isParsingError -> 0L
-
-                                    isNetworkError -> 2L
-
-                                    // Quick retry for DNS/Network hiccups
-                                    else -> (extractedDelay ?: RETRY_DELAY.toLong())
-                                }
+                                retryDelaySeconds(e, isParsingError, extractedDelay)
 
                             if (delayToApply > 0) {
                                 Timber
@@ -435,13 +425,6 @@ class GemmaClient
                                     ).w("Retrying immediately due to parsing error (${e.javaClass.simpleName})...")
                             }
                         } else {
-                            // Final failure
-                            if (!isParsingError) {
-                                retryDelay =
-                                    extractedDelay?.toInt() ?: retryDelay?.let {
-                                        if (it > 30) it / 2 else it + it
-                                    } ?: 2
-                            }
                             Timber.e("Final failure after $maxAttempts attempts.")
                             Timber.e("generate: Failed prompt")
                             Timber.w(prompt)
@@ -477,20 +460,7 @@ class GemmaClient
                             throw GuardrailsException(safetyStatus)
                         }
                     }
-                    if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
-                        Timber.w("Applying reactive delay due to high token count in last request.")
-                        retryDelay = 5
-                        delay((retryDelay ?: 5).seconds)
-                    }
                     val model = modelName(requirement)
-                    if (!useCore) {
-                        retryDelay?.let {
-                            if (logEnabled) Timber.e("generateStreaming: Trying delay $retryDelay seconds to avoid rate limit.")
-                            delay(it.seconds)
-                        }
-                    } else {
-                        if (logEnabled) Timber.i("generateStreaming: Core calls don't require delay.")
-                    }
 
                     val maxAttempts = MAX_RETRIES + 1
                     val startTime = System.currentTimeMillis()
@@ -674,7 +644,6 @@ class GemmaClient
 
                             Timber.d("generateStreaming: final state on streaming:\n${aiGeneration.toJsonFormat()}")
                             emit(StreamingState.Success(aiGeneration.data))
-                            retryDelay = null
                             return@flow
                         } catch (e: Exception) {
                             if (e.isFlowCancellation()) {
@@ -715,17 +684,9 @@ class GemmaClient
                                 }
                             }
 
-                            val isNetworkError = e is java.io.IOException
                             if (currentAttempt < maxAttempts) {
                                 val delayToApply =
-                                    when {
-                                        isParsingError -> 0L
-
-                                        isNetworkError -> 2L
-
-                                        // Quick retry for DNS/Network hiccups
-                                        else -> (extractedDelay ?: RETRY_DELAY.toLong())
-                                    }
+                                    retryDelaySeconds(e, isParsingError, extractedDelay)
                                 if (delayToApply > 0) delay(delayToApply.seconds)
                             } else {
                                 if (logEnabled && BuildConfig.DEBUG) {
@@ -743,10 +704,6 @@ class GemmaClient
                                             safetyStatus = safetyStatus,
                                         ),
                                     )
-                                }
-                                if (!isParsingError) {
-                                    retryDelay = extractedDelay?.toInt()
-                                        ?: retryDelay?.let { if (it > 30) it / 2 else it + it } ?: 2
                                 }
                                 emit(StreamingState.Error(e.message ?: "Unknown error", e))
                                 return@flow

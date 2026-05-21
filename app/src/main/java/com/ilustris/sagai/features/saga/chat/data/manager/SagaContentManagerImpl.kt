@@ -245,7 +245,6 @@ class SagaContentManagerImpl
         private fun buildEvaluationContext(): NarrativeEvaluationContext {
             val milestone = milestoneUpdate.value
             return NarrativeEvaluationContext(
-                isOnboardingVisible = isOnboardingVisible.value,
                 isMilestoneActive = isMilestoneActive.value,
                 isNarrativeProcessing = isProcessingNarrative.get(),
                 hasActiveMilestoneOverlay = milestone?.isIntrusive == true,
@@ -618,11 +617,6 @@ class SagaContentManagerImpl
             if (progressionMutex.isLocked) {
                 Timber.i("requestNarrativeProgression: already in progress, queueing reevaluation.")
                 narrativeCoordinator.schedulePendingReevaluation()
-                return
-            }
-
-            if (isOnboardingVisible.value) {
-                Timber.i("requestNarrativeProgression: onboarding visible, skipping.")
                 return
             }
 

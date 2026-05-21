@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ilustris.sagai.core.media.SagaPlaybackService
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -187,35 +188,38 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Pause/resume ambient when the app backgrounds (not when Nav 3 swaps screens).
+                // Pause ambient when activity is no longer visible; restart on onStart (foreground-safe).
                 val lifecycleOwner = LocalLifecycleOwner.current
+                val ambientMusicFile by sagaThemeManager.ambientMusicFile.collectAsState()
                 var hasAmbientTrack by remember { mutableStateOf(false) }
-                DisposableEffect(lifecycleOwner) {
+                DisposableEffect(lifecycleOwner, hasAmbientTrack, ambientMusicFile) {
                     val observer =
                         object : DefaultLifecycleObserver {
-                            override fun onPause(owner: LifecycleOwner) {
+                            override fun onStop(owner: LifecycleOwner) {
                                 if (!hasAmbientTrack) return
-                                startService(
-                                    Intent(
+                                SagaPlaybackService.startSafely(
+                                    applicationContext,
+                                    SagaPlaybackService.playbackIntent(
                                         applicationContext,
-                                        com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
-                                    ).apply {
-                                        action =
-                                            com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_PAUSE
-                                    },
+                                        SagaPlaybackService.ACTION_PAUSE,
+                                    ),
                                 )
                             }
 
-                            override fun onResume(owner: LifecycleOwner) {
+                            override fun onStart(owner: LifecycleOwner) {
                                 if (!hasAmbientTrack) return
-                                startService(
-                                    Intent(
+                                val path =
+                                    ambientMusicFile
+                                        ?.takeIf { it.exists() }
+                                        ?.absolutePath
+                                        ?: return
+                                SagaPlaybackService.startSafely(
+                                    applicationContext,
+                                    SagaPlaybackService.playbackIntent(
                                         applicationContext,
-                                        com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
-                                    ).apply {
-                                        action =
-                                            com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_RESUME
-                                    },
+                                        SagaPlaybackService.ACTION_START,
+                                        path,
+                                    ),
                                 )
                             }
                         }
@@ -224,40 +228,28 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // Global Ambient Music Control
-                val ambientMusicFile by sagaThemeManager.ambientMusicFile.collectAsState()
                 LaunchedEffect(ambientMusicFile) {
                     hasAmbientTrack = ambientMusicFile != null && ambientMusicFile?.exists() == true
-                    try {
-                        val file = ambientMusicFile
-                        if (file != null && file.exists()) {
-                            Timber.d("Global music update: Playing ${file.absolutePath}")
-                            val musicIntent =
-                                Intent(
-                                    applicationContext,
-                                    com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
-                                ).apply {
-                                    action =
-                                        com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_START
-                                    putExtra(
-                                        com.ilustris.sagai.core.media.SagaPlaybackService.EXTRA_MUSIC_PATH,
-                                        file.absolutePath,
-                                    )
-                                }
-                            startService(musicIntent)
-                        } else {
-                            Timber.d("Global music update: Stopping playback")
-                            startService(
-                                Intent(
-                                    applicationContext,
-                                    com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
-                                ).apply {
-                                    action =
-                                        com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_STOP
-                                },
-                            )
-                        }
-                    } catch (e: Exception) {
-                        Timber.e(e, "Error updating global music playback")
+                    val file = ambientMusicFile
+                    if (file != null && file.exists()) {
+                        Timber.d("Global music update: Playing ${file.absolutePath}")
+                        SagaPlaybackService.startSafely(
+                            applicationContext,
+                            SagaPlaybackService.playbackIntent(
+                                applicationContext,
+                                SagaPlaybackService.ACTION_START,
+                                file.absolutePath,
+                            ),
+                        )
+                    } else {
+                        Timber.d("Global music update: Stopping playback")
+                        SagaPlaybackService.startSafely(
+                            applicationContext,
+                            SagaPlaybackService.playbackIntent(
+                                applicationContext,
+                                SagaPlaybackService.ACTION_STOP,
+                            ),
+                        )
                     }
                 }
 

@@ -4,6 +4,8 @@ import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
 import android.content.IntentFilter
 import android.media.AudioManager
 import android.os.Binder
@@ -165,5 +167,43 @@ class SagaPlaybackService : Service() {
         const val ACTION_PAUSE = "com.ilustris.sagai.ACTION_PAUSE_MUSIC"
         const val ACTION_RESUME = "com.ilustris.sagai.ACTION_RESUME_MUSIC"
         const val EXTRA_MUSIC_PATH = "EXTRA_MUSIC_PATH"
+
+        fun playbackIntent(
+            context: Context,
+            action: String,
+            musicPath: String? = null,
+        ): Intent =
+            Intent(context, SagaPlaybackService::class.java).apply {
+                this.action = action
+                musicPath?.let { putExtra(EXTRA_MUSIC_PATH, it) }
+            }
+
+        /**
+         * Starts or signals [SagaPlaybackService] only while the app process is in the foreground.
+         * Avoids [android.app.BackgroundServiceStartNotAllowedException] when the activity resumes
+         * after the process was backgrounded for a long time (e.g. screen lock).
+         */
+        fun startSafely(
+            context: Context,
+            intent: Intent,
+        ): Boolean {
+            val processStarted =
+                ProcessLifecycleOwner.get().lifecycle.currentState
+                    .isAtLeast(Lifecycle.State.STARTED)
+            if (!processStarted) {
+                Timber.i("SagaPlaybackService: skipped start — app not in foreground (action=${intent.action})")
+                return false
+            }
+            return try {
+                context.startService(intent)
+                true
+            } catch (e: IllegalStateException) {
+                Timber.w(e, "SagaPlaybackService: start blocked (action=${intent.action})")
+                false
+            } catch (e: Exception) {
+                Timber.e(e, "SagaPlaybackService: start failed (action=${intent.action})")
+                false
+            }
+        }
     }
 }

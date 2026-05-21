@@ -676,9 +676,12 @@ class ChatViewModel
                             sagaContent.mainCharacter?.let { updateCharacter(it) }
                         }
 
-                        // Only validate character updates when messages changed
                         if (messagesChanged) {
                             validateCharacterMessageUpdates(sagaContent)
+                        }
+
+                        // Re-check whenever messages change or there is no active scene (e.g. new saga).
+                        if (messagesChanged || sagaContent.getCurrentTimeLine() == null) {
                             sagaContentManager.checkNarrativeProgression(sagaContent)
                         }
 

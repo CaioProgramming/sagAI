@@ -21,10 +21,6 @@ class NarrativeCoordinator
             nextResolvedAction: NarrativeAction?,
             context: NarrativeEvaluationContext,
         ): NarrativeUiState {
-            if (context.isOnboardingVisible) {
-                return _uiState.value
-            }
-
             if (context.isNarrativeProcessing) {
                 return _uiState.value
             }

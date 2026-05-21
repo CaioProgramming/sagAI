@@ -9,8 +9,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -41,10 +43,12 @@ import kotlinx.coroutines.delay
 fun GenreMemoriesLoader(
     genresConfigs: List<Pair<Genre, GenreVisualConfig?>>,
     isLoading: Boolean,
-    message: String,
+    reasoning: String?,
     modifier: Modifier = Modifier,
 ) {
     var configs by remember { mutableStateOf(genresConfigs.shuffled()) }
+    val displayGenre = genresConfigs.firstOrNull()?.first ?: Genre.FANTASY
+    val displayConfig = genresConfigs.firstOrNull()?.second ?: GenreVisualConfig()
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -53,31 +57,49 @@ fun GenreMemoriesLoader(
         }
     }
 
-    Box(
+    Column(
         modifier =
             modifier
-                .fillMaxSize(),
-        contentAlignment = Alignment.Center,
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+        Box(
             modifier =
                 Modifier
-                    .align(Alignment.Center)
-                    .fillMaxSize()
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            userScrollEnabled = false,
+                    .weight(1f)
+                    .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
         ) {
-            items(configs, key = { it }) { genre ->
-                GenreMemoryItem(
-                    genreConfig = genre,
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .animateItem(),
-                )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                userScrollEnabled = false,
+            ) {
+                items(configs, key = { it }) { genre ->
+                    GenreMemoryItem(
+                        genreConfig = genre,
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .animateItem(),
+                    )
+                }
             }
+        }
+
+        if (isLoading) {
+            BookGenerationReasoning(
+                reasoning = reasoning,
+                genre = displayGenre,
+                visualConfig = displayConfig,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp, top = 8.dp),
+            )
         }
     }
 }
