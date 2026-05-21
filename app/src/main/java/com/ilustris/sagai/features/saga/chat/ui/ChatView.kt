@@ -228,7 +228,7 @@ fun ChatView(
             }
         }
 
-        LaunchedEffect(Unit) {
+        LaunchedEffect(sagaId, isDebug) {
             PermissionService.requestPermission(
                 activity,
                 requiredPermission,

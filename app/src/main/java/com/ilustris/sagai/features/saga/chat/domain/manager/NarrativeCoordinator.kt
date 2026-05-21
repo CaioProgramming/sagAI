@@ -65,10 +65,11 @@ class NarrativeCoordinator
                     }
 
                     is NarrativeAction.CloseTimeline -> {
+                        // Timeline content is already persisted; closing only clears the chapter pointer.
                         NarrativeUiState(
-                            phase = NarrativePhase.BackgroundProcessing(BackgroundTask.ClosingScene),
+                            phase = NarrativePhase.Playing,
                             pendingAction = null,
-                            backgroundTask = BackgroundTask.ClosingScene,
+                            backgroundTask = null,
                             lastError = null,
                             isProcessing = false,
                         )

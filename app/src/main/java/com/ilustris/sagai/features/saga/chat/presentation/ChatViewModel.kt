@@ -251,7 +251,12 @@ class ChatViewModel
                 is ChatUiAction.AdvanceNarrative -> {
                     generationJob =
                         viewModelScope.launch(Dispatchers.IO) {
-                            sagaContentManager.advanceNarrative()
+                            try {
+                                sagaContentManager.advanceNarrative()
+                            } finally {
+                                stateManager.updateGenerating(false)
+                                updateLoading(false)
+                            }
                         }
                 }
 
@@ -302,22 +307,19 @@ class ChatViewModel
                 Timber.d("initChat: Saga $sagaId already initialized, skipping.")
                 return
             }
-            stateManager.updateLoading(true)
+            generationJob?.cancel()
+            generationJob = null
+            sendJob?.cancel()
+            sendJob = null
+            sagaContentManager.resetSagaSession()
             notificationManager.clearNotifications()
             lastActId = 0
             lastChapterId = 0
             lastEventId = 0
             lastMessageCount = 0
             loadFinished = false
-            stateManager.updateState {
-                it.copy(
-                    chatState = ChatState.Loading,
-                    sagaContent = null,
-                    messages = emptyList(),
-                    characters = emptyList(),
-                )
-            }
-            sagaContentManager.content.value = null
+            stateManager.resetForNewSaga()
+            stateManager.updateLoading(true)
             enableDebugMode(isDebug)
 
             sagaObserverJob?.cancel()
@@ -650,7 +652,18 @@ class ChatViewModel
                                 sagaContent = sagaContent,
                                 messages = messages,
                                 chatState = ChatState.Success,
-                                isLoading = if (loadFinished) it.isLoading else false,
+                                isLoading =
+                                    when {
+                                        sagaContent.data.isEnded -> false
+                                        loadFinished -> it.isLoading
+                                        else -> false
+                                    },
+                                isGenerating =
+                                    when {
+                                        sagaContent.data.isEnded -> false
+                                        loadFinished -> it.isGenerating
+                                        else -> false
+                                    },
                                 activeGenre = sagaContent.data.genre,
                                 flatEvents = sagaContent.flatEvents().map { it.data },
                                 characters = sagaContent.characters,
