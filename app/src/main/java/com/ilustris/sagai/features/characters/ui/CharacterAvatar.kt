@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -30,9 +31,9 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
@@ -77,11 +78,10 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 CircleShape,
-            )
-            .clip(CircleShape)
+            ).clip(CircleShape)
             .padding(innerPadding)
             .background(
-                characterColor.darker(.3f),
+                Brush.verticalGradient(characterColor.darkerPalette(factor = .35f)),
                 CircleShape,
             ),
     ) {
@@ -94,12 +94,13 @@ fun CharacterAvatar(
                     textStyle.copy(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                         brush =
-                            Brush.verticalGradient(
-                                characterColor.darkerPalette(factor = .2f),
-                            ),
+                            MaterialTheme.colorScheme.onBackground.gradientFade(),
                     ),
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.align(Alignment.Center),
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .alpha(.4f),
             )
         }
 
@@ -113,8 +114,7 @@ fun CharacterAvatar(
                             memoryCacheKey("${character.id}:$imagePath")
                             diskCacheKey("${character.id}:$imagePath")
                         }
-                    }
-                    .crossfade(true)
+                    }.crossfade(true)
                     .build(),
             contentDescription = character.name,
             contentScale = ContentScale.Crop,
@@ -126,6 +126,7 @@ fun CharacterAvatar(
                         -> true
 
                         is AsyncImagePainter.State.Success -> false
+
                         else -> imageLoadFailed
                     }
             },
