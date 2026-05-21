@@ -133,6 +133,10 @@ fun ChatBubble(
     isSelected: Boolean = false,
 ) {
     val message = messageContent.message
+    val avatarCharacter =
+        messageContent.character?.let { embedded ->
+            characters.find { it.id == embedded.id } ?: embedded
+        }
     val sender = message.senderType
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
@@ -258,31 +262,32 @@ fun ChatBubble(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
-                        val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
+                        val avatarSize = if (avatarCharacter == null) 24.dp else 50.dp
 
                         Box(
                             Modifier
                                 .clip(CircleShape)
                                 .clickable {
-                                    messageContent.character?.let { character ->
+                                    avatarCharacter?.let { character ->
                                         onAction(
                                             MessageAction.ClickCharacter(
-                                                characters.find { it.id == character.id },
+                                                characters.find { it.id == character.id } ?: character,
                                             ),
                                         )
                                     }
                                 }
                                 .size(avatarSize),
                         ) {
-                            messageContent.character?.let { character ->
+                            avatarCharacter?.let { character ->
                                 AnimatedContent(
-                                    character,
+                                    targetState = character.image to character.id,
                                     transitionSpec = {
                                         fadeIn() + scaleIn() togetherWith scaleOut()
                                     },
+                                    label = "ChatBubbleAvatar",
                                 ) {
                                     CharacterAvatar(
-                                        it,
+                                        character,
                                         isLoading = isLoading,
                                         genre = genre,
                                         borderSize = 2.dp,

@@ -408,9 +408,45 @@ class ChatViewModel
         private fun observeCharacters(sagaId: Int) =
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase.getCharactersBySaga(sagaId).collectLatest { characters ->
-                    stateManager.updateCharacters(characters.map { it.data })
+                    onCharactersRosterUpdated(sagaId, characters.map { it.data })
                 }
             }
+
+        private suspend fun onCharactersRosterUpdated(
+            sagaId: Int,
+            characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        ) {
+            stateManager.updateCharacters(characters)
+            syncSelectedCharacterFromRoster(characters)
+
+            val saga = sagaContentManager.content.value?.takeIf { it.data.id == sagaId } ?: return
+            val rules =
+                remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: return
+            val messages = mapper.mapToActDisplayData(saga, rules)
+            stateManager.updateState {
+                it.copy(
+                    sagaContent = saga,
+                    messages = messages,
+                    characters = saga.characters,
+                )
+            }
+        }
+
+        private fun syncSelectedCharacterFromRoster(
+            characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
+        ) {
+            uiState.value.selectedCharacter?.let { selected ->
+                characters.find { it.id == selected.id }?.takeIf { it != selected }?.let {
+                    stateManager.updateCharacter(it)
+                }
+            }
+            val main = uiState.value.mainCharacter?.data ?: return
+            characters.find { it.id == main.id }?.takeIf { it != main }?.let { updated ->
+                stateManager.updateState { state ->
+                    state.copy(mainCharacter = state.mainCharacter?.copy(data = updated))
+                }
+            }
+        }
 
         private fun observeTopCharacters(sagaId: Int) =
             viewModelScope.launch(Dispatchers.IO) {
@@ -619,6 +655,7 @@ class ChatViewModel
                         if (old == null || new == null) return@distinctUntilChanged old == new
                         old.data.copy(playTimeMs = 0) == new.data.copy(playTimeMs = 0) &&
                             old.acts == new.acts &&
+                            old.characters == new.characters &&
                             old.mainCharacter == new.mainCharacter
                     }.collectLatest { sagaContent ->
 
@@ -1139,7 +1176,9 @@ class ChatViewModel
                                         ),
                                         sceneSummary = sceneSummary,
                                         candidateName = discovery.name,
-                                    ).onFailureAsync {
+                                    ).onSuccessAsync { newCharacter ->
+                                        linkMessageToCharacter(generatedMessage, newCharacter)
+                                    }.onFailureAsync {
                                         sagaThemeManager.showSnackBar(
                                             message = "Ocorreu um erro ao criar o personagem",
                                             action =
@@ -1227,15 +1266,22 @@ class ChatViewModel
                                     )
                                 },
                         )
-                    }.onSuccessAsync {
-                        messageUseCase.updateMessage(
-                            message.copy(
-                                characterId = it.id,
-                                speakerName = it.name,
-                            ),
-                        )
+                    }.onSuccessAsync { newCharacter ->
+                        linkMessageToCharacter(message, newCharacter)
                     }
             }
+        }
+
+        private suspend fun linkMessageToCharacter(
+            message: Message,
+            character: com.ilustris.sagai.features.characters.data.model.Character,
+        ) {
+            messageUseCase.updateMessage(
+                message.copy(
+                    characterId = character.id,
+                    speakerName = character.name,
+                ),
+            )
         }
 
         private fun enableDebugMode(enabled: Boolean) {

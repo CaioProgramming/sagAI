@@ -214,6 +214,7 @@ class CharacterUseCaseImpl
                 }
             }
 
+        @Deprecated("Smart zoom is deprecated and no longer scheduled from chat or avatars.")
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
             executeRequest {
                 Timber.i("createSmartZoom: creating zoom for ${character.name}")

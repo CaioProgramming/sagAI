@@ -280,7 +280,9 @@ fun Modifier.fallbackEffect(
             )
     }
     if (softFocusRadius > 0f) {
-        modifier = modifier.blur((softFocusRadius * fallbackReduction).dp)
+        // Cap blur so small targets (avatars) are not reduced to a flat color blob.
+        val blurDp = (softFocusRadius * fallbackReduction).coerceAtMost(4f)
+        modifier = modifier.blur(blurDp.dp)
     }
     return modifier
 }

@@ -478,15 +478,18 @@ fun ChatInputView(
                     var characterMenu by remember { mutableStateOf(false) }
 
                     AnimatedContent(
-                        actualCharacter,
+                        targetState =
+                            actualCharacter?.let { it.id to it.image }
+                                ?: (content.mainCharacter?.id to content.mainCharacter?.image),
                         modifier =
                             Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
                                 .clickable { characterMenu = true },
+                        label = "ChatInputAvatar",
                     ) {
                         Box {
-                            val character = it ?: content.mainCharacter
+                            val character = actualCharacter ?: content.mainCharacter
                             character?.let {
                                 CharacterAvatar(
                                     it,
@@ -533,7 +536,13 @@ fun ChatInputView(
                                                     .fillMaxWidth()
                                                     .padding(bottom = 32.dp),
                                         ) {
-                                            items(characters.size) { index ->
+                                            items(
+                                                count = characters.size,
+                                                key = { index ->
+                                                    val c = characters[index]
+                                                    "${c.id}-${c.image}"
+                                                },
+                                            ) { index ->
                                                 val character = characters[index]
                                                 Column(
                                                     horizontalAlignment = Alignment.CenterHorizontally,

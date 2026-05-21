@@ -1668,7 +1668,7 @@ fun CharactersTopIcons(
     ) {
         itemsIndexed(
             charactersToDisplay,
-            key = { index, character -> "character-$index-${character.id}-${character.name}" },
+            key = { index, character -> "character-$index-${character.id}-${character.image}" },
         ) { index, character ->
             val overlapAmountPx = with(density) { overlapAmount.toPx() }
             with(sharedTransitionScope) {

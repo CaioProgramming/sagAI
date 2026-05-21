@@ -416,8 +416,6 @@ class SagaContentManagerImpl
                                     checkNarrativeProgression(saga)
                                 }
 
-                                validateCharacters(saga)
-
                                 if (previousSaga == null) {
                                     if (saga.data.isEnded.not()) {
                                         saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
@@ -450,18 +448,6 @@ class SagaContentManagerImpl
                         emitMilestone(null)
                     }
                 }
-        }
-
-        private suspend fun validateCharacters(saga: SagaMetadata) {
-            withContext(Dispatchers.IO) {
-                characterUseCase
-                    .getCharactersBySaga(saga.data.id)
-                    .first()
-                    .filter { it.data.smartZoom == null && it.data.image.isNotEmpty() }
-                    .forEach {
-                        characterUseCase.createSmartZoom(it.data)
-                    }
-            }
         }
 
         private suspend fun checkMessageNotifications(

@@ -234,16 +234,22 @@ class MessageUseCaseImpl
                                         )
                                     }
                                 }
+                                val resolvedSpeaker =
+                                    reply.message.speakerName ?: reply.newCharacter?.name
                                 val savedMessage =
                                     messageRepository.saveMessage(
                                         reply.message.copy(
                                             sagaId = saga.data.id,
                                             timelineId = saga.getCurrentTimeLine()!!.data.id,
+                                            speakerName = resolvedSpeaker,
                                             characterId =
-                                                sagaContent
-                                                    .findCharacter(reply.message.speakerName)
-                                                    ?.data
-                                                    ?.id,
+                                                resolvedSpeaker
+                                                    ?.let { name ->
+                                                        sagaContent
+                                                            .findCharacter(name)
+                                                            ?.data
+                                                            ?.id
+                                                    },
                                             status = MessageStatus.OK,
                                             timestamp = System.currentTimeMillis(),
                                         ),
