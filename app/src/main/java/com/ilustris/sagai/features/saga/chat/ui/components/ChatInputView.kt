@@ -447,8 +447,7 @@ fun ChatInputView(
                                                     inputField,
                                                 ),
                                             )
-                                        }
-                                        .padding(8.dp),
+                                        }.padding(8.dp),
                             )
                         }
                     }
@@ -462,8 +461,7 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    )
-                    .fillMaxWidth()
+                    ).fillMaxWidth()
                     .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
@@ -496,7 +494,7 @@ fun ChatInputView(
                                     genre = genre,
                                     grainRadius = 0f,
                                     pixelation = 0f,
-                                    useFallback = true,
+                                    useFallback = false,
                                     modifier = Modifier.fillMaxSize(),
                                     borderSize = 1.dp,
                                     innerPadding = 0.dp,
@@ -552,8 +550,7 @@ fun ChatInputView(
                                                             .clickable {
                                                                 onSelectCharacter(character)
                                                                 characterMenu = false
-                                                            }
-                                                            .padding(8.dp),
+                                                            }.padding(8.dp),
                                                 ) {
                                                     CharacterAvatar(
                                                         character,
@@ -1146,8 +1143,7 @@ fun ChatInputView(
                                                                         1.dp,
                                                                         col.copy(alpha = .3f),
                                                                         CircleShape,
-                                                                    )
-                                                                    .background(
+                                                                    ).background(
                                                                         col.copy(alpha = .1f),
                                                                         CircleShape,
                                                                     )

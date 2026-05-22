@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -255,8 +256,7 @@ private fun CharacterDetailsLoaded(
                                             .sharedBounds(
                                                 rememberSharedContentState(key = "character_${character.id}_icon"),
                                                 animatedVisibilityScope,
-                                            )
-                                            .fillParentMaxHeight(.6f)
+                                            ).fillParentMaxHeight(.6f)
                                             .fillMaxSize()
                                             .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
                                                 viewModel.regenerate(
@@ -270,17 +270,21 @@ private fun CharacterDetailsLoaded(
                                             .fillMaxSize()
                                             .effectForGenre(
                                                 genre,
-                                            )
-                                            .graphicsLayer(
+                                            ).graphicsLayer(
                                                 translationY = 120f,
                                             ),
                                 ) {
-                                    Box(
-                                        Modifier
-                                            .align(Alignment.TopCenter)
-                                            .fillMaxSize()
-                                            .background(fadeGradientTop(adaptiveColor)),
-                                    ) {
+                                    Box(Modifier.fillMaxSize()) {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .fillMaxHeight(.2f)
+                                                .background(
+                                                    fadeGradientTop(
+                                                        adaptiveColor,
+                                                    ),
+                                                ),
+                                        )
                                         genre.stylisedText(
                                             text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
                                             modifier =
@@ -292,8 +296,7 @@ private fun CharacterDetailsLoaded(
                                                         Brush.verticalGradient(
                                                             characterColor.darkerPalette(),
                                                         ),
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         characterColor.shimmerize(),
                                                     ),
