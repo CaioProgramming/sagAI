@@ -43,10 +43,9 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.shouldEnsureSceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionMaterializer
@@ -55,7 +54,6 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -640,11 +638,10 @@ class SagaContentManagerImpl
                     return@withLock
                 }
 
-                val uiState =
-                    narrativeCoordinator.reevaluate(
-                        nextResolvedAction = hydrated,
-                        context = buildEvaluationContext(),
-                    )
+                narrativeCoordinator.reevaluate(
+                    nextResolvedAction = hydrated,
+                    context = buildEvaluationContext(),
+                )
 
                 if (hydrated is NarrativeAction.CloseTimeline) {
                     Timber.d("Auto-executing CloseTimeline (chapter pointer only)")
@@ -775,24 +772,27 @@ class SagaContentManagerImpl
         private fun milestoneBackgroundNotification(milestone: SagaMilestone): SagaNotificationEvent? {
             val message =
                 when (milestone) {
-                    is SagaMilestone.ChapterFinished ->
+                    is SagaMilestone.ChapterFinished -> {
                         context.getString(
                             R.string.notification_new_chapter_content,
                             milestone.chapter.title,
                         )
+                    }
 
-                    is SagaMilestone.ActFinished ->
+                    is SagaMilestone.ActFinished -> {
                         context.getString(
                             R.string.notification_new_act_content,
                             milestone.act.title,
                             milestone.act.title,
                         )
+                    }
 
-                    is SagaMilestone.NewEvent ->
+                    is SagaMilestone.NewEvent -> {
                         context.getString(
                             R.string.notification_timeline_event_content,
                             milestone.timeline.title,
                         )
+                    }
 
                     is SagaMilestone.NewCharacter -> {
                         val name =
@@ -800,7 +800,9 @@ class SagaContentManagerImpl
                         context.getString(R.string.notification_new_character_content, name)
                     }
 
-                    else -> return null
+                    else -> {
+                        return null
+                    }
                 }
             return notificationEvent(message, NotificationStyle.DEFAULT)
         }
@@ -1149,8 +1151,16 @@ class SagaContentManagerImpl
             }
 
         override fun stopProcessing() {
-            Timber.i("Stopping all narrative processing")
-            resetSagaSession()
+            Timber.i("Stopping active generation without clearing saga session")
+            objectiveEnsureJob?.cancel()
+            objectiveEnsureJob = null
+            contentReasoning.value = null
+            isProcessing.set(false)
+            setNarrativeProcessingStatus(false)
+            narrativeCoordinator.markProcessing(false)
+            if (milestoneUpdate.value is SagaMilestone.Loading) {
+                dismissMilestone()
+            }
         }
 
         override suspend fun getSagaContent(): SagaContent? = sagaHistoryUseCase.getSagaById(content.value?.data?.id).first()

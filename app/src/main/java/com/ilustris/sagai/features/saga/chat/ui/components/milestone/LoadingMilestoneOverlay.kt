@@ -1,7 +1,12 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.EaseInOutQuad
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -65,7 +70,8 @@ fun LoadingMilestoneOverlay(
                         .gradientFill(Brush.verticalGradient(genre.colorPalette()))
                         .size(
                             50.dp,
-                        ).reactiveShimmer(
+                        )
+                        .reactiveShimmer(
                             true,
                             duration = 4.seconds,
                             targetValue = 200f,
@@ -73,22 +79,27 @@ fun LoadingMilestoneOverlay(
                         ),
             )
 
-            AnimatedContent(contentReasoning) { text ->
+            AnimatedContent(contentReasoning, transitionSpec = {
+                fadeIn(tween(1000, easing = EaseInOutQuad)) togetherWith
+                    fadeOut(
+                        animationSpec = tween(500, easing = EaseInOutQuad),
+                    )
+            }) { text ->
                 text?.let {
                     Text(
                         it,
                         style =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            MaterialTheme.typography.labelMedium.copy(
                                 textAlign = TextAlign.Center,
                                 shadow =
                                     Shadow(
                                         MaterialTheme.colorScheme.primary,
-                                        blurRadius = 5f,
+                                        blurRadius = 10f,
                                     ),
                             ),
                         modifier =
                             Modifier
+                                .reactiveShimmer(true)
                                 .padding(16.dp)
                                 .fillMaxWidth(),
                     )

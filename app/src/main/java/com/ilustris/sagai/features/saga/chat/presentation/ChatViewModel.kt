@@ -281,6 +281,7 @@ class ChatViewModel
             stateManager.updateGenerating(false)
             stateManager.updateSendingPending(false)
             stateManager.updateSendingProgress(0f)
+            stateManager.updateState { it.copy(reasoningChunk = null) }
         }
 
         private fun observeMileStone() =
@@ -290,7 +291,16 @@ class ChatViewModel
                 }
             }
 
-        private var loadFinished = false
+        private enum class SagaLoadStatus {
+            Idle,
+            Loading,
+            Loaded,
+            NotFound,
+        }
+
+        private var sagaLoadStatus = SagaLoadStatus.Idle
+        private var expectedSagaId: Int? = null
+        private var hasSeenResetNull = false
 
         fun initChat(
             sagaId: String?,
@@ -311,18 +321,24 @@ class ChatViewModel
             generationJob = null
             sendJob?.cancel()
             sendJob = null
-            sagaContentManager.resetSagaSession()
+
+            sagaObserverJob?.cancel()
+            sagaObserverJob = null
+
+            expectedSagaId = sagaId.toInt()
+            sagaLoadStatus = SagaLoadStatus.Loading
+            hasSeenResetNull = false
             notificationManager.clearNotifications()
             lastActId = 0
             lastChapterId = 0
             lastEventId = 0
             lastMessageCount = 0
-            loadFinished = false
             stateManager.resetForNewSaga()
             stateManager.updateLoading(true)
             enableDebugMode(isDebug)
 
-            sagaObserverJob?.cancel()
+            sagaContentManager.resetSagaSession()
+
             sagaObserverJob = observeSaga()
 
             milestoneObserverJob?.cancel()
@@ -661,10 +677,47 @@ class ChatViewModel
 
                         Timber.tag("ChatViewModel").d("observeSaga triggered for genre: ${sagaContent?.data?.genre}")
                         if (sagaContent == null) {
-                            if (loadFinished) {
-                                updateLoading(false)
-                                stateManager.updateState { it.copy(chatState = ChatState.Error("Saga not found.")) }
+                            when (sagaLoadStatus) {
+                                SagaLoadStatus.Loading -> {
+                                    if (!hasSeenResetNull) {
+                                        hasSeenResetNull = true
+                                        return@collectLatest
+                                    }
+                                    sagaLoadStatus = SagaLoadStatus.NotFound
+                                    updateLoading(false)
+                                    stateManager.updateState {
+                                        it.copy(
+                                            chatState =
+                                                ChatState.Error(
+                                                    context.getString(R.string.saga_not_found),
+                                                ),
+                                        )
+                                    }
+                                }
+
+                                SagaLoadStatus.NotFound -> {
+                                    updateLoading(false)
+                                    stateManager.updateState {
+                                        it.copy(
+                                            chatState =
+                                                ChatState.Error(
+                                                    context.getString(R.string.saga_not_found),
+                                                ),
+                                        )
+                                    }
+                                }
+
+                                SagaLoadStatus.Loaded,
+                                SagaLoadStatus.Idle,
+                                -> {
+                                    Unit
+                                }
                             }
+                            return@collectLatest
+                        }
+
+                        val expectedId = expectedSagaId
+                        if (expectedId != null && sagaContent.data.id != expectedId) {
                             return@collectLatest
                         }
 
@@ -692,13 +745,13 @@ class ChatViewModel
                                 isLoading =
                                     when {
                                         sagaContent.data.isEnded -> false
-                                        loadFinished -> it.isLoading
+                                        sagaLoadStatus == SagaLoadStatus.Loaded -> it.isLoading
                                         else -> false
                                     },
                                 isGenerating =
                                     when {
                                         sagaContent.data.isEnded -> false
-                                        loadFinished -> it.isGenerating
+                                        sagaLoadStatus == SagaLoadStatus.Loaded -> it.isGenerating
                                         else -> false
                                     },
                                 activeGenre = sagaContent.data.genre,
@@ -724,7 +777,8 @@ class ChatViewModel
 
                         updateProgress(sagaContent)
 
-                        loadFinished = true
+                        sagaLoadStatus = SagaLoadStatus.Loaded
+                        hasSeenResetNull = false
 
                         if (messagesChanged) {
                             validateMessageStatus(sagaContent)
