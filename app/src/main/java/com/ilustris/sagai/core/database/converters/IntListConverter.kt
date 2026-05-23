@@ -2,7 +2,7 @@ package com.ilustris.sagai.core.database.converters
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.gsonTypeOfIntList
 
 object IntListConverter {
     @TypeConverter
@@ -11,8 +11,7 @@ object IntListConverter {
         if (value == null) {
             return null
         }
-        val listType = object : TypeToken<List<Int>>() {}.type
-        return Gson().fromJson(value, listType)
+        return Gson().fromJson(value, gsonTypeOfIntList())
     }
 
     @TypeConverter

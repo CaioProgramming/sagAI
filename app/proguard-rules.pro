@@ -45,7 +45,12 @@
 -keep class kotlin.reflect.** { *; }
 -dontwarn kotlin.reflect.jvm.internal.**
 
-# Gson TypeToken — prefer TypeToken.getParameterized in code; keep for legacy call sites.
+-keep class com.ilustris.sagai.features.playthrough.data.model.** { *; }
+-keep class com.ilustris.sagai.core.narrative.** { *; }
+
+# Gson core (TypeAdapter factories, etc.)
+-keep class com.google.gson.** { *; }
+-dontwarn com.google.gson.**
 -keepclassmembers class * {
  @com.google.gson.annotations.SerializedName <fields>;
  }

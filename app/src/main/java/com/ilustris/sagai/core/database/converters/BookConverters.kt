@@ -2,7 +2,7 @@ package com.ilustris.sagai.core.database.converters
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.gsonTypeOfList
 import com.ilustris.sagai.features.act.data.model.BookChapter
 
 class BookConverters {
@@ -14,7 +14,6 @@ class BookConverters {
     @TypeConverter
     fun toBookChapterList(value: String?): List<BookChapter>? {
         if (value == null) return null
-        val type = object : TypeToken<List<BookChapter>>() {}.type
-        return gson.fromJson(value, type)
+        return gson.fromJson(value, gsonTypeOfList<BookChapter>())
     }
 }

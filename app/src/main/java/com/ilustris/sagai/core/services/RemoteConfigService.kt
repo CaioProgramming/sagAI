@@ -2,7 +2,7 @@ package com.ilustris.sagai.core.services
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.gsonTypeOf
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import timber.log.Timber
 
@@ -32,10 +32,8 @@ class RemoteConfigService {
     ): T? {
         val jsonString = getString(key, logEnabled)
         return if (jsonString?.isNotEmpty() == true) {
-            val typeToken = object : TypeToken<T>() {}
-
             try {
-                Gson().fromJson<T>(jsonString, typeToken.type)
+                Gson().fromJson<T>(jsonString, gsonTypeOf<T>())
             } catch (e: Exception) {
                 Timber.tag("RemoteConfigService").e("Error parsing json for $key: ${e.message}")
                 null
