@@ -69,11 +69,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Native crash deobfuscation in Play Console (App bundle → Downloads → native debug symbols).
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
     }
+    // After bundleRelease, upload mapping.txt from:
+    // app/build/outputs/mapping/release/mapping.txt → Play Console (Deobfuscation file)
+    // and enable Crashlytics mapping upload (Firebase plugin) for Java/Kotlin stack traces.
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

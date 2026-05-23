@@ -12,9 +12,8 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Preserve line numbers for readable Crashlytics / Play Console stack traces.
+-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
@@ -26,6 +25,10 @@
 # to introspect field names/types and build JSON schemas for AI prompts.
 # Obfuscation would turn field names into a, b, c breaking prompt generation.
 -keep class com.ilustris.sagai.core.ai.model.** { *; }
+-keep class com.ilustris.sagai.core.ai.** { *; }
+
+# Gson metadata for local database backups (SOS / settings restore list).
+-keep class com.ilustris.sagai.core.database.backup.** { *; }
 
 # Use ** (not *) to match nested feature packages like:
 # saga.chat.data.model, saga.detail.data.model, characters.relations.data.model, etc.
@@ -45,6 +48,10 @@
 -keepclassmembers enum * {
  @com.google.gson.annotations.SerializedName <fields>;
  }
+
+# Gson TypeToken used by GemmaClient structured AI responses.
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken { *; }
  -keepclassmembers class * extends androidx.work.Worker {
      public <init>(android.content.Context,androidx.work.WorkerParameters);
  }

@@ -566,6 +566,9 @@
     <string name="backup_disabled_warning_message">Suas sagas não estão fazendo backup, exporte seus dados para mantê-las</string>
     <string name="export_database_button">Exportar banco de dados</string>
     <string name="import_database_button">Importar banco de dados</string>
+    <string name="import_database_failed">Não foi possível importar o banco de dados. Verifique o arquivo e tente novamente.</string>
+    <string name="import_database_success">Banco de dados importado com sucesso. Reiniciando o app…</string>
+    <string name="backup_error_restore_database_failed">Não foi possível restaurar este backup do banco de dados.</string>
     <string name="restore_database_title">Backups de banco de dados</string>
     <string name="restore_database_description">Selecione um backup para restaurar suas histórias</string>
     <string name="onboarding_skip">Pular</string>

@@ -105,10 +105,21 @@ class BackupViewModel
                     BackupUiState.Loading(
                         stringHelper.getString(R.string.backup_loading_restoring_database),
                     )
-                databaseBackupService.restoreBackup(backup)
-                delay(2.seconds)
-                _uiState.emit(BackupUiState.Dimissed)
-                context.restartApp()
+                databaseBackupService
+                    .restoreBackup(backup)
+                    .onSuccessAsync {
+                        delay(2.seconds)
+                        _uiState.emit(BackupUiState.Dimissed)
+                        context.restartApp()
+                    }.onFailureAsync {
+                        _uiState.emit(
+                            BackupUiState.Empty(
+                                stringHelper.getString(R.string.backup_error_restore_database_failed),
+                            ),
+                        )
+                        delay(3.seconds)
+                        _uiState.emit(BackupUiState.Dimissed)
+                    }
             }
         }
 
@@ -136,14 +147,14 @@ class BackupViewModel
                     }.onFailureAsync {
                         _uiState.emit(
                             BackupUiState.Empty(
-                                it.message ?: "Falha ao importar banco de dados.",
+                                stringHelper.getString(R.string.import_database_failed),
                             ),
                         )
                         delay(3.seconds)
                         _uiState.emit(BackupUiState.Dimissed)
-                }
+                    }
+            }
         }
-    }
 
         fun dismiss() {
             _uiState.value = BackupUiState.Dimissed

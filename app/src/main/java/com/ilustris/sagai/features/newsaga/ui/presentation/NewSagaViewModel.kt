@@ -6,7 +6,9 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getGenderPlaceholders
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.isFlowCancellation
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
@@ -100,7 +102,9 @@ class NewSagaViewModel
         private val newSagaUseCase: NewSagaUseCase,
         private val visualConfigService: GenreVisualConfigService,
         private val remoteConfig: RemoteConfigService,
+        private val stringHelper: StringResourceHelper,
     ) : ViewModel() {
+        private fun genericErrorMessage(): String = stringHelper.getString(R.string.unexpected_error)
         private val _feed = MutableStateFlow<List<AgenticUIComponent>>(emptyList())
         val genderPlaceholders = MutableStateFlow<GenderPlaceholderMap>(emptyMap())
         val feed = _feed.asStateFlow()
@@ -200,7 +204,7 @@ class NewSagaViewModel
                                 if (generation != echoesRequestGeneration || _isAgentLoading.value) {
                                     return@onFailureAsync
                                 }
-                                _uiError.value = it.localizedMessage
+                                _uiError.value = genericErrorMessage()
                             }
                     } catch (e: Exception) {
                         if (e.isFlowCancellation()) {
@@ -445,6 +449,7 @@ class NewSagaViewModel
 
         private fun submitUserPrompt(prompt: String) {
             if (prompt.isBlank()) return
+            _uiError.value = null
             cancelInitialEchoes()
             _universeEchoes.value = emptyList()
             _libraryBooks.value = emptyList()
@@ -526,8 +531,7 @@ class NewSagaViewModel
 
                     is AgenticFlowResponse.Error -> {
                         _currentAgentMessage.value = null
-                        _uiError.value = response.throwable.localizedMessage
-                            ?: "An unexpected cosmic alignment error occurred."
+                        _uiError.value = genericErrorMessage()
                     }
                 }
             }

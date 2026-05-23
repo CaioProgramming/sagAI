@@ -387,6 +387,9 @@
     <string name="backup_disabled_warning_message">Your sagas are not being backed up automatically. Export your database to keep your progress safe.</string>
     <string name="export_database_button">Export Database</string>
     <string name="import_database_button">Import Database</string>
+    <string name="import_database_failed">Could not import the database. Please check the file and try again.</string>
+    <string name="import_database_success">Database imported successfully. Restarting the app…</string>
+    <string name="backup_error_restore_database_failed">Could not restore this database backup.</string>
     <string name="restore_database_title">Database Backups</string>
     <string name="restore_database_description">Select a backup to restore your entire database.</string>
     <string name="restore_database_button">Restore Database</string>
