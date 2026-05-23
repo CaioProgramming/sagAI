@@ -60,25 +60,24 @@ class NarrativeCoordinator
                         )
                     }
 
-                    is NarrativeAction.CloseTimeline -> {
-                        // Timeline content is already persisted; closing only clears the chapter pointer.
-                        NarrativeUiState(
-                            phase = NarrativePhase.Playing,
-                            pendingAction = null,
-                            backgroundTask = null,
-                            lastError = null,
-                            isProcessing = false,
-                        )
-                    }
-
                     else -> {
-                        NarrativeUiState(
-                            phase = NarrativePhase.AwaitingAdvance(nextAction),
-                            pendingAction = nextAction,
-                            backgroundTask = null,
-                            lastError = null,
-                            isProcessing = false,
-                        )
+                        if (nextAction.executionMode() == NarrativeExecutionMode.Automatic) {
+                            NarrativeUiState(
+                                phase = NarrativePhase.Playing,
+                                pendingAction = null,
+                                backgroundTask = null,
+                                lastError = null,
+                                isProcessing = false,
+                            )
+                        } else {
+                            NarrativeUiState(
+                                phase = NarrativePhase.AwaitingAdvance(nextAction),
+                                pendingAction = nextAction,
+                                backgroundTask = null,
+                                lastError = null,
+                                isProcessing = false,
+                            )
+                        }
                     }
                 }
 
@@ -204,6 +203,17 @@ class NarrativeCoordinator
 
 fun NarrativeAction.executionMode(): NarrativeExecutionMode =
     when (this) {
-        is NarrativeAction.CloseTimeline -> NarrativeExecutionMode.Automatic
-        else -> NarrativeExecutionMode.UserTriggered
+        NarrativeAction.CreateAct,
+        is NarrativeAction.GenerateActIntro,
+        is NarrativeAction.CreateChapter,
+        is NarrativeAction.GenerateChapterIntro,
+        is NarrativeAction.CreateTimeline,
+        is NarrativeAction.CloseTimeline,
+        -> NarrativeExecutionMode.Automatic
+
+        is NarrativeAction.EvolveTimeline,
+        is NarrativeAction.GenerateChapter,
+        is NarrativeAction.GenerateAct,
+        is NarrativeAction.GenerateEnding,
+        -> NarrativeExecutionMode.UserTriggered
     }
