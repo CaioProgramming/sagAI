@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Base64
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
@@ -67,6 +68,10 @@ class GemmaClient
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
             const val MAX_RETRIES = 2
 
+            /** Last AI generation failure (release debugging when [generate] returns null). */
+            @Volatile
+            var lastGenerateFailure: String? = null
+
             /** Fallback when the API omits RetryInfo on rate-limit responses. */
             const val DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3L
 
@@ -83,6 +88,25 @@ class GemmaClient
                     e is java.io.IOException -> NETWORK_RETRY_SECONDS
                     else -> DEFAULT_RATE_LIMIT_RETRY_SECONDS
                 }
+
+            fun recordGenerationFailure(
+                dataType: String,
+                model: String,
+                attempt: Int,
+                maxAttempts: Int,
+                throwable: Throwable,
+            ) {
+                val summary = "${throwable.javaClass.simpleName}: ${throwable.message}"
+                lastGenerateFailure = summary
+                FirebaseCrashlytics.getInstance().apply {
+                    log("GemmaClient.generate failure")
+                    setCustomKey("ai_data_type", dataType)
+                    setCustomKey("ai_model", model)
+                    setCustomKey("ai_attempt", attempt)
+                    setCustomKey("ai_max_attempts", maxAttempts)
+                    recordException(throwable)
+                }
+            }
         }
 
         enum class ModelRequirement {
@@ -285,7 +309,7 @@ class GemmaClient
                                 Gson().fromJson<AIGeneration<T>>(
                                     cleanedJsonString,
                                     gsonTypeOfAIGeneration<T>(),
-                                )
+                                ) ?: error("Gson returned null for AIGeneration<${T::class.java.simpleName}>")
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
@@ -306,6 +330,13 @@ class GemmaClient
                             data
                         }
                     } catch (e: Exception) {
+                        GemmaClient.recordGenerationFailure(
+                            dataType = T::class.java.simpleName,
+                            model = model,
+                            attempt = currentAttempt,
+                            maxAttempts = maxAttempts,
+                            throwable = e,
+                        )
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
                                 val duration = System.currentTimeMillis() - startTime
@@ -574,7 +605,7 @@ class GemmaClient
                                 Gson().fromJson<AIGeneration<T>>(
                                     cleanedJsonString,
                                     gsonTypeOfAIGeneration<T>(),
-                                )
+                                ) ?: error("Gson returned null for AIGeneration<${T::class.java.simpleName}>")
 
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
@@ -599,6 +630,13 @@ class GemmaClient
                             if (e.isFlowCancellation()) {
                                 throw e
                             }
+                            GemmaClient.recordGenerationFailure(
+                                dataType = T::class.java.simpleName,
+                                model = model,
+                                attempt = currentAttempt,
+                                maxAttempts = maxAttempts,
+                                throwable = e,
+                            )
                             if (logEnabled) {
                                 Timber
                                     .tag(
