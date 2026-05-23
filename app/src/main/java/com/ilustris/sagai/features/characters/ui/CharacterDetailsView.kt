@@ -34,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,9 +81,12 @@ import com.ilustris.sagai.features.timeline.ui.components.TimelineCharacterAttac
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
+import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.characterDetailsHeaderScrim
+import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.fadeGradientTopOverImage
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -101,20 +105,31 @@ fun CharacterDetailsView(
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val detailData by viewModel.characterDetailData.collectAsStateWithLifecycle()
+    val genre = detailData?.sagaInfo?.genre
 
     LaunchedEffect(characterId) {
         viewModel.loadCharacterDetails(characterId)
     }
 
-    AnimatedContent(detailData, transitionSpec = {
-        slideInVertically { -it } togetherWith fadeOut()
-    }, label = "CharacterDetailsTransition") {
-        if (it != null) {
-            CharacterDetailsContent(
-                it,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
-            )
+    DisposableEffect(characterId, detailData?.sagaInfo?.id, detailData?.sagaInfo?.genre) {
+        detailData?.sagaInfo?.let { sagaInfo ->
+            viewModel.onCharacterScreenVisible(sagaInfo.id)
+            viewModel.ensureGenreTheme(sagaInfo.genre)
+        }
+        onDispose { viewModel.onCharacterScreenHidden() }
+    }
+
+    SagAITheme(genre = genre) {
+        AnimatedContent(detailData, transitionSpec = {
+            slideInVertically { -it } togetherWith fadeOut()
+        }, label = "CharacterDetailsTransition") {
+            if (it != null) {
+                CharacterDetailsContent(
+                    it,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
+            }
         }
     }
 }
@@ -224,6 +239,11 @@ private fun CharacterDetailsLoaded(
     ) { characterData ->
         var imageError by remember { mutableStateOf(false) }
         val characterColor = characterData.hexColor.hexToColor() ?: resolvedColor
+        val headerScrimColor = characterDetailsHeaderScrim(adaptiveColor, characterColor)
+        val titleGradient =
+            remember(adaptiveTextColor, characterColor) {
+                characterDetailsTitleGradient(adaptiveTextColor, characterColor)
+            }
 
         Box(
             modifier =
@@ -278,11 +298,9 @@ private fun CharacterDetailsLoaded(
                                         Box(
                                             Modifier
                                                 .fillMaxWidth()
-                                                .fillMaxHeight(.2f)
+                                                .fillMaxHeight(0.28f)
                                                 .background(
-                                                    fadeGradientTop(
-                                                        adaptiveColor,
-                                                    ),
+                                                    fadeGradientTopOverImage(headerScrimColor),
                                                 ),
                                         )
                                         genre.stylisedText(
@@ -292,11 +310,8 @@ private fun CharacterDetailsLoaded(
                                                     .align(Alignment.TopCenter)
                                                     .statusBarsPadding()
                                                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                                                    .gradientFill(
-                                                        Brush.verticalGradient(
-                                                            characterColor.darkerPalette(),
-                                                        ),
-                                                    ).reactiveShimmer(
+                                                    .gradientFill(titleGradient)
+                                                    .reactiveShimmer(
                                                         true,
                                                         characterColor.shimmerize(),
                                                     ),

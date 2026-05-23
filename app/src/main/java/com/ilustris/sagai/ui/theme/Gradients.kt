@@ -124,6 +124,37 @@ fun fadeGradientTop(tintColor: Color = MaterialTheme.colorScheme.background) =
         1f to Color.Transparent,
     )
 
+/** Scrim on top of a portrait (transparent at the top edge → tint), mirrors [fadeGradientBottom]. */
+@Composable
+fun fadeGradientTopOverImage(tintColor: Color = MaterialTheme.colorScheme.background) =
+    Brush.verticalGradient(
+        0f to Color.Transparent,
+        0.4f to tintColor.copy(alpha = 0.3f),
+        0.7f to tintColor.copy(alpha = 0.65f),
+        1f to tintColor.copy(alpha = 0.92f),
+    )
+
+fun Color.blendedWith(
+    other: Color,
+    fraction: Float,
+): Color = androidx.compose.ui.graphics.lerp(this, other, fraction)
+
+/** Header scrim mixing saga adaptive color with character accent for readable titles. */
+fun characterDetailsHeaderScrim(
+    adaptiveColor: Color,
+    characterAccent: Color,
+): Color = adaptiveColor.blendedWith(characterAccent, 0.22f)
+
+fun characterDetailsTitleGradient(
+    legibleOnScrim: Color,
+    characterAccent: Color,
+): Brush =
+    Brush.verticalGradient(
+        0f to legibleOnScrim,
+        0.45f to legibleOnScrim.blendedWith(characterAccent, 0.4f),
+        1f to legibleOnScrim,
+    )
+
 @Composable
 fun fadedGradientTopAndBottom(tintColor: Color = MaterialTheme.colorScheme.background): Brush =
     Brush.verticalGradient(

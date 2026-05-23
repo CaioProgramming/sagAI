@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toRoman
@@ -43,6 +44,7 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.shouldEnsureSceneSummary
@@ -53,8 +55,10 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionMode
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
+import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -105,6 +109,7 @@ class SagaContentManagerImpl
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
+        private val stringResourceHelper: StringResourceHelper,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -145,6 +150,7 @@ class SagaContentManagerImpl
         private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
         private var progressionCounter = 0
+        private var autoProgressionChainSteps = 0
 
         private var objectiveEnsureJob: kotlinx.coroutines.Job? = null
 
@@ -168,8 +174,34 @@ class SagaContentManagerImpl
         override suspend fun advanceNarrative() {
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
+            autoProgressionChainSteps = 0
             narrativeCoordinator.onUserAdvanceRequested(action)
             executeNarrativeAction(action, isRetry = false)
+        }
+
+        private fun handleNarrativeActionFailure(
+            action: NarrativeAction,
+            canRetry: Boolean = true,
+        ) {
+            autoProgressionChainSteps = 0
+            val userMessage = stringResourceHelper.getString(R.string.unexpected_error)
+            narrativeCoordinator.onActionCompleted(
+                action,
+                NarrativeExecutionResult.Failure(
+                    message = userMessage,
+                    canRetry = canRetry,
+                ),
+            )
+            dismissMilestone()
+            sagaThemeManager.showSnackBar(
+                userMessage,
+                stringResourceHelper.getString(R.string.try_again) to {
+                    managerScope.launch {
+                        narrativeCoordinator.clearError()
+                        executeNarrativeAction(action, isRetry = true)
+                    }
+                },
+            )
         }
 
         private suspend fun executeNarrativeAction(
@@ -197,20 +229,7 @@ class SagaContentManagerImpl
 
                     is NarrativeExecutionResult.Failure -> {
                         Timber.e("Failed narrative action: ${result.message}")
-                        emitMilestone(null)
-                        if (isRetry) {
-                            sagaThemeManager.showSnackBar(
-                                result.message,
-                                context.getString(R.string.try_again) to {
-                                    managerScope.launch {
-                                        narrativeCoordinator.clearError()
-                                        executeNarrativeAction(action, isRetry = true)
-                                    }
-                                },
-                            )
-                        } else {
-                            executeNarrativeAction(action, isRetry = true)
-                        }
+                        handleNarrativeActionFailure(action, result.canRetry)
                     }
                 }
             } catch (e: Exception) {
@@ -218,11 +237,7 @@ class SagaContentManagerImpl
                     throw e
                 }
                 Timber.e(e, "Unexpected error executing narrative action")
-                narrativeCoordinator.onActionCompleted(
-                    action,
-                    NarrativeExecutionResult.Failure(e.message ?: "Unknown error"),
-                )
-                emitMilestone(null)
+                handleNarrativeActionFailure(action, canRetry = true)
             } finally {
                 narrativeCoordinator.markProcessing(false)
                 setNarrativeProcessingStatus(false)
@@ -643,11 +658,20 @@ class SagaContentManagerImpl
                     context = buildEvaluationContext(),
                 )
 
-                if (hydrated is NarrativeAction.CloseTimeline) {
-                    Timber.d("Auto-executing CloseTimeline (chapter pointer only)")
-                    val closeAction = hydrated
-                    managerScope.launch {
-                        executeNarrativeAction(closeAction, isRetry = isRetry)
+                if (hydrated == null) {
+                    autoProgressionChainSteps = 0
+                } else if (hydrated.executionMode() == NarrativeExecutionMode.Automatic) {
+                    if (autoProgressionChainSteps >= MAX_AUTO_PROGRESSION_CHAIN_STEPS) {
+                        Timber.w(
+                            "requestNarrativeProgression: auto chain limit ($MAX_AUTO_PROGRESSION_CHAIN_STEPS) reached at ${hydrated.javaClass.simpleName}",
+                        )
+                    } else {
+                        autoProgressionChainSteps++
+                        Timber.d("Auto-executing narrative setup: ${hydrated.javaClass.simpleName}")
+                        val autoAction = hydrated
+                        managerScope.launch {
+                            executeNarrativeAction(autoAction, isRetry = isRetry)
+                        }
                     }
                 }
 
@@ -887,20 +911,13 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.CreateTimeline -> {
-                    (resultValue as? Timeline)?.let { timeline ->
-                        chapterUseCase.updateChapter(
-                            saga.currentChapterInfo!!.data.copy(
-                                currentEventId = timeline.id,
-                            ),
-                        )
-                        val objective =
-                            timelineUseCase
-                                .getTimelineObjective(content.value!!, timeline)
-                                .getSuccess()
-                        objective?.let {
-                            emitMilestone(SagaMilestone.CurrentObjective(it))
-                        } ?: dismissMilestone()
-                    } ?: dismissMilestone()
+                    val timeline = resultValue as? Timeline
+                    if (timeline != null && timeline.hasActiveSceneSummary()) {
+                        timeline.sceneSummary?.let { _sceneSummary.value = it }
+                        emitMilestone(SagaMilestone.CurrentObjective(timeline))
+                    } else {
+                        dismissMilestone()
+                    }
                 }
 
                 is NarrativeAction.EvolveTimeline -> {
@@ -1204,5 +1221,6 @@ class SagaContentManagerImpl
 
         private companion object {
             val TITLE_SPLASH_DURATION = 2.5.seconds
+            const val MAX_AUTO_PROGRESSION_CHAIN_STEPS = 5
         }
     }
