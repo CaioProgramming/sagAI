@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.settings.ui
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -185,6 +186,14 @@ class SettingsViewModel
 
         fun importDatabase(sourceUri: Uri) {
             viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        sourceUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (_: SecurityException) {
+                    // OpenDocument grants one-shot read; tree URIs may not support persistable.
+                }
                 isLoading.value = true
                 loadingMessage.emit(stringHelper.getString(R.string.backup_loading_restoring_database))
                 settingsUseCase

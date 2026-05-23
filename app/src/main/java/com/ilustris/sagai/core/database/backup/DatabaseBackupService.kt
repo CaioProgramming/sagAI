@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.database.requireSqliteDatabaseFile
+import com.ilustris.sagai.core.file.copyContentUriToFile
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withLock
@@ -132,19 +133,14 @@ class DatabaseBackupService(
 
                 val pendingImport = File(context.cacheDir, "pending_db_import.db")
                 try {
-                    context.contentResolver.openInputStream(sourceUri)
-                        ?: error("Could not read selected file")
-                        .use { input ->
-                            pendingImport.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
+                    val uriInfo = copyContentUriToFile(context, sourceUri, pendingImport)
+                    FirebaseCrashlytics.getInstance().apply {
+                        setCustomKey("import_db_bytes", pendingImport.length())
+                        uriInfo.displayName?.let { setCustomKey("import_db_name", it) }
+                        uriInfo.reportedSizeBytes?.let { setCustomKey("import_db_reported_size", it) }
+                    }
 
                     requireSqliteDatabaseFile(pendingImport)
-                    FirebaseCrashlytics.getInstance().setCustomKey(
-                        "import_db_bytes",
-                        pendingImport.length(),
-                    )
 
                     val dbFile = dbFile()
                     val walFile = File(dbFile.path + "-wal")

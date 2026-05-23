@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.file.backup.ui
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -135,6 +136,14 @@ class BackupViewModel
 
         fun importDatabase(uri: Uri) {
             viewModelScope.launch {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (_: SecurityException) {
+                    // See SettingsViewModel.importDatabase
+                }
                 _uiState.value =
                     BackupUiState.Loading(
                         stringHelper.getString(R.string.backup_loading_restoring_database),
