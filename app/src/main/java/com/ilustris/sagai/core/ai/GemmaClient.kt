@@ -5,7 +5,6 @@ import android.util.Base64
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
-import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeminiContent
@@ -41,7 +40,6 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
-import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -172,33 +170,7 @@ class GemmaClient
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
                             val structure =
                                 if (describeOutput) {
-                                    val dataType = object : TypeToken<T>() {}.type
-                                    val dataStructure =
-                                        if (T::class == String::class) {
-                                            "\"string\""
-                                        } else if (dataType is ParameterizedType && dataType.rawType == GeneratedContent::class.java) {
-                                            val innerType =
-                                                dataType.actualTypeArguments[0] as Class<*>
-                                            val innerStructure =
-                                                toJsonMap(
-                                                    innerType,
-                                                    filteredFields = filterOutputFields,
-                                                )
-                                            toJsonMap(
-                                                GeneratedContent::class.java,
-                                                fieldCustomDescriptions = listOf("data" to innerStructure),
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        } else {
-                                            toJsonMap(
-                                                T::class.java,
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        }
-                                    toJsonMap(
-                                        AIGeneration::class.java,
-                                        fieldCustomDescriptions = listOf("data" to dataStructure),
-                                    )
+                                    buildAIPromptOutputStructure<T>(filterOutputFields)
                                 } else {
                                     T::class.java.simpleName
                                 }
@@ -309,9 +281,11 @@ class GemmaClient
 
                             val cleanedJsonString =
                                 requiredText.sanitizeAndExtractJsonString(AIGeneration::class.java)
-                            val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             val aiGeneration =
-                                Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+                                Gson().fromJson<AIGeneration<T>>(
+                                    cleanedJsonString,
+                                    gsonTypeOfAIGeneration<T>(),
+                                )
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
@@ -469,33 +443,7 @@ class GemmaClient
                         try {
                             val structure =
                                 if (describeOutput) {
-                                    val dataType = object : TypeToken<T>() {}.type
-                                    val dataStructure =
-                                        if (T::class == String::class) {
-                                            "\"string\""
-                                        } else if (dataType is ParameterizedType && dataType.rawType == GeneratedContent::class.java) {
-                                            val innerType =
-                                                dataType.actualTypeArguments[0] as Class<*>
-                                            val innerStructure =
-                                                toJsonMap(
-                                                    innerType,
-                                                    filteredFields = filterOutputFields,
-                                                )
-                                            toJsonMap(
-                                                GeneratedContent::class.java,
-                                                fieldCustomDescriptions = listOf("data" to innerStructure),
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        } else {
-                                            toJsonMap(
-                                                T::class.java,
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        }
-                                    toJsonMap(
-                                        AIGeneration::class.java,
-                                        fieldCustomDescriptions = listOf("data" to dataStructure),
-                                    )
+                                    buildAIPromptOutputStructure<T>(filterOutputFields)
                                 } else {
                                     T::class.java.simpleName
                                 }
@@ -619,12 +567,14 @@ class GemmaClient
                             val fullText = accumulatedText.toString()
                             val cleanedJsonString =
                                 fullText.sanitizeAndExtractJsonString(AIGeneration::class.java)
-                            val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             if (cleanedJsonString.isEmpty()) {
                                 error("Failed to parse JSON")
                             }
                             val aiGeneration =
-                                Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+                                Gson().fromJson<AIGeneration<T>>(
+                                    cleanedJsonString,
+                                    gsonTypeOfAIGeneration<T>(),
+                                )
 
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {

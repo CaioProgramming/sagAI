@@ -40,8 +40,12 @@
 -keep class io.ktor.client.plugins.** { *; }
 -keep class io.ktor.client.features.** { *; }
 
--keepattributes Signature
--keepattributes InnerClasses
+-keepattributes Signature,InnerClasses,EnclosingMethod
+-keep class kotlin.Metadata { *; }
+-keep class kotlin.reflect.** { *; }
+-dontwarn kotlin.reflect.jvm.internal.**
+
+# Gson TypeToken — prefer TypeToken.getParameterized in code; keep for legacy call sites.
 -keepclassmembers class * {
  @com.google.gson.annotations.SerializedName <fields>;
  }

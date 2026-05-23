@@ -4,6 +4,7 @@ import com.google.firebase.ai.type.Schema
 import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
+import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
 import timber.log.Timber
 import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
@@ -85,7 +86,7 @@ fun Class<*>.toSchema(
         List::class.java, Array::class.java -> {
             val itemType =
                 this.genericInterfaces
-                    .filterIsInstance<ParameterizedType>()
+                    .mapNotNull { it as? ParameterizedType }
                     .firstOrNull()
                     ?.actualTypeArguments
                     ?.firstOrNull() as? Class<*>
@@ -263,7 +264,7 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
 fun Any.toPromptVariables(): Map<String, String> {
     val gson = GsonBuilder().create()
     val json = gson.toJson(this)
-    val mapType = object : com.google.gson.reflect.TypeToken<Map<String, Any>>() {}.type
+    val mapType = gsonTypeOfStringAnyMap()
     val rawMap: Map<String, Any> = gson.fromJson(json, mapType)
 
     return rawMap.mapValues { (_, value) ->

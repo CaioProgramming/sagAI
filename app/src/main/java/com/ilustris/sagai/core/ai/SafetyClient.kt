@@ -76,10 +76,10 @@ class SafetyClient
 
                 val sanitizedJson = responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                 val result =
-                    Gson().fromJson(
+                    Gson().fromJson<AIGeneration<SafeGuard>>(
                         sanitizedJson,
-                        object : TypeToken<AIGeneration<SafeGuard>>() {}.type,
-                    ) as AIGeneration<SafeGuard>
+                        TypeToken.getParameterized(AIGeneration::class.java, SafeGuard::class.java).type,
+                    )
 
                 val safetyResult = result.data
                 val duration = System.currentTimeMillis() - startTime
