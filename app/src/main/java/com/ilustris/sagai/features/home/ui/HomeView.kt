@@ -115,6 +115,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
+/** Theme and ambient audio are owned by [com.ilustris.sagai.MainActivity] + [com.ilustris.sagai.core.theme.SagaThemeManager], not this screen. */
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -124,6 +125,7 @@ fun HomeView(
     navToProfile: () -> Unit,
     navToFAQ: () -> Unit,
     navToAuditLogs: () -> Unit,
+    navToPlaythrough: () -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -203,6 +205,10 @@ fun HomeView(
                                             },
                                             navToFAQ = navToFAQ,
                                             navToAuditLogs = navToAuditLogs,
+                                            navToPlaythrough = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                navToPlaythrough()
+                                            },
                                             sharedTransitionScope = sharedTransitionScope,
                                             animatedVisibilityScope = animatedVisibilityScope,
                                             onOpenPremiumOnboarding = {

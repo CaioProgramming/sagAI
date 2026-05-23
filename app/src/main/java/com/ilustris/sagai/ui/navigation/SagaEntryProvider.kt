@@ -36,6 +36,7 @@ fun createSagaEntryProvider(
             navToSaga = { sagaId, isDebug -> navigator.navigate(ChatKey(sagaId, isDebug)) },
             navToFAQ = { navigator.navigate(FAQKey) },
             navToAuditLogs = { navigator.navigate(AuditLogsKey) },
+            navToPlaythrough = { navigator.navigate(PlaythroughKey) },
             padding = padding,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,

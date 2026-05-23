@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getGenderPlaceholders
+import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
@@ -24,6 +25,7 @@ import com.ilustris.sagai.features.newsaga.data.usecase.SagaCreationState
 import com.ilustris.sagai.ui.navigation.ChatKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -127,9 +129,6 @@ class NewSagaViewModel
         private val _isAgentLoading = MutableStateFlow(false)
         val isAgentLoading = _isAgentLoading.asStateFlow()
 
-        private val _isEchoLoading = MutableStateFlow(false)
-        val isEchoLoading = _isEchoLoading.asStateFlow()
-
         private val _libraryBooks =
             MutableStateFlow<List<Pair<SagaBook, GenreVisualConfig>>>(emptyList())
         val libraryBooks = _libraryBooks.asStateFlow()
@@ -162,30 +161,55 @@ class NewSagaViewModel
 
         private var assistJob: kotlinx.coroutines.Job? = null
 
+        private var initialEchoesJob: Job? = null
+
+        /** Bumped when the user starts creation so late echo responses are ignored. */
+        private var echoesRequestGeneration = 0
+
         init {
             preFetchVisualConfigs()
             fetchGenderPlaceholders()
             requestInitialEchoes()
         }
 
+        private fun cancelInitialEchoes() {
+            echoesRequestGeneration++
+            initialEchoesJob?.cancel()
+            initialEchoesJob = null
+        }
+
         private fun requestInitialEchoes() {
-            _isEchoLoading.value = true
-            viewModelScope.launch {
-                newSagaUseCase
-                    .provideInitialEchoes()
-                    .onSuccessAsync {
-                        _universeEchoes.value =
-                            it.suggestions.mapNotNull { echo ->
-                                val config = visualConfigService.getVisualConfig(echo.genre)
-                                if (config != null) echo to config else null
+            val generation = echoesRequestGeneration
+            initialEchoesJob?.cancel()
+            initialEchoesJob =
+                viewModelScope.launch {
+                    try {
+                        newSagaUseCase
+                            .provideInitialEchoes()
+                            .onSuccessAsync {
+                                if (generation != echoesRequestGeneration || _isAgentLoading.value) {
+                                    return@onSuccessAsync
+                                }
+                                _universeEchoes.value =
+                                    it.suggestions.mapNotNull { echo ->
+                                        val config = visualConfigService.getVisualConfig(echo.genre)
+                                        if (config != null) echo to config else null
+                                    }
+                                _currentAgentMessage.value = it.message
+                            }.onFailureAsync {
+                                if (generation != echoesRequestGeneration || _isAgentLoading.value) {
+                                    return@onFailureAsync
+                                }
+                                _uiError.value = it.localizedMessage
                             }
-                        _currentAgentMessage.value = it.message
-                        _isEchoLoading.value = false
-                    }.onFailure {
-                        _uiError.value = it.localizedMessage
-                        _isEchoLoading.value = false
+                    } catch (e: Exception) {
+                        if (e.isFlowCancellation()) {
+                            Timber.d("Initial universe echoes cancelled — prioritizing user prompt")
+                            return@launch
+                        }
+                        throw e
                     }
-            }
+                }
         }
 
         private fun fetchGenderPlaceholders() {
@@ -421,6 +445,7 @@ class NewSagaViewModel
 
         private fun submitUserPrompt(prompt: String) {
             if (prompt.isBlank()) return
+            cancelInitialEchoes()
             _universeEchoes.value = emptyList()
             _libraryBooks.value = emptyList()
             _selectedBook.value = null

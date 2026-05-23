@@ -32,7 +32,7 @@ interface ChatNotificationManager {
         largeIcon: Bitmap?,
     )
 
-    fun sendSnackBarNotification(
+    fun deliverSystemNotification(
         saga: SagaMetadata,
         event: SagaNotificationEvent,
     )

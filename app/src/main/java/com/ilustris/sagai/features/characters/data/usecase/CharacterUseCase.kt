@@ -52,6 +52,10 @@ interface CharacterUseCase {
         candidateName: String? = null,
     ): Flow<StreamingState<GeneratedContent<Character>>>
 
+    @Deprecated(
+        message = "Smart zoom is deprecated and no longer scheduled from chat or avatars.",
+        level = DeprecationLevel.WARNING,
+    )
     suspend fun createSmartZoom(character: Character): RequestResult<Unit>
 
     suspend fun generateCharactersUpdate(

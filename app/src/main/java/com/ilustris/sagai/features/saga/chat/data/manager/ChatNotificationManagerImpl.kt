@@ -51,15 +51,8 @@ class ChatNotificationManagerImpl
             saga: SagaContent,
             message: MessageContent,
         ) {
-            if (appLifecycleManager.isAppInForeground.value) {
-                Timber.i(
-                    "App is in foreground. Skipping notification for message: ${message.message.text}",
-                )
-                return
-            }
-
             Timber.i(
-                "App is in background. Proceeding with notification for message: ${message.message.text}",
+                "Delivering system message notification: ${message.message.text}",
             )
 
             val characterIcon =
@@ -85,16 +78,7 @@ class ChatNotificationManagerImpl
             smallIcon: Bitmap?,
             largeIcon: Bitmap?,
         ) {
-            if (appLifecycleManager.isAppInForeground.value) {
-                Timber.i(
-                    "App is in foreground. Skipping notification for: $title",
-                )
-                return
-            }
-
-            Timber.i(
-                "App is in background. Proceeding with notification: $title",
-            )
+            Timber.i("Delivering system notification: $title")
 
             val formatChatDeepLink = "saga://chat/${saga.id}/false"
 
@@ -171,37 +155,32 @@ class ChatNotificationManagerImpl
 
         private fun chatDeepLink(sagaId: String): String = "saga://chat/$sagaId/false"
 
-        override fun sendSnackBarNotification(
+        override fun deliverSystemNotification(
             saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
             event: SagaNotificationEvent,
         ) {
-            if (appLifecycleManager.isAppInForeground.value) {
-                Timber.i("App is in foreground. Skipping background notification.")
-                return
-            }
-
             Timber.i(
-                "App is in background. Sending notification with style: ${event.style}",
+                "Delivering system notification (${event.style}) for saga ${event.sagaId}",
             )
 
-            val formatChatDeepLink = "saga://chat/${saga.data.id}/false"
+            val formatChatDeepLink = "saga://chat/${event.sagaId}/false"
 
             when (event.style) {
                 NotificationStyle.CHAT -> {
-                    /*sendChatNotification(
+                    sendChatNotification(
                         saga = saga.data,
                         title = saga.data.title,
+                        character = null,
                         message = event.message,
-                        largeIcon = event.largeIcon,
-                        pendingIntent = createPendingIntent(formatChatDeepLink),
-                    )*/
+                        largeIcon = event.icon ?: event.largeIcon,
+                    )
                 }
 
                 NotificationStyle.DEFAULT -> {
                     sendToNotificationChannel(
-                        title = saga.data.title,
+                        title = event.sagaTitle,
                         content = event.message,
-                        largeIcon = event.largeIcon,
+                        largeIcon = event.largeIcon ?: event.icon,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
                         genreColor = saga.data.genre.resolveColor(null),
                         smallIconResId = R.drawable.ic_spark,

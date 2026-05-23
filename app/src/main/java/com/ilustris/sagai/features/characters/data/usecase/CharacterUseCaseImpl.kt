@@ -214,6 +214,7 @@ class CharacterUseCaseImpl
                 }
             }
 
+        @Deprecated("Smart zoom is deprecated and no longer scheduled from chat or avatars.")
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
             executeRequest {
                 Timber.i("createSmartZoom: creating zoom for ${character.name}")
@@ -358,6 +359,7 @@ class CharacterUseCaseImpl
                         .synthesizeReasoning(
                             request,
                             "Bringing character to the story...",
+                            conversationStyle = genreConfigService.conversationBlueprint(sagaContent.data.genre),
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val newCharacter = state.data.data

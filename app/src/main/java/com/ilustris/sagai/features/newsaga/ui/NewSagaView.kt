@@ -1,9 +1,10 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 
 package com.ilustris.sagai.features.newsaga.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
@@ -78,8 +79,8 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
-import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
+import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.FluidGradient
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -107,8 +108,8 @@ fun NewSagaView(
     val currentConfig by viewModel.currentConfig.collectAsStateWithLifecycle()
     val genderPlaceholders by viewModel.genderPlaceholders.collectAsStateWithLifecycle()
     val universeEchoes by viewModel.universeEchoes.collectAsStateWithLifecycle()
-    val isEchoLoading by viewModel.isEchoLoading.collectAsStateWithLifecycle()
     var userInput by remember { mutableStateOf("") }
+    val defaultCreationMessage = stringResource(R.string.saga_description_subtitle)
     val genreConfigs by viewModel.genresVisuals.collectAsStateWithLifecycle()
     val libraryBooks by viewModel.libraryBooks.collectAsStateWithLifecycle()
     val uiError by viewModel.uiError.collectAsStateWithLifecycle()
@@ -131,34 +132,13 @@ fun NewSagaView(
     ) {
         val currentPalette = lockedSaga?.genre?.colorPalette() ?: holographicGradient
 
-        AnimatedContent(isEchoLoading) {
-            if (it) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    with(sharedTransitionScope) {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            contentDescription = "Loading",
-                            modifier =
-                                Modifier
-                                    .size(100.dp)
-                                    .sharedElement(
-                                        rememberSharedContentState("spark_icon"),
-                                        animatedVisibilityScope,
-                                    ).gradientFill(Brush.verticalGradient(holographicGradient))
-                                    .reactiveShimmer(true)
-                                    .levitate()
-                                    .divineAura(),
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background)
-                            .imePadding(),
-                ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .imePadding(),
+        ) {
                     AnimatedContent(
                         currentPalette,
                         label = "GradientTransition",
@@ -200,105 +180,107 @@ fun NewSagaView(
                             )
                         }
 
-                        AnimatedVisibility(libraryBooks.isNotEmpty() && isSaving.not()) {
-                            val filteredBooks =
-                                if (isSaving) {
-                                    libraryBooks.filter { it.first.draft.id == lockedSaga?.id }
-                                } else {
-                                    libraryBooks
-                                }
-                            LibraryPager(
-                                books = filteredBooks,
-                                lockedSaga = lockedSaga,
-                                lockedCharacter = lockedCharacter,
-                                isAgentLoading = isAgentLoading || isSaving,
-                                currentAgentMessage = currentAgentMessage,
-                                onAction = viewModel::onAgenticAction,
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            isSaving,
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                            enter =
-                                fadeIn(tween(800)) +
-                                    scaleIn(
-                                        tween(
-                                            400,
-                                            easing = FastOutLinearInEasing,
-                                        ),
-                                    ),
-                            exit = scaleOut(),
-                        ) {
-                            val actualBook =
-                                libraryBooks.firstOrNull { it.first.draft.id == lockedSaga?.id }
-                            actualBook?.let {
-                                CosmicBook(
-                                    book = it.first,
-                                    visualConfig = it.second,
-                                    isOpened = true,
-                                    isLoading = true,
-                                    reasoning = currentAgentMessage,
-                                    onToggle = {},
-                                    onAction = {},
-                                    modifier =
-                                        Modifier
-                                            .padding(50.dp)
-                                            .levitate()
-                                            .divineAura()
-                                            .chromaticAberration(),
-                                )
-                            }
-                        }
-
-                        AnimatedVisibility(
-                            isAgentLoading && libraryBooks.isEmpty(),
+                        Box(
                             modifier =
                                 Modifier
-                                    .fillMaxWidth()
-                                    .fillMaxHeight(.6f),
+                                    .weight(1f)
+                                    .fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            GenreMemoriesLoader(
-                                isLoading = isAgentLoading,
-                                message = emptyString(),
-                                genresConfigs = genreConfigs ?: emptyList(),
-                            )
-                        }
+                            when {
+                                isSaving -> {
+                                    val actualBook =
+                                        libraryBooks.firstOrNull {
+                                            it.first.draft.id == lockedSaga?.id
+                                        }
+                                    actualBook?.let { entry ->
+                                        with(sharedTransitionScope) {
+                                            NewSagaBookFocus(
+                                                book = entry.first,
+                                                visualConfig = entry.second,
+                                                reasoning = currentAgentMessage,
+                                                isOpened = true,
+                                                isLoading = true,
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                sharedContentKey = "new-saga-book-${entry.first.draft.id}",
+                                                modifier = Modifier.fillMaxSize(),
+                                            )
+                                        }
+                                    }
+                                }
 
-                        AnimatedContent(currentAgentMessage, transitionSpec = {
-                            fadeIn() + slideInVertically { it / 2 } togetherWith fadeOut() + slideOutVertically { -it / 2 }
-                        }, modifier = Modifier.fillMaxWidth()) { message ->
-                            message?.let {
-                                Text(
-                                    text = it,
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            shadow =
-                                                Shadow(
-                                                    Color.White,
-                                                    blurRadius = 10f,
-                                                ),
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth()
-                                            .levitate(isAgentLoading),
-                                    textAlign = TextAlign.Center,
-                                )
+                                libraryBooks.isNotEmpty() -> {
+                                    LibraryPager(
+                                        books = libraryBooks,
+                                        lockedSaga = lockedSaga,
+                                        lockedCharacter = lockedCharacter,
+                                        isAgentLoading = isAgentLoading,
+                                        currentAgentMessage = currentAgentMessage,
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        onAction = viewModel::onAgenticAction,
+                                    )
+                                }
+
+                                isAgentLoading -> {
+                                    GenreMemoriesLoader(
+                                        isLoading = isAgentLoading,
+                                        reasoning = currentAgentMessage,
+                                        genresConfigs = genreConfigs ?: emptyList(),
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+
+                                else -> {
+                                    Column(
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center,
+                                    ) {
+                                        AnimatedContent(
+                                            targetState = currentAgentMessage ?: defaultCreationMessage,
+                                            transitionSpec = {
+                                                fadeIn() + slideInVertically { it / 2 } togetherWith
+                                                    fadeOut() + slideOutVertically { -it / 2 }
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) { message ->
+                                            Text(
+                                                text = message,
+                                                style =
+                                                    MaterialTheme.typography.bodyMedium.copy(
+                                                        shadow =
+                                                            Shadow(
+                                                                Color.White,
+                                                                blurRadius = 10f,
+                                                            ),
+                                                    ),
+                                                modifier =
+                                                    Modifier
+                                                        .fillMaxWidth()
+                                                        .levitate(isAgentLoading),
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+
+                                        uiError?.let {
+                                            Text(
+                                                text = it,
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                modifier = Modifier.padding(top = 12.dp),
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
-
-                        uiError?.let {
-                            Text(
-                                text = it,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(16.dp),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
                     }
+
                     Box(
                         modifier =
                             Modifier
@@ -380,8 +362,6 @@ fun NewSagaView(
                             }
                         }
                     }
-                }
-            }
         }
     }
 
@@ -427,7 +407,7 @@ fun PromptBar(
     isLoading: Boolean,
     genre: Genre?,
 ) {
-    val shape = sagaShape() ?: MaterialTheme.shapes.extraLarge
+    val shape = MaterialTheme.shapes.extraLarge
     val themeBrush =
         Brush.horizontalGradient(genre?.colorPalette() ?: holographicGradient)
 

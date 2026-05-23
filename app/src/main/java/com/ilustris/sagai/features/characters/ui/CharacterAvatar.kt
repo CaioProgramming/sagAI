@@ -1,22 +1,24 @@
 package com.ilustris.sagai.features.characters.ui
-import androidx.compose.animation.core.animateFloatAsState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -24,17 +26,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
+
+/** Avatars are small; genre shaders / heavy blur destroy legibility on tiny targets. */
+private val GenreEffectMaxSize = 120.dp
 
 @Composable
 fun CharacterAvatar(
@@ -62,22 +68,10 @@ fun CharacterAvatar(
             ),
         )
 
-    val smartZoom = character.smartZoom
+    val imagePath = character.image.trim()
+    var imageLoadFailed by remember(character.id, imagePath) { mutableStateOf(imagePath.isBlank()) }
 
-    val animatedScale by animateFloatAsState(
-        targetValue = smartZoom?.scale ?: 1f,
-        label = "SmartZoomScale",
-    )
-    val animatedTranslationX by animateFloatAsState(
-        targetValue = smartZoom?.translationX ?: 0f,
-        label = "SmartZoomTranslationX",
-    )
-    val animatedTranslationY by animateFloatAsState(
-        targetValue = smartZoom?.translationY ?: 0f,
-        label = "SmartZoomTranslationY",
-    )
-
-    Box(
+    BoxWithConstraints(
         modifier
             .reactiveShimmer(isLoading, themeShimmer())
             .border(
@@ -87,53 +81,72 @@ fun CharacterAvatar(
             ).clip(CircleShape)
             .padding(innerPadding)
             .background(
-                characterColor.darker(.3f),
+                Brush.verticalGradient(characterColor.darkerPalette(factor = .35f)),
                 CircleShape,
             ),
     ) {
-        androidx.compose.material3.Text(
-            character.name.first().uppercase(),
-            style =
-                textStyle.copy(
-                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                    brush =
-                        Brush.verticalGradient(
-                            characterColor.darkerPalette(factor = .2f),
-                        ),
-                ),
-            fontWeight = FontWeight.Black,
-            modifier = Modifier.align(Alignment.Center),
-        )
+        val skipGenreEffect = maxWidth < GenreEffectMaxSize && maxHeight < GenreEffectMaxSize
+
+        if (imageLoadFailed) {
+            Text(
+                character.name.first().uppercase(),
+                style =
+                    textStyle.copy(
+                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                        brush =
+                            MaterialTheme.colorScheme.onBackground.gradientFade(),
+                    ),
+                fontWeight = FontWeight.Black,
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .alpha(.4f),
+            )
+        }
 
         AsyncImage(
             model =
                 ImageRequest
                     .Builder(LocalContext.current)
-                    .data(character.image)
-                    .crossfade(true)
+                    .data(imagePath.takeIf { it.isNotBlank() })
+                    .apply {
+                        if (imagePath.isNotBlank()) {
+                            memoryCacheKey("${character.id}:$imagePath")
+                            diskCacheKey("${character.id}:$imagePath")
+                        }
+                    }.crossfade(true)
                     .build(),
             contentDescription = character.name,
             contentScale = ContentScale.Crop,
+            onState = { state ->
+                imageLoadFailed =
+                    when (state) {
+                        is AsyncImagePainter.State.Error,
+                        is AsyncImagePainter.State.Empty,
+                        -> true
+
+                        is AsyncImagePainter.State.Success -> false
+
+                        else -> imageLoadFailed
+                    }
+            },
             modifier =
                 Modifier
+                    .fillMaxSize()
                     .clip(CircleShape)
-                    .background(
-                        characterColor.copy(alpha = 0.4f),
-                        CircleShape,
-                    ).fillMaxSize()
-                    .effectForGenre(
-                        genre,
-                        useFallBack = useFallback,
-                        focusRadius = softFocusRadius,
-                        customGrain = grainRadius,
-                        pixelSize = pixelation,
-                    ).graphicsLayer {
-                        scaleX = animatedScale
-                        scaleY = animatedScale
-                        translationX = animatedTranslationX * size.width
-                        translationY = animatedTranslationY * size.height
-                        transformOrigin = TransformOrigin.Center
-                    }.clipToBounds(),
+                    .then(
+                        if (!skipGenreEffect) {
+                            Modifier.effectForGenre(
+                                genre,
+                                useFallBack = useFallback,
+                                focusRadius = softFocusRadius,
+                                customGrain = grainRadius,
+                                pixelSize = pixelation,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    ),
         )
     }
 }

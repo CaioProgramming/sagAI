@@ -28,8 +28,4 @@ class AppLifecycleManagerImpl
         override fun onStop(owner: LifecycleOwner) {
             _isAppInForeground.value = false
         }
-
-        override fun onPause(owner: LifecycleOwner) {
-            _isAppInForeground.value = false
-        }
     }

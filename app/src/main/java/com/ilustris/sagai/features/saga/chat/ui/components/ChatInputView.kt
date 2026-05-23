@@ -447,8 +447,7 @@ fun ChatInputView(
                                                     inputField,
                                                 ),
                                             )
-                                        }
-                                        .padding(8.dp),
+                                        }.padding(8.dp),
                             )
                         }
                     }
@@ -462,8 +461,7 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    )
-                    .fillMaxWidth()
+                    ).fillMaxWidth()
                     .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
@@ -478,22 +476,25 @@ fun ChatInputView(
                     var characterMenu by remember { mutableStateOf(false) }
 
                     AnimatedContent(
-                        actualCharacter,
+                        targetState =
+                            actualCharacter?.let { it.id to it.image }
+                                ?: (content.mainCharacter?.id to content.mainCharacter?.image),
                         modifier =
                             Modifier
                                 .size(32.dp)
                                 .clip(CircleShape)
                                 .clickable { characterMenu = true },
+                        label = "ChatInputAvatar",
                     ) {
                         Box {
-                            val character = it ?: content.mainCharacter
+                            val character = actualCharacter ?: content.mainCharacter
                             character?.let {
                                 CharacterAvatar(
                                     it,
                                     genre = genre,
                                     grainRadius = 0f,
                                     pixelation = 0f,
-                                    useFallback = true,
+                                    useFallback = false,
                                     modifier = Modifier.fillMaxSize(),
                                     borderSize = 1.dp,
                                     innerPadding = 0.dp,
@@ -533,7 +534,13 @@ fun ChatInputView(
                                                     .fillMaxWidth()
                                                     .padding(bottom = 32.dp),
                                         ) {
-                                            items(characters.size) { index ->
+                                            items(
+                                                count = characters.size,
+                                                key = { index ->
+                                                    val c = characters[index]
+                                                    "${c.id}-${c.image}"
+                                                },
+                                            ) { index ->
                                                 val character = characters[index]
                                                 Column(
                                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -543,8 +550,7 @@ fun ChatInputView(
                                                             .clickable {
                                                                 onSelectCharacter(character)
                                                                 characterMenu = false
-                                                            }
-                                                            .padding(8.dp),
+                                                            }.padding(8.dp),
                                                 ) {
                                                     CharacterAvatar(
                                                         character,
@@ -1137,8 +1143,7 @@ fun ChatInputView(
                                                                         1.dp,
                                                                         col.copy(alpha = .3f),
                                                                         CircleShape,
-                                                                    )
-                                                                    .background(
+                                                                    ).background(
                                                                         col.copy(alpha = .1f),
                                                                         CircleShape,
                                                                     )

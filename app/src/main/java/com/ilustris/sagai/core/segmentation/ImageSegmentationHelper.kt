@@ -51,6 +51,10 @@ class ImageSegmentationHelper(
             bitmap to segmenter.process(image).await()?.foregroundBitmap!!
         }
 
+    @Deprecated(
+        message = "Smart zoom is deprecated; UI uses plain image crop for character avatars.",
+        level = DeprecationLevel.WARNING,
+    )
     suspend fun calculateSmartZoom(url: String): RequestResult<SmartZoom?> =
         executeRequest {
             if (url.isBlank()) {

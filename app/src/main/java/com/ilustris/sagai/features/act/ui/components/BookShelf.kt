@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +46,7 @@ import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
-import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.components.BookGenerationReasoning
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.levitate
@@ -159,55 +157,6 @@ private fun SharedTransitionScope.GeneratingBookFocus(
             visualConfig = visualConfig,
             modifier = Modifier.padding(top = 24.dp),
         )
-    }
-}
-
-@Composable
-private fun BookGenerationReasoning(
-    reasoning: String?,
-    genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
-    visualConfig: GenreVisualConfig,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Icon(
-            painter = painterResource(genre.icon),
-            contentDescription = null,
-            tint = genre.resolveColor(visualConfig),
-            modifier =
-                Modifier
-                    .padding(bottom = 4.dp)
-                    .genreVfx(genre),
-        )
-
-        AnimatedContent(
-            targetState = reasoning,
-            label = "BookGenerationReasoning",
-            transitionSpec = {
-                fadeIn(tween(300)) togetherWith fadeOut(tween(200))
-            },
-        ) { text ->
-            if (text != null) {
-                Text(
-                    text = text,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                            lineHeight = 22.sp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f),
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .reactiveShimmer(true, genre.shimmerColors(visualConfig)),
-                )
-            }
-        }
     }
 }
 

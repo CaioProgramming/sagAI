@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
@@ -34,6 +35,7 @@ class SagaDetailViewModel
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val sagaThemeManager: SagaThemeManager,
+        private val sagaImmersiveSession: SagaImmersiveSession,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
@@ -54,6 +56,9 @@ class SagaDetailViewModel
         private var cachedSegmentedImage: Pair<Bitmap, Bitmap>? = null
         private var cachedIconPath: String? = null
         private var initialSectionJob: kotlinx.coroutines.Job? = null
+
+        /** One entry SFX per detail visit — cleared when the screen is hidden. */
+        private var pendingEntryVfxSagaId: Int? = null
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -118,7 +123,16 @@ class SagaDetailViewModel
                     sagaDetailUseCase.getSagaResume(sagaId).collectLatest { resume ->
                         resume.let { data ->
                             this@SagaDetailViewModel.sagaResume.value = data
-                            sagaThemeManager.updateTheme(data.saga.genre, playEntryVfx = true)
+                            if (sagaImmersiveSession.isOwnerOnTop("saga_detail")) {
+                                val playEntryVfx = pendingEntryVfxSagaId == sagaId
+                                sagaThemeManager.updateTheme(
+                                    data.saga.genre,
+                                    playEntryVfx = playEntryVfx,
+                                )
+                                if (playEntryVfx) {
+                                    pendingEntryVfxSagaId = null
+                                }
+                            }
 
                             loadInitialSection()
                             detailDrawer.value =
@@ -171,10 +185,26 @@ class SagaDetailViewModel
             }
         }
 
+        fun onDetailScreenVisible(sagaId: Int) {
+            sagaImmersiveSession.push("saga_detail", sagaId)
+            pendingEntryVfxSagaId = sagaId
+        }
+
+        fun onDetailScreenHidden() {
+            sagaImmersiveSession.pop("saga_detail")
+            pendingEntryVfxSagaId = null
+        }
+
         private fun launchIntroSequence() {
             viewModelScope.launch {
                 delay(2.seconds)
                 showIntro.value = false
             }
+        }
+
+        override fun onCleared() {
+            pendingEntryVfxSagaId = null
+            super.onCleared()
+            sagaImmersiveSession.pop("saga_detail")
         }
     }

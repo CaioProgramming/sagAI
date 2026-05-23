@@ -102,7 +102,7 @@ fun ThinkingText(
                                 textAlpha = 1f
                                 onRevealed()
                             },
-                    starColor = MaterialTheme.colorScheme.secondary,
+                    starColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = starAlpha),
                     starCount = text.length,
                 )
             }

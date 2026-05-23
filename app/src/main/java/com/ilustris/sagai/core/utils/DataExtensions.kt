@@ -818,6 +818,28 @@ fun Long.formatFileSize(): String {
     }
 }
 
+/** Default cap for long descriptive strings (backstory, summaries, etc.). */
+private const val AI_STRING_TRUNCATE_DEFAULT = 500
+
+/** Chat message bodies — must not clip below UI `chat_input_limit` (default 2000). */
+private const val AI_MESSAGE_TEXT_MAX = 8_192
+
+private fun truncateForAi(
+    fieldName: String,
+    value: String,
+): String {
+    val limit =
+        when (fieldName) {
+            "text" -> AI_MESSAGE_TEXT_MAX
+            else -> AI_STRING_TRUNCATE_DEFAULT
+        }
+    return if (value.length > limit) {
+        "${value.take(limit - 3)}..."
+    } else {
+        value
+    }
+}
+
 fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
     if (this == null) return ""
     if (this is String || this is Number || this is Boolean || this is Enum<*>) {
@@ -855,13 +877,7 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                         }
                     }
 
-                    is String -> {
-                        if (value.length > 500) {
-                            "${value.take(497)}..."
-                        } else {
-                            value
-                        }
-                    }
+                    is String -> truncateForAi(field.name, value)
 
                     is Enum<*> -> {
                         value.toString()

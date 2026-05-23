@@ -21,6 +21,7 @@ import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import javax.inject.Inject
@@ -181,31 +182,26 @@ class NarrativeActionExecutorImpl
             val saga = environment.getSagaMetadata() ?: error("Saga not available")
             environment.dismissMilestone()
             var generated: GeneratedContent<Chapter>? = null
-            val contextString = "Synthesizing chapter progression and weaving plot threads..."
-            val style = genreConfigService.conversationBlueprint(saga.data.genre)
-            reasoningSynthesizerService
-                .synthesizeReasoning(
-                    sourceFlow = chapterUseCase.synthesizeChapterEvolutionStream(chapter.data.id),
-                    context = contextString,
-                    conversationStyle = style,
-                    genre = saga.data.genre.name,
-                ).collect { state ->
-                    when (state) {
-                        is StreamingState.Reasoning -> {
-                            environment.onReasoningChunk(state.chunk)
-                        }
+            chapterUseCase.synthesizeChapterEvolutionStream(chapter.data.id).collect { state ->
+                when (state) {
+                    is StreamingState.Reasoning -> {
+                        environment.onReasoningChunk(state.chunk)
+                    }
 
-                        is StreamingState.Success -> {
-                            generated = state.data
-                            environment.onReasoningChunk(null)
-                        }
+                    is StreamingState.Success -> {
+                        generated = state.data
+                        environment.onReasoningChunk(null)
+                    }
 
-                        is StreamingState.Error -> {
-                            environment.onReasoningChunk(null)
-                            error(state.message)
+                    is StreamingState.Error -> {
+                        environment.onReasoningChunk(null)
+                        if (state.isFlowCancellation()) {
+                            throw CancellationException(state.message)
                         }
+                        error(state.message)
                     }
                 }
+            }
             generated ?: error("Failed to generate chapter synthesis")
         }
 
@@ -268,35 +264,26 @@ class NarrativeActionExecutorImpl
             } else {
                 environment.dismissMilestone()
                 var generated: GeneratedContent<Timeline>? = null
-                val contextString = "Evaluating actions and shaping consequences..."
-                val style = genreConfigService.conversationBlueprint(saga.data.genre)
-                reasoningSynthesizerService
-                    .synthesizeReasoning(
-                        sourceFlow =
-                            timelineUseCase.generateFullLoreUpdateStream(
-                                saga,
-                                timeline.data,
-                            ),
-                        context = contextString,
-                        conversationStyle = style,
-                        genre = saga.data.genre.name,
-                    ).collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                environment.onReasoningChunk(state.chunk)
-                            }
+                timelineUseCase.generateFullLoreUpdateStream(saga, timeline.data).collect { state ->
+                    when (state) {
+                        is StreamingState.Reasoning -> {
+                            environment.onReasoningChunk(state.chunk)
+                        }
 
-                            is StreamingState.Success -> {
-                                generated = state.data
-                                environment.onReasoningChunk(null)
-                            }
+                        is StreamingState.Success -> {
+                            generated = state.data
+                            environment.onReasoningChunk(null)
+                        }
 
-                            is StreamingState.Error -> {
-                                environment.onReasoningChunk(null)
-                                error(state.message)
+                        is StreamingState.Error -> {
+                            environment.onReasoningChunk(null)
+                            if (state.isFlowCancellation()) {
+                                throw CancellationException(state.message)
                             }
+                            error(state.message)
                         }
                     }
+                }
                 generated ?: error("Failed to generate timeline update")
             }
         }
@@ -330,35 +317,26 @@ class NarrativeActionExecutorImpl
                 environment.dismissMilestone()
                 var generated: GeneratedContent<Act>? = null
                 val fullSaga = environment.getSagaContent() ?: error("Saga content not available")
-                val contextString = "Judging the player's choices and concluding the act..."
-                val style = genreConfigService.conversationBlueprint(saga.data.genre)
-                reasoningSynthesizerService
-                    .synthesizeReasoning(
-                        sourceFlow =
-                            actUseCase.synthesizeActEvolutionStream(
-                                fullSaga,
-                                currentAct,
-                            ),
-                        context = contextString,
-                        conversationStyle = style,
-                        genre = saga.data.genre.name,
-                    ).collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                environment.onReasoningChunk(state.chunk)
-                            }
+                actUseCase.synthesizeActEvolutionStream(fullSaga, currentAct).collect { state ->
+                    when (state) {
+                        is StreamingState.Reasoning -> {
+                            environment.onReasoningChunk(state.chunk)
+                        }
 
-                            is StreamingState.Success -> {
-                                generated = state.data
-                                environment.onReasoningChunk(null)
-                            }
+                        is StreamingState.Success -> {
+                            generated = state.data
+                            environment.onReasoningChunk(null)
+                        }
 
-                            is StreamingState.Error -> {
-                                environment.onReasoningChunk(null)
-                                error(state.message)
+                        is StreamingState.Error -> {
+                            environment.onReasoningChunk(null)
+                            if (state.isFlowCancellation()) {
+                                throw CancellationException(state.message)
                             }
+                            error(state.message)
                         }
                     }
+                }
                 generated ?: error("Failed to generate act synthesis")
             }
         }

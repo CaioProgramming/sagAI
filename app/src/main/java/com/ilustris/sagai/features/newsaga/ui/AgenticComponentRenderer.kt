@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.newsaga.ui
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -18,11 +20,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -30,6 +34,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -49,10 +54,13 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -68,7 +76,9 @@ import com.ilustris.sagai.features.newsaga.data.usecase.AgenticUIComponent
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
 import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.components.BookGenerationReasoning
 import com.ilustris.sagai.ui.components.CosmicBook
+import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.components.CosmicEditorSheet
 import com.ilustris.sagai.ui.components.CosmicInputField
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -107,14 +117,13 @@ fun AgenticUIComponent.Render(
         is AgenticUIComponent.LibraryComponent -> {
             scope.item(span = StaggeredGridItemSpan.FullLine) {
                 LibraryPager(
-                    this@Render.books,
-                    lockedSaga,
-                    lockedCharacter,
-                    isAgentLoading,
-                    currentAgentMessage =
-                        (this@Render as? AgenticUIComponent.AgentMessage)?.text
-                            ?: "",
-                    onAction,
+                    books = this@Render.books,
+                    lockedSaga = lockedSaga,
+                    lockedCharacter = lockedCharacter,
+                    isAgentLoading = isAgentLoading,
+                    currentAgentMessage = null,
+                    sharedTransitionScope = sharedTransitionScope,
+                    onAction = onAction,
                 )
             }
         }
@@ -255,43 +264,42 @@ private fun IdeaPitchCard(
         val gradient = Brush.verticalGradient(genre.colorPalette(activeVisual))
 
         Column(
-        modifier =
-            modifier
-                .padding(8.dp)
-                .dropShadow(shape) {
-                    this.color = color
-                    this.radius = 10f
-                    this.spread = 5f
-                    this.brush = gradient
-                }
-                .border(1.dp, MaterialTheme.colorScheme.primary, shape)
-                .background(MaterialTheme.colorScheme.surfaceContainer, shape)
-                .clickable { onSelect() }
-                .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            painterResource(genre.icon),
-            null,
-            tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.size(24.dp),
-        )
+            modifier =
+                modifier
+                    .padding(8.dp)
+                    .dropShadow(shape) {
+                        this.color = color
+                        this.radius = 10f
+                        this.spread = 5f
+                        this.brush = gradient
+                    }.border(1.dp, MaterialTheme.colorScheme.primary, shape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                    .clickable { onSelect() }
+                    .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                painterResource(genre.icon),
+                null,
+                tint = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.size(24.dp),
+            )
 
-        Text(
-            text = idea.title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Text(
-            text = idea.description,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
+            Text(
+                text = idea.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = idea.description,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -310,122 +318,121 @@ private fun LockedSagaCard(
         val brush = Brush.verticalGradient(genre.colorPalette(activeConfig))
         val genreColor = genre.resolveColor(activeConfig)
         val iconColor = MaterialTheme.colorScheme.secondary
-    var showEditor by remember { mutableStateOf(false) }
+        var showEditor by remember { mutableStateOf(false) }
 
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .dropShadow(shape) {
-                    this.color = genreColor
-                    this.radius = 10f
-                    this.spread = 5f
-                    this.brush = brush
-                }
-                .border(1.dp, genreColor.copy(alpha = 0.1f), shape)
-                .clip(shape)
-                .background(genre.color, shape)
-                .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
-    ) {
-        Icon(
-            painterResource(genre.icon),
-            null,
-            tint = iconColor,
+        Box(
             modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .size(100.dp)
-                    .alpha(.1f),
-        )
-
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .dropShadow(shape) {
+                        this.color = genreColor
+                        this.radius = 10f
+                        this.spread = 5f
+                        this.brush = brush
+                    }.border(1.dp, genreColor.copy(alpha = 0.1f), shape)
+                    .clip(shape)
+                    .background(genre.color, shape)
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painterResource(R.drawable.round_close_24),
-                    stringResource(R.string.content_description_close),
-                    tint = iconColor,
-                    modifier =
-                        Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .clickable { onAction(AgenticAction.UnlockSaga) },
-                )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Button({
-                    showEditor = true
-                }, shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(8.dp)) {
-                    Text(
-                        stringResource(R.string.edit),
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
-            }
-
-            Text(
-                text = draft.title,
-                style =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    ),
+            Icon(
+                painterResource(genre.icon),
+                null,
+                tint = iconColor,
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .genreVfx(genre),
+                        .align(Alignment.Center)
+                        .size(100.dp)
+                        .alpha(.1f),
             )
 
-            Text(
-                text = draft.description,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.round_close_24),
+                        stringResource(R.string.content_description_close),
+                        tint = iconColor,
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .clickable { onAction(AgenticAction.UnlockSaga) },
+                    )
 
-    if (showEditor) {
-        CosmicEditorSheet(
-            title = stringResource(R.string.agentic_edit_saga_title),
-            genre = genre,
-            fields =
-                listOf(
-                    CosmicInputField(
-                        "title",
-                        stringResource(R.string.saga_title_label),
-                        draft.title,
-                        hint = stringResource(R.string.saga_title_hint),
-                    ),
-                    CosmicInputField(
-                        "description",
-                        stringResource(R.string.description_label),
-                        draft.description,
-                        isMultiline = true,
-                        hint = stringResource(R.string.saga_description_hint),
-                    ),
-                ),
-            onSave = {
-                onAction(
-                    AgenticAction.UpdateSaga(
-                        draft.id,
-                        it["title"] ?: draft.title,
-                        it["description"] ?: draft.description,
-                    ),
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button({
+                        showEditor = true
+                    }, shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(8.dp)) {
+                        Text(
+                            stringResource(R.string.edit),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
+
+                Text(
+                    text = draft.title,
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .genreVfx(genre),
                 )
-            },
-            onDismiss = { showEditor = false },
-        )
+
+                Text(
+                    text = draft.description,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        if (showEditor) {
+            CosmicEditorSheet(
+                title = stringResource(R.string.agentic_edit_saga_title),
+                genre = genre,
+                fields =
+                    listOf(
+                        CosmicInputField(
+                            "title",
+                            stringResource(R.string.saga_title_label),
+                            draft.title,
+                            hint = stringResource(R.string.saga_title_hint),
+                        ),
+                        CosmicInputField(
+                            "description",
+                            stringResource(R.string.description_label),
+                            draft.description,
+                            isMultiline = true,
+                            hint = stringResource(R.string.saga_description_hint),
+                        ),
+                    ),
+                onSave = {
+                    onAction(
+                        AgenticAction.UpdateSaga(
+                            draft.id,
+                            it["title"] ?: draft.title,
+                            it["description"] ?: draft.description,
+                        ),
+                    )
+                },
+                onDismiss = { showEditor = false },
+            )
         }
     }
 }
@@ -509,99 +516,96 @@ private fun CharacterPitchCard(
     modifier: Modifier = Modifier,
 ) {
     SagAITheme(genre = genreVisuals.first) {
-    val genre = genreVisuals.first
+        val genre = genreVisuals.first
         val visualConfig = LocalGenreVisualConfig.current ?: genreVisuals.second
-    val placeholders = LocalGenderPlaceholders.current
-    val silhouetteUrl = placeholders.resolveUrl(genre, persona.gender)
-    val shape = genre.shape(visualConfig)
-    val genreColor = genre.resolveColor(visualConfig)
-
-    Column(
-        modifier =
-            modifier
-                .padding(8.dp)
-                .dropShadow(shape) {
-                    this.color = genreColor
-                    this.radius = 10f
-                    this.spread = 5f
-                    this.brush =
-                        Brush.verticalGradient(genre.colorPalette(visualConfig))
-                }
-                .border(
-                    1.dp,
-                    genreColor.copy(alpha = 0.1f),
-                    shape,
-                )
-                .clip(shape)
-                .background(
-                    MaterialTheme.colorScheme.surfaceContainer,
-                    shape,
-                )
-                .clickable { onSelect() },
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .background(genreColor.copy(alpha = 0.1f)),
-        ) {
-            if (silhouetteUrl.isNotEmpty()) {
-                coil3.compose.AsyncImage(
-                    model = silhouetteUrl,
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                )
-            } else {
-                Icon(
-                    painterResource(genre.icon),
-                    null,
-                    tint = genreColor.copy(alpha = 0.3f),
-                    modifier =
-                        Modifier
-                            .size(80.dp)
-                            .align(Alignment.Center),
-                )
-            }
-        }
+        val placeholders = LocalGenderPlaceholders.current
+        val silhouetteUrl = placeholders.resolveUrl(genre, persona.gender)
+        val shape = genre.shape(visualConfig)
+        val genreColor = genre.resolveColor(visualConfig)
 
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier =
+                modifier
+                    .padding(8.dp)
+                    .dropShadow(shape) {
+                        this.color = genreColor
+                        this.radius = 10f
+                        this.spread = 5f
+                        this.brush =
+                            Brush.verticalGradient(genre.colorPalette(visualConfig))
+                    }.border(
+                        1.dp,
+                        genreColor.copy(alpha = 0.1f),
+                        shape,
+                    ).clip(shape)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainer,
+                        shape,
+                    ).clickable { onSelect() },
         ) {
-            Text(
-                text = persona.name,
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
-            Text(
-                text = persona.gender.name.lowercase(),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        color = genreColor,
-                    ),
-            )
-            Text(
-                text = persona.description,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    ),
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
-                maxLines = 3,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
-        }
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .background(genreColor.copy(alpha = 0.1f)),
+            ) {
+                if (silhouetteUrl.isNotEmpty()) {
+                    coil3.compose.AsyncImage(
+                        model = silhouetteUrl,
+                        contentDescription = null,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                    )
+                } else {
+                    Icon(
+                        painterResource(genre.icon),
+                        null,
+                        tint = genreColor.copy(alpha = 0.3f),
+                        modifier =
+                            Modifier
+                                .size(80.dp)
+                                .align(Alignment.Center),
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = persona.name,
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = persona.gender.name.lowercase(),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            color = genreColor,
+                        ),
+                )
+                Text(
+                    text = persona.description,
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        ),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                    maxLines = 3,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -615,148 +619,148 @@ private fun LockedCharacterCard(
     modifier: Modifier = Modifier,
 ) {
     SagAITheme(genre = genreVisuals.first) {
-    val genre = genreVisuals.first
+        val genre = genreVisuals.first
         val visualConfig = LocalGenreVisualConfig.current ?: genreVisuals.second
-    val shape = genre.shape(visualConfig)
-    val color = genre.resolveColor(visualConfig)
-    val brush = Brush.verticalGradient(genre.colorPalette(visualConfig))
-    val iconColor = MaterialTheme.colorScheme.secondary
-    var showEditor by remember { mutableStateOf(false) }
+        val shape = genre.shape(visualConfig)
+        val color = genre.resolveColor(visualConfig)
+        val brush = Brush.verticalGradient(genre.colorPalette(visualConfig))
+        val iconColor = MaterialTheme.colorScheme.secondary
+        var showEditor by remember { mutableStateOf(false) }
 
-    val placeholders = LocalGenderPlaceholders.current
-    val silhouetteUrl = placeholders.resolveUrl(genre, persona.gender)
+        val placeholders = LocalGenderPlaceholders.current
+        val silhouetteUrl = placeholders.resolveUrl(genre, persona.gender)
 
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .dropShadow(shape) {
-                    this.color = color
-                    this.radius = 10f
-                    this.spread = 5f
-                    this.brush = brush
-                }
-                .border(1.dp, color.copy(alpha = 0.1f), shape)
-                .clip(shape)
-                .background(genre.color, shape)
-                .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
-    ) {
-        if (silhouetteUrl.isNotEmpty()) {
-            coil3.compose.AsyncImage(
-                model = silhouetteUrl,
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(260.dp)
-                        .alpha(0.1f)
-                        .align(Alignment.Center),
-                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-            )
-        } else {
-            Icon(
-                painterResource(genre.icon),
-                null,
-                tint = iconColor,
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .size(50.dp)
-                        .alpha(.4f),
-            )
-        }
-
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .dropShadow(shape) {
+                        this.color = color
+                        this.radius = 10f
+                        this.spread = 5f
+                        this.brush = brush
+                    }.border(1.dp, color.copy(alpha = 0.1f), shape)
+                    .clip(shape)
+                    .background(genre.color, shape)
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = .2f)),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (silhouetteUrl.isNotEmpty()) {
+                coil3.compose.AsyncImage(
+                    model = silhouetteUrl,
+                    contentDescription = null,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(260.dp)
+                            .alpha(0.1f)
+                            .align(Alignment.Center),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                )
+            } else {
                 Icon(
-                    painterResource(R.drawable.round_close_24),
-                    stringResource(R.string.content_description_close),
+                    painterResource(genre.icon),
+                    null,
                     tint = iconColor,
                     modifier =
                         Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .clickable { onAction(AgenticAction.UnlockCharacter) },
+                            .align(Alignment.Center)
+                            .size(50.dp)
+                            .alpha(.4f),
                 )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Button({
-                    showEditor = true
-                }, shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(8.dp)) {
-                    Text(
-                        stringResource(R.string.edit),
-                        style = MaterialTheme.typography.labelMedium,
-                    )
-                }
             }
 
-            Text(
-                text = persona.name,
-                style =
-                    MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .genreVfx(genre),
-            )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painterResource(R.drawable.round_close_24),
+                        stringResource(R.string.content_description_close),
+                        tint = iconColor,
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .clickable { onAction(AgenticAction.UnlockCharacter) },
+                    )
 
-            Text(
-                text = persona.description,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                        color = MaterialTheme.colorScheme.onBackground,
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button({
+                        showEditor = true
+                    }, shape = MaterialTheme.shapes.extraLarge, contentPadding = PaddingValues(8.dp)) {
+                        Text(
+                            stringResource(R.string.edit),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
+
+                Text(
+                    text = persona.name,
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .genreVfx(genre),
+                )
+
+                Text(
+                    text = persona.description,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        if (showEditor) {
+            CosmicEditorSheet(
+                title = stringResource(R.string.agentic_edit_character_title),
+                genre = genre,
+                fields =
+                    listOf(
+                        CosmicInputField(
+                            "name",
+                            stringResource(R.string.character_name_label),
+                            persona.name,
+                            hint = stringResource(R.string.character_name_hint),
+                        ),
+                        CosmicInputField(
+                            "description",
+                            stringResource(R.string.biography_label),
+                            persona.description,
+                            isMultiline = true,
+                            hint = stringResource(R.string.character_bio_hint),
+                        ),
                     ),
-                modifier = Modifier.fillMaxWidth(),
+                onSave = {
+                    onAction(
+                        AgenticAction.UpdateCharacter(
+                            persona.id,
+                            it["name"] ?: persona.name,
+                            it["description"] ?: persona.description,
+                        ),
+                    )
+                },
+                onDismiss = { showEditor = false },
             )
         }
     }
-
-    if (showEditor) {
-        CosmicEditorSheet(
-            title = stringResource(R.string.agentic_edit_character_title),
-            genre = genre,
-            fields =
-                listOf(
-                    CosmicInputField(
-                        "name",
-                        stringResource(R.string.character_name_label),
-                        persona.name,
-                        hint = stringResource(R.string.character_name_hint),
-                    ),
-                    CosmicInputField(
-                        "description",
-                        stringResource(R.string.biography_label),
-                        persona.description,
-                        isMultiline = true,
-                        hint = stringResource(R.string.character_bio_hint),
-                    ),
-                ),
-            onSave = {
-                onAction(
-                    AgenticAction.UpdateCharacter(
-                        persona.id,
-                        it["name"] ?: persona.name,
-                        it["description"] ?: persona.description,
-                    ),
-                )
-            },
-            onDismiss = { showEditor = false },
-            )
-    }
-    }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun LibraryPager(
     books: List<Pair<SagaBook, GenreVisualConfig>>,
@@ -764,6 +768,8 @@ fun LibraryPager(
     lockedCharacter: CharacterInfo?,
     isAgentLoading: Boolean,
     currentAgentMessage: String? = null,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onAction: (AgenticAction) -> Unit,
 ) {
     val pagerState =
@@ -793,29 +799,83 @@ fun LibraryPager(
         ) { pageIdx ->
             val bookEntry = books[pageIdx]
             val isOpened = bookEntry.first.draft.id == lockedSaga?.id
+            val isPageLoading = isAgentLoading && isOpened
 
             SagAITheme(genre = bookEntry.first.draft.genre) {
                 val bookVisual = LocalGenreVisualConfig.current ?: bookEntry.second
-            CosmicBook(
-                book = bookEntry.first,
-                    visualConfig = bookVisual,
-                isOpened = isOpened,
-                lockedCharacter = lockedCharacter,
-                isLoading = isAgentLoading && (lockedSaga?.id == bookEntry.first.draft.id),
-                reasoning = if (isAgentLoading && (lockedSaga?.id == bookEntry.first.draft.id)) currentAgentMessage else null,
-                onToggle = {
-                    if (isOpened) {
-                        onAction(AgenticAction.UnlockSaga)
+
+                if (isPageLoading) {
+                    val bookKey = "new-saga-book-${bookEntry.first.draft.id}"
+                    if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                        with(sharedTransitionScope) {
+                            NewSagaBookFocus(
+                                book = bookEntry.first,
+                                visualConfig = bookVisual,
+                                reasoning = currentAgentMessage,
+                                isOpened = true,
+                                isLoading = true,
+                                lockedCharacter = lockedCharacter,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                sharedContentKey = bookKey,
+                                onToggle = { onAction(AgenticAction.UnlockSaga) },
+                                onAction = onAction,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     } else {
-                        onAction(AgenticAction.SelectSaga(bookEntry.first.draft))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CosmicBook(
+                                book = bookEntry.first,
+                                visualConfig = bookVisual,
+                                isOpened = true,
+                                lockedCharacter = lockedCharacter,
+                                isLoading = true,
+                                reasoning = null,
+                                onToggle = { onAction(AgenticAction.UnlockSaga) },
+                                onAction = onAction,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                            )
+                            BookGenerationReasoning(
+                                reasoning = currentAgentMessage,
+                                genre = bookEntry.first.draft.genre,
+                                visualConfig = bookVisual,
+                                modifier = Modifier.padding(top = 16.dp, start = 8.dp, end = 8.dp),
+                            )
+                        }
                     }
-                },
-                onAction = onAction,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                )
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        CosmicBook(
+                            book = bookEntry.first,
+                            visualConfig = bookVisual,
+                            isOpened = isOpened,
+                            lockedCharacter = lockedCharacter,
+                            isLoading = false,
+                            reasoning = null,
+                            onToggle = {
+                                if (isOpened) {
+                                    onAction(AgenticAction.UnlockSaga)
+                                } else {
+                                    onAction(AgenticAction.SelectSaga(bookEntry.first.draft))
+                                }
+                            },
+                            onAction = onAction,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                        )
+                    }
+                }
             }
         }
 
@@ -863,25 +923,35 @@ fun LibraryPager(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun UniverseEchoesSection(
     echoes: List<Pair<UniverseEcho, GenreVisualConfig>>,
     onAction: (String) -> Unit,
 ) {
+    val maxSuggestionWidth =
+        (LocalConfiguration.current.screenWidthDp * 0.6f).dp
+
     LazyHorizontalGrid(
         rows = GridCells.Fixed(2),
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(100.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Bottom),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                .heightIn(min = 96.dp, max = 200.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        items(echoes) { (echo, config) ->
-            EchoBubbleCard(echo, config, modifier = Modifier.animateItem()) {
-                onAction(echo.input)
-            }
+        items(
+            items = echoes,
+            key = { (echo, _) -> echo.input },
+        ) { (echo, config) ->
+            EchoBubbleCard(
+                echo = echo,
+                visualConfig = config,
+                maxWidth = maxSuggestionWidth,
+                modifier = Modifier.animateItem(),
+                onClick = { onAction(echo.input) },
+            )
         }
     }
 }
@@ -890,6 +960,7 @@ internal fun UniverseEchoesSection(
 private fun EchoBubbleCard(
     echo: UniverseEcho,
     visualConfig: GenreVisualConfig,
+    maxWidth: Dp,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
@@ -897,40 +968,43 @@ private fun EchoBubbleCard(
         val genre = echo.genre
         val activeVisual = LocalGenreVisualConfig.current ?: visualConfig
         val color = genre.resolveColor(activeVisual)
-    val shape = MaterialTheme.shapes.extraLarge
+        val shape = RoundedCornerShape(25.dp)
         val genreBrush = Brush.linearGradient(genre.colorPalette(activeVisual))
 
-    Row(
-        modifier =
-            modifier
-                .padding(2.dp)
-                .wrapContentSize()
-                .dropShadow(shape) {
-                    brush = genreBrush
-                    radius = 5f
-                    spread = 5f
-                }
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.background)
-                .clickable {
-                    onClick()
-                }
-                .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(
-            painterResource(genre.icon),
-            null,
-            tint = color,
-            modifier = Modifier.size(24.dp),
-        )
-        Text(
-            text = echo.input,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
+        val textMaxWidth = maxWidth - 56.dp
+
+        Row(
+            modifier =
+                modifier
+                    .widthIn(max = maxWidth)
+                    .wrapContentWidth(Alignment.Start)
+                    .padding(2.dp)
+                    .dropShadow(shape) {
+                        brush = genreBrush
+                        radius = 5f
+                        spread = 5f
+                    }.clip(shape)
+                    .background(MaterialTheme.colorScheme.background)
+                    .clickable(onClick = onClick)
+                    .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                painterResource(genre.icon),
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(12.dp),
+            )
+            Text(
+                text = echo.input,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.widthIn(max = textMaxWidth),
+                softWrap = true,
+                overflow = TextOverflow.Clip,
+            )
+        }
     }
 }
 

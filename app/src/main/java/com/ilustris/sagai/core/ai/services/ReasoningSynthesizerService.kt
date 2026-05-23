@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.ProducerScope
@@ -46,14 +47,18 @@ class ReasoningSynthesizerService
                                 if (synthesisJob?.isActive != true && lastReasoning.length > 50) {
                                     synthesisJob =
                                         launch {
-                                            synthesizeNow(
-                                                lastReasoning,
-                                                context,
-                                                conversationStyle,
-                                                getLanguage(true),
-                                                this@channelFlow,
-                                                genre,
-                                            )
+                                            try {
+                                                synthesizeNow(
+                                                    lastReasoning,
+                                                    context,
+                                                    conversationStyle,
+                                                    getLanguage(true),
+                                                    this@channelFlow,
+                                                    genre,
+                                                )
+                                            } catch (_: CancellationException) {
+                                                // Replaced by a newer reasoning chunk or flow completion.
+                                            }
                                         }
                                 }
                             } else {
@@ -63,14 +68,18 @@ class ReasoningSynthesizerService
 
                         is StreamingState.Success -> {
                             if (showReasoning && lastReasoning.isNotBlank()) {
-                                synthesizeNow(
-                                    lastReasoning,
-                                    context,
-                                    conversationStyle,
-                                    getLanguage(true),
-                                    this,
-                                    genre,
-                                )
+                                try {
+                                    synthesizeNow(
+                                        lastReasoning,
+                                        context,
+                                        conversationStyle,
+                                        getLanguage(true),
+                                        this,
+                                        genre,
+                                    )
+                                } catch (_: CancellationException) {
+                                    // Flow completed while synthesis was running.
+                                }
                             }
                             synthesisJob?.cancel()
                             send(state)

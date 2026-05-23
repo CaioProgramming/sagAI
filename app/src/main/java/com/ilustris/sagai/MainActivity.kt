@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,12 +34,17 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.ilustris.sagai.core.media.SagaPlaybackService
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
@@ -56,10 +63,13 @@ import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.services.SideEffectService
+import com.ilustris.sagai.core.navigation.SagaNavigationTracker
+import com.ilustris.sagai.core.notifications.SagaNotificationRouter
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
+import com.ilustris.sagai.ui.components.SagaInAppNotificationBanner
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.navigation.AuditLogsKey
 import com.ilustris.sagai.ui.navigation.FAQKey
@@ -93,6 +103,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
+
+    @Inject
+    lateinit var sagaNotificationRouter: SagaNotificationRouter
+
+    @Inject
+    lateinit var sagaNavigationTracker: SagaNavigationTracker
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -141,11 +157,20 @@ class MainActivity : ComponentActivity() {
                 sagaThemeManager.setNeutral(isNeutralScreen)
             }
 
+            LaunchedEffect(currentKey) {
+                sagaNavigationTracker.update(currentKey)
+            }
+
+            LaunchedEffect(Unit) {
+                sagaNotificationRouter.start()
+            }
+
             SagAITheme(genre = themeGenre) {
                 Timber.d("MainActivity: SagAITheme block")
 
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
+                val inAppNotification by sagaNotificationRouter.inAppNotification.collectAsState()
                 var showGenreTransition by remember { mutableStateOf(false) }
 
                 LaunchedEffect(currentGenre) {
@@ -163,40 +188,68 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                // Global Ambient Music Control
+                // Pause ambient when activity is no longer visible; restart on onStart (foreground-safe).
+                val lifecycleOwner = LocalLifecycleOwner.current
                 val ambientMusicFile by sagaThemeManager.ambientMusicFile.collectAsState()
-                LaunchedEffect(ambientMusicFile) {
-                    try {
-                        val file = ambientMusicFile
-                        if (file != null && file.exists()) {
-                            Timber.d("Global music update: Playing ${file.absolutePath}")
-                            val musicIntent =
-                                Intent(
+                var hasAmbientTrack by remember { mutableStateOf(false) }
+                DisposableEffect(lifecycleOwner, hasAmbientTrack, ambientMusicFile) {
+                    val observer =
+                        object : DefaultLifecycleObserver {
+                            override fun onStop(owner: LifecycleOwner) {
+                                if (!hasAmbientTrack) return
+                                SagaPlaybackService.startSafely(
                                     applicationContext,
-                                    com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
-                                ).apply {
-                                    action =
-                                        com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_START
-                                    putExtra(
-                                        com.ilustris.sagai.core.media.SagaPlaybackService.EXTRA_MUSIC_PATH,
-                                        file.absolutePath,
-                                    )
-                                }
-                            startService(musicIntent)
-                        } else {
-                            Timber.d("Global music update: Stopping playback")
-                            startService(
-                                Intent(
+                                    SagaPlaybackService.playbackIntent(
+                                        applicationContext,
+                                        SagaPlaybackService.ACTION_PAUSE,
+                                    ),
+                                )
+                            }
+
+                            override fun onStart(owner: LifecycleOwner) {
+                                if (!hasAmbientTrack) return
+                                val path =
+                                    ambientMusicFile
+                                        ?.takeIf { it.exists() }
+                                        ?.absolutePath
+                                        ?: return
+                                SagaPlaybackService.startSafely(
                                     applicationContext,
-                                    com.ilustris.sagai.core.media.SagaPlaybackService::class.java,
-                                ).apply {
-                                    action =
-                                        com.ilustris.sagai.core.media.SagaPlaybackService.ACTION_STOP
-                                },
-                            )
+                                    SagaPlaybackService.playbackIntent(
+                                        applicationContext,
+                                        SagaPlaybackService.ACTION_START,
+                                        path,
+                                    ),
+                                )
+                            }
                         }
-                    } catch (e: Exception) {
-                        Timber.e(e, "Error updating global music playback")
+                    lifecycleOwner.lifecycle.addObserver(observer)
+                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                }
+
+                // Global Ambient Music Control
+                LaunchedEffect(ambientMusicFile) {
+                    hasAmbientTrack = ambientMusicFile != null && ambientMusicFile?.exists() == true
+                    val file = ambientMusicFile
+                    if (file != null && file.exists()) {
+                        Timber.d("Global music update: Playing ${file.absolutePath}")
+                        SagaPlaybackService.startSafely(
+                            applicationContext,
+                            SagaPlaybackService.playbackIntent(
+                                applicationContext,
+                                SagaPlaybackService.ACTION_START,
+                                file.absolutePath,
+                            ),
+                        )
+                    } else {
+                        Timber.d("Global music update: Stopping playback")
+                        SagaPlaybackService.startSafely(
+                            applicationContext,
+                            SagaPlaybackService.playbackIntent(
+                                applicationContext,
+                                SagaPlaybackService.ACTION_STOP,
+                            ),
+                        )
                     }
                 }
 
@@ -263,6 +316,22 @@ class MainActivity : ComponentActivity() {
                                         NavDisplay(
                                             entries = navigationState.toEntries(entryProvider),
                                             onBack = { navigator.goBack() },
+                                        )
+
+                                        SagaInAppNotificationBanner(
+                                            notification = inAppNotification,
+                                            onOpen = { deepLink ->
+                                                navigateDeepLink(deepLink)
+                                                sagaNotificationRouter.dismissInApp()
+                                            },
+                                            onDismiss = { sagaNotificationRouter.dismissInApp() },
+                                            modifier =
+                                                Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .zIndex(2f)
+                                                    .statusBarsPadding()
+                                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                                    .fillMaxWidth(),
                                         )
 
                                         SagaSnackBar(

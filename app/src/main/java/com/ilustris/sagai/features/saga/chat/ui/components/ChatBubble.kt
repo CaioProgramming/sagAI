@@ -133,6 +133,10 @@ fun ChatBubble(
     isSelected: Boolean = false,
 ) {
     val message = messageContent.message
+    val avatarCharacter =
+        messageContent.character?.let { embedded ->
+            characters.find { it.id == embedded.id } ?: embedded
+        }
     val sender = message.senderType
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
@@ -258,37 +262,38 @@ fun ChatBubble(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
-                        val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
+                        val avatarSize = if (avatarCharacter == null) 24.dp else 50.dp
 
                         Box(
                             Modifier
                                 .clip(CircleShape)
                                 .clickable {
-                                    messageContent.character?.let { character ->
+                                    avatarCharacter?.let { character ->
                                         onAction(
                                             MessageAction.ClickCharacter(
-                                                characters.find { it.id == character.id },
+                                                characters.find { it.id == character.id }
+                                                    ?: character,
                                             ),
                                         )
                                     }
                                 }
                                 .size(avatarSize),
                         ) {
-                            messageContent.character?.let { character ->
+                            avatarCharacter?.let { character ->
                                 AnimatedContent(
-                                    character,
+                                    targetState = character.image to character.id,
                                     transitionSpec = {
                                         fadeIn() + scaleIn() togetherWith scaleOut()
                                     },
+                                    label = "ChatBubbleAvatar",
                                 ) {
                                     CharacterAvatar(
-                                        it,
+                                        character,
                                         isLoading = isLoading,
                                         genre = genre,
                                         borderSize = 2.dp,
                                         pixelation = 0f,
                                         grainRadius = 0f,
-                                        useFallback = true,
                                         modifier =
                                             Modifier
                                                 .padding(8.dp)
@@ -337,8 +342,7 @@ fun ChatBubble(
                                                     message,
                                                 ),
                                             )
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -358,8 +362,7 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             messageEffectsEnabled,
-                                        )
-                                        .wrapContentSize()
+                                        ).wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -373,9 +376,9 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                sweepGradient(
-                                                                    palette,
-                                                                ) as ShaderBrush
+                                                                    sweepGradient(
+                                                                        palette,
+                                                                    ) as ShaderBrush
                                                                     ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
@@ -392,7 +395,8 @@ fun ChatBubble(
                                                 brush = brush,
                                                 style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }.background(
+                                        }
+                                        .background(
                                             MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             bubbleShape,
                                         )
@@ -421,11 +425,11 @@ fun ChatBubble(
                                                             )
                                                         }
                                                     },
-                                                ).emotionalEntrance(
+                                                )
+                                                .emotionalEntrance(
                                                     message.emotionalTone,
                                                     messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
@@ -457,7 +461,8 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    ).emotionalEntrance(
+                                                    )
+                                                    .emotionalEntrance(
                                                         message.emotionalTone,
                                                         messageEffectsEnabled,
                                                     )

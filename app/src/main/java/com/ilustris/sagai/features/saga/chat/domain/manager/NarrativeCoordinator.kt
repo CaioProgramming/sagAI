@@ -21,10 +21,6 @@ class NarrativeCoordinator
             nextResolvedAction: NarrativeAction?,
             context: NarrativeEvaluationContext,
         ): NarrativeUiState {
-            if (context.isOnboardingVisible) {
-                return _uiState.value
-            }
-
             if (context.isNarrativeProcessing) {
                 return _uiState.value
             }
@@ -65,10 +61,11 @@ class NarrativeCoordinator
                     }
 
                     is NarrativeAction.CloseTimeline -> {
+                        // Timeline content is already persisted; closing only clears the chapter pointer.
                         NarrativeUiState(
-                            phase = NarrativePhase.BackgroundProcessing(BackgroundTask.ClosingScene),
+                            phase = NarrativePhase.Playing,
                             pendingAction = null,
-                            backgroundTask = BackgroundTask.ClosingScene,
+                            backgroundTask = null,
                             lastError = null,
                             isProcessing = false,
                         )

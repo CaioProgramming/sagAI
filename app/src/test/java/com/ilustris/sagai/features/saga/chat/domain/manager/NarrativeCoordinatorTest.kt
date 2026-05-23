@@ -23,19 +23,6 @@ class NarrativeCoordinatorTest {
     }
 
     @Test
-    fun `reevaluate skips when onboarding visible`() {
-        coordinator.reevaluate(NarrativeAction.CreateAct, NarrativeEvaluationContext())
-        val initial = coordinator.uiState.value
-
-        coordinator.reevaluate(
-            NarrativeAction.CreateAct,
-            NarrativeEvaluationContext(isOnboardingVisible = true),
-        )
-
-        assertEquals(initial, coordinator.uiState.value)
-    }
-
-    @Test
     fun `failure restores awaiting advance for user actions`() {
         val act = ActContent(data = Act(id = 1, sagaId = 1))
         val action = NarrativeAction.GenerateActIntro(act)

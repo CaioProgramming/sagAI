@@ -39,8 +39,11 @@ data class SagaSnackBarMessage(
     val action: Pair<String, () -> Unit>? = null,
 )
 
-/** Background notification payload (not shown in the global toast UI). */
+/** Saga activity payload routed to in-app banner or system notification. */
 data class SagaNotificationEvent(
+    val sagaId: Int,
+    val sagaTitle: String,
+    val genre: Genre,
     val message: String,
     val icon: Bitmap? = null,
     val largeIcon: Bitmap? = null,

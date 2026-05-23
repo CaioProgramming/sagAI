@@ -35,6 +35,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -119,9 +120,11 @@ fun SagaDetailView(
     SagAITheme(genre = resume?.saga?.genre) {
         var lastNavigationTime by remember { mutableStateOf(0L) }
         val onAction: (DetailAction) -> Unit =
-            remember(onCharacterDetails, onLoreDebug, viewModel) {
+            remember(onBack, onCharacterDetails, onLoreDebug, viewModel) {
                 { action ->
                     when (action) {
+                        DetailAction.Back -> onBack()
+
                         DetailAction.OpenReview -> {
                             showReview = true
                         }
@@ -269,7 +272,15 @@ fun SagaDetailView(
         }
     }
 
-    LaunchedEffect(Unit) {
+    DisposableEffect(sagaId) {
+        val id = sagaId.toIntOrNull() ?: 0
+        if (id != 0) {
+            viewModel.onDetailScreenVisible(id)
+        }
+        onDispose { viewModel.onDetailScreenHidden() }
+    }
+
+    LaunchedEffect(sagaId) {
         viewModel.fetchSagaDetails(sagaId.toInt())
     }
 }

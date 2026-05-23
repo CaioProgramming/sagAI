@@ -9,10 +9,12 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
@@ -42,7 +44,8 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
+import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
+import com.ilustris.sagai.features.saga.chat.data.model.shouldEnsureSceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionMaterializer
@@ -51,7 +54,6 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -100,6 +102,7 @@ class SagaContentManagerImpl
         private val genreConfigService: GenreConfigService,
         private val messageDao: MessageDao,
         private val sagaThemeManager: SagaThemeManager,
+        private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
         @ApplicationContext
@@ -143,6 +146,8 @@ class SagaContentManagerImpl
 
         private var progressionCounter = 0
 
+        private var objectiveEnsureJob: kotlinx.coroutines.Job? = null
+
         private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
             isProcessingNarrative.set(isProcessing)
             _narrativeProcessingUiState.value = isProcessing
@@ -185,7 +190,9 @@ class SagaContentManagerImpl
                     is NarrativeExecutionResult.Success -> {
                         handlePostAction(sagaMetadata, action, result.value)
                         awaitMilestoneDismissalIfNeeded()
-                        requestNarrativeProgression(isRetry = false)
+                        managerScope.launch {
+                            requestNarrativeProgression(isRetry = false)
+                        }
                     }
 
                     is NarrativeExecutionResult.Failure -> {
@@ -207,6 +214,9 @@ class SagaContentManagerImpl
                     }
                 }
             } catch (e: Exception) {
+                if (e.isFlowCancellation()) {
+                    throw e
+                }
                 Timber.e(e, "Unexpected error executing narrative action")
                 narrativeCoordinator.onActionCompleted(
                     action,
@@ -233,7 +243,6 @@ class SagaContentManagerImpl
         private fun buildEvaluationContext(): NarrativeEvaluationContext {
             val milestone = milestoneUpdate.value
             return NarrativeEvaluationContext(
-                isOnboardingVisible = isOnboardingVisible.value,
                 isMilestoneActive = isMilestoneActive.value,
                 isNarrativeProcessing = isProcessingNarrative.get(),
                 hasActiveMilestoneOverlay = milestone?.isIntrusive == true,
@@ -243,6 +252,9 @@ class SagaContentManagerImpl
         private suspend fun awaitMilestoneDismissalIfNeeded() {
             if (isMilestoneActive.value) {
                 isMilestoneActive.first { !it }
+            }
+            if (milestoneUpdate.value?.isIntrusive == true) {
+                milestoneUpdate.first { it == null || !it.isIntrusive }
             }
         }
 
@@ -270,6 +282,24 @@ class SagaContentManagerImpl
             }
         }
 
+        override fun resetSagaSession() {
+            Timber.d("resetSagaSession: clearing chat session state")
+            sagaJob?.cancel()
+            sagaJob = null
+            objectiveEnsureJob?.cancel()
+            objectiveEnsureJob = null
+            setNarrativeProcessingStatus(false)
+            isProcessing.set(false)
+            narrativeCoordinator.reset()
+            contentReasoning.value = null
+            _sceneSummary.value = null
+            isMilestoneActive.value = false
+            milestoneUpdate.value = null
+            notificationUpdate.value = null
+            isOnboardingVisible.value = false
+            content.value = null
+        }
+
         override suspend fun loadSaga(sagaId: String) {
             if (content.value
                     ?.data
@@ -282,11 +312,10 @@ class SagaContentManagerImpl
                 }
                 return
             }
-            sagaJob?.cancel()
+            resetSagaSession()
             sagaJob =
                 managerScope.launch {
                     Timber.d("Loading saga: $sagaId")
-                    content.value = null
                     try {
                         if (loadingObserverJob == null || loadingObserverJob?.isActive == false) {
                             loadingObserverJob = observeLoading()
@@ -366,8 +395,11 @@ class SagaContentManagerImpl
                                 saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
                                     _sceneSummary.value = it
                                 }
+                                ensureCurrentTimelineSceneSummary(saga)
 
-                                sagaThemeManager.updateTheme(saga.data.genre)
+                                if (sagaImmersiveSession.isOwnerOnTop("chat")) {
+                                    sagaThemeManager.updateTheme(saga.data.genre)
+                                }
 
                                 checkMessageNotifications(
                                     previousSaga,
@@ -381,8 +413,6 @@ class SagaContentManagerImpl
                                 ) {
                                     checkNarrativeProgression(saga)
                                 }
-
-                                validateCharacters(saga)
 
                                 if (previousSaga == null) {
                                     if (saga.data.isEnded.not()) {
@@ -418,18 +448,6 @@ class SagaContentManagerImpl
                 }
         }
 
-        private suspend fun validateCharacters(saga: SagaMetadata) {
-            withContext(Dispatchers.IO) {
-                characterUseCase
-                    .getCharactersBySaga(saga.data.id)
-                    .first()
-                    .filter { it.data.smartZoom == null && it.data.image.isNotEmpty() }
-                    .forEach {
-                        characterUseCase.createSmartZoom(it.data)
-                    }
-            }
-        }
-
         private suspend fun checkMessageNotifications(
             previousSaga: SagaMetadata?,
             saga: SagaMetadata,
@@ -445,14 +463,12 @@ class SagaContentManagerImpl
                         .getImageBitmap(lastMessage.character?.image, true)
                         .getSuccess()
                 if (lastMessage.message.senderType == SenderType.CHARACTER) {
-                    emitNotification(
-                        SagaNotificationEvent(
-                            message =
-                                "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
-                            icon = charIcon,
-                            style = NotificationStyle.CHAT,
-                        ),
-                    )
+                    notificationEvent(
+                        message =
+                            "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
+                        icon = charIcon,
+                        style = NotificationStyle.CHAT,
+                    )?.let { emitNotification(it) }
                 }
             }
         }
@@ -557,8 +573,14 @@ class SagaContentManagerImpl
         private fun observeReasoning() =
             managerScope.launch {
                 contentReasoning.collectLatest { reasoning ->
-                    if (reasoning != null && milestoneUpdate.value != SagaMilestone.Loading) {
-                        emitMilestone(SagaMilestone.Loading)
+                    when {
+                        reasoning != null && milestoneUpdate.value != SagaMilestone.Loading -> {
+                            emitMilestone(SagaMilestone.Loading)
+                        }
+
+                        reasoning == null && milestoneUpdate.value is SagaMilestone.Loading -> {
+                            emitMilestone(null)
+                        }
                     }
                 }
             }
@@ -582,13 +604,10 @@ class SagaContentManagerImpl
                 return
             }
 
-            if (isOnboardingVisible.value) {
-                Timber.i("requestNarrativeProgression: onboarding visible, skipping.")
-                return
-            }
-
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
+
+                ensureCurrentTimelineSceneSummary(currentSaga)
 
                 if (isProcessingNarrative.get()) {
                     Timber.i("requestNarrativeProgression: narrative processing, skipping.")
@@ -619,24 +638,39 @@ class SagaContentManagerImpl
                     return@withLock
                 }
 
-                val uiState =
-                    narrativeCoordinator.reevaluate(
-                        nextResolvedAction = hydrated,
-                        context = buildEvaluationContext(),
-                    )
+                narrativeCoordinator.reevaluate(
+                    nextResolvedAction = hydrated,
+                    context = buildEvaluationContext(),
+                )
 
-                if (uiState.phase is NarrativePhase.BackgroundProcessing &&
-                    hydrated is NarrativeAction.CloseTimeline
-                ) {
-                    Timber.d("Auto-executing CloseTimeline")
-                    narrativeCoordinator.onBackgroundTaskStarted(BackgroundTask.ClosingScene)
-                    executeNarrativeAction(hydrated, isRetry = isRetry)
+                if (hydrated is NarrativeAction.CloseTimeline) {
+                    Timber.d("Auto-executing CloseTimeline (chapter pointer only)")
+                    val closeAction = hydrated
+                    managerScope.launch {
+                        executeNarrativeAction(closeAction, isRetry = isRetry)
+                    }
                 }
 
                 if (narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
                 }
             }
+        }
+
+        private fun notificationEvent(
+            message: String,
+            style: NotificationStyle,
+            icon: android.graphics.Bitmap? = null,
+        ): SagaNotificationEvent? {
+            val saga = content.value ?: return null
+            return SagaNotificationEvent(
+                sagaId = saga.data.id,
+                sagaTitle = saga.data.title,
+                genre = saga.data.genre,
+                message = message,
+                icon = icon,
+                style = style,
+            )
         }
 
         private fun emitNotification(event: SagaNotificationEvent) {
@@ -699,9 +733,10 @@ class SagaContentManagerImpl
                 is SagaMilestone.NewEvent -> {
                     getSagaContent()?.currentActInfo?.currentChapterInfo?.let { chapter ->
                         managerScope.launch {
-                            val closeAction = NarrativeAction.CloseTimeline(chapter)
-                            narrativeCoordinator.onBackgroundTaskStarted(BackgroundTask.ClosingScene)
-                            executeNarrativeAction(closeAction, isRetry = false)
+                            chapterUseCase.updateChapter(
+                                chapter.data.copy(currentEventId = null),
+                            )
+                            requestNarrativeProgression()
                         }
                     }
                 }
@@ -720,17 +755,57 @@ class SagaContentManagerImpl
             }
         }
 
-        private fun emitMilestone(milestone: SagaMilestone?) =
-            CoroutineScope(Dispatchers.Main.immediate).launch {
+        private suspend fun emitMilestone(milestone: SagaMilestone?) {
+            withContext(Dispatchers.Main.immediate) {
                 if (milestone != null && milestone.isIntrusive) {
                     isMilestoneActive.value = true
                     narrativeCoordinator.markMilestoneActive()
                     if (milestone.shouldPlaySoundFx) {
                         sagaThemeManager.playVfx()
                     }
+                    milestoneBackgroundNotification(milestone)?.let { emitNotification(it) }
                 }
                 milestoneUpdate.emit(milestone)
             }
+        }
+
+        private fun milestoneBackgroundNotification(milestone: SagaMilestone): SagaNotificationEvent? {
+            val message =
+                when (milestone) {
+                    is SagaMilestone.ChapterFinished -> {
+                        context.getString(
+                            R.string.notification_new_chapter_content,
+                            milestone.chapter.title,
+                        )
+                    }
+
+                    is SagaMilestone.ActFinished -> {
+                        context.getString(
+                            R.string.notification_new_act_content,
+                            milestone.act.title,
+                            milestone.act.title,
+                        )
+                    }
+
+                    is SagaMilestone.NewEvent -> {
+                        context.getString(
+                            R.string.notification_timeline_event_content,
+                            milestone.timeline.title,
+                        )
+                    }
+
+                    is SagaMilestone.NewCharacter -> {
+                        val name =
+                            "${milestone.character.name} ${milestone.character.lastName ?: emptyString()}".trim()
+                        context.getString(R.string.notification_new_character_content, name)
+                    }
+
+                    else -> {
+                        return null
+                    }
+                }
+            return notificationEvent(message, NotificationStyle.DEFAULT)
+        }
 
         private suspend fun startProcessing(block: suspend () -> Unit) {
             if (isProcessing.get().not()) {
@@ -879,10 +954,13 @@ class SagaContentManagerImpl
                     } ?: dismissMilestone()
                 }
 
-                is NarrativeAction.CloseTimeline,
-                is NarrativeAction.GenerateEnding,
-                -> {
+                is NarrativeAction.CloseTimeline -> {
                     doNothing()
+                }
+
+                is NarrativeAction.GenerateEnding -> {
+                    contentReasoning.value = null
+                    emitMilestone(null)
                 }
             }
         }
@@ -890,16 +968,57 @@ class SagaContentManagerImpl
         override suspend fun getCurrentObjective(sceneSummary: SceneSummary) {
             val saga = content.value ?: return
             val event = saga.getCurrentTimeLine() ?: return
-            if (event.data.currentObjective.isNullOrEmpty()) {
+            if (!event.data.hasActiveSceneSummary()) {
                 startProcessing {
                     val updatedTimeline =
                         event.data.copy(
+                            sceneSummary = sceneSummary,
                             currentObjective = sceneSummary.immediateObjective,
                         )
                     timelineUseCase.updateTimeline(updatedTimeline)
+                    _sceneSummary.value = sceneSummary
                     showObjective()
                 }
             }
+        }
+
+        /**
+         * Backfills [SceneSummary] when the user returns to a saga whose active timeline never
+         * received an objective (e.g. left during [TimelineUseCase.getTimelineObjective]).
+         */
+        private fun ensureCurrentTimelineSceneSummary(saga: SagaMetadata) {
+            val timeline = saga.getCurrentTimeLine()?.data ?: return
+            if (saga.data.isEnded || !timeline.shouldEnsureSceneSummary()) {
+                timeline.sceneSummary?.let { _sceneSummary.value = it }
+                return
+            }
+            if (isProcessingNarrative.get() || isProcessing.get() || isMilestoneActive.value) {
+                return
+            }
+            objectiveEnsureJob?.cancel()
+            objectiveEnsureJob =
+                managerScope.launch {
+                    try {
+                        setNarrativeProcessingStatus(true)
+                        Timber.i("ensureCurrentTimelineSceneSummary: generating for timeline ${timeline.id}")
+                        timelineUseCase
+                            .getTimelineObjective(saga, timeline)
+                            .onSuccessAsync { updated ->
+                                _sceneSummary.value = updated.sceneSummary
+                                if (
+                                    milestoneUpdate.value == null &&
+                                    !isMilestoneActive.value &&
+                                    updated.hasActiveSceneSummary()
+                                ) {
+                                    emitMilestone(SagaMilestone.CurrentObjective(updated))
+                                }
+                            }.onFailureAsync { e ->
+                                Timber.w(e, "ensureCurrentTimelineSceneSummary failed")
+                            }
+                    } finally {
+                        setNarrativeProcessingStatus(false)
+                    }
+                }
         }
 
         private suspend fun handleChapterPostActions(
@@ -1032,11 +1151,16 @@ class SagaContentManagerImpl
             }
 
         override fun stopProcessing() {
-            Timber.i("Stopping all narrative processing")
-            setNarrativeProcessingStatus(false)
+            Timber.i("Stopping active generation without clearing saga session")
+            objectiveEnsureJob?.cancel()
+            objectiveEnsureJob = null
+            contentReasoning.value = null
             isProcessing.set(false)
-            narrativeCoordinator.reset()
-            emitMilestone(null)
+            setNarrativeProcessingStatus(false)
+            narrativeCoordinator.markProcessing(false)
+            if (milestoneUpdate.value is SagaMilestone.Loading) {
+                dismissMilestone()
+            }
         }
 
         override suspend fun getSagaContent(): SagaContent? = sagaHistoryUseCase.getSagaById(content.value?.data?.id).first()
@@ -1071,7 +1195,9 @@ class SagaContentManagerImpl
 
                 is StreamingState.Error -> {
                     contentReasoning.value = null
-                    sagaThemeManager.showSnackBar(state.message)
+                    if (!state.isFlowCancellation()) {
+                        sagaThemeManager.showSnackBar(state.message)
+                    }
                 }
             }
         }

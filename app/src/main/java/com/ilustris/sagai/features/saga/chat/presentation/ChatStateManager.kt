@@ -15,6 +15,20 @@ class ChatStateManager {
         _uiState.update(updater)
     }
 
+    /** Drops per-saga UI state while keeping user preferences loaded from settings. */
+    fun resetForNewSaga() {
+        _uiState.update { prev ->
+            ChatUiState(
+                chatState = ChatState.Loading,
+                maxContentLength = prev.maxContentLength,
+                messageEffectsEnabled = prev.messageEffectsEnabled,
+                notificationsEnabled = prev.notificationsEnabled,
+                smartSuggestionsEnabled = prev.smartSuggestionsEnabled,
+                narrativeUiState = NarrativeUiState(),
+            )
+        }
+    }
+
     fun updateLoading(loading: Boolean) {
         _uiState.update { it.copy(isLoading = loading) }
     }
