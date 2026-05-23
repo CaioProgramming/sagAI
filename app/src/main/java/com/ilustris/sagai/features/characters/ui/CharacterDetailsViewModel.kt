@@ -3,8 +3,11 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.model.ImagePalette
+import com.ilustris.sagai.core.theme.SagaImmersiveSession
+import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
@@ -22,6 +25,8 @@ class CharacterDetailsViewModel
     constructor(
         private val characterUseCase: CharacterUseCase,
         private val paletteUseCase: PaletteUseCase,
+        private val sagaThemeManager: SagaThemeManager,
+        private val sagaImmersiveSession: SagaImmersiveSession,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
@@ -45,6 +50,21 @@ class CharacterDetailsViewModel
 
         /** Job for character arcs collection — cancelled on re-entry. */
         private var arcsJob: Job? = null
+
+        fun onCharacterScreenVisible(sagaId: Int) {
+            sagaImmersiveSession.push("character_detail", sagaId)
+        }
+
+        fun onCharacterScreenHidden() {
+            sagaImmersiveSession.pop("character_detail")
+        }
+
+        /** Re-applies saga genre theme when this screen owns the immersive stack (e.g. after a neutral reset). */
+        fun ensureGenreTheme(genre: Genre) {
+            if (sagaImmersiveSession.isOwnerOnTop("character_detail")) {
+                sagaThemeManager.updateTheme(genre)
+            }
+        }
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -80,6 +100,7 @@ class CharacterDetailsViewModel
                     characterUseCase.getCharacterDetailData(characterId).collect { data ->
                         characterDetailData.value = data
                         data?.let {
+                            ensureGenreTheme(it.sagaInfo.genre)
                             messageCount.value = it.messageCount
                             if (characterResume.value == null) {
                                 generateResume(it)
@@ -166,5 +187,10 @@ class CharacterDetailsViewModel
                         }
                     }
             }
+        }
+
+        override fun onCleared() {
+            sagaImmersiveSession.pop("character_detail")
+            super.onCleared()
         }
     }
