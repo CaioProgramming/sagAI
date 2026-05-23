@@ -245,11 +245,22 @@ class NarrativeActionExecutorImpl
                 )
                 throw IllegalArgumentException("Timeline already set at this chapter")
             }
-            timelineUseCase.saveTimeline(
-                Timeline(
-                    chapterId = currentChapter.data.id,
-                ),
+
+            val savedTimeline =
+                timelineUseCase.saveTimeline(
+                    Timeline(
+                        chapterId = currentChapter.data.id,
+                    ),
+                )
+            chapterUseCase.updateChapter(
+                currentChapter.data.copy(currentEventId = savedTimeline.id),
             )
+
+            val saga = environment.getSagaMetadata() ?: error("Saga not available")
+            when (val objectiveResult = timelineUseCase.getTimelineObjective(saga, savedTimeline)) {
+                is RequestResult.Success -> objectiveResult.value
+                is RequestResult.Error -> throw objectiveResult.value
+            }
         }
 
         private suspend fun updateTimeline(

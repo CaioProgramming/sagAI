@@ -131,18 +131,8 @@ class NarrativeCoordinator
                 is NarrativeExecutionResult.Failure -> {
                     _uiState.update {
                         it.copy(
-                            phase =
-                                if (action.executionMode() == NarrativeExecutionMode.UserTriggered) {
-                                    NarrativePhase.AwaitingAdvance(action)
-                                } else {
-                                    NarrativePhase.Playing
-                                },
-                            pendingAction =
-                                if (action.executionMode() == NarrativeExecutionMode.UserTriggered) {
-                                    action
-                                } else {
-                                    null
-                                },
+                            phase = NarrativePhase.AwaitingAdvance(action),
+                            pendingAction = action,
                             backgroundTask = null,
                             isProcessing = false,
                             lastError =

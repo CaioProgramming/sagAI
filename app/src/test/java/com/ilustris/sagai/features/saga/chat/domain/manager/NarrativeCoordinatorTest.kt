@@ -46,6 +46,20 @@ class NarrativeCoordinatorTest {
     }
 
     @Test
+    fun `failure restores awaiting advance for automatic setup actions`() {
+        coordinator.onUserAdvanceRequested(NarrativeAction.CreateAct)
+        coordinator.onActionCompleted(
+            NarrativeAction.CreateAct,
+            NarrativeExecutionResult.Failure("network"),
+        )
+
+        val state = coordinator.uiState.value
+        assertTrue(state.pendingAction is NarrativeAction.CreateAct)
+        assertTrue(state.phase is NarrativePhase.AwaitingAdvance)
+        assertTrue(state.showAdvanceTrigger)
+    }
+
+    @Test
     fun `failure restores awaiting advance for user actions`() {
         val chapter = com.ilustris.sagai.features.chapter.data.model.ChapterContent(
             data = com.ilustris.sagai.features.chapter.data.model.Chapter(id = 1, actId = 1),

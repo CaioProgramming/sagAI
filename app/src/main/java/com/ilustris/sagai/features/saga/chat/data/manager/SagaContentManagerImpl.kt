@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toRoman
@@ -108,6 +109,7 @@ class SagaContentManagerImpl
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
+        private val stringResourceHelper: StringResourceHelper,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -177,6 +179,31 @@ class SagaContentManagerImpl
             executeNarrativeAction(action, isRetry = false)
         }
 
+        private fun handleNarrativeActionFailure(
+            action: NarrativeAction,
+            canRetry: Boolean = true,
+        ) {
+            autoProgressionChainSteps = 0
+            val userMessage = stringResourceHelper.getString(R.string.unexpected_error)
+            narrativeCoordinator.onActionCompleted(
+                action,
+                NarrativeExecutionResult.Failure(
+                    message = userMessage,
+                    canRetry = canRetry,
+                ),
+            )
+            dismissMilestone()
+            sagaThemeManager.showSnackBar(
+                userMessage,
+                stringResourceHelper.getString(R.string.try_again) to {
+                    managerScope.launch {
+                        narrativeCoordinator.clearError()
+                        executeNarrativeAction(action, isRetry = true)
+                    }
+                },
+            )
+        }
+
         private suspend fun executeNarrativeAction(
             action: NarrativeAction,
             isRetry: Boolean,
@@ -202,20 +229,7 @@ class SagaContentManagerImpl
 
                     is NarrativeExecutionResult.Failure -> {
                         Timber.e("Failed narrative action: ${result.message}")
-                        emitMilestone(null)
-                        if (isRetry) {
-                            sagaThemeManager.showSnackBar(
-                                result.message,
-                                context.getString(R.string.try_again) to {
-                                    managerScope.launch {
-                                        narrativeCoordinator.clearError()
-                                        executeNarrativeAction(action, isRetry = true)
-                                    }
-                                },
-                            )
-                        } else {
-                            executeNarrativeAction(action, isRetry = true)
-                        }
+                        handleNarrativeActionFailure(action, result.canRetry)
                     }
                 }
             } catch (e: Exception) {
@@ -223,11 +237,7 @@ class SagaContentManagerImpl
                     throw e
                 }
                 Timber.e(e, "Unexpected error executing narrative action")
-                narrativeCoordinator.onActionCompleted(
-                    action,
-                    NarrativeExecutionResult.Failure(e.message ?: "Unknown error"),
-                )
-                emitMilestone(null)
+                handleNarrativeActionFailure(action, canRetry = true)
             } finally {
                 narrativeCoordinator.markProcessing(false)
                 setNarrativeProcessingStatus(false)
@@ -901,22 +911,13 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.CreateTimeline -> {
-                    (resultValue as? Timeline)?.let { timeline ->
-                        chapterUseCase.updateChapter(
-                            saga.currentChapterInfo!!.data.copy(
-                                currentEventId = timeline.id,
-                            ),
-                        )
-                        val objective =
-                            timelineUseCase
-                                .getTimelineObjective(content.value!!, timeline)
-                                .getSuccess()
-                        if (objective != null && objective.hasActiveSceneSummary()) {
-                            emitMilestone(SagaMilestone.CurrentObjective(objective))
-                        } else {
-                            dismissMilestone()
-                        }
-                    } ?: dismissMilestone()
+                    val timeline = resultValue as? Timeline
+                    if (timeline != null && timeline.hasActiveSceneSummary()) {
+                        timeline.sceneSummary?.let { _sceneSummary.value = it }
+                        emitMilestone(SagaMilestone.CurrentObjective(timeline))
+                    } else {
+                        dismissMilestone()
+                    }
                 }
 
                 is NarrativeAction.EvolveTimeline -> {
