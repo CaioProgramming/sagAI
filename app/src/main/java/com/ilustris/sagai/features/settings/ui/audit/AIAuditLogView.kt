@@ -603,7 +603,7 @@ fun AuditLogItem(
                 if (!log.blueprintKey.isNullOrEmpty()) {
                     if (log.suggestion != null) {
                         Text(
-                            text = "Improvement sugestion",
+                            text = stringResource(R.string.audit_logs_improvement_suggestion),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -645,7 +645,7 @@ fun AuditLogItem(
                                         .size(24.dp)
                                         .padding(horizontal = 8.dp),
                             )
-                            Text("Suggest Improvements", fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.audit_logs_suggest_improvements), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }

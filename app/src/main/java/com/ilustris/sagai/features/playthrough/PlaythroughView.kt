@@ -78,7 +78,7 @@ fun PlaythroughView(
                 IconButton(onClick = onBack) {
                     Icon(
                         painterResource(R.drawable.ic_back_left),
-                        contentDescription = "Voltar",
+                        contentDescription = stringResource(R.string.back_button_description),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -104,7 +104,7 @@ fun PlaythroughView(
                         ) {
                             StarryLoader(
                                 true,
-                                "Analisando sua jornada...",
+                                stringResource(R.string.playthrough_loading_analyzing),
                                 textStyle =
                                     MaterialTheme.typography.labelMedium.copy(
                                         textAlign = TextAlign.Center,
@@ -238,7 +238,7 @@ fun PlaythroughView(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
-                                    text = "Refletindo sobre sua alma através das histórias.",
+                                    text = stringResource(R.string.playthrough_reflection_footer),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                     textAlign = TextAlign.Center,

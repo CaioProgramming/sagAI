@@ -411,6 +411,55 @@
     <string name="restore_database_description">Select a backup to restore your entire database.</string>
     <string name="restore_database_button">Restore Database</string>
 
+    <!-- SOS -->
+    <string name="sos_recovery_subtitle">We will check what happened and you can return to your sagas shortly.</string>
+    <string name="sos_restore_dialog_title">Restore your sagas before continuing?</string>
+    <string name="sos_restore_dialog_message">Continuing without a backup will permanently delete all your existing sagas and chronicles. This action cannot be undone.</string>
+    <string name="sos_restore_failed">Could not restore your sagas: %1$s</string>
+    <string name="sos_loading_preparing">Preparing system…</string>
+    <string name="sos_error_clear_database_failed">Failed to clear corrupted database.</string>
+    <string name="sos_error_restore_sagas_failed">Failed to restore any sagas.</string>
+    <string name="sos_loading_clearing_data">Clearing all data…</string>
+    <string name="sos_error_clear_database">Failed to clear database.</string>
+    <string name="sos_unknown_system_failure">Unknown system failure</string>
+
+    <!-- Playthrough -->
+    <string name="playthrough_loading_analyzing">Analyzing your journey…</string>
+    <string name="playthrough_reflection_footer">Reflecting on your soul through the stories.</string>
+    <string name="playthrough_load_error">Could not load playthrough data.</string>
+
+    <!-- Character stats -->
+    <string name="character_stat_height">Height</string>
+    <string name="character_stat_weight">Weight</string>
+    <string name="character_generating">Generating %1$s…</string>
+
+    <!-- Chat -->
+    <string name="regenerate_audio">Regenerate audio…</string>
+    <string name="see_reasoning">See reasoning</string>
+    <string name="milestone_loading_cd">Loading</string>
+
+    <!-- Audit logs -->
+    <string name="audit_logs_improvement_suggestion">Improvement suggestion</string>
+    <string name="audit_logs_suggest_improvements">Suggest Improvements</string>
+    <string name="audit_logs_reasoning_cd">Reasoning</string>
+
+    <!-- Book reader -->
+    <string name="share_book_pdf_chooser">Share Book PDF</string>
+    <string name="share_book_pdf_subject">Sharing %1$s from Sagas</string>
+    <string name="regenerate_book_cd">Regenerate Book</string>
+    <string name="share_pdf_cd">Share PDF</string>
+    <string name="book_share_preparing">Preparing your chronicle for sharing…</string>
+    <string name="book_share_error_uri">Failed to get file URI</string>
+    <string name="book_share_error_pdf">Failed to generate PDF</string>
+    <string name="act_not_found">Act not found</string>
+
+    <!-- Settings -->
+    <string name="settings_wipe_loading">Clearing your universes…</string>
+    <string name="settings_wipe_success">Your stories were removed — time to start fresh!</string>
+    <string name="settings_export_database_loading">Exporting database…</string>
+    <string name="settings_export_database_success">Database exported successfully!</string>
+    <string name="settings_export_database_failed">Failed to export database.</string>
+
     <!-- Conversation Snippet Sharing -->
     <string name="messages_selected">%1$d of %2$d messages selected</string>
     <string name="share">Share</string>

@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.Scaffold
 import com.ilustris.sagai.MainActivity
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.sos.presentation.SOSViewModel
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,7 +21,7 @@ class SOSActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val errorMessage = intent.getStringExtra(EXTRA_ERROR_MESSAGE) ?: "Unknown system failure"
+        val errorMessage = intent.getStringExtra(EXTRA_ERROR_MESSAGE) ?: getString(R.string.sos_unknown_system_failure)
         val isDatabaseError = intent.getBooleanExtra(EXTRA_IS_DATABASE_ERROR, false)
         val exceptionClass = intent.getStringExtra(EXTRA_EXCEPTION_CLASS) ?: "Exception"
 

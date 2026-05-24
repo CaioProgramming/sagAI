@@ -9,9 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
@@ -25,28 +27,33 @@ fun CharacterStats(
     val stats =
         buildList {
             if (traits.gender.isNotBlank()) {
-                add(traits.gender to "Gênero")
+                add(traits.gender to R.string.character_form_title_gender)
             }
             if (traits.height > 0) {
-                add("${traits.height.toInt()}cm" to "Altura")
+                add("${traits.height.toInt()}cm" to R.string.character_stat_height)
             }
             if (traits.weight > 0) {
-                add("${traits.weight.toInt()}kg" to "Peso")
+                add("${traits.weight.toInt()}kg" to R.string.character_stat_weight)
             }
             if (traits.race.isNotBlank()) {
-                add(traits.race to "Raça")
+                add(traits.race to R.string.character_form_label_race)
             }
             if (traits.ethnicity.isNotBlank()) {
-                add(traits.ethnicity to "Etnia")
+                add(traits.ethnicity to R.string.character_form_label_ethnicity)
             }
         }
 
     if (stats.isEmpty()) return
 
     LazyRow(modifier = Modifier.padding(16.dp)) {
-        stats.forEach { (value, label) ->
+        stats.forEach { (value, labelRes) ->
             item {
-                VerticalLabel(value, label, genre, contentColor)
+                VerticalLabel(
+                    value = value,
+                    label = stringResource(labelRes),
+                    genre = genre,
+                    contentColor = contentColor,
+                )
             }
         }
     }

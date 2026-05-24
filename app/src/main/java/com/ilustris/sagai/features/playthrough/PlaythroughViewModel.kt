@@ -2,7 +2,9 @@ package com.ilustris.sagai.features.playthrough
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.playthrough.data.model.PlayThroughData
 import com.ilustris.sagai.features.playthrough.data.model.SagaPlaythrough
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +32,7 @@ class PlaythroughViewModel
     @Inject
     constructor(
         private val playthroughUseCase: PlaythroughUseCase,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<PlaythroughUiState>(PlaythroughUiState.Loading)
         val uiState = _uiState.asStateFlow()
@@ -51,7 +54,7 @@ class PlaythroughViewModel
                     is RequestResult.Error -> {
                         _uiState.value =
                             PlaythroughUiState.Empty(
-                                "Erro ao carregar dados de jogatina",
+                                stringResourceHelper.getString(R.string.playthrough_load_error),
                             )
                     }
                 }

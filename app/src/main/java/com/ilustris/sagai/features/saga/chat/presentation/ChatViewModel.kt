@@ -1132,7 +1132,7 @@ class ChatViewModel
                         }
                     }.onFailureAsync {
                         sagaThemeManager.showSnackBar(
-                            message = "Ocorreu um erro ao salvar a mensagem",
+                            message = context.getString(R.string.message_save_error),
                             action =
                                 context.getString(R.string.try_again) to {
                                     retryAiResponse(message)
@@ -1234,7 +1234,7 @@ class ChatViewModel
                                         linkMessageToCharacter(generatedMessage, newCharacter)
                                     }.onFailureAsync {
                                         sagaThemeManager.showSnackBar(
-                                            message = "Ocorreu um erro ao criar o personagem",
+                                            message = context.getString(R.string.character_create_error),
                                             action =
                                                 context.getString(R.string.try_again) to {
                                                     requestNewCharacter(
@@ -1311,7 +1311,7 @@ class ChatViewModel
                         candidateName = message.speakerName,
                     ).onFailureAsync {
                         sagaThemeManager.showSnackBar(
-                            message = "Ocorreu um erro ao criar o personagem",
+                            message = context.getString(R.string.character_create_error),
                             action =
                                 context.getString(R.string.try_again) to {
                                     requestNewCharacter(

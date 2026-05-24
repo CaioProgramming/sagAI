@@ -2,10 +2,12 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.usecase.PaletteUseCase
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
@@ -27,6 +29,7 @@ class CharacterDetailsViewModel
         private val paletteUseCase: PaletteUseCase,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
@@ -159,7 +162,8 @@ class CharacterDetailsViewModel
             selectedCharacter: Character,
         ) {
             isGenerating.value = true
-            loadingMessage.value = "Gerando ${selectedCharacter.name}..."
+            loadingMessage.value =
+                stringResourceHelper.getString(R.string.character_generating, selectedCharacter.name)
             imageReasoning.value = null
 
             viewModelScope.launch(Dispatchers.IO) {

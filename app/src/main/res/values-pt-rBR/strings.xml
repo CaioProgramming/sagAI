@@ -603,6 +603,91 @@
     <string name="import_database_failed">Não foi possível importar o banco de dados. Verifique o arquivo e tente novamente.</string>
     <string name="import_database_success">Banco de dados importado com sucesso. Reiniciando o app…</string>
     <string name="backup_error_restore_database_failed">Não foi possível restaurar este backup do banco de dados.</string>
+
+    <!-- SOS -->
+    <!-- TODO: Review translation -->
+    <string name="sos_recovery_subtitle">Vamos verificar o que aconteceu e você poderá voltar às suas sagas em breve.</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_restore_dialog_title">Deseja restaurar suas sagas antes de continuar?</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_restore_dialog_message">Continuar sem backup apagará permanentemente todas as suas sagas e crônicas. Esta ação não pode ser desfeita.</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_restore_failed">Não foi possível restaurar suas sagas: %1$s</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_loading_preparing">Preparando o sistema…</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_error_clear_database_failed">Falha ao limpar o banco de dados corrompido.</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_error_restore_sagas_failed">Falha ao restaurar as sagas.</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_loading_clearing_data">Limpando todos os dados…</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_error_clear_database">Falha ao limpar o banco de dados.</string>
+    <!-- TODO: Review translation -->
+    <string name="sos_unknown_system_failure">Falha desconhecida do sistema</string>
+
+    <!-- Playthrough -->
+    <!-- TODO: Review translation -->
+    <string name="playthrough_loading_analyzing">Analisando sua jornada…</string>
+    <!-- TODO: Review translation -->
+    <string name="playthrough_reflection_footer">Refletindo sobre sua alma através das histórias.</string>
+    <!-- TODO: Review translation -->
+    <string name="playthrough_load_error">Erro ao carregar dados de jogatina.</string>
+
+    <!-- Character stats -->
+    <!-- TODO: Review translation -->
+    <string name="character_stat_height">Altura</string>
+    <!-- TODO: Review translation -->
+    <string name="character_stat_weight">Peso</string>
+    <!-- TODO: Review translation -->
+    <string name="character_generating">Gerando %1$s…</string>
+
+    <!-- Chat -->
+    <!-- TODO: Review translation -->
+    <string name="regenerate_audio">Regenerar áudio…</string>
+    <!-- TODO: Review translation -->
+    <string name="see_reasoning">Ver raciocínio</string>
+    <!-- TODO: Review translation -->
+    <string name="milestone_loading_cd">Carregando</string>
+
+    <!-- Audit logs -->
+    <!-- TODO: Review translation -->
+    <string name="audit_logs_improvement_suggestion">Sugestão de melhoria</string>
+    <!-- TODO: Review translation -->
+    <string name="audit_logs_suggest_improvements">Sugerir melhorias</string>
+    <!-- TODO: Review translation -->
+    <string name="audit_logs_reasoning_cd">Raciocínio</string>
+
+    <!-- Book reader -->
+    <!-- TODO: Review translation -->
+    <string name="share_book_pdf_chooser">Compartilhar PDF do livro</string>
+    <!-- TODO: Review translation -->
+    <string name="share_book_pdf_subject">Compartilhando %1$s do Sagas</string>
+    <!-- TODO: Review translation -->
+    <string name="regenerate_book_cd">Regenerar livro</string>
+    <!-- TODO: Review translation -->
+    <string name="share_pdf_cd">Compartilhar PDF</string>
+    <!-- TODO: Review translation -->
+    <string name="book_share_preparing">Preparando sua crônica para compartilhar…</string>
+    <!-- TODO: Review translation -->
+    <string name="book_share_error_uri">Falha ao obter URI do arquivo</string>
+    <!-- TODO: Review translation -->
+    <string name="book_share_error_pdf">Falha ao gerar PDF</string>
+    <!-- TODO: Review translation -->
+    <string name="act_not_found">Ato não encontrado</string>
+
+    <!-- Settings -->
+    <!-- TODO: Review translation -->
+    <string name="settings_wipe_loading">Limpando seus universos…</string>
+    <!-- TODO: Review translation -->
+    <string name="settings_wipe_success">Suas histórias foram removidas — hora de recomeçar!</string>
+    <!-- TODO: Review translation -->
+    <string name="settings_export_database_loading">Exportando banco de dados…</string>
+    <!-- TODO: Review translation -->
+    <string name="settings_export_database_success">Banco de dados exportado com sucesso!</string>
+    <!-- TODO: Review translation -->
+    <string name="settings_export_database_failed">Falha ao exportar banco de dados.</string>
+
     <string name="restore_database_title">Backups de banco de dados</string>
     <string name="restore_database_description">Selecione um backup para restaurar suas histórias</string>
     <string name="onboarding_skip">Pular</string>

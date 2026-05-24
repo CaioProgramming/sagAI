@@ -142,9 +142,9 @@ class SettingsViewModel
         fun wipeAppData() {
             viewModelScope.launch {
                 isLoading.value = true
-                loadingMessage.emit("Limpando seus universos...")
+                loadingMessage.emit(stringHelper.getString(R.string.settings_wipe_loading))
                 settingsUseCase.wipeAppData()
-                loadingMessage.emit("Suas histórias foram removidas, hora de recomeçar!")
+                loadingMessage.emit(stringHelper.getString(R.string.settings_wipe_success))
                 loadMemoryUsage()
                 delay(2.seconds)
                 isLoading.value = false
@@ -167,16 +167,16 @@ class SettingsViewModel
         fun exportDatabase(destinationUri: Uri) {
             viewModelScope.launch {
                 isLoading.value = true
-                loadingMessage.emit("Exportando banco de dados...")
+                loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_loading))
                 settingsUseCase
                     .exportDatabase(destinationUri)
                     .onSuccessAsync {
-                        loadingMessage.emit("Banco de dados exportado com sucesso!")
+                        loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_success))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)
                     }.onFailureAsync {
-                        loadingMessage.emit("Falha ao exportar banco de dados.")
+                        loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_failed))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)

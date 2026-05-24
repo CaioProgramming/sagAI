@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -234,7 +235,7 @@ fun ActReader(
         }
         item {
             Text(
-                "Conclusão",
+                stringResource(R.string.volume_conclusion),
                 style =
                     MaterialTheme.typography.titleLarge.copy(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -274,7 +275,7 @@ fun ActReader(
             }
             item {
                 Text(
-                    "Sobre você",
+                    stringResource(R.string.review_page_about_you_title),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -407,7 +408,7 @@ fun ActReadingContent(
 
             item {
                 Text(
-                    "Conclusão",
+                    stringResource(R.string.volume_conclusion),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -447,7 +448,7 @@ fun ActReadingContent(
                 }
                 item {
                     Text(
-                        "Sobre você",
+                        stringResource(R.string.review_page_about_you_title),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -506,7 +507,10 @@ fun IntroductionPage(
                 .padding(16.dp),
     ) {
         Text(
-            "Criado em ${createdAt.formatDate(DateFormatOption.DAY_OF_WEEK_DD_MM_YYYY)}",
+            stringResource(
+                R.string.saga_detail_status_created,
+                createdAt.formatDate(DateFormatOption.DAY_OF_WEEK_DD_MM_YYYY),
+            ),
             style =
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,

@@ -883,7 +883,7 @@ fun ChatBubble(
                     ) {
                         Icon(
                             painterResource(R.drawable.baseline_refresh_24),
-                            "Tentar novamente",
+                            contentDescription = stringResource(R.string.try_again),
                             modifier =
                                 Modifier
                                     .padding(4.dp)
@@ -948,7 +948,7 @@ private fun AudioGenButton(
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.secondary),
             )
             Text(
-                "Regenerate audio...",
+                text = stringResource(R.string.regenerate_audio),
                 style =
                     MaterialTheme.typography.labelMedium.copy(
                         fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -977,7 +977,7 @@ private fun ReasoningView(
         ) {
             Icon(
                 painterResource(R.drawable.ic_spark),
-                contentDescription = "Reasoning",
+                contentDescription = stringResource(R.string.audit_logs_reasoning_cd),
                 modifier =
                     Modifier
                         .size(12.dp)
@@ -985,7 +985,7 @@ private fun ReasoningView(
                 tint = MaterialTheme.colorScheme.secondary,
             )
             Text(
-                if (isExpanded) it else "See reasoning",
+                if (isExpanded) it else stringResource(R.string.see_reasoning),
                 style =
                     MaterialTheme.typography.labelSmall.copy(
                         color = MaterialTheme.colorScheme.secondary.copy(alpha = .5f),

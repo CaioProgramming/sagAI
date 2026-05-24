@@ -2,10 +2,12 @@ package com.ilustris.sagai.features.sos.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.database.backup.BackupMetadata
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.backup.RestorableSaga
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,7 @@ class SOSViewModel
         private val databaseBackupService: DatabaseBackupService,
         private val backupService: BackupService,
         private val sagaBackupService: SagaBackupService,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _state = MutableStateFlow(SOSState())
         val state = _state.asStateFlow()
@@ -50,7 +53,7 @@ class SOSViewModel
 
         fun importSagaBackups() {
             viewModelScope.launch {
-                _state.update { it.copy(isLoading = true, loadingMessage = "Preparing system...") }
+                _state.update { it.copy(isLoading = true, loadingMessage = stringResourceHelper.getString(R.string.sos_loading_preparing)) }
 
                 // 1. Clear database
                 val clearResult = databaseBackupService.clearDatabase()
@@ -58,7 +61,7 @@ class SOSViewModel
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            error = "Failed to clear corrupted database.",
+                            error = stringResourceHelper.getString(R.string.sos_error_clear_database_failed),
                         )
                     }
                     return@launch
@@ -69,7 +72,15 @@ class SOSViewModel
                 var successCount = 0
 
                 sagaBackups.forEach { saga ->
-                    _state.update { it.copy(loadingMessage = "Restoring ${saga.manifest.title}...") }
+                    _state.update {
+                        it.copy(
+                            loadingMessage =
+                                stringResourceHelper.getString(
+                                    R.string.backup_loading_restoring_saga,
+                                    saga.manifest.title,
+                                ),
+                        )
+                    }
                     val result = sagaBackupService.restoreContent(saga)
                     if (result.isSuccess) successCount++
                 }
@@ -77,7 +88,12 @@ class SOSViewModel
                 if (successCount > 0 || sagaBackups.isEmpty()) {
                     _state.update { it.copy(isLoading = false, recoverySuccess = true) }
                 } else {
-                    _state.update { it.copy(isLoading = false, error = "Failed to restore any sagas.") }
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            error = stringResourceHelper.getString(R.string.sos_error_restore_sagas_failed),
+                        )
+                    }
                 }
             }
         }
@@ -87,7 +103,7 @@ class SOSViewModel
                 _state.update {
                     it.copy(
                         isLoading = true,
-                        loadingMessage = "Restoring full database...",
+                        loadingMessage = stringResourceHelper.getString(R.string.backup_loading_restoring_database),
                     )
                 }
                 val result = databaseBackupService.restoreBackup(backup)
@@ -97,7 +113,7 @@ class SOSViewModel
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            error = "Failed to restore database backup.",
+                            error = stringResourceHelper.getString(R.string.backup_error_restore_database_failed),
                         )
                     }
                 }
@@ -106,12 +122,22 @@ class SOSViewModel
 
         fun freshStart() {
             viewModelScope.launch {
-                _state.update { it.copy(isLoading = true, loadingMessage = "Clearing all data...") }
+                _state.update {
+                    it.copy(
+                        isLoading = true,
+                        loadingMessage = stringResourceHelper.getString(R.string.sos_loading_clearing_data),
+                    )
+                }
                 val result = databaseBackupService.clearDatabase()
                 if (result.isSuccess) {
                     _state.update { it.copy(isLoading = false, recoverySuccess = true) }
                 } else {
-                    _state.update { it.copy(isLoading = false, error = "Failed to clear database.") }
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            error = stringResourceHelper.getString(R.string.sos_error_clear_database),
+                        )
+                    }
                 }
             }
         }
