@@ -54,12 +54,12 @@ class OnboardingStateMapper
             saga: Saga?,
         ): List<OnboardingUiPage> {
             val storyAssets =
-                remoteConfigService.getJson<List<OnboardingAsset>>("story_faces") ?: emptyList()
+                remoteConfigService.getJsonList("story_faces", OnboardingAsset::class.java) ?: emptyList()
             val iconsAssets =
-                remoteConfigService.getJson<List<OnboardingAsset>>("avatar_faces") ?: emptyList()
+                remoteConfigService.getJsonList("avatar_faces", OnboardingAsset::class.java) ?: emptyList()
             val genreConfigs = Genre.entries.associateWith { genreVisualConfig.getVisualConfig(it) }
             val mascotDesigns =
-                remoteConfigService.getJson<Map<String, String>>("mascot_full_body_designs")
+                remoteConfigService.getJsonMapStringString("mascot_full_body_designs")
                     ?: emptyMap()
 
             return content.pages.mapIndexed { index, page ->

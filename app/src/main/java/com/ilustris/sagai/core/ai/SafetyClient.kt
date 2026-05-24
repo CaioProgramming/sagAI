@@ -1,7 +1,6 @@
 package com.ilustris.sagai.core.ai
 
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient.ModelRequirement
 import com.ilustris.sagai.core.ai.model.AIGeneration
@@ -14,7 +13,7 @@ import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
-import com.ilustris.sagai.core.network.GeminiApiService
+import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
@@ -30,7 +29,7 @@ class SafetyClient
         private val remoteConfigService: RemoteConfigService,
         private val ageVerificationService: AgeVerificationService,
         private val promptService: PromptService,
-        private val geminiApiService: GeminiApiService,
+        private val geminiApiClient: GeminiApiClient,
         private val aiAuditLogDao: AIAuditLogDao,
     ) : AIClient() {
         suspend fun checkSafety(userInput: String): SafeGuard {
@@ -65,7 +64,7 @@ class SafetyClient
                         GeminiGenerationConfig(),
                     )
 
-                val response = geminiApiService.generateContent(modelName, apiKey, request)
+                val response = geminiApiClient.generateContent(modelName, apiKey, request)
                 val responseText =
                     response.candidates
                         ?.firstOrNull()
@@ -76,10 +75,7 @@ class SafetyClient
 
                 val sanitizedJson = responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                 val result =
-                    Gson().fromJson<AIGeneration<SafeGuard>>(
-                        sanitizedJson,
-                        TypeToken.getParameterized(AIGeneration::class.java, SafeGuard::class.java).type,
-                    )
+                    parseAIGenerationFromJson<SafeGuard>(Gson(), sanitizedJson)
 
                 val safetyResult = result.data
                 val duration = System.currentTimeMillis() - startTime
@@ -129,7 +125,7 @@ class SafetyClient
 
         suspend fun modelName(requirement: ModelRequirement): String {
             val tierConfig =
-                remoteConfigService.getJson<Map<String, Any>>("model_configs") ?: emptyMap()
+                remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
             return when (val config = tierConfig[requirement.name]) {
                 is String -> {
                     config.replace("models/", "")

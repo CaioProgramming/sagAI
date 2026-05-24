@@ -168,7 +168,7 @@ class SagaThemeManager
 
         private suspend fun getReplySfx(genre: Genre) {
             withContext(Dispatchers.IO) {
-                val sfxMap = remoteConfig.getJson<Map<String, String>>("reply_sfx_config")
+                val sfxMap = remoteConfig.getJsonMapStringString("reply_sfx_config")
                 val finalUrl = sfxMap?.get(genre.name) ?: sfxMap?.get("DEFAULT")
                 if (finalUrl.isNullOrEmpty()) return@withContext
 

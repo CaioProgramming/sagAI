@@ -4,7 +4,7 @@ import android.util.Base64
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.createAudioGenerationRequest
 import timber.log.Timber
-import com.ilustris.sagai.core.network.GeminiApiService
+import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -24,7 +24,7 @@ class AudioGenClientImpl
     constructor(
         private val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
-        private val geminiApiService: GeminiApiService,
+        private val geminiApiClient: GeminiApiClient,
     ) : AudioGenClient {
         companion object {
             const val AUDIO_GEN_MODEL_FLAG = "audioGenModel"
@@ -58,12 +58,7 @@ class AudioGenClientImpl
                     "Sending audio generation request to model: $modelName with voice: ${audioConfig.voice.id}",
                 )
 
-                val response =
-                    geminiApiService.generateContent(
-                        model = modelName,
-                        apiKey = apiKey,
-                        request = request,
-                    )
+                val response = geminiApiClient.generateContent(modelName, apiKey, request)
 
                 // Check for API error
                 response.error?.let { error ->

@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder
 import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
 import timber.log.Timber
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -27,6 +28,7 @@ fun Long.formatDuration(): String {
 fun Class<*>.toSchema(
     nullable: Boolean,
     excludeFields: List<String>,
+    genericType: Type? = null,
 ): Schema {
     if (this.isEnum) {
         val enumConstants = this.enumConstants?.map { it.toString() } ?: emptyList()
@@ -84,12 +86,15 @@ fun Class<*>.toSchema(
         }
 
         List::class.java, Array::class.java -> {
-            val itemType =
+            val itemType = if (genericType is ParameterizedType) {
+                genericType.actualTypeArguments.firstOrNull() as? Class<*>
+            } else {
                 this.genericInterfaces
                     .mapNotNull { it as? ParameterizedType }
                     .firstOrNull()
                     ?.actualTypeArguments
                     ?.firstOrNull() as? Class<*>
+            }
 
             Schema.array(
                 itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
@@ -109,16 +114,16 @@ fun Class<*>.toSchema(
 fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String, Schema> =
     declaredFields
         .filter {
-            excludeFields.plus($$"$stable").contains(it.name).not()
+            !excludeFields.contains(it.name) && !it.name.startsWith("$") && !it.name.contains("companion")
         }.associate {
-            val memberIsNullable =
-                this
-                    .kotlin.members
-                    .find { member -> member.name == it.name }
-                    ?.returnType
-                    ?.isMarkedNullable
-            Timber.tag("SchemaMapper").d("Mapping field ${it.name} nullable: $memberIsNullable type: ${it.type.name}")
-            it.name to it.type.toSchema(memberIsNullable == true, excludeFields)
+            // Safely check for nullability annotations using Java reflection
+            val isNullable = it.annotations.any { ann -> 
+                ann.annotationClass.java.simpleName.contains("Nullable", ignoreCase = true)
+            } || !it.type.isPrimitive
+
+            
+            Timber.tag("SchemaMapper").d("Mapping field ${it.name} nullable: $isNullable type: ${it.type.name}")
+            it.name to it.type.toSchema(isNullable, excludeFields, it.genericType)
         }
 
 fun String.removePackagePrefix(): String =

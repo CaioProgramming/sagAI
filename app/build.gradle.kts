@@ -137,9 +137,7 @@ dependencies {
 
     implementation(libs.compose.charts)
 
-    // Retrofit & OkHttp
-    implementation(libs.retrofit.core)
-    implementation(libs.retrofit.converter.gson)
+    // OkHttp (Gemini REST)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlin.toon)

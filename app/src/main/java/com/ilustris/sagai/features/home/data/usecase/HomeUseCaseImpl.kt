@@ -66,7 +66,7 @@ class HomeUseCaseImpl
 
         private suspend fun useFallback(): DynamicSagaPrompt {
             val fallbacks =
-                remoteConfig.getJson<List<DynamicSagaPrompt>>("dynamic_saga_prompt_fallbacks")
+                remoteConfig.getJsonList("dynamic_saga_prompt_fallbacks", DynamicSagaPrompt::class.java)
             return fallbacks?.randomOrNull() ?: DynamicSagaPrompt(
                 title = "SYSTEM RESONANCE DETECTED",
                 subtitle = "A new narrative rift is opening. The library awaits your presence.",

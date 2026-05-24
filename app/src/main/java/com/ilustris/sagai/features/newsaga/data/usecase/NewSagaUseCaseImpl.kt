@@ -254,7 +254,7 @@ class NewSagaUseCaseImpl
             executeRequest {
                 val identity = genre?.let { genreConfigService.conversationBlueprint(it) } ?: ""
                 val processConfig =
-                    remoteConfigService.getJson<Map<String, String>>("process_config") ?: emptyMap()
+                    remoteConfigService.getJsonMapStringString("process_config") ?: emptyMap()
                 val instruction = processConfig[process.name] ?: ""
                 gemmaClient.generate(
                     NewSagaPrompts.generateProcessPrompt(
@@ -324,7 +324,7 @@ class NewSagaUseCaseImpl
         ): RequestResult<CreationAssist> =
             executeRequest {
                 val objectives =
-                    remoteConfigService.getJson<Map<String, String>>("creation_flow_objectives")!!
+                    remoteConfigService.getJsonMapStringString("creation_flow_objectives")!!
                 val flowSpecificObjectives = objectives[flow.name] ?: ""
                 val identity =
                     sagaDraft?.genre?.let { genreConfigService.conversationBlueprint(it) } ?: ""

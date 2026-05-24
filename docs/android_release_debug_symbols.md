@@ -16,14 +16,14 @@ Copy logcat or Crashlytics text, then:
 ```bash
 chmod +x scripts/deobfuscate-stacktrace.sh
 
-# From a saved stack trace file
-./scripts/deobfuscate-stacktrace.sh < /tmp/stacktrace.txt
-
-# From clipboard (macOS)
+# App-only frames (default) — hides Android/Kotlin/coroutines noise
 pbpaste | ./scripts/deobfuscate-stacktrace.sh
 
-# From device logcat (last crash lines)
-adb logcat -d | ./scripts/deobfuscate-stacktrace.sh
+# Full deobfuscated trace
+pbpaste | ./scripts/deobfuscate-stacktrace.sh --full
+
+# Directly from device logcat, app-only
+./scripts/deobfuscate-stacktrace.sh --logcat
 ```
 
 Requires `ANDROID_HOME` (or `~/Library/Android/sdk`) with **cmdline-tools** (`retrace`).
