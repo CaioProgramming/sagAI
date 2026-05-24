@@ -158,6 +158,8 @@ class PermissionService
                     "application/database",
                     "application/x-sqlite-3",
                     "application/sqlite3",
+                    // Lets users pick .db when the provider only exposes a generic type.
+                    "*/*",
                 )
 
             /**

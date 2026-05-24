@@ -11,7 +11,7 @@ class EmotionalToneVisualService
         private val remoteConfigService: RemoteConfigService,
     ) {
         suspend fun getVisualUrl(tone: EmotionalTone): String? {
-            val map = remoteConfigService.getJson<Map<String, String>>("tone_visuals")
+            val map = remoteConfigService.getJsonMapStringString("tone_visuals")
             return map?.get(tone.name)
         }
     }

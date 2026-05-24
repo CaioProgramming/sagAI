@@ -2,9 +2,13 @@ package com.ilustris.sagai.core.services
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.gsonTypeOfList
+import com.ilustris.sagai.core.ai.gsonTypeOfMapString
+import com.ilustris.sagai.core.ai.gsonTypeOfMapStringString
+import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import timber.log.Timber
+import java.lang.reflect.Type
 
 class RemoteConfigService {
     private val firebaseRemoteConfig by lazy {
@@ -26,16 +30,44 @@ class RemoteConfigService {
 
     suspend fun getDouble(key: String): Double? = fetchFlag("getDouble", key) { firebaseRemoteConfig.getDouble(key) }
 
-    suspend inline fun <reified T> getJson(
+    /** Plain JSON objects (data classes). Do not use for Map/List — use typed helpers below. */
+    @OptIn(ExperimentalStdlibApi::class)
+    suspend inline fun <reified T : Any> getJson(
         key: String?,
         logEnabled: Boolean = true,
+    ): T? = getJsonWithType(key, com.ilustris.sagai.core.ai.getJavaType<T>(), logEnabled)
+
+    suspend fun getJsonMapStringAny(
+        key: String?,
+        logEnabled: Boolean = true,
+    ): Map<String, Any>? = getJsonWithType(key, gsonTypeOfStringAnyMap(), logEnabled)
+
+    suspend fun getJsonMapStringString(
+        key: String?,
+        logEnabled: Boolean = true,
+    ): Map<String, String>? = getJsonWithType(key, gsonTypeOfMapStringString(), logEnabled)
+
+    suspend fun <V : Any> getJsonMapString(
+        key: String?,
+        valueClass: Class<V>,
+        logEnabled: Boolean = true,
+    ): Map<String, V>? = getJsonWithType(key, gsonTypeOfMapString(valueClass), logEnabled)
+
+    suspend fun <T : Any> getJsonList(
+        key: String?,
+        itemClass: Class<T>,
+        logEnabled: Boolean = true,
+    ): List<T>? = getJsonWithType(key, gsonTypeOfList(itemClass), logEnabled)
+
+    suspend fun <T> getJsonWithType(
+        key: String?,
+        type: Type,
+        logEnabled: Boolean,
     ): T? {
         val jsonString = getString(key, logEnabled)
         return if (jsonString?.isNotEmpty() == true) {
-            val typeToken = object : TypeToken<T>() {}
-
             try {
-                Gson().fromJson<T>(jsonString, typeToken.type)
+                Gson().fromJson(jsonString, type)
             } catch (e: Exception) {
                 Timber.tag("RemoteConfigService").e("Error parsing json for $key: ${e.message}")
                 null
@@ -67,7 +99,8 @@ class RemoteConfigService {
 suspend fun RemoteConfigService.getNarrativeRules() = getJson<NarrativeRules>("narrative_rules", false)!!
 
 suspend fun RemoteConfigService.getGenderPlaceholders() =
-    getJson<Map<String, com.ilustris.sagai.features.newsaga.data.model.GenderPlaceholders>>(
+    getJsonMapString(
         "gender_placeholders",
+        com.ilustris.sagai.features.newsaga.data.model.GenderPlaceholders::class.java,
         false,
     ) ?: emptyMap()

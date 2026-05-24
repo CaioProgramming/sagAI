@@ -36,7 +36,9 @@ fun NarrativeAction.toUi(): NarrativeActionUi {
             is NarrativeAction.GenerateChapterIntro ->
                 R.string.advance_new_chapter_introduction to R.string.releasing_chapter_introduction
 
-            is NarrativeAction.CreateTimeline ->
+            is NarrativeAction.CreateTimeline,
+            is NarrativeAction.EnsureTimelineSceneSummary,
+            ->
                 R.string.advance_start_story to R.string.releasing_start_story
 
             is NarrativeAction.GenerateEnding ->

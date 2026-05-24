@@ -1,11 +1,18 @@
 package com.ilustris.sagai.core.database.backup
 
 import android.content.Context
+import android.net.Uri
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.gson.Gson
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.database.requireSqliteDatabaseFile
+import com.ilustris.sagai.core.file.copyContentUriToFile
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -20,10 +27,10 @@ class DatabaseBackupService(
     private val database: SagaDatabase,
 ) {
     companion object {
-        private const val DB_NAME = "SagaDatabase"
         private const val BACKUP_DIR = "backups"
         private const val METADATA_FILE = "backup_metadata.json"
         private const val MAX_BACKUPS = 2
+        private const val LOG_TAG = "DatabaseBackup"
     }
 
     private fun getBackupDir(): File {
@@ -32,55 +39,62 @@ class DatabaseBackupService(
         return dir
     }
 
-    suspend fun createBackup(): Result<BackupMetadata> =
-        withContext(Dispatchers.IO) {
-            try {
-                val currentVersion = database.openHelper.readableDatabase.version
+    private fun dbFile(): File = context.getDatabasePath(SagaDatabase.NAME)
 
-                database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
+    private suspend fun performCreateBackup(): BackupMetadata {
+        logOperation("createBackup_start")
+        val currentVersion = database.openHelper.readableDatabase.version
 
-                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-                val dbFile = context.getDatabasePath(DB_NAME)
-                val backupDir = getBackupDir()
+        database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
 
-                val backupDb = File(backupDir, "backup_v${currentVersion}_$timestamp.db")
-                val backupWal = File(backupDir, "backup_v${currentVersion}_$timestamp.db-wal")
-                val backupShm = File(backupDir, "backup_v${currentVersion}_$timestamp.db-shm")
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val sourceDb = dbFile()
+        val backupDir = getBackupDir()
 
-                dbFile.copyTo(backupDb, overwrite = true)
+        val backupDb = File(backupDir, "backup_v${currentVersion}_$timestamp.db")
+        val backupWal = File(backupDir, "backup_v${currentVersion}_$timestamp.db-wal")
+        val backupShm = File(backupDir, "backup_v${currentVersion}_$timestamp.db-shm")
 
-                File(dbFile.path + "-wal").let {
-                    if (it.exists()) it.copyTo(backupWal, overwrite = true)
+        sourceDb.copyTo(backupDb, overwrite = true)
+
+        File(sourceDb.path + "-wal").let {
+            if (it.exists()) it.copyTo(backupWal, overwrite = true)
+        }
+        File(sourceDb.path + "-shm").let {
+            if (it.exists()) it.copyTo(backupShm, overwrite = true)
+        }
+
+        val checksum = calculateChecksum(backupDb)
+
+        val metadata =
+            BackupMetadata(
+                version = currentVersion,
+                appVersion = BuildConfig.VERSION_NAME,
+                timestamp = System.currentTimeMillis(),
+                filePath = backupDb.name,
+                fileSize = backupDb.length(),
+                checksum = checksum,
+            )
+
+        saveMetadata(metadata)
+        cleanOldBackups()
+        logOperation("createBackup_success", metadata.fileSize)
+        return metadata
+    }
+
+    suspend fun createBackup() =
+        databaseBackupLock.withLock {
+            executeRequest { performCreateBackup() }.also { result ->
+                if (result.isFailure) {
+                    Timber.tag(LOG_TAG).e(result.error.value, "createBackup failed")
                 }
-                File(dbFile.path + "-shm").let {
-                    if (it.exists()) it.copyTo(backupShm, overwrite = true)
-                }
-
-                val checksum = calculateChecksum(backupDb)
-
-                val metadata =
-                    BackupMetadata(
-                        version = currentVersion,
-                        appVersion = BuildConfig.VERSION_NAME,
-                        timestamp = System.currentTimeMillis(),
-                        filePath = backupDb.name,
-                        fileSize = backupDb.length(),
-                        checksum = checksum,
-                    )
-
-                saveMetadata(metadata)
-                cleanOldBackups()
-
-                Result.success(metadata)
-            } catch (e: Exception) {
-                Timber.tag("DatabaseBackup").e(e, "Backup failed")
-                Result.failure(e)
             }
         }
 
-    suspend fun restoreBackup(metadata: BackupMetadata): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            try {
+    suspend fun restoreBackup(metadata: BackupMetadata) =
+        databaseBackupLock.withLock {
+            executeRequest {
+                logOperation("restoreBackup_start", metadata.fileSize)
                 val backupDb = File(getBackupDir(), metadata.filePath)
                 if (!backupDb.exists()) error("Backup file not found")
 
@@ -89,7 +103,7 @@ class DatabaseBackupService(
 
                 database.close()
 
-                val currentDb = context.getDatabasePath(DB_NAME)
+                val currentDb = dbFile()
                 val currentWal = File(currentDb.path + "-wal")
                 val currentShm = File(currentDb.path + "-shm")
 
@@ -103,32 +117,83 @@ class DatabaseBackupService(
                 val backupShm = File(backupDb.path + "-shm")
                 if (backupWal.exists()) backupWal.copyTo(currentWal, overwrite = true)
                 if (backupShm.exists()) backupShm.copyTo(currentShm, overwrite = true)
-
-                Result.success(Unit)
-            } catch (e: Exception) {
-                Timber.tag("DatabaseBackup").e(e, "Restore failed")
-                Result.failure(e)
+                logOperation("restoreBackup_success")
+            }.also { result ->
+                if (result.isFailure) {
+                    Timber.tag(LOG_TAG).e(result.error.value, "restoreBackup failed")
+                }
             }
         }
 
-    suspend fun clearDatabase(): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            try {
+    suspend fun importDatabaseFromUri(sourceUri: Uri): RequestResult<Unit> =
+        databaseBackupLock.withLock {
+            executeRequest {
+                FirebaseCrashlytics.getInstance().log("importDatabase_start")
+                performCreateBackup()
+
+                val pendingImport = File(context.cacheDir, "pending_db_import.db")
+                try {
+                    val uriInfo = copyContentUriToFile(context, sourceUri, pendingImport)
+                    FirebaseCrashlytics.getInstance().apply {
+                        setCustomKey("import_db_bytes", pendingImport.length())
+                        uriInfo.displayName?.let { setCustomKey("import_db_name", it) }
+                        uriInfo.reportedSizeBytes?.let { setCustomKey("import_db_reported_size", it) }
+                    }
+
+                    requireSqliteDatabaseFile(pendingImport)
+
+                    val dbFile = dbFile()
+                    val walFile = File(dbFile.path + "-wal")
+                    val shmFile = File(dbFile.path + "-shm")
+
+                    database.close()
+
+                    if (walFile.exists()) walFile.delete()
+                    if (shmFile.exists()) shmFile.delete()
+                    if (dbFile.exists()) dbFile.delete()
+
+                    pendingImport.copyTo(dbFile, overwrite = true)
+                    FirebaseCrashlytics.getInstance().log("importDatabase_success")
+                } finally {
+                    pendingImport.delete()
+                }
+            }.also { result ->
+                if (result.isFailure) {
+                    Timber.tag(LOG_TAG).e(result.error.value, "importDatabase failed")
+                }
+            }
+        }
+
+    suspend fun clearDatabase() =
+        databaseBackupLock.withLock {
+            executeRequest {
+                logOperation("clearDatabase_start")
                 database.close()
-                val dbFile = context.getDatabasePath(DB_NAME)
+                val dbFile = dbFile()
                 val walFile = File(dbFile.path + "-wal")
                 val shmFile = File(dbFile.path + "-shm")
 
                 if (dbFile.exists()) dbFile.delete()
                 if (walFile.exists()) walFile.delete()
                 if (shmFile.exists()) shmFile.delete()
-
-                Result.success(Unit)
-            } catch (e: Exception) {
-                Timber.tag("DatabaseBackup").e(e, "Clear database failed")
-                Result.failure(e)
+                logOperation("clearDatabase_success")
+            }.also { result ->
+                if (result.isFailure) {
+                    Timber.tag(LOG_TAG).e(result.error.value, "clearDatabase failed")
+                }
             }
         }
+
+    private fun logOperation(
+        step: String,
+        fileSize: Long? = null,
+    ) {
+        FirebaseCrashlytics.getInstance().apply {
+            log(step)
+            setCustomKey("db_backup_step", step)
+            fileSize?.let { setCustomKey("db_backup_file_size", it) }
+        }
+    }
 
     private fun calculateChecksum(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")

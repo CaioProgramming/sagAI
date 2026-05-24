@@ -68,8 +68,9 @@ class OnboardingUseCaseImpl
 
         private suspend fun getFallbackContent(type: OnboardingType): OnboardingContent {
             val fallbacks =
-                remoteConfigService.getJson<Map<String, OnboardingContent>>(
+                remoteConfigService.getJsonMapString(
                     OnboardingPrompts.ONBOARDING_FALLBACKS,
+                    OnboardingContent::class.java,
                 )
             return fallbacks?.get(type.name) ?: OnboardingContent()
     }

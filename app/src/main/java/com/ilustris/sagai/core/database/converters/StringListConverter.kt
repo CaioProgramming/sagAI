@@ -2,7 +2,7 @@ package com.ilustris.sagai.core.database.converters
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.gsonTypeOfStringList
 
 class StringListConverter {
     @TypeConverter
@@ -14,7 +14,6 @@ class StringListConverter {
     @TypeConverter
     fun toStringList(value: String?): List<String>? {
         if (value == null) return null
-        val listType = object : TypeToken<List<String>>() {}.type
-        return Gson().fromJson(value, listType)
+        return Gson().fromJson(value, gsonTypeOfStringList())
     }
 }

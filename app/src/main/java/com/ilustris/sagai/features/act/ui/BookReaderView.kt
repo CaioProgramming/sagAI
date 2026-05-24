@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,10 +79,12 @@ fun BookReaderView(
                 Intent(Intent.ACTION_SEND).apply {
                     type = "application/pdf"
                     putExtra(Intent.EXTRA_STREAM, event.uri)
-                    putExtra(Intent.EXTRA_SUBJECT, "Sharing ${event.title} from Sagas")
+                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.share_book_pdf_subject, event.title))
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-            context.startActivity(Intent.createChooser(intent, "Share Book PDF"))
+            context.startActivity(
+                Intent.createChooser(intent, context.getString(R.string.share_book_pdf_chooser)),
+            )
         }
     }
 
@@ -192,7 +195,7 @@ fun BookReaderView(
                             ) {
                                 Icon(
                                     painterResource(R.drawable.baseline_refresh_24),
-                                    contentDescription = "Regenerate Book",
+                                    contentDescription = stringResource(R.string.regenerate_book_cd),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                 )
                             }
@@ -203,7 +206,7 @@ fun BookReaderView(
                             ) {
                                 Icon(
                                     painterResource(R.drawable.ic_share),
-                                    contentDescription = "Share PDF",
+                                    contentDescription = stringResource(R.string.share_pdf_cd),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                 )
                             }

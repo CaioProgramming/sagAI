@@ -3,9 +3,11 @@ package com.ilustris.sagai.features.act.ui
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.usecase.BookUseCase
@@ -56,6 +58,7 @@ class BookReaderViewModel
         private val sharePlayUseCase: SharePlayUseCase,
         private val fileHelper: FileHelper,
         private val pageMapper: BookPageMapper,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _state = MutableStateFlow<BookReaderState>(BookReaderState.Loading)
         val state = _state.asStateFlow()
@@ -79,7 +82,7 @@ class BookReaderViewModel
             viewModelScope.launch {
                 sagaRepository.getSagaById(sagaId).collectLatest { saga ->
                     if (saga == null) {
-                        _state.value = BookReaderState.Error("Saga not found")
+                        _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.saga_not_found))
                         return@collectLatest
                     }
                     sagaContent = saga
@@ -142,7 +145,7 @@ class BookReaderViewModel
                 _state.value =
                     BookReaderState.Generating(
                         book.actTitle,
-                        "Preparing your chronicle for sharing...",
+                        stringResourceHelper.getString(R.string.book_share_preparing),
                     )
 
                 val pages = pageMapper.buildPages(saga, act, saga.characters)
@@ -162,10 +165,10 @@ class BookReaderViewModel
                         _pdfEvent.tryEmit(event)
                         renderCurrentAct(saga)
                     } else {
-                        _state.value = BookReaderState.Error("Failed to get file URI")
+                        _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.book_share_error_uri))
                     }
                 } else {
-                    _state.value = BookReaderState.Error("Failed to generate PDF")
+                    _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.book_share_error_pdf))
                 }
             }
         }
@@ -177,7 +180,7 @@ class BookReaderViewModel
         private fun renderCurrentAct(saga: SagaContent) {
             val act =
                 saga.acts.getOrNull(currentActIndex) ?: run {
-                    _state.value = BookReaderState.Error("Act not found")
+                    _state.value = BookReaderState.Error(stringResourceHelper.getString(R.string.act_not_found))
                     return
                 }
             viewModelScope.launch {

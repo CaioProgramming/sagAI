@@ -75,6 +75,21 @@ fun Throwable.isFlowCancellation(): Boolean =
         message?.contains("child flow", ignoreCase = true) == true ||
         message?.contains("scoped flow was cancelled", ignoreCase = true) == true
 
+/** Room/SQLite access while the singleton DB was closed for backup or import. */
+fun Throwable.isRoomDatabaseClosed(): Boolean {
+    var cause: Throwable? = this
+    while (cause != null) {
+        val message = cause.message.orEmpty()
+        if (message.contains("connection pool has been closed", ignoreCase = true)) return true
+        if (message.contains("database is closed", ignoreCase = true)) return true
+        if (message.contains("Cannot perform this operation because the connection pool", ignoreCase = true)) {
+            return true
+        }
+        cause = cause.cause
+    }
+    return false
+}
+
 // asSuccess remains largely the same
 fun <R> R.asSuccess(): RequestResult.Success<R> = RequestResult.Success(this)
 
@@ -97,5 +112,5 @@ suspend fun <R> executeRequest(
         if (e.isFlowCancellation()) {
             throw e
         }
-        e.asError(reportCrash)
+        e.asError(reportCrash && !e.isRoomDatabaseClosed())
     }

@@ -1,10 +1,13 @@
 package com.ilustris.sagai.features.settings.ui
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.utils.restartApp
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -30,6 +33,7 @@ class SettingsViewModel
     constructor(
         private val settingsUseCase: SettingsUseCase,
         private val visualConfigService: GenreVisualConfigService,
+        private val stringHelper: StringResourceHelper,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
@@ -80,15 +84,15 @@ class SettingsViewModel
                                 _visualConfigs.emit(configs.toMap())
                             }
                         }
+                    }
                 }
             }
-        }
         }
 
         fun checkHasSagasWithChapters() {
             viewModelScope.launch {
                 _hasSagasWithChapters.value = settingsUseCase.hasSagasWithChapters()
-        }
+            }
         }
 
         fun clearCache() {
@@ -133,14 +137,14 @@ class SettingsViewModel
             viewModelScope.launch {
                 settingsUseCase.setMusicEnabled(enabled)
             }
-    }
+        }
 
         fun wipeAppData() {
             viewModelScope.launch {
                 isLoading.value = true
-                loadingMessage.emit("Limpando seus universos...")
+                loadingMessage.emit(stringHelper.getString(R.string.settings_wipe_loading))
                 settingsUseCase.wipeAppData()
-                loadingMessage.emit("Suas histórias foram removidas, hora de recomeçar!")
+                loadingMessage.emit(stringHelper.getString(R.string.settings_wipe_success))
                 loadMemoryUsage()
                 delay(2.seconds)
                 isLoading.value = false
@@ -163,16 +167,16 @@ class SettingsViewModel
         fun exportDatabase(destinationUri: Uri) {
             viewModelScope.launch {
                 isLoading.value = true
-                loadingMessage.emit("Exportando banco de dados...")
+                loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_loading))
                 settingsUseCase
                     .exportDatabase(destinationUri)
                     .onSuccessAsync {
-                        loadingMessage.emit("Banco de dados exportado com sucesso!")
+                        loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_success))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)
                     }.onFailureAsync {
-                        loadingMessage.emit("Falha ao exportar banco de dados.")
+                        loadingMessage.emit(stringHelper.getString(R.string.settings_export_database_failed))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)
@@ -181,17 +185,25 @@ class SettingsViewModel
         }
 
         fun importDatabase(sourceUri: Uri) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        sourceUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (_: SecurityException) {
+                    // OpenDocument grants one-shot read; tree URIs may not support persistable.
+                }
                 isLoading.value = true
-                loadingMessage.emit("Importando banco de dados...")
+                loadingMessage.emit(stringHelper.getString(R.string.backup_loading_restoring_database))
                 settingsUseCase
                     .importDatabase(sourceUri)
                     .onSuccessAsync {
-                        loadingMessage.emit("Banco de dados importado com sucesso!")
+                        loadingMessage.emit(stringHelper.getString(R.string.import_database_success))
                         delay(2.seconds)
                         context.restartApp()
                     }.onFailureAsync {
-                        loadingMessage.emit("Falha ao importar banco de dados.")
+                        loadingMessage.emit(stringHelper.getString(R.string.import_database_failed))
                         delay(3.seconds)
                         isLoading.value = false
                         loadingMessage.emit(null)
@@ -210,7 +222,7 @@ class SettingsViewModel
             viewModelScope.launch {
                 settingsUseCase.clearPreferences()
             }
-    }
+        }
     }
 
 data class SagaStorageInfo(

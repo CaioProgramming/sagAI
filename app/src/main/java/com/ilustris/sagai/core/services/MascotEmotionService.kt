@@ -35,7 +35,7 @@ class MascotEmotionService
             cache.value[genre]?.let { return it }
             val key = "${genre.name.lowercase()}_mascot_emotions"
             val raw =
-                remoteConfigService.getJson<Map<String, String>>(key)
+                remoteConfigService.getJsonMapStringString(key)
                     ?: emptyMap()
 
             val mapped =
@@ -57,7 +57,7 @@ class MascotEmotionService
         private suspend fun fetchDefaults(): Map<EmotionalTone, String> {
             defaultEmotions?.let { return it }
             val raw =
-                remoteConfigService.getJson<Map<String, String>>("default_mascot_emotions")
+                remoteConfigService.getJsonMapStringString("default_mascot_emotions")
                     ?: emptyMap()
 
             val mapped =

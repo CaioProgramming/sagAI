@@ -116,7 +116,7 @@ class SettingsUseCaseImpl
         override suspend fun setMessageEffectsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
 
-    override suspend fun setShowTutorials(enabled: Boolean) = dataStorePreferences.setBoolean(TUTORIALS_ENABLED_KEY, enabled)
+        override suspend fun setShowTutorials(enabled: Boolean) = dataStorePreferences.setBoolean(TUTORIALS_ENABLED_KEY, enabled)
 
         override fun getMusicEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MUSIC_ENABLED_KEY, true)
 
@@ -173,32 +173,8 @@ class SettingsUseCaseImpl
                 } ?: error("Could not open output stream for destination URI")
             }
 
-        override suspend fun importDatabase(sourceUri: Uri): RequestResult<Unit> =
-            executeRequest {
-                withContext(Dispatchers.IO) {
-                    val backupResult = databaseBackupService.createBackup()
-                    if (backupResult.isFailure) {
-                        error(
-                            "Failed to create backup before import: ${backupResult.exceptionOrNull()?.message}",
-                        )
-                    }
-
-                    database.close()
-
-                    val dbFile = context.getDatabasePath(SagaDatabase.NAME)
-                    val walFile = java.io.File(dbFile.path + "-wal")
-                    val shmFile = java.io.File(dbFile.path + "-shm")
-
-                    if (walFile.exists()) walFile.delete()
-                    if (shmFile.exists()) shmFile.delete()
-
-                    context.contentResolver.openInputStream(sourceUri)?.use { input ->
-                        dbFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    } ?: error("Could not open input stream for source URI")
-                }
-            }
+        override suspend fun importDatabase(sourceUri: Uri) =
+            databaseBackupService.importDatabaseFromUri(sourceUri)
 
         override suspend fun clearPreferences() {
             dataStorePreferences.clearAll()

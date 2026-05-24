@@ -18,17 +18,14 @@ class NarrativeActionExecutionModeTest {
     private val saga = SagaContent(data = Saga(id = 1))
 
     @Test
-    fun `structural setup actions are automatic`() {
-        assertEquals(NarrativeExecutionMode.Automatic, NarrativeAction.CreateAct.executionMode())
-        assertEquals(NarrativeExecutionMode.Automatic, NarrativeAction.GenerateActIntro(act).executionMode())
-        assertEquals(NarrativeExecutionMode.Automatic, NarrativeAction.CreateChapter(act).executionMode())
-        assertEquals(NarrativeExecutionMode.Automatic, NarrativeAction.GenerateChapterIntro(chapter).executionMode())
-        assertEquals(NarrativeExecutionMode.Automatic, NarrativeAction.CreateTimeline(chapter).executionMode())
-        assertEquals(NarrativeExecutionMode.Automatic, NarrativeAction.CloseTimeline(chapter).executionMode())
-    }
-
-    @Test
-    fun `narrative payoff actions require user advance`() {
+    fun `all narrative actions require user advance on the trigger`() {
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CreateAct.executionMode())
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateActIntro(act).executionMode())
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CreateChapter(act).executionMode())
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateChapterIntro(chapter).executionMode())
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CreateTimeline(chapter).executionMode())
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.EnsureTimelineSceneSummary(timeline).executionMode())
+        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CloseTimeline(chapter).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.EvolveTimeline(timeline).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateChapter(chapter).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateAct(act).executionMode())

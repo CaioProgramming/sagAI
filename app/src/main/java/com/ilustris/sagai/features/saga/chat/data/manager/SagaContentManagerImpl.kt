@@ -47,7 +47,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.shouldEnsureSceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionMaterializer
@@ -55,10 +54,8 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionMode
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
-import com.ilustris.sagai.features.saga.chat.domain.manager.executionMode
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -150,9 +147,6 @@ class SagaContentManagerImpl
         private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
         private var progressionCounter = 0
-        private var autoProgressionChainSteps = 0
-
-        private var objectiveEnsureJob: kotlinx.coroutines.Job? = null
 
         private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
             isProcessingNarrative.set(isProcessing)
@@ -174,7 +168,6 @@ class SagaContentManagerImpl
         override suspend fun advanceNarrative() {
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
-            autoProgressionChainSteps = 0
             narrativeCoordinator.onUserAdvanceRequested(action)
             executeNarrativeAction(action, isRetry = false)
         }
@@ -183,7 +176,6 @@ class SagaContentManagerImpl
             action: NarrativeAction,
             canRetry: Boolean = true,
         ) {
-            autoProgressionChainSteps = 0
             val userMessage = stringResourceHelper.getString(R.string.unexpected_error)
             narrativeCoordinator.onActionCompleted(
                 action,
@@ -301,8 +293,6 @@ class SagaContentManagerImpl
             Timber.d("resetSagaSession: clearing chat session state")
             sagaJob?.cancel()
             sagaJob = null
-            objectiveEnsureJob?.cancel()
-            objectiveEnsureJob = null
             setNarrativeProcessingStatus(false)
             isProcessing.set(false)
             narrativeCoordinator.reset()
@@ -410,8 +400,6 @@ class SagaContentManagerImpl
                                 saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
                                     _sceneSummary.value = it
                                 }
-                                ensureCurrentTimelineSceneSummary(saga)
-
                                 if (sagaImmersiveSession.isOwnerOnTop("chat")) {
                                     sagaThemeManager.updateTheme(saga.data.genre)
                                 }
@@ -622,8 +610,6 @@ class SagaContentManagerImpl
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
-                ensureCurrentTimelineSceneSummary(currentSaga)
-
                 if (isProcessingNarrative.get()) {
                     Timber.i("requestNarrativeProgression: narrative processing, skipping.")
                     return@withLock
@@ -657,23 +643,6 @@ class SagaContentManagerImpl
                     nextResolvedAction = hydrated,
                     context = buildEvaluationContext(),
                 )
-
-                if (hydrated == null) {
-                    autoProgressionChainSteps = 0
-                } else if (hydrated.executionMode() == NarrativeExecutionMode.Automatic) {
-                    if (autoProgressionChainSteps >= MAX_AUTO_PROGRESSION_CHAIN_STEPS) {
-                        Timber.w(
-                            "requestNarrativeProgression: auto chain limit ($MAX_AUTO_PROGRESSION_CHAIN_STEPS) reached at ${hydrated.javaClass.simpleName}",
-                        )
-                    } else {
-                        autoProgressionChainSteps++
-                        Timber.d("Auto-executing narrative setup: ${hydrated.javaClass.simpleName}")
-                        val autoAction = hydrated
-                        managerScope.launch {
-                            executeNarrativeAction(autoAction, isRetry = isRetry)
-                        }
-                    }
-                }
 
                 if (narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
@@ -847,17 +816,31 @@ class SagaContentManagerImpl
             Timber.d("handlePostAction: performing post action for $action")
             when (action) {
                 NarrativeAction.CreateAct -> {
-                    (resultValue as? Act)?.let { data ->
+                    val generatedContent = resultValue as? GeneratedContent<Act>
+                    val act = generatedContent?.data ?: resultValue as? Act
+                    val message = generatedContent?.finalMessage
+                    act?.let { a ->
                         val latest = content.value?.data ?: saga.data
-                        if (latest.currentActId != data.id) {
+                        if (latest.currentActId != a.id) {
                             Timber.w(
-                                "CreateAct: aligning saga.currentActId (${latest.currentActId}) to new act ${data.id}",
+                                "CreateAct: aligning saga.currentActId (${latest.currentActId}) to new act ${a.id}",
                             )
                             sagaHistoryUseCase.updateSaga(
-                                latest.copy(currentActId = data.id),
+                                latest.copy(currentActId = a.id),
                             )
                         }
                         backupSaga()
+                        if (generatedContent != null) {
+                            emitMilestone(
+                                SagaMilestone.Introduction(
+                                    type = IntroductionType.ACT,
+                                    titleText = a.title,
+                                    introduction = message ?: a.introduction,
+                                    number = saga.actNumber(a.id).toRoman(),
+                                    messageText = message,
+                                ),
+                            )
+                        }
                     }
                 }
 
@@ -879,16 +862,18 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.CreateChapter -> {
-                    val currentAct = content.value?.currentActInfo ?: saga.currentActInfo ?: return
-                    (resultValue as? Chapter)?.let { chapter ->
-                        if (saga.currentChapterInfo != null &&
-                            saga.currentChapterInfo!!.data.id != chapter.id
-                        ) {
-                            Timber.w("CreateChapter: Chapter already set and different. Skipping update.")
-                            return
-                        }
-                        actUseCase.updateAct(
-                            currentAct.data.copy(currentChapterId = chapter.id),
+                    val generatedContent = resultValue as? GeneratedContent<Chapter>
+                    val chapterUpdate = generatedContent?.data ?: resultValue as? Chapter
+                    val message = generatedContent?.finalMessage
+                    chapterUpdate?.let { c ->
+                        emitMilestone(
+                            SagaMilestone.Introduction(
+                                type = IntroductionType.CHAPTER,
+                                titleText = c.title,
+                                introduction = message ?: emptyString(),
+                                number = saga.chapterNumber(c.id).toRoman(),
+                                messageText = message,
+                            ),
                         )
                     } ?: dismissMilestone()
                 }
@@ -910,7 +895,9 @@ class SagaContentManagerImpl
                     } ?: dismissMilestone()
                 }
 
-                is NarrativeAction.CreateTimeline -> {
+                is NarrativeAction.CreateTimeline,
+                is NarrativeAction.EnsureTimelineSceneSummary,
+                -> {
                     val timeline = resultValue as? Timeline
                     if (timeline != null && timeline.hasActiveSceneSummary()) {
                         timeline.sceneSummary?.let { _sceneSummary.value = it }
@@ -997,45 +984,6 @@ class SagaContentManagerImpl
                     showObjective()
                 }
             }
-        }
-
-        /**
-         * Backfills [SceneSummary] when the user returns to a saga whose active timeline never
-         * received an objective (e.g. left during [TimelineUseCase.getTimelineObjective]).
-         */
-        private fun ensureCurrentTimelineSceneSummary(saga: SagaMetadata) {
-            val timeline = saga.getCurrentTimeLine()?.data ?: return
-            if (saga.data.isEnded || !timeline.shouldEnsureSceneSummary()) {
-                timeline.sceneSummary?.let { _sceneSummary.value = it }
-                return
-            }
-            if (isProcessingNarrative.get() || isProcessing.get() || isMilestoneActive.value) {
-                return
-            }
-            objectiveEnsureJob?.cancel()
-            objectiveEnsureJob =
-                managerScope.launch {
-                    try {
-                        setNarrativeProcessingStatus(true)
-                        Timber.i("ensureCurrentTimelineSceneSummary: generating for timeline ${timeline.id}")
-                        timelineUseCase
-                            .getTimelineObjective(saga, timeline)
-                            .onSuccessAsync { updated ->
-                                _sceneSummary.value = updated.sceneSummary
-                                if (
-                                    milestoneUpdate.value == null &&
-                                    !isMilestoneActive.value &&
-                                    updated.hasActiveSceneSummary()
-                                ) {
-                                    emitMilestone(SagaMilestone.CurrentObjective(updated))
-                                }
-                            }.onFailureAsync { e ->
-                                Timber.w(e, "ensureCurrentTimelineSceneSummary failed")
-                            }
-                    } finally {
-                        setNarrativeProcessingStatus(false)
-                    }
-                }
         }
 
         private suspend fun handleChapterPostActions(
@@ -1169,8 +1117,6 @@ class SagaContentManagerImpl
 
         override fun stopProcessing() {
             Timber.i("Stopping active generation without clearing saga session")
-            objectiveEnsureJob?.cancel()
-            objectiveEnsureJob = null
             contentReasoning.value = null
             isProcessing.set(false)
             setNarrativeProcessingStatus(false)
@@ -1221,6 +1167,5 @@ class SagaContentManagerImpl
 
         private companion object {
             val TITLE_SPLASH_DURATION = 2.5.seconds
-            const val MAX_AUTO_PROGRESSION_CHAIN_STEPS = 5
         }
     }

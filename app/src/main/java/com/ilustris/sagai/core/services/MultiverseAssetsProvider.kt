@@ -55,7 +55,7 @@ class MultiverseAssetsProvider
                 isLoadingPersonas = true
                 try {
                     val assets =
-                        remoteConfigService.getJson<List<OnboardingAsset>>("avatar_faces")
+                        remoteConfigService.getJsonList("avatar_faces", OnboardingAsset::class.java)
                             ?: emptyList()
                     val mappedPersonas =
                         assets.mapIndexed { index, asset ->
@@ -82,7 +82,7 @@ class MultiverseAssetsProvider
                 isLoadingStories = true
                 try {
                     val assets =
-                        remoteConfigService.getJson<List<OnboardingAsset>>("story_faces") ?: emptyList()
+                        remoteConfigService.getJsonList("story_faces", OnboardingAsset::class.java) ?: emptyList()
                     _storyAssets.emit(assets)
                     assets
                 } finally {

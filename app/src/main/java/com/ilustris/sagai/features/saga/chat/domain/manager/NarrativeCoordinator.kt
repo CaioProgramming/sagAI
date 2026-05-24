@@ -61,23 +61,13 @@ class NarrativeCoordinator
                     }
 
                     else -> {
-                        if (nextAction.executionMode() == NarrativeExecutionMode.Automatic) {
-                            NarrativeUiState(
-                                phase = NarrativePhase.Playing,
-                                pendingAction = null,
-                                backgroundTask = null,
-                                lastError = null,
-                                isProcessing = false,
-                            )
-                        } else {
-                            NarrativeUiState(
-                                phase = NarrativePhase.AwaitingAdvance(nextAction),
-                                pendingAction = nextAction,
-                                backgroundTask = null,
-                                lastError = null,
-                                isProcessing = false,
-                            )
-                        }
+                        NarrativeUiState(
+                            phase = NarrativePhase.AwaitingAdvance(nextAction),
+                            pendingAction = nextAction,
+                            backgroundTask = null,
+                            lastError = null,
+                            isProcessing = false,
+                        )
                     }
                 }
 
@@ -191,19 +181,4 @@ class NarrativeCoordinator
         }
     }
 
-fun NarrativeAction.executionMode(): NarrativeExecutionMode =
-    when (this) {
-        NarrativeAction.CreateAct,
-        is NarrativeAction.GenerateActIntro,
-        is NarrativeAction.CreateChapter,
-        is NarrativeAction.GenerateChapterIntro,
-        is NarrativeAction.CreateTimeline,
-        is NarrativeAction.CloseTimeline,
-        -> NarrativeExecutionMode.Automatic
-
-        is NarrativeAction.EvolveTimeline,
-        is NarrativeAction.GenerateChapter,
-        is NarrativeAction.GenerateAct,
-        is NarrativeAction.GenerateEnding,
-        -> NarrativeExecutionMode.UserTriggered
-    }
+fun NarrativeAction.executionMode(): NarrativeExecutionMode = NarrativeExecutionMode.UserTriggered

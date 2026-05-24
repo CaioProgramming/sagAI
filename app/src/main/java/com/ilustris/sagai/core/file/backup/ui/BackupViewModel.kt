@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.file.backup.ui
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -105,10 +106,21 @@ class BackupViewModel
                     BackupUiState.Loading(
                         stringHelper.getString(R.string.backup_loading_restoring_database),
                     )
-                databaseBackupService.restoreBackup(backup)
-                delay(2.seconds)
-                _uiState.emit(BackupUiState.Dimissed)
-                context.restartApp()
+                databaseBackupService
+                    .restoreBackup(backup)
+                    .onSuccessAsync {
+                        delay(2.seconds)
+                        _uiState.emit(BackupUiState.Dimissed)
+                        context.restartApp()
+                    }.onFailureAsync {
+                        _uiState.emit(
+                            BackupUiState.Empty(
+                                stringHelper.getString(R.string.backup_error_restore_database_failed),
+                            ),
+                        )
+                        delay(3.seconds)
+                        _uiState.emit(BackupUiState.Dimissed)
+                    }
             }
         }
 
@@ -124,6 +136,14 @@ class BackupViewModel
 
         fun importDatabase(uri: Uri) {
             viewModelScope.launch {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (_: SecurityException) {
+                    // See SettingsViewModel.importDatabase
+                }
                 _uiState.value =
                     BackupUiState.Loading(
                         stringHelper.getString(R.string.backup_loading_restoring_database),
@@ -136,14 +156,14 @@ class BackupViewModel
                     }.onFailureAsync {
                         _uiState.emit(
                             BackupUiState.Empty(
-                                it.message ?: "Falha ao importar banco de dados.",
+                                stringHelper.getString(R.string.import_database_failed),
                             ),
                         )
                         delay(3.seconds)
                         _uiState.emit(BackupUiState.Dimissed)
-                }
+                    }
+            }
         }
-    }
 
         fun dismiss() {
             _uiState.value = BackupUiState.Dimissed

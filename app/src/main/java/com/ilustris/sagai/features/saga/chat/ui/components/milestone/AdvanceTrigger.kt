@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.vibrate
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -88,7 +89,7 @@ fun AdvanceTrigger(
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Image(
                     painterResource(genre.icon),
-                    "carregando",
+                    contentDescription = stringResource(R.string.milestone_loading_cd),
                     modifier =
                         Modifier
                             .gradientFill(Brush.verticalGradient(colors))

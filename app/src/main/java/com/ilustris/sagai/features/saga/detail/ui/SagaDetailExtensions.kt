@@ -269,7 +269,7 @@ fun DetailSectionView.InitialSection.miniSection(
                             ),
                     ) {
                         Text(
-                            "Read your story",
+                            stringResource(R.string.saga_detail_read_story_title),
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
                                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -277,7 +277,7 @@ fun DetailSectionView.InitialSection.miniSection(
                                 ),
                         )
                         Text(
-                            "Read the story from start to beginning until now",
+                            stringResource(R.string.saga_detail_read_story_subtitle),
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,

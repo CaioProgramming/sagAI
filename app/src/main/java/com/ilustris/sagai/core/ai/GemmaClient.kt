@@ -2,14 +2,13 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Base64
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.google.gson.JsonSyntaxException
-import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeminiContent
-import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
@@ -19,16 +18,17 @@ import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
-import com.ilustris.sagai.core.network.GeminiApiService
+import com.ilustris.sagai.core.network.GeminiApiClient
+import com.ilustris.sagai.core.network.GeminiApiCodec
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.core.data.isFlowCancellation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -38,10 +38,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import retrofit2.HttpException
+import com.ilustris.sagai.core.network.GeminiHttpException
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
-import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -53,7 +52,7 @@ class GemmaClient
         private val remoteConfigService: RemoteConfigService,
         val safetyClient: SafetyClient,
         val sideEffectService: SideEffectService,
-        val geminiApiService: GeminiApiService,
+        val geminiApiClient: GeminiApiClient,
         val promptService: PromptService,
         @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
     ) : AIClient() {
@@ -68,6 +67,10 @@ class GemmaClient
             const val INPUT_TOKEN_LIMIT = 15000
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
             const val MAX_RETRIES = 2
+
+            /** Last AI generation failure (release debugging when [generate] returns null). */
+            @Volatile
+            var lastGenerateFailure: String? = null
 
             /** Fallback when the API omits RetryInfo on rate-limit responses. */
             const val DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3L
@@ -85,6 +88,25 @@ class GemmaClient
                     e is java.io.IOException -> NETWORK_RETRY_SECONDS
                     else -> DEFAULT_RATE_LIMIT_RETRY_SECONDS
                 }
+
+            fun recordGenerationFailure(
+                dataType: String,
+                model: String,
+                attempt: Int,
+                maxAttempts: Int,
+                throwable: Throwable,
+            ) {
+                val summary = "${throwable.javaClass.simpleName}: ${throwable.message}"
+                lastGenerateFailure = summary
+                FirebaseCrashlytics.getInstance().apply {
+                    log("GemmaClient.generate failure")
+                    setCustomKey("ai_data_type", dataType)
+                    setCustomKey("ai_model", model)
+                    setCustomKey("ai_attempt", attempt)
+                    setCustomKey("ai_max_attempts", maxAttempts)
+                    recordException(throwable)
+                }
+            }
         }
 
         enum class ModelRequirement {
@@ -96,7 +118,7 @@ class GemmaClient
 
         suspend fun modelName(requirement: ModelRequirement): String {
             val tierConfig =
-                remoteConfigService.getJson<Map<String, Any>>("model_configs") ?: emptyMap()
+                remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
             return when (val config = tierConfig[requirement.name]) {
                 is String -> {
                     config.replace("models/", "")
@@ -170,37 +192,19 @@ class GemmaClient
                 for (currentAttempt in 1..maxAttempts) {
                     try {
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
+                            val dataType = getJavaType<T>()
+                            val dataTypeName =
+                                when (dataType) {
+                                    is Class<*> -> dataType.simpleName
+                                    is java.lang.reflect.ParameterizedType -> (dataType.rawType as? Class<*>)?.simpleName ?: dataType.toString()
+                                    else -> dataType.toString().substringAfterLast(".")
+                                }
+
                             val structure =
                                 if (describeOutput) {
-                                    val dataType = object : TypeToken<T>() {}.type
-                                    val dataStructure =
-                                        if (T::class == String::class) {
-                                            "\"string\""
-                                        } else if (dataType is ParameterizedType && dataType.rawType == GeneratedContent::class.java) {
-                                            val innerType =
-                                                dataType.actualTypeArguments[0] as Class<*>
-                                            val innerStructure =
-                                                toJsonMap(
-                                                    innerType,
-                                                    filteredFields = filterOutputFields,
-                                                )
-                                            toJsonMap(
-                                                GeneratedContent::class.java,
-                                                fieldCustomDescriptions = listOf("data" to innerStructure),
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        } else {
-                                            toJsonMap(
-                                                T::class.java,
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        }
-                                    toJsonMap(
-                                        AIGeneration::class.java,
-                                        fieldCustomDescriptions = listOf("data" to dataStructure),
-                                    )
+                                    buildAIPromptOutputStructure<T>(filterOutputFields)
                                 } else {
-                                    T::class.java.simpleName
+                                    dataTypeName
                                 }
 
                             val formattingRule =
@@ -213,7 +217,7 @@ class GemmaClient
                                     variables =
                                         mapOf(
                                             "language" to getLanguage(requireTranslation),
-                                            "type" to T::class.java.simpleName,
+                                            "type" to dataTypeName,
                                             "structure" to structure,
                                             "formattingRule" to formattingRule,
                                             "task" to prompt,
@@ -267,12 +271,7 @@ class GemmaClient
                                 )
 
                             val formattedModel = model.replace("models/", "")
-                            val response =
-                                geminiApiService.generateContent(
-                                    model = formattedModel,
-                                    apiKey = apiConfig(useCore),
-                                    request = geminiRequest,
-                                )
+                            val response = callGenerateContent(formattedModel, apiConfig(useCore), geminiRequest)
 
                             // Check for API error
                             response.error?.let { error ->
@@ -309,16 +308,15 @@ class GemmaClient
 
                             val cleanedJsonString =
                                 requiredText.sanitizeAndExtractJsonString(AIGeneration::class.java)
-                            val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             val aiGeneration =
-                                Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+                                parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
                                         blueprintKey = blueprintKey,
-                                        dataType = T::class.java.simpleName,
+                                        dataType = dataTypeName,
                                         status = "SUCCESS",
                                         reasoning = aiGeneration?.reasoning,
                                         rawResponse = requiredText,
@@ -332,6 +330,14 @@ class GemmaClient
                             data
                         }
                     } catch (e: Exception) {
+                        e.printStackTrace()
+                        GemmaClient.recordGenerationFailure(
+                            dataType = this.javaClass.simpleName,
+                            model = model,
+                            attempt = currentAttempt,
+                            maxAttempts = maxAttempts,
+                            throwable = e,
+                        )
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
                                 val duration = System.currentTimeMillis() - startTime
@@ -341,7 +347,7 @@ class GemmaClient
                                     AIAuditLog(
                                         model = model,
                                         blueprintKey = blueprintKey,
-                                        dataType = T::class.java.simpleName,
+                                        dataType = this.javaClass.simpleName,
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                         responseTime = duration,
@@ -366,15 +372,14 @@ class GemmaClient
                             e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
                         var extractedDelay: Long? = null
 
-                        if (e is HttpException) {
-                            val errorBody = e.response()?.errorBody()?.string()
+                        if (e is GeminiHttpException) {
+                            val errorBody = e.errorBody
                             if (logEnabled) {
                                 Timber.tag(this@GemmaClient::class.java.simpleName).e("HTTP Error ($model): $errorBody")
                             }
 
                             try {
-                                val errorResponse =
-                                    Gson().fromJson(errorBody, GeminiErrorResponse::class.java)
+                                val errorResponse = GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
                                 val retryInfo =
                                     errorResponse.error?.details?.find {
                                         it.type == "type.googleapis.com/google.rpc.RetryInfo"
@@ -467,37 +472,19 @@ class GemmaClient
 
                     for (currentAttempt in 1..maxAttempts) {
                         try {
+                            val dataType = getJavaType<T>()
+                            val dataTypeName =
+                                when (dataType) {
+                                    is Class<*> -> dataType.simpleName
+                                    is java.lang.reflect.ParameterizedType -> (dataType.rawType as? Class<*>)?.simpleName ?: dataType.toString()
+                                    else -> dataType.toString().substringAfterLast(".")
+                                }
+
                             val structure =
                                 if (describeOutput) {
-                                    val dataType = object : TypeToken<T>() {}.type
-                                    val dataStructure =
-                                        if (T::class == String::class) {
-                                            "\"string\""
-                                        } else if (dataType is ParameterizedType && dataType.rawType == GeneratedContent::class.java) {
-                                            val innerType =
-                                                dataType.actualTypeArguments[0] as Class<*>
-                                            val innerStructure =
-                                                toJsonMap(
-                                                    innerType,
-                                                    filteredFields = filterOutputFields,
-                                                )
-                                            toJsonMap(
-                                                GeneratedContent::class.java,
-                                                fieldCustomDescriptions = listOf("data" to innerStructure),
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        } else {
-                                            toJsonMap(
-                                                T::class.java,
-                                                filteredFields = filterOutputFields,
-                                            )
-                                        }
-                                    toJsonMap(
-                                        AIGeneration::class.java,
-                                        fieldCustomDescriptions = listOf("data" to dataStructure),
-                                    )
+                                    buildAIPromptOutputStructure<T>(filterOutputFields)
                                 } else {
-                                    T::class.java.simpleName
+                                    dataTypeName
                                 }
 
                             val formattingRule =
@@ -510,7 +497,7 @@ class GemmaClient
                                     variables =
                                         mapOf(
                                             "language" to getLanguage(requireTranslation),
-                                            "type" to T::class.java.simpleName,
+                                            "type" to dataTypeName,
                                             "structure" to structure,
                                             "formattingRule" to formattingRule,
                                         ),
@@ -569,12 +556,7 @@ class GemmaClient
 
                                 Timber.d("Prompt requested:\n$fullPrompt")
                             }
-                            val responseBody =
-                                geminiApiService.streamGenerateContent(
-                                    model = formattedModel,
-                                    apiKey = apiConfig(useCore),
-                                    request = geminiRequest,
-                                )
+                            val responseBody = callStreamGenerateContent(formattedModel, apiConfig(useCore), geminiRequest)
 
                             val accumulatedText = StringBuilder()
 
@@ -594,11 +576,7 @@ class GemmaClient
                                         if (logEnabled) {
                                             Timber.i("generateStreaming: Trying to parse $jsonStr")
                                         }
-                                        val partialResponse =
-                                            Gson().fromJson(
-                                                jsonStr,
-                                                GeminiResponse::class.java,
-                                            )
+                                        val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
                                         val partialPart =
                                             partialResponse.candidates
                                                 ?.firstOrNull()
@@ -619,12 +597,11 @@ class GemmaClient
                             val fullText = accumulatedText.toString()
                             val cleanedJsonString =
                                 fullText.sanitizeAndExtractJsonString(AIGeneration::class.java)
-                            val typeToken = object : TypeToken<AIGeneration<T>>() {}
                             if (cleanedJsonString.isEmpty()) {
                                 error("Failed to parse JSON")
                             }
                             val aiGeneration =
-                                Gson().fromJson<AIGeneration<T>>(cleanedJsonString, typeToken.type)
+                                parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
 
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
@@ -632,7 +609,7 @@ class GemmaClient
                                     AIAuditLog(
                                         model = model,
                                         blueprintKey = blueprintKey,
-                                        dataType = T::class.java.simpleName,
+                                        dataType = dataTypeName,
                                         status = "SUCCESS",
                                         reasoning = aiGeneration?.reasoning,
                                         rawResponse = fullText,
@@ -649,6 +626,13 @@ class GemmaClient
                             if (e.isFlowCancellation()) {
                                 throw e
                             }
+                            GemmaClient.recordGenerationFailure(
+                                dataType = javaClass.simpleName,
+                                model = model,
+                                attempt = currentAttempt,
+                                maxAttempts = maxAttempts,
+                                throwable = e,
+                            )
                             if (logEnabled) {
                                 Timber
                                     .tag(
@@ -664,11 +648,10 @@ class GemmaClient
                                 e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
                             var extractedDelay: Long? = null
 
-                            if (e is HttpException) {
-                                val errorBody = e.response()?.errorBody()?.string()
+                            if (e is GeminiHttpException) {
+                                val errorBody = e.errorBody
                                 try {
-                                    val errorResponse =
-                                        Gson().fromJson(errorBody, GeminiErrorResponse::class.java)
+                                    val errorResponse = GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
                                     val retryInfo =
                                         errorResponse.error?.details?.find {
                                             it.type ==
@@ -697,7 +680,7 @@ class GemmaClient
                                         AIAuditLog(
                                             model = model,
                                             blueprintKey = blueprintKey,
-                                            dataType = T::class.java.simpleName,
+                                            dataType = javaClass.simpleName,
                                             status = "ERROR",
                                             errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                             responseTime = duration,
@@ -733,12 +716,7 @@ class GemmaClient
                 )
             return requestMutexes.getOrPut(model) { Mutex() }.withLock {
                 try {
-                    val response =
-                        geminiApiService.generateContent(
-                            model = model,
-                            apiKey = apiConfig(false),
-                            request = geminiRequest,
-                        )
+                    val response = callGenerateContent(model, apiConfig(false), geminiRequest)
                     response.error?.let { throw Exception(it.message) }
                     response.candidates
                         ?.firstOrNull()
@@ -752,6 +730,21 @@ class GemmaClient
                 }
             }
         }
+
+        @PublishedApi
+        internal suspend fun callGenerateContent(
+            model: String,
+            apiKey: String,
+            request: GeminiRequest,
+        ): GeminiResponse =
+            geminiApiClient.generateContent(model, apiKey, request)
+
+        @PublishedApi
+        internal suspend fun callStreamGenerateContent(
+            model: String,
+            apiKey: String,
+            request: GeminiRequest,
+        ) = geminiApiClient.streamGenerateContent(model, apiKey, request)
 
         /**
          * Recursively checks if a class or any of its nested classes contain String fields.

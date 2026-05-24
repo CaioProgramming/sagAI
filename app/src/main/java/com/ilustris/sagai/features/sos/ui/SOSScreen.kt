@@ -109,7 +109,7 @@ fun SOSScreen(
             }
 
             Text(
-                text = "Vamos verificar o que aconteceu e você poderá voltar as suas sagas em breve.",
+                text = stringResource(R.string.sos_recovery_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
             )
@@ -146,17 +146,15 @@ fun SOSScreen(
                 }
             },
             onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Deseja restaurar suas sagas antes de continuar?") },
+            title = { Text(stringResource(R.string.sos_restore_dialog_title)) },
             text = {
                 Column {
-                    Text(
-                        "Continuing without a backup will permanently delete all your existing sagas and chronicles. This action cannot be undone.",
-                    )
+                    Text(stringResource(R.string.sos_restore_dialog_message))
 
                     state.error?.let {
                         Spacer(modifier = Modifier.size(8.dp))
                         Text(
-                            text = "Nao foi possivel restaurar suas sagas: $it",
+                            text = stringResource(R.string.sos_restore_failed, it),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -170,7 +168,7 @@ fun SOSScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text("Restore sagas")
+                    Text(stringResource(R.string.restore_sagas))
                 }
             },
             dismissButton = {
@@ -178,7 +176,7 @@ fun SOSScreen(
                     showConfirmDialog = false
                     onRestart()
                 }) {
-                    Text("Continue")
+                    Text(stringResource(R.string.continue_button))
                 }
             },
         )

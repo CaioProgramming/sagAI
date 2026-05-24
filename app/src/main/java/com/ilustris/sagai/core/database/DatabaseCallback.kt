@@ -3,12 +3,12 @@ package com.ilustris.sagai.core.database
 import android.content.Context
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import timber.log.Timber
 import com.ilustris.sagai.core.database.backup.DatabaseBackupService
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class DatabaseCallback(
     private val context: Context,
@@ -35,7 +35,7 @@ class DatabaseCallback(
                 if (result.isSuccess) {
                     Timber.tag("DatabaseCallback").i("Auto-backup created successfully")
                 } else {
-                    Timber.tag("DatabaseCallback").e(result.exceptionOrNull(), "Auto-backup failed")
+                    Timber.tag("DatabaseCallback").e(result.error.value, "Auto-backup failed")
                 }
             }
         }

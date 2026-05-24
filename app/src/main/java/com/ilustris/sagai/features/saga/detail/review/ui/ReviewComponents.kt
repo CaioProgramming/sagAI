@@ -73,7 +73,6 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
@@ -325,17 +324,6 @@ fun HeroSummaryCard(
             if (hours > 0) "${hours}h ${minutes % 60}m" else "${minutes}m"
         }
 
-    val mostActiveHour = content.rankByHour().maxByOrNull { it.value.size }?.key ?: 0
-    when (mostActiveHour) {
-        in 0..4 -> "The Midnight Chronicler"
-        in 5..8 -> "The Dawn Speaker"
-        in 9..11 -> "The Morning Muse"
-        in 12..14 -> "The Midday Architect"
-        in 15..17 -> "The Dusk Weaver"
-        in 18..21 -> "The Evening Star"
-        else -> "The Night Owl"
-    }
-
     val shape = genre.bubble(isNarrator = true)
     val contentColor = MaterialTheme.colorScheme.background
 
@@ -388,7 +376,7 @@ fun HeroSummaryCard(
                     .padding(4.dp),
             ) {
                 Text(
-                    "TOP PERSONAGENS",
+                    stringResource(R.string.review_hero_top_characters_label),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -425,7 +413,7 @@ fun HeroSummaryCard(
                         .padding(4.dp),
                 ) {
                     Text(
-                        "LADO EMOCIONAL",
+                        stringResource(R.string.review_hero_emotional_side_label),
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -468,7 +456,7 @@ fun HeroSummaryCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    "Tempo de jogo",
+                    stringResource(R.string.review_hero_playtime_label),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -500,7 +488,7 @@ fun HeroSummaryCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        "Emoção definitiva",
+                        stringResource(R.string.review_hero_definitive_emotion_label),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -1054,7 +1042,7 @@ fun ReviewLoadingPage(
             modifier = Modifier.padding(32.dp),
         ) {
             Text(
-                text = "Checking out the beautiful mess we made...",
+                text = stringResource(R.string.review_intro_loading_message),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,

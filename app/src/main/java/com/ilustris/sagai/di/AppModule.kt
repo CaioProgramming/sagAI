@@ -41,7 +41,7 @@ import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SoundFxService
-import com.ilustris.sagai.core.network.GeminiApiService
+import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
 import com.ilustris.sagai.core.notifications.WorkManagerScheduler
@@ -309,7 +309,7 @@ object AppModule {
     fun providesSafetyClient(
         remoteConfigService: RemoteConfigService,
         ageVerificationService: AgeVerificationService,
-        geminiApiService: GeminiApiService,
+        geminiApiClient: GeminiApiClient,
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
     ): SafetyClient =
@@ -317,7 +317,7 @@ object AppModule {
             remoteConfigService,
             ageVerificationService,
             promptService,
-            geminiApiService,
+            geminiApiClient,
             aiAuditLogDao,
         )
 
@@ -329,13 +329,13 @@ object AppModule {
         aiAuditLogDao: AIAuditLogDao,
         safetyClient: SafetyClient,
         sideEffectService: SideEffectService,
-        geminiApiService: GeminiApiService,
+        geminiApiClient: GeminiApiClient,
     ): GemmaClient =
         GemmaClient(
             remoteConfigService = remoteConfigService,
             safetyClient = safetyClient,
             sideEffectService = sideEffectService,
-            geminiApiService = geminiApiService,
+            geminiApiClient = geminiApiClient,
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
         )
@@ -477,8 +477,8 @@ object AppModule {
     fun provideAudioGenClient(
         billingService: BillingService,
         remoteConfigService: RemoteConfigService,
-        geminiApiService: GeminiApiService,
-    ): AudioGenClient = AudioGenClientImpl(billingService, remoteConfigService, geminiApiService)
+        geminiApiClient: GeminiApiClient,
+    ): AudioGenClient = AudioGenClientImpl(billingService, remoteConfigService, geminiApiClient)
 
     @Provides
     @Singleton

@@ -12,39 +12,24 @@
 #   public *;
 #}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Gson (Room converters, Remote Config, AI response parsing)
+-keep class com.google.gson.** { *; }
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
--keepnames class kotlin.Pair { *; }
--keepnames class kotlin.Triple { *; }
-# Keep all AI model classes - reflection is used in GemmaClient.toJsonMap()
-# to introspect field names/types and build JSON schemas for AI prompts.
-# Obfuscation would turn field names into a, b, c breaking prompt generation.
+# AI / Gson models used with reflection
 -keep class com.ilustris.sagai.core.ai.model.** { *; }
-
-# Use ** (not *) to match nested feature packages like:
-# saga.chat.data.model, saga.detail.data.model, characters.relations.data.model, etc.
 -keep class com.ilustris.sagai.features.**.data.model.** { *; }
-
-# Models in domain.model packages (e.g. ShareText in features.share.domain.model)
 -keep class com.ilustris.sagai.features.**.domain.model.** { *; }
 
--keep class io.ktor.client.plugins.** { *; }
--keep class io.ktor.client.features.** { *; }
+# Kotlin metadata for reified types / data classes
+-keep class kotlin.Metadata { *; }
+-keepattributes Signature,AnnotationDefault,EnclosingMethod,InnerClasses,SourceFile,LineNumberTable,RuntimeVisibleAnnotations
 
--keepattributes Signature
--keepattributes InnerClasses
--keepclassmembers class * {
- @com.google.gson.annotations.SerializedName <fields>;
- }
--keepclassmembers enum * {
- @com.google.gson.annotations.SerializedName <fields>;
- }
- -keepclassmembers class * extends androidx.work.Worker {
-     public <init>(android.content.Context,androidx.work.WorkerParameters);
- }
+# WorkManager
+-keepclassmembers class * extends androidx.work.Worker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}

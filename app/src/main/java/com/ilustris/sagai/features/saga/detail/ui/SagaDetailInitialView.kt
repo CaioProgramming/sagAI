@@ -570,7 +570,7 @@ fun SagaDetailInitialContent(
                                         .fillMaxWidth(),
                             ) {
                                 Text(
-                                    "Manage Story",
+                                    stringResource(R.string.saga_detail_manage_story),
                                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     textAlign = TextAlign.Center,
                                 )

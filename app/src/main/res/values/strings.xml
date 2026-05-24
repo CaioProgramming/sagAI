@@ -145,6 +145,17 @@
     <string name="review_page_your_journey_title">Your Journey</string>
     <string name="review_page_thank_you">Thank you</string>
     <string name="review_page_for_playing">FOR PLAYING</string>
+    <string name="review_page_most_played_time_title">Most played time</string>
+    <string name="review_page_most_played_hour_chart_label">Most played hour</string>
+    <string name="review_page_about_you_title">About you</string>
+    <string name="review_chart_messages_suffix">messages</string>
+    <string name="review_chart_mentions_suffix">mentions</string>
+    <string name="review_chart_messages_count_format">%1$d messages</string>
+    <string name="review_hero_top_characters_label">TOP CHARACTERS</string>
+    <string name="review_hero_emotional_side_label">EMOTIONAL SIDE</string>
+    <string name="review_hero_playtime_label">Playtime</string>
+    <string name="review_hero_definitive_emotion_label">Definitive emotion</string>
+    <string name="review_intro_loading_message">Checking out the beautiful mess we made…</string>
 
     <!-- SagaDetailView.kt Strings -->
     <string name="saga_detail_delete_confirmation_title">Confirm Deletion</string>
@@ -181,6 +192,12 @@
     <string name="saga_detail_no_events_placeholder">No events recorded</string>
     <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
     <string name="saga_detail_delete_saga_button">Delete Saga</string>
+    <string name="saga_detail_read_story_title">Read your story</string>
+    <string name="saga_detail_read_story_subtitle">Read the story from the start until now</string>
+    <string name="saga_detail_manage_story">Manage Story</string>
+    <string name="saga_detail_regenerating_icon">Regenerating saga icon…</string>
+    <string name="saga_detail_error_regenerating_icon">Error regenerating icon: %1$s</string>
+    <string name="saga_detail_error_emotional_conclusion">Error generating emotional conclusion: %1$s</string>
 
     <!-- HomeView.kt Strings -->
     <string name="home_debug_session_icon_desc">Debug Session</string>
@@ -387,9 +404,61 @@
     <string name="backup_disabled_warning_message">Your sagas are not being backed up automatically. Export your database to keep your progress safe.</string>
     <string name="export_database_button">Export Database</string>
     <string name="import_database_button">Import Database</string>
+    <string name="import_database_failed">Could not import the database. Please check the file and try again.</string>
+    <string name="import_database_success">Database imported successfully. Restarting the app…</string>
+    <string name="backup_error_restore_database_failed">Could not restore this database backup.</string>
     <string name="restore_database_title">Database Backups</string>
     <string name="restore_database_description">Select a backup to restore your entire database.</string>
     <string name="restore_database_button">Restore Database</string>
+
+    <!-- SOS -->
+    <string name="sos_recovery_subtitle">We will check what happened and you can return to your sagas shortly.</string>
+    <string name="sos_restore_dialog_title">Restore your sagas before continuing?</string>
+    <string name="sos_restore_dialog_message">Continuing without a backup will permanently delete all your existing sagas and chronicles. This action cannot be undone.</string>
+    <string name="sos_restore_failed">Could not restore your sagas: %1$s</string>
+    <string name="sos_loading_preparing">Preparing system…</string>
+    <string name="sos_error_clear_database_failed">Failed to clear corrupted database.</string>
+    <string name="sos_error_restore_sagas_failed">Failed to restore any sagas.</string>
+    <string name="sos_loading_clearing_data">Clearing all data…</string>
+    <string name="sos_error_clear_database">Failed to clear database.</string>
+    <string name="sos_unknown_system_failure">Unknown system failure</string>
+
+    <!-- Playthrough -->
+    <string name="playthrough_loading_analyzing">Analyzing your journey…</string>
+    <string name="playthrough_reflection_footer">Reflecting on your soul through the stories.</string>
+    <string name="playthrough_load_error">Could not load playthrough data.</string>
+
+    <!-- Character stats -->
+    <string name="character_stat_height">Height</string>
+    <string name="character_stat_weight">Weight</string>
+    <string name="character_generating">Generating %1$s…</string>
+
+    <!-- Chat -->
+    <string name="regenerate_audio">Regenerate audio…</string>
+    <string name="see_reasoning">See reasoning</string>
+    <string name="milestone_loading_cd">Loading</string>
+
+    <!-- Audit logs -->
+    <string name="audit_logs_improvement_suggestion">Improvement suggestion</string>
+    <string name="audit_logs_suggest_improvements">Suggest Improvements</string>
+    <string name="audit_logs_reasoning_cd">Reasoning</string>
+
+    <!-- Book reader -->
+    <string name="share_book_pdf_chooser">Share Book PDF</string>
+    <string name="share_book_pdf_subject">Sharing %1$s from Sagas</string>
+    <string name="regenerate_book_cd">Regenerate Book</string>
+    <string name="share_pdf_cd">Share PDF</string>
+    <string name="book_share_preparing">Preparing your chronicle for sharing…</string>
+    <string name="book_share_error_uri">Failed to get file URI</string>
+    <string name="book_share_error_pdf">Failed to generate PDF</string>
+    <string name="act_not_found">Act not found</string>
+
+    <!-- Settings -->
+    <string name="settings_wipe_loading">Clearing your universes…</string>
+    <string name="settings_wipe_success">Your stories were removed — time to start fresh!</string>
+    <string name="settings_export_database_loading">Exporting database…</string>
+    <string name="settings_export_database_success">Database exported successfully!</string>
+    <string name="settings_export_database_failed">Failed to export database.</string>
 
     <!-- Conversation Snippet Sharing -->
     <string name="messages_selected">%1$d of %2$d messages selected</string>

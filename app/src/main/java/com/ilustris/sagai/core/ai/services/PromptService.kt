@@ -58,7 +58,7 @@ class PromptServiceImpl
     ) : PromptService {
         override suspend fun getPromptDirectives(): PromptDirectives =
             PromptDirectives(
-                remoteConfigService.getJson<Map<String, String>>("prompt_directives") ?: emptyMap(),
+                remoteConfigService.getJsonMapStringString("prompt_directives") ?: emptyMap(),
             )
 
         override fun buildPrompt(

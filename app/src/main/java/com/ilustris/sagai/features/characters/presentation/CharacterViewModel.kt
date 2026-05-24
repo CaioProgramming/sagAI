@@ -2,7 +2,9 @@ package com.ilustris.sagai.features.characters.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -23,6 +25,7 @@ class CharacterViewModel
     constructor(
         private val characterUseCase: CharacterUseCase,
         private val sagaHistoryUseCase: SagaHistoryUseCase,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _saga = MutableStateFlow<SagaContent?>(null)
         val saga: StateFlow<SagaContent?> = _saga.asStateFlow()
@@ -33,7 +36,7 @@ class CharacterViewModel
 
         fun loadCharacters(sagaId: Int?) {
             if (sagaId == null) {
-                state.value = State.Error("Saga não encontrada")
+                state.value = State.Error(stringResourceHelper.getString(R.string.saga_not_found))
                 return
             }
             viewModelScope.launch {

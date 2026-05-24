@@ -23,6 +23,10 @@ class PlaythroughUseCaseImpl
                 if (sagas.isEmpty()) error("No playthroughs available")
 
                 val prompt = PlaythroughPrompts.extractPlaythroughReview(sagas)
-                textGenClient.generate<PlayThroughData>(prompt)!!
+                textGenClient.generate<PlayThroughData>(prompt)
+                    ?: error(
+                        GemmaClient.lastGenerateFailure
+                            ?: "Playthrough review generation failed",
+                    )
             }
     }
