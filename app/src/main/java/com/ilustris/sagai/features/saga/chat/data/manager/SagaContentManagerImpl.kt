@@ -56,7 +56,6 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationC
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
-import com.ilustris.sagai.features.saga.chat.domain.manager.isUserAdvanceChainFollowUp
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -148,8 +147,6 @@ class SagaContentManagerImpl
         private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
         private var progressionCounter = 0
-        private var autoProgressionChainSteps = 0
-        private var userAdvanceProgressionChainActive = false
 
         private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
             isProcessingNarrative.set(isProcessing)
@@ -171,8 +168,6 @@ class SagaContentManagerImpl
         override suspend fun advanceNarrative() {
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
-            autoProgressionChainSteps = 0
-            userAdvanceProgressionChainActive = true
             narrativeCoordinator.onUserAdvanceRequested(action)
             executeNarrativeAction(action, isRetry = false)
         }
@@ -181,8 +176,6 @@ class SagaContentManagerImpl
             action: NarrativeAction,
             canRetry: Boolean = true,
         ) {
-            autoProgressionChainSteps = 0
-            userAdvanceProgressionChainActive = false
             val userMessage = stringResourceHelper.getString(R.string.unexpected_error)
             narrativeCoordinator.onActionCompleted(
                 action,
@@ -651,33 +644,6 @@ class SagaContentManagerImpl
                     context = buildEvaluationContext(),
                 )
 
-                if (hydrated == null) {
-                    autoProgressionChainSteps = 0
-                    userAdvanceProgressionChainActive = false
-                } else if (
-                    userAdvanceProgressionChainActive &&
-                    hydrated.isUserAdvanceChainFollowUp()
-                ) {
-                    if (autoProgressionChainSteps >= MAX_AUTO_PROGRESSION_CHAIN_STEPS) {
-                        Timber.w(
-                            "requestNarrativeProgression: user-advance chain limit ($MAX_AUTO_PROGRESSION_CHAIN_STEPS) reached at ${hydrated.javaClass.simpleName}",
-                        )
-                        userAdvanceProgressionChainActive = false
-                    } else {
-                        autoProgressionChainSteps++
-                        Timber.d(
-                            "Chaining narrative setup after user advance: ${hydrated.javaClass.simpleName}",
-                        )
-                        val chainedAction = hydrated
-                        managerScope.launch {
-                            executeNarrativeAction(chainedAction, isRetry = isRetry)
-                        }
-                    }
-                } else {
-                    autoProgressionChainSteps = 0
-                    userAdvanceProgressionChainActive = false
-                }
-
                 if (narrativeCoordinator.consumePendingReevaluation()) {
                     requestNarrativeProgression(isRetry = false)
                 }
@@ -850,17 +816,31 @@ class SagaContentManagerImpl
             Timber.d("handlePostAction: performing post action for $action")
             when (action) {
                 NarrativeAction.CreateAct -> {
-                    (resultValue as? Act)?.let { data ->
+                    val generatedContent = resultValue as? GeneratedContent<Act>
+                    val act = generatedContent?.data ?: resultValue as? Act
+                    val message = generatedContent?.finalMessage
+                    act?.let { a ->
                         val latest = content.value?.data ?: saga.data
-                        if (latest.currentActId != data.id) {
+                        if (latest.currentActId != a.id) {
                             Timber.w(
-                                "CreateAct: aligning saga.currentActId (${latest.currentActId}) to new act ${data.id}",
+                                "CreateAct: aligning saga.currentActId (${latest.currentActId}) to new act ${a.id}",
                             )
                             sagaHistoryUseCase.updateSaga(
-                                latest.copy(currentActId = data.id),
+                                latest.copy(currentActId = a.id),
                             )
                         }
                         backupSaga()
+                        if (generatedContent != null) {
+                            emitMilestone(
+                                SagaMilestone.Introduction(
+                                    type = IntroductionType.ACT,
+                                    titleText = a.title,
+                                    introduction = message ?: a.introduction,
+                                    number = saga.actNumber(a.id).toRoman(),
+                                    messageText = message,
+                                ),
+                            )
+                        }
                     }
                 }
 
@@ -882,16 +862,18 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeAction.CreateChapter -> {
-                    val currentAct = content.value?.currentActInfo ?: saga.currentActInfo ?: return
-                    (resultValue as? Chapter)?.let { chapter ->
-                        if (saga.currentChapterInfo != null &&
-                            saga.currentChapterInfo!!.data.id != chapter.id
-                        ) {
-                            Timber.w("CreateChapter: Chapter already set and different. Skipping update.")
-                            return
-                        }
-                        actUseCase.updateAct(
-                            currentAct.data.copy(currentChapterId = chapter.id),
+                    val generatedContent = resultValue as? GeneratedContent<Chapter>
+                    val chapterUpdate = generatedContent?.data ?: resultValue as? Chapter
+                    val message = generatedContent?.finalMessage
+                    chapterUpdate?.let { c ->
+                        emitMilestone(
+                            SagaMilestone.Introduction(
+                                type = IntroductionType.CHAPTER,
+                                titleText = c.title,
+                                introduction = message ?: emptyString(),
+                                number = saga.chapterNumber(c.id).toRoman(),
+                                messageText = message,
+                            ),
                         )
                     } ?: dismissMilestone()
                 }
@@ -1185,6 +1167,5 @@ class SagaContentManagerImpl
 
         private companion object {
             val TITLE_SPLASH_DURATION = 2.5.seconds
-            const val MAX_AUTO_PROGRESSION_CHAIN_STEPS = 5
         }
     }

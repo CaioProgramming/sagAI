@@ -182,13 +182,3 @@ class NarrativeCoordinator
     }
 
 fun NarrativeAction.executionMode(): NarrativeExecutionMode = NarrativeExecutionMode.UserTriggered
-
-/** Runs immediately after a user-held advance without a second confirmation. */
-fun NarrativeAction.isUserAdvanceChainFollowUp(): Boolean =
-    when (this) {
-        is NarrativeAction.GenerateActIntro,
-        is NarrativeAction.GenerateChapterIntro,
-        -> true
-
-        else -> false
-    }

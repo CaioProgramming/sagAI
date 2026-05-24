@@ -9,8 +9,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NarrativeActionExecutionModeTest {
@@ -32,14 +30,5 @@ class NarrativeActionExecutionModeTest {
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateChapter(chapter).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateAct(act).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateEnding(saga).executionMode())
-    }
-
-    @Test
-    fun `intro actions chain after structural setup without a second hold`() {
-        assertTrue(NarrativeAction.GenerateActIntro(act).isUserAdvanceChainFollowUp())
-        assertTrue(NarrativeAction.GenerateChapterIntro(chapter).isUserAdvanceChainFollowUp())
-        assertFalse(NarrativeAction.CreateAct.isUserAdvanceChainFollowUp())
-        assertFalse(NarrativeAction.CreateChapter(act).isUserAdvanceChainFollowUp())
-        assertFalse(NarrativeAction.CreateTimeline(chapter).isUserAdvanceChainFollowUp())
     }
 }

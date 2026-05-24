@@ -135,13 +135,23 @@ class NarrativeActionExecutorImpl
                 sagaHistoryUseCase.updateSaga(
                     saga.data.copy(currentActId = newAct.id),
                 )
-                newAct
+                generateActIntroductionContent(
+                    ActContent(data = newAct),
+                    environment,
+                )
             }
 
         private suspend fun generateActIntroduction(
             currentAct: ActContent,
             environment: NarrativeExecutionEnvironment,
         ) = executeRequest {
+            generateActIntroductionContent(currentAct, environment)
+        }
+
+        private suspend fun generateActIntroductionContent(
+            currentAct: ActContent,
+            environment: NarrativeExecutionEnvironment,
+        ): GeneratedContent<Act> {
             val saga = environment.getSagaMetadata() ?: error("Saga not available")
             var finalAct: GeneratedContent<Act>? = null
             actUseCase
@@ -161,7 +171,7 @@ class NarrativeActionExecutorImpl
                     }
                 }
             environment.onReasoningChunk(null)
-            finalAct!!
+            return finalAct ?: error("Failed to generate act introduction")
         }
 
         private suspend fun startChapter(
@@ -176,7 +186,45 @@ class NarrativeActionExecutorImpl
                 actUseCase.updateAct(latestAct.data.copy(currentChapterId = lastChapter.data.id))
                 throw IllegalArgumentException("Chapter is already set at this act")
             }
-            chapterUseCase.saveChapter(Chapter(actId = latestAct.data.id))
+            val newChapter = chapterUseCase.saveChapter(Chapter(actId = latestAct.data.id))
+            actUseCase.updateAct(latestAct.data.copy(currentChapterId = newChapter.id))
+            generateChapterIntroductionContent(
+                ChapterContent(data = newChapter),
+                environment,
+            )
+        }
+
+        private suspend fun generateChapterIntroduction(
+            currentChapter: ChapterContent,
+            environment: NarrativeExecutionEnvironment,
+        ) = executeRequest {
+            generateChapterIntroductionContent(currentChapter, environment)
+        }
+
+        private suspend fun generateChapterIntroductionContent(
+            currentChapter: ChapterContent,
+            environment: NarrativeExecutionEnvironment,
+        ): GeneratedContent<Chapter> {
+            val saga = environment.getSagaMetadata() ?: error("Saga not available")
+            var finalChapter: GeneratedContent<Chapter>? = null
+            chapterUseCase
+                .generateChapterIntroductionStream(currentChapter.data.id)
+                .let { flow ->
+                    reasoningSynthesizerService.synthesizeReasoning(
+                        sourceFlow = flow,
+                        context = "Generating chapter introduction for ${currentChapter.data.title}",
+                        conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
+                        genre = saga.data.genre.name,
+                    )
+                }.collect { state ->
+                    when (state) {
+                        is StreamingState.Reasoning -> environment.onReasoningChunk(state.chunk)
+                        is StreamingState.Success -> finalChapter = state.data
+                        is StreamingState.Error -> throw Exception(state.message)
+                    }
+                }
+            environment.onReasoningChunk(null)
+            return finalChapter ?: error("Failed to generate chapter introduction")
         }
 
         private suspend fun updateChapter(
@@ -207,32 +255,6 @@ class NarrativeActionExecutorImpl
                 }
             }
             generated ?: error("Failed to generate chapter synthesis")
-        }
-
-        private suspend fun generateChapterIntroduction(
-            currentChapter: ChapterContent,
-            environment: NarrativeExecutionEnvironment,
-        ) = executeRequest {
-            val saga = environment.getSagaMetadata() ?: error("Saga not available")
-            var finalChapter: GeneratedContent<Chapter>? = null
-            chapterUseCase
-                .generateChapterIntroductionStream(currentChapter.data.id)
-                .let { flow ->
-                    reasoningSynthesizerService.synthesizeReasoning(
-                        sourceFlow = flow,
-                        context = "Generating chapter introduction for ${currentChapter.data.title}",
-                        conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                        genre = saga.data.genre.name,
-                    )
-                }.collect { state ->
-                    when (state) {
-                        is StreamingState.Reasoning -> environment.onReasoningChunk(state.chunk)
-                        is StreamingState.Success -> finalChapter = state.data
-                        is StreamingState.Error -> throw Exception(state.message)
-                    }
-                }
-            environment.onReasoningChunk(null)
-            finalChapter!!
         }
 
         private suspend fun ensureTimelineSceneSummary(
