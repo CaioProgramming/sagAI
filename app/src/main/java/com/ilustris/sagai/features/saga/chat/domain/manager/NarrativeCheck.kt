@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.TimelineMetadata
 import com.ilustris.sagai.features.home.data.model.toNarrativeMetadata
+import com.ilustris.sagai.features.saga.chat.data.model.shouldEnsureSceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck.validateProgression
 
 object NarrativeCheck {
@@ -71,6 +72,10 @@ object NarrativeCheck {
 
             currentTimeline.narrativelyCompleteTimeline(rules) -> {
                 NarrativeProgressIntent.CloseTimeline(currentChapter.data.id)
+            }
+
+            currentTimeline.data.shouldEnsureSceneSummary() -> {
+                NarrativeProgressIntent.EnsureTimelineSceneSummary(currentTimeline.data.id)
             }
 
             currentTimeline.messages.size >= rules.loreUpdateLimit -> {

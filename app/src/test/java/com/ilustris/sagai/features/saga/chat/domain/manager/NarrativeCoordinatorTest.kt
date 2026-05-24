@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.chat.domain.manager
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -33,16 +32,16 @@ class NarrativeCoordinatorTest {
     }
 
     @Test
-    fun `reevaluate does not await advance for structural setup actions`() {
+    fun `reevaluate awaits advance for structural setup actions`() {
         val state =
             coordinator.reevaluate(
                 nextResolvedAction = NarrativeAction.CreateAct,
                 context = NarrativeEvaluationContext(),
             )
 
-        assertNull(state.pendingAction)
-        assertTrue(state.phase is NarrativePhase.Playing)
-        assertFalse(state.showAdvanceTrigger)
+        assertTrue(state.pendingAction is NarrativeAction.CreateAct)
+        assertTrue(state.phase is NarrativePhase.AwaitingAdvance)
+        assertTrue(state.showAdvanceTrigger)
     }
 
     @Test

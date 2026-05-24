@@ -70,6 +70,10 @@ class NarrativeActionExecutorImpl
                         startTimeline(action.chapter, environment)
                     }
 
+                    is NarrativeAction.EnsureTimelineSceneSummary -> {
+                        ensureTimelineSceneSummary(action.timeline, environment)
+                    }
+
                     is NarrativeAction.EvolveTimeline -> {
                         updateTimeline(action.timeline, environment)
                     }
@@ -229,6 +233,17 @@ class NarrativeActionExecutorImpl
                 }
             environment.onReasoningChunk(null)
             finalChapter!!
+        }
+
+        private suspend fun ensureTimelineSceneSummary(
+            timeline: TimelineContent,
+            environment: NarrativeExecutionEnvironment,
+        ) = executeRequest {
+            val saga = environment.getSagaMetadata() ?: error("Saga not available")
+            when (val objectiveResult = timelineUseCase.getTimelineObjective(saga, timeline.data)) {
+                is RequestResult.Success -> objectiveResult.value
+                is RequestResult.Error -> throw objectiveResult.value
+            }
         }
 
         private suspend fun startTimeline(
