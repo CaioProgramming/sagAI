@@ -121,6 +121,28 @@
     <string name="review_page_your_journey_title">Sua jornada</string>
     <string name="review_page_thank_you">Obrigado</string>
     <string name="review_page_for_playing">POR JOGAR</string>
+    <!-- TODO: Review translation -->
+    <string name="review_page_most_played_time_title">Horário mais jogado</string>
+    <!-- TODO: Review translation -->
+    <string name="review_page_most_played_hour_chart_label">Hora mais jogada</string>
+    <!-- TODO: Review translation -->
+    <string name="review_page_about_you_title">Sobre você</string>
+    <!-- TODO: Review translation -->
+    <string name="review_chart_messages_suffix">mensagens</string>
+    <!-- TODO: Review translation -->
+    <string name="review_chart_mentions_suffix">menções</string>
+    <!-- TODO: Review translation -->
+    <string name="review_chart_messages_count_format">%1$d mensagens</string>
+    <!-- TODO: Review translation -->
+    <string name="review_hero_top_characters_label">TOP PERSONAGENS</string>
+    <!-- TODO: Review translation -->
+    <string name="review_hero_emotional_side_label">LADO EMOCIONAL</string>
+    <!-- TODO: Review translation -->
+    <string name="review_hero_playtime_label">Tempo de jogo</string>
+    <!-- TODO: Review translation -->
+    <string name="review_hero_definitive_emotion_label">Emoção definitiva</string>
+    <!-- TODO: Review translation -->
+    <string name="review_intro_loading_message">Analisando a bela bagunça que fizemos…</string>
 
     <!-- SagaDetailView.kt Strings -->
     <string name="saga_detail_delete_confirmation_title">Confirmar Exclusão</string>
@@ -157,6 +179,18 @@
     <string name="saga_detail_no_events_placeholder">Nenhum evento registrado</string>
     <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
     <string name="saga_detail_delete_saga_button">Excluir Saga</string>
+    <!-- TODO: Review translation -->
+    <string name="saga_detail_read_story_title">Ler sua história</string>
+    <!-- TODO: Review translation -->
+    <string name="saga_detail_read_story_subtitle">Leia a história do começo até agora</string>
+    <!-- TODO: Review translation -->
+    <string name="saga_detail_manage_story">Gerenciar história</string>
+    <!-- TODO: Review translation -->
+    <string name="saga_detail_regenerating_icon">Regenerando ícone da saga…</string>
+    <!-- TODO: Review translation -->
+    <string name="saga_detail_error_regenerating_icon">Erro ao regenerar ícone: %1$s</string>
+    <!-- TODO: Review translation -->
+    <string name="saga_detail_error_emotional_conclusion">Erro ao gerar conclusão emocional: %1$s</string>
 
     <string name="home_debug_session_icon_desc">Sessão de Depuração</string>
     <string name="home_start_debug_session_title">Iniciar Sessão de Depuração</string>

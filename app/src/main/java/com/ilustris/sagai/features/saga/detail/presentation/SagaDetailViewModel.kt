@@ -3,10 +3,12 @@ package com.ilustris.sagai.features.saga.detail.presentation
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -36,6 +38,7 @@ class SagaDetailViewModel
         private val sagaDetailUIMapper: SagaDetailUIMapper,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
@@ -161,7 +164,7 @@ class SagaDetailViewModel
         fun regenerateIcon() {
             val currentSagaId = sagaResume.value?.saga?.id ?: return
             isGenerating.value = true
-            _loadingMessage.value = "Regenerating saga icon..."
+            _loadingMessage.value = stringResourceHelper.getString(R.string.saga_detail_regenerating_icon)
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
                     .regenerateSagaIconStream(currentSagaId)
@@ -178,7 +181,11 @@ class SagaDetailViewModel
 
                             is StreamingState.Error -> {
                                 isGenerating.value = false
-                                _loadingMessage.value = "Error regenerating icon: ${state.message}"
+                                _loadingMessage.value =
+                                    stringResourceHelper.getString(
+                                        R.string.saga_detail_error_regenerating_icon,
+                                        state.message,
+                                    )
                             }
                         }
                     }

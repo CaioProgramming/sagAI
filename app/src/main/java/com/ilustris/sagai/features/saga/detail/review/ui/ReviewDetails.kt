@@ -359,7 +359,7 @@ fun ReviewDetails(saga: SagaContent) {
 
             item {
                 Text(
-                    "Horário mais jogado",
+                    stringResource(R.string.review_page_most_played_time_title),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -430,7 +430,7 @@ fun ReviewDetails(saga: SagaContent) {
             saga.data.emotionalReview?.let {
                 item {
                     Text(
-                        "Sobre você",
+                        stringResource(R.string.review_page_about_you_title),
                         style =
                             MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -469,12 +469,15 @@ private fun CharactersChart(
 ) {
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.secondary
+    val charactersRankLabel = stringResource(R.string.review_page_characters_rank_title)
+    val messagesSuffix = stringResource(R.string.review_chart_messages_suffix)
+    val mentionsSuffix = stringResource(R.string.review_chart_mentions_suffix)
 
     val data =
-        remember(resolvedColor, resolvedIconColor) {
+        remember(resolvedColor, resolvedIconColor, charactersRankLabel, messagesSuffix, mentionsSuffix) {
             listOf(
                 Bars(
-                    label = "Ranking de personagens",
+                    label = charactersRankLabel,
                     values =
                         charactersRanking
                             .map {
@@ -491,7 +494,7 @@ private fun CharactersChart(
                                     val displayValue =
                                         if (index == 0) it.second else mentionsForCharacter
 
-                                    if (index % 2 == 0) "messages" else "mentions"
+                                    if (index % 2 == 0) messagesSuffix else mentionsSuffix
 
                                     Bars.Data(
                                         label = "${it.first.name}",
@@ -527,7 +530,7 @@ private fun CharactersChart(
                             color = resolvedIconColor,
                         ),
                     contentBuilder = { dataIndex, valueIndex, value ->
-                        val suffix = if (valueIndex % 2 == 0) "messages" else "mentions"
+                        val suffix = if (valueIndex % 2 == 0) messagesSuffix else mentionsSuffix
                         "${value.toInt()} $suffix"
                     },
                 ),
@@ -673,13 +676,15 @@ private fun HourRankChart(
     val cornerSize = genre.cornerSize()
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.secondary
+    val mostPlayedHourLabel = stringResource(R.string.review_page_most_played_hour_chart_label)
+    val messagesCountFormat = stringResource(R.string.review_chart_messages_count_format)
     LineChart(
         modifier = modifier,
         data =
-            remember(palette, cornerSize) {
+            remember(palette, cornerSize, mostPlayedHourLabel, messagesCountFormat) {
                 listOf(
                     Line(
-                        label = "Hora mais jogada",
+                        label = mostPlayedHourLabel,
                         values = hourRanking.map { it.value.size.toDouble() },
                         color = Brush.verticalGradient(palette),
                         firstGradientFillColor = resolvedColor,
@@ -696,7 +701,7 @@ private fun HourRankChart(
                                         color = resolvedIconColor,
                                     ),
                                 contentBuilder = { dataIndex, valueIndex, value ->
-                                    "${value.toInt()} messages"
+                                    String.format(messagesCountFormat, value.toInt())
                                 },
                             ),
                     ),

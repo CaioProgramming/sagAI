@@ -145,6 +145,17 @@
     <string name="review_page_your_journey_title">Your Journey</string>
     <string name="review_page_thank_you">Thank you</string>
     <string name="review_page_for_playing">FOR PLAYING</string>
+    <string name="review_page_most_played_time_title">Most played time</string>
+    <string name="review_page_most_played_hour_chart_label">Most played hour</string>
+    <string name="review_page_about_you_title">About you</string>
+    <string name="review_chart_messages_suffix">messages</string>
+    <string name="review_chart_mentions_suffix">mentions</string>
+    <string name="review_chart_messages_count_format">%1$d messages</string>
+    <string name="review_hero_top_characters_label">TOP CHARACTERS</string>
+    <string name="review_hero_emotional_side_label">EMOTIONAL SIDE</string>
+    <string name="review_hero_playtime_label">Playtime</string>
+    <string name="review_hero_definitive_emotion_label">Definitive emotion</string>
+    <string name="review_intro_loading_message">Checking out the beautiful mess we made…</string>
 
     <!-- SagaDetailView.kt Strings -->
     <string name="saga_detail_delete_confirmation_title">Confirm Deletion</string>
@@ -181,6 +192,12 @@
     <string name="saga_detail_no_events_placeholder">No events recorded</string>
     <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
     <string name="saga_detail_delete_saga_button">Delete Saga</string>
+    <string name="saga_detail_read_story_title">Read your story</string>
+    <string name="saga_detail_read_story_subtitle">Read the story from the start until now</string>
+    <string name="saga_detail_manage_story">Manage Story</string>
+    <string name="saga_detail_regenerating_icon">Regenerating saga icon…</string>
+    <string name="saga_detail_error_regenerating_icon">Error regenerating icon: %1$s</string>
+    <string name="saga_detail_error_emotional_conclusion">Error generating emotional conclusion: %1$s</string>
 
     <!-- HomeView.kt Strings -->
     <string name="home_debug_session_icon_desc">Debug Session</string>
