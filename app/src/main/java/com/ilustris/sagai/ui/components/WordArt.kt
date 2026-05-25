@@ -58,6 +58,7 @@ import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.lighter
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
 fun WordArtText(
@@ -286,9 +287,9 @@ fun Genre.stylisedText(
     fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
     visualConfig: GenreVisualConfig? = null,
 ) {
-    val resolvedColor = resolveColor(visualConfig)
-    val resolvedIconColor = resolveIconColor(visualConfig)
-    val palette = colorPalette(visualConfig)
+    val resolvedColor = MaterialTheme.colorScheme.primary
+    val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
+    val palette = themeBrushColors()
     val style =
         MaterialTheme.typography.displaySmall.copy(
             textAlign = TextAlign.Center,

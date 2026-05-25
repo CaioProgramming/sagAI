@@ -164,6 +164,7 @@ import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
+import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -178,6 +179,7 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaHighlight
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
@@ -1118,7 +1120,10 @@ private fun SagaChatSparkPlaceholder(modifier: Modifier = Modifier) {
         Icon(
             painter = painterResource(R.drawable.ic_spark),
             contentDescription = null,
-            modifier = Modifier.size(48.dp),
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .gradientFill(sagaBrush(gradientType = GradientType.VERTICAL)),
             tint = muted,
         )
     }
