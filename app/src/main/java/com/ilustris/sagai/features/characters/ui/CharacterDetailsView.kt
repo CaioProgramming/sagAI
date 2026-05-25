@@ -18,9 +18,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
@@ -86,12 +86,13 @@ import com.ilustris.sagai.ui.theme.characterDetailsHeaderScrim
 import com.ilustris.sagai.ui.theme.characterDetailsTitleGradient
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTopOverImage
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.shimmerize
 
@@ -291,25 +292,37 @@ private fun CharacterDetailsLoaded(
                                             .effectForGenre(
                                                 genre,
                                             ).graphicsLayer(
-                                                translationY = 120f,
+                                                translationY = 100f,
                                             ),
                                 ) {
-                                    Box(Modifier.fillMaxSize()) {
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .fillMaxHeight(0.28f)
-                                                .background(
-                                                    fadeGradientTopOverImage(headerScrimColor),
-                                                ),
-                                        )
+                                    Box(
+                                        Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.TopCenter,
+                                    ) {
+                                        Column {
+                                            Box(
+                                                Modifier
+                                                    .background(adaptiveColor)
+                                                    .fillMaxWidth()
+                                                    .height(50.dp),
+                                            )
+                                            Box(
+                                                Modifier
+                                                    .background(fadeGradientTop(adaptiveColor))
+                                                    .fillMaxWidth()
+                                                    .height(50.dp),
+                                            )
+                                        }
+
                                         genre.stylisedText(
                                             text = "${characterData.name} ${(characterData.lastName ?: emptyString())}".trim(),
                                             modifier =
                                                 Modifier
-                                                    .align(Alignment.TopCenter)
+                                                    .background(
+                                                        fadeGradientTop(adaptiveColor),
+                                                    ).fillMaxWidth()
                                                     .statusBarsPadding()
-                                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                                    .padding(horizontal = 16.dp, vertical = 4.dp)
                                                     .gradientFill(titleGradient)
                                                     .reactiveShimmer(
                                                         true,
@@ -336,6 +349,7 @@ private fun CharacterDetailsLoaded(
                                             .padding(top = 16.dp)
                                             .size(24.dp)
                                             .clip(CircleShape)
+                                            .gradientFill(sagaBrush())
                                             .clickable { showCharacterShare = true },
                                     colorFilter = ColorFilter.tint(characterColor),
                                 )
@@ -389,8 +403,7 @@ private fun CharacterDetailsLoaded(
                                             sagaInfo,
                                             characterData,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -517,8 +530,7 @@ private fun CharacterDetailsLoaded(
                                             isSummarizing,
                                             targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
-                                        )
-                                        .padding(vertical = 16.dp),
+                                        ).padding(vertical = 16.dp),
                             )
                         }
                     }

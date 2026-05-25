@@ -167,7 +167,7 @@ fun AdvanceTrigger(
                                 if (isHolding) {
                                     stringResource(actionUi.holdingTextRes)
                                 } else {
-                                    stringResource(actionUi.titleRes)
+                                    stringResource(actionUi.titleRes ?: R.string.continue_text)
                                 }.uppercase(),
                             style =
                                 MaterialTheme.typography.labelLarge.copy(

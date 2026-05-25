@@ -37,6 +37,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.network.ConnectivityObserver
@@ -313,10 +315,26 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
                                     Box(modifier = Modifier.fillMaxSize()) {
-                                        NavDisplay(
-                                            entries = navigationState.toEntries(entryProvider),
-                                            onBack = { navigator.goBack() },
-                                        )
+                                        // Provide a navigation-specific AnimatedContent scope so
+                                        // all entries can use the same default transition (crossfade).
+                                        AnimatedContent(
+                                            targetState = resolveCurrentKey(),
+                                            transitionSpec = { fadeIn() togetherWith fadeOut() },
+                                        ) {
+                                            // `this` is an AnimatedContentScope — provide it to
+                                            // navigation entries via LocalNavAnimatedContentScope
+                                            CompositionLocalProvider(
+                                                LocalNavAnimatedContentScope provides this,
+                                            ) {
+                                                NavDisplay(
+                                                    entries =
+                                                        navigationState.toEntries(
+                                                            entryProvider,
+                                                        ),
+                                                    onBack = { navigator.goBack() },
+                                                )
+                                            }
+                                        }
 
                                         SagaInAppNotificationBanner(
                                             notification = inAppNotification,
