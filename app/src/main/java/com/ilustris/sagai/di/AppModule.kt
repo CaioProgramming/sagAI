@@ -42,7 +42,6 @@ import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SoundFxService
 import com.ilustris.sagai.core.network.GeminiApiClient
-import com.ilustris.sagai.core.network.OpenRouterApiClient
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
 import com.ilustris.sagai.core.notifications.WorkManagerScheduler
@@ -331,14 +330,12 @@ object AppModule {
         safetyClient: SafetyClient,
         sideEffectService: SideEffectService,
         geminiApiClient: GeminiApiClient,
-        openRouterApiClient: OpenRouterApiClient,
     ): GemmaClient =
         GemmaClient(
             remoteConfigService = remoteConfigService,
             safetyClient = safetyClient,
             sideEffectService = sideEffectService,
             geminiApiClient = geminiApiClient,
-            openRouterApiClient = openRouterApiClient,
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
         )

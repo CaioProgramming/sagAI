@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -22,15 +23,13 @@ import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.network.GeminiApiCodec
-import com.ilustris.sagai.core.network.GeminiHttpException
-import com.ilustris.sagai.core.network.OpenRouterApiClient
-import com.ilustris.sagai.core.network.OpenRouterApiCodec
-import com.ilustris.sagai.core.network.OpenRouterHttpException
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +38,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import com.ilustris.sagai.core.network.GeminiHttpException
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
@@ -53,7 +53,6 @@ class GemmaClient
         val safetyClient: SafetyClient,
         val sideEffectService: SideEffectService,
         val geminiApiClient: GeminiApiClient,
-        val openRouterApiClient: OpenRouterApiClient,
         val promptService: PromptService,
         @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
     ) : AIClient() {
@@ -162,13 +161,6 @@ class GemmaClient
                 } ?: error("Flag Value unavailable.")
             }
 
-        suspend fun openRouterKey(): String =
-            remoteConfigService.getString(OPENROUTER_KEY_FLAG, false)?.let {
-                it.ifEmpty {
-                    error("Couldn't fetch openRouter key")
-                }
-            } ?: error("OpenRouter Key unavailable.")
-
         /**
          * @param blueprintKey Optional key identifying the prompt blueprint used. Providing this greatly helps trace prompt generation in the local debugging ai_audit_logs database.
          */
@@ -181,7 +173,7 @@ class GemmaClient
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
-            requirement: ModelRequirement = ModelRequirement.LOW,
+            requirement: ModelRequirement = ModelRequirement.MEDIUM,
             blueprintKey: String? = null,
             logEnabled: Boolean = true,
         ): T? =
@@ -192,21 +184,7 @@ class GemmaClient
                         throw GuardrailsException(safetyStatus)
                     }
                 }
-
-                var useOpenRouter = false
-                var model = ""
-                try {
-                    model = modelName(requirement)
-                } catch (e: ModelOutageException) {
-                    if (logEnabled) {
-                        Timber.w(
-                            "Gemini model outage detected, " +
-                                "falling back to OpenRouter: ${e.message}",
-                        )
-                    }
-                    useOpenRouter = true
-                    model = "openRouter"
-                }
+                val model = modelName(requirement)
 
                 val maxAttempts = MAX_RETRIES + 1
                 val startTime = System.currentTimeMillis()
@@ -217,18 +195,9 @@ class GemmaClient
                             val dataType = getJavaType<T>()
                             val dataTypeName =
                                 when (dataType) {
-                                    is Class<*> -> {
-                                        dataType.simpleName
-                                    }
-
-                                    is java.lang.reflect.ParameterizedType -> {
-                                        (dataType.rawType as? Class<*>)?.simpleName
-                                            ?: dataType.toString()
-                                    }
-
-                                    else -> {
-                                        dataType.toString().substringAfterLast(".")
-                                    }
+                                    is Class<*> -> dataType.simpleName
+                                    is java.lang.reflect.ParameterizedType -> (dataType.rawType as? Class<*>)?.simpleName ?: dataType.toString()
+                                    else -> dataType.toString().substringAfterLast(".")
                                 }
 
                             val structure =
@@ -302,74 +271,26 @@ class GemmaClient
                                 )
 
                             val formattedModel = model.replace("models/", "")
+                            val response = callGenerateContent(formattedModel, apiConfig(useCore), geminiRequest)
 
-                            val temperature =
-                                if (requirement == ModelRequirement.TINY ||
-                                    requirement == ModelRequirement.LOW
-                                ) {
-                                    0.1f
-                                } else {
-                                    temperatureRandomness
-                                }
+                            // Check for API error
+                            response.error?.let { error ->
+                                if (logEnabled) Timber.e("Gemini API error: ${error.code} - ${error.message}")
+                                throw Exception("Gemini API error: ${error.message}")
+                            }
 
-                            val (response, requiredText, apiUsed) =
-                                if (useOpenRouter) {
-                                    try {
-                                        val orResponse =
-                                            callOpenRouterGenerateContent(
-                                                openRouterKey(),
-                                                geminiRequest,
-                                                temperature,
-                                            )
+                            lastTokenCount = response.usageMetadata?.promptTokenCount ?: 0
+                            if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
+                                lastTokenCount = 0
+                            }
 
-                                        // Check for API error
-                                        orResponse.error?.let { error ->
-                                            if (logEnabled) Timber.e("OpenRouter API error: ${error.code} - ${error.message}")
-                                            throw Exception("OpenRouter API error: ${error.message}")
-                                        }
+                            val responseContent =
+                                response.candidates
+                                    ?.firstOrNull()
+                                    ?.content
+                                    ?.parts
 
-                                        lastTokenCount = orResponse.usage?.promptTokens ?: 0
-                                        if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
-                                            lastTokenCount = 0
-                                        }
-
-                                        val text =
-                                            orResponse.choices
-                                                ?.firstOrNull()
-                                                ?.message
-                                                ?.content
-                                        Triple(orResponse, text, "openRouter")
-                                    } catch (e: Exception) {
-                                        throw e
-                                    }
-                                } else {
-                                    val geminiResp =
-                                        callGenerateContent(
-                                            formattedModel,
-                                            apiConfig(useCore),
-                                            geminiRequest,
-                                        )
-
-                                    // Check for API error
-                                    geminiResp.error?.let { error ->
-                                        if (logEnabled) Timber.e("Gemini API error: ${error.code} - ${error.message}")
-                                        throw Exception("Gemini API error: ${error.message}")
-                                    }
-
-                                    lastTokenCount = geminiResp.usageMetadata?.promptTokenCount ?: 0
-                                    if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
-                                        lastTokenCount = 0
-                                    }
-
-                                    val responseContent =
-                                        geminiResp.candidates
-                                            ?.firstOrNull()
-                                            ?.content
-                                            ?.parts
-
-                                    val text = responseContent?.lastOrNull()?.text
-                                    Triple(geminiResp, text, formattedModel)
-                                }
+                            val requiredText = responseContent?.lastOrNull()?.text
 
                             if (logEnabled) {
                                 Timber.d(
@@ -382,11 +303,7 @@ class GemmaClient
 
                                 Timber.d("Prompt requested:\n$fullPrompt")
 
-                                if (useOpenRouter) {
-                                    Timber.i("API Response (OpenRouter): $requiredText")
-                                } else {
-                                    Timber.i("API Response: ${response.toJsonFormat()}")
-                                }
+                                Timber.i("API Response: ${response.toJsonFormat()}")
                             }
 
                             val cleanedJsonString =
@@ -397,7 +314,7 @@ class GemmaClient
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
-                                        model = apiUsed,
+                                        model = model,
                                         blueprintKey = blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
@@ -406,7 +323,7 @@ class GemmaClient
                                         responseTime = duration,
                                     ),
                                 )
-                                Timber.i("Generation Bench: $apiUsed took ${duration}ms (Prompt: $promptLength chars)")
+                                Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
                             }
                             val data = aiGeneration.data
                             if (logEnabled) Timber.d("AI data ->\n$data\n")
@@ -414,7 +331,7 @@ class GemmaClient
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        recordGenerationFailure(
+                        GemmaClient.recordGenerationFailure(
                             dataType = this.javaClass.simpleName,
                             model = model,
                             attempt = currentAttempt,
@@ -458,9 +375,7 @@ class GemmaClient
                         if (e is GeminiHttpException) {
                             val errorBody = e.errorBody
                             if (logEnabled) {
-                                Timber
-                                    .tag(this@GemmaClient::class.java.simpleName)
-                                    .e("HTTP Error (Gemini $model): $errorBody")
+                                Timber.tag(this@GemmaClient::class.java.simpleName).e("HTTP Error ($model): $errorBody")
                             }
 
                             try {
@@ -494,31 +409,7 @@ class GemmaClient
                                         ).i("Extracted precise delay from error: $extractedDelay seconds")
                                 }
                             } catch (parseEx: Exception) {
-                                Timber
-                                    .tag(this@GemmaClient::class.java.simpleName)
-                                    .e("Failed to parse error body", parseEx)
-                            }
-                        } else if (e is OpenRouterHttpException) {
-                            val errorBody = e.errorBody
-                            if (logEnabled) {
-                                Timber
-                                    .tag(this@GemmaClient::class.java.simpleName)
-                                    .e("HTTP Error (OpenRouter): $errorBody")
-                            }
-
-                            try {
-                                val errorResponse =
-                                    OpenRouterApiCodec.decodeErrorResponse(errorBody ?: "")
-                                errorResponse.message?.let {
-                                    Timber
-                                        .tag(this@GemmaClient::class.java.simpleName)
-                                        .w("OpenRouter Error: $it")
-                                }
-                            } catch (parseEx: Exception) {
-                                Timber
-                                    .tag(
-                                        this@GemmaClient::class.java.simpleName,
-                                    ).e("Failed to parse OpenRouter error body: ${parseEx.message}")
+                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Failed to parse error body: ${parseEx.message}")
                             }
                         }
 
@@ -574,21 +465,7 @@ class GemmaClient
                             throw GuardrailsException(safetyStatus)
                         }
                     }
-
-                    var useOpenRouter = false
-                    var model = ""
-                    try {
-                        model = modelName(requirement)
-                    } catch (e: ModelOutageException) {
-                        if (logEnabled) {
-                            Timber.w(
-                                "Gemini model outage detected in streaming, " +
-                                    "falling back to OpenRouter: ${e.message}",
-                            )
-                        }
-                        useOpenRouter = true
-                        model = "openRouter"
-                    }
+                    val model = modelName(requirement)
 
                     val maxAttempts = MAX_RETRIES + 1
                     val startTime = System.currentTimeMillis()
@@ -598,18 +475,9 @@ class GemmaClient
                             val dataType = getJavaType<T>()
                             val dataTypeName =
                                 when (dataType) {
-                                    is Class<*> -> {
-                                        dataType.simpleName
-                                    }
-
-                                    is java.lang.reflect.ParameterizedType -> {
-                                        (dataType.rawType as? Class<*>)?.simpleName
-                                            ?: dataType.toString()
-                                    }
-
-                                    else -> {
-                                        dataType.toString().substringAfterLast(".")
-                                    }
+                                    is Class<*> -> dataType.simpleName
+                                    is java.lang.reflect.ParameterizedType -> (dataType.rawType as? Class<*>)?.simpleName ?: dataType.toString()
+                                    else -> dataType.toString().substringAfterLast(".")
                                 }
 
                             val structure =
@@ -677,15 +545,6 @@ class GemmaClient
 
                             val formattedModel = model.replace("models/", "")
 
-                            val temperature =
-                                if (requirement == ModelRequirement.TINY ||
-                                    requirement == ModelRequirement.LOW
-                                ) {
-                                    0.1f
-                                } else {
-                                    temperatureRandomness
-                                }
-
                             if (logEnabled) {
                                 Timber.d(
                                     "Input JSON: ${
@@ -697,24 +556,9 @@ class GemmaClient
 
                                 Timber.d("Prompt requested:\n$fullPrompt")
                             }
-
-                            val responseBody =
-                                if (useOpenRouter) {
-                                    callOpenRouterStreamGenerateContent(
-                                        openRouterKey(),
-                                        geminiRequest,
-                                        temperature,
-                                    )
-                                } else {
-                                    callStreamGenerateContent(
-                                        formattedModel,
-                                        apiConfig(useCore),
-                                        geminiRequest,
-                                    )
-                                }
+                            val responseBody = callStreamGenerateContent(formattedModel, apiConfig(useCore), geminiRequest)
 
                             val accumulatedText = StringBuilder()
-                            var apiUsed = formattedModel
 
                             responseBody.byteStream().bufferedReader().useLines { lines ->
                                 for (line in lines) {
@@ -732,42 +576,16 @@ class GemmaClient
                                         if (logEnabled) {
                                             Timber.i("generateStreaming: Trying to parse $jsonStr")
                                         }
+                                        val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+                                        val partialPart =
+                                            partialResponse.candidates
+                                                ?.firstOrNull()
+                                                ?.content
+                                                ?.parts
+                                                ?.firstOrNull()
 
-                                        val textContent =
-                                            if (useOpenRouter) {
-                                                // Try to parse as OpenRouter response format
-                                                try {
-                                                    val orResponse =
-                                                        OpenRouterApiCodec.decodeResponse(jsonStr)
-                                                    apiUsed = "openRouter"
-                                                    orResponse.choices
-                                                        ?.firstOrNull()
-                                                        ?.message
-                                                        ?.content
-                                                } catch (e: Exception) {
-                                                    // Fall back to trying Gemini format
-                                                    val geminiResponse =
-                                                        GeminiApiCodec.decodeResponse(jsonStr)
-                                                    geminiResponse.candidates
-                                                        ?.firstOrNull()
-                                                        ?.content
-                                                        ?.parts
-                                                        ?.firstOrNull()
-                                                        ?.text
-                                                }
-                                            } else {
-                                                val partialResponse =
-                                                    GeminiApiCodec.decodeResponse(jsonStr)
-                                                partialResponse.candidates
-                                                    ?.firstOrNull()
-                                                    ?.content
-                                                    ?.parts
-                                                    ?.firstOrNull()
-                                                    ?.text
-                                            }
-
-                                        if (textContent != null) {
-                                            accumulatedText.append(textContent)
+                                        if (partialPart != null && partialPart.text != null) {
+                                            accumulatedText.append(partialPart.text)
                                             emit(StreamingState.Reasoning(accumulatedText.toString()))
                                         }
                                     } catch (e: Exception) {
@@ -789,7 +607,7 @@ class GemmaClient
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
-                                        model = apiUsed,
+                                        model = model,
                                         blueprintKey = blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
@@ -798,7 +616,7 @@ class GemmaClient
                                         responseTime = duration,
                                     ),
                                 )
-                                Timber.i("Generation Streaming Bench: $apiUsed took ${duration}ms")
+                                Timber.i("Generation Streaming Bench: $model took ${duration}ms")
                             }
 
                             Timber.d("generateStreaming: final state on streaming:\n${aiGeneration.toJsonFormat()}")
@@ -808,7 +626,7 @@ class GemmaClient
                             if (e.isFlowCancellation()) {
                                 throw e
                             }
-                            recordGenerationFailure(
+                            GemmaClient.recordGenerationFailure(
                                 dataType = javaClass.simpleName,
                                 model = model,
                                 attempt = currentAttempt,
@@ -845,20 +663,6 @@ class GemmaClient
                                             ?.removeSuffix("s")
                                             ?.toDoubleOrNull()
                                             ?.toLong()
-                                } catch (parseEx: Exception) {
-                                }
-                            } else if (e is OpenRouterHttpException) {
-                                val errorBody = e.errorBody
-                                try {
-                                    val errorResponse =
-                                        OpenRouterApiCodec.decodeErrorResponse(errorBody ?: "")
-                                    errorResponse.message?.let {
-                                        if (logEnabled) {
-                                            Timber
-                                                .tag(this@GemmaClient::class.java.simpleName)
-                                                .w("OpenRouter Error: $it")
-                                        }
-                                    }
                                 } catch (parseEx: Exception) {
                                 }
                             }
@@ -932,7 +736,8 @@ class GemmaClient
             model: String,
             apiKey: String,
             request: GeminiRequest,
-        ): GeminiResponse = geminiApiClient.generateContent(model, apiKey, request)
+        ): GeminiResponse =
+            geminiApiClient.generateContent(model, apiKey, request)
 
         @PublishedApi
         internal suspend fun callStreamGenerateContent(
@@ -940,26 +745,6 @@ class GemmaClient
             apiKey: String,
             request: GeminiRequest,
         ) = geminiApiClient.streamGenerateContent(model, apiKey, request)
-
-        @PublishedApi
-        internal suspend fun callOpenRouterGenerateContent(
-            apiKey: String,
-            request: GeminiRequest,
-            temperature: Float,
-        ) = openRouterApiClient.generateContent(
-            apiKey,
-            OpenRouterApiCodec.geminiToOpenRouterRequest(request, temperature),
-        )
-
-        @PublishedApi
-        internal suspend fun callOpenRouterStreamGenerateContent(
-            apiKey: String,
-            request: GeminiRequest,
-            temperature: Float,
-        ) = openRouterApiClient.streamGenerateContent(
-            apiKey,
-            OpenRouterApiCodec.geminiToOpenRouterRequest(request, temperature),
-        )
 
         /**
          * Recursively checks if a class or any of its nested classes contain String fields.
@@ -992,5 +777,3 @@ class GemmaClient
     }
 
 const val KEY_FLAG = "FIREBASE_KEY"
-
-const val OPENROUTER_KEY_FLAG = "OPENROUTER_KEY"
