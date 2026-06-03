@@ -55,7 +55,6 @@ class HomeUseCaseImpl
                             blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
                             temperatureRandomness = .5f,
                             requireTranslation = true,
-                            requirement = GemmaClient.ModelRequirement.TINY,
                         )
                     result ?: useFallback()
                 } catch (e: Exception) {
