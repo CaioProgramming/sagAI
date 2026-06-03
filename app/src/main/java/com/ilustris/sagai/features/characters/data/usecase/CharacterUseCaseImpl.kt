@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.prompts.CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
@@ -280,7 +281,7 @@ class CharacterUseCaseImpl
                                 "firstSceneId",
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
-                        blueprintKey = CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT,
+                        blueprintKey = CHARACTER_GENERATION_BLUEPRINT,
                     )!!
 
                 val character = sagaContent.findCharacter(newCharacter.name)
@@ -340,6 +341,7 @@ class CharacterUseCaseImpl
                         gemmaClient
                             .generateStreaming<GeneratedContent<Character>>(
                                 prompt,
+                                blueprintKey = CHARACTER_GENERATION_BLUEPRINT,
                                 useCore = true,
                                 filterOutputFields =
                                     listOf(

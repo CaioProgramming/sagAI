@@ -8,17 +8,13 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +22,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -69,7 +64,6 @@ import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
@@ -77,8 +71,6 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.ui.animations.chromaticAberration
-import com.ilustris.sagai.ui.animations.divineAura
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.FluidGradient
@@ -86,7 +78,6 @@ import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 
@@ -139,229 +130,223 @@ fun NewSagaView(
                     .background(MaterialTheme.colorScheme.background)
                     .imePadding(),
         ) {
-                    AnimatedContent(
-                        currentPalette,
-                        label = "GradientTransition",
-                        modifier = Modifier.fillMaxSize(),
-                        transitionSpec = {
-                            fadeIn(tween(1000, easing = EaseIn)) togetherWith
-                                fadeOut(
-                                    tween(
-                                        200,
-                                        easing = FastOutSlowInEasing,
-                                    ),
-                                )
-                        },
-                    ) {
-                        FluidGradient(
-                            colors = it,
-                            modifier = Modifier.fillMaxSize(),
+            AnimatedContent(
+                currentPalette,
+                label = "GradientTransition",
+                modifier = Modifier.fillMaxSize(),
+                transitionSpec = {
+                    fadeIn(tween(1000, easing = EaseIn)) togetherWith
+                        fadeOut(
+                            tween(
+                                200,
+                                easing = FastOutSlowInEasing,
+                            ),
                         )
-                    }
+                },
+            ) {
+                FluidGradient(
+                    colors = it,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
 
-                    // 2. Gradient Overlay
-                    Box(
-                        modifier =
-                            Modifier
-                                .background(fadedGradientTopAndBottom())
-                                .fillMaxSize(),
+            // 2. Gradient Overlay
+            Box(
+                modifier =
+                    Modifier
+                        .background(fadedGradientTopAndBottom())
+                        .fillMaxSize(),
+            )
+
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding(),
+            ) {
+                AnimatedVisibility(!isSaving) {
+                    TopBarContent(
+                        modifier = Modifier.fillMaxWidth(),
+                        navigateBack = { onBack() },
                     )
+                }
 
-                    Column(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .statusBarsPadding(),
-                    ) {
-                        AnimatedVisibility(!isSaving) {
-                            TopBarContent(
-                                modifier = Modifier.fillMaxWidth(),
-                                navigateBack = { onBack() },
-                            )
-                        }
-
-                        Box(
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            when {
-                                isSaving -> {
-                                    val actualBook =
-                                        libraryBooks.firstOrNull {
-                                            it.first.draft.id == lockedSaga?.id
-                                        }
-                                    actualBook?.let { entry ->
-                                        with(sharedTransitionScope) {
-                                            NewSagaBookFocus(
-                                                book = entry.first,
-                                                visualConfig = entry.second,
-                                                reasoning = currentAgentMessage,
-                                                isOpened = true,
-                                                isLoading = true,
-                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                sharedContentKey = "new-saga-book-${entry.first.draft.id}",
-                                                modifier = Modifier.fillMaxSize(),
-                                            )
-                                        }
-                                    }
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when {
+                        isSaving -> {
+                            val actualBook =
+                                libraryBooks.firstOrNull {
+                                    it.first.draft.id == lockedSaga?.id
                                 }
-
-                                libraryBooks.isNotEmpty() -> {
-                                    LibraryPager(
-                                        books = libraryBooks,
-                                        lockedSaga = lockedSaga,
-                                        lockedCharacter = lockedCharacter,
-                                        isAgentLoading = isAgentLoading,
-                                        currentAgentMessage = currentAgentMessage,
-                                        sharedTransitionScope = sharedTransitionScope,
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        onAction = viewModel::onAgenticAction,
-                                    )
-                                }
-
-                                isAgentLoading -> {
-                                    GenreMemoriesLoader(
-                                        isLoading = isAgentLoading,
+                            actualBook?.let { entry ->
+                                with(sharedTransitionScope) {
+                                    NewSagaBookFocus(
+                                        book = entry.first,
+                                        visualConfig = entry.second,
                                         reasoning = currentAgentMessage,
-                                        genresConfigs = genreConfigs ?: emptyList(),
+                                        isOpened = true,
+                                        isLoading = true,
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        sharedContentKey = "new-saga-book-${entry.first.draft.id}",
                                         modifier = Modifier.fillMaxSize(),
                                     )
                                 }
+                            }
+                        }
 
-                                else -> {
-                                    Column(
+                        libraryBooks.isNotEmpty() -> {
+                            LibraryPager(
+                                books = libraryBooks,
+                                lockedSaga = lockedSaga,
+                                lockedCharacter = lockedCharacter,
+                                isAgentLoading = isAgentLoading,
+                                currentAgentMessage = currentAgentMessage,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                onAction = viewModel::onAgenticAction,
+                            )
+                        }
+
+                        isAgentLoading -> {
+                            GenreMemoriesLoader(
+                                isLoading = isAgentLoading,
+                                reasoning = currentAgentMessage,
+                                genresConfigs = genreConfigs ?: emptyList(),
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
+                        else -> {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                AnimatedContent(
+                                    targetState = currentAgentMessage ?: defaultCreationMessage,
+                                    transitionSpec = {
+                                        fadeIn() + slideInVertically { it / 2 } togetherWith
+                                            fadeOut() + slideOutVertically { -it / 2 }
+                                    },
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                ) { message ->
+                                    Text(
+                                        text = message,
+                                        style =
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                shadow =
+                                                    Shadow(
+                                                        Color.White,
+                                                        blurRadius = 10f,
+                                                    ),
+                                            ),
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Center,
-                                    ) {
-                                        AnimatedContent(
-                                            targetState = currentAgentMessage ?: defaultCreationMessage,
-                                            transitionSpec = {
-                                                fadeIn() + slideInVertically { it / 2 } togetherWith
-                                                    fadeOut() + slideOutVertically { -it / 2 }
-                                            },
-                                            modifier = Modifier.fillMaxWidth(),
-                                        ) { message ->
-                                            Text(
-                                                text = message,
-                                                style =
-                                                    MaterialTheme.typography.bodyMedium.copy(
-                                                        shadow =
-                                                            Shadow(
-                                                                Color.White,
-                                                                blurRadius = 10f,
-                                                            ),
-                                                    ),
-                                                modifier =
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .levitate(isAgentLoading),
-                                                textAlign = TextAlign.Center,
-                                            )
-                                        }
-
-                                        uiError?.let {
-                                            Text(
-                                                text = it,
-                                                color = MaterialTheme.colorScheme.error,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                modifier = Modifier.padding(top = 12.dp),
-                                                textAlign = TextAlign.Center,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth(),
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            AnimatedVisibility(
-                                universeEchoes.isNotEmpty() && isAgentLoading.not(),
-                                enter = fadeIn(tween(800)) + slideInVertically { it },
-                                exit = fadeOut(tween(800)) + slideOutVertically { it },
-                            ) {
-                                UniverseEchoesSection(universeEchoes, {
-                                    userInput = it
-                                    viewModel.onAgenticAction(AgenticAction.SubmitPrompt(it))
-                                })
-                            }
-
-                            AnimatedContent(
-                                targetState = (isReadyToSave && lockedSaga != null && lockedCharacter != null) || isSaving,
-                                label = "BottomControl",
-                            ) { ready ->
-                                if (ready) {
-                                    AnimatedVisibility(isSaving.not()) {
-                                        lockedSaga?.genre
-                                        val buttonShape = sagaShape()
-                                        val color =
-                                            MaterialTheme.colorScheme.primary
-                                                ?: MaterialTheme.colorScheme.primary
-                                        val contentColor =
-                                            MaterialTheme.colorScheme.secondary
-                                                ?: MaterialTheme.colorScheme.onPrimary
-                                        Button(
-                                            onClick = { viewModel.onAgenticAction(AgenticAction.SaveSaga) },
-                                            modifier =
-                                                Modifier
-                                                    .padding(32.dp)
-                                                    .dropShadow(
-                                                        buttonShape,
-                                                    ) {
-                                                        this.color = color
-                                                        this.radius = 5f
-                                                        this.spread = 5f
-                                                    }.fillMaxWidth(),
-                                            shape = buttonShape,
-                                            enabled = !isSaving,
-                                            colors =
-                                                ButtonDefaults.buttonColors(
-                                                    containerColor = color,
-                                                    contentColor = contentColor,
-                                                ),
-                                        ) {
-                                            Text(
-                                                stringResource(R.string.save_saga),
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    PromptBar(
-                                        value = userInput,
-                                        onValueChange = { newValue: String ->
-                                            userInput = newValue
-                                        },
-                                        onSend = {
-                                            viewModel.onAgenticAction(
-                                                AgenticAction.SubmitPrompt(
-                                                    userInput,
-                                                ),
-                                            )
-                                            userInput = ""
-                                        },
-                                        isLoading = isAgentLoading || isSaving,
-                                        genre = lockedSaga?.genre,
+                                                .levitate(isAgentLoading),
+                                        textAlign = TextAlign.Center,
                                     )
                                 }
+
+                                uiError?.let {
+                                    Text(
+                                        text = it,
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(top = 12.dp),
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+
+                                AnimatedVisibility(
+                                    universeEchoes.isNotEmpty() && isAgentLoading.not(),
+                                    enter = fadeIn(tween(800)) + slideInVertically { it },
+                                    exit = fadeOut(tween(800)) + slideOutVertically { it },
+                                ) {
+                                    UniverseEchoesSection(universeEchoes, {
+                                        userInput = it
+                                        viewModel.onAgenticAction(AgenticAction.SubmitPrompt(it))
+                                    })
+                                }
                             }
                         }
                     }
+                }
+            }
+
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+            ) {
+                AnimatedContent(
+                    targetState = (isReadyToSave && lockedSaga != null && lockedCharacter != null) || isSaving,
+                    label = "BottomControl",
+                ) { ready ->
+                    if (ready) {
+                        AnimatedVisibility(isSaving.not()) {
+                            lockedSaga?.genre
+                            val buttonShape = sagaShape()
+                            val color =
+                                MaterialTheme.colorScheme.primary
+                                    ?: MaterialTheme.colorScheme.primary
+                            val contentColor =
+                                MaterialTheme.colorScheme.secondary
+                                    ?: MaterialTheme.colorScheme.onPrimary
+                            Button(
+                                onClick = { viewModel.onAgenticAction(AgenticAction.SaveSaga) },
+                                modifier =
+                                    Modifier
+                                        .padding(32.dp)
+                                        .dropShadow(
+                                            buttonShape,
+                                        ) {
+                                            this.color = color
+                                            this.radius = 5f
+                                            this.spread = 5f
+                                        }.fillMaxWidth(),
+                                shape = buttonShape,
+                                enabled = !isSaving,
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = color,
+                                        contentColor = contentColor,
+                                    ),
+                            ) {
+                                Text(
+                                    stringResource(R.string.save_saga),
+                                )
+                            }
+                        }
+                    } else {
+                        PromptBar(
+                            value = userInput,
+                            onValueChange = { newValue: String ->
+                                userInput = newValue
+                            },
+                            onSend = {
+                                viewModel.onAgenticAction(
+                                    AgenticAction.SubmitPrompt(
+                                        userInput,
+                                    ),
+                                )
+                                userInput = ""
+                            },
+                            isLoading = isAgentLoading || isSaving,
+                            genre = lockedSaga?.genre,
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -419,8 +404,8 @@ fun PromptBar(
                 .fillMaxWidth()
                 .dropShadow(shape) {
                     this.color = primaryColor
-                    this.radius = 10f
-                    this.spread = 5f
+                    this.radius = 15f
+                    this.spread = 15f
                     this.brush = themeBrush
                 }.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
                 .background(MaterialTheme.colorScheme.background, shape)

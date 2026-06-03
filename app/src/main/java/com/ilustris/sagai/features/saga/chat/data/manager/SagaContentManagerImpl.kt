@@ -44,7 +44,6 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
@@ -1034,7 +1033,6 @@ class SagaContentManagerImpl
                     } else {
                         var generated: GeneratedContent<Character>? =
                             null
-                        "Evaluating potential characters for the story..."
                         genreConfigService.conversationBlueprint(currentSaga.data.genre)
                         characterUseCase
                             .generateCharacterStream(

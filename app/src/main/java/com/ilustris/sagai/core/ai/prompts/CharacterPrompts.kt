@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -16,6 +18,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 data class CharacterReplyArgs(
@@ -97,7 +100,7 @@ object CharacterPrompts {
     const val CHARACTER_ENRICHMENT_BLUEPRINT = "character_enrichment_blueprint"
 
     suspend fun conversationalCharacterReply(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         currentCharacterInfo: CharacterInfo,
         userInput: String,
         conversationHistory: List<com.ilustris.sagai.features.newsaga.data.model.ChatMessage>,
@@ -118,7 +121,7 @@ object CharacterPrompts {
     }
 
     suspend fun characterIntroPrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         sagaContext: SagaDraft?,
     ): String {
         val args =
@@ -132,7 +135,7 @@ object CharacterPrompts {
     }
 
     suspend fun characterAdaptationPrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         currentCharacterInfo: CharacterInfo,
         newGenre: String,
     ): String {
@@ -245,13 +248,13 @@ object CharacterPrompts {
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun characterGeneration(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
         description: String,
         bannedNames: List<String> = emptyList(),
         themeColor: String? = null,
-        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
+        sceneSummary: SceneSummary? = null,
     ): String {
         val themeColorContext =
             themeColor?.let {
@@ -332,7 +335,7 @@ object CharacterPrompts {
     }
 
     suspend fun characterLoreGeneration(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         timeline: Timeline,
         characters: List<Character>,
     ): String {
@@ -353,7 +356,7 @@ object CharacterPrompts {
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun findNickNames(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         characters: List<Character>,
         messages: List<Message>,
         timeline: Timeline,
@@ -378,7 +381,7 @@ object CharacterPrompts {
     }
 
     suspend fun generateCharacterRelation(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         timeline: Timeline,
         saga: SagaContent,
     ): String {
@@ -402,11 +405,11 @@ object CharacterPrompts {
     }
 
     suspend fun characterResume(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         promptDirectives: PromptDirectives,
         character: CharacterContent,
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
     ): String {
         val characterData = character.data
         val journeyEvents =
@@ -450,7 +453,7 @@ object CharacterPrompts {
     }
 
     suspend fun knowledgeUpdatePrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         event: Timeline,
         characters: List<Character>,
     ): String {
@@ -464,7 +467,7 @@ object CharacterPrompts {
     }
 
     suspend fun refineCharacterDraftPrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         rawInput: String,
         sagaContext: SagaDraft?,
         appearanceGuidelines: String,
@@ -479,7 +482,7 @@ object CharacterPrompts {
         return promptService.buildRemotePrompt(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
 
         suspend fun characterEnrichmentPrompt(
-            promptService: com.ilustris.sagai.core.ai.services.PromptService,
+            promptService: PromptService,
             character: CharacterContent,
             saga: SagaContent,
         ): String {

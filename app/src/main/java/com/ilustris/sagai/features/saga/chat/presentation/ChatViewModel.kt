@@ -24,6 +24,7 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -40,7 +41,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
-import com.ilustris.sagai.features.saga.chat.data.model.toGenerationDescription
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
@@ -448,9 +448,7 @@ class ChatViewModel
             }
         }
 
-        private fun syncSelectedCharacterFromRoster(
-            characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
-        ) {
+        private fun syncSelectedCharacterFromRoster(characters: List<com.ilustris.sagai.features.characters.data.model.Character>) {
             uiState.value.selectedCharacter?.let { selected ->
                 characters.find { it.id == selected.id }?.takeIf { it != selected }?.let {
                     stateManager.updateCharacter(it)
@@ -1071,78 +1069,78 @@ class ChatViewModel
             sendJob?.cancel()
             sendJob =
                 viewModelScope.launch(Dispatchers.IO) {
-                stateManager.updateLoading(true)
-                val saga = uiState.value.sagaContent ?: return@launch
-                val characterReference = saga.findCharacter(message.speakerName)
+                    stateManager.updateLoading(true)
+                    val saga = uiState.value.sagaContent ?: return@launch
+                    val characterReference = saga.findCharacter(message.speakerName)
 
-                resetSuggestions()
-                val characterId =
-                    if (message.senderType == SenderType.NARRATOR) {
-                        null
-                    } else {
-                        message.characterId ?: characterReference?.id
-                    }
+                    resetSuggestions()
+                    val characterId =
+                        if (message.senderType == SenderType.NARRATOR) {
+                            null
+                        } else {
+                            message.characterId ?: characterReference?.id
+                        }
 
-                val speaker =
-                    if (message.senderType == SenderType.NARRATOR) {
-                        null
-                    } else {
-                        characterReference?.name ?: message.speakerName
-                    }
+                    val speaker =
+                        if (message.senderType == SenderType.NARRATOR) {
+                            null
+                        } else {
+                            characterReference?.name ?: message.speakerName
+                        }
 
-                messageUseCase
-                    .saveMessage(
-                        saga,
-                        message.copy(
-                            characterId = characterId,
-                            speakerName = speaker,
-                            sagaId = saga.data.id,
-                        ),
-                        isFromUser,
-                        null,
-                    ).onSuccessAsync { savedMessage ->
-                        resetSuggestions()
-                        stateManager.updateInput(TextFieldValue())
+                    messageUseCase
+                        .saveMessage(
+                            saga,
+                            message.copy(
+                                characterId = characterId,
+                                speakerName = speaker,
+                                sagaId = saga.data.id,
+                            ),
+                            isFromUser,
+                            null,
+                        ).onSuccessAsync { savedMessage ->
+                            resetSuggestions()
+                            stateManager.updateInput(TextFieldValue())
 
-                        viewModelScope.launch(Dispatchers.IO) {
-                            val sceneSummaryData =
+                            viewModelScope.launch(Dispatchers.IO) {
+                                val sceneSummaryData =
+                                    if (isFromUser) {
+                                        messageUseCase
+                                            .getSceneContext(saga)
+                                            .getSuccess()
+                                    } else {
+                                        sceneSummary
+                                    }
+
                                 if (isFromUser) {
-                                    messageUseCase
-                                        .getSceneContext(saga)
-                                        .getSuccess()
-                                } else {
-                                    sceneSummary
+                                    generationJob =
+                                        viewModelScope.launch(Dispatchers.IO) {
+                                            replyMessage(savedMessage, sceneSummaryData, isAudio)
+                                        }
                                 }
 
-                            if (isFromUser) {
-                                generationJob =
-                                    viewModelScope.launch(Dispatchers.IO) {
-                                        replyMessage(savedMessage, sceneSummaryData, isAudio)
-                                    }
+                                messageUseCase.generateExtraContent(
+                                    saga = saga,
+                                    message = savedMessage,
+                                    sceneSummary = sceneSummaryData,
+                                    characterReference = characterReference,
+                                    generateAudio = isAudio && isFromUser.not(),
+                                    isFromUser = isFromUser,
+                                )
                             }
-
-                            messageUseCase.generateExtraContent(
-                                saga = saga,
-                                message = savedMessage,
-                                sceneSummary = sceneSummaryData,
-                                characterReference = characterReference,
-                                generateAudio = isAudio && isFromUser.not(),
-                                isFromUser = isFromUser,
+                        }.onFailureAsync {
+                            sagaThemeManager.showSnackBar(
+                                message = context.getString(R.string.message_save_error),
+                                action =
+                                    context.getString(R.string.try_again) to {
+                                        retryAiResponse(message)
+                                    },
                             )
+                            stateManager.updateState { s -> s.copy(typoFixMessage = null) }
+                            updateLoading(false)
+                            stateManager.updateInput(TextFieldValue())
                         }
-                    }.onFailureAsync {
-                        sagaThemeManager.showSnackBar(
-                            message = context.getString(R.string.message_save_error),
-                            action =
-                                context.getString(R.string.try_again) to {
-                                    retryAiResponse(message)
-                                },
-                        )
-                        stateManager.updateState { s -> s.copy(typoFixMessage = null) }
-                        updateLoading(false)
-                        stateManager.updateInput(TextFieldValue())
-                    }
-            }
+                }
         }
 
         private fun resetSuggestions() {
@@ -1224,10 +1222,7 @@ class ChatViewModel
 
                                 sagaContentManager
                                     .generateCharacter(
-                                        discovery.toGenerationDescription(
-                                            message,
-                                            generatedMessage,
-                                        ),
+                                        discovery.toAINormalize(),
                                         sceneSummary = sceneSummary,
                                         candidateName = discovery.name,
                                     ).onSuccessAsync { newCharacter ->
