@@ -237,7 +237,7 @@ fun DetailSectionView.InitialSection.miniSection(
                             onToggle = {
                                 onAction(DetailAction.OpenChronicles(book.actId))
                             },
-                            onAction = {},
+                            onIntent = {},
                             modifier =
                                 Modifier
                                     .width(160.dp)

@@ -101,11 +101,7 @@ private val LightColorScheme =
 @Composable
 fun themeBrushColors(): List<Color> {
     val genre = LocalSagaGenre.current
-    return genre?.colorPalette() ?: listOf(
-        MaterialColor.Blue500,
-        MaterialColor.BlueA700,
-        MaterialColor.LightBlueA400,
-    )
+    return genre?.colorPalette() ?: holographicGradient
 }
 
 private const val THEME_ANIMATION_DURATION = 600

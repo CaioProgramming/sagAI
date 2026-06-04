@@ -25,3 +25,4 @@ gha-creds-*.json
 .junie/
 .kotlin/sessions/
 keystore.properties
+.hotswan/

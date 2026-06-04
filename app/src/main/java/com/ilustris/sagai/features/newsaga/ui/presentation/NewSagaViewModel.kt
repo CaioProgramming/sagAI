@@ -2,25 +2,20 @@ package com.ilustris.sagai.features.newsaga.ui.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
+import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getGenderPlaceholders
-import com.ilustris.sagai.R
-import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.CreationAssist
 import com.ilustris.sagai.features.newsaga.data.model.GenderPlaceholderMap
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.LibraryPitchesResponse
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
-import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
-import com.ilustris.sagai.features.newsaga.data.usecase.AgenticFlowResponse
-import com.ilustris.sagai.features.newsaga.data.usecase.AgenticUIComponent
-import com.ilustris.sagai.features.newsaga.data.usecase.AgenticUIComponent.IdeaPitches
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaCreationState
@@ -36,64 +31,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
-
-internal data class LoadingState(
-    val message: String,
-)
-
-enum class FlowPages {
-    SELECT_THEME,
-    CREATE_SAGA,
-    CREATE_CHARACTER,
-    GENERATING,
-}
-
-sealed class AgenticAction {
-    data class SubmitPrompt(
-        val prompt: String,
-    ) : AgenticAction()
-
-    data class SelectSaga(
-        val draft: SagaDraft,
-    ) : AgenticAction()
-
-    data class SelectCharacter(
-        val info: CharacterInfo,
-    ) : AgenticAction()
-
-    data object UnlockSaga : AgenticAction()
-
-    data object UnlockCharacter : AgenticAction()
-
-    data object SaveSaga : AgenticAction()
-
-    data class UpdateSaga(
-        val id: String,
-        val titleInput: String,
-        val descriptionInput: String,
-    ) : AgenticAction()
-
-    data class EnhanceSaga(
-        val draft: SagaDraft,
-    ) : AgenticAction()
-
-    data class UpdateCharacter(
-        val id: String,
-        val nameInput: String,
-        val descriptionInput: String,
-    ) : AgenticAction()
-
-    data class EnhanceCharacter(
-        val persona: CharacterInfo,
-    ) : AgenticAction()
-
-    data class SelectEcho(
-        val echo: UniverseEcho,
-    ) : AgenticAction()
-}
 
 @HiltViewModel
 class NewSagaViewModel
@@ -105,76 +47,28 @@ class NewSagaViewModel
         private val stringHelper: StringResourceHelper,
     ) : ViewModel() {
         private fun genericErrorMessage(): String = stringHelper.getString(R.string.unexpected_error)
-        private val _feed = MutableStateFlow<List<AgenticUIComponent>>(emptyList())
+
         val genderPlaceholders = MutableStateFlow<GenderPlaceholderMap>(emptyMap())
-        val feed = _feed.asStateFlow()
 
-        private val _lockedSaga = MutableStateFlow<SagaDraft?>(null)
-        val lockedSaga = _lockedSaga.asStateFlow()
-
-        private val _lockedCharacter = MutableStateFlow<CharacterInfo?>(null)
-        val lockedCharacter = _lockedCharacter.asStateFlow()
-
-        private val _selectedBook = MutableStateFlow<SagaBook?>(null)
-        val selectedBook = _selectedBook.asStateFlow()
-
-        private val _isReadyToSave = MutableStateFlow(false)
-        val isReadyToSave: StateFlow<Boolean> = _isReadyToSave.asStateFlow()
-
-        private val _isSaving = MutableStateFlow(false)
-        val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
-
-        private val _loadingMessage = MutableStateFlow<String?>(null)
-        val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
-
-        private val _currentAgentMessage = MutableStateFlow<String?>(null)
-        val currentAgentMessage = _currentAgentMessage.asStateFlow()
-
-        private val _isAgentLoading = MutableStateFlow(false)
-        val isAgentLoading = _isAgentLoading.asStateFlow()
-
-        private val _libraryBooks =
-            MutableStateFlow<List<Pair<SagaBook, GenreVisualConfig>>>(emptyList())
-        val libraryBooks = _libraryBooks.asStateFlow()
-
-        private val _uiError = MutableStateFlow<String?>(null)
-        val uiError = _uiError.asStateFlow()
-
-        private val _universeEchoes =
-            MutableStateFlow<List<Pair<UniverseEcho, GenreVisualConfig>>>(emptyList())
-        val universeEchoes = _universeEchoes.asStateFlow()
-
-        private val _savingError = MutableStateFlow<String?>(null)
-        val savingError: StateFlow<String?> = _savingError.asStateFlow()
+        private val _uiState = MutableStateFlow(NewSagaUiState())
+        val uiState: StateFlow<NewSagaUiState> = _uiState.asStateFlow()
 
         val effect = MutableStateFlow<Effect?>(null)
 
-        val genresVisuals = MutableStateFlow<List<Pair<Genre, GenreVisualConfig?>>?>(null)
-
-        val savedContent = MutableStateFlow<Pair<Saga?, Character?>?>(null)
-        val currentConfig = MutableStateFlow<GenreVisualConfig?>(null)
-
-        private val _sagaAssist = MutableStateFlow(CreationAssist())
-        val sagaAssist = _sagaAssist.asStateFlow()
-
-        private val _characterAssist = MutableStateFlow(CreationAssist())
-        val characterAssist = _characterAssist.asStateFlow()
-
-        private val _themeAssist = MutableStateFlow(CreationAssist())
-        val themeAssist = _themeAssist.asStateFlow()
-
-        private var assistJob: kotlinx.coroutines.Job? = null
-
+        private var promptJob: Job? = null
         private var initialEchoesJob: Job? = null
-
-        /** Bumped when the user starts creation so late echo responses are ignored. */
         private var echoesRequestGeneration = 0
+        private var lastUserPrompt: String = ""
 
         init {
             preFetchVisualConfigs()
             fetchGenderPlaceholders()
             requestInitialEchoes()
         }
+
+        private fun updateState(reducer: NewSagaUiState.() -> NewSagaUiState) {
+            _uiState.update(reducer)
+    }
 
         private fun cancelInitialEchoes() {
             echoesRequestGeneration++
@@ -191,20 +85,27 @@ class NewSagaViewModel
                         newSagaUseCase
                             .provideInitialEchoes()
                             .onSuccessAsync {
-                                if (generation != echoesRequestGeneration || _isAgentLoading.value) {
+                                val state = _uiState.value
+                                if (generation != echoesRequestGeneration || state.isGenerating) {
                                     return@onSuccessAsync
                                 }
-                                _universeEchoes.value =
+                                val echoes =
                                     it.suggestions.mapNotNull { echo ->
                                         val config = visualConfigService.getVisualConfig(echo.genre)
                                         if (config != null) echo to config else null
                                     }
-                                _currentAgentMessage.value = it.message
+                                updateState {
+                                    copy(
+                                        universeEchoes = echoes,
+                                        statusMessage = it.message.ifBlank { statusMessage },
+                                    )
+                                }
                             }.onFailureAsync {
-                                if (generation != echoesRequestGeneration || _isAgentLoading.value) {
+                                val state = _uiState.value
+                                if (generation != echoesRequestGeneration || state.isGenerating) {
                                     return@onFailureAsync
                                 }
-                                _uiError.value = genericErrorMessage()
+                                updateState { copy(error = genericErrorMessage()) }
                             }
                     } catch (e: Exception) {
                         if (e.isFlowCancellation()) {
@@ -222,400 +123,365 @@ class NewSagaViewModel
             }
         }
 
-        fun onAgenticAction(action: AgenticAction) {
-            viewModelScope.launch(Dispatchers.IO) {
-                when (action) {
-                    is AgenticAction.SubmitPrompt -> {
-                        submitUserPrompt(action.prompt)
-                    }
+        fun onIntent(intent: NewSagaIntent) {
+            when (intent) {
+                is NewSagaIntent.SubmitPrompt -> {
+                    submitUserPrompt(intent.prompt)
+                }
 
-                    is AgenticAction.SelectSaga -> {
-                        val visualConfig = visualConfigService.getVisualConfig(action.draft.genre)
-                        _lockedSaga.value = action.draft
-                        _lockedCharacter.value = null
-                        currentConfig.emit(visualConfig)
+                is NewSagaIntent.SelectSaga -> {
+                    selectSaga(intent.draft)
+                }
 
-                        val book =
-                            _libraryBooks.value.find { it.first.draft.id == action.draft.id }?.first
+                is NewSagaIntent.SelectCharacter -> {
+                    selectCharacter(intent.info)
+                }
 
-                        if (book != null) {
-                            _selectedBook.value = book
-                        } else {
-                            submitUserPrompt("Suggest characters for this story")
-                        }
-                    }
+                is NewSagaIntent.UnlockSaga -> {
+                    unlockSaga()
+                }
 
-                    is AgenticAction.SelectCharacter -> {
-                        val saga = _lockedSaga.value ?: return@launch
-                        visualConfigService.getVisualConfig(saga.genre)
-                        _lockedCharacter.value = action.info
-                        _isReadyToSave.value = true
-                    }
+                is NewSagaIntent.UnlockCharacter -> {
+                    unlockCharacter()
+                }
 
-                    is AgenticAction.UnlockSaga -> {
-                        _lockedSaga.value = null
-                        _lockedCharacter.value = null
-                        _selectedBook.value = null
-                        _isReadyToSave.value = false
-                        _feed.emit(
-                            _feed.value.filter { it !is AgenticUIComponent.PersonaPitches },
-                        )
-                    }
+                is NewSagaIntent.SaveSaga -> {
+                    saveSaga()
+                }
 
-                    is AgenticAction.UnlockCharacter -> {
-                        _lockedCharacter.value = null
-                        _isReadyToSave.value = false
-                    }
+                is NewSagaIntent.UpdateSaga -> {
+                    updateSaga(intent.id, intent.titleInput, intent.descriptionInput)
+                }
 
-                    is AgenticAction.SaveSaga -> {
-                        saveSaga()
-                    }
+                is NewSagaIntent.UpdateCharacter -> {
+                    updateCharacter(intent.id, intent.nameInput, intent.descriptionInput)
+                }
 
-                    is AgenticAction.UpdateSaga -> {
-                        _lockedSaga.value?.let { current ->
+                is NewSagaIntent.SelectEcho -> {
+                    selectEcho(intent)
+                }
 
-                            Timber.d("Updating character from ${current.toJsonFormat()} ")
-                            Timber.d("Trying to edit ${action.toJsonFormat()}")
-                            if (current.id == action.id) {
-                                val updated =
-                                    current.copy(
-                                        title = action.titleInput,
-                                        description = action.descriptionInput,
-                                    )
-                                _lockedSaga.value = updated
-                                _selectedBook.value = _selectedBook.value?.copy(draft = updated)
-                                _libraryBooks.value =
-                                    _libraryBooks.value.map {
-                                        if (it.first.draft.id == updated.id) {
-                                            it.copy(first = it.first.copy(draft = updated))
-                                        } else {
-                                            it
-                                        }
-                                    }
-                                updateFeedWithSaga(updated)
-                                Timber.i("onAgenticAction: Updated to ${updated.toJsonFormat()}")
-                            } else {
-                                Timber.e("Saga ID mismatch: ${current.id} != ${action.id}")
-                            }
-                        }
-                    }
-
-                    is AgenticAction.EnhanceSaga -> {
-                        submitUserPrompt(
-                            "Enchance the story of this saga keeping the same theme. Title: ${action.draft.title}. Description: ${action.draft.description}",
-                        )
-                    }
-
-                    is AgenticAction.UpdateCharacter -> {
-                        _selectedBook.value?.let { book ->
-                            Timber.d("Updating character from ${book.toJsonFormat()} ")
-                            Timber.d(": Trying to edit ${action.toJsonFormat()}")
-
-                            val updatedCharacters =
-                                book.characters.map {
-                                    if (it.id == action.id) {
-                                        it.copy(
-                                            name = action.nameInput,
-                                            description = action.descriptionInput,
-                                        )
-                                    } else {
-                                        it
-                                    }
-                                }
-                            val updatedBook = book.copy(characters = updatedCharacters)
-                            _selectedBook.value = updatedBook
-                            _libraryBooks.value =
-                                _libraryBooks.value.map {
-                                    if (it.first.draft.id == updatedBook.draft.id) {
-                                        it.copy(first = updatedBook)
-                                    } else {
-                                        it
-                                    }
-                                }
-                            _lockedCharacter.value?.let { current ->
-                                if (current.id == action.id) {
-                                    _lockedCharacter.value =
-                                        current.copy(
-                                            name = action.nameInput,
-                                            description = action.descriptionInput,
-                                        )
-                                }
-                            }
-                            updateFeedWithBook(updatedBook)
-                        }
-                    }
-
-                    is AgenticAction.EnhanceCharacter -> {
-                        submitUserPrompt(
-                            "Enchance the biography of the character ${action.persona.name} based on the saga lore. Current bio: ${action.persona.description}",
-                        )
-                    }
-
-                    is AgenticAction.SelectEcho -> {
-                        _currentAgentMessage.value =
-                            "Exploring the ${action.echo.genre.name} universe..."
-                        _feed.value = emptyList()
-                        _universeEchoes.value = emptyList()
-                        submitUserPrompt(action.echo.input)
-                    }
+                is NewSagaIntent.LoadMore -> {
+                    loadMore()
                 }
             }
         }
 
-        private fun updateFeedWithSaga(updatedSaga: SagaDraft) {
-            _feed.value =
-                _feed.value.map { component ->
-                    when (component) {
-                        is AgenticUIComponent.LibraryComponent -> {
-                            val updatedBooks =
-                                component.books.map { bookEntry ->
-                                    if (bookEntry.first.draft.id == updatedSaga.id) {
-                                        bookEntry.first.copy(draft = updatedSaga) to bookEntry.second
-                                    } else {
-                                        bookEntry
-                                    }
-                                }
-                            AgenticUIComponent.LibraryComponent(updatedBooks)
-                        }
-
-                        is IdeaPitches -> {
-                            val updatedIdeas =
-                                component.ideas.map { idea ->
-                                    if (idea.first.id == updatedSaga.id) {
-                                        updatedSaga to idea.second
-                                    } else {
-                                        idea
-                                    }
-                                }
-                            IdeaPitches(updatedIdeas)
-                        }
-
-                        is AgenticUIComponent.ExpandedSaga -> {
-                            if (component.draft.id == updatedSaga.id) {
-                                component.copy(draft = updatedSaga)
-                            } else {
-                                component
-                            }
-                        }
-
-                        else -> {
-                            component
-                        }
-                    }
+        private fun selectSaga(draft: SagaDraft) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val visualConfig = visualConfigService.getVisualConfig(draft.genre)
+                updateState {
+                    copy(
+                        lockedSaga = draft,
+                        lockedCharacter = null,
+                        isReadyToSave = false,
+                        currentVisualConfig = visualConfig,
+                )
                 }
+            }
         }
 
-        private fun updateFeedWithBook(updatedBook: SagaBook) {
-            _feed.value =
-                _feed.value.map { component ->
-                    when (component) {
-                        is AgenticUIComponent.LibraryComponent -> {
-                            val updatedBooks =
-                                component.books.map { bookEntry ->
-                                    if (bookEntry.first.draft.id == updatedBook.draft.id) {
-                                        updatedBook to bookEntry.second
-                                    } else {
-                                        bookEntry
-                                    }
-                                }
-                            AgenticUIComponent.LibraryComponent(updatedBooks)
-                        }
+        private fun selectCharacter(info: CharacterInfo) {
+            val saga = _uiState.value.lockedSaga ?: return
+            viewModelScope.launch(Dispatchers.IO) {
+                visualConfigService.getVisualConfig(saga.genre)
+                updateState {
+                    copy(
+                        lockedCharacter = info,
+                        isReadyToSave = true,
+                    )
+                }
+            }
+        }
 
-                        is AgenticUIComponent.PersonaPitches -> {
-                            // Also update persona pitches if they are visible for this saga
-                            if (updatedBook.draft.id == _lockedSaga.value?.id) {
-                                component.copy(personas = updatedBook.characters)
+        private fun unlockSaga() {
+            updateState {
+                copy(
+                    lockedSaga = null,
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                    currentVisualConfig = null,
+                )
+            }
+        }
+
+        private fun unlockCharacter() {
+            updateState {
+                copy(
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                )
+            }
+        }
+
+        private fun selectEcho(intent: NewSagaIntent.SelectEcho) {
+            updateState {
+                copy(
+                    statusMessage = "Exploring the ${intent.echo.genre.name} universe...",
+                    universeEchoes = emptyList(),
+                )
+            }
+            submitUserPrompt(intent.echo.input)
+        }
+
+        private fun loadMore() {
+            val state = _uiState.value
+            if (lastUserPrompt.isBlank() || state.isGenerating || state.isLoadingMore || !state.hasMoreGenres) {
+                return
+            }
+            val usedGenres = state.libraryBooks.map { it.first.draft.genre }
+            collectLibraryStream(
+                prompt = lastUserPrompt,
+                excludedGenres = usedGenres,
+                append = true,
+            )
+        }
+
+        private fun updateSaga(
+            id: String?,
+            titleInput: String,
+            descriptionInput: String,
+        ) {
+            val current = _uiState.value.lockedSaga ?: return
+            if (current.id != id) {
+                Timber.e("Saga ID mismatch: ${current.id} != $id")
+                return
+            }
+            val updated =
+                current.copy(
+                    title = titleInput,
+                    description = descriptionInput,
+                )
+            Timber.i("updateSaga: ${updated.toJsonFormat()}")
+            updateState {
+                copy(
+                    lockedSaga = updated,
+                    libraryBooks =
+                        libraryBooks.map { entry ->
+                            if (entry.first.draft.id == updated.id) {
+                                entry.copy(first = entry.first.copy(draft = updated))
                             } else {
-                                component
+                                entry
                             }
-                        }
+                        },
+                )
+            }
+        }
 
-                        is AgenticUIComponent.ExpandedCharacter -> {
-                            val matchingPersona =
-                                updatedBook.characters.find { it.id == component.persona.id }
-                            if (matchingPersona != null) {
-                                component.copy(persona = matchingPersona)
-                            } else {
-                                component
-                            }
-                        }
-
-                        else -> {
-                            component
-                        }
+        private fun updateCharacter(
+            id: String?,
+            nameInput: String,
+            descriptionInput: String,
+        ) {
+            val lockedSagaId = _uiState.value.lockedSaga?.id ?: return
+            val bookEntry =
+                _uiState.value.libraryBooks.find { it.first.draft.id == lockedSagaId } ?: return
+            val book = bookEntry.first
+            val updatedCharacters =
+                book.characters.map { character ->
+                    if (character.id == id) {
+                        character.copy(name = nameInput, description = descriptionInput)
+                    } else {
+                        character
                     }
                 }
+            val updatedBook = book.copy(characters = updatedCharacters)
+            updateState {
+                val updatedLockedCharacter =
+                    lockedCharacter?.takeIf { it.id == id }?.copy(
+                    name = nameInput,
+                    description = descriptionInput,
+                ) ?: lockedCharacter
+                copy(
+                libraryBooks =
+                        libraryBooks.map { entry ->
+                            if (entry.first.draft.id == updatedBook.draft.id) {
+                                entry.copy(first = updatedBook)
+                            } else {
+                                entry
+                            }
+                        },
+                    lockedCharacter = updatedLockedCharacter,
+                )
+            }
         }
 
         private fun submitUserPrompt(prompt: String) {
             if (prompt.isBlank()) return
-            _uiError.value = null
+            lastUserPrompt = prompt
             cancelInitialEchoes()
-            _universeEchoes.value = emptyList()
-            _libraryBooks.value = emptyList()
-            _selectedBook.value = null
-            _lockedCharacter.value = null
-            _lockedSaga.value = null
-            newSagaUseCase
-                .executePrompt(prompt, _lockedSaga.value, _lockedCharacter.value)
-                .onStart { _isAgentLoading.value = true }
-                .onCompletion { _isAgentLoading.value = false }
-                .onEach { response: AgenticFlowResponse ->
-                    handleAgenticResponse(response)
-                }.launchIn(viewModelScope)
+            updateState {
+                copy(
+                    error = null,
+                    universeEchoes = emptyList(),
+                    libraryBooks = emptyList(),
+                    lockedSaga = null,
+                    lockedCharacter = null,
+                    isReadyToSave = false,
+                    currentVisualConfig = null,
+                )
+            }
+            collectLibraryStream(prompt = prompt, append = false)
         }
 
-        private fun handleAgenticResponse(response: AgenticFlowResponse) {
-            viewModelScope.launch {
-                when (response) {
-                    is AgenticFlowResponse.Log -> {
-                        _currentAgentMessage.value = response.message
-                    }
-
-                    is AgenticFlowResponse.SagaPitches -> {
-                        val ideas =
-                            response.ideas.mapNotNull {
-                                val config =
-                                    visualConfigService.getVisualConfig(it.genre)
-                                        ?: return@mapNotNull null
-                                it to config
-                            }
-                        response.message?.let {
-                            _currentAgentMessage.value = it
+        private fun collectLibraryStream(
+            prompt: String,
+            excludedGenres: List<Genre> = emptyList(),
+            append: Boolean = false,
+        ) {
+            promptJob?.cancel()
+            promptJob =
+                newSagaUseCase
+                    .executePrompt(prompt, excludedGenres)
+                    .onStart {
+                        updateState {
+                            copy(
+                                isGenerating = !append,
+                                isLoadingMore = append,
+                                error = null,
+                            )
                         }
-                        _feed.value += IdeaPitches(ideas)
-                    }
-
-                    is AgenticFlowResponse.LibraryPitches -> {
-                        val books =
-                            response.books.mapNotNull { book ->
-                                val config = visualConfigService.getVisualConfig(book.draft.genre)
-                                if (config != null) book to config else null
-                            }
-                        response.message?.let {
-                            _currentAgentMessage.value = it
+                    }.onCompletion {
+                        updateState {
+                            copy(
+                                isGenerating = false,
+                                isLoadingMore = false,
+                            )
                         }
-                        _libraryBooks.value = books
-                    }
+                    }.onEach { state ->
+                        when (state) {
+                            is StreamingState.Reasoning -> {
+                                updateState { copy(statusMessage = state.chunk) }
+                            }
 
-                    is AgenticFlowResponse.CharacterPitches -> {
-                        val saga = _lockedSaga.value ?: return@launch
-                        val visualConfig = visualConfigService.getVisualConfig(saga.genre)
-                        val personas =
-                            response.personas.map {
-                                if (it.id.isBlank()) {
-                                    it.copy(
-                                        id = System.currentTimeMillis().toString() + it.name.hashCode(),
-                                    )
-                                } else {
-                                    it
+                            is StreamingState.Success -> {
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    mergeBooks(state.data, append)
                                 }
                             }
-                        response.message?.let {
-                            _currentAgentMessage.value = it
+
+                            is StreamingState.Error -> {
+                                if (!state.isFlowCancellation()) {
+                                    updateState {
+                                        copy(
+                                            error = genericErrorMessage(),
+                                            statusMessage = null,
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        _feed.value +=
-                            AgenticUIComponent.PersonaPitches(
-                                personas,
-                                saga.genre to visualConfig,
-                            )
-                    }
+                    }.launchIn(viewModelScope)
+        }
 
-                    is AgenticFlowResponse.UniverseSuggestions -> {
-                        // Nothing to do here
+        private suspend fun mergeBooks(
+            response: LibraryPitchesResponse,
+            append: Boolean,
+        ) {
+            val newBooks =
+                response.books.mapNotNull { book ->
+                    val normalized = normalizeBook(book)
+                    val config = visualConfigService.getVisualConfig(normalized.draft.genre)
+                    if (config != null) normalized to config else null
+                }
+            val welcomeMessage = response.welcomeMessage.ifBlank { null }
+            updateState {
+                val mergedBooks =
+                    if (append) {
+                        val existingGenres = libraryBooks.map { it.first.draft.genre }.toSet()
+                        libraryBooks +
+                            newBooks.filter { it.first.draft.genre !in existingGenres }
+                    } else {
+                    newBooks
                     }
+                copy(
+                    libraryBooks = mergedBooks,
+                statusMessage = welcomeMessage ?: statusMessage,
+                    isSaving = false,
+                    isGenerating = false,
+                    isLoadingMore = false,
+                )
+            }
+        }
 
-                    is AgenticFlowResponse.RefinedDraft -> {
-                        // This could be used for final refinement confirmation
-                    }
-
-                    is AgenticFlowResponse.Error -> {
-                        _currentAgentMessage.value = null
-                        _uiError.value = genericErrorMessage()
+        private fun normalizeBook(book: SagaBook): SagaBook {
+            val draftId = book.draft.id?.ifBlank { UUID.randomUUID().toString() }
+            val draft = book.draft.copy(id = draftId)
+            val characters =
+                book.characters.map { character ->
+                    if (character.id.isNullOrBlank()) {
+                    character.copy(
+                        id = "${System.currentTimeMillis()}_${character.name.hashCode()}",
+                    )
+                    } else {
+                        character
                     }
                 }
-            }
+        return book.copy(draft = draft, characters = characters)
         }
 
         private fun preFetchVisualConfigs() {
             viewModelScope.launch(Dispatchers.IO) {
-                genresVisuals.value =
-                    Genre.entries.map {
-                        it to visualConfigService.getVisualConfig(it)
+                val visuals =
+                    Genre.entries.map { genre ->
+                        genre to visualConfigService.getVisualConfig(genre)
                     }
+                updateState { copy(genresVisuals = visuals) }
             }
         }
 
-        // Old flow methods removed to avoid StateManager dependencies
-
-        fun updateGenre(genre: Genre) {
-            _lockedSaga.value = _lockedSaga.value?.copy(genre = genre)
-            // Ideally trigger adaptation via Agent
-        }
-
-        fun updateSagaDraft(draft: SagaDraft) {
-            _lockedSaga.value = draft
-        }
-
-        fun updateCharacterDraft(info: CharacterInfo) {
-            _lockedCharacter.value = info
-        }
-
-        fun saveSaga() {
-            val sagaDraft = _lockedSaga.value ?: return
-            val characterInfo = _lockedCharacter.value ?: return
-            _isSaving.value = true
-            _savingError.value = null
+    private fun saveSaga() {
+        val sagaDraft = _uiState.value.lockedSaga ?: return
+        val characterInfo = _uiState.value.lockedCharacter ?: return
+        updateState { copy(isSaving = true, savingError = null) }
 
             newSagaUseCase
                 .sealSacredContract(
                     sagaDraft = sagaDraft,
                     characterInfo = characterInfo,
-                ).onEach { state: SagaCreationState ->
+                ).onEach { state ->
                     when (state) {
                         is SagaCreationState.Loading -> {
-                            _currentAgentMessage.value = state.message
+                            updateState { copy(statusMessage = state.message) }
                         }
 
                         is SagaCreationState.Success -> {
-                            savedContent.value = state.saga to state.character
-                            _isSaving.value = false
-                            _loadingMessage.value = null
+                            updateState { copy(isSaving = false) }
                             viewModelScope.launch {
                                 delay(3000)
-                                reset()
+                                resetAfterSave()
                                 navigateToSaga(state.saga)
                             }
                         }
 
-                        is SagaCreationState.AgenticUpdate -> {
-                            handleAgenticResponse(state.response)
-                        }
-
                         is SagaCreationState.Error -> {
                             Timber.e(state.error, "saveSaga: Error saving saga")
-                            _savingError.value =
-                                state.error.message ?: "Unknown error occurred while saving"
-                            _isSaving.value = false
-                            _loadingMessage.value = null
+                            updateState {
+                                copy(
+                                    savingError =
+                                        state.error.message
+                                            ?: "Unknown error occurred while saving",
+                                    isSaving = false,
+                                )
+                            }
                         }
                     }
                 }.launchIn(viewModelScope)
         }
 
         fun retry() {
-            _savingError.value = null
+            updateState { copy(savingError = null) }
             saveSaga()
         }
 
-        fun reset() {
-            _lockedSaga.value = null
-            _lockedCharacter.value = null
-            _feed.value = emptyList()
-            _isReadyToSave.value = false
-            _isSaving.value = false
-            _loadingMessage.value = null
-            _savingError.value = null
+    private fun resetAfterSave() {
+        updateState {
+            NewSagaUiState(
+                genresVisuals = genresVisuals,
+            )
+        }
+        lastUserPrompt = ""
+        requestInitialEchoes()
         }
 
         private fun navigateToSaga(saga: Saga) {

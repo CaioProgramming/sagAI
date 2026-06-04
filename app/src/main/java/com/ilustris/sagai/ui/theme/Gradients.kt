@@ -2,6 +2,7 @@ package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -105,7 +107,10 @@ fun gradientAnimation(
                 ),
             label = "Gradient Offset Animation",
         )
-    return gradientType.toBrush(colors = colors, offsetAnimationValue = if (isAnimating) offsetAnimation.value else targetValue)
+    return gradientType.toBrush(
+        colors = colors,
+        offsetAnimationValue = if (isAnimating) offsetAnimation.value else targetValue,
+    )
 }
 
 @Composable
@@ -137,7 +142,9 @@ fun fadeGradientTopOverImage(tintColor: Color = MaterialTheme.colorScheme.backgr
 fun Color.blendedWith(
     other: Color,
     fraction: Float,
-): Color = androidx.compose.ui.graphics.lerp(this, other, fraction)
+): Color =
+    androidx.compose.ui.graphics
+        .lerp(this, other, fraction)
 
 /** Header scrim mixing saga adaptive color with character accent for readable titles. */
 fun characterDetailsHeaderScrim(
@@ -225,7 +232,7 @@ val iridescentGradient =
         Color(0xFFE2CFEA), // Pale Lilac
         Color(0xFFA0CED9), // Sky Blue
         Color(0xFFADF7B6), // Mint
-)
+    )
 
 @Composable
 fun themeShimmer() =
@@ -374,7 +381,14 @@ fun rememberAnimatedShuffledGradientBrush(
     // Ensure the palette is not empty to avoid issues
     val safeColorPalette =
         remember(colorPalette) {
-            if (colorPalette.isEmpty()) listOf(Color.Transparent, Color.Transparent) else colorPalette
+            if (colorPalette.isEmpty()) {
+                listOf(
+                    Color.Transparent,
+                    Color.Transparent,
+                )
+            } else {
+                colorPalette
+            }
         }
 
     var currentGradientColors by remember {
@@ -420,4 +434,37 @@ fun progressiveBrush(
         stop + 0.001f to tintColor,
         1f to tintColor,
     )
+}
+
+@Composable
+fun morphingGradient(
+    colors: List<Color> = themeBrushColors(),
+    duration: Duration = 2.seconds,
+): List<Color> {
+    // Use a mutable state so updates trigger recomposition and the animated targets change.
+    var brushColors by remember { mutableStateOf(colors) }
+
+    // Keep shuffling the palette in a loop so the gradient keeps morphing.
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(duration)
+            brushColors = brushColors.shuffled()
+        }
+    }
+
+    val animatedColors =
+        brushColors.map {
+            animateColorAsState(
+                it,
+                tween(
+                    durationMillis =
+                        (duration.toInt(DurationUnit.MILLISECONDS) / 2).coerceAtLeast(
+                            1,
+                        ),
+                    easing = EaseIn,
+                ),
+            )
+        }
+
+    return animatedColors.map { it.value }
 }

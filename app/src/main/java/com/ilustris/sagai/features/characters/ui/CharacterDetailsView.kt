@@ -11,7 +11,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -122,8 +121,8 @@ fun CharacterDetailsView(
 
     SagAITheme(genre = genre) {
         AnimatedContent(detailData, transitionSpec = {
-            slideInVertically { -it } togetherWith fadeOut()
-        }, label = "CharacterDetailsTransition") {
+            fadeIn() togetherWith fadeOut()
+        }, label = "CharacterDetailsTransition", modifier = Modifier.fillMaxSize()) {
             if (it != null) {
                 CharacterDetailsContent(
                     it,

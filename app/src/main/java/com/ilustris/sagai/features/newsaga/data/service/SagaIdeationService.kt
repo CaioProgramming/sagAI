@@ -21,8 +21,12 @@ class SagaIdeationService
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
     ) {
-        suspend fun generateCosmicLibrary(userPrompt: String): Flow<StreamingState<LibraryPitchesResponse>> {
-            val themes = Genre.entries.joinToString(", ") { it.name }
+        suspend fun generateCosmicLibrary(
+            userPrompt: String,
+            excludedGenres: List<Genre> = emptyList(),
+        ): Flow<StreamingState<LibraryPitchesResponse>> {
+            val availableGenres = Genre.entries - excludedGenres.toSet()
+            val themes = availableGenres.joinToString(", ") { it.name }
             val blueprint =
                 promptService.buildRemotePrompt(
                     NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
@@ -30,10 +34,10 @@ class SagaIdeationService
                 )
             return gemmaClient.generateStreaming<LibraryPitchesResponse>(
                 blueprint,
-                requirement = GemmaClient.ModelRequirement.HIGH,
+                requirement = GemmaClient.ModelRequirement.MEDIUM,
                 temperatureRandomness = 1f,
                 filterOutputFields = listOf("id", "variationId"),
-                blueprintKey = NewSagaPrompts.SAAGA_IDEATION_PROCESS,
+                blueprintKey = NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
             )
         }
 
@@ -49,6 +53,7 @@ class SagaIdeationService
                     blueprint,
                     temperatureRandomness = 1f,
                     blueprintKey = NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 

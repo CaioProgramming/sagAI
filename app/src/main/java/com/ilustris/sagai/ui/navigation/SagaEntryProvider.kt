@@ -74,7 +74,7 @@ fun createSagaEntryProvider(
     entry<NewSagaKey> {
         NewSagaView(
             onBack = { navigator.goBack() },
-            onNavigate = { key -> navigator.navigate(key) },
+            onNavigate = { key -> navigator.navigateAndDismissTopLevel(key) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

@@ -9,7 +9,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
-import com.ilustris.sagai.features.newsaga.ui.presentation.FlowPages
 
 data class ConversationalSagaReplyArgs(
     val companionPersona: String,
@@ -270,28 +269,6 @@ object NewSagaPrompts {
             )
 
         return promptService.buildRemotePrompt(REFINE_SAGA_DRAFT_BLUEPRINT, args)
-    }
-
-    suspend fun creationAssistPrompt(
-        promptService: PromptService,
-        flow: FlowPages,
-        sagaDraft: SagaDraft?,
-        characterInfo: CharacterInfo?,
-        flowSpecificObjectives: String,
-        identity: String = "",
-    ): String {
-        val args =
-            CreationAssistArgs(
-                companionPersona = identity,
-                conversationalStyle = identity,
-                flowPageName = flow.name,
-                genreName = sagaDraft?.genre?.name ?: "N/A",
-                sagaDraft = sagaDraft?.toAINormalize() ?: "",
-                characterInfo = characterInfo?.toAINormalize() ?: "",
-                flowSpecificObjectives = flowSpecificObjectives,
-            )
-
-        return promptService.buildRemotePrompt(CREATION_FLOW_ASSIST_BLUEPRINT, args)
     }
 
     suspend fun sacredBindingPrompt(
