@@ -531,7 +531,6 @@ fun StoryCard(
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Start,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
-                            modifier = Modifier.weight(1f),
                         )
 
                         chapter.events.forEach { event ->
@@ -620,6 +619,13 @@ fun StoryCard(
                                 }
                             }
                         }
+
+                        Text(
+                            chapter.data.overview,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Start,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
+                        )
 
                         Text(
                             extraContent.toJsonAnnotatedString(),

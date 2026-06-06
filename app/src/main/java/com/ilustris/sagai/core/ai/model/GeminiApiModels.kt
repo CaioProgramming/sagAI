@@ -13,6 +13,8 @@ data class GeminiRequest(
     val contents: List<GeminiContent>,
     @SerializedName("generationConfig")
     val generationConfig: GeminiGenerationConfig,
+    @SerializedName("system_instruction")
+    val systemInstruction: GeminiContent? = null,
 )
 
 data class GeminiContent(

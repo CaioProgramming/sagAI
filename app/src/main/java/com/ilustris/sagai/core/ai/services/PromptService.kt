@@ -9,30 +9,6 @@ import timber.log.Timber
 import javax.inject.Inject
 
 interface PromptService {
-    /**
-     * Replaces `{key}` placeholders in the [template] with the corresponding values from the [variables] map.
-     * Use this when you already have the template string in hand (e.g. from a local config object).
-     */
-    fun buildPrompt(
-        template: String,
-        variables: Map<String, String>,
-        logEnabled: Boolean = true,
-    ): String
-
-    /**
-     * Converts a Data Class to a Map<String, String> and injects its properties into the [template].
-     * Use this when you already have the template string in hand.
-     */
-    fun <T : Any> buildPrompt(
-        template: String,
-        variablesDataClass: T,
-        logEnabled: Boolean = true,
-    ): String
-
-    /**
-     * Fetches a template from Remote Config by [remoteConfigKey] and replaces `{key}` placeholders
-     * with the corresponding values from the [variables] map.
-     */
     suspend fun buildRemotePrompt(
         remoteConfigKey: String,
         variables: Map<String, String> = emptyMap(),
@@ -61,15 +37,16 @@ class PromptServiceImpl
                 remoteConfigService.getJsonMapStringString("prompt_directives") ?: emptyMap(),
             )
 
-        override fun buildPrompt(
+        private fun buildPrompt(
             template: String,
             variables: Map<String, String>,
             logEnabled: Boolean,
+            blueprint: String? = null,
         ): String {
             if (logEnabled) {
                 Timber
                     .tag("PromptService")
-                    .i("buildPrompt: Received vars ->\n${variables.toJsonFormat()}")
+                    .i("buildPrompt($blueprint): Received vars ->\n${variables.toJsonFormat()}")
             }
 
             val placeholders =
@@ -81,7 +58,7 @@ class PromptServiceImpl
                     .tag(
                         "PromptService",
                     ).i(
-                        "buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
+                        "buildPrompt($blueprint): Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
                     )
             }
 
@@ -97,27 +74,16 @@ class PromptServiceImpl
                 } else {
                     Timber
                         .tag("PromptService")
-                        .e("buildPrompt($key): CRITICAL - Variable '{$key}' not found in provided args!")
+                        .e("buildPrompt($blueprint): CRITICAL - Variable '{$key}' not found in provided args!")
                 }
             }
 
             if (logEnabled) {
-                Timber.tag("PromptService").d("buildPrompt: Final Prompt Construction Complete.")
+                Timber
+                    .tag("PromptService")
+                    .d("buildPrompt($blueprint): Final Prompt Construction Complete.")
             }
             return result
-        }
-
-        override fun <T : Any> buildPrompt(
-            template: String,
-            variablesDataClass: T,
-            logEnabled: Boolean,
-        ): String {
-            val stringMap = variablesDataClass.toPromptVariables()
-            Timber
-                .tag(
-                    "PromptService",
-                ).d("buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys")
-            return buildPrompt(template, stringMap, logEnabled)
         }
 
         override suspend fun buildRemotePrompt(
@@ -146,7 +112,14 @@ class PromptServiceImpl
                     if (blueprint.rules.isNotEmpty()) {
                         blueprint.rules.values.forEach { appendLine(it) }
                     }
-                    appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                    appendLine(
+                        buildPrompt(
+                            blueprint.template,
+                            variables,
+                            logEnabled,
+                            remoteConfigKey,
+                        ),
+                    )
                 } else {
                     // 1. Identity
                     if (blueprint.role.isNotBlank()) {
@@ -187,7 +160,14 @@ class PromptServiceImpl
 
                     // 5. The Core Template
                     appendLine("# TASK DEFINITION")
-                    appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                    appendLine(
+                        buildPrompt(
+                            blueprint.template,
+                            variables,
+                            logEnabled,
+                            remoteConfigKey,
+                        ),
+                    )
                 }
             }.trimIndent()
         }

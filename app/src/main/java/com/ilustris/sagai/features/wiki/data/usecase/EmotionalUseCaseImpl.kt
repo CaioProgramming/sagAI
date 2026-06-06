@@ -79,6 +79,7 @@ class EmotionalUseCaseImpl
                             blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                         ),
                         "Generating emotional conclusion...",
+                        genre = sagaContent.data.genre.name,
                     ).collect { emit(it) }
             }
     }

@@ -104,6 +104,7 @@ class SagaHistoryUseCaseImpl
                                 ),
                             "Generating saga ending... ",
                             conversationDirective,
+                            genre = saga.data.genre.name,
                         ).collect { state ->
 
                             if (state is StreamingState.Success) {

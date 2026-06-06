@@ -5,6 +5,7 @@ import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
 import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
+import com.ilustris.sagai.core.ai.model.GeminiResponsePart
 import timber.log.Timber
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -86,15 +87,16 @@ fun Class<*>.toSchema(
         }
 
         List::class.java, Array::class.java -> {
-            val itemType = if (genericType is ParameterizedType) {
-                genericType.actualTypeArguments.firstOrNull() as? Class<*>
-            } else {
-                this.genericInterfaces
-                    .mapNotNull { it as? ParameterizedType }
-                    .firstOrNull()
-                    ?.actualTypeArguments
-                    ?.firstOrNull() as? Class<*>
-            }
+            val itemType =
+                if (genericType is ParameterizedType) {
+                    genericType.actualTypeArguments.firstOrNull() as? Class<*>
+                } else {
+                    this.genericInterfaces
+                        .mapNotNull { it as? ParameterizedType }
+                        .firstOrNull()
+                        ?.actualTypeArguments
+                        ?.firstOrNull() as? Class<*>
+                }
 
             Schema.array(
                 itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
@@ -117,11 +119,12 @@ fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String,
             !excludeFields.contains(it.name) && !it.name.startsWith("$") && !it.name.contains("companion")
         }.associate {
             // Safely check for nullability annotations using Java reflection
-            val isNullable = it.annotations.any { ann -> 
-                ann.annotationClass.java.simpleName.contains("Nullable", ignoreCase = true)
-            } || !it.type.isPrimitive
+            val isNullable =
+                it.annotations.any { ann ->
+                    ann.annotationClass.java.simpleName
+                        .contains("Nullable", ignoreCase = true)
+                } || !it.type.isPrimitive
 
-            
             Timber.tag("SchemaMapper").d("Mapping field ${it.name} nullable: $isNullable type: ${it.type.name}")
             it.name to it.type.toSchema(isNullable, excludeFields, it.genericType)
         }
@@ -321,6 +324,82 @@ fun Long.formatHours(): String {
 }
 
 val jsonPattern = Regex("```json\\s*\\n?(.*?)\\n?\\s*```", RegexOption.DOT_MATCHES_ALL)
+
+/**
+ * Intelligently finds and extracts JSON content from a list of Gemini response parts.
+ *
+ * Uses a tiered search strategy:
+ * 1. First looks for parts containing fenced JSON blocks ```json...```
+ * 2. Falls back to parts containing JSON structure markers `{` or `[`
+ * 3. Selects the largest candidate (most complete content)
+ * 4. Returns a Pair of (extracted text, part index) or (null, -1) if no JSON found
+ *
+ * This allows the JSON extractor to work robustly across model changes where
+ * response structure may shift from part[0] to part[1], etc.
+ */
+fun List<GeminiResponsePart>?.findJsonContent(): Pair<String?, Int> {
+    val logTag = "GeminiJsonLocator"
+
+    if (this == null || this.isEmpty()) {
+        Timber.tag(logTag).w("Response parts list is null or empty")
+        return Pair(null, -1)
+    }
+
+    // Stage 1: Look for fenced JSON blocks (most reliable)
+    val fencedCandidates = mutableListOf<Pair<String, Int>>()
+    forEachIndexed { index, part ->
+        part.text?.let { text ->
+            val match = jsonPattern.find(text)
+            if (match != null) {
+                val extracted = match.groupValues[1].trim()
+                fencedCandidates.add(Pair(extracted, index))
+                Timber
+                    .tag(logTag)
+                    .d("Found fenced JSON in part[$index]: length=${extracted.length}")
+            }
+        }
+    }
+
+    if (fencedCandidates.isNotEmpty()) {
+        // Return the largest fenced block (most complete)
+        val best = fencedCandidates.maxByOrNull { it.first.length } ?: fencedCandidates[0]
+        Timber
+            .tag(logTag)
+            .i("Selected fenced JSON from part[${best.second}], length=${best.first.length}")
+        return best
+    }
+
+    // Stage 2: Fall back to parts with JSON structure markers
+    val jsonCandidates = mutableListOf<Pair<String, Int>>()
+    forEachIndexed { index, part ->
+        part.text?.let { text ->
+            if (text.contains("{") || text.contains("[")) {
+                jsonCandidates.add(Pair(text, index))
+                Timber.tag(logTag).d("Found JSON marker in part[$index]: length=${text.length}")
+            }
+        }
+    }
+
+    if (jsonCandidates.isNotEmpty()) {
+        // Return the largest block (most content = likely the main response)
+        val best = jsonCandidates.maxByOrNull { it.first.length } ?: jsonCandidates[0]
+        Timber
+            .tag(logTag)
+            .i("Selected JSON from part[${best.second}] (no fencing), length=${best.first.length}")
+        return best
+    }
+
+    // Stage 3: No JSON found - return any non-empty text part
+    val firstNonEmpty = this.firstOrNull { !it.text.isNullOrBlank() }
+    if (firstNonEmpty != null) {
+        val index = this.indexOf(firstNonEmpty)
+        Timber.tag(logTag).w("No JSON structure found. Returning raw text from part[$index]")
+        return Pair(firstNonEmpty.text, index)
+    }
+
+    Timber.tag(logTag).e("All response parts are empty or null")
+    return Pair(null, -1)
+}
 
 fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
@@ -839,11 +918,7 @@ private fun truncateForAi(
             "text" -> AI_MESSAGE_TEXT_MAX
             else -> AI_STRING_TRUNCATE_DEFAULT
         }
-    return if (value.length > limit) {
-        "${value.take(limit - 3)}..."
-    } else {
-        value
-    }
+    return value
 }
 
 fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
@@ -883,7 +958,9 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                         }
                     }
 
-                    is String -> truncateForAi(field.name, value)
+                    is String -> {
+                        truncateForAi(field.name, value)
+                    }
 
                     is Enum<*> -> {
                         value.toString()

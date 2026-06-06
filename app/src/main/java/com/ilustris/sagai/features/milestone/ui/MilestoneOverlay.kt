@@ -84,13 +84,7 @@ fun MilestoneOverlay(
                     ),
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
-            val titleModifier =
-                Modifier.sharedElement(
-                    rememberSharedContentState(
-                        key = "saga_${saga.data.id}_title",
-                    ),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                )
+            val titleModifier = Modifier
             when (it) {
                 is SagaMilestone.CurrentObjective -> {
                     Box {}

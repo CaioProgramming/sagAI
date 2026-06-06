@@ -410,6 +410,7 @@ class ChapterUseCaseImpl
                                     blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
                                 ),
                             "Generating chapter introduction...",
+                            genre = saga.data.genre.name,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val introContent = state.data
@@ -456,6 +457,7 @@ class ChapterUseCaseImpl
                                     requirement = GemmaClient.ModelRequirement.HIGH,
                                 ),
                             "Generating new chapter...",
+                            genre = saga.data.genre.name,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {

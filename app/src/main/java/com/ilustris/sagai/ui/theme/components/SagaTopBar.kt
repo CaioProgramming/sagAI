@@ -55,7 +55,6 @@ fun SagaTopBar(
                     Modifier
                         .reactiveShimmer(
                             isLoading,
-                            shimmerColors = themeShimmer() ?: themeShimmer(),
                         ).clip(CircleShape)
                         .clickable {
                             onBackClick()

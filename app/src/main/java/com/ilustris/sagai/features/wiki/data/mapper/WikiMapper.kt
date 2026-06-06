@@ -10,14 +10,16 @@ class WikiMapper(
     private val stringResourceHelper: StringResourceHelper,
 ) {
     suspend fun buildWikiGroups(saga: SagaContent): List<WikiGroup> =
-        saga.flatChapters().map {
-            val wikis = it.events.flatMap { it.updatedWikis }
-            WikiGroup(
-                it.data.title,
-                wikis,
-                canBeReviewed = wikis.size > 10,
-            )
-        }.filter { it.wikis.isNotEmpty() }
+        saga
+            .flatChapters()
+            .map {
+                val wikis = it.events.flatMap { it.updatedWikis }
+                WikiGroup(
+                    it.data.title,
+                    wikis,
+                    canBeReviewed = wikis.size > 10,
+                )
+            }.filter { it.wikis.isNotEmpty() }
 
     fun buildWikiGroups(wikis: List<WikiWithChapter>): List<WikiGroup> =
         wikis
@@ -27,7 +29,7 @@ class WikiMapper(
                 WikiGroup(
                     title,
                     wikiItems,
-                    canBeReviewed = wikiItems.size > 10,
+                    canBeReviewed = false,
                 )
-        }.filter { it.wikis.isNotEmpty() }
+            }.filter { it.wikis.isNotEmpty() }
 }

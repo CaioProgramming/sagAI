@@ -111,6 +111,7 @@ class ActUseCaseImpl
                                 useCore = true,
                             ),
                         "Generating new act...",
+                        genre = saga.data.genre.name,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -223,6 +224,7 @@ class ActUseCaseImpl
                                 requirement = GemmaClient.ModelRequirement.HIGH,
                             ),
                         "Starting a new act...",
+                        genre = saga.data.genre.name,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -280,6 +282,7 @@ class ActUseCaseImpl
                                     requirement = GemmaClient.ModelRequirement.HIGH,
                                 ),
                             "Finishing story act",
+                            genre = saga.data.genre.name,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {

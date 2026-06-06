@@ -33,6 +33,9 @@ object GeminiApiCodec {
         val root = JsonObject()
         root.add("contents", encodeContents(request.contents))
         root.add("generationConfig", encodeGenerationConfig(request.generationConfig))
+        request.systemInstruction?.let {
+            root.add("system_instruction", encodeContent(it))
+        }
         return root.toString()
     }
 
@@ -57,13 +60,14 @@ object GeminiApiCodec {
     private fun encodeContents(contents: List<GeminiContent>): JsonArray =
         JsonArray().also { array ->
             contents.forEach { content ->
-                array.add(
-                    JsonObject().also { obj ->
-                        obj.addProperty("role", content.role)
-                        obj.add("parts", encodeParts(content.parts))
-                    },
-                )
+                array.add(encodeContent(content))
             }
+        }
+
+    private fun encodeContent(content: GeminiContent): JsonObject =
+        JsonObject().also { obj ->
+            obj.addProperty("role", content.role)
+            obj.add("parts", encodeParts(content.parts))
         }
 
     private fun encodeParts(parts: List<GeminiPart>): JsonArray =

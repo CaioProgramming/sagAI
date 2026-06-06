@@ -15,6 +15,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import kotlinx.coroutines.delay
@@ -238,7 +242,7 @@ val iridescentGradient =
 fun themeShimmer() =
     buildList {
         add(Color.Transparent)
-        addAll(iridescentGradient)
+        addAll(themeBrushColors())
         add(Color.Transparent)
     }
 
@@ -292,14 +296,7 @@ enum class FadeDirection {
 @Composable
 fun Modifier.reactiveShimmer(
     isPlaying: Boolean,
-    shimmerColors: List<Color> =
-        listOf(
-            Color.White.copy(alpha = 0.0f),
-            Color.White.copy(alpha = 0.5f),
-            Color.White.copy(alpha = 0.2f),
-            Color.White.copy(alpha = 0.1f),
-            Color.White.copy(alpha = 0.0f),
-        ),
+    shimmerColors: List<Color> = themeShimmer(),
     duration: Duration = 5.seconds,
     targetValue: Float = 500f,
     repeatMode: RepeatMode = RepeatMode.Reverse,
@@ -444,8 +441,22 @@ fun morphingGradient(
     // Use a mutable state so updates trigger recomposition and the animated targets change.
     var brushColors by remember { mutableStateOf(colors) }
 
-    // Keep shuffling the palette in a loop so the gradient keeps morphing.
-    LaunchedEffect(Unit) {
+    // Only run the shuffle loop while the composable's lifecycle is at least STARTED
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycle = lifecycleOwner.lifecycle
+    var isStarted by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
+
+    DisposableEffect(lifecycle) {
+        val observer =
+            LifecycleEventObserver { _, _ ->
+                isStarted = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(isStarted) {
+        if (!isStarted) return@LaunchedEffect
         while (true) {
             delay(duration)
             brushColors = brushColors.shuffled()

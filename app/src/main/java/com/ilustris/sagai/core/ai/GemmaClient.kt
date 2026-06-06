@@ -14,7 +14,6 @@ import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
-import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -23,13 +22,13 @@ import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.network.GeminiApiCodec
+import com.ilustris.sagai.core.network.GeminiHttpException
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
+import com.ilustris.sagai.core.utils.findJsonContent
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -38,7 +37,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import com.ilustris.sagai.core.network.GeminiHttpException
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
@@ -76,6 +74,15 @@ class GemmaClient
             const val DEFAULT_RATE_LIMIT_RETRY_SECONDS = 3L
 
             const val NETWORK_RETRY_SECONDS = 2L
+
+            @JvmStatic
+            @PublishedApi
+            internal fun getCoreBlueprintKey(requirement: ModelRequirement): String =
+                if (requirement == ModelRequirement.HIGH) {
+                    "core_blueprint"
+                } else {
+                    "core_${requirement.name.lowercase()}_blueprint"
+                }
 
             fun retryDelaySeconds(
                 e: Exception,
@@ -195,9 +202,18 @@ class GemmaClient
                             val dataType = getJavaType<T>()
                             val dataTypeName =
                                 when (dataType) {
-                                    is Class<*> -> dataType.simpleName
-                                    is java.lang.reflect.ParameterizedType -> (dataType.rawType as? Class<*>)?.simpleName ?: dataType.toString()
-                                    else -> dataType.toString().substringAfterLast(".")
+                                    is Class<*> -> {
+                                        dataType.simpleName
+                                    }
+
+                                    is java.lang.reflect.ParameterizedType -> {
+                                        (dataType.rawType as? Class<*>)?.simpleName
+                                            ?: dataType.toString()
+                                    }
+
+                                    else -> {
+                                        dataType.toString().substringAfterLast(".")
+                                    }
                                 }
 
                             val structure =
@@ -210,22 +226,20 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
-                            requirement.name.lowercase()
                             val corePrompt =
                                 promptService.buildRemotePrompt(
-                                    remoteConfigKey = "core_blueprint",
+                                    remoteConfigKey = getCoreBlueprintKey(requirement),
                                     variables =
                                         mapOf(
                                             "language" to getLanguage(requireTranslation),
                                             "type" to dataTypeName,
                                             "structure" to structure,
                                             "formattingRule" to formattingRule,
-                                            "task" to prompt,
                                         ),
                                     logEnabled = false,
                                 )
 
-                            val fullPrompt = corePrompt
+                            val fullPrompt = prompt
 
                             val promptLength =
                                 fullPrompt.length +
@@ -257,6 +271,7 @@ class GemmaClient
                             val geminiRequest =
                                 GeminiRequest(
                                     contents = listOf(GeminiContent(parts = parts)),
+                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = corePrompt))),
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
@@ -279,6 +294,12 @@ class GemmaClient
                                 throw Exception("Gemini API error: ${error.message}")
                             }
 
+                            val candidate = response.candidates?.firstOrNull()
+                            if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
+                                if (logEnabled) Timber.w("API blocked content with reason: ${candidate.finishReason}")
+                                throw GuardrailsException(SafeGuard.BLOCKED)
+                            }
+
                             lastTokenCount = response.usageMetadata?.promptTokenCount ?: 0
                             if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
                                 lastTokenCount = 0
@@ -290,7 +311,8 @@ class GemmaClient
                                     ?.content
                                     ?.parts
 
-                            val requiredText = responseContent?.lastOrNull()?.text
+                            // Use intelligent JSON locator that searches across all parts
+                            val (requiredText, partIndex) = responseContent.findJsonContent()
 
                             if (logEnabled) {
                                 Timber.d(
@@ -304,6 +326,9 @@ class GemmaClient
                                 Timber.d("Prompt requested:\n$fullPrompt")
 
                                 Timber.i("API Response: ${response.toJsonFormat()}")
+                                if (partIndex >= 0) {
+                                    Timber.i("JSON extracted from response part[$partIndex]")
+                                }
                             }
 
                             val cleanedJsonString =
@@ -331,7 +356,7 @@ class GemmaClient
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        GemmaClient.recordGenerationFailure(
+                        recordGenerationFailure(
                             dataType = this.javaClass.simpleName,
                             model = model,
                             attempt = currentAttempt,
@@ -475,9 +500,18 @@ class GemmaClient
                             val dataType = getJavaType<T>()
                             val dataTypeName =
                                 when (dataType) {
-                                    is Class<*> -> dataType.simpleName
-                                    is java.lang.reflect.ParameterizedType -> (dataType.rawType as? Class<*>)?.simpleName ?: dataType.toString()
-                                    else -> dataType.toString().substringAfterLast(".")
+                                    is Class<*> -> {
+                                        dataType.simpleName
+                                    }
+
+                                    is java.lang.reflect.ParameterizedType -> {
+                                        (dataType.rawType as? Class<*>)?.simpleName
+                                            ?: dataType.toString()
+                                    }
+
+                                    else -> {
+                                        dataType.toString().substringAfterLast(".")
+                                    }
                                 }
 
                             val structure =
@@ -490,10 +524,9 @@ class GemmaClient
                             val formattingRule =
                                 "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
 
-                            requirement.name.lowercase()
                             val corePrompt =
                                 promptService.buildRemotePrompt(
-                                    remoteConfigKey = "core_blueprint",
+                                    remoteConfigKey = getCoreBlueprintKey(requirement),
                                     variables =
                                         mapOf(
                                             "language" to getLanguage(requireTranslation),
@@ -504,12 +537,7 @@ class GemmaClient
                                     logEnabled = false,
                                 )
 
-                            val fullPrompt =
-                                buildString {
-                                    appendLine(prompt)
-                                    appendLine()
-                                    appendLine(corePrompt)
-                                }
+                            val fullPrompt = prompt
 
                             val parts = mutableListOf<GeminiPart>()
                             parts.add(GeminiPart(text = fullPrompt))
@@ -530,6 +558,7 @@ class GemmaClient
                             val geminiRequest =
                                 GeminiRequest(
                                     contents = listOf(GeminiContent(parts = parts)),
+                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = corePrompt))),
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
@@ -577,9 +606,15 @@ class GemmaClient
                                             Timber.i("generateStreaming: Trying to parse $jsonStr")
                                         }
                                         val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+
+                                        val candidate = partialResponse.candidates?.firstOrNull()
+                                        if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
+                                            if (logEnabled) Timber.w("Streaming API blocked content with reason: ${candidate.finishReason}")
+                                            throw GuardrailsException(SafeGuard.BLOCKED)
+                                        }
+
                                         val partialPart =
-                                            partialResponse.candidates
-                                                ?.firstOrNull()
+                                            candidate
                                                 ?.content
                                                 ?.parts
                                                 ?.firstOrNull()
@@ -595,6 +630,9 @@ class GemmaClient
                             }
 
                             val fullText = accumulatedText.toString()
+                            if (logEnabled) {
+                                Timber.i("Streaming completed, accumulated text length: ${fullText.length}")
+                            }
                             val cleanedJsonString =
                                 fullText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             if (cleanedJsonString.isEmpty()) {
@@ -626,7 +664,7 @@ class GemmaClient
                             if (e.isFlowCancellation()) {
                                 throw e
                             }
-                            GemmaClient.recordGenerationFailure(
+                            recordGenerationFailure(
                                 dataType = javaClass.simpleName,
                                 model = model,
                                 attempt = currentAttempt,
@@ -736,8 +774,7 @@ class GemmaClient
             model: String,
             apiKey: String,
             request: GeminiRequest,
-        ): GeminiResponse =
-            geminiApiClient.generateContent(model, apiKey, request)
+        ): GeminiResponse = geminiApiClient.generateContent(model, apiKey, request)
 
         @PublishedApi
         internal suspend fun callStreamGenerateContent(

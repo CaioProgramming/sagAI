@@ -33,7 +33,7 @@ class ReasoningSynthesizerService
             context: String,
             conversationStyle: String? = null,
             showReasoning: Boolean = true,
-            genre: String? = null,
+            genre: String?,
         ): Flow<StreamingState<T>> =
             channelFlow {
                 var synthesisJob: Job? = null
@@ -130,7 +130,7 @@ class ReasoningSynthesizerService
                 val translation =
                     gemmaClient.generate<String>(
                         prompt = prompt,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        requirement = GemmaClient.ModelRequirement.TINY,
                         logEnabled = false,
                         temperatureRandomness = 1f,
                     )

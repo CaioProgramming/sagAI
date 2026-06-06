@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.services.LoadingService
-import com.ilustris.sagai.core.services.LoadingType
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -50,12 +49,6 @@ class EmotionalReviewViewModel
                 }
                 _isGenerating.value = true
                 genreConfigService.getGenreConfig(sagaContent.data.genre)
-                val emotionalTask = promptService.buildPrompt("emotional_loading", emptyMap())
-                _loadingMessage.value =
-                    loadingService.generateLoadingMessage(
-                        LoadingType(emotionalTask),
-                        genreConfigService.conversationBlueprint(sagaContent.data.genre),
-                    )
 
                 emotionalUseCase.streamEmotionalConclusion(sagaContent).collect { state ->
                     when (state) {

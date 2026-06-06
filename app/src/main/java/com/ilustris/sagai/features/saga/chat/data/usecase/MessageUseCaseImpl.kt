@@ -141,7 +141,6 @@ class MessageUseCaseImpl
             val prompt =
                 EmotionalPrompt.emotionalToneExtraction(
                     promptService,
-                    promptService.getPromptDirectives(),
                     message.text,
                 )
             val raw =
@@ -150,7 +149,7 @@ class MessageUseCaseImpl
                         prompt,
                         blueprintKey = EmotionalPrompt.EMOTIONAL_TONE_EXTRACTION_BLUEPRINT,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = GemmaClient.ModelRequirement.TINY,
                     )?.trim()
                     ?.uppercase()
             EmotionalTone.getTone(raw)
@@ -484,6 +483,6 @@ class MessageUseCaseImpl
             return characterIds
                 .associateWith { characterId ->
                     characterUseCase.getCharacterArcs(characterId).first()
-            }.filterValues { it.isNotEmpty() }
-    }
+                }.filterValues { it.isNotEmpty() }
+        }
     }

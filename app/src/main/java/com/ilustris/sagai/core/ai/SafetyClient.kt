@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.findJsonContent
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonMap
 import timber.log.Timber
@@ -50,7 +51,6 @@ class SafetyClient
                         blueprintKey,
                         mapOf(
                             "userAge" to userAge.name,
-                            "userInput" to userInput,
                             "formattingRule" to "Respond ONLY with a JSON with this structure: $structure",
                         ),
                     )
@@ -60,18 +60,25 @@ class SafetyClient
 
                 val request =
                     GeminiRequest(
-                        contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
-                        GeminiGenerationConfig(),
+                        contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = userInput)))),
+                        systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = prompt))),
+                        generationConfig = GeminiGenerationConfig(),
                     )
 
                 val response = geminiApiClient.generateContent(modelName, apiKey, request)
-                val responseText =
-                    response.candidates
-                        ?.firstOrNull()
-                        ?.content
-                        ?.parts
-                        ?.lastOrNull()
-                        ?.text
+                val candidate = response.candidates?.firstOrNull()
+
+                if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
+                    Timber
+                        .tag("SafetyClient")
+                        .w("API blocked content with reason: ${candidate.finishReason}")
+                    return SafeGuard.BLOCKED
+                }
+
+                val responseParts = candidate?.content?.parts
+
+                // Use intelligent JSON locator that searches across all parts
+                val (responseText, _) = responseParts.findJsonContent()
 
                 val sanitizedJson = responseText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                 val result =

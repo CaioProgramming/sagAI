@@ -362,6 +362,7 @@ class CharacterUseCaseImpl
                             request,
                             "Bringing character to the story...",
                             conversationStyle = genreConfigService.conversationBlueprint(sagaContent.data.genre),
+                            genre = sagaContent.data.genre.name,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val newCharacter = state.data.data

@@ -1031,9 +1031,7 @@ class SagaContentManagerImpl
                         )
                         fakeCharacter
                     } else {
-                        var generated: GeneratedContent<Character>? =
-                            null
-                        genreConfigService.conversationBlueprint(currentSaga.data.genre)
+                        var generated: GeneratedContent<Character>? = null
                         characterUseCase
                             .generateCharacterStream(
                                 currentSaga,
@@ -1076,6 +1074,7 @@ class SagaContentManagerImpl
                             ),
                         )
 
+                        setProcessing(false)
                         generatedCharacter
                     }
                 } catch (e: Exception) {

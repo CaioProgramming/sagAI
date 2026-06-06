@@ -373,7 +373,8 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             openPremiumSheet()
-                                        }.wrapContentWidth()
+                                        }
+                                        .wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -417,7 +418,8 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -555,10 +557,12 @@ private fun ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 15f
                             spread = 10f
-                        }.background(
+                        }
+                        .background(
                             MaterialTheme.colorScheme.background,
                             MaterialTheme.shapes.large,
-                        ).fillMaxWidth(),
+                        )
+                        .fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -566,7 +570,7 @@ private fun ChatList(
                         MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Black,
                             brush =
-                                Brush.horizontalGradient(iridescentGradient)
+                                Brush.horizontalGradient(iridescentGradient),
                         ),
                 )
             }
@@ -609,14 +613,12 @@ fun ChatCard(
                                 .sharedElement(
                                     rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
                                     animatedContentScope,
-                                )
-                                .dropShadow(CircleShape) {
+                                ).dropShadow(CircleShape) {
                                     radius = 5f
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }
-                                .size(50.dp),
+                                }.size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -653,8 +655,7 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        )
-                                        .weight(1f),
+                                        ).weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime

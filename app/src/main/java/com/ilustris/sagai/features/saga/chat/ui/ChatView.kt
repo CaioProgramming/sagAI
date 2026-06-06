@@ -359,7 +359,8 @@ fun ChatView(
                                             true,
                                             themeShimmer(),
                                             duration = 2.seconds,
-                                        ).fillMaxSize(),
+                                        )
+                                        .fillMaxSize(),
                             )
                         }
 
@@ -474,7 +475,8 @@ fun ChatContent(
                                     shimmerColors = themeShimmer(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).size(100.dp)
+                                )
+                                .size(100.dp)
                                 .alpha(.4f),
                     )
 
@@ -482,7 +484,8 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            ).fillMaxSize(),
+                            )
+                            .fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay) = createRefs()
@@ -637,7 +640,8 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }.fillMaxWidth()
+                                }
+                                .fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -676,7 +680,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.animateContentSize(),
+                                    }
+                                    .animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
                                     slideOutVertically { it } + fadeOut()
@@ -752,7 +757,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(
+                                    }
+                                    .padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -838,7 +844,7 @@ fun ChatContent(
                                 Modifier
                                     .background(MaterialTheme.colorScheme.background)
                                     .fillMaxWidth()
-                                    .animateContentSize(tween(200, easing = EaseIn))
+                                    .animateContentSize()
                                     .constrainAs(topBar) {
                                         top.linkTo(parent.top)
                                         start.linkTo(parent.start)
@@ -861,18 +867,21 @@ fun ChatContent(
                                             saga.genre,
                                             isPlaying =
                                                 uiState.isGenerating ||
-                                                    uiState.isLoading ||
-                                                    genreVfxPulse,
-                                        ).size(32.dp)
+                                                        uiState.isLoading ||
+                                                        genreVfxPulse,
+                                        )
+                                        .size(32.dp)
                                         .clip(CircleShape)
                                         .clickable {
                                             onAction(ChatUiAction.ShowObjective)
-                                        }.gradientFill(
+                                        }
+                                        .gradientFill(
                                             progressiveBrush(
                                                 resolvedColor,
                                                 progressState.value,
                                             ),
-                                        ).reactiveShimmer(
+                                        )
+                                        .reactiveShimmer(
                                             uiState.isGenerating || uiState.isLoading,
                                             shimmerColors = themeShimmer(),
                                         ),
@@ -906,7 +915,8 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }.fillMaxWidth()
+                                        }
+                                        .fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.graphicsLayer(alpha = alpha),
@@ -1010,7 +1020,8 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            ).fillMaxWidth(),
+                                            )
+                                            .fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1029,7 +1040,8 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1301,7 +1313,8 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }.animateContentSize(),
+                    }
+                    .animateContentSize(),
         )
     }
 }
@@ -1362,22 +1375,22 @@ fun ChatList(
                         text = it,
                         style =
                             MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                textAlign = TextAlign.Center,
                                 shadow =
                                     Shadow(
                                         MaterialTheme.colorScheme.primary,
                                         blurRadius = 10f,
                                     ),
+                                fontWeight = FontWeight.Normal,
                             ),
+                        textAlign = TextAlign.Center,
                         overflow = TextOverflow.Ellipsis,
                         modifier =
                             Modifier
-                                .reactiveShimmer(true)
                                 .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .alpha(.6f),
+                                .alpha(.6f)
+                                .reactiveShimmer(true),
                     )
                 }
             }
@@ -1474,6 +1487,8 @@ fun ChatList(
                             onAction = onMessageAction,
                             isSelectionMode = isSelectionMode,
                             isSelected = selectedMessageIds.contains(it.message.id),
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
                         )
                     }
 
@@ -1677,9 +1692,11 @@ fun CharactersTopIcons(
                                 } else {
                                     (charactersToDisplay.size - 1 - index).toFloat()
                                 },
-                            ).graphicsLayer(
+                            )
+                            .graphicsLayer(
                                 translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                            ).clip(CircleShape)
+                            )
+                            .clip(CircleShape)
                             .size(24.dp)
                             .clickable { onCharacterSelected(character) },
                 )
