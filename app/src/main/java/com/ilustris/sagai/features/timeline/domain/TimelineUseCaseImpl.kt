@@ -73,9 +73,14 @@ class TimelineUseCaseImpl
 
             val unifiedLore =
                 gemmaClient.generate<UnifiedLoreUpdate>(
-                    prompt = prompt,
-                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                    prompt = prompt.processedTemplate,
+                    blueprintKey = prompt.blueprintKey,
+                    systemInstructions =
+                        prompt
+                            .renderInstructions()
+                            .plus(genreConfigService.conversationInstructions(saga.data.genre)),
                     requirement = GemmaClient.ModelRequirement.HIGH,
+                    aiStats = prompt.getAIStats(),
                 )!!
 
             updateTimeline(
@@ -142,14 +147,18 @@ class TimelineUseCaseImpl
                         conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
                     )
 
-                val conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre)
-
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         sourceFlow =
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
-                                    prompt = prompt,
+                                    prompt = prompt.processedTemplate,
+                                    systemInstructions =
+                                        prompt.renderInstructions().plus(
+                                            genreConfigService.conversationInstructions(
+                                                saga.data.genre,
+                                            ),
+                                        ),
                                     blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
                                     filterOutputFields =
                                         listOf(
@@ -158,8 +167,7 @@ class TimelineUseCaseImpl
                                         ),
                                 ),
                         context = "Generating new lore...",
-                        conversationStyle = conversationStyle,
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -348,7 +356,7 @@ class TimelineUseCaseImpl
             val summary =
                 gemmaClient
                     .generate<SceneSummary>(
-                        objectivePrompt,
+                        objectivePrompt.processedTemplate,
                         requirement = GemmaClient.ModelRequirement.MEDIUM,
                         useCore = true,
                     )!!

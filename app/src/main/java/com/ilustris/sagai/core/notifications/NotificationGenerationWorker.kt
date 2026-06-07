@@ -4,6 +4,9 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.PowerManager
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -21,6 +24,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import java.net.UnknownHostException
 import kotlin.time.Duration.Companion.seconds
 
 @HiltWorker
@@ -38,6 +42,16 @@ class NotificationGenerationWorker
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
             return try {
+                if (runAttemptCount > 1) {
+                    Timber.w("Second attempt for worker ${this.id}, giving up to avoid spamming.")
+                    return Result.success()
+                }
+
+                if (!isNetworkAvailable() || isBackgroundRestricted() || isDeviceIdle()) {
+                    Timber.w("Skipping notification generation: Network unavailable, background restricted or device in Doze mode.")
+                    return Result.success()
+                }
+
                 withTimeout(60.seconds) {
                     Timber.d("Generating notification...")
                     val sagaId = inputData.getInt(KEY_SAGA_ID, -1)
@@ -82,7 +96,12 @@ class NotificationGenerationWorker
                             val currentTime = System.currentTimeMillis()
                             val scheduledTime = currentTime + getNotificationDelay()
 
-                            val message = gemmaClient.generate<String>(prompt, useCore = true)!!
+                            val message = gemmaClient.generate<String>(prompt, useCore = true)
+
+                            if (message == null) {
+                                Timber.e("Failed to generate message for notification")
+                                return@let null
+                            }
 
                             selectedCharacter to message
 
@@ -134,9 +153,38 @@ class NotificationGenerationWorker
                     Result.success()
                 }
             } catch (e: Exception) {
+                if (e is UnknownHostException) {
+                    Timber.e("Unknown host: network likely unavailable in Doze mode. Skipping.")
+                    return Result.success()
+                }
                 Timber.e(e, "Failed to generate notification")
-                Result.retry()
+                if (runAttemptCount < 1) {
+                    Result.retry()
+                } else {
+                    Result.success()
+                }
             }
+        }
+
+        private fun isNetworkAvailable(): Boolean {
+            val connectivityManager =
+                applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val activeNetwork = connectivityManager.activeNetwork
+            val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+            return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        }
+
+        private fun isBackgroundRestricted(): Boolean {
+            val connectivityManager =
+                applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            return connectivityManager.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED
+        }
+
+        private fun isDeviceIdle(): Boolean {
+            val powerManager =
+                applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return powerManager.isDeviceIdleMode
         }
 
         private fun getNotificationDelay(): Long =

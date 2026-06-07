@@ -443,8 +443,7 @@ fun AuditLogItem(
                                         1.dp,
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         RoundedCornerShape(4.dp),
-                                    )
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                     .padding(8.dp),
                         )
                     }
@@ -570,14 +569,51 @@ fun AuditLogItem(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(8.dp),
-                                )
-                                .padding(8.dp),
+                                ).padding(8.dp),
                     ) {
                         Text(
                             text = log.reasoning,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                }
+
+                if (!log.systemInstruction.isNullOrEmpty()) {
+                    Text(
+                        text = stringResource(R.string.audit_logs_system_instruction),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    MaterialTheme.shapes.small,
+                                ).padding(12.dp),
+                    ) {
+                        JsonCodeBlock(
+                            jsonString = log.systemInstruction,
+                        )
+                    }
+                }
+
+                if (!log.sentVariables.isNullOrEmpty()) {
+                    Text(
+                        text = stringResource(R.string.audit_logs_sent_variables),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    MaterialTheme.shapes.small,
+                                ).padding(12.dp),
+                    ) {
+                        JsonCodeBlock(jsonString = log.sentVariables)
                     }
                 }
 

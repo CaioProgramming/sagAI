@@ -159,7 +159,7 @@ fun HomeView(
     }
 
     with(sharedTransitionScope) {
-        AnimatedContent(isStarting, transitionSpec = {
+        AnimatedContent(sagas.isEmpty(), transitionSpec = {
             fadeIn(tween(700)) togetherWith fadeOut(tween(400))
         }) {
             if (it) {
@@ -175,8 +175,7 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                )
-                                .reactiveShimmer(
+                                ).reactiveShimmer(
                                     true,
                                     themeShimmer(),
                                     1.seconds,
@@ -373,8 +372,7 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             openPremiumSheet()
-                                        }
-                                        .wrapContentWidth()
+                                        }.wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -613,12 +611,14 @@ fun ChatCard(
                                 .sharedElement(
                                     rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
                                     animatedContentScope,
-                                ).dropShadow(CircleShape) {
+                                )
+                                .dropShadow(CircleShape) {
                                     radius = 5f
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }.size(50.dp),
+                                }
+                                .size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -655,7 +655,8 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        ).weight(1f),
+                                        )
+                                        .weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime

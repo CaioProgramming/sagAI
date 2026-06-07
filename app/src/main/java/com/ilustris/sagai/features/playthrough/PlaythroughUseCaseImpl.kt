@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.playthrough
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.PlaythroughPrompts
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.playthrough.data.model.PlayThroughData
@@ -14,6 +15,7 @@ class PlaythroughUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val textGenClient: GemmaClient,
+        private val promptService: PromptService,
     ) : PlaythroughUseCase {
         override fun availableSagas() = sagaRepository.getPlaythroughData()
 
@@ -22,11 +24,19 @@ class PlaythroughUseCaseImpl
                 val sagas = availableSagas().first()
                 if (sagas.isEmpty()) error("No playthroughs available")
 
-                val prompt = PlaythroughPrompts.extractPlaythroughReview(sagas)
-                textGenClient.generate<PlayThroughData>(prompt)
-                    ?: error(
-                        GemmaClient.lastGenerateFailure
-                            ?: "Playthrough review generation failed",
+                val splitPrompt =
+                    PlaythroughPrompts.playthroughReviewPrompt(
+                        promptService,
+                        sagas,
                     )
+
+                textGenClient.generate<PlayThroughData>(
+                    prompt = splitPrompt.processedTemplate,
+                    systemInstructions = splitPrompt.renderInstructions(),
+                    aiStats = splitPrompt.getAIStats(),
+                ) ?: error(
+                    GemmaClient.lastGenerateFailure
+                        ?: "Playthrough review generation failed",
+                )
             }
     }

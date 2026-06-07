@@ -267,7 +267,12 @@ class CharacterUseCaseImpl
                 )
                 val newCharacter =
                     gemmaClient.generate<Character>(
-                        prompt,
+                        prompt.processedTemplate,
+                        systemInstructions =
+                            prompt
+                                .renderInstructions()
+                                .plus(genreConfigService.conversationInstructions(sagaContent.data.genre)),
+                        aiStats = prompt.getAIStats(),
                         useCore = true,
                         filterOutputFields =
                             listOf(
@@ -340,8 +345,16 @@ class CharacterUseCaseImpl
                     val request =
                         gemmaClient
                             .generateStreaming<GeneratedContent<Character>>(
-                                prompt,
-                                blueprintKey = CHARACTER_GENERATION_BLUEPRINT,
+                                prompt.processedTemplate,
+                                systemInstructions =
+                                    prompt
+                                        .renderInstructions()
+                                        .plus(
+                                            genreConfigService.conversationInstructions(
+                                                sagaContent.data.genre,
+                                            ),
+                                        ),
+                                blueprintKey = prompt.blueprintKey,
                                 useCore = true,
                                 filterOutputFields =
                                     listOf(
@@ -355,14 +368,14 @@ class CharacterUseCaseImpl
                                         "firstSceneId",
                                     ),
                                 requirement = GemmaClient.ModelRequirement.HIGH,
+                                aiStats = prompt.getAIStats(),
                             )
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             request,
                             "Bringing character to the story...",
-                            conversationStyle = genreConfigService.conversationBlueprint(sagaContent.data.genre),
-                            genre = sagaContent.data.genre.name,
+                            genre = sagaContent.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val newCharacter = state.data.data

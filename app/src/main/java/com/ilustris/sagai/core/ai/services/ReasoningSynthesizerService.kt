@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,14 +27,14 @@ class ReasoningSynthesizerService
         @PublishedApi internal val gemmaClient: GemmaClient,
         @PublishedApi internal val promptService: PromptService,
         @PublishedApi internal val remoteConfigService: RemoteConfigService,
+        @PublishedApi internal val genreConfigService: GenreConfigService,
     ) : AIClient() {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
             sourceFlow: Flow<StreamingState<T>>,
             context: String,
-            conversationStyle: String? = null,
             showReasoning: Boolean = true,
-            genre: String?,
+            genre: Genre? = null,
         ): Flow<StreamingState<T>> =
             channelFlow {
                 var synthesisJob: Job? = null
@@ -51,7 +52,6 @@ class ReasoningSynthesizerService
                                                 synthesizeNow(
                                                     lastReasoning,
                                                     context,
-                                                    conversationStyle,
                                                     getLanguage(true),
                                                     this@channelFlow,
                                                     genre,
@@ -72,7 +72,6 @@ class ReasoningSynthesizerService
                                     synthesizeNow(
                                         lastReasoning,
                                         context,
-                                        conversationStyle,
                                         getLanguage(true),
                                         this,
                                         genre,
@@ -97,17 +96,19 @@ class ReasoningSynthesizerService
         internal suspend fun <T> synthesizeNow(
             reasoning: String,
             context: String,
-            conversationStyle: String?,
             targetLanguage: String,
             scope: ProducerScope<StreamingState<T>>,
-            genre: String? = null,
+            genre: Genre? = null,
         ) {
             try {
+                val conversationStyle =
+                    genre?.let {
+                        genreConfigService.conversationInstructions(it)
+                    }
                 val style =
                     conversationStyle
-                        ?: promptService.buildRemotePrompt(
+                        ?: promptService.buildSplitBlueprint(
                             OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                            logEnabled = false,
                         )
 
                 val sanitizedReasoning = sanitizeReasoning(reasoning).takeLast(400)
@@ -116,12 +117,11 @@ class ReasoningSynthesizerService
                     mapOf(
                         "context" to context,
                         "thoughtStream" to sanitizedReasoning,
-                        "conversationStyle" to style,
                         "language" to targetLanguage,
                     )
 
                 val prompt =
-                    promptService.buildRemotePrompt(
+                    promptService.buildSplitBlueprint(
                         REASONING_SYNTHESIZER_BLUEPRINT,
                         variables,
                         logEnabled = false,
@@ -129,7 +129,14 @@ class ReasoningSynthesizerService
 
                 val translation =
                     gemmaClient.generate<String>(
-                        prompt = prompt,
+                        prompt = prompt.processedTemplate,
+                        systemInstructions =
+                            buildMap {
+                                putAll(prompt.renderInstructions())
+                                conversationStyle?.let {
+                                    putAll(it)
+                                }
+                            },
                         requirement = GemmaClient.ModelRequirement.TINY,
                         logEnabled = false,
                         temperatureRandomness = 1f,
@@ -153,7 +160,7 @@ class ReasoningSynthesizerService
         }
 
         private suspend fun <T> useFallback(
-            genre: String?,
+            genre: Genre?,
             scope: ProducerScope<StreamingState<T>>,
         ) {
             try {
@@ -162,8 +169,8 @@ class ReasoningSynthesizerService
                         REASONING_FALLBACKS_KEY,
                     )
                 val fallbackMessage =
-                    if (genre != null && fallbacks?.genres?.containsKey(genre) == true) {
-                        fallbacks.genres[genre]?.randomOrNull()
+                    if (genre != null && fallbacks?.genres?.containsKey(genre.name) == true) {
+                        fallbacks.genres[genre.name]?.randomOrNull()
                     } else {
                         fallbacks?.default?.randomOrNull()
                     }

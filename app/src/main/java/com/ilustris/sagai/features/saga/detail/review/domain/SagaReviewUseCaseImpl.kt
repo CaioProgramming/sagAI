@@ -54,8 +54,7 @@ class SagaReviewUseCaseImpl
                             .synthesizeReasoning(
                                 sourceFlow = sourceFlow,
                                 context = step.name,
-                                conversationStyle = genreConfigService.conversationBlueprint(content.data.genre),
-                                genre = content.data.genre.name,
+                                genre = content.data.genre,
                             ).collect { state ->
                                 when (state) {
                                     is StreamingState.Reasoning -> emit(ReviewState.Loading(state.chunk))

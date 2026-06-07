@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 
 data class EmotionalToneArgs(
@@ -33,12 +35,13 @@ object EmotionalPrompt {
     suspend fun emotionalToneExtraction(
         promptService: PromptService,
         userText: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             EmotionalToneArgs(
                 availableTones = EmotionalTone.entries.joinToString { it.name },
                 userText = userText,
             )
-        return promptService.buildRemotePrompt(EMOTIONAL_TONE_EXTRACTION_BLUEPRINT, args)
+        return promptService
+            .buildSplitBlueprint(EMOTIONAL_TONE_EXTRACTION_BLUEPRINT, args.asMap())
     }
 }

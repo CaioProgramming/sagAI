@@ -38,7 +38,6 @@ class NewSagaUseCaseImpl
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = sourceFlow,
                         context = "Curating your cosmic library",
-                        genre = null,
                     ),
                 )
             }
@@ -62,8 +61,7 @@ class NewSagaUseCaseImpl
                                     identity,
                                 ),
                             context = "Sealing the Sacred Contract for ${sagaDraft.title}",
-                            conversationStyle = identity,
-                            genre = sagaDraft.genre.name,
+                            genre = sagaDraft.genre,
                         ).collect { streamingState ->
                             when (streamingState) {
                                 is StreamingState.Reasoning -> {

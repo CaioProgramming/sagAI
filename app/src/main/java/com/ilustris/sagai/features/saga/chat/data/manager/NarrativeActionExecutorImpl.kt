@@ -160,8 +160,7 @@ class NarrativeActionExecutorImpl
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = flow,
                         context = "Generating act introduction for ${saga.data.title}",
-                        conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     )
                 }.collect { state ->
                     when (state) {
@@ -213,8 +212,7 @@ class NarrativeActionExecutorImpl
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = flow,
                         context = "Generating chapter introduction for ${currentChapter.data.title}",
-                        conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     )
                 }.collect { state ->
                     when (state) {
@@ -415,8 +413,7 @@ class NarrativeActionExecutorImpl
                     .synthesizeReasoning(
                         sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(fullSaga),
                         context = contextString,
-                        conversationStyle = style,
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Reasoning -> {

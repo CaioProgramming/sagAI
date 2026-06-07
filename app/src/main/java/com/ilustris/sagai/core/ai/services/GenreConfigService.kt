@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.ai.services
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,4 +44,10 @@ class GenreConfigService
                 "${genre.name.lowercase()}_conversation_blueprint",
                 emptyMap(),
             )
+
+        suspend fun conversationInstructions(genre: Genre) =
+            promptService
+                .fetchBlueprintData(
+                    "${genre.name.lowercase()}_conversation_blueprint",
+                ).asMap()
     }

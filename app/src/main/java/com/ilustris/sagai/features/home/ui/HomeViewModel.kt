@@ -65,15 +65,17 @@ class HomeViewModel
         val billingState = homeUseCase.billingState
 
         init {
-            Timber.d("HomeViewModel: init")
+            loadSagas()
             checkDebug()
             getDynamicPrompts()
-            loadSagas()
         }
 
         private fun loadSagas() {
             viewModelScope.launch(Dispatchers.IO) {
                 homeUseCase.getSagas().collect { sagaList ->
+                    if (sagas.value.isEmpty()) {
+                        delay(1.seconds)
+                    }
                     sagas.emit(sagaList)
                 }
             }

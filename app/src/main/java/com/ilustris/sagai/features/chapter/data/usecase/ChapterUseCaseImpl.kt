@@ -410,7 +410,7 @@ class ChapterUseCaseImpl
                                     blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
                                 ),
                             "Generating chapter introduction...",
-                            genre = saga.data.genre.name,
+                            genre = saga.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val introContent = state.data
@@ -452,12 +452,19 @@ class ChapterUseCaseImpl
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
-                                    prompt = prompt,
+                                    prompt = prompt.processedTemplate,
+                                    systemInstructions =
+                                        prompt.renderInstructions().plus(
+                                            genreConfigService.conversationInstructions(
+                                                saga.data.genre,
+                                            ),
+                                        ),
                                     blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
                                     requirement = GemmaClient.ModelRequirement.HIGH,
+                                    aiStats = prompt.getAIStats(),
                                 ),
                             "Generating new chapter...",
-                            genre = saga.data.genre.name,
+                            genre = saga.data.genre,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {

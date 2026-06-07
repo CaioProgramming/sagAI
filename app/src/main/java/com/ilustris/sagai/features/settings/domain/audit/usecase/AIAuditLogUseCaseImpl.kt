@@ -44,20 +44,22 @@ class AIAuditLogUseCaseImpl
                                 originalBlueprint?.toAINormalize(blueprintExclusions)
                                     ?: "Blueprint not found for key: $blueprintKey"
                             ),
-                        "aiLog" to log.toAINormalize(logExclusions),
+                        "pipelineData" to log.toAINormalize(logExclusions),
                     )
 
                 val prompt =
-                    promptService.buildRemotePrompt(
+                    promptService.buildSplitBlueprint(
                         AuditLogPrompts.AUDIT_LOG_SUGGESTION_BLUEPRINT,
                         promptArgs,
                     )
 
                 val suggestionResult =
                     gemmaClient.generate<String>(
-                        prompt = prompt,
+                        prompt = prompt.processedTemplate,
+                        systemInstructions = prompt.renderInstructions(),
                         blueprintKey = AuditLogPrompts.AUDIT_LOG_SUGGESTION_BLUEPRINT,
                         describeOutput = false,
+                        aiStats = prompt.getAIStats(),
                     )
 
                 repository.updateLog(log.copy(suggestion = suggestionResult))

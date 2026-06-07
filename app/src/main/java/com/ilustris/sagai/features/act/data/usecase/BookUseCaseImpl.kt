@@ -67,8 +67,7 @@ class BookUseCaseImpl
                         .synthesizeReasoning(
                             sourceFlow = sourceFlow,
                             context = args.sagaContext,
-                            conversationStyle = args.conversationDirective,
-                            genre = saga.data.genre.name,
+                            genre = saga.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val book = state.data.data.copy(id = 0, actId = actContent.data.id)

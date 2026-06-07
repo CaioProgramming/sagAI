@@ -103,8 +103,7 @@ class SagaHistoryUseCaseImpl
                                     blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                                 ),
                             "Generating saga ending... ",
-                            conversationDirective,
-                            genre = saga.data.genre.name,
+                            genre = saga.data.genre,
                         ).collect { state ->
 
                             if (state is StreamingState.Success) {

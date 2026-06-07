@@ -103,8 +103,7 @@ class ImagenClientImpl
                         .synthesizeReasoning(
                             sourceFlow = sourceStream,
                             context = context,
-                            conversationStyle = genreConfigService.conversationBlueprint(genre),
-                            genre = genre.name,
+                            genre = genre,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Reasoning -> {

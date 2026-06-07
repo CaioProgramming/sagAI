@@ -269,11 +269,8 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     return gson.toJson(this)
 }
 
-fun Any.toPromptVariables(): Map<String, String> {
-    val gson = GsonBuilder().create()
-    val json = gson.toJson(this)
-    val mapType = gsonTypeOfStringAnyMap()
-    val rawMap: Map<String, Any> = gson.fromJson(json, mapType)
+fun Any.asMap(): Map<String, String> {
+    val rawMap: Map<String, Any> = this.toRawMap()
 
     return rawMap.mapValues { (_, value) ->
         if (value is Double && value % 1 == 0.0) {
@@ -282,6 +279,17 @@ fun Any.toPromptVariables(): Map<String, String> {
             value.toString()
         }
     }
+}
+
+/**
+ * Converts any object into a Map<String, Any>, preserving nested structures.
+ * Uses Gson to ensure field names match serialization rules and noise is removed.
+ */
+fun Any.toRawMap(): Map<String, Any> {
+    val gson = GsonBuilder().create()
+    val json = gson.toJson(this)
+    val mapType = gsonTypeOfStringAnyMap()
+    return gson.fromJson(json, mapType)
 }
 
 fun doNothing() {
@@ -926,71 +934,70 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
     if (this is String || this is Number || this is Boolean || this is Enum<*>) {
         return this.toString()
     }
-    val fields = this::class.java.declaredFields
+
     val standardExclusions = listOf("\$stable", "companion")
     val allExclusions = fieldsToExclude + standardExclusions
 
-    return fields
-        .mapNotNull { field ->
-            if (field.name in allExclusions) return@mapNotNull null
-            field.isAccessible = true
-            val value = field.get(this) ?: return@mapNotNull null
-
-            val valueString =
-                when (value) {
-                    is List<*> -> {
-                        if (value.isEmpty()) {
-                            ""
-                        } else {
-                            value.normalizetoAIItems(
-                                fieldsToExclude,
-                            )
-                        }
-                    }
-
-                    is Array<*> -> {
-                        if (value.isEmpty()) {
-                            ""
-                        } else {
-                            value.normalizetoAIItems(
-                                fieldsToExclude,
-                            )
-                        }
-                    }
-
-                    is String -> {
-                        truncateForAi(field.name, value)
-                    }
-
-                    is Enum<*> -> {
-                        value.toString()
-                    }
-
-                    else -> {
-                        if (value::class.isData) {
-                            val normalized = value.toAINormalize(fieldsToExclude)
-                            if (normalized.isNotBlank()) {
-                                "\n${normalized.prependIndent("  ")}"
-                            } else {
-                                ""
-                            }
-                        } else {
-                            value.toString()
-                        }
-                    }
+    fun formatValue(
+        name: String,
+        value: Any,
+    ): String? {
+        val valueString =
+            when (value) {
+                is List<*> -> {
+                    if (value.isEmpty()) "" else value.normalizetoAIItems(fieldsToExclude)
                 }
 
-            if (valueString.isBlank() || valueString == "[]") {
-                null
-            } else {
-                val itemsSize =
-                    when (value) {
-                        is List<*> -> "[${value.size}]"
-                        is Array<*> -> "[${value.size}]"
-                        else -> emptyString()
+                is Array<*> -> {
+                    if (value.isEmpty()) "" else value.normalizetoAIItems(fieldsToExclude)
+                }
+
+                is String -> {
+                    truncateForAi(name, value)
+                }
+
+                is Enum<*> -> {
+                    value.toString()
+                }
+
+                else -> {
+                    if (value::class.isData || value is Map<*, *>) {
+                        val normalized = value.toAINormalize(fieldsToExclude)
+                        if (normalized.isNotBlank()) {
+                            "\n${normalized.prependIndent("  ")}"
+                        } else {
+                            ""
+                        }
+                    } else {
+                        value.toString()
                     }
-                "${field.name}$itemsSize: $valueString"
+                }
             }
+
+        return if (valueString.isBlank() || valueString == "[]") {
+            null
+        } else {
+            val itemsSize =
+                when (value) {
+                    is List<*> -> "[${value.size}]"
+                    is Array<*> -> "[${value.size}]"
+                    else -> emptyString()
+                }
+            "$name$itemsSize: $valueString"
+        }
+    }
+
+    val mapData =
+        when (this) {
+            is Map<*, *> -> this
+            else -> this.toRawMap()
+        }
+
+    return mapData.entries
+        .mapNotNull { (key, value) ->
+            val name = key.toString()
+            if (name in allExclusions || value == null) return@mapNotNull null
+            formatValue(name, value)
         }.joinToString("\n")
 }
 

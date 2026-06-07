@@ -49,13 +49,14 @@ class HomeUseCaseImpl
             executeRequest {
                 Timber.d("Fetching new dynamic saga texts...")
                 try {
+                    val prompt = HomePrompts.dynamicSagaCreationPrompt(promptService)
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
-                            prompt = HomePrompts.dynamicSagaCreationPrompt(promptService),
-                            blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
-                            temperatureRandomness = .5f,
-                            requireTranslation = true,
-                            requirement = GemmaClient.ModelRequirement.TINY,
+                            prompt = prompt.processedTemplate,
+                            systemInstructions = prompt.renderInstructions(),
+                            blueprintKey = prompt.blueprintKey,
+                            requirement = GemmaClient.ModelRequirement.LOW,
+                            aiStats = prompt.getAIStats(),
                         )
                     result ?: useFallback()
                 } catch (e: Exception) {

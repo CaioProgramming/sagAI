@@ -592,6 +592,8 @@
     <string name="audit_logs_clear_button">Limpar</string>
     <string name="audit_logs_reasoning">Raciocínio (Chain-of-Thought):</string>
     <string name="audit_logs_raw_response">Resposta Bruta:</string>
+    <string name="audit_logs_system_instruction">Instrução de Sistema:</string>
+    <string name="audit_logs_sent_variables">Variáveis Enviadas:</string>
     <string name="audit_logs_error_label">Erro:</string>
     <string name="clear_preferences">Limpar preferências</string>
     <string name="backup_loading_restoring_database">Restaurando banco de dados...</string>

@@ -16,9 +16,12 @@ import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.data.SideEffect
 import com.ilustris.sagai.core.data.isFlowCancellation
 import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.database.model.AIStats
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.network.GeminiApiCodec
@@ -27,6 +30,7 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.findJsonContent
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +43,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -181,64 +187,30 @@ class GemmaClient
             filterOutputFields: List<String> = emptyList(),
             useCore: Boolean = false,
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
+            aiStats: AIStats? = null,
             blueprintKey: String? = null,
+            systemInstructions: Map<String, Any> = emptyMap(),
             logEnabled: Boolean = true,
         ): T? =
             withContext(Dispatchers.IO) {
-                if (userInteraction) {
-                    val safetyStatus = safetyClient.checkSafety(prompt)
-                    if (safetyStatus != SafeGuard.OK) {
-                        throw GuardrailsException(safetyStatus)
-                    }
-                }
+                checkSafety(userInteraction, prompt)
                 val model = modelName(requirement)
 
                 val maxAttempts = MAX_RETRIES + 1
                 val startTime = System.currentTimeMillis()
 
+                val (dataTypeName, systemInstruction) =
+                    buildStructure<T>(
+                        describeOutput,
+                        filterOutputFields,
+                        requirement,
+                        requireTranslation,
+                        systemInstructions,
+                    )
+
                 for (currentAttempt in 1..maxAttempts) {
                     try {
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
-                            val dataType = getJavaType<T>()
-                            val dataTypeName =
-                                when (dataType) {
-                                    is Class<*> -> {
-                                        dataType.simpleName
-                                    }
-
-                                    is java.lang.reflect.ParameterizedType -> {
-                                        (dataType.rawType as? Class<*>)?.simpleName
-                                            ?: dataType.toString()
-                                    }
-
-                                    else -> {
-                                        dataType.toString().substringAfterLast(".")
-                                    }
-                                }
-
-                            val structure =
-                                if (describeOutput) {
-                                    buildAIPromptOutputStructure<T>(filterOutputFields)
-                                } else {
-                                    dataTypeName
-                                }
-
-                            val formattingRule =
-                                "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
-
-                            val corePrompt =
-                                promptService.buildRemotePrompt(
-                                    remoteConfigKey = getCoreBlueprintKey(requirement),
-                                    variables =
-                                        mapOf(
-                                            "language" to getLanguage(requireTranslation),
-                                            "type" to dataTypeName,
-                                            "structure" to structure,
-                                            "formattingRule" to formattingRule,
-                                        ),
-                                    logEnabled = false,
-                                )
-
                             val fullPrompt = prompt
 
                             val promptLength =
@@ -271,7 +243,7 @@ class GemmaClient
                             val geminiRequest =
                                 GeminiRequest(
                                     contents = listOf(GeminiContent(parts = parts)),
-                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = corePrompt))),
+                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = systemInstruction))),
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
@@ -286,7 +258,12 @@ class GemmaClient
                                 )
 
                             val formattedModel = model.replace("models/", "")
-                            val response = callGenerateContent(formattedModel, apiConfig(useCore), geminiRequest)
+                            val response =
+                                callGenerateContent(
+                                    formattedModel,
+                                    apiConfig(useCore),
+                                    geminiRequest,
+                                )
 
                             // Check for API error
                             response.error?.let { error ->
@@ -315,6 +292,18 @@ class GemmaClient
                             val (requiredText, partIndex) = responseContent.findJsonContent()
 
                             if (logEnabled) {
+                                Timber.d("Request stats: \n${response.usageMetadata.toJsonFormat()}\n")
+
+                                Timber.d("Instructions: \n$systemInstruction\n")
+
+                                Timber.d("Prompt requested:\n$fullPrompt\n")
+
+                                if (partIndex >= 0) {
+                                    Timber.i("JSON extracted from response part[$partIndex]")
+                                }
+
+                                Timber.i("API Response: ${response.toJsonFormat()}")
+
                                 Timber.d(
                                     "Input JSON: ${
                                         geminiRequest.toJsonFormatExcludingFields(
@@ -322,13 +311,6 @@ class GemmaClient
                                         )
                                     }",
                                 )
-
-                                Timber.d("Prompt requested:\n$fullPrompt")
-
-                                Timber.i("API Response: ${response.toJsonFormat()}")
-                                if (partIndex >= 0) {
-                                    Timber.i("JSON extracted from response part[$partIndex]")
-                                }
                             }
 
                             val cleanedJsonString =
@@ -340,12 +322,14 @@ class GemmaClient
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
-                                        blueprintKey = blueprintKey,
+                                        blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
-                                        reasoning = aiGeneration?.reasoning,
+                                        reasoning = aiGeneration.reasoning,
                                         rawResponse = requiredText,
                                         responseTime = duration,
+                                        systemInstruction = systemInstruction,
+                                        sentVariables = aiStats?.sentVariables.toJsonFormat(),
                                     ),
                                 )
                                 Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
@@ -371,16 +355,20 @@ class GemmaClient
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
-                                        blueprintKey = blueprintKey,
+                                        blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
                                         dataType = this.javaClass.simpleName,
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                         responseTime = duration,
                                         safetyStatus = safetyStatus,
+                                        systemInstruction = systemInstruction,
+                                        sentVariables = aiStats?.sentVariables.toJsonFormat(),
                                     ),
                                 )
                             } catch (logEx: Exception) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Error saving log: ${logEx.message}")
+                                Timber
+                                    .tag(this@GemmaClient::class.java.simpleName)
+                                    .e("Error saving log: ${logEx.message}")
                             }
                         }
                         if (logEnabled) {
@@ -400,7 +388,9 @@ class GemmaClient
                         if (e is GeminiHttpException) {
                             val errorBody = e.errorBody
                             if (logEnabled) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).e("HTTP Error ($model): $errorBody")
+                                Timber
+                                    .tag(this@GemmaClient::class.java.simpleName)
+                                    .e("HTTP Error ($model): $errorBody")
                             }
 
                             try {
@@ -434,7 +424,9 @@ class GemmaClient
                                         ).i("Extracted precise delay from error: $extractedDelay seconds")
                                 }
                             } catch (parseEx: Exception) {
-                                Timber.tag(this@GemmaClient::class.java.simpleName).e("Failed to parse error body: ${parseEx.message}")
+                                Timber
+                                    .tag(this@GemmaClient::class.java.simpleName)
+                                    .e("Failed to parse error body: ${parseEx.message}")
                             }
                         }
 
@@ -465,6 +457,80 @@ class GemmaClient
                 return@withContext null
             }
 
+        suspend inline fun <reified T> buildStructure(
+            describeOutput: Boolean,
+            filterOutputFields: List<String>,
+            requirement: ModelRequirement,
+            requireTranslation: Boolean,
+            systemInstructions: Map<String, Any>,
+        ): Pair<String, String> {
+            val dataType = getJavaType<T>()
+            val dataTypeName = validateType(dataType)!!
+
+            val structure = validateStructure<T>(describeOutput, filterOutputFields, dataTypeName)
+
+            val corePrompt = buildCorePrompt(requirement, requireTranslation, dataTypeName, structure)
+
+            val systemInstruction = buildInstructions(corePrompt, systemInstructions)
+            return Pair(dataTypeName, systemInstruction)
+        }
+
+        suspend fun buildCorePrompt(
+            requirement: ModelRequirement,
+            requireTranslation: Boolean,
+            dataTypeName: String,
+            structure: String,
+        ): SplitPrompt =
+            promptService.buildSplitBlueprint(
+                remoteConfigKey = getCoreBlueprintKey(requirement),
+                variables =
+                    mapOf(
+                        "language" to getLanguage(requireTranslation),
+                        "type" to dataTypeName,
+                        "structure" to structure,
+                    ),
+                logEnabled = false,
+            )
+
+        inline fun <reified T> validateStructure(
+            describeOutput: Boolean,
+            filterOutputFields: List<String>,
+            dataTypeName: String,
+        ): String =
+            if (describeOutput) {
+                buildAIPromptOutputStructure<T>(filterOutputFields)
+            } else {
+                dataTypeName
+            }
+
+        fun validateType(dataType: Type): String? =
+            when (dataType) {
+                is Class<*> -> {
+                    dataType.simpleName
+                }
+
+                is ParameterizedType -> {
+                    (dataType.rawType as? Class<*>)?.simpleName
+                        ?: dataType.toString()
+                }
+
+                else -> {
+                    dataType.toString().substringAfterLast(".")
+                }
+            }
+
+        suspend fun checkSafety(
+            userInteraction: Boolean,
+            prompt: String,
+        ) {
+            if (userInteraction) {
+                val safetyStatus = safetyClient.checkSafety(prompt)
+                if (safetyStatus != SafeGuard.OK) {
+                    throw GuardrailsException(safetyStatus)
+                }
+            }
+        }
+
         /**
          * Streams the generation of T, emitting chunks of reasoning as they arrive,
          * and finally emitting Success with the data, or Error if it fails.
@@ -481,15 +547,21 @@ class GemmaClient
             blueprintKey: String? = null,
             userInteraction: Boolean = false,
             logEnabled: Boolean = true,
+            aiStats: AIStats? = null,
+            systemInstructions: Map<String, Any> = emptyMap(),
         ): Flow<StreamingState<T>> =
             flow {
                 try {
-                    if (userInteraction) {
-                        val safetyStatus = safetyClient.checkSafety(prompt)
-                        if (safetyStatus != SafeGuard.OK) {
-                            throw GuardrailsException(safetyStatus)
-                        }
-                    }
+                    checkSafety(userInteraction, prompt)
+                    val (dataTypeName, systemInstruction) =
+                        buildStructure<T>(
+                            describeOutput,
+                            filterOutputFields,
+                            requirement,
+                            requireTranslation,
+                            systemInstructions,
+                        )
+
                     val model = modelName(requirement)
 
                     val maxAttempts = MAX_RETRIES + 1
@@ -497,46 +569,6 @@ class GemmaClient
 
                     for (currentAttempt in 1..maxAttempts) {
                         try {
-                            val dataType = getJavaType<T>()
-                            val dataTypeName =
-                                when (dataType) {
-                                    is Class<*> -> {
-                                        dataType.simpleName
-                                    }
-
-                                    is java.lang.reflect.ParameterizedType -> {
-                                        (dataType.rawType as? Class<*>)?.simpleName
-                                            ?: dataType.toString()
-                                    }
-
-                                    else -> {
-                                        dataType.toString().substringAfterLast(".")
-                                    }
-                                }
-
-                            val structure =
-                                if (describeOutput) {
-                                    buildAIPromptOutputStructure<T>(filterOutputFields)
-                                } else {
-                                    dataTypeName
-                                }
-
-                            val formattingRule =
-                                "Respond using STRICTLY VALID JSON. Maintain escaping and UTF-8 encoding."
-
-                            val corePrompt =
-                                promptService.buildRemotePrompt(
-                                    remoteConfigKey = getCoreBlueprintKey(requirement),
-                                    variables =
-                                        mapOf(
-                                            "language" to getLanguage(requireTranslation),
-                                            "type" to dataTypeName,
-                                            "structure" to structure,
-                                            "formattingRule" to formattingRule,
-                                        ),
-                                    logEnabled = false,
-                                )
-
                             val fullPrompt = prompt
 
                             val parts = mutableListOf<GeminiPart>()
@@ -558,7 +590,7 @@ class GemmaClient
                             val geminiRequest =
                                 GeminiRequest(
                                     contents = listOf(GeminiContent(parts = parts)),
-                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = corePrompt))),
+                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = systemInstruction))),
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
@@ -585,7 +617,12 @@ class GemmaClient
 
                                 Timber.d("Prompt requested:\n$fullPrompt")
                             }
-                            val responseBody = callStreamGenerateContent(formattedModel, apiConfig(useCore), geminiRequest)
+                            val responseBody =
+                                callStreamGenerateContent(
+                                    formattedModel,
+                                    apiConfig(useCore),
+                                    geminiRequest,
+                                )
 
                             val accumulatedText = StringBuilder()
 
@@ -646,7 +683,7 @@ class GemmaClient
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
                                         model = model,
-                                        blueprintKey = blueprintKey,
+                                        blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
                                         reasoning = aiGeneration?.reasoning,
@@ -686,10 +723,15 @@ class GemmaClient
                                 e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
                             var extractedDelay: Long? = null
 
+                            if (e is GuardrailsException) {
+                                sideEffectService.emit(SideEffect.GuardrailBlock(e.status))
+                            }
+
                             if (e is GeminiHttpException) {
                                 val errorBody = e.errorBody
                                 try {
-                                    val errorResponse = GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
+                                    val errorResponse =
+                                        GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
                                     val retryInfo =
                                         errorResponse.error?.details?.find {
                                             it.type ==
@@ -702,6 +744,7 @@ class GemmaClient
                                             ?.toDoubleOrNull()
                                             ?.toLong()
                                 } catch (parseEx: Exception) {
+                                    Timber.e(parseEx)
                                 }
                             }
 
@@ -717,7 +760,7 @@ class GemmaClient
                                     aiAuditLogDao.insertLog(
                                         AIAuditLog(
                                             model = model,
-                                            blueprintKey = blueprintKey,
+                                            blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
                                             dataType = javaClass.simpleName,
                                             status = "ERROR",
                                             errorMessage = "${e.javaClass.simpleName}: ${e.message}",
@@ -738,36 +781,6 @@ class GemmaClient
                     emit(StreamingState.Error(e.message ?: "Unknown error", e))
                 }
             }.flowOn(Dispatchers.IO)
-
-        suspend fun generateText(
-            prompt: String,
-            requirement: ModelRequirement = ModelRequirement.LOW,
-            temperatureRandomness: Float = 0.5f,
-            logEnabled: Boolean = true,
-        ): String? {
-            val model = modelName(requirement)
-            val parts = listOf(GeminiPart(text = prompt))
-            val geminiRequest =
-                GeminiRequest(
-                    contents = listOf(GeminiContent(parts = parts)),
-                    generationConfig = GeminiGenerationConfig(temperature = temperatureRandomness),
-                )
-            return requestMutexes.getOrPut(model) { Mutex() }.withLock {
-                try {
-                    val response = callGenerateContent(model, apiConfig(false), geminiRequest)
-                    response.error?.let { throw Exception(it.message) }
-                    response.candidates
-                        ?.firstOrNull()
-                        ?.content
-                        ?.parts
-                        ?.firstOrNull()
-                        ?.text
-                } catch (e: Exception) {
-                    Timber.w("generateText failed: ${e.message}")
-                    null
-                }
-            }
-        }
 
         @PublishedApi
         internal suspend fun callGenerateContent(
@@ -812,5 +825,14 @@ class GemmaClient
             return Base64.encodeToString(byteArray, Base64.NO_WRAP)
         }
     }
+
+fun buildInstructions(
+    corePrompt: SplitPrompt,
+    systemInstructions: Map<String, Any>,
+): String =
+    buildMap {
+        putAll(corePrompt.renderInstructions().plus("task" to corePrompt.processedTemplate))
+        putAll(systemInstructions)
+    }.toAINormalize()
 
 const val KEY_FLAG = "FIREBASE_KEY"

@@ -674,6 +674,8 @@
     <string name="audit_logs_clear_button">Clear</string>
     <string name="audit_logs_reasoning">Reasoning (Chain-of-Thought):</string>
     <string name="audit_logs_raw_response">Raw Response:</string>
+    <string name="audit_logs_system_instruction">System Instruction:</string>
+    <string name="audit_logs_sent_variables">Sent Variables:</string>
     <string name="audit_logs_error_label">Error:</string>
     <string name="story_guides">Story Guides</string>
     <string name="story_guides_description">Show introductory guides when starting a new saga universe.</string>

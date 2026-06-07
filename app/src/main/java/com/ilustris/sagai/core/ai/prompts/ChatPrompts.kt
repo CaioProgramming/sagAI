@@ -1,7 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
@@ -152,7 +154,7 @@ object ChatPrompts {
         conversationDirective: String,
         updateLimit: Int,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
-    ): String {
+    ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
                 saga.findCharacter(it)
@@ -201,7 +203,8 @@ object ChatPrompts {
                     },
             )
 
-        return promptService.buildRemotePrompt(REPLY_GENERATION_BLUEPRINT, argsMap)
+        return promptService
+            .buildSplitBlueprint(REPLY_GENERATION_BLUEPRINT, argsMap)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -211,7 +214,7 @@ object ChatPrompts {
         conversationDirective: String,
         updateLimit: Int,
         message: String,
-    ): String {
+    ): SplitPrompt {
         val recentContext =
             conversationHistory(
                 updateLimit,
@@ -228,7 +231,7 @@ object ChatPrompts {
                 message = message,
             )
 
-        return promptService.buildRemotePrompt(CHAT_WRITING_PAL_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAT_WRITING_PAL_BLUEPRINT, args)
     }
 
     suspend fun generateReactionPrompt(
@@ -237,7 +240,7 @@ object ChatPrompts {
         saga: SagaContent,
         messageToReact: Message,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val mainCharacter = saga.mainCharacter!!
         val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
         val relationshipsBlock =
@@ -260,14 +263,14 @@ object ChatPrompts {
                 genreName = saga.data.genre.name,
             )
 
-        return promptService.buildRemotePrompt(CHAT_REACTION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAT_REACTION_BLUEPRINT, args.asMap())
     }
 
     suspend fun sceneSummarizationPrompt(
         promptService: PromptService,
         saga: SagaContent,
         rules: NarrativeRules,
-    ): String {
+    ): SplitPrompt {
         val latestMessage = saga.flatMessages().maxByOrNull { it.message.timestamp }?.message
         val latestMessageContent = latestMessage?.toAINormalize(messageExclusions) ?: ""
 
@@ -279,7 +282,7 @@ object ChatPrompts {
                 latestMessage = latestMessageContent,
             )
 
-        return promptService.buildRemotePrompt(SCENE_SUMMARIZATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SCENE_SUMMARIZATION_BLUEPRINT, args)
     }
 
     suspend fun scheduledNotificationPrompt(
