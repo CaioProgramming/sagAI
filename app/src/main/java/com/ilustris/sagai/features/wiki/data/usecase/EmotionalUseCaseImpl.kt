@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.wiki.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -41,7 +42,7 @@ class EmotionalUseCaseImpl
                                 sagaContent,
                                 conversationDirective,
                             ),
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = ModelRequirement.HIGH,
                         blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                     )!!
                 result
@@ -75,7 +76,7 @@ class EmotionalUseCaseImpl
                                     sagaContent,
                                     genreConfigService.conversationBlueprint(sagaContent.data.genre),
                                 ),
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                         ),
                         "Generating emotional conclusion...",

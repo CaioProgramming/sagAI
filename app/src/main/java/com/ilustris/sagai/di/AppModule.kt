@@ -17,7 +17,6 @@ import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.SafetyClient
-import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -52,7 +51,6 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
-import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
@@ -296,10 +294,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesTextGenClient(remoteConfigService: RemoteConfigService): TextGenClient = TextGenClient(remoteConfigService)
-
-    @Provides
-    @Singleton
     fun providesAgeVerificationService(
         @ApplicationContext context: Context,
     ): AgeVerificationService = AgeVerificationService(context)
@@ -332,7 +326,7 @@ object AppModule {
         geminiApiClient: GeminiApiClient,
     ): GemmaClient =
         GemmaClient(
-            remoteConfigService = remoteConfigService,
+            remoteConfig = remoteConfigService,
             safetyClient = safetyClient,
             sideEffectService = sideEffectService,
             geminiApiClient = geminiApiClient,
@@ -390,16 +384,6 @@ object AppModule {
         timelineMapper,
         wikiMapper,
         emotionalUseCase,
-    )
-
-    @Provides
-    @Singleton
-    fun providesLoadingService(
-        gemmaClient: GemmaClient,
-        promptService: PromptService,
-    ) = LoadingService(
-        gemmaClient,
-        promptService,
     )
 
     @Provides

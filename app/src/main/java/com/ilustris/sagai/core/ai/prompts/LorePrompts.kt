@@ -1,10 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
-import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 data class LoreGenerationArgs(
     val sagaTitle: String,
@@ -44,33 +41,6 @@ object LorePrompts {
 
     val ACT_EXCLUDED_FIELDS =
         listOf("id", "sagaId", "currentChapterId", "createdAt")
-
-    @Suppress("ktlint:standard:max-line-length")
-    suspend fun loreGeneration(
-        promptService: PromptService,
-        narrativeRules: NarrativeRules,
-        sagaContent: SagaContent,
-        currentTimeline: TimelineContent,
-        conversationDirective: String,
-    ): String {
-        val args =
-            LoreGenerationArgs(
-                sagaTitle = sagaContent.data.title,
-                loreUpdateLimit = narrativeRules.loreUpdateLimit.toString(),
-                sagaContext = SagaPrompts.mainContext(sagaContent),
-                storyContext = storyContext(sagaContent, narrativeRules),
-                newConversationBust =
-                    currentTimeline.messages
-                        .map { it.message }
-                        .take(narrativeRules.loreUpdateLimit)
-                        .normalizetoAIItems(
-                            ChatPrompts.messageExclusions,
-                        ),
-                conversationDirective = conversationDirective,
-            )
-
-        return promptService.buildRemotePrompt(LORE_GENERATION_BLUEPRINT, args)
-    }
 
     fun storyContext(
         sagaContent: SagaContent,

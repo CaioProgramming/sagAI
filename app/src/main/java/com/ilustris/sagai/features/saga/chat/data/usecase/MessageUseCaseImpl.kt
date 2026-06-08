@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 import MessageStatus
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.AudioConfig
 import com.ilustris.sagai.core.ai.model.Voice
@@ -104,7 +105,7 @@ class MessageUseCaseImpl
                     blueprintKey = ChatPrompts.CHAT_WRITING_PAL_BLUEPRINT,
                     userInteraction = true,
                     requireTranslation = true,
-                    requirement = GemmaClient.ModelRequirement.LOW,
+                    requirement = ModelRequirement.LOW,
                 )!!
             }
 
@@ -121,7 +122,7 @@ class MessageUseCaseImpl
                     prompt = prompt.processedTemplate,
                     systemInstructions = prompt.renderInstructions(),
                     blueprintKey = ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT,
-                    requirement = GemmaClient.ModelRequirement.LOW,
+                    requirement = ModelRequirement.LOW,
                     aiStats = prompt.getAIStats(),
                 )
             }
@@ -162,7 +163,7 @@ class MessageUseCaseImpl
                         prompt.processedTemplate,
                         blueprintKey = prompt.blueprintKey,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.TINY,
+                        requirement = ModelRequirement.TINY,
                         systemInstructions = prompt.renderInstructions(),
                         aiStats = prompt.getAIStats(),
                     )?.trim()
@@ -226,7 +227,7 @@ class MessageUseCaseImpl
                             blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
                             userInteraction = true,
                             filterOutputFields = ChatPrompts.messageExclusions,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             useCore = true,
                             systemInstructions =
                                 buildMap {
@@ -364,7 +365,7 @@ class MessageUseCaseImpl
                 gemmaClient.generate<ReactionGen>(
                     prompt.processedTemplate,
                     blueprintKey = prompt.blueprintKey,
-                    requirement = GemmaClient.ModelRequirement.LOW,
+                    requirement = ModelRequirement.LOW,
                     systemInstructions =
                         prompt
                             .renderInstructions()
@@ -424,7 +425,7 @@ class MessageUseCaseImpl
                         ),
                         blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
                         requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = ModelRequirement.MEDIUM,
                     )!!
 
                 val finalConfig =

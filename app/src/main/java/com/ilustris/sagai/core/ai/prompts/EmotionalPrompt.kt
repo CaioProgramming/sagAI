@@ -10,25 +10,6 @@ data class EmotionalToneArgs(
     val userText: String,
 )
 
-data class EmotionalReviewArgs(
-    val sagaMainContext: String,
-    val analysisData: String,
-    val conversationDirective: String,
-)
-
-data class EmotionalConclusionArgs(
-    val roleDefinition: String,
-    val sagaMainContext: String,
-    val emotionalJourneySummary: String,
-    val conversationDirective: String,
-)
-
-data class EmotionalProfileArgs(
-    val roleDefinition: String,
-    val behaviorNotes: String,
-    val conversationDirective: String,
-)
-
 object EmotionalPrompt {
     const val EMOTIONAL_TONE_EXTRACTION_BLUEPRINT = "emotional_tone_extraction_blueprint"
 

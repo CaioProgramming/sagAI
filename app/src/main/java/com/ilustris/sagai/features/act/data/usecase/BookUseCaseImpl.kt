@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.BookGenerationArgs
@@ -57,10 +58,14 @@ class BookUseCaseImpl
                     val sourceFlow =
                         gemmaClient
                             .generateStreaming<GeneratedContent<Book>>(
-                                prompt = prompt,
-                                blueprintKey = BookPrompts.BOOK_CHRONICLE_BLUEPRINT,
+                                prompt.copy(
+                                    instructionBuckets =
+                                        prompt.renderInstructions().plus(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                        ),
+                                ),
                                 useCore = true,
-                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requirement = ModelRequirement.HIGH,
                             )
 
                     reasoningSynthesizerService

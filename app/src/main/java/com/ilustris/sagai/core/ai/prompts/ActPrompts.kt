@@ -1,7 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -72,7 +74,7 @@ object ActPrompts {
         sagaContent: SagaContent,
         currentActContent: ActContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val isFirst = sagaContent.acts.indexOfFirst { it.data.id == currentActContent.data.id } == 0
         val previousAct =
             if (isFirst) {
@@ -106,7 +108,7 @@ object ActPrompts {
                         ?: "Initial Volume: The saga begins here, with no prior history recorded.",
             )
 
-        return promptService.buildRemotePrompt(ACT_CONCLUSION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(ACT_CONCLUSION_BLUEPRINT, args.asMap())
     }
 
     suspend fun actIntroductionPrompt(
@@ -114,7 +116,7 @@ object ActPrompts {
         saga: SagaContent,
         narrativeRules: NarrativeRules,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val isFirst = saga.acts.isEmpty()
         val lastState =
             if (isFirst) {
@@ -129,7 +131,7 @@ object ActPrompts {
                 lastStateContext = lastState,
                 narrativeStyle = conversationDirective,
             )
-        return promptService.buildRemotePrompt(ACT_INTRODUCTION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(ACT_INTRODUCTION_BLUEPRINT, args.asMap())
     }
 
     suspend fun actSynthesisPrompt(
@@ -138,7 +140,7 @@ object ActPrompts {
         act: ActContent,
         narrativeRules: NarrativeRules,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val isFirst = saga.acts.indexOfFirst { it.data.id == act.data.id } == 0
         val previousAct =
             if (isFirst) {
@@ -171,6 +173,6 @@ object ActPrompts {
                 narrativeStyle = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(ACT_SYNTHESIS_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(ACT_SYNTHESIS_BLUEPRINT, args)
     }
 }

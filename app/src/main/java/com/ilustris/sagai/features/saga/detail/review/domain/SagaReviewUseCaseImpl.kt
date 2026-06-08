@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -46,7 +47,7 @@ class SagaReviewUseCaseImpl
                         val sourceFlow =
                             gemmaClient.generateStreaming<ReviewStage>(
                                 prompt,
-                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requirement = ModelRequirement.HIGH,
                                 blueprintKey = step.blueprintKey,
                             )
 

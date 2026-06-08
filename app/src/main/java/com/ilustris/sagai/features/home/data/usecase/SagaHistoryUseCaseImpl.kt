@@ -1,11 +1,12 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -21,11 +22,9 @@ class SagaHistoryUseCaseImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
-        private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val genreConfigService: GenreConfigService,
-        private val promptService: com.ilustris.sagai.core.ai.services.PromptService,
-        private val remoteConfigService: com.ilustris.sagai.core.services.RemoteConfigService,
+        private val promptService: PromptService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
     ) : SagaHistoryUseCase {
         override suspend fun getSagaById(sagaId: Int?): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
@@ -71,7 +70,7 @@ class SagaHistoryUseCaseImpl
                             prompt = SagaPrompts.endCredits(promptService, saga, conversationDirective),
                             requireTranslation = true,
                             useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
                         ).collect { state ->
                             emit(state)
@@ -99,7 +98,7 @@ class SagaHistoryUseCaseImpl
                                         ),
                                     requireTranslation = true,
                                     useCore = true,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    requirement = ModelRequirement.HIGH,
                                     blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
                                 ),
                             "Generating saga ending... ",

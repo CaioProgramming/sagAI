@@ -30,7 +30,7 @@ class CharacterRelationUseCaseImpl
                 val prompt =
                     CharacterPrompts.generateCharacterRelation(promptService, timeline, saga)
                 val generatedRelationsData =
-                    gemmaClient.generate<RelationGenerationGen>(prompt, blueprintKey = CharacterPrompts.CHARACTER_RELATION_BLUEPRINT)!!
+                    gemmaClient.generate<RelationGenerationGen>(prompt)!!
 
                 val updatedRelations =
                     generatedRelationsData.relations.map { relationData ->

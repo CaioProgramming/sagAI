@@ -69,7 +69,7 @@ class AIAuditLogViewModel
         init {
             viewModelScope.launch {
                 aiAuditLogUseCase
-                    .getRecentLogs(100)
+                    .getRecentLogs()
                     .catch { e -> e.printStackTrace() }
                     .collect { fetchedLogs ->
                         _logs.value = fetchedLogs

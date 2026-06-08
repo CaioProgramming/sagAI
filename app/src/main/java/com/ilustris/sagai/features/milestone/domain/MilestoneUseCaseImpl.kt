@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.milestone.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
@@ -43,7 +44,7 @@ class MilestoneUseCaseImpl
                 gemmaClient.generate<String>(
                     prompt,
                     temperatureRandomness = 1f,
-                    requirement = GemmaClient.ModelRequirement.LOW,
+                    requirement = ModelRequirement.LOW,
                     blueprintKey = MilestonePrompts.MILESTONE_GENERATION_BLUEPRINT,
                 )
             }

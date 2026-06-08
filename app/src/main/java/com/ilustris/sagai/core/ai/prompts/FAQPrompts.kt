@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.faq.data.model.FAQContent
@@ -16,12 +17,12 @@ object FAQPrompts {
         promptService: PromptService,
         query: String,
         context: FAQContent,
-    ): String {
+    ): SplitPrompt {
         val args =
             FAQArgs(
                 query = query,
                 faqContext = context.toAINormalize(),
             )
-        return promptService.buildRemotePrompt(FAQ_ASK_AI_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(FAQ_ASK_AI_BLUEPRINT, args)
     }
 }

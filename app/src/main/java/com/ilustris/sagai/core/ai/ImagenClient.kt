@@ -93,9 +93,11 @@ class ImagenClientImpl
                     var finalStringPrompt: String? = null
                     val sourceStream =
                         gemmaClient.generateStreaming<String>(
-                            prompt = prompt,
+                            prompt = prompt.processedTemplate,
+                            blueprintKey = prompt.blueprintKey,
+                            systemInstructions = prompt.renderInstructions(),
                             useCore = false,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             requireTranslation = false,
                         )
 
@@ -193,9 +195,11 @@ class ImagenClientImpl
 
                 val finalStringPrompt =
                     gemmaClient.generate<String>(
-                        prompt = prompt,
+                        prompt = prompt.processedTemplate,
+                        blueprintKey = prompt.blueprintKey,
+                        systemInstructions = prompt.renderInstructions(),
                         useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = ModelRequirement.HIGH,
                         requireTranslation = false,
                     )!!
 

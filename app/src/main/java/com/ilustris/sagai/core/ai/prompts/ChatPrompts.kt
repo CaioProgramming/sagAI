@@ -291,7 +291,7 @@ object ChatPrompts {
         selectedCharacter: CharacterContent,
         sceneSummary: SceneSummary,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
         val relationshipBlock = relationWithCharacter?.summarizeRelation(1) ?: ""
 
@@ -307,7 +307,7 @@ object ChatPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(CHAT_NOTIFICATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAT_NOTIFICATION_BLUEPRINT, args)
     }
 
     fun conversationHistory(

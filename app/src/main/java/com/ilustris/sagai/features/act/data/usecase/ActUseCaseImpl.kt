@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -12,6 +14,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
@@ -67,7 +70,14 @@ class ActUseCaseImpl
                 val titlePrompt = generateActPrompt(saga)
                 val newAct =
                     gemmaClient.generate<Act>(
-                        titlePrompt,
+                        titlePrompt.processedTemplate,
+                        systemInstructions =
+                            titlePrompt.renderInstructions().plus(
+                                genreConfigService.conversationInstructions(
+                                    saga.data.genre,
+                                ),
+                            ),
+                        aiStats = titlePrompt.getAIStats(),
                         filterOutputFields =
                             listOf(
                                 "id",
@@ -100,7 +110,13 @@ class ActUseCaseImpl
                     .synthesizeReasoning(
                         gemmaClient
                             .generateStreaming<GeneratedContent<Act>>(
-                                prompt = titlePrompt,
+                                prompt = titlePrompt.processedTemplate,
+                                systemInstructions =
+                                    titlePrompt.renderInstructions().plus(
+                                        genreConfigService.conversationInstructions(
+                                            saga.data.genre,
+                                        ),
+                                    ),
                                 filterOutputFields =
                                     listOf(
                                         "id",
@@ -109,9 +125,10 @@ class ActUseCaseImpl
                                         "introduction",
                                     ),
                                 useCore = true,
+                                aiStats = titlePrompt.getAIStats(),
                             ),
                         "Generating new act...",
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -158,7 +175,7 @@ class ActUseCaseImpl
             }
         }
 
-        private suspend fun generateActPrompt(sagaMetadata: SagaMetadata): String {
+        private suspend fun generateActPrompt(sagaMetadata: SagaMetadata): SplitPrompt {
             remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
             val sagaId = sagaMetadata.data.id
             val fullSaga = sagaRepository.getSagaById(sagaId).first() as SagaContent
@@ -193,7 +210,9 @@ class ActUseCaseImpl
 
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
-                    prompt,
+                    prompt.processedTemplate,
+                    systemInstructions = prompt.renderInstructions(),
+                    aiStats = prompt.getAIStats(),
                     useCore = true,
                     blueprintKey = ActPrompts.ACT_INTRODUCTION_BLUEPRINT,
                 )!!
@@ -212,19 +231,25 @@ class ActUseCaseImpl
                         promptService = promptService,
                         saga = fullSaga,
                         narrativeRules = remoteConfigService.getNarrativeRules(),
-                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        conversationDirective = emptyString(),
                     )
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         gemmaClient
                             .generateStreaming<GeneratedContent<String>>(
-                                prompt = prompt,
+                                prompt = prompt.processedTemplate,
+                                blueprintKey = prompt.blueprintKey,
+                                aiStats = prompt.getAIStats(),
+                                systemInstructions =
+                                    prompt
+                                        .renderInstructions()
+                                        .plus(genreConfigService.conversationInstructions(saga.data.genre)),
                                 requireTranslation = true,
                                 useCore = true,
-                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requirement = ModelRequirement.MEDIUM,
                             ),
                         "Starting a new act...",
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -277,12 +302,18 @@ class ActUseCaseImpl
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
-                                    prompt = prompt,
-                                    blueprintKey = ActPrompts.ACT_SYNTHESIS_BLUEPRINT,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    prompt = prompt.processedTemplate,
+                                    systemInstructions =
+                                        prompt
+                                            .renderInstructions()
+                                            .plus(genreConfigService.conversationInstructions(saga.data.genre)),
+                                    aiStats = prompt.getAIStats(),
+                                    useCore = true,
+                                    blueprintKey = prompt.blueprintKey,
+                                    requirement = ModelRequirement.HIGH,
                                 ),
                             "Finishing story act",
-                            genre = saga.data.genre.name,
+                            genre = saga.data.genre,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {

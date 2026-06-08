@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -48,7 +49,7 @@ class GetInputSuggestionsUseCaseImpl
                     .generate<SuggestionGen>(
                         prompt,
                         temperatureRandomness = 1f,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = ModelRequirement.MEDIUM,
                     )!!
                     .suggestions
             }

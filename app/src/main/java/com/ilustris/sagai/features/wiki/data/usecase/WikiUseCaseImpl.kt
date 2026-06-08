@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.wiki.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.WikiPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
@@ -55,7 +56,8 @@ class WikiUseCaseImpl
                             event = event,
                             config = genreConfig,
                         ),
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement =
+                        ModelRequirement.MEDIUM,
                 )!!
                 .wikis
         }
@@ -75,7 +77,7 @@ class WikiUseCaseImpl
                     gemmaClient
                         .generate<MergeWikiGen>(
                             prompt = prompt,
-                            requirement = GemmaClient.ModelRequirement.MEDIUM,
+                            requirement = ModelRequirement.MEDIUM,
                         )!!
                         .mergedItems
 

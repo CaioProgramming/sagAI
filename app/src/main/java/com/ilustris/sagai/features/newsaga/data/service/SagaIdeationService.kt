@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.newsaga.data.service
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.prompts.CosmicLibraryArgs
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
@@ -34,7 +35,7 @@ class SagaIdeationService
                 )
             return gemmaClient.generateStreaming<LibraryPitchesResponse>(
                 blueprint,
-                requirement = GemmaClient.ModelRequirement.MEDIUM,
+                requirement = ModelRequirement.MEDIUM,
                 temperatureRandomness = 1f,
                 filterOutputFields = listOf("id", "variationId"),
                 blueprintKey = NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
@@ -53,7 +54,7 @@ class SagaIdeationService
                     blueprint,
                     temperatureRandomness = 1f,
                     blueprintKey = NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
-                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    requirement = ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -66,7 +67,7 @@ class SagaIdeationService
                 NewSagaPrompts.sacredBindingPrompt(promptService, sagaDraft, characterInfo, identity)
             return gemmaClient.generateStreaming<SacredContract>(
                 blueprint,
-                requirement = GemmaClient.ModelRequirement.HIGH,
+                requirement = ModelRequirement.HIGH,
                 filterOutputFields =
                     listOf(
                         "id",

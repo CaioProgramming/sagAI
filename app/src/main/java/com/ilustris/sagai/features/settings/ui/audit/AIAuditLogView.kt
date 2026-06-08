@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -74,14 +75,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shimmerize
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -216,8 +216,7 @@ fun AIAuditLogView(
                             .fillMaxWidth()
                             .horizontalScroll(
                                 androidx.compose.foundation.rememberScrollState(),
-                            )
-                            .padding(bottom = 8.dp),
+                            ).padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -295,6 +294,7 @@ fun AIAuditLogView(
                 Text(
                     text = stringResource(R.string.audit_logs_empty),
                     style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 )
@@ -368,7 +368,6 @@ fun AuditLogItem(
             log.responseTime < 10000 -> Color(0xFFFFC107)
             else -> Color(0xFFE53935)
         }
-    val dateFormat = SimpleDateFormat("MMM dd, HH:mm:ss", Locale.getDefault())
 
     Column(
         modifier =
@@ -449,7 +448,7 @@ fun AuditLogItem(
                     }
 
                     Text(
-                        text = "• ${dateFormat.format(Date(log.timestamp))}",
+                        text = "• ${log.timestamp.formatDate()}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
                         modifier = Modifier.alpha(.7f),
                     )
@@ -584,19 +583,10 @@ fun AuditLogItem(
                         text = stringResource(R.string.audit_logs_system_instruction),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    MaterialTheme.shapes.small,
-                                ).padding(12.dp),
-                    ) {
-                        JsonCodeBlock(
-                            jsonString = log.systemInstruction,
-                        )
-                    }
+
+                    JsonCodeBlock(
+                        jsonString = log.systemInstruction,
+                    )
                 }
 
                 if (!log.sentVariables.isNullOrEmpty()) {
@@ -604,17 +594,8 @@ fun AuditLogItem(
                         text = stringResource(R.string.audit_logs_sent_variables),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    MaterialTheme.shapes.small,
-                                ).padding(12.dp),
-                    ) {
-                        JsonCodeBlock(jsonString = log.sentVariables)
-                    }
+
+                    JsonCodeBlock(jsonString = log.sentVariables)
                 }
 
                 if (!log.rawResponse.isNullOrEmpty()) {
@@ -622,18 +603,8 @@ fun AuditLogItem(
                         text = stringResource(R.string.audit_logs_raw_response),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    Color(0xFF1E1E1E),
-                                    RoundedCornerShape(8.dp),
-                                )
-                                .padding(12.dp),
-                    ) {
-                        JsonCodeBlock(jsonString = log.rawResponse)
-                    }
+
+                    JsonCodeBlock(jsonString = log.rawResponse)
                 }
 
                 if (!log.blueprintKey.isNullOrEmpty()) {
@@ -654,8 +625,7 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    )
-                                    .padding(12.dp),
+                                    ).padding(12.dp),
                         )
                     } else {
                         Button(
@@ -681,7 +651,10 @@ fun AuditLogItem(
                                         .size(24.dp)
                                         .padding(horizontal = 8.dp),
                             )
-                            Text(stringResource(R.string.audit_logs_suggest_improvements), fontWeight = FontWeight.SemiBold)
+                            Text(
+                                stringResource(R.string.audit_logs_suggest_improvements),
+                                fontWeight = FontWeight.SemiBold,
+                            )
                         }
                     }
                 }
@@ -756,7 +729,13 @@ fun JsonCodeBlock(jsonString: String) {
                 fontFamily = FontFamily.Monospace,
                 lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified,
             ),
-        color = Color.White.copy(alpha = 0.9f),
+        modifier =
+            Modifier
+                .padding(8.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    shape = MaterialTheme.shapes.small,
+                ).padding(12.dp),
     )
 }
 
@@ -782,15 +761,10 @@ fun PipelineInsightCard(
                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.surfaceContainer),
                         modifier =
                             Modifier
-                                .sharedElement(
-                                    rememberSharedContentState("spark_icon"),
-                                    animatedVisibilityScope,
-                                )
                                 .size(50.dp)
                                 .reactiveShimmer(
                                     isLoading,
-                                    MaterialTheme.colorScheme.primary.shimmerize(),
-                                    duration = 2.seconds,
+                                    repeatMode = RepeatMode.Restart,
                                 ),
                     )
                 }
@@ -813,8 +787,7 @@ fun PipelineInsightCard(
                                 .alpha(alpha)
                                 .padding(
                                     16.dp,
-                                )
-                                .clickable {
+                                ).clickable {
                                     expanded = !expanded
                                 },
                     )

@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.chapter.data.usecase
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -99,7 +100,7 @@ class ChapterUseCaseImpl
                                 ),
                             requireTranslation = true,
                             useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
                         )!!
 
@@ -141,7 +142,7 @@ class ChapterUseCaseImpl
                                 ),
                             requireTranslation = true,
                             useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
@@ -378,7 +379,7 @@ class ChapterUseCaseImpl
                     prompt,
                     requireTranslation = true,
                     useCore = true,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
+                    requirement = ModelRequirement.HIGH,
                     blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
@@ -406,7 +407,7 @@ class ChapterUseCaseImpl
                                     prompt = prompt,
                                     requireTranslation = true,
                                     useCore = true,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    requirement = ModelRequirement.HIGH,
                                     blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
                                 ),
                             "Generating chapter introduction...",
@@ -460,7 +461,7 @@ class ChapterUseCaseImpl
                                             ),
                                         ),
                                     blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    requirement = ModelRequirement.HIGH,
                                     aiStats = prompt.getAIStats(),
                                 ),
                             "Generating new chapter...",

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.onboarding.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -58,7 +59,7 @@ class OnboardingUseCaseImpl
                     runCatching {
                         gemmaClient.generate<OnboardingContent>(
                             prompt = prompt,
-                            requirement = GemmaClient.ModelRequirement.LOW,
+                            requirement = ModelRequirement.LOW,
                             blueprintKey = OnboardingPrompts.ONBOARDING_BLUEPRINT,
                         )
                     }.getOrNull()
@@ -73,7 +74,7 @@ class OnboardingUseCaseImpl
                     OnboardingContent::class.java,
                 )
             return fallbacks?.get(type.name) ?: OnboardingContent()
-    }
+        }
 
         override suspend fun markSeen(type: OnboardingType) {
             if (type == OnboardingType.GAMEPLAY_GUIDE) return

@@ -96,7 +96,18 @@ class NotificationGenerationWorker
                             val currentTime = System.currentTimeMillis()
                             val scheduledTime = currentTime + getNotificationDelay()
 
-                            val message = gemmaClient.generate<String>(prompt, useCore = true)
+                            val message =
+                                gemmaClient.generate<String>(
+                                    prompt.copy(
+                                        instructionBuckets =
+                                            prompt.renderInstructions().plus(
+                                                genreConfigService.conversationInstructions(
+                                                    sagaContent.data.genre,
+                                                ),
+                                            ),
+                                    ),
+                                    useCore = true,
+                                )
 
                             if (message == null) {
                                 Timber.e("Failed to generate message for notification")
@@ -184,7 +195,7 @@ class NotificationGenerationWorker
         private fun isDeviceIdle(): Boolean {
             val powerManager =
                 applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager
-        return powerManager.isDeviceIdleMode
+            return powerManager.isDeviceIdleMode
         }
 
         private fun getNotificationDelay(): Long =

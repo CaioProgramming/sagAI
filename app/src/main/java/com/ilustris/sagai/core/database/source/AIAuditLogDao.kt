@@ -15,8 +15,8 @@ interface AIAuditLogDao {
     @Update
     suspend fun updateLog(log: AIAuditLog)
 
-    @Query("SELECT * FROM ai_audit_logs ORDER BY timestamp DESC LIMIT :limit")
-    fun getRecentLogs(limit: Int = 100): Flow<List<AIAuditLog>>
+    @Query("SELECT * FROM ai_audit_logs ORDER BY timestamp DESC")
+    fun getRecentLogs(): Flow<List<AIAuditLog>>
 
     @Query("DELETE FROM ai_audit_logs")
     suspend fun clearLogs()

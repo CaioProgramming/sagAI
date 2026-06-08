@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface AIAuditLogUseCase {
     suspend fun clearLogs(): RequestResult<Unit>
 
-    suspend fun getRecentLogs(limit: Int = 100): Flow<List<AIAuditLog>>
+    suspend fun getRecentLogs(): Flow<List<AIAuditLog>>
 
     suspend fun generateSuggestion(log: AIAuditLog): RequestResult<Unit>
 

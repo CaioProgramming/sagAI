@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -55,7 +56,7 @@ class HomeUseCaseImpl
                             prompt = prompt.processedTemplate,
                             systemInstructions = prompt.renderInstructions(),
                             blueprintKey = prompt.blueprintKey,
-                            requirement = GemmaClient.ModelRequirement.LOW,
+                            requirement = ModelRequirement.LOW,
                             aiStats = prompt.getAIStats(),
                         )
                     result ?: useFallback()

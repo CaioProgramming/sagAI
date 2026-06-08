@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai
 
 import com.google.gson.Gson
 import com.ilustris.sagai.BuildConfig
-import com.ilustris.sagai.core.ai.GemmaClient.ModelRequirement
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.AgeGroup
 import com.ilustris.sagai.core.ai.model.GeminiContent
@@ -18,6 +17,8 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.findJsonContent
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
+import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import timber.log.Timber
 import javax.inject.Inject
@@ -27,12 +28,12 @@ import javax.inject.Singleton
 class SafetyClient
     @Inject
     constructor(
-        private val remoteConfigService: RemoteConfigService,
+        remoteConfig: RemoteConfigService,
         private val ageVerificationService: AgeVerificationService,
-        private val promptService: PromptService,
+        promptService: PromptService,
         private val geminiApiClient: GeminiApiClient,
         private val aiAuditLogDao: AIAuditLogDao,
-    ) : AIClient() {
+    ) : AIClient(remoteConfig, promptService) {
         suspend fun checkSafety(userInput: String): SafeGuard {
             val startTime = System.currentTimeMillis()
             val userAge = ageVerificationService.getUserAgeGroup()
@@ -47,21 +48,30 @@ class SafetyClient
                     )
 
                 val prompt =
-                    promptService.buildRemotePrompt(
+                    promptService.buildSplitBlueprint(
                         blueprintKey,
                         mapOf(
                             "userAge" to userAge.name,
+                            "userInput" to userInput,
                             "formattingRule" to "Respond ONLY with a JSON with this structure: $structure",
                         ),
                     )
 
-                val modelName = modelName(ModelRequirement.MEDIUM)
+                val corePrompt =
+                    buildCoreInstructions(ModelRequirement.TINY, true, "SafeGuard", structure)
+
+                val modelName = modelName(ModelRequirement.TINY)
                 val apiKey = getApiKey()
 
+                val instructions =
+                    buildMap {
+                        putAll(corePrompt)
+                        putAll(prompt.renderInstructions())
+                    }
                 val request =
                     GeminiRequest(
-                        contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = userInput)))),
-                        systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = prompt))),
+                        contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt.processedTemplate)))),
+                        systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = instructions.toAINormalize()))),
                         generationConfig = GeminiGenerationConfig(),
                     )
 
@@ -92,13 +102,15 @@ class SafetyClient
                     aiAuditLogDao.insertLog(
                         AIAuditLog(
                             model = modelName,
-                            blueprintKey = "SAFETY_GATE",
+                            blueprintKey = prompt.blueprintKey,
                             dataType = "SafeGuard",
                             status = "SUCCESS",
                             safetyStatus = safetyResult.name,
                             reasoning = result.reasoning,
                             rawResponse = responseText,
                             responseTime = duration,
+                            systemInstruction = instructions.toJsonFormat(),
+                            sentVariables = prompt.sentVariables.toJsonFormat(),
                         ),
                     )
                 }
@@ -127,35 +139,6 @@ class SafetyClient
                     ),
                 )
                 SafeGuard.OK
-            }
-        }
-
-        suspend fun modelName(requirement: ModelRequirement): String {
-            val tierConfig =
-                remoteConfigService.getJsonMapStringAny("model_configs") ?: emptyMap()
-            return when (val config = tierConfig[requirement.name]) {
-                is String -> {
-                    config.replace("models/", "")
-                }
-
-                is Map<*, *> -> {
-                    val enabled = config["enabled"] as? Boolean ?: true
-                    if (!enabled) {
-                        throw ModelOutageException(
-                            requirement,
-                            config["model"] as? String ?: "UNKNOWN",
-                        )
-                    }
-                    val model =
-                        config["model"] as? String
-                            ?: error("Model name not found in config for ${requirement.name}")
-                    model.replace("models/", "")
-                }
-
-                else -> {
-                    Timber.e("Invalid model configuration for ${requirement.name}: $config")
-                    error("Invalid model configuration for ${requirement.name}")
-                }
             }
         }
 

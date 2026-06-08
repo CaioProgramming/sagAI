@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.characters.data.usecase
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
@@ -285,7 +286,7 @@ class CharacterUseCaseImpl
                                 "hexColor",
                                 "firstSceneId",
                             ),
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = ModelRequirement.HIGH,
                         blueprintKey = CHARACTER_GENERATION_BLUEPRINT,
                     )!!
 
@@ -367,7 +368,7 @@ class CharacterUseCaseImpl
                                         "hexColor",
                                         "firstSceneId",
                                     ),
-                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requirement = ModelRequirement.HIGH,
                                 aiStats = prompt.getAIStats(),
                             )
 
@@ -438,7 +439,7 @@ class CharacterUseCaseImpl
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
                         prompt,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        requirement = ModelRequirement.LOW,
                         temperatureRandomness = .3f,
                         blueprintKey = CharacterPrompts.REFINE_CHARACTER_DRAFT_BLUEPRINT,
                     )!!
@@ -506,7 +507,7 @@ class CharacterUseCaseImpl
                         gemmaClient
                             .generate<NickNameGen>(
                                 prompt,
-                                requirement = GemmaClient.ModelRequirement.LOW,
+                                requirement = ModelRequirement.LOW,
                             )!!
                             .suggestions
 
@@ -561,8 +562,7 @@ class CharacterUseCaseImpl
                     )
                 gemmaClient.generate<String>(
                     prompt,
-                    requirement = GemmaClient.ModelRequirement.LOW,
-                    blueprintKey = CharacterPrompts.CHARACTER_RESUME_BLUEPRINT,
+                    requirement = ModelRequirement.LOW,
                 )!!
             }
 
@@ -635,7 +635,7 @@ class CharacterUseCaseImpl
                 val prompt = emptyString()
                 gemmaClient.generate<CharacterDetailState>(
                     prompt,
-                    requirement = GemmaClient.ModelRequirement.LOW,
+                    requirement = ModelRequirement.LOW,
                     blueprintKey = CharacterPrompts.CHARACTER_ENRICHMENT_BLUEPRINT,
                 )!!
             }

@@ -1,8 +1,10 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.ChapterConclusionContext
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -130,7 +132,7 @@ object ChapterPrompts {
         chapter: ChapterContent,
         narrativeRules: NarrativeRules,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val chapterAct = saga.findChapterAct(chapter.data)
         val isFirstAct =
             saga.acts
@@ -169,6 +171,6 @@ object ChapterPrompts {
                 narrativeStyle = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(CHAPTER_SYNTHESIS_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAPTER_SYNTHESIS_BLUEPRINT, args.asMap())
     }
 }

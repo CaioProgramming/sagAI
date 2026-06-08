@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
@@ -79,7 +80,7 @@ class TimelineUseCaseImpl
                         prompt
                             .renderInstructions()
                             .plus(genreConfigService.conversationInstructions(saga.data.genre)),
-                    requirement = GemmaClient.ModelRequirement.HIGH,
+                    requirement = ModelRequirement.HIGH,
                     aiStats = prompt.getAIStats(),
                 )!!
 
@@ -357,7 +358,7 @@ class TimelineUseCaseImpl
                 gemmaClient
                     .generate<SceneSummary>(
                         objectivePrompt.processedTemplate,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        requirement = ModelRequirement.MEDIUM,
                         useCore = true,
                     )!!
 

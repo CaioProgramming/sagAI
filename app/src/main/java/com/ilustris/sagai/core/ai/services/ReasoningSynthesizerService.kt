@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -25,10 +26,13 @@ class ReasoningSynthesizerService
     @Inject
     constructor(
         @PublishedApi internal val gemmaClient: GemmaClient,
-        @PublishedApi internal val promptService: PromptService,
-        @PublishedApi internal val remoteConfigService: RemoteConfigService,
+        promptService: PromptService,
+        remoteConfigService: RemoteConfigService,
         @PublishedApi internal val genreConfigService: GenreConfigService,
-    ) : AIClient() {
+    ) : AIClient(
+            remoteConfigService,
+            promptService,
+) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
             sourceFlow: Flow<StreamingState<T>>,
@@ -137,7 +141,7 @@ class ReasoningSynthesizerService
                                     putAll(it)
                                 }
                             },
-                        requirement = GemmaClient.ModelRequirement.TINY,
+                        requirement = ModelRequirement.TINY,
                         logEnabled = false,
                         temperatureRandomness = 1f,
                     )

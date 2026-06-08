@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
-import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -24,10 +22,8 @@ class EmotionalReviewViewModel
     @Inject
     constructor(
         private val emotionalUseCase: EmotionalUseCase,
-        private val loadingService: LoadingService,
         private val genreConfigService: GenreConfigService,
         private val sagaRepository: SagaRepository,
-        private val promptService: PromptService,
         private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _isGenerating = MutableStateFlow(false)
