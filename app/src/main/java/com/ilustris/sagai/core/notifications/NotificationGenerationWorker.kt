@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
@@ -81,16 +82,13 @@ class NotificationGenerationWorker
                             val selectedCharacter =
                                 sagaContent.findCharacter(it.charactersPresent.randomOrNull())
                                     ?: sagaContent.mainCharacter
-                            val conversationDirective =
-                                genreConfigService.conversationBlueprint(sagaContent.data.genre)
-
                             val prompt =
                                 ChatPrompts.scheduledNotificationPrompt(
                                     promptService = promptService,
                                     saga = sagaContent,
                                     selectedCharacter = selectedCharacter!!,
                                     sceneSummary = it,
-                                    conversationDirective = conversationDirective,
+                                    conversationDirective = emptyString(),
                                 )
 
                             val currentTime = System.currentTimeMillis()
@@ -98,14 +96,15 @@ class NotificationGenerationWorker
 
                             val message =
                                 gemmaClient.generate<String>(
-                                    prompt.copy(
-                                        instructionBuckets =
-                                            prompt.renderInstructions().plus(
-                                                genreConfigService.conversationInstructions(
-                                                    sagaContent.data.genre,
-                                                ),
+                                    prompt = prompt.processedTemplate,
+                                    systemInstructions =
+                                        prompt.renderInstructions().plus(
+                                            genreConfigService.conversationInstructions(
+                                                sagaContent.data.genre,
                                             ),
-                                    ),
+                                        ),
+                                    blueprintKey = prompt.blueprintKey,
+                                    aiStats = prompt.getAIStats(),
                                     useCore = true,
                                 )
 

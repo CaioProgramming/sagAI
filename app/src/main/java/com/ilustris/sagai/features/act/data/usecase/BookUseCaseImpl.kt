@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.Book
@@ -45,7 +46,7 @@ class BookUseCaseImpl
                                 saga.characters
                                     .map { it.data }
                                     .normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
-                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                            conversationDirective = emptyString(),
                             isFinalVolume =
                                 saga.acts
                                     .lastOrNull()
@@ -58,12 +59,13 @@ class BookUseCaseImpl
                     val sourceFlow =
                         gemmaClient
                             .generateStreaming<GeneratedContent<Book>>(
-                                prompt.copy(
-                                    instructionBuckets =
-                                        prompt.renderInstructions().plus(
-                                            genreConfigService.conversationInstructions(saga.data.genre),
-                                        ),
-                                ),
+                                prompt = prompt.processedTemplate,
+                                systemInstructions =
+                                    prompt.renderInstructions().plus(
+                                        genreConfigService.conversationInstructions(saga.data.genre),
+                                    ),
+                                blueprintKey = prompt.blueprintKey,
+                                aiStats = prompt.getAIStats(),
                                 useCore = true,
                                 requirement = ModelRequirement.HIGH,
                             )

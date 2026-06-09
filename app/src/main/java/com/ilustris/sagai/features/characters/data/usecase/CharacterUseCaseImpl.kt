@@ -561,7 +561,13 @@ class CharacterUseCaseImpl
                         config,
                     )
                 gemmaClient.generate<String>(
-                    prompt,
+                    prompt.copy(
+                        instructionBuckets =
+                            buildMap {
+                                putAll(genreConfigService.conversationInstructions(saga.data.genre))
+                                putAll(prompt.renderInstructions())
+                            },
+                    ),
                     requirement = ModelRequirement.LOW,
                 )!!
             }

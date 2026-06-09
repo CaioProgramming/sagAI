@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaEnding
@@ -50,12 +51,16 @@ class SagaHistoryUseCaseImpl
         override suspend fun generateEndMessage(saga: SagaContent): RequestResult<String> =
             executeRequest {
                 genreConfigService.getGenreConfig(saga.data.genre)
-                val conversationDirective =
-                    genreConfigService.conversationBlueprint(saga.data.genre)
+                val prompt = SagaPrompts.endCredits(promptService, saga, emptyString())
                 gemmaClient
                     .generate<String>(
-                        SagaPrompts.endCredits(promptService, saga, conversationDirective),
+                        prompt.processedTemplate,
+                        systemInstructions =
+                            prompt.renderInstructions().plus(
+                                genreConfigService.conversationInstructions(saga.data.genre),
+                            ),
                         blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
+                        aiStats = prompt.getAIStats(),
                     )!!
             }
 
@@ -63,15 +68,19 @@ class SagaHistoryUseCaseImpl
             kotlinx.coroutines.flow.flow {
                 try {
                     genreConfigService.getGenreConfig(saga.data.genre)
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val prompt = SagaPrompts.endCredits(promptService, saga, emptyString())
                     gemmaClient
                         .generateStreaming<GeneratedContent<String>>(
-                            prompt = SagaPrompts.endCredits(promptService, saga, conversationDirective),
+                            prompt = prompt.processedTemplate,
+                            systemInstructions =
+                                prompt.renderInstructions().plus(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
+                                ),
                             requireTranslation = true,
                             useCore = true,
                             requirement = ModelRequirement.HIGH,
                             blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
+                            aiStats = prompt.getAIStats(),
                         ).collect { state ->
                             emit(state)
                         }
@@ -84,22 +93,26 @@ class SagaHistoryUseCaseImpl
             kotlinx.coroutines.flow.flow {
                 try {
                     genreConfigService.getGenreConfig(saga.data.genre)
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
+                    val prompt =
+                        SagaPrompts.generateSagaEnding(
+                            promptService,
+                            saga,
+                            emptyString(),
+                        )
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<SagaEnding>>(
-                                    prompt =
-                                        SagaPrompts.generateSagaEnding(
-                                            promptService,
-                                            saga,
-                                            conversationDirective,
+                                    prompt = prompt.processedTemplate,
+                                    systemInstructions =
+                                        prompt.renderInstructions().plus(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requireTranslation = true,
                                     useCore = true,
                                     requirement = ModelRequirement.HIGH,
                                     blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
+                                    aiStats = prompt.getAIStats(),
                                 ),
                             "Generating saga ending... ",
                             genre = saga.data.genre,

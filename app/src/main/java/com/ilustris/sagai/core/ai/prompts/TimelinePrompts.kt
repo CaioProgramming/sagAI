@@ -100,7 +100,7 @@ object TimelinePrompts {
         sagaContent: SagaContent,
         currentTimeline: TimelineContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val recentEvents =
             sagaContent
                 .flatEvents()
@@ -134,6 +134,6 @@ object TimelinePrompts {
                         ?: "None.",
             )
 
-        return promptService.buildRemotePrompt(PAGE_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(PAGE_GENERATION_BLUEPRINT, args)
     }
 }

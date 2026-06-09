@@ -27,6 +27,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.currentActInfo
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
@@ -186,9 +187,7 @@ class ActUseCaseImpl
                 fullSaga,
                 fullSaga.acts.find { it.data.id == sagaMetadata.currentActInfo?.data?.id }
                     ?: fullSaga.acts.last(),
-                genreConfigService.conversationBlueprint(
-                    sagaMetadata.data.genre,
-                ),
+                emptyString(),
             )
         }
 
@@ -205,16 +204,22 @@ class ActUseCaseImpl
                     promptService = promptService,
                     saga = fullSaga,
                     narrativeRules = remoteConfigService.getNarrativeRules(),
-                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    conversationDirective = emptyString(),
                 )
+            val actContext = promptService.buildSplitBlueprint(saga.getDirectiveKey(), emptyMap())
 
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
                     prompt.processedTemplate,
-                    systemInstructions = prompt.renderInstructions(),
+                    systemInstructions =
+                        buildMap {
+                            putAll(genreConfigService.conversationInstructions(saga.data.genre))
+                            putAll(actContext.renderInstructions())
+                            putAll(prompt.renderInstructions())
+                        },
                     aiStats = prompt.getAIStats(),
                     useCore = true,
-                    blueprintKey = ActPrompts.ACT_INTRODUCTION_BLUEPRINT,
+                    blueprintKey = prompt.blueprintKey,
                 )!!
             val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
             GeneratedContent(updatedAct, intro.finalMessage)
@@ -233,6 +238,9 @@ class ActUseCaseImpl
                         narrativeRules = remoteConfigService.getNarrativeRules(),
                         conversationDirective = emptyString(),
                     )
+                val actContext =
+                    promptService.buildSplitBlueprint(saga.getDirectiveKey(), emptyMap())
+
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         gemmaClient
@@ -241,9 +249,11 @@ class ActUseCaseImpl
                                 blueprintKey = prompt.blueprintKey,
                                 aiStats = prompt.getAIStats(),
                                 systemInstructions =
-                                    prompt
-                                        .renderInstructions()
-                                        .plus(genreConfigService.conversationInstructions(saga.data.genre)),
+                                    buildMap {
+                                        putAll(genreConfigService.conversationInstructions(saga.data.genre))
+                                        putAll(actContext.renderInstructions())
+                                        putAll(prompt.renderInstructions())
+                                    },
                                 requireTranslation = true,
                                 useCore = true,
                                 requirement = ModelRequirement.MEDIUM,
@@ -285,8 +295,6 @@ class ActUseCaseImpl
         ): Flow<StreamingState<GeneratedContent<Act>>> =
             flow {
                 try {
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
                     val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
 
                     val prompt =
@@ -295,7 +303,7 @@ class ActUseCaseImpl
                             saga = fullSaga,
                             act = actContent,
                             narrativeRules = remoteConfigService.getNarrativeRules(),
-                            conversationDirective = conversationDirective,
+                            conversationDirective = emptyString(),
                         )
 
                     reasoningSynthesizerService

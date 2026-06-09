@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -32,7 +31,7 @@ class ReasoningSynthesizerService
     ) : AIClient(
             remoteConfigService,
             promptService,
-) {
+        ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
             sourceFlow: Flow<StreamingState<T>>,
@@ -109,11 +108,6 @@ class ReasoningSynthesizerService
                     genre?.let {
                         genreConfigService.conversationInstructions(it)
                     }
-                val style =
-                    conversationStyle
-                        ?: promptService.buildSplitBlueprint(
-                            OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                        )
 
                 val sanitizedReasoning = sanitizeReasoning(reasoning).takeLast(400)
 
@@ -131,15 +125,17 @@ class ReasoningSynthesizerService
                         logEnabled = false,
                     )
 
+                useFallback(genre, scope)
+
                 val translation =
                     gemmaClient.generate<String>(
                         prompt = prompt.processedTemplate,
                         systemInstructions =
                             buildMap {
-                                putAll(prompt.renderInstructions())
                                 conversationStyle?.let {
                                     putAll(it)
                                 }
+                                putAll(prompt.renderInstructions())
                             },
                         requirement = ModelRequirement.TINY,
                         logEnabled = false,

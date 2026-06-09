@@ -248,7 +248,7 @@ fun LoreDebugView(
                         it.isFull(rules) &&
                             (
                                 it.data.emotionalReview.isNullOrEmpty() || it.data.narrativeGuide.isNullOrEmpty() ||
-                                    it.data.overview.isEmpty()
+                                    it.data.content.isEmpty()
                             )
                     }
             val timelinesToFix =
@@ -621,7 +621,7 @@ fun StoryCard(
                         }
 
                         Text(
-                            chapter.data.overview,
+                            chapter.data.content,
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Start,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),

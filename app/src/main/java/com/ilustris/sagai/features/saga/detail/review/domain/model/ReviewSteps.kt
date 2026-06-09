@@ -51,7 +51,7 @@ enum class ReviewSteps(
 fun ReviewSteps.buildArgs(
     saga: SagaContent,
     conversationDirective: String,
-) {
+): Any {
     val playerMessages = saga.flatMessages().filter { it.message.senderType == SenderType.USER }
 
     val actionCount = playerMessages.count { it.message.text.contains("<action>") }
@@ -69,7 +69,7 @@ fun ReviewSteps.buildArgs(
             .joinToString {
                 "${it.first.name} - ${it.second} messages."
             }
-    when (this) {
+    return when (this) {
         ReviewSteps.INTRO -> {
             ReviewIntroArgs(
                 characterName = saga.mainCharacter?.data?.name!!,

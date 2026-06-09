@@ -29,6 +29,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -201,8 +202,6 @@ class MessageUseCaseImpl
                     }
 
                     genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
                     val narrativeRules = fetchNarrativeRules()
 
                     val sagaContent =
@@ -214,13 +213,18 @@ class MessageUseCaseImpl
                             saga = sagaContent,
                             message = message.message,
                             sceneSummary = sceneSummary,
-                            conversationDirective = conversationDirective,
+                            conversationDirective = emptyString(),
                             updateLimit = narrativeRules.loreUpdateLimit,
                             characterArcsById = characterArcsById,
                         )
                     val conversationInstructions =
                         genreConfigService
                             .conversationInstructions(saga.data.genre)
+                    val actContext =
+                        promptService.buildSplitBlueprint(
+                            saga.getDirectiveKey(),
+                            emptyMap(),
+                        )
                     val generateStream =
                         gemmaClient.generateStreaming<AIReply>(
                             prompt = prompt.processedTemplate,
@@ -231,8 +235,9 @@ class MessageUseCaseImpl
                             useCore = true,
                             systemInstructions =
                                 buildMap {
-                                    putAll(prompt.renderInstructions())
                                     putAll(conversationInstructions)
+                                    putAll(actContext.renderInstructions())
+                                    putAll(prompt.renderInstructions())
                                 },
                             aiStats = prompt.getAIStats(),
                         )
@@ -349,8 +354,6 @@ class MessageUseCaseImpl
                 it.characterOne.id in charactersInScene.map { character -> character.data.id } ||
                     it.characterTwo.id in charactersInScene.map { character -> character.data.id }
             }
-
-            val conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre)
 
             val prompt =
                 ChatPrompts.generateReactionPrompt(

@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaEnding
@@ -31,19 +32,23 @@ class EmotionalUseCaseImpl
     ) : EmotionalUseCase {
         override suspend fun generateEmotionalConclusion(sagaContent: SagaContent) =
             executeRequest {
-                val conversationDirective =
-                    genreConfigService.conversationBlueprint(sagaContent.data.genre)
+                val prompt =
+                    SagaPrompts.generateSagaEnding(
+                        promptService,
+                        sagaContent,
+                        emptyString(),
+                    )
 
                 val result =
                     gemmaClient.generate<SagaEnding>(
-                        prompt =
-                            SagaPrompts.generateSagaEnding(
-                                promptService,
-                                sagaContent,
-                                conversationDirective,
+                        prompt = prompt.processedTemplate,
+                        systemInstructions =
+                            prompt.renderInstructions().plus(
+                                genreConfigService.conversationInstructions(sagaContent.data.genre),
                             ),
                         requirement = ModelRequirement.HIGH,
                         blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
+                        aiStats = prompt.getAIStats(),
                     )!!
                 result
             }
@@ -67,17 +72,23 @@ class EmotionalUseCaseImpl
 
         override fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding>> =
             flow {
+                val prompt =
+                    SagaPrompts.generateSagaEnding(
+                        promptService,
+                        sagaContent,
+                        emptyString(),
+                    )
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         gemmaClient.generateStreaming<SagaEnding>(
-                            prompt =
-                                SagaPrompts.generateSagaEnding(
-                                    promptService,
-                                    sagaContent,
-                                    genreConfigService.conversationBlueprint(sagaContent.data.genre),
+                            prompt = prompt.processedTemplate,
+                            systemInstructions =
+                                prompt.renderInstructions().plus(
+                                    genreConfigService.conversationInstructions(sagaContent.data.genre),
                                 ),
                             requirement = ModelRequirement.HIGH,
                             blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
+                            aiStats = prompt.getAIStats(),
                         ),
                         "Generating emotional conclusion...",
                         genre = sagaContent.data.genre,

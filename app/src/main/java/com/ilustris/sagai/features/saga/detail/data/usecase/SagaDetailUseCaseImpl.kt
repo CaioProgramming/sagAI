@@ -12,6 +12,7 @@ import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.source.ActDao
@@ -203,8 +204,16 @@ class SagaDetailUseCaseImpl
                     SagaPrompts.generateStoryBriefing(
                         promptService,
                         saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
+                        emptyString(),
                     )
-                textGenClient.generate<StoryDailyBriefing>(prompt)!!
+                textGenClient.generate<StoryDailyBriefing>(
+                    prompt.processedTemplate,
+                    systemInstructions =
+                        prompt.renderInstructions().plus(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
+                    blueprintKey = SagaPrompts.STORY_BRIEFING_BLUEPRINT,
+                    aiStats = prompt.getAIStats(),
+                )!!
             }
     }

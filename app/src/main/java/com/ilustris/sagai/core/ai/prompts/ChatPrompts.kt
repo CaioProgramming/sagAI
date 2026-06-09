@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.home.data.model.historySummary
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -176,11 +175,6 @@ object ChatPrompts {
                 "relationshipsBlock" to "",
                 "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
                 "conversationHistory" to conversationHistory(updateLimit, saga),
-                "actDirective" to
-                    promptService.buildRemotePrompt(
-                        saga.getDirectiveKey(),
-                        emptyMap(),
-                    ),
                 "sagaMainContext" to SagaPrompts.mainContext(saga),
                 "conversationDirective" to conversationDirective,
                 "latestMessage" to message.toAINormalize(messageExclusions),

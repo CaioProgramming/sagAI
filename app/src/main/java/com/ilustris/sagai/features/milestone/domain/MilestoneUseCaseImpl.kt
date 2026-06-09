@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import timber.log.Timber
@@ -31,21 +32,24 @@ class MilestoneUseCaseImpl
                     error("Loading and TitleSplash don't need message")
                 }
 
-                val identity = genreConfigService.conversationBlueprint(saga.data.genre)
-
                 val prompt =
                     MilestonePrompts.generateCongratsMessage(
                         promptService,
                         milestone,
                         saga,
-                        identity,
-                    )!!
+                        emptyString(),
+                    ) ?: return@executeRequest null
 
                 gemmaClient.generate<String>(
-                    prompt,
+                    prompt = prompt.processedTemplate,
+                    systemInstructions =
+                        prompt.renderInstructions().plus(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     temperatureRandomness = 1f,
                     requirement = ModelRequirement.LOW,
-                    blueprintKey = MilestonePrompts.MILESTONE_GENERATION_BLUEPRINT,
+                    blueprintKey = prompt.blueprintKey,
+                    aiStats = prompt.getAIStats(),
                 )
             }
     }

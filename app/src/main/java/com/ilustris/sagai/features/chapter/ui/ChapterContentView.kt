@@ -161,7 +161,7 @@ fun ChapterContentView(
         }
 
         TypewriterText(
-            text = chapter.overview,
+            text = chapter.content,
             modifier =
                 Modifier
                     .background(MaterialTheme.colorScheme.background)

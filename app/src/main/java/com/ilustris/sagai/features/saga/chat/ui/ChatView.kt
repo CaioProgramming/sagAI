@@ -475,8 +475,7 @@ fun ChatContent(
                                     shimmerColors = themeShimmer(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                )
-                                .size(100.dp)
+                                ).size(100.dp)
                                 .alpha(.4f),
                     )
 
@@ -484,8 +483,7 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay) = createRefs()
@@ -640,8 +638,7 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }
-                                .fillMaxWidth()
+                                }.fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -869,8 +866,7 @@ fun ChatContent(
                                                 uiState.isGenerating ||
                                                         uiState.isLoading ||
                                                         genreVfxPulse,
-                                        )
-                                        .size(32.dp)
+                                        ).size(32.dp)
                                         .clip(CircleShape)
                                         .clickable {
                                             onAction(ChatUiAction.ShowObjective)
@@ -1438,6 +1434,18 @@ fun ChatList(
             }
         }
         actList.forEach { act ->
+
+            if (act.hasConclusionContent()) {
+                item(key = "act-${act.content.data.id}-conclusion") {
+                    ActComponent(
+                        act.content,
+                        saga.acts.indexOf(act.content) + 1,
+                        saga,
+                        modifier = Modifier,
+                    )
+                }
+            }
+
             act.chapters.forEach { chapter ->
 
                 if (chapter.isComplete) {
@@ -1549,17 +1557,6 @@ fun ChatList(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                    )
-                }
-            }
-
-            if (act.hasConclusionContent()) {
-                item(key = "act-${act.content.data.id}-conclusion") {
-                    ActComponent(
-                        act.content,
-                        saga.acts.indexOf(act.content) + 1,
-                        saga,
-                        modifier = Modifier,
                     )
                 }
             }
@@ -1695,8 +1692,7 @@ fun CharactersTopIcons(
                             )
                             .graphicsLayer(
                                 translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                            )
-                            .clip(CircleShape)
+                            ).clip(CircleShape)
                             .size(24.dp)
                             .clickable { onCharacterSelected(character) },
                 )

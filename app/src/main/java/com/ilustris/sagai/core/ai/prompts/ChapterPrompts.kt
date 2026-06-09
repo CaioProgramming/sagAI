@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -13,6 +14,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.findChapterAct
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.home.data.model.historySummary
@@ -23,6 +25,7 @@ data class ChapterIntroductionArgs(
     val storyHistory: String,
     val volumeContext: String,
     val lastStateContext: String,
+    val storyContext: String,
 )
 
 data class ChapterGenerationArgs(
@@ -50,8 +53,52 @@ object ChapterPrompts {
         sagaContent: SagaContent,
         currentChapter: Chapter,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
+        val actIntroduction =
+            sagaContent.acts
+                .lastOrNull()
+                ?.data
+                ?.introduction
         val lastEvent = sagaContent.flatEvents().lastOrNull()?.data
+        val lastChapter = sagaContent.flatChapters().lastOrNull()?.data
+        val lastAct = sagaContent.acts.lastOrNull { it.data.id != currentChapter.actId }
+        val storyContext =
+            buildMap {
+                put("Saga Context", SagaPrompts.mainContext(sagaContent))
+
+                actIntroduction?.let {
+                    put("Volume introduction", actIntroduction)
+                }
+
+                lastEvent?.let {
+                    put(
+                        "Latest event",
+                        lastEvent.toAINormalize(
+                            LorePrompts.TIMELINE_EXCLUDED_FIELDS,
+                        ),
+                    )
+                }
+
+                lastChapter?.let {
+                    put(
+                        "Latest chapter",
+                        lastChapter.toAINormalize(
+                            CHAPTER_EXCLUSIONS,
+                        ),
+                    )
+                }
+
+                lastAct?.let {
+                    put(
+                        "Latest act",
+                        lastAct.data.toAINormalize(
+                            ActPrompts.ACT_EXCLUSIONS,
+                        ),
+                    )
+                }
+
+                put("Continuity", "This is the story so far.")
+            }
         val lastState =
             lastEvent?.let {
                 "The story last drew breath here: ${it.title} - ${it.content}"
@@ -69,9 +116,15 @@ object ChapterPrompts {
                         ),
                     ),
                 lastStateContext = lastState,
+                storyContext = storyContext.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt(CHAPTER_INTRODUCTION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(
+            CHAPTER_INTRODUCTION_BLUEPRINT,
+            buildMap {
+                put("storyContext", storyContext.toAINormalize())
+            },
+        )
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -81,7 +134,7 @@ object ChapterPrompts {
         currentChapterContent: ChapterContent,
         rules: NarrativeRules,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val chapterAct = sagaContent.findChapterAct(currentChapterContent.data)
         val isFirstAct =
             sagaContent.acts
@@ -123,7 +176,7 @@ object ChapterPrompts {
                 narrativeStyle = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(CHAPTER_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAPTER_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun chapterSynthesisPrompt(
@@ -166,9 +219,9 @@ object ChapterPrompts {
 
         val args =
             ChapterSynthesisArgs(
-                chapterContext = synthesisContext.toJsonFormat(),
+                chapterContext = synthesisContext.toAINormalize(),
                 characterIndex = SagaPrompts.charactersSummary(saga),
-                narrativeStyle = conversationDirective,
+                narrativeStyle = emptyString(),
             )
 
         return promptService.buildSplitBlueprint(CHAPTER_SYNTHESIS_BLUEPRINT, args.asMap())

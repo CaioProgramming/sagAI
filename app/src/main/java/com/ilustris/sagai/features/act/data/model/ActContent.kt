@@ -67,7 +67,7 @@ data class ActContent(
                     "featuredCharacters",
                     "coverImage",
                     "createdAt",
-                    "overview",
+                    "content",
                 ),
             )
         }
@@ -79,7 +79,6 @@ data class ActContent(
             )
             appendLine("CHAPTERS: ")
             chapters.forEach { chapter ->
-                chapter == chapters.last()
                 appendLine(chapters.indexOf(chapter) + 1)
                 appendLine(
                     chapter.data.toAINormalize(LorePrompts.CHAPTER_EXCLUDED_FIELDS),

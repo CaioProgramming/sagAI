@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
+import com.ilustris.sagai.core.ai.model.GeminiThinkingConfig
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.model.SplitPrompt
@@ -189,6 +190,14 @@ class GemmaClient
                                                     0.1f
                                                 } else {
                                                     temperatureRandomness
+                                                },
+                                            thinkingConfig =
+                                                if (requirement == ModelRequirement.TINY ||
+                                                    requirement == ModelRequirement.LOW
+                                                ) {
+                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                } else {
+                                                    null
                                                 },
                                         ),
                                 )
@@ -468,6 +477,14 @@ class GemmaClient
                                                     0.1f
                                                 } else {
                                                     temperatureRandomness
+                                                },
+                                            thinkingConfig =
+                                                if (requirement == ModelRequirement.TINY ||
+                                                    requirement == ModelRequirement.LOW
+                                                ) {
+                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                } else {
+                                                    null
                                                 },
                                         ),
                                 )
@@ -775,6 +792,14 @@ class GemmaClient
                                                 } else {
                                                     temperatureRandomness
                                                 },
+                                            thinkingConfig =
+                                                if (requirement == ModelRequirement.TINY ||
+                                                    requirement == ModelRequirement.LOW
+                                                ) {
+                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                } else {
+                                                    null
+                                                },
                                         ),
                                 )
 
@@ -1019,6 +1044,14 @@ class GemmaClient
                                                     0.1f
                                                 } else {
                                                     temperatureRandomness
+                                                },
+                                            thinkingConfig =
+                                                if (requirement == ModelRequirement.TINY ||
+                                                    requirement == ModelRequirement.LOW
+                                                ) {
+                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                } else {
+                                                    null
                                                 },
                                         ),
                                 )

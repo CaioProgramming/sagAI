@@ -198,7 +198,7 @@ class LoreDebugViewModel
                             (
                                 it.data.emotionalReview.isNullOrEmpty() ||
                                     it.data.narrativeGuide.isNullOrEmpty() ||
-                                    it.data.overview.isEmpty()
+                                    it.data.content.isEmpty()
                             )
                     }
                 val timelinesToFix =

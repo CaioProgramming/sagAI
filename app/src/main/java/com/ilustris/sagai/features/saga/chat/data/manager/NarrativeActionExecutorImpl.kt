@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
-import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -33,7 +32,6 @@ class NarrativeActionExecutorImpl
         private val chapterUseCase: ChapterUseCase,
         private val timelineUseCase: TimelineUseCase,
         private val actUseCase: ActUseCase,
-        private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val messageDao: MessageDao,
     ) : NarrativeActionExecutor {
@@ -406,7 +404,6 @@ class NarrativeActionExecutorImpl
                     sagaHistoryUseCase.getSagaById(sagaId).first()
                         ?: error("Saga not found")
                 val contextString = "Concluding your legend and weaving the final threads of fate..."
-                val style = genreConfigService.conversationBlueprint(saga.data.genre)
                 var generated: GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>? =
                     null
                 reasoningSynthesizerService

@@ -175,7 +175,7 @@ fun ActReader(
                     )
 
                     Text(
-                        chapter.data.overview,
+                        chapter.data.content,
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
@@ -357,7 +357,7 @@ fun ActReadingContent(
                 )
 
                 Text(
-                    it.data.overview,
+                    it.data.content,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,

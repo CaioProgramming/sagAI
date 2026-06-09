@@ -53,7 +53,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         AIAuditLog::class,
         CharacterArc::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = true,
 )
 @TypeConverters(

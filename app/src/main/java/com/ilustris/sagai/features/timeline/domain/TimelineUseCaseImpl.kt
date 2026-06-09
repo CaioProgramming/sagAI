@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -69,7 +70,7 @@ class TimelineUseCaseImpl
                     narrativeRules = narrativeRules,
                     sagaContent = fullSaga,
                     currentTimeline = fullSaga.findTimeline(timeline.id)!!,
-                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    conversationDirective = emptyString(),
                 )
 
             val unifiedLore =
@@ -145,7 +146,7 @@ class TimelineUseCaseImpl
                         narrativeRules = narrativeRules,
                         sagaContent = fullSaga,
                         currentTimeline = TimelineContent(timeline, emptyList()),
-                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        conversationDirective = emptyString(),
                     )
 
                 reasoningSynthesizerService
@@ -264,15 +265,20 @@ class TimelineUseCaseImpl
                 val narrativeRules =
                     remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
                 val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() ?: return@flow
+                val prompt =
+                    TimelinePrompts.generateTimelinePrompt(
+                        promptService = promptService,
+                        narrativeRules = narrativeRules,
+                        sagaContent = fullSaga,
+                        currentTimeline = TimelineContent(currentTimeline, emptyList()),
+                        conversationDirective = emptyString(),
+                    )
                 gemmaClient
                     .generateStreaming<GeneratedContent<Timeline>>(
-                        prompt =
-                            TimelinePrompts.generateTimelinePrompt(
-                                promptService = promptService,
-                                narrativeRules = narrativeRules,
-                                sagaContent = fullSaga,
-                                currentTimeline = TimelineContent(currentTimeline, emptyList()),
-                                conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        prompt = prompt.processedTemplate,
+                        systemInstructions =
+                            prompt.renderInstructions().plus(
+                                genreConfigService.conversationInstructions(saga.data.genre),
                             ),
                         filterOutputFields =
                             listOf(
@@ -282,6 +288,8 @@ class TimelineUseCaseImpl
                                 "currentObjective",
                             ),
                         useCore = true,
+                        blueprintKey = prompt.blueprintKey,
+                        aiStats = prompt.getAIStats(),
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {

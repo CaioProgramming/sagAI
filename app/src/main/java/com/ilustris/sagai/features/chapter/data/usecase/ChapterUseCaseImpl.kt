@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -17,6 +18,7 @@ import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
@@ -29,6 +31,7 @@ import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -82,13 +85,18 @@ class ChapterUseCaseImpl
         override suspend fun generateChapter(chapterId: Int) =
             executeRequest {
                 val (saga, chapterContent) = fetchContext(chapterId)
+                val prompt =
+                    generateChapterPrompt(
+                        saga = saga,
+                        currentChapter = chapterContent,
+                    )
                 val genChapter =
                     gemmaClient
                         .generate<Chapter>(
-                            prompt =
-                                generateChapterPrompt(
-                                    saga = saga,
-                                    currentChapter = chapterContent,
+                            prompt = prompt.processedTemplate,
+                            systemInstructions =
+                                prompt.renderInstructions().plus(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -102,13 +110,14 @@ class ChapterUseCaseImpl
                             useCore = true,
                             requirement = ModelRequirement.HIGH,
                             blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                            aiStats = prompt.getAIStats(),
                         )!!
 
                 val updatedChapter =
                     updateChapter(
                         chapterContent.data.copy(
                             title = genChapter.title,
-                            overview = genChapter.overview,
+                            content = genChapter.content,
                             introduction = chapterContent.data.introduction, // Keep existing introduction
                             featuredCharacters = genChapter.featuredCharacters.take(2),
                             emotionalReview = genChapter.emotionalReview,
@@ -125,12 +134,17 @@ class ChapterUseCaseImpl
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
+                    val prompt =
+                        generateChapterPrompt(
+                            saga = saga,
+                            currentChapter = chapterContent,
+                        )
                     gemmaClient
                         .generateStreaming<GeneratedContent<Chapter>>(
-                            prompt =
-                                generateChapterPrompt(
-                                    saga = saga,
-                                    currentChapter = chapterContent,
+                            prompt = prompt.processedTemplate,
+                            systemInstructions =
+                                prompt.renderInstructions().plus(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -144,6 +158,7 @@ class ChapterUseCaseImpl
                             useCore = true,
                             requirement = ModelRequirement.HIGH,
                             blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                            aiStats = prompt.getAIStats(),
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val genChapter = state.data.data
@@ -350,16 +365,14 @@ class ChapterUseCaseImpl
         private suspend fun generateChapterPrompt(
             saga: SagaContent,
             currentChapter: ChapterContent,
-        ): String {
-            val conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre)
-            return ChapterPrompts.chapterGeneration(
+        ): SplitPrompt =
+            ChapterPrompts.chapterGeneration(
                 promptService,
                 saga,
                 currentChapter,
                 remoteConfigService.getNarrativeRules(),
-                conversationDirective,
+                emptyString(),
             )
-        }
 
         override suspend fun generateChapterIntroduction(
             sagaId: Int,
@@ -372,15 +385,20 @@ class ChapterUseCaseImpl
                     promptService = promptService,
                     sagaContent = saga,
                     currentChapter = chapterContent,
-                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    conversationDirective = emptyString(),
                 )
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
-                    prompt,
+                    prompt.processedTemplate,
+                    systemInstructions =
+                        prompt.renderInstructions().plus(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     requireTranslation = true,
                     useCore = true,
                     requirement = ModelRequirement.HIGH,
                     blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                    aiStats = prompt.getAIStats(),
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
@@ -397,18 +415,23 @@ class ChapterUseCaseImpl
                             promptService = promptService,
                             sagaContent = saga,
                             currentChapter = chapterContent,
-                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                            conversationDirective = emptyString(),
                         )
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<String>>(
-                                    prompt = prompt,
+                                    prompt = prompt.processedTemplate,
+                                    systemInstructions =
+                                        prompt.renderInstructions().plus(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                        ),
                                     requireTranslation = true,
                                     useCore = true,
                                     requirement = ModelRequirement.HIGH,
                                     blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                                    aiStats = prompt.getAIStats(),
                                 ),
                             "Generating chapter introduction...",
                             genre = saga.data.genre,
@@ -438,15 +461,18 @@ class ChapterUseCaseImpl
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
                     val prompt =
                         ChapterPrompts.chapterSynthesisPrompt(
                             promptService = promptService,
                             saga = saga,
                             chapter = chapterContent,
                             narrativeRules = remoteConfigService.getNarrativeRules(),
-                            conversationDirective = conversationDirective,
+                            conversationDirective = emptyString(),
+                        )
+                    val actContext =
+                        promptService.buildSplitBlueprint(
+                            saga.getDirectiveKey(),
+                            emptyMap(),
                         )
 
                     reasoningSynthesizerService
@@ -455,11 +481,11 @@ class ChapterUseCaseImpl
                                 .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
                                     prompt = prompt.processedTemplate,
                                     systemInstructions =
-                                        prompt.renderInstructions().plus(
-                                            genreConfigService.conversationInstructions(
-                                                saga.data.genre,
-                                            ),
-                                        ),
+                                        buildMap {
+                                            putAll(genreConfigService.conversationInstructions(saga.data.genre))
+                                            putAll(actContext.renderInstructions())
+                                            putAll(prompt.renderInstructions())
+                                        },
                                     blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
                                     requirement = ModelRequirement.HIGH,
                                     aiStats = prompt.getAIStats(),

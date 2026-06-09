@@ -113,14 +113,14 @@ data class ChapterMetadata(
 ) {
     fun isFull(rules: NarrativeRules): Boolean = events.size >= rules.chapterUpdateLimit
 
-    fun isComplete(rules: NarrativeRules): Boolean = isFull(rules) && data.title.isNotBlank() && data.overview.isNotBlank()
+    fun isComplete(rules: NarrativeRules): Boolean = isFull(rules) && data.title.isNotBlank() && data.content.isNotBlank()
 }
 
 fun ChapterMetadata.toInfo(sagaId: Int) =
     ChapterInfo(
         id = data.id,
         title = data.title,
-        overview = data.overview,
+        content = data.content,
         coverImage = data.coverImage,
         actId = data.actId,
         sagaId = sagaId,

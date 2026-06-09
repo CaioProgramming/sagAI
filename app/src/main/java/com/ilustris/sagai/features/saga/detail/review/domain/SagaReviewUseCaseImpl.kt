@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
@@ -34,21 +35,24 @@ class SagaReviewUseCaseImpl
 
                     ReviewSteps.entries.forEach { step ->
                         val prompt =
-                            promptService.buildRemotePrompt(
+                            promptService.buildSplitBlueprint(
                                 step.blueprintKey,
                                 step.buildArgs(
                                     content,
-                                    genreConfigService.conversationBlueprint(
-                                        content.data.genre,
-                                    ),
+                                    emptyString(),
                                 ),
                             )
 
                         val sourceFlow =
                             gemmaClient.generateStreaming<ReviewStage>(
-                                prompt,
+                                prompt = prompt.processedTemplate,
+                                systemInstructions =
+                                    prompt.renderInstructions().plus(
+                                        genreConfigService.conversationInstructions(content.data.genre),
+                                    ),
                                 requirement = ModelRequirement.HIGH,
-                                blueprintKey = step.blueprintKey,
+                                blueprintKey = prompt.blueprintKey,
+                                aiStats = prompt.getAIStats(),
                             )
 
                         synthesizerService
