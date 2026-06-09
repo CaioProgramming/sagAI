@@ -144,8 +144,11 @@ object GeminiApiCodec {
             GeminiResponsePart(
                 text = obj.optString("text"),
                 inlineData = decodeInlineData(obj),
+                thought = obj.optBoolean("thought"),
             )
         }
+
+    private fun JsonObject.optBoolean(key: String): Boolean? = get(key)?.takeUnless { it.isJsonNull || !it.isJsonPrimitive }?.asBoolean
 
     private fun decodeInlineData(obj: JsonObject): GeminiInlineData? {
         val inline = obj.optJsonObject("inlineData") ?: obj.optJsonObject("inline_data") ?: return null

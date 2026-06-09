@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.ai
 
-import com.google.firebase.ai.GenerativeModel
-import com.google.firebase.ai.type.GenerationConfig
 import com.ilustris.sagai.core.ai.GemmaClient.Companion.CORE_FLAG
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -22,8 +20,6 @@ abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
     protected val promptService: PromptService,
 ) {
-    open suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel? = null
-
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
         val languageName = locale.getDisplayName(locale)
@@ -31,6 +27,7 @@ abstract class AIClient(
     }
 
     fun buildDataStructure(
+        requirement: ModelRequirement,
         describeOutput: Boolean,
         type: Type,
         filterOutputFields: List<String>,

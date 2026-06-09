@@ -19,7 +19,6 @@ import com.ilustris.sagai.core.utils.findJsonContent
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonMap
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -40,11 +39,20 @@ class SafetyClient
             val blueprintKey = "safety_guardrails_blueprint"
 
             return try {
-                val dataStructure = toJsonMap(SafeGuard::class.java)
-                val structure =
-                    toJsonMap(
-                        AIGeneration::class.java,
-                        fieldCustomDescriptions = listOf("data" to dataStructure),
+                val type = getJavaType<SafeGuard>()
+                val dataStructure =
+                    buildDataStructure(
+                        ModelRequirement.TINY,
+                        false,
+                        type,
+                        listOf("reasoning"),
+                    )
+                val coreInstructions =
+                    buildCoreInstructions(
+                        ModelRequirement.TINY,
+                        true,
+                        dataStructure.first,
+                        dataStructure.second,
                     )
 
                 val prompt =
@@ -53,19 +61,15 @@ class SafetyClient
                         mapOf(
                             "userAge" to userAge.name,
                             "userInput" to userInput,
-                            "formattingRule" to "Respond ONLY with a JSON with this structure: $structure",
                         ),
                     )
-
-                val corePrompt =
-                    buildCoreInstructions(ModelRequirement.TINY, true, "SafeGuard", structure)
 
                 val modelName = modelName(ModelRequirement.TINY)
                 val apiKey = getApiKey()
 
                 val instructions =
                     buildMap {
-                        putAll(corePrompt)
+                        putAll(coreInstructions)
                         putAll(prompt.renderInstructions())
                     }
                 val request =
@@ -86,6 +90,10 @@ class SafetyClient
                 }
 
                 val responseParts = candidate?.content?.parts
+                val nativeThoughts =
+                    responseParts
+                        ?.filter { it.thought == true }
+                        ?.joinToString("\n") { it.text.orEmpty() }
 
                 // Use intelligent JSON locator that searches across all parts
                 val (responseText, _) = responseParts.findJsonContent()
@@ -106,7 +114,7 @@ class SafetyClient
                             dataType = "SafeGuard",
                             status = "SUCCESS",
                             safetyStatus = safetyResult.name,
-                            reasoning = result.reasoning,
+                            reasoning = nativeThoughts,
                             rawResponse = responseText,
                             responseTime = duration,
                             systemInstruction = instructions.toJsonFormat(),

@@ -42,12 +42,7 @@ fun <T> parseAIGenerationFromJson(
         throw JsonSyntaxException("Expected JSON object for AIGeneration")
     }
     val obj = root.asJsonObject
-    val reasoning =
-        obj
-            .get("reasoning")
-            ?.takeUnless { it.isJsonNull }
-            ?.asString
-            .orEmpty()
+
     val dataElement =
         obj.get("data")
             ?: throw JsonSyntaxException("Missing 'data' in AIGeneration JSON")
@@ -66,7 +61,7 @@ fun <T> parseAIGenerationFromJson(
                 gson.fromJson(dataElement, dataType) as T
             }
         }
-    return AIGeneration(reasoning = reasoning, data = data)
+    return AIGeneration(data = data)
 }
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -75,6 +70,7 @@ inline fun <reified T> parseAIGenerationFromJson(
     json: String,
 ): AIGeneration<T> = parseAIGenerationFromJson(gson, json, getJavaType<T>())
 
+@OptIn(ExperimentalStdlibApi::class)
 fun buildAIPromptOutputStructure(
     type: Type,
     filterOutputFields: List<String> = emptyList(),

@@ -37,13 +37,15 @@ data class GeminiGenerationConfig(
     val temperature: Float? = null,
     @SerializedName("response_mime_type")
     val responseMimeType: String? = null,
-    @SerializedName("thinking_config")
+    @SerializedName("thinkingConfig")
     val thinkingConfig: GeminiThinkingConfig? = null,
 )
 
 data class GeminiThinkingConfig(
-    @SerializedName("include_thoughts")
-    val includeThoughts: Boolean,
+    @SerializedName("includeThoughts")
+    val includeThoughts: Boolean? = null,
+    @SerializedName("thinkingLevel")
+    val thinkingLevel: String? = null,
 )
 
 data class GeminiSpeechConfig(
@@ -88,6 +90,8 @@ data class GeminiResponseContent(
 data class GeminiResponsePart(
     val text: String?,
     val inlineData: GeminiInlineData?,
+    @SerializedName("thought")
+    val thought: Boolean? = null,
 )
 
 data class GeminiInlineData(

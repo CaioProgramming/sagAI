@@ -53,11 +53,8 @@ class HomeUseCaseImpl
                     val prompt = HomePrompts.dynamicSagaCreationPrompt(promptService)
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
-                            prompt = prompt.processedTemplate,
-                            systemInstructions = prompt.renderInstructions(),
-                            blueprintKey = prompt.blueprintKey,
-                            requirement = ModelRequirement.LOW,
-                            aiStats = prompt.getAIStats(),
+                            promptSplit = prompt,
+                            requirement = ModelRequirement.TINY,
                         )
                     result ?: useFallback()
                 } catch (e: Exception) {

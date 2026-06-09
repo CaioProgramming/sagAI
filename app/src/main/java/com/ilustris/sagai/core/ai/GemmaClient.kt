@@ -139,6 +139,7 @@ class GemmaClient
 
                 val (type, structure) =
                     buildDataStructure(
+                        requirement,
                         describeOutput,
                         getJavaType<T>(),
                         filterOutputFields,
@@ -195,7 +196,10 @@ class GemmaClient
                                                 if (requirement == ModelRequirement.TINY ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
-                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                    GeminiThinkingConfig(
+                                                        includeThoughts = false,
+                                                        thinkingLevel = "LOW",
+                                                    )
                                                 } else {
                                                     null
                                                 },
@@ -235,6 +239,10 @@ class GemmaClient
 
                             // Use intelligent JSON locator that searches across all parts
                             val (requiredText, partIndex) = responseContent.findJsonContent()
+                            val nativeThoughts =
+                                responseContent
+                                    ?.filter { it.thought == true }
+                                    ?.joinToString("\n") { it.text.orEmpty() }
 
                             if (logEnabled) {
                                 Timber.d("Request stats: \n${response.usageMetadata.toJsonFormat()}\n")
@@ -270,7 +278,7 @@ class GemmaClient
                                         blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
                                         dataType = type,
                                         status = "SUCCESS",
-                                        reasoning = aiGeneration.reasoning,
+                                        reasoning = nativeThoughts,
                                         rawResponse = requiredText,
                                         responseTime = duration,
                                         systemInstruction = finalInstructions.toJsonFormat(),
@@ -482,7 +490,10 @@ class GemmaClient
                                                 if (requirement == ModelRequirement.TINY ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
-                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                    GeminiThinkingConfig(
+                                                        includeThoughts = false,
+                                                        thinkingLevel = "LOW",
+                                                    )
                                                 } else {
                                                     null
                                                 },
@@ -522,6 +533,10 @@ class GemmaClient
 
                             // Use intelligent JSON locator that searches across all parts
                             val (requiredText, partIndex) = responseContent.findJsonContent()
+                            val nativeThoughts =
+                                responseContent
+                                    ?.filter { it.thought == true }
+                                    ?.joinToString("\n") { it.text.orEmpty() }
 
                             if (logEnabled) {
                                 Timber.d("Request stats: \n${response.usageMetadata.toJsonFormat()}\n")
@@ -557,7 +572,7 @@ class GemmaClient
                                         blueprintKey = promptSplit.blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
-                                        reasoning = aiGeneration.reasoning,
+                                        reasoning = nativeThoughts,
                                         rawResponse = requiredText,
                                         responseTime = duration,
                                         systemInstruction = systemInstruction,
@@ -697,8 +712,10 @@ class GemmaClient
             systemInstructions: Map<String, Any>,
         ): Pair<String, String> {
             val dataType = getJavaType<T>()
+
             val (typeName, structure) =
                 buildDataStructure(
+                    requirement,
                     describeOutput,
                     dataType,
                     filterOutputFields,
@@ -796,7 +813,10 @@ class GemmaClient
                                                 if (requirement == ModelRequirement.TINY ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
-                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                    GeminiThinkingConfig(
+                                                        includeThoughts = false,
+                                                        thinkingLevel = "LOW",
+                                                    )
                                                 } else {
                                                     null
                                                 },
@@ -824,6 +844,7 @@ class GemmaClient
                                 )
 
                             val accumulatedText = StringBuilder()
+                            val accumulatedThoughts = StringBuilder()
 
                             responseBody.byteStream().bufferedReader().useLines { lines ->
                                 for (line in lines) {
@@ -849,15 +870,19 @@ class GemmaClient
                                             throw GuardrailsException(SafeGuard.BLOCKED)
                                         }
 
-                                        val partialPart =
-                                            candidate
-                                                ?.content
-                                                ?.parts
-                                                ?.firstOrNull()
-
-                                        if (partialPart != null && partialPart.text != null) {
-                                            accumulatedText.append(partialPart.text)
-                                            emit(StreamingState.Reasoning(accumulatedText.toString()))
+                                        candidate?.content?.parts?.forEach { part ->
+                                            if (part.text != null) {
+                                                if (part.thought == true) {
+                                                    accumulatedThoughts.append(part.text)
+                                                    emit(
+                                                        StreamingState.Reasoning(
+                                                            accumulatedThoughts.toString(),
+                                                        ),
+                                                    )
+                                                } else {
+                                                    accumulatedText.append(part.text)
+                                                }
+                                            }
                                         }
                                     } catch (e: Exception) {
                                         Timber.w("Failed to parse stream chunk: $jsonStr => ${e.message}")
@@ -866,6 +891,7 @@ class GemmaClient
                             }
 
                             val fullText = accumulatedText.toString()
+                            val fullThoughts = accumulatedThoughts.toString()
                             if (logEnabled) {
                                 Timber.i("Streaming completed, accumulated text length: ${fullText.length}")
                             }
@@ -885,7 +911,7 @@ class GemmaClient
                                         blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
-                                        reasoning = aiGeneration?.reasoning,
+                                        reasoning = fullThoughts,
                                         rawResponse = fullText,
                                         responseTime = duration,
                                     ),
@@ -1049,7 +1075,10 @@ class GemmaClient
                                                 if (requirement == ModelRequirement.TINY ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
-                                                    GeminiThinkingConfig(includeThoughts = false)
+                                                    GeminiThinkingConfig(
+                                                        includeThoughts = false,
+                                                        thinkingLevel = "LOW",
+                                                    )
                                                 } else {
                                                     null
                                                 },
@@ -1077,6 +1106,7 @@ class GemmaClient
                                 )
 
                             val accumulatedText = StringBuilder()
+                            val accumulatedThoughts = StringBuilder()
 
                             responseBody.byteStream().bufferedReader().useLines { lines ->
                                 for (line in lines) {
@@ -1102,15 +1132,19 @@ class GemmaClient
                                             throw GuardrailsException(SafeGuard.BLOCKED)
                                         }
 
-                                        val partialPart =
-                                            candidate
-                                                ?.content
-                                                ?.parts
-                                                ?.firstOrNull()
-
-                                        if (partialPart != null && partialPart.text != null) {
-                                            accumulatedText.append(partialPart.text)
-                                            emit(StreamingState.Reasoning(accumulatedText.toString()))
+                                        candidate?.content?.parts?.forEach { part ->
+                                            if (part.text != null) {
+                                                if (part.thought == true) {
+                                                    accumulatedThoughts.append(part.text)
+                                                    emit(
+                                                        StreamingState.Reasoning(
+                                                            accumulatedThoughts.toString(),
+                                                        ),
+                                                    )
+                                                } else {
+                                                    accumulatedText.append(part.text)
+                                                }
+                                            }
                                         }
                                     } catch (e: Exception) {
                                         Timber.w("Failed to parse stream chunk: $jsonStr => ${e.message}")
@@ -1119,6 +1153,7 @@ class GemmaClient
                             }
 
                             val fullText = accumulatedText.toString()
+                            val fullThoughts = accumulatedThoughts.toString()
                             if (logEnabled) {
                                 Timber.i("Streaming completed, accumulated text length: ${fullText.length}")
                             }
@@ -1138,7 +1173,7 @@ class GemmaClient
                                         blueprintKey = promptSplit.blueprintKey,
                                         dataType = dataTypeName,
                                         status = "SUCCESS",
-                                        reasoning = aiGeneration?.reasoning,
+                                        reasoning = fullThoughts,
                                         rawResponse = fullText,
                                         responseTime = duration,
                                         sentVariables = promptSplit.sentVariables.toJsonFormat(),
@@ -1214,17 +1249,17 @@ class GemmaClient
                                         AIAuditLog(
                                             model = model,
                                             blueprintKey = promptSplit.blueprintKey,
-                                        dataType = javaClass.simpleName,
-                                        status = "ERROR",
-                                        errorMessage = "${e.javaClass.simpleName}: ${e.message}",
-                                        responseTime = duration,
-                                        safetyStatus = safetyStatus,
-                                        sentVariables = promptSplit.sentVariables.toJsonFormat(),
-                                    ),
-                                )
-                            }
-                            emit(StreamingState.Error(e.message ?: "Unknown error", e))
-                            return@flow
+                                            dataType = javaClass.simpleName,
+                                            status = "ERROR",
+                                            errorMessage = "${e.javaClass.simpleName}: ${e.message}",
+                                            responseTime = duration,
+                                            safetyStatus = safetyStatus,
+                                            sentVariables = promptSplit.sentVariables.toJsonFormat(),
+                                        ),
+                                    )
+                                }
+                                emit(StreamingState.Error(e.message ?: "Unknown error", e))
+                                return@flow
                             }
                         }
                     }

@@ -113,6 +113,7 @@ fun AIAuditLogView(
     LazyColumn(
         modifier =
             Modifier
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxSize()
                 .statusBarsPadding()
                 .padding(16.dp),
