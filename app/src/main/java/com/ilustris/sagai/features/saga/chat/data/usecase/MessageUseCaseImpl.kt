@@ -138,7 +138,6 @@ class MessageUseCaseImpl
             saga: SagaMetadata,
             message: Message,
             isFromUser: Boolean,
-            sceneSummary: SceneSummary?,
         ) = executeRequest {
             messageRepository.saveMessage(
                 message.copy(
@@ -164,7 +163,7 @@ class MessageUseCaseImpl
                         prompt.processedTemplate,
                         blueprintKey = prompt.blueprintKey,
                         requireTranslation = false,
-                        requirement = ModelRequirement.TINY,
+                        requirement = ModelRequirement.MINIMAL,
                         systemInstructions = prompt.renderInstructions(),
                         aiStats = prompt.getAIStats(),
                     )?.trim()
@@ -181,7 +180,6 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaMetadata,
             message: MessageContent,
-            sceneSummary: SceneSummary?,
         ): Flow<StreamingState<AIReply>> =
             flow {
                 try {
@@ -205,7 +203,10 @@ class MessageUseCaseImpl
                     val narrativeRules = fetchNarrativeRules()
 
                     val sagaContent =
-                        sagaRepository.getSagaById(saga.data.id).first() as SagaContent
+                        sagaRepository.getSagaById(saga.data.id).first() ?: error("Saga not found")
+                    val sceneSummary =
+                        sagaContent.getCurrentTimeLine()?.data?.sceneSummary
+                            ?: getSceneContext(saga).getSuccess()
                     val characterArcsById = loadCharacterArcsForScene(sagaContent, sceneSummary)
                     val prompt =
                         ChatPrompts.replyMessagePrompt(
@@ -227,19 +228,21 @@ class MessageUseCaseImpl
                         )
                     val generateStream =
                         gemmaClient.generateStreaming<AIReply>(
-                            prompt = prompt.processedTemplate,
-                            blueprintKey = ChatPrompts.REPLY_GENERATION_BLUEPRINT,
+                            promptSplit =
+                                prompt.copy(
+                                    instructionBuckets =
+                                        prompt.renderInstructions().plus(
+                                            buildMap {
+                                                putAll(conversationInstructions)
+                                                putAll(actContext.renderInstructions())
+                                                putAll(prompt.renderInstructions())
+                                            },
+                                        ),
+                                ),
                             userInteraction = true,
                             filterOutputFields = ChatPrompts.messageExclusions,
                             requirement = ModelRequirement.HIGH,
                             useCore = true,
-                            systemInstructions =
-                                buildMap {
-                                    putAll(conversationInstructions)
-                                    putAll(actContext.renderInstructions())
-                                    putAll(prompt.renderInstructions())
-                                },
-                            aiStats = prompt.getAIStats(),
                         )
                     reasoningSynthesizerService
                         .synthesizeReasoning(
@@ -483,11 +486,16 @@ class MessageUseCaseImpl
         override suspend fun generateExtraContent(
             saga: SagaMetadata,
             message: Message,
-            sceneSummary: SceneSummary?,
             characterReference: Character?,
             generateAudio: Boolean,
             isFromUser: Boolean,
         ) {
+            val sagaContent =
+                sagaRepository.getSagaById(saga.data.id).first() ?: error("Saga not found")
+            val sceneSummary =
+                sagaContent.getCurrentTimeLine()?.data?.sceneSummary
+                    ?: getSceneContext(saga).getSuccess()
+
             val tone = analyzeMessageTone(saga, message, isFromUser).getSuccess()
             if (tone != null) {
                 updateMessage(message.copy(emotionalTone = tone))

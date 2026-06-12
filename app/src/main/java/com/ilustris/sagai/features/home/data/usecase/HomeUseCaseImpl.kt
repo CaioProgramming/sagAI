@@ -54,7 +54,7 @@ class HomeUseCaseImpl
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
                             promptSplit = prompt,
-                            requirement = ModelRequirement.TINY,
+                            requirement = ModelRequirement.MINIMAL,
                         )
                     result ?: useFallback()
                 } catch (e: Exception) {

@@ -10,7 +10,7 @@ import java.lang.reflect.Type
 import java.util.Locale
 
 enum class ModelRequirement {
-    TINY,
+    MINIMAL,
     LOW,
     MEDIUM,
     HIGH,

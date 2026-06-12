@@ -42,14 +42,14 @@ class SafetyClient
                 val type = getJavaType<SafeGuard>()
                 val dataStructure =
                     buildDataStructure(
-                        ModelRequirement.TINY,
+                        ModelRequirement.MINIMAL,
                         false,
                         type,
                         listOf("reasoning"),
                     )
                 val coreInstructions =
                     buildCoreInstructions(
-                        ModelRequirement.TINY,
+                        ModelRequirement.MINIMAL,
                         true,
                         dataStructure.first,
                         dataStructure.second,
@@ -64,7 +64,7 @@ class SafetyClient
                         ),
                     )
 
-                val modelName = modelName(ModelRequirement.TINY)
+                val modelName = modelName(ModelRequirement.MINIMAL)
                 val apiKey = getApiKey()
 
                 val instructions =

@@ -69,7 +69,10 @@ class AIAuditLogUseCaseImpl
                         .filter { it.status != "ERROR" }
                         .distinctBy { it.blueprintKey }
                         .map {
-                            it.blueprintKey to remoteConfigService.getJson<PromptBlueprint>(it.blueprintKey)
+                            it.blueprintKey to
+                                remoteConfigService
+                                    .getJson<PromptBlueprint>(it.blueprintKey)
+                                    ?.toAINormalize()
                         }.filter {
                             it.first != null && it.second != null
                         }

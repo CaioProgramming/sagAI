@@ -39,7 +39,6 @@ import com.ilustris.sagai.features.home.data.model.currentChapterInfo
 import com.ilustris.sagai.features.home.data.model.currentEventInfo
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -1126,10 +1125,8 @@ class SagaContentManagerImpl
         override suspend fun getSagaContent(): SagaContent? = sagaHistoryUseCase.getSagaById(content.value?.data?.id).first()
 
         override suspend fun updateSummary(sceneSummary: SceneSummary) {
-            val saga = content.value ?: return
-            val currentTimeline = saga.flatEvents().lastOrNull() ?: return
-            val updatedTimeline = currentTimeline.data.copy(sceneSummary = sceneSummary)
-            timelineUseCase.updateTimeline(updatedTimeline)
+            val currentTimeline = content.value?.getCurrentTimeLine() ?: return
+            timelineUseCase.updateTimeline(currentTimeline.data.copy(sceneSummary = sceneSummary))
         }
 
         private suspend fun handleStreamingState(state: StreamingState<GeneratedContent<*>>) {

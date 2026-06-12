@@ -3,18 +3,21 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
-import timber.log.Timber
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class GetInputSuggestionsUseCaseImpl
@@ -23,6 +26,8 @@ class GetInputSuggestionsUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val remoteConfigService: RemoteConfigService,
         private val promptService: PromptService,
+        private val genreConfigService: GenreConfigService,
+        private val characterUseCase: CharacterUseCase,
     ) : GetInputSuggestionsUseCase {
         override suspend fun invoke(
             chatMessages: List<MessageContent>,
@@ -39,17 +44,24 @@ class GetInputSuggestionsUseCaseImpl
                     SuggestionPrompts.generateSuggestionsPrompt(
                         promptService,
                         saga,
-                        character = currentUserCharacter!!,
+                        character = saga.findCharacter(currentUserCharacter?.id)!!,
                         sceneSummary = contextSummary,
                         updateLimit = narrativeRules.loreUpdateLimit,
+                        characterArcs =
+                            characterUseCase
+                                .getCharacterArcs(currentUserCharacter!!.id)
+                                .first(),
                     )
 
-                Timber.d("Sending prompt to GemmaClient for suggestions.")
                 gemmaClient
                     .generate<SuggestionGen>(
-                        prompt,
-                        temperatureRandomness = 1f,
-                        requirement = ModelRequirement.MEDIUM,
+                        prompt.copy(
+                            instructionBuckets =
+                                prompt.renderInstructions().plus(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
+                                ),
+                        ),
+                        requirement = ModelRequirement.MINIMAL,
                     )!!
                     .suggestions
             }

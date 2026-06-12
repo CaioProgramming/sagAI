@@ -82,7 +82,6 @@ interface SagaContentManager {
 
     fun stopProcessing()
 
-    /** Clears narrative/milestone/processing state when leaving or switching sagas. */
     fun resetSagaSession()
 
     suspend fun updateSummary(sceneSummary: SceneSummary)

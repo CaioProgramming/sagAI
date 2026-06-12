@@ -142,7 +142,7 @@ class HomeViewModel
             if (isBackingUp) return
             viewModelScope.launch(Dispatchers.IO) {
                 isBackingUp = true
-                homeUseCase.autoBackup()
+                // homeUseCase.autoBackup()
                 isBackingUp = false
             }
         }

@@ -104,6 +104,8 @@ class ReasoningSynthesizerService
             genre: Genre? = null,
         ) {
             try {
+                useFallback(genre, scope)
+
                 val conversationStyle =
                     genre?.let {
                         genreConfigService.conversationInstructions(it)
@@ -125,8 +127,6 @@ class ReasoningSynthesizerService
                         logEnabled = false,
                     )
 
-                useFallback(genre, scope)
-
                 val translation =
                     gemmaClient.generate<String>(
                         prompt = prompt.processedTemplate,
@@ -137,7 +137,7 @@ class ReasoningSynthesizerService
                                 }
                                 putAll(prompt.renderInstructions())
                             },
-                        requirement = ModelRequirement.TINY,
+                        requirement = ModelRequirement.MINIMAL,
                         logEnabled = false,
                         temperatureRandomness = 1f,
                     )

@@ -185,7 +185,7 @@ class GemmaClient
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
-                                                if (requirement == ModelRequirement.TINY ||
+                                                if (requirement == ModelRequirement.MINIMAL ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
                                                     0.1f
@@ -193,16 +193,10 @@ class GemmaClient
                                                     temperatureRandomness
                                                 },
                                             thinkingConfig =
-                                                if (requirement == ModelRequirement.TINY ||
-                                                    requirement == ModelRequirement.LOW
-                                                ) {
-                                                    GeminiThinkingConfig(
-                                                        includeThoughts = false,
-                                                        thinkingLevel = "LOW",
-                                                    )
-                                                } else {
-                                                    null
-                                                },
+                                                GeminiThinkingConfig(
+                                                    includeThoughts = true,
+                                                    thinkingLevel = requirement.name,
+                                                ),
                                         ),
                                 )
 
@@ -238,7 +232,10 @@ class GemmaClient
                                     ?.parts
 
                             // Use intelligent JSON locator that searches across all parts
-                            val (requiredText, partIndex) = responseContent.findJsonContent()
+                            val (requiredText, partIndex) =
+                                responseContent
+                                    ?.filter { it.thought != true }
+                                    .findJsonContent()
                             val nativeThoughts =
                                 responseContent
                                     ?.filter { it.thought == true }
@@ -479,7 +476,7 @@ class GemmaClient
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
-                                                if (requirement == ModelRequirement.TINY ||
+                                                if (requirement == ModelRequirement.MINIMAL ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
                                                     0.1f
@@ -487,16 +484,10 @@ class GemmaClient
                                                     temperatureRandomness
                                                 },
                                             thinkingConfig =
-                                                if (requirement == ModelRequirement.TINY ||
-                                                    requirement == ModelRequirement.LOW
-                                                ) {
-                                                    GeminiThinkingConfig(
-                                                        includeThoughts = false,
-                                                        thinkingLevel = "LOW",
-                                                    )
-                                                } else {
-                                                    null
-                                                },
+                                                GeminiThinkingConfig(
+                                                    includeThoughts = true,
+                                                    thinkingLevel = requirement.name,
+                                                ),
                                         ),
                                 )
 
@@ -532,7 +523,10 @@ class GemmaClient
                                     ?.parts
 
                             // Use intelligent JSON locator that searches across all parts
-                            val (requiredText, partIndex) = responseContent.findJsonContent()
+                            val (requiredText, partIndex) =
+                                responseContent
+                                    ?.filter { it.thought != true }
+                                .findJsonContent()
                             val nativeThoughts =
                                 responseContent
                                     ?.filter { it.thought == true }
@@ -802,7 +796,7 @@ class GemmaClient
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
-                                                if (requirement == ModelRequirement.TINY ||
+                                                if (requirement == ModelRequirement.MINIMAL ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
                                                     0.1f
@@ -810,16 +804,10 @@ class GemmaClient
                                                     temperatureRandomness
                                                 },
                                             thinkingConfig =
-                                                if (requirement == ModelRequirement.TINY ||
-                                                    requirement == ModelRequirement.LOW
-                                                ) {
-                                                    GeminiThinkingConfig(
-                                                        includeThoughts = false,
-                                                        thinkingLevel = "LOW",
-                                                    )
-                                                } else {
-                                                    null
-                                                },
+                                                GeminiThinkingConfig(
+                                                    includeThoughts = true,
+                                                    thinkingLevel = requirement.name,
+                                                ),
                                         ),
                                 )
 
@@ -1064,7 +1052,7 @@ class GemmaClient
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
-                                                if (requirement == ModelRequirement.TINY ||
+                                                if (requirement == ModelRequirement.MINIMAL ||
                                                     requirement == ModelRequirement.LOW
                                                 ) {
                                                     0.1f
@@ -1072,16 +1060,10 @@ class GemmaClient
                                                     temperatureRandomness
                                                 },
                                             thinkingConfig =
-                                                if (requirement == ModelRequirement.TINY ||
-                                                    requirement == ModelRequirement.LOW
-                                                ) {
-                                                    GeminiThinkingConfig(
-                                                        includeThoughts = false,
-                                                        thinkingLevel = "LOW",
-                                                    )
-                                                } else {
-                                                    null
-                                                },
+                                                GeminiThinkingConfig(
+                                                    includeThoughts = true,
+                                                    thinkingLevel = requirement.name,
+                                                ),
                                         ),
                                 )
 

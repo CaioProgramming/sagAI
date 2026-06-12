@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -75,6 +76,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -119,6 +121,7 @@ fun AIAuditLogView(
                 .padding(16.dp),
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
+        state = rememberLazyListState(),
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -217,7 +220,8 @@ fun AIAuditLogView(
                             .fillMaxWidth()
                             .horizontalScroll(
                                 androidx.compose.foundation.rememberScrollState(),
-                            ).padding(bottom = 8.dp),
+                            )
+                            .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -294,10 +298,16 @@ fun AIAuditLogView(
             item {
                 Text(
                     text = stringResource(R.string.audit_logs_empty),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Light,
+                        ),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(16.dp),
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 )
             }
         } else {
@@ -443,13 +453,14 @@ fun AuditLogItem(
                                         1.dp,
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         RoundedCornerShape(4.dp),
-                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    )
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                     .padding(8.dp),
                         )
                     }
 
                     Text(
-                        text = "• ${log.timestamp.formatDate()}",
+                        text = "• ${log.timestamp.formatDate(DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Light),
                         modifier = Modifier.alpha(.7f),
                     )
@@ -569,7 +580,8 @@ fun AuditLogItem(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     RoundedCornerShape(8.dp),
-                                ).padding(8.dp),
+                                )
+                                .padding(8.dp),
                     ) {
                         Text(
                             text = log.reasoning,
@@ -626,7 +638,8 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    ).padding(12.dp),
+                                    )
+                                    .padding(12.dp),
                         )
                     } else {
                         Button(
@@ -736,7 +749,8 @@ fun JsonCodeBlock(jsonString: String) {
                 .background(
                     MaterialTheme.colorScheme.surfaceVariant,
                     shape = MaterialTheme.shapes.small,
-                ).padding(12.dp),
+                )
+                .padding(12.dp),
     )
 }
 
@@ -788,7 +802,8 @@ fun PipelineInsightCard(
                                 .alpha(alpha)
                                 .padding(
                                     16.dp,
-                                ).clickable {
+                                )
+                                .clickable {
                                     expanded = !expanded
                                 },
                     )
