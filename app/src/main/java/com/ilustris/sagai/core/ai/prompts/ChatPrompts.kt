@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -155,11 +156,16 @@ object ChatPrompts {
                     buildMap {
                         put(
                             "sagaContext",
-                            saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+                            saga.data.asMap(),
                         )
                         sceneSummary?.let {
-                            put("currentStoryContext", sceneSummary.toAINormalize())
+                            put("currentStoryContext", sceneSummary.asMap())
                         }
+
+                        put(
+                            "storyCharacters",
+                            saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
+                        )
 
                         messageSender?.let {
                             put(
@@ -193,7 +199,12 @@ object ChatPrompts {
                         if (mentionedWikis.isNotEmpty()) {
                             put("mentionedWikis", mentionedWikis.normalizetoAIItems())
                         }
-                    }.toAINormalize(),
+                    }.toAINormalize(
+                        buildList {
+                            addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
+                            addAll(CHARACTER_EXCLUSIONS)
+                        },
+                    ),
             )
 
         val argsMap =

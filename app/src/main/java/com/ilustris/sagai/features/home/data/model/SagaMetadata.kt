@@ -275,7 +275,7 @@ fun SagaMetadata.chapterNumber(chapterId: Int?): Int =
         flatChapters().indexOfFirst { it.data.id == chapterId } + 1
     }
 
-fun SagaMetadata.findCharacter(characterId: Int) = characters.find { it.id == characterId }
+fun SagaMetadata.findCharacter(characterId: Int?) = if (characterId == null) null else characters.find { it.id == characterId }
 
 fun SagaMetadata.findCharacter(name: String?) =
     characters.find {

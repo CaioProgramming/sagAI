@@ -281,7 +281,9 @@ class SagaContentManagerImpl
         override suspend fun showObjective() {
             val saga = content.value ?: return
             val currentTimeline = saga.getCurrentTimeLine() ?: return
-            val objective = currentTimeline.data.currentObjective
+            val objective =
+                currentTimeline.data.sceneSummary?.immediateObjective
+                    ?: currentTimeline.data.currentObjective
             if (objective?.isNotBlank() == true) {
                 milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
             }

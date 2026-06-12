@@ -46,23 +46,22 @@ class OnboardingUseCaseImpl
 
                 val persona =
                     if (type == OnboardingType.GAMEPLAY_GUIDE && genre != null) {
-                        genreConfigService.conversationBlueprint(genre)
+                        genreConfigService.conversationInstructions(genre)
                     } else {
-                        promptService.buildRemotePrompt(
-                            OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                            emptyMap<String, String>(),
-                        )
+                        promptService
+                            .buildSplitBlueprint(
+                                OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
+                            ).renderInstructions()
                     }
 
-                val prompt = OnboardingPrompts.getOnboardingPrompt(promptService, config, persona)
+                val prompt = OnboardingPrompts.getOnboardingPrompt(promptService, config)
                 val content =
-                    runCatching {
-                        gemmaClient.generate<OnboardingContent>(
-                            prompt = prompt,
-                            requirement = ModelRequirement.LOW,
-                            blueprintKey = OnboardingPrompts.ONBOARDING_BLUEPRINT,
-                        )
-                    }.getOrNull()
+                    gemmaClient.generate<OnboardingContent>(
+                        prompt.copy(
+                            instructionBuckets = prompt.renderInstructions().plus(persona),
+                        ),
+                        requirement = ModelRequirement.MINIMAL,
+                    )
 
                 content ?: getFallbackContent(type)
             }

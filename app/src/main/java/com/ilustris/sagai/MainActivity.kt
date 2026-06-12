@@ -373,6 +373,7 @@ class MainActivity : ComponentActivity() {
                             type = OnboardingType.PREMIUM_GUIDE,
                             force = true,
                             onDismiss = { activeSideEffect = null },
+                            genre = currentGenre,
                         )
                     }
 

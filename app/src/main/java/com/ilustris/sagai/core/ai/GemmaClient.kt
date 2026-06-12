@@ -69,7 +69,13 @@ class GemmaClient
             const val CORE_FLAG = "SAGA_CORE"
             const val INPUT_TOKEN_LIMIT = 15000
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
-            const val MAX_RETRIES = 2
+
+            fun maxAttempts(requirement: ModelRequirement): Int =
+                when (requirement) {
+                    ModelRequirement.MINIMAL, ModelRequirement.LOW -> 1
+                    ModelRequirement.MEDIUM -> 2
+                    ModelRequirement.HIGH -> 3
+                }
 
             /** Last AI generation failure (release debugging when [generate] returns null). */
             @Volatile
@@ -134,7 +140,7 @@ class GemmaClient
                 checkSafety(userInteraction, prompt)
                 val model = modelName(requirement)
 
-                val maxAttempts = MAX_RETRIES + 1
+                val maxAttempts = maxAttempts(requirement)
                 val startTime = System.currentTimeMillis()
 
                 val (type, structure) =
@@ -425,7 +431,7 @@ class GemmaClient
                 checkSafety(userInteraction, prompt)
                 val model = modelName(requirement)
 
-                val maxAttempts = MAX_RETRIES + 1
+                val maxAttempts = maxAttempts(requirement)
                 val startTime = System.currentTimeMillis()
 
                 val (dataTypeName, systemInstruction) =
@@ -766,7 +772,7 @@ class GemmaClient
 
                     val model = modelName(requirement)
 
-                    val maxAttempts = MAX_RETRIES + 1
+                    val maxAttempts = maxAttempts(requirement)
                     val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
@@ -1022,7 +1028,7 @@ class GemmaClient
 
                     val model = modelName(requirement)
 
-                    val maxAttempts = MAX_RETRIES + 1
+                    val maxAttempts = maxAttempts(requirement)
                     val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
