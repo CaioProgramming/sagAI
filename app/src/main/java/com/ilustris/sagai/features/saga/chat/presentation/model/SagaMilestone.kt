@@ -68,7 +68,7 @@ sealed class SagaMilestone(
         val timeline: Timeline,
     ) : SagaMilestone(
             R.string.current_objective,
-            timeline.currentObjective ?: "",
+            timeline.displayObjective() ?: "",
             delay = 0.seconds,
             isIntrusive = false,
         )
@@ -103,6 +103,7 @@ sealed class SagaMilestone(
                 is NewEvent,
                 is CurrentObjective,
                 -> false
+
                 else -> isIntrusive
             }
 }
