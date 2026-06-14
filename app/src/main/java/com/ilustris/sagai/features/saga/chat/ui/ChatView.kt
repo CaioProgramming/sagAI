@@ -23,6 +23,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -83,7 +84,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -99,7 +99,6 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -181,6 +180,8 @@ import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaHighlight
+import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.themeIcon
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -218,14 +219,6 @@ fun ChatView(
         }
 
     SagAITheme(genre = uiState.sagaContent?.data?.genre) {
-        LaunchedEffect(uiState.sagaContent) {
-            uiState.sagaContent?.let {
-                if (it.data.icon.isNotEmpty()) {
-                    viewModel.segmentSagaCover(it.data.icon)
-                }
-            }
-        }
-
         LaunchedEffect(sagaId, isDebug) {
             PermissionService.requestPermission(
                 activity,
@@ -278,107 +271,115 @@ fun ChatView(
             requiredPermission = null
         }
 
-        when (uiState.chatState) {
-            is ChatState.Loading -> {
-                SagaChatSparkPlaceholder(modifier = Modifier.fillMaxSize())
-            }
-
-            is ChatState.Error -> {
-                SagaNotFoundView(modifier = Modifier.fillMaxSize())
-            }
-
-            is ChatState.Success -> {
-                val sagaContent = uiState.sagaContent
-                if (sagaContent == null) {
+        AnimatedContent(uiState.chatState, transitionSpec = {
+            fadeIn(tween(500)) togetherWith fadeOut(tween(500))
+        }) { state ->
+            when (state) {
+                is ChatState.Loading -> {
                     SagaChatSparkPlaceholder(modifier = Modifier.fillMaxSize())
-                } else {
-                    Box(Modifier.fillMaxSize()) {
-                        ModalNavigationDrawer(
-                            drawerState = drawerState,
-                            drawerContent = {
-                                ModalDrawerSheet(
-                                    drawerShape = RoundedCornerShape(0.dp),
-                                    drawerContainerColor = MaterialTheme.colorScheme.background,
-                                ) {
-                                    SagaWikiView(
-                                        sagaId = sagaContent.data.id.toString(),
-                                        onBack = { coroutineScope.launch { drawerState.close() } },
+                }
+
+                is ChatState.Error -> {
+                    SagaNotFoundView(modifier = Modifier.fillMaxSize())
+                }
+
+                is ChatState.Success -> {
+                    val sagaContent = uiState.sagaContent
+                    if (sagaContent == null) {
+                        SagaChatSparkPlaceholder(modifier = Modifier.fillMaxSize())
+                    } else {
+                        Box(Modifier.fillMaxSize()) {
+                            ModalNavigationDrawer(
+                                drawerState = drawerState,
+                                drawerContent = {
+                                    ModalDrawerSheet(
+                                        drawerShape = RoundedCornerShape(0.dp),
+                                        drawerContainerColor = MaterialTheme.colorScheme.background,
+                                    ) {
+                                        SagaWikiView(
+                                            sagaId = sagaContent.data.id.toString(),
+                                            onBack = { coroutineScope.launch { drawerState.close() } },
+                                            sharedTransitionScope = sharedTransitionScope,
+                                            animatedVisibilityScope = animatedVisibilityScope,
+                                            interceptSystemBack = drawerState.isOpen,
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                with(sharedTransitionScope) {
+                                    ChatContent(
+                                        uiState = uiState,
+                                        onAction = onAction,
+                                        padding = padding,
+                                        isDebug = isDebug,
+                                        genreVfxPulse = genreVfxPulse,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                        interceptSystemBack = drawerState.isOpen,
                                     )
                                 }
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            with(sharedTransitionScope) {
-                                ChatContent(
-                                    uiState = uiState,
-                                    onAction = onAction,
-                                    padding = padding,
-                                    isDebug = isDebug,
-                                    genreVfxPulse = genreVfxPulse,
-                                    sharedTransitionScope = sharedTransitionScope,
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                )
                             }
-                        }
 
-                        if (showBackupSheet) {
-                            BackupSheet(onDismiss = { showBackupSheet = false })
-                        }
+                            if (showBackupSheet) {
+                                BackupSheet(onDismiss = { showBackupSheet = false })
+                            }
 
-                        if (uiState.showAudioTranscript) {
-                            AudioRecordingSheet(
-                                sagaContent.data.genre?.colorPalette() ?: holographicGradient,
-                                onDismiss = {
+                            if (uiState.showAudioTranscript) {
+                                AudioRecordingSheet(
+                                    sagaContent.data.genre?.colorPalette() ?: holographicGradient,
+                                    onDismiss = {
+                                        onAction(ChatUiAction.RequestAudioTranscript(false))
+                                    },
+                                ) {
+                                    onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
+                                    onAction(
+                                        ChatUiAction.SendInput(
+                                            userConfirmed = false,
+                                            isAudio = true,
+                                        ),
+                                    )
                                     onAction(ChatUiAction.RequestAudioTranscript(false))
-                                },
-                            ) {
-                                onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
-                                onAction(
-                                    ChatUiAction.SendInput(
-                                        userConfirmed = false,
-                                        isAudio = true,
-                                    ),
-                                )
-                                onAction(ChatUiAction.RequestAudioTranscript(false))
+                                }
                             }
-                        }
 
-                        AnimatedVisibility(
-                            uiState.isLoading || uiState.isGenerating,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            StarryTextPlaceholder(
+                            AnimatedVisibility(
+                                uiState.isLoading || uiState.isGenerating,
+                                enter = fadeIn(tween(800)) + scaleIn(),
+                                exit = fadeOut(tween(500)),
                                 modifier =
                                     Modifier
-                                        .reactiveShimmer(
-                                            true,
-                                            themeShimmer(),
-                                            duration = 2.seconds,
-                                        ).fillMaxSize(),
-                            )
-                        }
+                                        .fillMaxSize()
+                                        .gradientFill(
+                                            Brush.horizontalGradient(themeBrushColors()),
+                                        ),
+                            ) {
+                                StarryTextPlaceholder(
+                                    modifier =
+                                        Modifier
+                                            .reactiveShimmer(
+                                                true,
+                                                duration = 2.seconds,
+                                            ).fillMaxSize(),
+                                )
+                            }
 
-                        ShareSheet(
-                            saga = sagaContent.data,
-                            isVisible = uiState.showShareSheet,
-                            shareType = ShareType.CONVERSATION,
-                            onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
-                        )
-
-                        uiState.onboardingType?.let { onboardingType ->
-                            OnboardingDialog(
+                            ShareSheet(
                                 saga = sagaContent.data,
-                                type = onboardingType,
-                                genre = sagaContent.data.genre,
-                                onDismiss = {
-                                    viewModel.onOnboardingDismissed()
-                                },
+                                isVisible = uiState.showShareSheet,
+                                shareType = ShareType.CONVERSATION,
+                                onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
                             )
+
+                            uiState.onboardingType?.let { onboardingType ->
+                                OnboardingDialog(
+                                    saga = sagaContent.data,
+                                    type = onboardingType,
+                                    genre = sagaContent.data.genre,
+                                    onDismiss = {
+                                        viewModel.onOnboardingDismissed()
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -1123,7 +1124,7 @@ private fun SagaChatSparkPlaceholder(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_spark),
+            painter = themeIcon(),
             contentDescription = null,
             modifier =
                 Modifier
@@ -1219,61 +1220,43 @@ fun SagaHeader(
                         .height(400.dp),
             ) {
                 with(sharedTransitionScope) {
-                    if (originalBitmap != null && segmentedBitmap != null) {
-                        DepthLayout(
-                            originalImage = originalBitmap,
-                            segmentedImage = segmentedBitmap,
-                            modifier = Modifier.fillMaxSize(),
-                            imageModifier =
-                                Modifier
-                                    .effectForGenre(saga.genre)
-                                    .sagaHighlight(),
-                        ) {
-                            Text(
-                                saga.title,
-                                style =
-                                    MaterialTheme.typography.headlineLarge.copy(
-                                        fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                                    ),
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                        .genreVfx(saga.genre)
-                                        .clickable {
-                                            openSaga()
-                                        },
-                            )
-                        }
-                    } else {
-                        AsyncImage(
-                            model =
-                                ImageRequest
-                                    .Builder(LocalContext.current)
-                                    .data(saga.icon)
-                                    .crossfade(true)
-                                    .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
+                    DepthLayout(
+                        imagePath = saga.icon,
+                        modifier = Modifier.fillMaxSize(),
+                        imageModifier =
+                            Modifier
+                                .sharedBounds(
+                                    rememberSharedContentState(key = "saga_${saga.id}_icon"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ).effectForGenre(saga.genre)
+                                .sagaHighlight(),
+                    ) {
+                        Text(
+                            saga.title,
+                            style =
+                                MaterialTheme.typography.headlineLarge.copy(
+                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
+                                ),
+                            fontWeight = FontWeight.Normal,
+                            textAlign = TextAlign.Center,
                             modifier =
                                 Modifier
-                                    .align(Alignment.Center)
-                                    .effectForGenre(saga.genre)
-                                    .sagaHighlight()
-                                    .fillMaxSize(),
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .genreVfx(saga.genre)
+                                    .clickable {
+                                        openSaga()
+                                    },
+                        )
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(
+                                    fadedGradientTopAndBottom(),
+                                ),
                         )
                     }
                 }
-
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            fadedGradientTopAndBottom(),
-                        ),
-                )
             }
         }
 

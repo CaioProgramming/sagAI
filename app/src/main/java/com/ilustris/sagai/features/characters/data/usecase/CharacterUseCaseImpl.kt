@@ -321,7 +321,7 @@ class CharacterUseCaseImpl
             description: String,
             sceneSummary: SceneSummary?,
             candidateName: String?,
-        ): Flow<StreamingState<GeneratedContent<Character>>> =
+        ): Flow<StreamingState<GeneratedContent<Character>?>> =
             flow {
                 try {
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
@@ -379,7 +379,7 @@ class CharacterUseCaseImpl
                             genre = sagaContent.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val newCharacter = state.data.data
+                                val newCharacter = state.data!!.data
                                 val character = sagaContent.findCharacter(newCharacter.name)
                                 if (character?.data?.fullName() == newCharacter.fullName()) {
                                     emit(

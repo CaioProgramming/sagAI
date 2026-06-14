@@ -214,9 +214,19 @@ class NarrativeActionExecutorImpl
                     )
                 }.collect { state ->
                     when (state) {
-                        is StreamingState.Reasoning -> environment.onReasoningChunk(state.chunk)
-                        is StreamingState.Success -> finalChapter = state.data
-                        is StreamingState.Error -> throw Exception(state.message)
+                        is StreamingState.Reasoning -> {
+                            environment.onReasoningChunk(state.chunk)
+                        }
+
+                        is StreamingState.Success -> {
+                            state.data?.let {
+                                finalChapter = state.data
+                            }
+                        }
+
+                        is StreamingState.Error -> {
+                            throw Exception(state.message)
+                        }
                     }
                 }
             environment.onReasoningChunk(null)

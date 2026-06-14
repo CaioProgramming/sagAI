@@ -164,7 +164,7 @@ private fun toJsonMapObject(
 
         clazz == String::class.java -> return "PLACEHOLDER_STRING"
 
-        clazz == Int::class.java || clazz == Integer::class.java || clazz == Integer::class.java || clazz == Long::class.java ||
+        clazz == Int::class.java || clazz == Integer::class.java || clazz == Long::class.java ||
             clazz == java.lang.Long::class.java -> return 999
 
         clazz == Boolean::class.java || clazz == java.lang.Boolean::class.java -> return false
@@ -190,34 +190,53 @@ private fun toJsonMapObject(
         .filter { !deniedFields.contains(it.name) }
         .sortedBy { it.name }
         .forEach { field ->
+            val isNullable =
+                field.annotations.any { ann ->
+                    ann.annotationClass.java.simpleName
+                        .contains("Nullable", ignoreCase = true)
+                } || !field.type.isPrimitive
+
             val customDesc = fieldCustomDescriptions.find { it.first == field.name }
             if (customDesc != null) {
+                val rawDesc = customDesc.second
                 try {
+                    // Try to parse as JSON first to keep structure
                     map[field.name] =
                         com.google.gson.JsonParser
-                            .parseString(customDesc.second)
+                            .parseString(rawDesc)
                 } catch (e: Exception) {
-                    map[field.name] = customDesc.second
+                    // Fallback to string with optional hint
+                    map[field.name] = if (isNullable) "$rawDesc (optional)" else rawDesc
                 }
             } else {
                 val fieldType = field.type
-                if (List::class.java.isAssignableFrom(fieldType) ||
-                    Array::class.java.isAssignableFrom(
-                        fieldType,
-                    )
-                ) {
-                    val genericType = field.genericType as? ParameterizedType
-                    val itemType = genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
-                    map[field.name] =
+                val value =
+                    if (List::class.java.isAssignableFrom(fieldType) ||
+                        Array::class.java.isAssignableFrom(fieldType)
+                    ) {
+                        val genericType = field.genericType as? ParameterizedType
+                        val itemType = genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
                         if (itemType != null) {
                             listOf(toJsonMapObject(itemType, filteredFields, emptyList(), visited))
                         } else {
                             emptyList<Any>()
                         }
-                } else {
-                    map[field.name] =
+                    } else {
                         toJsonMapObject(fieldType, filteredFields, emptyList(), visited)
-                }
+                    }
+
+                val finalValue =
+                    if (isNullable) {
+                        when (value) {
+                            is String -> "$value (optional)"
+                            is Number -> "$value (optional)"
+                            is Boolean -> "$value (optional)"
+                            else -> value // For Map/List we keep as is for now to avoid breaking structure
+                        }
+                    } else {
+                        value
+                    }
+                map[field.name] = finalValue
             }
         }
     visited.remove(clazz)
@@ -585,14 +604,16 @@ private fun repairJsonStructure(
                     if (charIndex < currentJson.length) {
                         val firstChar = currentJson[charIndex]
 
-                        // Check if this is a JSON literal (null, true, false) or number - don't quote these
+                        // Check if this is a JSON literal (null, true, false), number, object or array - don't quote these
                         val remainingText = currentJson.substring(charIndex)
                         val isJsonLiteral =
                             remainingText.startsWith("null") ||
                                 remainingText.startsWith("true") ||
                                 remainingText.startsWith("false") ||
                                 firstChar.isDigit() ||
-                                firstChar == '-'
+                                firstChar == '-' ||
+                                firstChar == '{' ||
+                                firstChar == '['
 
                         if (isJsonLiteral) {
                             // Skip this field - it's a valid JSON literal, not a string needing quotes

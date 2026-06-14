@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.historySummary
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -181,7 +182,11 @@ object ChatPrompts {
                                     }
                                     put(
                                         "LatestCharacterEvents",
-                                        it.events.takeLast(3).normalizetoAIItems(),
+                                        it.events
+                                            .map {
+                                                "${it.character.name} - ${it.event.title}\n${it.event.summary}"
+                                            }.takeLast(3)
+                                            .normalizetoAIItems(),
                                     )
                                     put(
                                         "relationshipsWithPresentCharacters",
@@ -213,6 +218,19 @@ object ChatPrompts {
                 "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
                 "conversationHistory" to conversationHistory(updateLimit, saga),
                 "latestMessage" to message.toAINormalize(messageExclusions),
+                "userToneProtocol" to
+                    """
+                    Analyze the 'latestMessage' from the user and extract its EmotionalTone.
+                    Valid tones: ${EmotionalTone.entries.joinToString { it.name }}.
+                    Return the tone in the 'userTone' field.
+                    """.trimIndent(),
+                "userReactionProtocol" to
+                    """
+                    Based on the 'latestMessage' from the user and the 'sceneSummary', generate reactions from characters present in the scene.
+                    Characters should react to what the user just said/did.
+                    Return these in the 'userReactions' field as a list of AIReaction objects { "character": "Name", "reaction": "Emoji", "thought": "Brief thought" }.
+                    Exclude the message sender from reacting to their own message.
+                    """.trimIndent(),
             )
 
         return promptService

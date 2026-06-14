@@ -17,6 +17,7 @@ import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class SagaHistoryUseCaseImpl
@@ -64,8 +65,8 @@ class SagaHistoryUseCaseImpl
                     )!!
             }
 
-        override fun generateEndMessageStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<String>>> =
-            kotlinx.coroutines.flow.flow {
+        override fun generateEndMessageStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<String>?>> =
+            flow {
                 try {
                     genreConfigService.getGenreConfig(saga.data.genre)
                     val prompt = SagaPrompts.endCredits(promptService, saga, emptyString())
@@ -89,8 +90,8 @@ class SagaHistoryUseCaseImpl
                 }
             }
 
-        override fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>>> =
-            kotlinx.coroutines.flow.flow {
+        override fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>?>> =
+            flow {
                 try {
                     genreConfigService.getGenreConfig(saga.data.genre)
                     val prompt =
@@ -119,7 +120,7 @@ class SagaHistoryUseCaseImpl
                         ).collect { state ->
 
                             if (state is StreamingState.Success) {
-                                val ending = state.data.data
+                                val ending = state.data!!.data
                                 sagaRepository.updateSaga(
                                     saga.data.copy(
                                         endMessage = ending.endingMessage,

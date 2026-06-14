@@ -1070,7 +1070,7 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewCharacter(
                                 generatedCharacter,
-                                generated.finalMessage,
+                                generated!!.finalMessage,
                                 saga = currentSaga.data,
                             ),
                         )

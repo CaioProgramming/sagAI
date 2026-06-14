@@ -25,7 +25,7 @@ class SagaIdeationService
         suspend fun generateCosmicLibrary(
             userPrompt: String,
             excludedGenres: List<Genre> = emptyList(),
-        ): Flow<StreamingState<LibraryPitchesResponse>> {
+        ): Flow<StreamingState<LibraryPitchesResponse?>> {
             val availableGenres = Genre.entries - excludedGenres.toSet()
             val themes = availableGenres.joinToString(", ") { it.name }
             val blueprint =
@@ -62,7 +62,7 @@ class SagaIdeationService
             sagaDraft: SagaDraft,
             characterInfo: CharacterInfo,
             identity: String,
-        ): Flow<StreamingState<SacredContract>> {
+        ): Flow<StreamingState<SacredContract?>> {
             val blueprint =
                 NewSagaPrompts.sacredBindingPrompt(promptService, sagaDraft, characterInfo, identity)
             return gemmaClient.generateStreaming<SacredContract>(

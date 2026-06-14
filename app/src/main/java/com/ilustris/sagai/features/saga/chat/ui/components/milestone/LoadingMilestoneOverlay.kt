@@ -29,10 +29,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -57,7 +57,12 @@ fun LoadingMilestoneOverlay(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(32.dp),
+                    .padding(32.dp)
+                    .reactiveShimmer(
+                        true,
+                        duration = 3.seconds,
+                        repeatMode = RepeatMode.Restart,
+                    ),
         ) {
             Image(
                 painterResource(genre.icon),
@@ -67,15 +72,9 @@ fun LoadingMilestoneOverlay(
                     sparkModifier
                         .genreVfx(genre)
                         .padding(8.dp)
-                        .gradientFill(Brush.verticalGradient(genre.colorPalette()))
+                        .gradientFill(Brush.horizontalGradient(themeBrushColors()))
                         .size(
                             50.dp,
-                        )
-                        .reactiveShimmer(
-                            true,
-                            duration = 4.seconds,
-                            targetValue = 200f,
-                            repeatMode = RepeatMode.Restart,
                         ),
             )
 
@@ -96,10 +95,10 @@ fun LoadingMilestoneOverlay(
                                         MaterialTheme.colorScheme.primary,
                                         blurRadius = 10f,
                                     ),
+                                brush = Brush.horizontalGradient(themeBrushColors()),
                             ),
                         modifier =
                             Modifier
-                                .reactiveShimmer(true)
                                 .padding(16.dp)
                                 .fillMaxWidth(),
                     )

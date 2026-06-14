@@ -41,8 +41,8 @@ import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
 import com.ilustris.sagai.ui.components.BookGenerationReasoning
 import com.ilustris.sagai.ui.components.CosmicBook
-import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.saturation
 
 @Composable
 fun BookShelf(
@@ -135,7 +135,8 @@ private fun SharedTransitionScope.GeneratingBookFocus(
                     .sharedBounds(
                         rememberSharedContentState(key = "book-${act.data.id}"),
                         animatedVisibilityScope,
-                    ).width(280.dp)
+                    )
+                    .width(280.dp)
                     .fillMaxHeight(0.55f)
                     .levitate(true)
                     .divineAura()
@@ -193,7 +194,8 @@ private fun BookShelfPager(
                             this.scaleX = scale
                             this.scaleY = scale
                             this.alpha = if (isSelected) 1f else 0.6f
-                        }.clickable {
+                        }
+                        .clickable {
                             if (isSelected) onBookSelected(act)
                         },
                 contentAlignment = Alignment.Center,
@@ -223,7 +225,7 @@ private fun BookShelfPager(
                             .sharedBounds(
                                 rememberSharedContentState(key = "book-${act.data.id}"),
                                 animatedVisibilityScope,
-                            ).grayScale(if (act.book == null) 0f else 1f)
+                            ).saturation(if (act.book == null) 0f else 1f)
                             .width(280.dp)
                             .fillMaxHeight(.75f)
                             .padding(vertical = 16.dp)

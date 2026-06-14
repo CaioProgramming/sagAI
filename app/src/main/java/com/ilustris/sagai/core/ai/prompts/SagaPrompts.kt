@@ -115,6 +115,8 @@ object SagaPrompts {
             "review",
             "emotionalReview",
             "isEnded",
+            "playTimeMs",
+            "emotionalProfile",
         )
 
     fun mainContext(
@@ -312,8 +314,8 @@ object SagaPrompts {
                     saga
                         .flatMessages()
                         .takeLast(10)
-                    .joinToString("\n") { "${it.character?.name}: ${it.message.text}" },
-                        narrativeStyle = conversationDirective,
+                        .joinToString("\n") { "${it.character?.name}: ${it.message.text}" },
+                narrativeStyle = conversationDirective,
             )
 
         return promptService.buildSplitBlueprint(WIKI_INSIGHT_BLUEPRINT, args)

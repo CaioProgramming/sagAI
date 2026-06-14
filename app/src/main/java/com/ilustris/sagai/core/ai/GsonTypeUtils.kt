@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.model.AIError
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -43,9 +44,21 @@ fun <T> parseAIGenerationFromJson(
     }
     val obj = root.asJsonObject
 
-    val dataElement =
-        obj.get("data")
-            ?: throw JsonSyntaxException("Missing 'data' in AIGeneration JSON")
+    val errorElement = obj.get("error")
+    val error: AIError? =
+        if (errorElement != null && !errorElement.isJsonNull) {
+            gson.fromJson(errorElement, AIError::class.java)
+        } else {
+            null
+        }
+
+    val dataElement = obj.get("data")
+    if (dataElement == null || dataElement.isJsonNull) {
+        if (error != null) {
+            return AIGeneration(data = null, error = error)
+        }
+        throw JsonSyntaxException("Missing 'data' or 'error' in AIGeneration JSON")
+    }
 
     val data: T =
         when (dataType) {
@@ -58,10 +71,20 @@ fun <T> parseAIGenerationFromJson(
             }
 
             else -> {
-                gson.fromJson(dataElement, dataType) as T
+                // Handle double-stringification: if the target is an object but we got a string
+                if (dataElement.isJsonPrimitive && dataElement.asJsonPrimitive.isString) {
+                    try {
+                        val innerJson = dataElement.asString
+                        gson.fromJson(innerJson, dataType)
+                    } catch (e: Exception) {
+                        gson.fromJson(dataElement, dataType)
+                    }
+                } else {
+                    gson.fromJson(dataElement, dataType)
+                }
             }
         }
-    return AIGeneration(data = data)
+    return AIGeneration(data = data, error = error)
 }
 
 @OptIn(ExperimentalStdlibApi::class)

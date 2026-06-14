@@ -32,7 +32,7 @@ interface MessageUseCase {
     suspend fun generateMessage(
         saga: SagaMetadata,
         message: MessageContent,
-    ): Flow<StreamingState<AIReply>>
+    ): Flow<StreamingState<AIReply?>>
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
 

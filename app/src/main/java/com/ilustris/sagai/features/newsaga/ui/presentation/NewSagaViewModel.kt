@@ -68,7 +68,7 @@ class NewSagaViewModel
 
         private fun updateState(reducer: NewSagaUiState.() -> NewSagaUiState) {
             _uiState.update(reducer)
-    }
+        }
 
         private fun cancelInitialEchoes() {
             echoesRequestGeneration++
@@ -176,7 +176,7 @@ class NewSagaViewModel
                         lockedCharacter = null,
                         isReadyToSave = false,
                         currentVisualConfig = visualConfig,
-                )
+                    )
                 }
             }
         }
@@ -289,11 +289,11 @@ class NewSagaViewModel
             updateState {
                 val updatedLockedCharacter =
                     lockedCharacter?.takeIf { it.id == id }?.copy(
-                    name = nameInput,
-                    description = descriptionInput,
-                ) ?: lockedCharacter
+                        name = nameInput,
+                        description = descriptionInput,
+                    ) ?: lockedCharacter
                 copy(
-                libraryBooks =
+                    libraryBooks =
                         libraryBooks.map { entry ->
                             if (entry.first.draft.id == updatedBook.draft.id) {
                                 entry.copy(first = updatedBook)
@@ -356,7 +356,7 @@ class NewSagaViewModel
 
                             is StreamingState.Success -> {
                                 viewModelScope.launch(Dispatchers.IO) {
-                                    mergeBooks(state.data, append)
+                                    mergeBooks(state.data!!, append)
                                 }
                             }
 
@@ -392,11 +392,11 @@ class NewSagaViewModel
                         libraryBooks +
                             newBooks.filter { it.first.draft.genre !in existingGenres }
                     } else {
-                    newBooks
+                        newBooks
                     }
                 copy(
                     libraryBooks = mergedBooks,
-                statusMessage = welcomeMessage ?: statusMessage,
+                    statusMessage = welcomeMessage ?: statusMessage,
                     isSaving = false,
                     isGenerating = false,
                     isLoadingMore = false,
@@ -410,14 +410,14 @@ class NewSagaViewModel
             val characters =
                 book.characters.map { character ->
                     if (character.id.isNullOrBlank()) {
-                    character.copy(
-                        id = "${System.currentTimeMillis()}_${character.name.hashCode()}",
-                    )
+                        character.copy(
+                            id = "${System.currentTimeMillis()}_${character.name.hashCode()}",
+                        )
                     } else {
                         character
                     }
                 }
-        return book.copy(draft = draft, characters = characters)
+            return book.copy(draft = draft, characters = characters)
         }
 
         private fun preFetchVisualConfigs() {
@@ -430,10 +430,10 @@ class NewSagaViewModel
             }
         }
 
-    private fun saveSaga() {
-        val sagaDraft = _uiState.value.lockedSaga ?: return
-        val characterInfo = _uiState.value.lockedCharacter ?: return
-        updateState { copy(isSaving = true, savingError = null) }
+        private fun saveSaga() {
+            val sagaDraft = _uiState.value.lockedSaga ?: return
+            val characterInfo = _uiState.value.lockedCharacter ?: return
+            updateState { copy(isSaving = true, savingError = null) }
 
             newSagaUseCase
                 .sealSacredContract(
@@ -474,13 +474,13 @@ class NewSagaViewModel
             saveSaga()
         }
 
-    private fun resetAfterSave() {
-        updateState {
-            NewSagaUiState(
-                genresVisuals = genresVisuals,
-            )
-        }
-        lastUserPrompt = ""
+        private fun resetAfterSave() {
+            updateState {
+                NewSagaUiState(
+                    genresVisuals = genresVisuals,
+                )
+            }
+            lastUserPrompt = ""
         requestInitialEchoes()
         }
 

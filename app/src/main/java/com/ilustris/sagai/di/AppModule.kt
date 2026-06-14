@@ -16,7 +16,6 @@ import com.ilustris.sagai.core.ai.ImageGenerator
 import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
-import com.ilustris.sagai.core.ai.SafetyClient
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -300,38 +299,21 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesSafetyClient(
-        remoteConfigService: RemoteConfigService,
-        ageVerificationService: AgeVerificationService,
-        geminiApiClient: GeminiApiClient,
-        promptService: PromptService,
-        aiAuditLogDao: AIAuditLogDao,
-    ): SafetyClient =
-        SafetyClient(
-            remoteConfigService,
-            ageVerificationService,
-            promptService,
-            geminiApiClient,
-            aiAuditLogDao,
-        )
-
-    @Provides
-    @Singleton
     fun providesSummarizationClient(
         remoteConfigService: RemoteConfigService,
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
-        safetyClient: SafetyClient,
         sideEffectService: SideEffectService,
         geminiApiClient: GeminiApiClient,
+        ageVerificationService: AgeVerificationService,
     ): GemmaClient =
         GemmaClient(
             remoteConfig = remoteConfigService,
-            safetyClient = safetyClient,
             sideEffectService = sideEffectService,
             geminiApiClient = geminiApiClient,
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
+            ageVerificationService = ageVerificationService,
         )
 
     @Provides

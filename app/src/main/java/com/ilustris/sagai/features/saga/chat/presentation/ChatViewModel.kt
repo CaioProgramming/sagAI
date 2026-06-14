@@ -1205,19 +1205,12 @@ class ChatViewModel
                         is StreamingState.Success -> {
                             stateManager.updateState { it.copy(reasoningChunk = null) }
                             updateLoading(false)
+                            sagaThemeManager.playHaptics()
                             withContext(Dispatchers.IO) {
                                 messageUseCase.updateMessage(newMessage.message.copy(status = MessageStatus.OK))
-
-                                messageUseCase.generateExtraContent(
-                                    saga = saga,
-                                    message = newMessage.message,
-                                    characterReference = saga.findCharacter(newMessage.message.speakerName),
-                                    generateAudio = false,
-                                    isFromUser = true,
-                                )
                             }
 
-                            streamingState.data.newCharacter?.let { discovery ->
+                            streamingState.data?.newCharacter?.let { discovery ->
                                 val generatedMessage = streamingState.data.message
 
                                 if (generatedMessage.senderType == SenderType.NARRATOR) return@let

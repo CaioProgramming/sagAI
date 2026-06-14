@@ -31,7 +31,7 @@ class NewSagaUseCaseImpl
         override fun executePrompt(
             prompt: String,
             excludedGenres: List<Genre>,
-        ): Flow<StreamingState<LibraryPitchesResponse>> =
+        ): Flow<StreamingState<LibraryPitchesResponse?>> =
             flow {
                 val sourceFlow = sagaIdeationService.generateCosmicLibrary(prompt, excludedGenres)
                 emitAll(
@@ -69,7 +69,7 @@ class NewSagaUseCaseImpl
                                 }
 
                                 is StreamingState.Success -> {
-                                    val contract = streamingState.data
+                                    val contract = streamingState.data!!
                                     val savedSagaResult = saveSaga(contract.saga)
                                     val savedSaga =
                                         savedSagaResult.getSuccess()

@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.core.ai.GemmaClient.Companion.CORE_FLAG
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import timber.log.Timber
 import java.lang.reflect.ParameterizedType
@@ -19,6 +20,7 @@ enum class ModelRequirement {
 abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
     protected val promptService: PromptService,
+    protected val ageVerificationService: AgeVerificationService,
 ) {
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
@@ -66,22 +68,28 @@ abstract class AIClient(
             }
         }
 
+    suspend fun buildSafetyPrompt() {
+    }
+
     suspend fun buildCorePrompt(
         requirement: ModelRequirement,
         requireTranslation: Boolean,
         dataTypeName: String,
         structure: String,
-    ): SplitPrompt =
-        promptService.buildSplitBlueprint(
+    ): SplitPrompt {
+        val userAge = ageVerificationService.getUserAgeGroup()
+        return promptService.buildSplitBlueprint(
             remoteConfigKey = getCoreBlueprintKey(requirement),
             variables =
                 mapOf(
                     "language" to getLanguage(requireTranslation),
                     "type" to dataTypeName,
                     "structure" to structure,
+                    "userAge" to userAge.name,
                 ),
             logEnabled = false,
         )
+    }
 
     suspend fun buildCoreInstructions(
         requirement: ModelRequirement,
@@ -92,6 +100,44 @@ abstract class AIClient(
         val config = buildCorePrompt(requirement, requireTranslation, dataTypeName, structure)
         put("task", config.processedTemplate)
         putAll(config.renderInstructions())
+    }
+
+    suspend fun buildUnifiedInstructions(
+        requirement: ModelRequirement,
+        requireTranslation: Boolean,
+        dataTypeName: String,
+        structure: String,
+        userInteraction: Boolean,
+        prompt: String,
+        systemInstructions: Map<String, Any>,
+    ): Map<String, Any> {
+        val coreInstructions =
+            buildCoreInstructions(requirement, requireTranslation, dataTypeName, structure)
+        val safetyInstructions =
+            if (userInteraction) {
+                val userAge = ageVerificationService.getUserAgeGroup()
+                val blueprintKey = "safety_guardrails_blueprint"
+                val safetyPrompt =
+                    promptService.buildSplitBlueprint(
+                        blueprintKey,
+                        mapOf(
+                            "userAge" to userAge.name,
+                            "userInput" to prompt,
+                        ),
+                    )
+                buildMap {
+                    put("Safety Verification", safetyPrompt.processedTemplate)
+                    putAll(safetyPrompt.renderInstructions())
+                }
+            } else {
+                emptyMap()
+            }
+
+        return buildMap {
+            putAll(coreInstructions)
+            putAll(systemInstructions)
+            putAll(safetyInstructions)
+        }
     }
 
     fun getCoreBlueprintKey(requirement: ModelRequirement): String =

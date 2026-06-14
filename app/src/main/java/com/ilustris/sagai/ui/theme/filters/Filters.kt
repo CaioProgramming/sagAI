@@ -23,7 +23,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.colorTemperature
 import com.ilustris.sagai.ui.theme.contrast
-import com.ilustris.sagai.ui.theme.grayScale
+import com.ilustris.sagai.ui.theme.saturation
 import com.ilustris.sagai.ui.theme.vignette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -159,7 +159,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 // Adaptive scale factor based on an assumed 1080px reference.
                 // Weakens grain and pixel-based blurs on small elements (like avatars) to prevent destroying legibility.
@@ -261,7 +262,7 @@ fun Modifier.fallbackEffect(
     var modifier: Modifier = this
 
     if (saturation != 1.0f) {
-        modifier = modifier.grayScale(saturation * fallbackReduction)
+        modifier = modifier.saturation(saturation * fallbackReduction)
     }
     if (brightnessValue != 0f) {
         modifier = modifier.brightness(brightnessValue * fallbackReduction)

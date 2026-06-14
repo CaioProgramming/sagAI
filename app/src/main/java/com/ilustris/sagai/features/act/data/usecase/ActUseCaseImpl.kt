@@ -133,7 +133,7 @@ class ActUseCaseImpl
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
-                                val newAct = state.data.data
+                                val newAct = state.data!!.data
                                 val updatedAct =
                                     updateAct(
                                         actContent.data.copy(
@@ -264,7 +264,8 @@ class ActUseCaseImpl
                         when (state) {
                             is StreamingState.Success -> {
                                 val introContent = state.data
-                                val updatedAct = updateAct(act.copy(introduction = introContent.data))
+                                val updatedAct =
+                                    updateAct(act.copy(introduction = introContent!!.data))
                                 emit(
                                     StreamingState.Success(
                                         GeneratedContent(
@@ -325,7 +326,7 @@ class ActUseCaseImpl
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {
-                                    val synthesis = state.data.data
+                                    val synthesis = state.data!!.data
 
                                     // 1. Update Act details & Narrative Guide
                                     val updatedAct =

@@ -180,7 +180,7 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaMetadata,
             message: MessageContent,
-        ): Flow<StreamingState<AIReply>> =
+        ): Flow<StreamingState<AIReply?>> =
             flow {
                 try {
                     if (isDebugModeEnabled) {
@@ -251,7 +251,7 @@ class MessageUseCaseImpl
                             genre = saga.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val reply = state.data
+                                val reply = state.data!!
                                 reply.newCharacter?.let { discovery ->
                                     val speaker = reply.message.speakerName
                                     if (speaker != null &&
@@ -297,6 +297,12 @@ class MessageUseCaseImpl
                                 }
                                 withContext(Dispatchers.IO) {
                                     handleAIReplyReactions(saga, savedMessage, reply.reactions)
+                                    reply?.userTone?.let { tone ->
+                                        updateMessage(message.message.copy(emotionalTone = tone))
+                                    }
+                                    reply?.userReactions?.let { reactions ->
+                                        handleAIReplyReactions(saga, message.message, reactions)
+                                    }
                                 }
                                 emit(StreamingState.Success(reply.copy(message = savedMessage)))
                             } else {
@@ -319,7 +325,7 @@ class MessageUseCaseImpl
             message: Message,
             reactions: List<AIReaction>?,
         ) {
-            val sagaContent = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
+            val sagaContent = sagaRepository.getSagaById(saga.data.id).first() ?: return
             reactions?.forEach { aiReaction ->
                 val character = sagaContent.findCharacter(aiReaction.character)
                 if (character != null && character.data.id != message.characterId) {

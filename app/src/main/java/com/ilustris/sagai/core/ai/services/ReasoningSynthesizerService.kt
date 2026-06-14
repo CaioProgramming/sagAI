@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
+import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.CancellationException
@@ -27,10 +28,12 @@ class ReasoningSynthesizerService
         @PublishedApi internal val gemmaClient: GemmaClient,
         promptService: PromptService,
         remoteConfigService: RemoteConfigService,
+        ageVerificationService: AgeVerificationService,
         @PublishedApi internal val genreConfigService: GenreConfigService,
     ) : AIClient(
             remoteConfigService,
             promptService,
+            ageVerificationService,
         ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
@@ -70,19 +73,6 @@ class ReasoningSynthesizerService
                         }
 
                         is StreamingState.Success -> {
-                            if (showReasoning && lastReasoning.isNotBlank()) {
-                                try {
-                                    synthesizeNow(
-                                        lastReasoning,
-                                        context,
-                                        getLanguage(true),
-                                        this,
-                                        genre,
-                                    )
-                                } catch (_: CancellationException) {
-                                    // Flow completed while synthesis was running.
-                                }
-                            }
                             synthesisJob?.cancel()
                             send(state)
                         }
@@ -177,7 +167,6 @@ class ReasoningSynthesizerService
 
                 fallbackMessage?.let {
                     scope.send(StreamingState.Reasoning(it))
-                    delay(2.seconds)
                 }
             } catch (e: Exception) {
                 Timber.e("Error fetching fallbacks: ${e.message}")

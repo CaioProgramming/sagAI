@@ -173,7 +173,7 @@ class TimelineUseCaseImpl
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
-                                val unifiedLore = state.data.data
+                                val unifiedLore = state.data!!.data
 
                                 // 1. Update Timeline Details
                                 val timelineUpdate =
@@ -293,7 +293,7 @@ class TimelineUseCaseImpl
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
-                                val newLore = state.data.data
+                                val newLore = state.data!!.data
                                 val updatedTimeline =
                                     updateTimeline(
                                         currentTimeline.copy(

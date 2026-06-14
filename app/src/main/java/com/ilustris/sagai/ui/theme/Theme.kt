@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.Placeholder
@@ -102,6 +103,13 @@ private val LightColorScheme =
 fun themeBrushColors(): List<Color> {
     val genre = LocalSagaGenre.current
     return genre?.colorPalette() ?: iridescentGradient
+}
+
+@Composable
+fun themeIcon(): Painter {
+    val genre = LocalSagaGenre.current
+    val iconRes = genre?.icon ?: R.drawable.ic_spark
+    return painterResource(iconRes)
 }
 
 private const val THEME_ANIMATION_DURATION = 600

@@ -55,7 +55,7 @@ class EmotionalReviewViewModel
                         is StreamingState.Success -> {
                             sagaRepository.updateSaga(
                                 sagaContent.data.copy(
-                                    emotionalProfile = state.data.emotionalProfile,
+                                    emotionalProfile = state.data!!.emotionalProfile,
                                     emotionalReview = state.data.emotionalProfile.emotionalContent,
                                     endMessage = state.data.endingMessage,
                                 ),

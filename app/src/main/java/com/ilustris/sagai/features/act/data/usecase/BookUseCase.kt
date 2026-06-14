@@ -11,13 +11,13 @@ interface BookUseCase {
     fun generateBookStream(
         saga: SagaContent,
         actContent: ActContent,
-    ): Flow<StreamingState<GeneratedContent<Book>>>
+    ): Flow<StreamingState<GeneratedContent<Book>?>>
 
     /**
      * Triggers the eager sequential generation of all completed acts in a saga.
      * Emits each book as it becomes ready.
      */
-    fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>>>
+    fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>?>>
 
     suspend fun resetBook(actContent: ActContent)
 }

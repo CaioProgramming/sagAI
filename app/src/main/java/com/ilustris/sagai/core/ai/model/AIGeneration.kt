@@ -6,5 +6,7 @@ import com.google.gson.annotations.SerializedName
 @Keep
 data class AIGeneration<T>(
     @SerializedName("data")
-    val data: T,
+    val data: T?,
+    @SerializedName("error")
+    val error: AIError? = null,
 )

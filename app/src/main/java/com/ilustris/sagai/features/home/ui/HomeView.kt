@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -352,8 +351,7 @@ private fun ChatList(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background)
-                            .statusBarsPadding(),
+                            .background(MaterialTheme.colorScheme.background),
                 ) {
                     Box(Modifier.size(24.dp))
                     AnimatedContent(
@@ -416,8 +414,7 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -463,13 +460,16 @@ private fun ChatList(
             )
         }
 
-        dynamicNewSagaTexts?.let {
-            item {
-                CreateSagaCard(
-                    modifier = Modifier.padding(16.dp),
-                    dynamicNewSagaTexts = dynamicNewSagaTexts,
-                    onCreateNewChat = onCreateNewChat,
-                )
+        item {
+            AnimatedContent(dynamicNewSagaTexts, transitionSpec = {
+                fadeIn(tween(700)) togetherWith fadeOut(tween(400))
+            }) {
+                it?.let { dynamicContent ->
+                    CreateSagaCard(
+                        dynamicNewSagaTexts = dynamicContent,
+                        onCreateNewChat = onCreateNewChat,
+                    )
+                }
             }
         }
 
@@ -555,12 +555,10 @@ private fun ChatList(
                                 Brush.horizontalGradient(iridescentGradient)
                             radius = 15f
                             spread = 10f
-                        }
-                        .background(
+                        }.background(
                             MaterialTheme.colorScheme.background,
                             MaterialTheme.shapes.large,
-                        )
-                        .fillMaxWidth(),
+                        ).fillMaxWidth(),
             ) {
                 Text(
                     stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -611,14 +609,12 @@ fun ChatCard(
                                 .sharedElement(
                                     rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
                                     animatedContentScope,
-                                )
-                                .dropShadow(CircleShape) {
+                                ).dropShadow(CircleShape) {
                                     radius = 5f
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }
-                                .size(50.dp),
+                                }.size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -630,7 +626,13 @@ fun ChatCard(
                                 .uppercase(),
                             visualConfig = visualConfig,
                             borderWidth = 1.dp,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .sharedBounds(
+                                        rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
+                                        animatedVisibilityScope = animatedContentScope,
+                                    ),
                         )
                     }
 
@@ -655,8 +657,7 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        )
-                                        .weight(1f),
+                                        ).weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime
@@ -712,7 +713,7 @@ fun ChatCard(
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Normal,
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                    fontFamily = MaterialTheme.typography.bodySmall.fontFamily,
                                     textAlign = TextAlign.Start,
                                     color = color.copy(alpha = .6f),
                                 ),

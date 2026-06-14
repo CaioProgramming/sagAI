@@ -130,7 +130,7 @@ class ChapterUseCaseImpl
                 updatedChapter
             }
 
-        override suspend fun generateChapterStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+        override suspend fun generateChapterStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
@@ -161,7 +161,7 @@ class ChapterUseCaseImpl
                             aiStats = prompt.getAIStats(),
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val genChapter = state.data.data
+                                val genChapter = state.data!!.data
                                 val updatedChapter =
                                     updateChapter(
                                         genChapter.copy(
@@ -405,7 +405,7 @@ class ChapterUseCaseImpl
             GeneratedContent(updatedChapter, intro.finalMessage)
         }
 
-        override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+        override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapter) = fetchContext(chapterId)
@@ -436,20 +436,28 @@ class ChapterUseCaseImpl
                             "Generating chapter introduction...",
                             genre = saga.data.genre,
                         ).collect { state ->
-                            if (state is StreamingState.Success) {
-                                val introContent = state.data
-                                val updatedChapter =
-                                    updateChapter(chapterContent.copy(introduction = introContent.data))
-                                emit(
-                                    StreamingState.Success(
-                                        GeneratedContent(
-                                            updatedChapter,
-                                            introContent.finalMessage,
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val introContent = state.data!!
+                                    val updatedChapter =
+                                        updateChapter(chapterContent.copy(introduction = introContent.data))
+                                    emit(
+                                        StreamingState.Success(
+                                            GeneratedContent(
+                                                updatedChapter,
+                                                introContent.finalMessage,
+                                            ),
                                         ),
-                                    ),
-                                )
-                            } else {
-                                emit(state as StreamingState<GeneratedContent<Chapter>>)
+                                    )
+                                }
+
+                                is StreamingState.Reasoning -> {
+                                    emit(state)
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(state)
+                                }
                             }
                         }
                 } catch (e: Exception) {
@@ -457,7 +465,7 @@ class ChapterUseCaseImpl
                 }
             }
 
-        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
@@ -495,7 +503,7 @@ class ChapterUseCaseImpl
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {
-                                    val synthesis = state.data.data
+                                    val synthesis = state.data!!.data
 
                                     // 1. Update Chapter details & Narrative Guide
                                     val updatedChapter =

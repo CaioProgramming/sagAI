@@ -27,6 +27,7 @@ import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.network.GeminiApiClient
 import com.ilustris.sagai.core.network.GeminiApiCodec
 import com.ilustris.sagai.core.network.GeminiHttpException
+import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.utils.findJsonContent
@@ -53,12 +54,12 @@ class GemmaClient
     @Inject
     constructor(
         remoteConfig: RemoteConfigService,
-        val safetyClient: SafetyClient,
         val sideEffectService: SideEffectService,
         val geminiApiClient: GeminiApiClient,
         promptService: PromptService,
+        ageVerificationService: AgeVerificationService,
         @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
-    ) : AIClient(remoteConfig, promptService) {
+    ) : AIClient(remoteConfig, promptService, ageVerificationService) {
         @PublishedApi
         internal val requestMutexes = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
 
@@ -151,8 +152,15 @@ class GemmaClient
                         filterOutputFields,
                     )
                 val finalInstructions =
-                    buildCoreInstructions(requirement, requireTranslation, type, structure)
-                        .plus(systemInstructions)
+                    buildUnifiedInstructions(
+                        requirement,
+                        requireTranslation,
+                        type,
+                        structure,
+                        userInteraction,
+                        prompt,
+                        systemInstructions,
+                    )
 
                 for (currentAttempt in 1..maxAttempts) {
                     try {
@@ -273,6 +281,9 @@ class GemmaClient
                                 requiredText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             val aiGeneration =
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
+                            aiGeneration.error?.let {
+                                throw GuardrailsException(it.type)
+                            }
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
@@ -434,7 +445,7 @@ class GemmaClient
                 val maxAttempts = maxAttempts(requirement)
                 val startTime = System.currentTimeMillis()
 
-                val (dataTypeName, systemInstruction) =
+                val (dataTypeName, systemInstructionMap) =
                     buildStructure<T>(
                         describeOutput,
                         filterOutputFields,
@@ -442,6 +453,17 @@ class GemmaClient
                         requireTranslation,
                         promptSplit.renderInstructions(),
                     )
+
+                val systemInstruction =
+                    buildUnifiedInstructions(
+                        requirement,
+                        requireTranslation,
+                        dataTypeName,
+                        "Prompt blueprint instructions",
+                        userInteraction,
+                        prompt,
+                        systemInstructionMap,
+                    ).toAINormalize()
 
                 for (currentAttempt in 1..maxAttempts) {
                     try {
@@ -532,7 +554,7 @@ class GemmaClient
                             val (requiredText, partIndex) =
                                 responseContent
                                     ?.filter { it.thought != true }
-                                .findJsonContent()
+                                    .findJsonContent()
                             val nativeThoughts =
                                 responseContent
                                     ?.filter { it.thought == true }
@@ -564,6 +586,9 @@ class GemmaClient
                                 requiredText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             val aiGeneration =
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
+                            aiGeneration.error?.let {
+                                throw GuardrailsException(it.type)
+                            }
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
@@ -710,7 +735,7 @@ class GemmaClient
             requirement: ModelRequirement,
             requireTranslation: Boolean,
             systemInstructions: Map<String, Any>,
-        ): Pair<String, String> {
+        ): Pair<String, Map<String, Any>> {
             val dataType = getJavaType<T>()
 
             val (typeName, structure) =
@@ -723,7 +748,7 @@ class GemmaClient
 
             val corePrompt = buildCorePrompt(requirement, requireTranslation, typeName, structure)
 
-            val systemInstruction = buildInstructions(corePrompt, systemInstructions)
+            val systemInstruction = buildInstructionsMap(corePrompt, systemInstructions)
             return Pair(typeName, systemInstruction)
         }
 
@@ -731,12 +756,7 @@ class GemmaClient
             userInteraction: Boolean,
             prompt: String,
         ) {
-            if (userInteraction) {
-                val safetyStatus = safetyClient.checkSafety(prompt)
-                if (safetyStatus != SafeGuard.OK) {
-                    throw GuardrailsException(safetyStatus)
-                }
-            }
+            // No-op: Safety is now integrated into main requests via AIGeneration.error and safety directives.
         }
 
         /**
@@ -757,11 +777,10 @@ class GemmaClient
             logEnabled: Boolean = true,
             aiStats: AIStats? = null,
             systemInstructions: Map<String, Any> = emptyMap(),
-        ): Flow<StreamingState<T>> =
+        ): Flow<StreamingState<T?>> =
             flow {
                 try {
-                    checkSafety(userInteraction, prompt)
-                    val (dataTypeName, systemInstruction) =
+                    val (dataTypeName, baseSystemInstruction) =
                         buildStructure<T>(
                             describeOutput,
                             filterOutputFields,
@@ -769,6 +788,17 @@ class GemmaClient
                             requireTranslation,
                             systemInstructions,
                         )
+
+                    val systemInstruction =
+                        buildUnifiedInstructions(
+                            requirement,
+                            requireTranslation,
+                            dataTypeName,
+                            "Prompt blueprint instructions",
+                            userInteraction,
+                            prompt,
+                            baseSystemInstruction,
+                        ).toAINormalize()
 
                     val model = modelName(requirement)
 
@@ -878,6 +908,23 @@ class GemmaClient
                                                 }
                                             }
                                         }
+                                        candidate?.let {
+                                            if (logEnabled) {
+                                                Timber.d("Instructions: \n${systemInstruction}\n")
+
+                                                Timber.d("Prompt requested:\n$prompt\n")
+
+                                                Timber.d(
+                                                    "Input JSON: ${
+                                                        geminiRequest.toJsonFormatExcludingFields(
+                                                            AI_EXCLUDED_FIELDS,
+                                                        )
+                                                    }",
+                                                )
+
+                                                Timber.d("Request stats: \n${it.content.toJsonFormat()}\n")
+                                            }
+                                        }
                                     } catch (e: Exception) {
                                         Timber.w("Failed to parse stream chunk: $jsonStr => ${e.message}")
                                     }
@@ -886,9 +933,7 @@ class GemmaClient
 
                             val fullText = accumulatedText.toString()
                             val fullThoughts = accumulatedThoughts.toString()
-                            if (logEnabled) {
-                                Timber.i("Streaming completed, accumulated text length: ${fullText.length}")
-                            }
+
                             val cleanedJsonString =
                                 fullText.sanitizeAndExtractJsonString(AIGeneration::class.java)
                             if (cleanedJsonString.isEmpty()) {
@@ -896,6 +941,10 @@ class GemmaClient
                             }
                             val aiGeneration =
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
+
+                            aiGeneration.error?.let {
+                                throw GuardrailsException(it.type)
+                            }
 
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
@@ -908,6 +957,8 @@ class GemmaClient
                                         reasoning = fullThoughts,
                                         rawResponse = fullText,
                                         responseTime = duration,
+                                        systemInstruction = systemInstruction,
+                                        sentVariables = aiStats?.sentVariables.toJsonFormat(),
                                     ),
                                 )
                                 Timber.i("Generation Streaming Bench: $model took ${duration}ms")
@@ -985,6 +1036,8 @@ class GemmaClient
                                             errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                             responseTime = duration,
                                             safetyStatus = safetyStatus,
+                                            systemInstruction = systemInstruction,
+                                            sentVariables = aiStats?.sentVariables.toJsonFormat(),
                                         ),
                                     )
                                 }
@@ -1012,12 +1065,11 @@ class GemmaClient
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             userInteraction: Boolean = false,
             logEnabled: Boolean = true,
-        ): Flow<StreamingState<T>> =
+        ): Flow<StreamingState<T?>> =
             flow {
                 try {
                     val prompt = promptSplit.processedTemplate
-                    checkSafety(userInteraction, prompt)
-                    val (dataTypeName, systemInstruction) =
+                    val (dataTypeName, baseSystemInstruction) =
                         buildStructure<T>(
                             describeOutput,
                             filterOutputFields,
@@ -1025,6 +1077,17 @@ class GemmaClient
                             requireTranslation,
                             promptSplit.renderInstructions(),
                         )
+
+                    val systemInstruction =
+                        buildUnifiedInstructions(
+                            requirement,
+                            requireTranslation,
+                            dataTypeName,
+                            "Prompt blueprint instructions",
+                            userInteraction,
+                            prompt,
+                            baseSystemInstruction,
+                        ).toAINormalize()
 
                     val model = modelName(requirement)
 
@@ -1152,6 +1215,10 @@ class GemmaClient
                             }
                             val aiGeneration =
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
+
+                            aiGeneration.error?.let {
+                                throw GuardrailsException(it.type)
+                            }
 
                             val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
@@ -1242,6 +1309,7 @@ class GemmaClient
                                             errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                             responseTime = duration,
                                             safetyStatus = safetyStatus,
+                                            systemInstruction = systemInstruction,
                                             sentVariables = promptSplit.sentVariables.toJsonFormat(),
                                         ),
                                     )
@@ -1303,13 +1371,18 @@ class GemmaClient
         }
     }
 
-fun buildInstructions(
+fun buildInstructionsMap(
     corePrompt: SplitPrompt,
     systemInstructions: Map<String, Any>,
-): String =
+): Map<String, Any> =
     buildMap {
         putAll(corePrompt.renderInstructions().plus("task" to corePrompt.processedTemplate))
         putAll(systemInstructions)
-    }.toAINormalize()
+    }
+
+fun buildInstructions(
+    corePrompt: SplitPrompt,
+    systemInstructions: Map<String, Any>,
+): String = buildInstructionsMap(corePrompt, systemInstructions).toAINormalize()
 
 const val KEY_FLAG = "FIREBASE_KEY"

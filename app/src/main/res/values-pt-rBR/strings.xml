@@ -793,5 +793,7 @@
     <string name="guardrail_age_message">Este conteúdo não é apropriado para a sua idade verificada.</string>
     <string name="guardrail_explicit_title">Conteúdo Explícito Detectado</string>
     <string name="guardrail_explicit_message">Sua mensagem contém conteúdo sexual ou gráfico explícito que é proibido para todos os usuários. Por favor, mantenha um ambiente seguro.</string>
+    <string name="guardrail_unknown_title">Interrupção do Sistema</string>
+    <string name="guardrail_unknown_message">Algo inesperado aconteceu durante o processamento. Por favor, tente novamente.</string>
     <string name="guardrail_dismiss">Entendi</string>
 </resources>

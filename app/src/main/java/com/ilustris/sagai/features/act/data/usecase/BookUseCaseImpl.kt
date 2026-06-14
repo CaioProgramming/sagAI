@@ -35,7 +35,7 @@ class BookUseCaseImpl
         override fun generateBookStream(
             saga: SagaContent,
             actContent: ActContent,
-        ): Flow<StreamingState<GeneratedContent<Book>>> =
+        ): Flow<StreamingState<GeneratedContent<Book>?>> =
             flow {
                 try {
                     val args =
@@ -77,7 +77,8 @@ class BookUseCaseImpl
                             genre = saga.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val book = state.data.data.copy(id = 0, actId = actContent.data.id)
+                                val book =
+                                    state.data!!.data.copy(id = 0, actId = actContent.data.id)
                                 bookDao.saveBook(book)
                             }
                             emit(state)
@@ -87,7 +88,7 @@ class BookUseCaseImpl
                 }
             }
 
-        override fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>>> =
+        override fun generateSagaChronicles(saga: SagaContent): Flow<StreamingState<GeneratedContent<Book>?>> =
             flow {
                 // Find all completed acts that don't have a book yet
                 val completedActs = saga.acts.filter { it.book == null }

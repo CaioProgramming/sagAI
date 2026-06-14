@@ -70,7 +70,7 @@ class EmotionalUseCaseImpl
                 )!!
         }
 
-        override fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding>> =
+        override fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding?>> =
             flow {
                 val prompt =
                     SagaPrompts.generateSagaEnding(
