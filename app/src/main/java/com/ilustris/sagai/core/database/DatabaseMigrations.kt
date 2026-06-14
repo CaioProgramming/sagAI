@@ -260,6 +260,15 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_19_20 =
+        object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `promptTokens` INTEGER")
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `candidatesTokens` INTEGER")
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `totalTokens` INTEGER")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -280,5 +289,6 @@ object DatabaseMigrations {
             MIGRATION_16_17,
             MIGRATION_17_18,
             MIGRATION_18_19,
+            MIGRATION_19_20,
         )
 }

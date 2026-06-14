@@ -25,6 +25,9 @@ data class AIAuditLog(
     val systemInstruction: String? = null,
     /** JSON representation of the variables map sent to [com.ilustris.sagai.core.ai.services.PromptService.buildSplitBlueprint]. */
     val sentVariables: String? = null,
+    val promptTokens: Int? = null,
+    val candidatesTokens: Int? = null,
+    val totalTokens: Int? = null,
 )
 
 data class AIStats(

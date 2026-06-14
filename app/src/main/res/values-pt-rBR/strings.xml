@@ -595,6 +595,10 @@
     <string name="audit_logs_system_instruction">Instrução de Sistema:</string>
     <string name="audit_logs_sent_variables">Variáveis Enviadas:</string>
     <string name="audit_logs_error_label">Erro:</string>
+    <string name="audit_logs_token_usage">Uso de Tokens:</string>
+    <string name="audit_logs_tokens_prompt">Prompt: %d</string>
+    <string name="audit_logs_tokens_candidates">Candidatos: %d</string>
+    <string name="audit_logs_tokens_total">Total: %d</string>
     <string name="clear_preferences">Limpar preferências</string>
     <string name="backup_loading_restoring_database">Restaurando banco de dados...</string>
     <string name="backup_loading_creating">Criando backup</string>

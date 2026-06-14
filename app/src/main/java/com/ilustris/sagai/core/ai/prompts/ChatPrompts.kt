@@ -152,64 +152,61 @@ object ChatPrompts {
             }
 
         val worldContext =
-            mapOf(
-                "worldContext" to
-                    buildMap {
-                        put(
-                            "sagaContext",
-                            saga.data.asMap(),
-                        )
-                        sceneSummary?.let {
-                            put("currentStoryContext", sceneSummary.asMap())
-                        }
+            buildMap {
+                put(
+                    "sagaContext",
+                    saga.data.asMap(),
+                )
+                sceneSummary?.let {
+                    put("currentStoryContext", sceneSummary.asMap())
+                }
 
-                        put(
-                            "storyCharacters",
-                            saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
-                        )
+                put(
+                    "storyCharacters",
+                    saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
+                )
 
-                        messageSender?.let {
+                messageSender?.let {
+                    put(
+                        "messageSender",
+                        buildMap {
+                            putAll(messageSender.data.asMap())
+                            val storyArcs = characterArcsById[it.data.id]
+                            storyArcs?.let {
+                                put(
+                                    "CharacterArcs",
+                                    storyArcs.takeLast(3).normalizetoAIItems(),
+                                )
+                            }
                             put(
-                                "messageSender",
-                                buildMap {
-                                    putAll(messageSender.data.asMap())
-                                    val storyArcs = characterArcsById[it.data.id]
-                                    storyArcs?.let {
-                                        put(
-                                            "CharacterArcs",
-                                            storyArcs.takeLast(3).normalizetoAIItems(),
-                                        )
-                                    }
-                                    put(
-                                        "LatestCharacterEvents",
-                                        it.events
-                                            .map {
-                                                "${it.character.name} - ${it.event.title}\n${it.event.summary}"
-                                            }.takeLast(3)
-                                            .normalizetoAIItems(),
-                                    )
-                                    put(
-                                        "relationshipsWithPresentCharacters",
-                                        charactersInScene
-                                            .mapNotNull {
-                                                messageSender
-                                                    .findRelationship(it.data.id)
-                                                    ?.summarizeRelation()
-                                            }.normalizetoAIItems(),
-                                    )
-                                }.toAINormalize(CHARACTER_EXCLUSIONS),
+                                "LatestCharacterEvents",
+                                it.events
+                                    .map {
+                                        "${it.character.name} - ${it.event.title}\n${it.event.summary}"
+                                    }.takeLast(3)
+                                    .normalizetoAIItems(),
                             )
-                        }
+                            put(
+                                "relationshipsWithPresentCharacters",
+                                charactersInScene
+                                    .mapNotNull {
+                                        messageSender
+                                            .findRelationship(it.data.id)
+                                            ?.summarizeRelation()
+                                    }.normalizetoAIItems(),
+                            )
+                        }.toAINormalize(CHARACTER_EXCLUSIONS),
+                    )
+                }
 
-                        if (mentionedWikis.isNotEmpty()) {
-                            put("mentionedWikis", mentionedWikis.normalizetoAIItems())
-                        }
-                    }.toAINormalize(
-                        buildList {
-                            addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
-                            addAll(CHARACTER_EXCLUSIONS)
-                        },
-                    ),
+                if (mentionedWikis.isNotEmpty()) {
+                    put("mentionedWikis", mentionedWikis.normalizetoAIItems())
+                }
+            }.toAINormalize(
+                buildList {
+                    addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
+                    addAll(CHARACTER_EXCLUSIONS)
+                },
             )
 
         val argsMap =

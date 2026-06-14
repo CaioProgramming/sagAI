@@ -15,6 +15,7 @@ import com.ilustris.sagai.core.ai.model.GeminiPart
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
 import com.ilustris.sagai.core.ai.model.GeminiThinkingConfig
+import com.ilustris.sagai.core.ai.model.GeminiUsageMetadata
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.SafeGuard
 import com.ilustris.sagai.core.ai.model.SplitPrompt
@@ -297,6 +298,9 @@ class GemmaClient
                                         responseTime = duration,
                                         systemInstruction = finalInstructions.toJsonFormat(),
                                         sentVariables = aiStats?.sentVariables.toJsonFormat(),
+                                        promptTokens = response.usageMetadata?.promptTokenCount,
+                                        candidatesTokens = response.usageMetadata?.candidatesTokenCount,
+                                        totalTokens = response.usageMetadata?.totalTokenCount,
                                     ),
                                 )
                                 Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
@@ -602,6 +606,9 @@ class GemmaClient
                                         responseTime = duration,
                                         systemInstruction = systemInstruction,
                                         sentVariables = promptSplit.sentVariables.toJsonFormat(),
+                                        promptTokens = response.usageMetadata?.promptTokenCount,
+                                        candidatesTokens = response.usageMetadata?.candidatesTokenCount,
+                                        totalTokens = response.usageMetadata?.totalTokenCount,
                                     ),
                                 )
                                 Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
@@ -779,29 +786,29 @@ class GemmaClient
             systemInstructions: Map<String, Any> = emptyMap(),
         ): Flow<StreamingState<T?>> =
             flow {
+                val (dataTypeName, baseSystemInstruction) =
+                    buildStructure<T>(
+                        describeOutput,
+                        filterOutputFields,
+                        requirement,
+                        requireTranslation,
+                        systemInstructions,
+                    )
+
+                val systemInstruction =
+                    buildUnifiedInstructions(
+                        requirement,
+                        requireTranslation,
+                        dataTypeName,
+                        "Prompt blueprint instructions",
+                        userInteraction,
+                        prompt,
+                        baseSystemInstruction,
+                    ).toAINormalize()
+
+                val model = modelName(requirement)
+
                 try {
-                    val (dataTypeName, baseSystemInstruction) =
-                        buildStructure<T>(
-                            describeOutput,
-                            filterOutputFields,
-                            requirement,
-                            requireTranslation,
-                            systemInstructions,
-                        )
-
-                    val systemInstruction =
-                        buildUnifiedInstructions(
-                            requirement,
-                            requireTranslation,
-                            dataTypeName,
-                            "Prompt blueprint instructions",
-                            userInteraction,
-                            prompt,
-                            baseSystemInstruction,
-                        ).toAINormalize()
-
-                    val model = modelName(requirement)
-
                     val maxAttempts = maxAttempts(requirement)
                     val startTime = System.currentTimeMillis()
 
@@ -869,6 +876,7 @@ class GemmaClient
 
                             val accumulatedText = StringBuilder()
                             val accumulatedThoughts = StringBuilder()
+                            var usageMetadata: GeminiUsageMetadata? = null
 
                             responseBody.byteStream().bufferedReader().useLines { lines ->
                                 for (line in lines) {
@@ -887,6 +895,10 @@ class GemmaClient
                                             Timber.i("generateStreaming: Trying to parse $jsonStr")
                                         }
                                         val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+
+                                        if (partialResponse.usageMetadata != null) {
+                                            usageMetadata = partialResponse.usageMetadata
+                                        }
 
                                         val candidate = partialResponse.candidates?.firstOrNull()
                                         if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
@@ -959,6 +971,9 @@ class GemmaClient
                                         responseTime = duration,
                                         systemInstruction = systemInstruction,
                                         sentVariables = aiStats?.sentVariables.toJsonFormat(),
+                                        promptTokens = usageMetadata?.promptTokenCount,
+                                        candidatesTokens = usageMetadata?.candidatesTokenCount,
+                                        totalTokens = usageMetadata?.totalTokenCount,
                                     ),
                                 )
                                 Timber.i("Generation Streaming Bench: $model took ${duration}ms")
@@ -1031,7 +1046,7 @@ class GemmaClient
                                         AIAuditLog(
                                             model = model,
                                             blueprintKey = aiStats?.blueprintKey ?: blueprintKey,
-                                            dataType = javaClass.simpleName,
+                                            dataType = dataTypeName,
                                             status = "ERROR",
                                             errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                             responseTime = duration,
@@ -1067,30 +1082,30 @@ class GemmaClient
             logEnabled: Boolean = true,
         ): Flow<StreamingState<T?>> =
             flow {
+                val prompt = promptSplit.processedTemplate
+                val (dataTypeName, baseSystemInstruction) =
+                    buildStructure<T>(
+                        describeOutput,
+                        filterOutputFields,
+                        requirement,
+                        requireTranslation,
+                        promptSplit.renderInstructions(),
+                    )
+
+                val systemInstruction =
+                    buildUnifiedInstructions(
+                        requirement,
+                        requireTranslation,
+                        dataTypeName,
+                        "Prompt blueprint instructions",
+                        userInteraction,
+                        prompt,
+                        baseSystemInstruction,
+                    ).toAINormalize()
+
+                val model = modelName(requirement)
+
                 try {
-                    val prompt = promptSplit.processedTemplate
-                    val (dataTypeName, baseSystemInstruction) =
-                        buildStructure<T>(
-                            describeOutput,
-                            filterOutputFields,
-                            requirement,
-                            requireTranslation,
-                            promptSplit.renderInstructions(),
-                        )
-
-                    val systemInstruction =
-                        buildUnifiedInstructions(
-                            requirement,
-                            requireTranslation,
-                            dataTypeName,
-                            "Prompt blueprint instructions",
-                            userInteraction,
-                            prompt,
-                            baseSystemInstruction,
-                        ).toAINormalize()
-
-                    val model = modelName(requirement)
-
                     val maxAttempts = maxAttempts(requirement)
                     val startTime = System.currentTimeMillis()
 
@@ -1158,6 +1173,7 @@ class GemmaClient
 
                             val accumulatedText = StringBuilder()
                             val accumulatedThoughts = StringBuilder()
+                            var usageMetadata: GeminiUsageMetadata? = null
 
                             responseBody.byteStream().bufferedReader().useLines { lines ->
                                 for (line in lines) {
@@ -1176,6 +1192,10 @@ class GemmaClient
                                             Timber.i("generateStreaming: Trying to parse $jsonStr")
                                         }
                                         val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+
+                                        if (partialResponse.usageMetadata != null) {
+                                            usageMetadata = partialResponse.usageMetadata
+                                        }
 
                                         val candidate = partialResponse.candidates?.firstOrNull()
                                         if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
@@ -1232,6 +1252,9 @@ class GemmaClient
                                         rawResponse = fullText,
                                         responseTime = duration,
                                         sentVariables = promptSplit.sentVariables.toJsonFormat(),
+                                        promptTokens = usageMetadata?.promptTokenCount,
+                                        candidatesTokens = usageMetadata?.candidatesTokenCount,
+                                        totalTokens = usageMetadata?.totalTokenCount,
                                     ),
                                 )
                                 Timber.i("Generation Streaming Bench: $model took ${duration}ms")
@@ -1304,7 +1327,7 @@ class GemmaClient
                                         AIAuditLog(
                                             model = model,
                                             blueprintKey = promptSplit.blueprintKey,
-                                            dataType = javaClass.simpleName,
+                                            dataType = dataTypeName,
                                             status = "ERROR",
                                             errorMessage = "${e.javaClass.simpleName}: ${e.message}",
                                             responseTime = duration,

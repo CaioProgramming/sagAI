@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,8 +30,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,15 +49,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +88,7 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -105,6 +113,10 @@ fun AIAuditLogView(
     val isPipelineInsightLoading by viewModel.isPipelineInsightLoading.collectAsState()
 
     var showClearDialog by remember { mutableStateOf(false) }
+
+    var selectedSectionContent by remember { mutableStateOf<AuditLogSectionData?>(null) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(logs) {
         if (pipelineInsight == null && logs.isNotEmpty()) viewModel.requestGlobalInsight()
@@ -219,9 +231,8 @@ fun AIAuditLogView(
                         Modifier
                             .fillMaxWidth()
                             .horizontalScroll(
-                                androidx.compose.foundation.rememberScrollState(),
-                            )
-                            .padding(bottom = 8.dp),
+                                rememberScrollState(),
+                            ).padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -307,7 +318,7 @@ fun AIAuditLogView(
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 )
             }
         } else {
@@ -334,6 +345,7 @@ fun AIAuditLogView(
                             isLast = true,
                             isLoadingSuggestion = loadingSuggestionId == log.id,
                             onRequestSuggestion = { viewModel.requestSuggestion(log) },
+                            onShowSection = { selectedSectionContent = it },
                         )
                     }
                 }
@@ -361,7 +373,78 @@ fun AIAuditLogView(
             },
         )
     }
+
+    selectedSectionContent?.let { section ->
+        ModalBottomSheet(
+            onDismissRequest = { selectedSectionContent = null },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = {
+                Box(
+                    Modifier
+                        .padding(vertical = 12.dp)
+                        .size(32.dp, 4.dp)
+                        .background(
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            CircleShape,
+                        ),
+                )
+            },
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(
+                    text = section.title,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                )
+
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                RoundedCornerShape(12.dp),
+                            ).verticalScroll(rememberScrollState()),
+                ) {
+                    if (section.isJson) {
+                        JsonCodeBlock(jsonString = section.content)
+                    } else {
+                        Text(
+                            text = section.content,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            selectedSectionContent = null
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text(stringResource(R.string.next))
+                }
+            }
+        }
+    }
 }
+
+data class AuditLogSectionData(
+    val title: String,
+    val content: String,
+    val isJson: Boolean = true,
+)
 
 @Composable
 fun AuditLogItem(
@@ -369,6 +452,7 @@ fun AuditLogItem(
     isLast: Boolean,
     isLoadingSuggestion: Boolean,
     onRequestSuggestion: () -> Unit,
+    onShowSection: (AuditLogSectionData) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -419,8 +503,7 @@ fun AuditLogItem(
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                     )
 
-                    androidx.compose.foundation.layout
-                        .Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(1f))
 
                     Text(
                         text = String.format("%.1fs", log.responseTime / 1000.0),
@@ -453,8 +536,7 @@ fun AuditLogItem(
                                         1.dp,
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         RoundedCornerShape(4.dp),
-                                    )
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                     .padding(8.dp),
                         )
                     }
@@ -474,6 +556,16 @@ fun AuditLogItem(
                     maxLines = 1,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 )
+
+                if (log.totalTokens != null && log.totalTokens > 0) {
+                    TokenUsageBarChart(
+                        promptTokens = log.promptTokens ?: 0,
+                        candidatesTokens = log.candidatesTokens ?: 0,
+                        totalTokens = log.totalTokens,
+                        modifier = Modifier.padding(8.dp),
+                        showLegend = true,
+                    )
+                }
 
                 if (!log.usedTools.isNullOrEmpty()) {
                     Row(
@@ -569,55 +661,103 @@ fun AuditLogItem(
                 }
 
                 if (!log.reasoning.isNullOrEmpty()) {
-                    Text(
-                        text = stringResource(R.string.audit_logs_reasoning),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    AuditLogSectionCard(
+                        title = stringResource(R.string.audit_logs_reasoning),
+                        content = log.reasoning,
+                        onClick = {
+                            onShowSection(
+                                AuditLogSectionData(
+                                    title = it,
+                                    content = log.reasoning,
+                                    isJson = false,
+                                ),
+                            )
+                        },
                     )
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    RoundedCornerShape(8.dp),
-                                )
-                                .padding(8.dp),
-                    ) {
-                        Text(
-                            text = log.reasoning,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
 
                 if (!log.systemInstruction.isNullOrEmpty()) {
-                    Text(
-                        text = stringResource(R.string.audit_logs_system_instruction),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    )
-
-                    JsonCodeBlock(
-                        jsonString = log.systemInstruction,
+                    AuditLogSectionCard(
+                        title = stringResource(R.string.audit_logs_system_instruction),
+                        content = log.systemInstruction,
+                        onClick = {
+                            onShowSection(
+                                AuditLogSectionData(
+                                    title = it,
+                                    content = log.systemInstruction,
+                                ),
+                            )
+                        },
                     )
                 }
 
                 if (!log.sentVariables.isNullOrEmpty()) {
-                    Text(
-                        text = stringResource(R.string.audit_logs_sent_variables),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    AuditLogSectionCard(
+                        title = stringResource(R.string.audit_logs_sent_variables),
+                        content = log.sentVariables,
+                        onClick = {
+                            onShowSection(
+                                AuditLogSectionData(
+                                    title = it,
+                                    content = log.sentVariables,
+                                ),
+                            )
+                        },
                     )
-
-                    JsonCodeBlock(jsonString = log.sentVariables)
                 }
 
                 if (!log.rawResponse.isNullOrEmpty()) {
+                    AuditLogSectionCard(
+                        title = stringResource(R.string.audit_logs_raw_response),
+                        content = log.rawResponse,
+                        onClick = {
+                            onShowSection(
+                                AuditLogSectionData(
+                                    title = it,
+                                    content = log.rawResponse,
+                                ),
+                            )
+                        },
+                    )
+                }
+
+                if (log.totalTokens != null && log.totalTokens > 0) {
                     Text(
-                        text = stringResource(R.string.audit_logs_raw_response),
+                        text = stringResource(R.string.audit_logs_token_usage),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
-
-                    JsonCodeBlock(jsonString = log.rawResponse)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                    ) {
+                        TokenInfo(
+                            label =
+                                stringResource(
+                                    R.string.audit_logs_tokens_prompt,
+                                    log.promptTokens ?: 0,
+                                ),
+                            color = MaterialTheme.colorScheme.secondary,
+                        )
+                        TokenInfo(
+                            label =
+                                stringResource(
+                                    R.string.audit_logs_tokens_candidates,
+                                    log.candidatesTokens ?: 0,
+                                ),
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                        TokenInfo(
+                            label =
+                                stringResource(
+                                    R.string.audit_logs_tokens_total,
+                                    log.totalTokens,
+                                ),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
 
                 if (!log.blueprintKey.isNullOrEmpty()) {
@@ -638,8 +778,7 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    )
-                                    .padding(12.dp),
+                                    ).padding(12.dp),
                         )
                     } else {
                         Button(
@@ -682,6 +821,46 @@ fun AuditLogItem(
                 thickness = 1.dp,
             )
         }
+    }
+}
+
+@Composable
+fun AuditLogSectionCard(
+    title: String,
+    content: String,
+    onClick: (String) -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { onClick(title) }
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            )
+            Text(
+                text = content.take(100).replace("\n", " ") + "...",
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.alpha(0.6f),
+            )
+        }
+
+        Icon(
+            painter = painterResource(R.drawable.round_arrow_forward_ios_24),
+            contentDescription = null,
+            modifier = Modifier.size(12.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+        )
     }
 }
 
@@ -749,9 +928,105 @@ fun JsonCodeBlock(jsonString: String) {
                 .background(
                     MaterialTheme.colorScheme.surfaceVariant,
                     shape = MaterialTheme.shapes.small,
-                )
-                .padding(12.dp),
+                ).padding(12.dp),
     )
+}
+
+@Composable
+fun TokenUsageBarChart(
+    promptTokens: Int,
+    candidatesTokens: Int,
+    totalTokens: Int,
+    modifier: Modifier = Modifier,
+    limit: Int = 16000,
+    showLegend: Boolean = false,
+) {
+    val promptColor = MaterialTheme.colorScheme.secondary
+    val candidatesColor = MaterialTheme.colorScheme.tertiary
+    val barHeight = 6.dp
+
+    val promptRatio = promptTokens.toFloat() / limit
+    val candidatesRatio = candidatesTokens.toFloat() / limit
+    val remainingRatio = ((limit - totalTokens).toFloat() / limit).coerceAtLeast(0f)
+
+    Column(modifier = modifier) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(barHeight)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (promptRatio > 0) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(promptRatio.coerceAtLeast(0.01f))
+                            .fillMaxHeight()
+                            .background(promptColor),
+                )
+            }
+            if (candidatesRatio > 0) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(candidatesRatio.coerceAtLeast(0.01f))
+                            .fillMaxHeight()
+                            .background(candidatesColor),
+                )
+            }
+            if (remainingRatio > 0) {
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(remainingRatio.coerceAtLeast(0.01f))
+                            .fillMaxHeight(),
+                )
+            }
+        }
+
+        if (showLegend) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+            ) {
+                TokenInfo(
+                    label = stringResource(R.string.audit_logs_tokens_prompt, promptTokens),
+                    color = promptColor,
+                )
+                TokenInfo(
+                    label = stringResource(R.string.audit_logs_tokens_candidates, candidatesTokens),
+                    color = candidatesColor,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TokenInfo(
+    label: String,
+    color: Color,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .background(color, CircleShape),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
@@ -802,8 +1077,7 @@ fun PipelineInsightCard(
                                 .alpha(alpha)
                                 .padding(
                                     16.dp,
-                                )
-                                .clickable {
+                                ).clickable {
                                     expanded = !expanded
                                 },
                     )

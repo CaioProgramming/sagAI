@@ -677,6 +677,10 @@
     <string name="audit_logs_system_instruction">System Instruction:</string>
     <string name="audit_logs_sent_variables">Sent Variables:</string>
     <string name="audit_logs_error_label">Error:</string>
+    <string name="audit_logs_token_usage">Token Usage:</string>
+    <string name="audit_logs_tokens_prompt">Prompt: %d</string>
+    <string name="audit_logs_tokens_candidates">Candidates: %d</string>
+    <string name="audit_logs_tokens_total">Total: %d</string>
     <string name="story_guides">Story Guides</string>
     <string name="story_guides_description">Show introductory guides when starting a new saga universe.</string>
     <string name="onboarding_dont_show_again">Don\'t show again</string>
