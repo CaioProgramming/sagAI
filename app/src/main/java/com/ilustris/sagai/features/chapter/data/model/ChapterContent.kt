@@ -32,7 +32,7 @@ data class ChapterContent(
     fun isComplete(narrativeRules: NarrativeRules): Boolean =
         isFull(narrativeRules.chapterUpdateLimit, narrativeRules) &&
             data.title.isNotEmpty() &&
-            data.overview.isNotEmpty()
+            data.content.isNotEmpty()
 
     fun fetchCharacters(saga: SagaContent) =
         this.data.featuredCharacters.map {
@@ -47,7 +47,7 @@ data class ChapterContent(
         ChapterInfo(
             id = data.id,
             title = data.title,
-            overview = data.overview,
+            content = data.content,
             coverImage = data.coverImage,
             actId = data.actId,
             sagaId = sagaId,

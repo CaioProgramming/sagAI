@@ -92,6 +92,7 @@ fun SOSScreen(
                 text = stringResource(R.string.unexpected_error),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(16.dp),
             )
 
             if (BuildConfig.DEBUG) {
@@ -104,7 +105,7 @@ fun SOSScreen(
                             .background(
                                 MaterialTheme.colorScheme.errorContainer,
                                 RoundedCornerShape(4.dp),
-                            ).padding(horizontal = 8.dp, vertical = 2.dp),
+                            ).padding(16.dp),
                 )
             }
 
@@ -112,11 +113,31 @@ fun SOSScreen(
                 text = stringResource(R.string.sos_recovery_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.padding(16.dp),
             )
 
-            Button(onClick = {
+            Text(
+                errorMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainer,
+                            MaterialTheme.shapes.large,
+                        ),
+            )
+
+            Button(
+                onClick = {
                 restartApp()
-            }, modifier = Modifier.fillMaxWidth()) {
+            },
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                ) {
                 Text(
                     stringResource(R.string.continue_text),
                     style = MaterialTheme.typography.labelMedium,

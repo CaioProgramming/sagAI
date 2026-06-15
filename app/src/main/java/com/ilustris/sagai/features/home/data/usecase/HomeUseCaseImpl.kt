@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -49,13 +50,11 @@ class HomeUseCaseImpl
             executeRequest {
                 Timber.d("Fetching new dynamic saga texts...")
                 try {
+                    val prompt = HomePrompts.dynamicSagaCreationPrompt(promptService)
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
-                            prompt = HomePrompts.dynamicSagaCreationPrompt(promptService),
-                            blueprintKey = HomePrompts.DYNAMIC_SAGA_CREATION_BLUEPRINT,
-                            temperatureRandomness = .5f,
-                            requireTranslation = true,
-                            requirement = GemmaClient.ModelRequirement.TINY,
+                            promptSplit = prompt,
+                            requirement = ModelRequirement.MINIMAL,
                         )
                     result ?: useFallback()
                 } catch (e: Exception) {

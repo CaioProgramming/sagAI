@@ -20,9 +20,9 @@ interface SagaHistoryUseCase {
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<String>
 
-    fun generateEndMessageStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<String>>>
+    fun generateEndMessageStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<String>?>>
 
-    fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>>>
+    fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>?>>
 
     suspend fun backupSaga(saga: SagaContent): RequestResult<RequestResult<Uri>>
 }

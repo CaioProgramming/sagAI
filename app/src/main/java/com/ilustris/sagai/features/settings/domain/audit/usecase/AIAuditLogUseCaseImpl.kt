@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.settings.domain.audit.repository.AIAuditLogRepository
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +27,7 @@ class AIAuditLogUseCaseImpl
                 repository.clearLogs()
             }
 
-        override suspend fun getRecentLogs(limit: Int): Flow<List<AIAuditLog>> = repository.getRecentLogs(limit)
+        override suspend fun getRecentLogs(): Flow<List<AIAuditLog>> = repository.getRecentLogs()
 
         override suspend fun generateSuggestion(log: AIAuditLog): RequestResult<Unit> =
             executeRequest {
@@ -44,20 +45,18 @@ class AIAuditLogUseCaseImpl
                                 originalBlueprint?.toAINormalize(blueprintExclusions)
                                     ?: "Blueprint not found for key: $blueprintKey"
                             ),
-                        "aiLog" to log.toAINormalize(logExclusions),
+                        "pipelineData" to log.toAINormalize(logExclusions),
                     )
 
                 val prompt =
-                    promptService.buildRemotePrompt(
+                    promptService.buildSplitBlueprint(
                         AuditLogPrompts.AUDIT_LOG_SUGGESTION_BLUEPRINT,
                         promptArgs,
                     )
 
                 val suggestionResult =
                     gemmaClient.generate<String>(
-                        prompt = prompt,
-                        blueprintKey = AuditLogPrompts.AUDIT_LOG_SUGGESTION_BLUEPRINT,
-                        describeOutput = false,
+                        promptSplit = prompt,
                     )
 
                 repository.updateLog(log.copy(suggestion = suggestionResult))
@@ -69,37 +68,28 @@ class AIAuditLogUseCaseImpl
                     logs
                         .filter { it.status != "ERROR" }
                         .distinctBy { it.blueprintKey }
+                        .map {
+                            it.blueprintKey to
+                                remoteConfigService
+                                    .getJson<PromptBlueprint>(it.blueprintKey)
+                                    ?.toAINormalize()
+                        }.filter {
+                            it.first != null && it.second != null
+                        }
 
                 if (successfulLogs.isEmpty()) {
                     error("No successful logs with blueprints found. Please generate some content first!")
                 }
-
-                val pipelineDataParts = mutableListOf<String>()
-                successfulLogs.forEach { log ->
-                    val blueprint =
-                        remoteConfigService.getJson<PromptBlueprint>(log.blueprintKey)
-                            ?: "Blueprint not found"
-                    val logNorm =
-                        log.toAINormalize(listOf("id", "timestamp", "suggestion", "rawResponse"))
-                    val blueprintNorm =
-                        blueprint.toAINormalize(listOf("omitHeaders"))
-
-                    pipelineDataParts.add(
-                        "BLUEPRINT: ${log.blueprintKey}\n$blueprintNorm\n\nLOG:\n$logNorm",
-                    )
-                }
-
-                val pipelineContext = pipelineDataParts.joinToString("\n---\n")
+                val pipelineContext = successfulLogs.normalizetoAIItems()
 
                 val prompt =
-                    promptService.buildRemotePrompt(
+                    promptService.buildSplitBlueprint(
                         AuditLogPrompts.GLOBAL_PIPELINE_AUDIT_BLUEPRINT,
                         mapOf("pipelineData" to pipelineContext),
                     )
 
                 gemmaClient.generate<String>(
-                    prompt = prompt,
-                    blueprintKey = AuditLogPrompts.GLOBAL_PIPELINE_AUDIT_BLUEPRINT,
+                    promptSplit = prompt,
                     describeOutput = false,
                 )!!
             }

@@ -33,4 +33,10 @@ enum class SafeGuard(
         color = { it.error },
         iconRes = R.drawable.ic_censor,
     ),
+    UNKNOWN(
+        R.string.guardrail_unknown_title,
+        R.string.guardrail_unknown_message,
+        color = { it.error },
+        iconRes = R.drawable.ic_violation,
+    ),
 }

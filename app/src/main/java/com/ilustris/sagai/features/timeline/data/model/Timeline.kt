@@ -38,4 +38,6 @@ data class Timeline(
     val narrativeGuide: String? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
+
+    fun displayObjective() = sceneSummary?.immediateObjective ?: currentObjective
 }

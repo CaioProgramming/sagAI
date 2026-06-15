@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -12,6 +13,7 @@ import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.Book
 import com.ilustris.sagai.features.act.data.source.ActDao
@@ -203,8 +205,13 @@ class SagaDetailUseCaseImpl
                     SagaPrompts.generateStoryBriefing(
                         promptService,
                         saga,
-                        genreConfigService.conversationBlueprint(saga.data.genre),
+                        emptyString(),
                     )
-                textGenClient.generate<StoryDailyBriefing>(prompt)!!
+                textGenClient.generate<StoryDailyBriefing>(
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
+                )!!
             }
     }

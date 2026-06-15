@@ -10,5 +10,5 @@ interface AIAuditLogRepository {
 
     suspend fun clearLogs()
 
-    fun getRecentLogs(limit: Int = 100): Flow<List<AIAuditLog>>
+    fun getRecentLogs(): Flow<List<AIAuditLog>>
 }

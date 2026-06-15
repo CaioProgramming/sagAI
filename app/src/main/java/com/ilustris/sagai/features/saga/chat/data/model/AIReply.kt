@@ -9,4 +9,6 @@ data class AIReply(
     val reactions: List<AIReaction>? = null,
     val sceneSummary: SceneSummary? = null,
     val newCharacter: NewCharacterDiscovery? = null,
+    val userReactions: List<AIReaction>? = null,
+    val userTone: EmotionalTone? = null,
 )

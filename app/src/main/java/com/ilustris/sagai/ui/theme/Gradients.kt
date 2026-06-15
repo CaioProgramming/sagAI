@@ -2,6 +2,7 @@ package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -14,6 +15,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,8 +30,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -105,7 +111,10 @@ fun gradientAnimation(
                 ),
             label = "Gradient Offset Animation",
         )
-    return gradientType.toBrush(colors = colors, offsetAnimationValue = if (isAnimating) offsetAnimation.value else targetValue)
+    return gradientType.toBrush(
+        colors = colors,
+        offsetAnimationValue = if (isAnimating) offsetAnimation.value else targetValue,
+    )
 }
 
 @Composable
@@ -137,7 +146,9 @@ fun fadeGradientTopOverImage(tintColor: Color = MaterialTheme.colorScheme.backgr
 fun Color.blendedWith(
     other: Color,
     fraction: Float,
-): Color = androidx.compose.ui.graphics.lerp(this, other, fraction)
+): Color =
+    androidx.compose.ui.graphics
+        .lerp(this, other, fraction)
 
 /** Header scrim mixing saga adaptive color with character accent for readable titles. */
 fun characterDetailsHeaderScrim(
@@ -225,13 +236,13 @@ val iridescentGradient =
         Color(0xFFE2CFEA), // Pale Lilac
         Color(0xFFA0CED9), // Sky Blue
         Color(0xFFADF7B6), // Mint
-)
+    )
 
 @Composable
 fun themeShimmer() =
     buildList {
         add(Color.Transparent)
-        addAll(iridescentGradient)
+        addAll(themeBrushColors())
         add(Color.Transparent)
     }
 
@@ -285,14 +296,7 @@ enum class FadeDirection {
 @Composable
 fun Modifier.reactiveShimmer(
     isPlaying: Boolean,
-    shimmerColors: List<Color> =
-        listOf(
-            Color.White.copy(alpha = 0.0f),
-            Color.White.copy(alpha = 0.5f),
-            Color.White.copy(alpha = 0.2f),
-            Color.White.copy(alpha = 0.1f),
-            Color.White.copy(alpha = 0.0f),
-        ),
+    shimmerColors: List<Color> = themeShimmer(),
     duration: Duration = 5.seconds,
     targetValue: Float = 500f,
     repeatMode: RepeatMode = RepeatMode.Reverse,
@@ -374,7 +378,14 @@ fun rememberAnimatedShuffledGradientBrush(
     // Ensure the palette is not empty to avoid issues
     val safeColorPalette =
         remember(colorPalette) {
-            if (colorPalette.isEmpty()) listOf(Color.Transparent, Color.Transparent) else colorPalette
+            if (colorPalette.isEmpty()) {
+                listOf(
+                    Color.Transparent,
+                    Color.Transparent,
+                )
+            } else {
+                colorPalette
+            }
         }
 
     var currentGradientColors by remember {
@@ -420,4 +431,51 @@ fun progressiveBrush(
         stop + 0.001f to tintColor,
         1f to tintColor,
     )
+}
+
+@Composable
+fun morphingGradient(
+    colors: List<Color> = themeBrushColors(),
+    duration: Duration = 2.seconds,
+): List<Color> {
+    // Use a mutable state so updates trigger recomposition and the animated targets change.
+    var brushColors by remember { mutableStateOf(colors) }
+
+    // Only run the shuffle loop while the composable's lifecycle is at least STARTED
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycle = lifecycleOwner.lifecycle
+    var isStarted by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
+
+    DisposableEffect(lifecycle) {
+        val observer =
+            LifecycleEventObserver { _, _ ->
+                isStarted = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(isStarted) {
+        if (!isStarted) return@LaunchedEffect
+        while (true) {
+            delay(duration)
+            brushColors = brushColors.shuffled()
+        }
+    }
+
+    val animatedColors =
+        brushColors.map {
+            animateColorAsState(
+                it,
+                tween(
+                    durationMillis =
+                        (duration.toInt(DurationUnit.MILLISECONDS) / 2).coerceAtLeast(
+                            1,
+                        ),
+                    easing = EaseIn,
+                ),
+            )
+        }
+
+    return animatedColors.map { it.value }
 }

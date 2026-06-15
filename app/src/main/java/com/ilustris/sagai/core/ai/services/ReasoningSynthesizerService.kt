@@ -2,10 +2,14 @@ package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
+import com.ilustris.sagai.core.ai.model.mergeInstructions
+import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.features.onboarding.data.OnboardingPrompts
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -15,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -24,20 +29,26 @@ class ReasoningSynthesizerService
     @Inject
     constructor(
         @PublishedApi internal val gemmaClient: GemmaClient,
-        @PublishedApi internal val promptService: PromptService,
-        @PublishedApi internal val remoteConfigService: RemoteConfigService,
-    ) : AIClient() {
+        promptService: PromptService,
+        remoteConfigService: RemoteConfigService,
+        ageVerificationService: AgeVerificationService,
+        @PublishedApi internal val genreConfigService: GenreConfigService,
+    ) : AIClient(
+            remoteConfigService,
+            promptService,
+            ageVerificationService,
+        ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
             sourceFlow: Flow<StreamingState<T>>,
             context: String,
-            conversationStyle: String? = null,
             showReasoning: Boolean = true,
-            genre: String? = null,
+            genre: Genre? = null,
         ): Flow<StreamingState<T>> =
             channelFlow {
                 var synthesisJob: Job? = null
                 var lastReasoning = ""
+                val terminal = AtomicBoolean(false)
 
                 sourceFlow.collect { state ->
                     when (state) {
@@ -51,10 +62,10 @@ class ReasoningSynthesizerService
                                                 synthesizeNow(
                                                     lastReasoning,
                                                     context,
-                                                    conversationStyle,
                                                     getLanguage(true),
                                                     this@channelFlow,
                                                     genre,
+                                                    terminal,
                                                 )
                                             } catch (_: CancellationException) {
                                                 // Replaced by a newer reasoning chunk or flow completion.
@@ -67,25 +78,13 @@ class ReasoningSynthesizerService
                         }
 
                         is StreamingState.Success -> {
-                            if (showReasoning && lastReasoning.isNotBlank()) {
-                                try {
-                                    synthesizeNow(
-                                        lastReasoning,
-                                        context,
-                                        conversationStyle,
-                                        getLanguage(true),
-                                        this,
-                                        genre,
-                                    )
-                                } catch (_: CancellationException) {
-                                    // Flow completed while synthesis was running.
-                                }
-                            }
+                            terminal.set(true)
                             synthesisJob?.cancel()
                             send(state)
                         }
 
                         is StreamingState.Error -> {
+                            terminal.set(true)
                             synthesisJob?.cancel()
                             send(state)
                         }
@@ -97,18 +96,18 @@ class ReasoningSynthesizerService
         internal suspend fun <T> synthesizeNow(
             reasoning: String,
             context: String,
-            conversationStyle: String?,
             targetLanguage: String,
             scope: ProducerScope<StreamingState<T>>,
-            genre: String? = null,
+            genre: Genre? = null,
+            terminal: AtomicBoolean = AtomicBoolean(false),
         ) {
+            if (terminal.get() || scope.isClosedForSend) return
+
             try {
-                val style =
-                    conversationStyle
-                        ?: promptService.buildRemotePrompt(
-                            OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                            logEnabled = false,
-                        )
+                val conversationStyle =
+                    genre?.let {
+                        genreConfigService.conversationInstructions(it)
+                    }
 
                 val sanitizedReasoning = sanitizeReasoning(reasoning).takeLast(400)
 
@@ -116,12 +115,11 @@ class ReasoningSynthesizerService
                     mapOf(
                         "context" to context,
                         "thoughtStream" to sanitizedReasoning,
-                        "conversationStyle" to style,
                         "language" to targetLanguage,
                     )
 
                 val prompt =
-                    promptService.buildRemotePrompt(
+                    promptService.buildSplitBlueprint(
                         REASONING_SYNTHESIZER_BLUEPRINT,
                         variables,
                         logEnabled = false,
@@ -129,11 +127,14 @@ class ReasoningSynthesizerService
 
                 val translation =
                     gemmaClient.generate<String>(
-                        prompt = prompt,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        promptSplit =
+                            conversationStyle?.let { prompt.mergeInstructions(it) } ?: prompt,
+                        requirement = ModelRequirement.MINIMAL,
                         logEnabled = false,
                         temperatureRandomness = 1f,
                     )
+
+                if (terminal.get() || scope.isClosedForSend) return
 
                 if (translation != null) {
                     scope.send(
@@ -144,33 +145,40 @@ class ReasoningSynthesizerService
                     delay(3.seconds)
                 } else {
                     Timber.w("AI Reasoning failed, using fallback...")
-                    useFallback(genre, scope)
+                    useFallback(genre, scope, terminal)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
+                if (terminal.get() || scope.isClosedForSend) return
                 Timber.w("Failed to synthesize reasoning: ${e.message}, using fallback...")
-                useFallback(genre, scope)
+                useFallback(genre, scope, terminal)
             }
         }
 
         private suspend fun <T> useFallback(
-            genre: String?,
+            genre: Genre?,
             scope: ProducerScope<StreamingState<T>>,
+            terminal: AtomicBoolean = AtomicBoolean(false),
         ) {
+            if (terminal.get() || scope.isClosedForSend) return
+
             try {
                 val fallbacks =
                     remoteConfigService.getJson<ReasoningFallbacks>(
                         REASONING_FALLBACKS_KEY,
                     )
                 val fallbackMessage =
-                    if (genre != null && fallbacks?.genres?.containsKey(genre) == true) {
-                        fallbacks.genres[genre]?.randomOrNull()
+                    if (genre != null && fallbacks?.genres?.containsKey(genre.name) == true) {
+                        fallbacks.genres[genre.name]?.randomOrNull()
                     } else {
                         fallbacks?.default?.randomOrNull()
                     }
 
                 fallbackMessage?.let {
-                    scope.send(StreamingState.Reasoning(it))
-                    delay(2.seconds)
+                    if (!terminal.get() && !scope.isClosedForSend) {
+                        scope.send(StreamingState.Reasoning(it))
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e("Error fetching fallbacks: ${e.message}")

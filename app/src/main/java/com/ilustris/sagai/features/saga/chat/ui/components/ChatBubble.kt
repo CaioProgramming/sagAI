@@ -5,6 +5,8 @@ import android.graphics.Matrix
 import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
@@ -131,6 +133,8 @@ fun ChatBubble(
     messageEffectsEnabled: Boolean = true,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val message = messageContent.message
     val avatarCharacter =
@@ -233,178 +237,288 @@ fun ChatBubble(
         label = "borderColorAnimation",
     )
 
-    when (sender) {
-        SenderType.USER,
-        SenderType.CHARACTER,
-        SenderType.THOUGHT,
-        SenderType.ACTION,
-        -> {
-            val layoutDirection = if (isUser) LayoutDirection.Rtl else LayoutDirection.Ltr
-            val hasValidAudio =
-                remember(message.audioPath) {
-                    message.audioPath?.let { path ->
-                        File(path).exists()
-                    } ?: false
-                }
-            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                Box(
-                    modifier =
-                        modifier
-                            .fillMaxWidth()
-                            .animateContentSize(),
-                ) {
-                    Row(
+    with(sharedTransitionScope) {
+        when (sender) {
+            SenderType.USER,
+            SenderType.CHARACTER,
+            SenderType.THOUGHT,
+            SenderType.ACTION,
+            -> {
+                val layoutDirection = if (isUser) LayoutDirection.Rtl else LayoutDirection.Ltr
+                val hasValidAudio =
+                    remember(message.audioPath) {
+                        message.audioPath?.let { path ->
+                            File(path).exists()
+                        } ?: false
+                    }
+                CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                    Box(
                         modifier =
-                            Modifier
-                                .padding(8.dp)
+                            modifier
                                 .fillMaxWidth()
                                 .animateContentSize(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.Bottom,
                     ) {
-                        val avatarSize = if (avatarCharacter == null) 24.dp else 50.dp
-
-                        Box(
-                            Modifier
-                                .clip(CircleShape)
-                                .clickable {
-                                    avatarCharacter?.let { character ->
-                                        onAction(
-                                            MessageAction.ClickCharacter(
-                                                characters.find { it.id == character.id }
-                                                    ?: character,
-                                            ),
-                                        )
-                                    }
-                                }
-                                .size(avatarSize),
-                        ) {
-                            avatarCharacter?.let { character ->
-                                AnimatedContent(
-                                    targetState = character.image to character.id,
-                                    transitionSpec = {
-                                        fadeIn() + scaleIn() togetherWith scaleOut()
-                                    },
-                                    label = "ChatBubbleAvatar",
-                                ) {
-                                    CharacterAvatar(
-                                        character,
-                                        isLoading = isLoading,
-                                        genre = genre,
-                                        borderSize = 2.dp,
-                                        pixelation = 0f,
-                                        grainRadius = 0f,
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .fillMaxSize(),
-                                    )
-                                }
-
-                                val relationWithMainCharacter =
-                                    mainCharacter
-                                        ?.findRelationship(character.id)
-                                        ?.sortedByEvents(flatEvents)
-                                        ?.firstOrNull()
-
-                                if (isUser.not()) {
-                                    relationWithMainCharacter?.let {
-                                        Text(
-                                            it.emoji,
-                                            style =
-                                                MaterialTheme.typography.labelSmall.copy(
-                                                    shadow =
-                                                        Shadow(
-                                                            color =
-                                                                character.hexColor.hexToColor()
-                                                                    ?: resolvedColor,
-                                                            offset = Offset(2f, 2f),
-                                                            blurRadius = 0f,
-                                                        ),
-                                                ),
-                                            modifier =
-                                                Modifier
-                                                    .animateContentSize()
-                                                    .align(Alignment.BottomCenter)
-                                                    .padding(2.dp),
-                                        )
-                                    }
-                                }
-                            } ?: run {
-                                Image(
-                                    painterResource(R.drawable.ic_spark),
-                                    null,
-                                    Modifier
-                                        .clickable {
-                                            onAction(
-                                                MessageAction.RequestNewCharacter(
-                                                    message.speakerName ?: "",
-                                                    message,
-                                                ),
-                                            )
-                                        }.size(24.dp)
-                                        .gradientFill(genre.gradient()),
-                                )
-                            }
-                        }
-
-                        Column(
+                        Row(
                             modifier =
                                 Modifier
-                                    .weight(1f)
-                                    .padding(end = 50.dp),
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                                    .animateContentSize(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.Bottom,
                         ) {
-                            val palette = genre.colorPalette()
-                            val bubbleModifier =
-                                if (message.status == MessageStatus.LOADING) {
-                                    Modifier
-                                        .alpha(.7f)
-                                        .emotionalEntrance(
-                                            message.emotionalTone,
-                                            messageEffectsEnabled,
-                                        ).wrapContentSize()
-                                        .drawWithContent {
-                                            drawContent()
-                                            val outline =
-                                                bubbleShape.createOutline(
-                                                    size,
-                                                    layoutDirection,
-                                                    this,
+                            val avatarSize = if (avatarCharacter == null) 24.dp else 50.dp
+
+                            Box(
+                                Modifier
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        avatarCharacter?.let { character ->
+                                            onAction(
+                                                MessageAction.ClickCharacter(
+                                                    characters.find { it.id == character.id }
+                                                        ?: character,
+                                                ),
+                                            )
+                                        }
+                                    }.size(avatarSize),
+                            ) {
+                                avatarCharacter?.let { character ->
+                                    AnimatedContent(
+                                        targetState = character.image to character.id,
+                                        transitionSpec = {
+                                            fadeIn() + scaleIn() togetherWith scaleOut()
+                                        },
+                                        label = "ChatBubbleAvatar",
+                                    ) {
+                                        CharacterAvatar(
+                                            character,
+                                            isLoading = isLoading,
+                                            genre = genre,
+                                            borderSize = 2.dp,
+                                            pixelation = 0f,
+                                            grainRadius = 0f,
+                                            modifier =
+                                                Modifier
+                                                    .sharedElement(
+                                                        rememberSharedContentState(key = "character_${character.id}_icon"),
+                                                        animatedVisibilityScope,
+                                                    ).padding(8.dp)
+                                                    .fillMaxSize(),
+                                        )
+                                    }
+
+                                    val relationWithMainCharacter =
+                                        mainCharacter
+                                            ?.findRelationship(character.id)
+                                            ?.sortedByEvents(flatEvents)
+                                            ?.firstOrNull()
+
+                                    if (isUser.not()) {
+                                        relationWithMainCharacter?.let {
+                                            Text(
+                                                it.emoji,
+                                                style =
+                                                    MaterialTheme.typography.labelSmall.copy(
+                                                        shadow =
+                                                            Shadow(
+                                                                color =
+                                                                    character.hexColor.hexToColor()
+                                                                        ?: resolvedColor,
+                                                                offset = Offset(2f, 2f),
+                                                                blurRadius = 0f,
+                                                            ),
+                                                    ),
+                                                modifier =
+                                                    Modifier
+                                                        .animateContentSize()
+                                                        .align(Alignment.BottomCenter)
+                                                        .padding(2.dp),
+                                            )
+                                        }
+                                    }
+                                } ?: run {
+                                    Image(
+                                        painterResource(R.drawable.ic_spark),
+                                        null,
+                                        Modifier
+                                            .clickable {
+                                                onAction(
+                                                    MessageAction.RequestNewCharacter(
+                                                        message.speakerName ?: "",
+                                                        message,
+                                                    ),
                                                 )
-                                            val brush =
-                                                object : ShaderBrush() {
-                                                    override fun createShader(size: Size): Shader {
-                                                        val shader =
-                                                            (
+                                            }.size(24.dp)
+                                            .gradientFill(genre.gradient()),
+                                    )
+                                }
+                            }
+
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(end = 50.dp),
+                            ) {
+                                val palette = genre.colorPalette()
+                                val bubbleModifier =
+                                    if (message.status == MessageStatus.LOADING) {
+                                        Modifier
+                                            .alpha(.7f)
+                                            .emotionalEntrance(
+                                                message.emotionalTone,
+                                                messageEffectsEnabled,
+                                            ).wrapContentSize()
+                                            .drawWithContent {
+                                                drawContent()
+                                                val outline =
+                                                    bubbleShape.createOutline(
+                                                        size,
+                                                        layoutDirection,
+                                                        this,
+                                                    )
+                                                val brush =
+                                                    object : ShaderBrush() {
+                                                        override fun createShader(size: Size): Shader {
+                                                            val shader =
+                                                                (
                                                                     sweepGradient(
                                                                         palette,
                                                                     ) as ShaderBrush
-                                                                    ).createShader(size)
-                                                        val matrix = Matrix()
-                                                        matrix.setRotate(
-                                                            rotationState.value,
-                                                            size.width / 2,
-                                                            size.height / 2,
-                                                        )
-                                                        shader.setLocalMatrix(matrix)
-                                                        return shader
+                                                                ).createShader(size)
+                                                            val matrix = Matrix()
+                                                            matrix.setRotate(
+                                                                rotationState.value,
+                                                                size.width / 2,
+                                                                size.height / 2,
+                                                            )
+                                                            shader.setLocalMatrix(matrix)
+                                                            return shader
+                                                        }
                                                     }
-                                                }
-                                            drawOutline(
-                                                outline = outline,
-                                                brush = brush,
-                                                style = Stroke(width = 1.dp.toPx()),
+                                                drawOutline(
+                                                    outline = outline,
+                                                    brush = brush,
+                                                    style = Stroke(width = 1.dp.toPx()),
+                                                )
+                                            }.background(
+                                                MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                    alpha = .3f,
+                                                ),
+                                                bubbleShape,
                                             )
-                                        }
-                                        .background(
-                                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
-                                            bubbleShape,
-                                        )
-                                } else {
-                                    when (sender) {
-                                        SenderType.USER -> {
-                                            Modifier
-                                                .combinedClickable(
+                                    } else {
+                                        when (sender) {
+                                            SenderType.USER -> {
+                                                Modifier
+                                                    .combinedClickable(
+                                                        interactionSource = interactionSource,
+                                                        indication = ripple(),
+                                                        onClick = {
+                                                            if (isSelectionMode) {
+                                                                onAction(
+                                                                    MessageAction.ToggleSelection(
+                                                                        message.id,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            if (!isSelectionMode) {
+                                                                onAction(
+                                                                    MessageAction.LongPress(
+                                                                        message.id,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        },
+                                                    ).emotionalEntrance(
+                                                        message.emotionalTone,
+                                                        messageEffectsEnabled,
+                                                    ).wrapContentSize()
+                                                    .background(
+                                                        bubbleStyle.backgroundColor,
+                                                        bubbleShape,
+                                                    )
+                                            }
+
+                                            SenderType.CHARACTER -> {
+                                                if (isUser.not()) {
+                                                    Modifier
+                                                        .combinedClickable(
+                                                            interactionSource = interactionSource,
+                                                            indication = ripple(),
+                                                            onClick = {
+                                                                if (isSelectionMode) {
+                                                                    onAction(
+                                                                        MessageAction.ToggleSelection(
+                                                                            message.id,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            },
+                                                            onLongClick = {
+                                                                if (!isSelectionMode) {
+                                                                    onAction(
+                                                                        MessageAction
+                                                                            .LongPress(
+                                                                                message.id,
+                                                                            ),
+                                                                    )
+                                                                }
+                                                            },
+                                                        ).emotionalEntrance(
+                                                            message.emotionalTone,
+                                                            messageEffectsEnabled,
+                                                        ).wrapContentSize()
+                                                        .background(
+                                                            bubbleStyle.backgroundColor,
+                                                            bubbleShape,
+                                                        ).background(
+                                                            MaterialTheme.colorScheme.surfaceContainer
+                                                                .copy(
+                                                                    alpha = .5f,
+                                                                ),
+                                                            bubbleShape,
+                                                        )
+                                                } else {
+                                                    Modifier
+                                                        .combinedClickable(
+                                                            interactionSource = interactionSource,
+                                                            indication = ripple(),
+                                                            onClick = {
+                                                                if (isSelectionMode) {
+                                                                    onAction(
+                                                                        MessageAction.ToggleSelection(
+                                                                            message.id,
+                                                                        ),
+                                                                    )
+                                                                }
+                                                            },
+                                                            onLongClick = {
+                                                                if (!isSelectionMode) {
+                                                                    onAction(
+                                                                        MessageAction
+                                                                            .LongPress(
+                                                                                message.id,
+                                                                            ),
+                                                                    )
+                                                                }
+                                                            },
+                                                        ).emotionalEntrance(
+                                                            message.emotionalTone,
+                                                            messageEffectsEnabled,
+                                                        ).wrapContentSize()
+                                                        .background(
+                                                            bubbleStyle.backgroundColor,
+                                                            bubbleShape,
+                                                        )
+                                                }
+                                            }
+
+                                            else -> {
+                                                Modifier.combinedClickable(
                                                     interactionSource = interactionSource,
                                                     indication = ripple(),
                                                     onClick = {
@@ -426,329 +540,228 @@ fun ChatBubble(
                                                         }
                                                     },
                                                 )
-                                                .emotionalEntrance(
-                                                    message.emotionalTone,
-                                                    messageEffectsEnabled,
-                                                ).wrapContentSize()
-                                                .background(
-                                                    bubbleStyle.backgroundColor,
+                                            }
+                                        }
+                                    }
+
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    AudioGenButton(
+                                        message,
+                                        genre,
+                                        onAction,
+                                        messageContent,
+                                        hasValidAudio,
+                                    )
+                                }
+
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    TooltipBox(
+                                        positionProvider = tooltipPositionProvider,
+                                        state = reactionToolTipState,
+                                        onDismissRequest = {
+                                            tooltipData = null
+                                        },
+                                        tooltip = {
+                                            tooltipData?.let {
+                                                AnnotationTooltip(
+                                                    data = it,
+                                                    genre = genre,
+                                                    shape = narratorShape,
+                                                )
+                                            }
+                                        },
+                                        modifier =
+                                            bubbleModifier
+                                                .graphicsLayer {
+                                                    scaleX = finalScale
+                                                    scaleY = finalScale
+                                                }.border(
+                                                    2.dp,
+                                                    borderColorAnimation,
                                                     bubbleShape,
+                                                ).padding(paddingAnimation)
+                                                .clip(bubbleShape)
+                                                .padding(vertical = 4.dp)
+                                                .animateContentSize(),
+                                    ) {
+                                        Box {
+                                            var textAlpha by remember {
+                                                mutableStateOf(
+                                                    if (sender == SenderType.THOUGHT) 0f else 1f,
                                                 )
-                                        }
-
-                                        SenderType.CHARACTER -> {
-                                            if (isUser.not()) {
-                                                Modifier
-                                                    .combinedClickable(
-                                                        interactionSource = interactionSource,
-                                                        indication = ripple(),
-                                                        onClick = {
-                                                            if (isSelectionMode) {
-                                                                onAction(
-                                                                    MessageAction.ToggleSelection(
-                                                                        message.id,
-                                                                    ),
-                                                                )
-                                                            }
-                                                        },
-                                                        onLongClick = {
-                                                            if (!isSelectionMode) {
-                                                                onAction(
-                                                                    MessageAction
-                                                                        .LongPress(
-                                                                            message.id,
-                                                                        ),
-                                                                )
-                                                            }
-                                                        },
-                                                    )
-                                                    .emotionalEntrance(
-                                                        message.emotionalTone,
-                                                        messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
-                                                    .background(
-                                                        bubbleStyle.backgroundColor,
-                                                        bubbleShape,
-                                                    )
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surfaceContainer
-                                                            .copy(
-                                                                alpha = .5f,
-                                                            ),
-                                                        bubbleShape,
-                                                    )
-                                            } else {
-                                                Modifier
-                                                    .combinedClickable(
-                                                        interactionSource = interactionSource,
-                                                        indication = ripple(),
-                                                        onClick = {
-                                                            if (isSelectionMode) {
-                                                                onAction(
-                                                                    MessageAction.ToggleSelection(
-                                                                        message.id,
-                                                                    ),
-                                                                )
-                                                            }
-                                                        },
-                                                        onLongClick = {
-                                                            if (!isSelectionMode) {
-                                                                onAction(
-                                                                    MessageAction
-                                                                        .LongPress(
-                                                                            message.id,
-                                                                        ),
-                                                                )
-                                                            }
-                                                        },
-                                                    )
-                                                    .emotionalEntrance(
-                                                        message.emotionalTone,
-                                                        messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
-                                                    .background(
-                                                        bubbleStyle.backgroundColor,
-                                                        bubbleShape,
-                                                    )
                                             }
-                                        }
+                                            val textColor =
+                                                when (sender) {
+                                                    SenderType.ACTION -> MaterialColor.Amber400
+                                                    SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
+                                                    else -> bubbleStyle.textColor
+                                                }
+                                            val textAlign = TextAlign.Start
+                                            val fontStyle =
+                                                if (sender == SenderType.ACTION ||
+                                                    sender == SenderType.THOUGHT
+                                                ) {
+                                                    FontStyle.Italic
+                                                } else {
+                                                    FontStyle.Normal
+                                                }
+                                            val text =
+                                                if (sender == SenderType.ACTION) "(${message.text})" else message.text
 
-                                        else -> {
-                                            Modifier.combinedClickable(
-                                                interactionSource = interactionSource,
-                                                indication = ripple(),
-                                                onClick = {
-                                                    if (isSelectionMode) {
-                                                        onAction(
-                                                            MessageAction.ToggleSelection(
-                                                                message.id,
-                                                            ),
-                                                        )
-                                                    }
-                                                },
-                                                onLongClick = {
-                                                    if (!isSelectionMode) {
-                                                        onAction(
-                                                            MessageAction.LongPress(
-                                                                message.id,
-                                                            ),
-                                                        )
-                                                    }
-                                                },
-                                            )
-                                        }
-                                    }
-                                }
+                                            val hasExpressiveTags =
+                                                remember(text) {
+                                                    text.contains("<action>") ||
+                                                        text.contains("<think>") ||
+                                                        text.contains("<narrator>")
+                                                }
 
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                AudioGenButton(
-                                    message,
-                                    genre,
-                                    onAction,
-                                    messageContent,
-                                    hasValidAudio,
-                                )
-                            }
-
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                TooltipBox(
-                                    positionProvider = tooltipPositionProvider,
-                                    state = reactionToolTipState,
-                                    onDismissRequest = {
-                                        tooltipData = null
-                                    },
-                                    tooltip = {
-                                        tooltipData?.let {
-                                            AnnotationTooltip(
-                                                data = it,
-                                                genre = genre,
-                                                shape = narratorShape,
-                                            )
-                                        }
-                                    },
-                                    modifier =
-                                        bubbleModifier
-                                            .graphicsLayer {
-                                                scaleX = finalScale
-                                                scaleY = finalScale
-                                            }
-                                            .border(
-                                                2.dp,
-                                                borderColorAnimation,
-                                                bubbleShape,
-                                            )
-                                            .padding(paddingAnimation)
-                                            .clip(bubbleShape)
-                                            .padding(vertical = 4.dp)
-                                            .animateContentSize(),
-                                ) {
-                                    Box {
-                                        var textAlpha by remember {
-                                            mutableStateOf(
-                                                if (sender == SenderType.THOUGHT) 0f else 1f,
-                                            )
-                                        }
-                                        val textColor =
-                                            when (sender) {
-                                                SenderType.ACTION -> MaterialColor.Amber400
-                                                SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
-                                                else -> bubbleStyle.textColor
-                                            }
-                                        val textAlign = TextAlign.Start
-                                        val fontStyle =
-                                            if (sender == SenderType.ACTION ||
-                                                sender == SenderType.THOUGHT
+                                            Column(
+                                                Modifier.padding(16.dp),
+                                                verticalArrangement = Arrangement.spacedBy(4.dp),
                                             ) {
-                                                FontStyle.Italic
-                                            } else {
-                                                FontStyle.Normal
-                                            }
-                                        val text =
-                                            if (sender == SenderType.ACTION) "(${message.text})" else message.text
+                                                if (hasValidAudio) {
+                                                    AudioMessagePlayer(
+                                                        transcription = text,
+                                                        audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
+                                                        genre = genre,
+                                                        contentColor = textColor,
+                                                        onPlayPauseClick = {
+                                                            onAction(
+                                                                MessageAction.PlayAudio(
+                                                                    messageContent,
+                                                                ),
+                                                            )
+                                                        },
+                                                    )
+                                                } else if (hasExpressiveTags) {
+                                                    ExpressiveText(
+                                                        text = text,
+                                                        genre = genre,
+                                                        style =
+                                                            MaterialTheme.typography.bodySmall.copy(
+                                                                fontWeight = FontWeight.Normal,
+                                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                                                color = textColor,
+                                                            ),
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        mainCharacter = mainCharacter?.data,
+                                                        characters = characters,
+                                                        wiki = wikis,
+                                                        shouldAnimate = canAnimate && messageEffectsEnabled,
+                                                        onAnnotationClick = { data ->
+                                                            tooltipData = data
+                                                        },
+                                                    )
+                                                } else {
+                                                    TypewriterText(
+                                                        text = text,
+                                                        isAnimated = isAnimated,
+                                                        genre = genre,
+                                                        mainCharacter = mainCharacter?.data,
+                                                        characters = characters,
+                                                        wiki = wikis,
+                                                        duration = duration,
+                                                        easing = EaseIn,
+                                                        onAnnotationClick = { data ->
+                                                            tooltipData = data
+                                                        },
+                                                        modifier =
+                                                            Modifier
+                                                                .alpha(textAlpha),
+                                                        style =
+                                                            MaterialTheme.typography.bodySmall.copy(
+                                                                fontWeight = FontWeight.Normal,
+                                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                                                fontStyle = fontStyle,
+                                                                color = textColor,
+                                                                textAlign = textAlign,
+                                                            ),
+                                                    )
+                                                }
 
-                                        val hasExpressiveTags =
-                                            remember(text) {
-                                                text.contains("<action>") ||
-                                                    text.contains("<think>") ||
-                                                    text.contains("<narrator>")
-                                            }
-
-                                        Column(
-                                            Modifier.padding(16.dp),
-                                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                                        ) {
-                                            if (hasValidAudio) {
-                                                AudioMessagePlayer(
-                                                    transcription = text,
-                                                    audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
-                                                    genre = genre,
-                                                    contentColor = textColor,
-                                                    onPlayPauseClick = {
-                                                        onAction(MessageAction.PlayAudio(messageContent))
-                                                    },
-                                                )
-                                            } else if (hasExpressiveTags) {
-                                                ExpressiveText(
-                                                    text = text,
-                                                    genre = genre,
-                                                    style =
-                                                        MaterialTheme.typography.bodySmall.copy(
-                                                            fontWeight = FontWeight.Normal,
-                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                            color = textColor,
-                                                        ),
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    mainCharacter = mainCharacter?.data,
-                                                    characters = characters,
-                                                    wiki = wikis,
-                                                    shouldAnimate = canAnimate && messageEffectsEnabled,
-                                                    onAnnotationClick = { data ->
-                                                        tooltipData = data
-                                                    },
-                                                )
-                                            } else {
-                                                TypewriterText(
-                                                    text = text,
-                                                    isAnimated = isAnimated,
-                                                    genre = genre,
-                                                    mainCharacter = mainCharacter?.data,
-                                                    characters = characters,
-                                                    wiki = wikis,
-                                                    duration = duration,
-                                                    easing = EaseIn,
-                                                    onAnnotationClick = { data ->
-                                                        tooltipData = data
-                                                    },
-                                                    modifier =
-                                                        Modifier
-                                                            .alpha(textAlpha),
-                                                    style =
-                                                        MaterialTheme.typography.bodySmall.copy(
-                                                            fontWeight = FontWeight.Normal,
-                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                            fontStyle = fontStyle,
-                                                            color = textColor,
-                                                            textAlign = textAlign,
-                                                        ),
-                                                )
-                                            }
-
-                                            if (BuildConfig.DEBUG) {
-                                                ReasoningView(message.reasoning, genre)
+                                                if (BuildConfig.DEBUG) {
+                                                    ReasoningView(message.reasoning, genre)
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                AnimatedContent(message.status) {
-                                    if (it == MessageStatus.ERROR) {
-                                        Button(
-                                            onClick = {
-                                                onAction(MessageAction.RetryMessage(messageContent))
-                                            },
-                                            colors =
-                                                ButtonDefaults.textButtonColors().copy(
-                                                    contentColor = MaterialTheme.colorScheme.error,
-                                                    containerColor = Color.Transparent,
-                                                ),
-                                            modifier =
-                                                Modifier
-                                                    .padding(horizontal = 16.dp)
-                                                    .fillMaxWidth(),
-                                        ) {
-                                            Icon(
-                                                painterResource(R.drawable.baseline_refresh_24),
-                                                null,
-                                                Modifier.size(12.dp),
-                                            )
-
-                                            Text(
-                                                stringResource(R.string.try_again),
-                                                style =
-                                                    MaterialTheme.typography.labelMedium.copy(
-                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                        fontWeight = FontWeight.Normal,
-                                                    ),
-                                                modifier = Modifier.padding(start = 4.dp),
-                                            )
-                                        }
-                                    } else {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            modifier =
-                                                Modifier
-                                                    .padding(horizontal = 20.dp)
-                                                    .offset(y = (-10).dp),
-                                        ) {
-                                            Text(
-                                                message.timestamp.formatHours(),
-                                                style =
-                                                    MaterialTheme.typography.labelSmall.copy(
-                                                        color = MaterialTheme.colorScheme.onBackground,
-                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                        fontWeight = FontWeight.Light,
-                                                        textAlign = TextAlign.Start,
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    AnimatedContent(message.status) {
+                                        if (it == MessageStatus.ERROR) {
+                                            Button(
+                                                onClick = {
+                                                    onAction(
+                                                        MessageAction.RetryMessage(
+                                                            messageContent,
+                                                        ),
+                                                    )
+                                                },
+                                                colors =
+                                                    ButtonDefaults.textButtonColors().copy(
+                                                        contentColor = MaterialTheme.colorScheme.error,
+                                                        containerColor = Color.Transparent,
                                                     ),
                                                 modifier =
                                                     Modifier
-                                                        .padding(horizontal = 4.dp)
-                                                        .alpha(0.5f)
-                                                        .weight(1f),
-                                            )
-
-                                            AnimatedVisibility(
-                                                visible = messageContent.reactions.isNotEmpty(),
+                                                        .padding(horizontal = 16.dp)
+                                                        .fillMaxWidth(),
                                             ) {
-                                                ReactionsView(
-                                                    reactions = messageContent.reactions,
-                                                    genre = genre,
+                                                Icon(
+                                                    painterResource(R.drawable.baseline_refresh_24),
+                                                    null,
+                                                    Modifier.size(12.dp),
+                                                )
+
+                                                Text(
+                                                    stringResource(R.string.try_again),
+                                                    style =
+                                                        MaterialTheme.typography.labelMedium.copy(
+                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                                            fontWeight = FontWeight.Normal,
+                                                        ),
+                                                    modifier = Modifier.padding(start = 4.dp),
+                                                )
+                                            }
+                                        } else {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                modifier =
+                                                    Modifier
+                                                        .padding(horizontal = 20.dp)
+                                                        .offset(y = (-10).dp),
+                                            ) {
+                                                Text(
+                                                    message.timestamp.formatHours(),
+                                                    style =
+                                                        MaterialTheme.typography.labelSmall.copy(
+                                                            color = MaterialTheme.colorScheme.onBackground,
+                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                                            fontWeight = FontWeight.Light,
+                                                            textAlign = TextAlign.Start,
+                                                        ),
+                                                    modifier =
+                                                        Modifier
+                                                            .padding(horizontal = 4.dp)
+                                                            .alpha(0.5f)
+                                                            .weight(1f),
+                                                )
+
+                                                AnimatedVisibility(
+                                                    visible = messageContent.reactions.isNotEmpty(),
                                                 ) {
-                                                    onAction(MessageAction.ClickReactions(messageContent))
+                                                    ReactionsView(
+                                                        reactions = messageContent.reactions,
+                                                        genre = genre,
+                                                    ) {
+                                                        onAction(
+                                                            MessageAction.ClickReactions(
+                                                                messageContent,
+                                                            ),
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -756,157 +769,156 @@ fun ChatBubble(
                                 }
                             }
                         }
-                    }
 
-                    AnimatedVisibility(
-                        visible = isSelectionMode,
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(16.dp),
-                        enter = scaleIn() + fadeIn(),
-                        exit = scaleOut() + fadeOut(),
-                    ) {
-                        Box(
+                        AnimatedVisibility(
+                            visible = isSelectionMode,
                             modifier =
                                 Modifier
-                                    .size(32.dp),
-                            contentAlignment = Alignment.Center,
+                                    .align(Alignment.TopEnd)
+                                    .padding(16.dp),
+                            enter = scaleIn() + fadeIn(),
+                            exit = scaleOut() + fadeOut(),
                         ) {
-                            val color by animateColorAsState(
-                                if (isSelected) {
-                                    resolvedColor
-                                } else {
-                                    MaterialTheme.colorScheme.onBackground.copy(
-                                        alpha = .3f,
-                                    )
-                                },
-                            )
-                            Icon(
-                                painterResource(R.drawable.ic_spark),
-                                contentDescription = "Selected",
-                                tint = color,
+                            Box(
                                 modifier =
                                     Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
-                            )
+                                        .size(32.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                val color by animateColorAsState(
+                                    if (isSelected) {
+                                        resolvedColor
+                                    } else {
+                                        MaterialTheme.colorScheme.onBackground.copy(
+                                            alpha = .3f,
+                                        )
+                                    },
+                                )
+                                Icon(
+                                    painterResource(R.drawable.ic_spark),
+                                    contentDescription = "Selected",
+                                    tint = color,
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxSize(),
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        SenderType.NARRATOR -> {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val hasValidAudio =
-                    remember(message.audioPath) {
-                        message.audioPath?.let { path ->
-                            File(path).exists()
-                        } ?: false
+            SenderType.NARRATOR -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val hasValidAudio =
+                        remember(message.audioPath) {
+                            message.audioPath?.let { path ->
+                                File(path).exists()
+                            } ?: false
+                        }
+
+                    AudioGenButton(message, genre, onAction, messageContent, hasValidAudio)
+
+                    Box(
+                        modifier =
+                            modifier
+                                .emotionalEntrance(
+                                    message.emotionalTone,
+                                    messageEffectsEnabled,
+                                ).padding(16.dp)
+                                .fillMaxWidth(),
+                    ) {
+                        Column(
+                            Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            if (hasValidAudio) {
+                                // Show Audio Player
+                                AudioMessagePlayer(
+                                    transcription = message.text,
+                                    audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
+                                    genre = genre,
+                                    contentColor = resolvedIconColor,
+                                    onPlayPauseClick = {
+                                        onAction(MessageAction.PlayAudio(messageContent))
+                                    },
+                                )
+                            } else {
+                                // Show Text
+                                ExpressiveText(
+                                    text = message.text,
+                                    genre = genre,
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Normal,
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                            color = resolvedIconColor,
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .padding(4.dp)
+                                            .fillMaxWidth(),
+                                    mainCharacter = mainCharacter?.data,
+                                    characters = characters,
+                                    wiki = wikis,
+                                    shouldAnimate = canAnimate && messageEffectsEnabled,
+                                    onAnnotationClick = { data ->
+                                        tooltipData = data
+                                    },
+                                )
+                            }
+                        }
                     }
 
-                AudioGenButton(message, genre, onAction, messageContent, hasValidAudio)
-
-                Box(
-                    modifier =
-                        modifier
-                            .emotionalEntrance(
-                                message.emotionalTone,
-                                messageEffectsEnabled,
-                            )
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                ) {
-                    Column(
-                        Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    AnimatedVisibility(
+                        message.status == MessageStatus.ERROR,
+                        modifier =
+                            Modifier.align(Alignment.CenterHorizontally),
                     ) {
-                        if (hasValidAudio) {
-                            // Show Audio Player
-                            AudioMessagePlayer(
-                                transcription = message.text,
-                                audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
-                                genre = genre,
-                                contentColor = resolvedIconColor,
-                                onPlayPauseClick = {
-                                    onAction(MessageAction.PlayAudio(messageContent))
-                                },
-                            )
-                        } else {
-                            // Show Text
-                            ExpressiveText(
-                                text = message.text,
-                                genre = genre,
-                                style =
-                                    MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                        color = resolvedIconColor,
+                        IconButton(
+                            onClick = {
+                                onAction(MessageAction.RetryMessage(messageContent))
+                            },
+                            modifier =
+                                Modifier
+                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                    .size(24.dp),
+                            colors =
+                                IconButtonDefaults
+                                    .iconButtonColors()
+                                    .copy(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.error,
                                     ),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.baseline_refresh_24),
+                                contentDescription = stringResource(R.string.try_again),
                                 modifier =
                                     Modifier
                                         .padding(4.dp)
-                                        .fillMaxWidth(),
-                                mainCharacter = mainCharacter?.data,
-                                characters = characters,
-                                wiki = wikis,
-                                shouldAnimate = canAnimate && messageEffectsEnabled,
-                                onAnnotationClick = { data ->
-                                    tooltipData = data
-                                },
+                                        .fillMaxSize(),
                             )
                         }
                     }
-                }
 
-                AnimatedVisibility(
-                    message.status == MessageStatus.ERROR,
-                    modifier =
-                        Modifier.align(Alignment.CenterHorizontally),
-                ) {
-                    IconButton(
-                        onClick = {
-                            onAction(MessageAction.RetryMessage(messageContent))
-                        },
+                    AnimatedVisibility(
+                        visible = messageContent.reactions.isNotEmpty(),
                         modifier =
-                            Modifier
-                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                .size(24.dp),
-                        colors =
-                            IconButtonDefaults
-                                .iconButtonColors()
-                                .copy(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.error,
-                                ),
+                            Modifier.padding(vertical = 8.dp),
                     ) {
-                        Icon(
-                            painterResource(R.drawable.baseline_refresh_24),
-                            contentDescription = stringResource(R.string.try_again),
-                            modifier =
-                                Modifier
-                                    .padding(4.dp)
-                                    .fillMaxSize(),
-                        )
+                        ReactionsView(
+                            reactions = messageContent.reactions,
+                            genre = genre,
+                        ) {
+                            onAction(MessageAction.ClickReactions(messageContent))
+                        }
                     }
-                }
 
-                AnimatedVisibility(
-                    visible = messageContent.reactions.isNotEmpty(),
-                    modifier =
-                        Modifier.padding(vertical = 8.dp),
-                ) {
-                    ReactionsView(
-                        reactions = messageContent.reactions,
-                        genre = genre,
-                    ) {
-                        onAction(MessageAction.ClickReactions(messageContent))
+                    if (BuildConfig.DEBUG) {
+                        ReasoningView(message.reasoning, genre)
                     }
-                }
-
-                if (BuildConfig.DEBUG) {
-                    ReasoningView(message.reasoning, genre)
                 }
             }
         }

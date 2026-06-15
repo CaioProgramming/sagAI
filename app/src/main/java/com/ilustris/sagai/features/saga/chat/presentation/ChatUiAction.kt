@@ -114,6 +114,8 @@ sealed class ChatUiAction {
 
     data object ShowObjective : ChatUiAction()
 
+    data object DismissObjective : ChatUiAction()
+
     data object StopGeneration : ChatUiAction()
 
     data class OpenCharacter(

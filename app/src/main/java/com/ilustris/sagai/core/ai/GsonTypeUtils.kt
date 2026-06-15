@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import com.ilustris.sagai.core.ai.model.AIError
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -14,21 +15,17 @@ import kotlin.reflect.typeOf
 /**
  * R8-safe Gson types.
  */
-fun gsonTypeOfMapString(valueClass: Class<*>): Type =
-    TypeToken.getParameterized(Map::class.java, String::class.java, valueClass).type
+fun gsonTypeOfMapString(valueClass: Class<*>): Type = TypeToken.getParameterized(Map::class.java, String::class.java, valueClass).type
 
 fun gsonTypeOfStringAnyMap(): Type = gsonTypeOfMapString(Any::class.java)
 
 fun gsonTypeOfMapStringString(): Type = gsonTypeOfMapString(String::class.java)
 
-fun gsonTypeOfStringList(): Type =
-    TypeToken.getParameterized(List::class.java, String::class.java).type
+fun gsonTypeOfStringList(): Type = TypeToken.getParameterized(List::class.java, String::class.java).type
 
-fun gsonTypeOfIntList(): Type =
-    TypeToken.getParameterized(List::class.java, Int::class.javaObjectType).type
+fun gsonTypeOfIntList(): Type = TypeToken.getParameterized(List::class.java, Int::class.javaObjectType).type
 
-fun gsonTypeOfList(itemClass: Class<*>): Type =
-    TypeToken.getParameterized(List::class.java, itemClass).type
+fun gsonTypeOfList(itemClass: Class<*>): Type = TypeToken.getParameterized(List::class.java, itemClass).type
 
 inline fun <reified T> gsonTypeOfList(): Type = gsonTypeOfList(T::class.java)
 
@@ -46,26 +43,48 @@ fun <T> parseAIGenerationFromJson(
         throw JsonSyntaxException("Expected JSON object for AIGeneration")
     }
     val obj = root.asJsonObject
-    val reasoning =
-        obj.get("reasoning")
-            ?.takeUnless { it.isJsonNull }
-            ?.asString
-            .orEmpty()
-    val dataElement =
-        obj.get("data")
-            ?: throw JsonSyntaxException("Missing 'data' in AIGeneration JSON")
+
+    val errorElement = obj.get("error")
+    val error: AIError? =
+        if (errorElement != null && !errorElement.isJsonNull) {
+            gson.fromJson(errorElement, AIError::class.java)
+        } else {
+            null
+        }
+
+    val dataElement = obj.get("data")
+    if (dataElement == null || dataElement.isJsonNull) {
+        if (error != null) {
+            return AIGeneration(data = null, error = error)
+        }
+        throw JsonSyntaxException("Missing 'data' or 'error' in AIGeneration JSON")
+    }
 
     val data: T =
         when (dataType) {
-            String::class.java ->
+            String::class.java -> {
                 if (dataElement.isJsonPrimitive) {
                     dataElement.asString as T
                 } else {
                     gson.fromJson(dataElement, String::class.java) as T
                 }
-            else -> gson.fromJson(dataElement, dataType) as T
+            }
+
+            else -> {
+                // Handle double-stringification: if the target is an object but we got a string
+                if (dataElement.isJsonPrimitive && dataElement.asJsonPrimitive.isString) {
+                    try {
+                        val innerJson = dataElement.asString
+                        gson.fromJson(innerJson, dataType)
+                    } catch (e: Exception) {
+                        gson.fromJson(dataElement, dataType)
+                    }
+                } else {
+                    gson.fromJson(dataElement, dataType)
+                }
+            }
         }
-    return AIGeneration(reasoning = reasoning, data = data)
+    return AIGeneration(data = data, error = error)
 }
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -75,8 +94,10 @@ inline fun <reified T> parseAIGenerationFromJson(
 ): AIGeneration<T> = parseAIGenerationFromJson(gson, json, getJavaType<T>())
 
 @OptIn(ExperimentalStdlibApi::class)
-inline fun <reified T> buildAIPromptOutputStructure(filterOutputFields: List<String> = emptyList()): String {
-    val type = getJavaType<T>()
+fun buildAIPromptOutputStructure(
+    type: Type,
+    filterOutputFields: List<String> = emptyList(),
+): String {
     val dataStructure = buildDataStructure(type, filterOutputFields)
 
     return toJsonMap(
@@ -105,8 +126,11 @@ inline fun <reified T> getJavaType(): Type {
     }
 }
 
-fun buildDataStructure(type: Type, filterOutputFields: List<String>): String {
-    return when (type) {
+fun buildDataStructure(
+    type: Type,
+    filterOutputFields: List<String>,
+): String =
+    when (type) {
         is Class<*> -> {
             when {
                 type == String::class.java -> "\"string\""
@@ -116,28 +140,35 @@ fun buildDataStructure(type: Type, filterOutputFields: List<String>): String {
                 else -> toJsonMap(type, filteredFields = filterOutputFields)
             }
         }
+
         is java.lang.reflect.ParameterizedType -> {
-            val rawType = type.rawType
-            when (rawType) {
+            when (val rawType = type.rawType) {
                 List::class.java, ArrayList::class.java -> {
                     val itemType = type.actualTypeArguments.firstOrNull() ?: Any::class.java
                     "[${buildDataStructure(itemType, filterOutputFields)}]"
                 }
+
                 Map::class.java, HashMap::class.java -> {
                     val valueType = type.actualTypeArguments.getOrNull(1) ?: Any::class.java
                     "{ \"key\": ${buildDataStructure(valueType, filterOutputFields)} }"
                 }
+
                 GeneratedContent::class.java -> {
                     val innerType = type.actualTypeArguments.firstOrNull() ?: Any::class.java
                     toJsonMap(
                         GeneratedContent::class.java,
                         fieldCustomDescriptions = listOf("data" to buildDataStructure(innerType, filterOutputFields)),
-                        filteredFields = filterOutputFields
+                        filteredFields = filterOutputFields,
                     )
                 }
-                else -> toJsonMap(rawType as Class<*>, filteredFields = filterOutputFields)
+
+                else -> {
+                    toJsonMap(rawType as Class<*>, filteredFields = filterOutputFields)
+                }
             }
         }
-        else -> "\"any\""
+
+        else -> {
+            "\"any\""
+        }
     }
-}

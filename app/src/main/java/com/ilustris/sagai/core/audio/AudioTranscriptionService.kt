@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.audio
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -58,8 +60,13 @@ class AudioTranscriptionService
 
                 val transcription =
                     gemmaClient.generate<String>(
-                        prompt = transcriptionPrompt,
-                    blueprintKey = com.ilustris.sagai.core.ai.prompts.AudioPrompts.AUDIO_CONFIG_BLUEPRINT)
+                        promptSplit =
+                            SplitPrompt(
+                                blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
+                                instructionBuckets = emptyMap(),
+                                processedTemplate = transcriptionPrompt,
+                            ),
+                    )
 
                 transcription?.let { text ->
                     if (text.isNotBlank()) {

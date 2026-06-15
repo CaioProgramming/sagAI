@@ -145,7 +145,6 @@ fun OnboardingDialog(
         ) {
             Box(
                 Modifier
-                    .reactiveShimmer(true)
                     .background(
                         fadeGradientBottom(
                             MaterialTheme.colorScheme.primary ?: MaterialTheme.colorScheme.primary,
@@ -166,8 +165,8 @@ fun OnboardingDialog(
                             .levitate()
                             .reactiveShimmer(
                                 true,
-                                shimmerColors = holographicGradient,
                                 targetValue = 100f,
+                                repeatMode = RepeatMode.Restart,
                             ),
                 )
             }

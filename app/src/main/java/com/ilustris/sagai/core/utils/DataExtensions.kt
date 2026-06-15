@@ -5,6 +5,7 @@ import com.google.gson.ExclusionStrategy
 import com.google.gson.FieldAttributes
 import com.google.gson.GsonBuilder
 import com.ilustris.sagai.core.ai.gsonTypeOfStringAnyMap
+import com.ilustris.sagai.core.ai.model.GeminiResponsePart
 import timber.log.Timber
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -86,15 +87,16 @@ fun Class<*>.toSchema(
         }
 
         List::class.java, Array::class.java -> {
-            val itemType = if (genericType is ParameterizedType) {
-                genericType.actualTypeArguments.firstOrNull() as? Class<*>
-            } else {
-                this.genericInterfaces
-                    .mapNotNull { it as? ParameterizedType }
-                    .firstOrNull()
-                    ?.actualTypeArguments
-                    ?.firstOrNull() as? Class<*>
-            }
+            val itemType =
+                if (genericType is ParameterizedType) {
+                    genericType.actualTypeArguments.firstOrNull() as? Class<*>
+                } else {
+                    this.genericInterfaces
+                        .mapNotNull { it as? ParameterizedType }
+                        .firstOrNull()
+                        ?.actualTypeArguments
+                        ?.firstOrNull() as? Class<*>
+                }
 
             Schema.array(
                 itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
@@ -117,11 +119,12 @@ fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String,
             !excludeFields.contains(it.name) && !it.name.startsWith("$") && !it.name.contains("companion")
         }.associate {
             // Safely check for nullability annotations using Java reflection
-            val isNullable = it.annotations.any { ann -> 
-                ann.annotationClass.java.simpleName.contains("Nullable", ignoreCase = true)
-            } || !it.type.isPrimitive
+            val isNullable =
+                it.annotations.any { ann ->
+                    ann.annotationClass.java.simpleName
+                        .contains("Nullable", ignoreCase = true)
+                } || !it.type.isPrimitive
 
-            
             Timber.tag("SchemaMapper").d("Mapping field ${it.name} nullable: $isNullable type: ${it.type.name}")
             it.name to it.type.toSchema(isNullable, excludeFields, it.genericType)
         }
@@ -161,7 +164,7 @@ private fun toJsonMapObject(
 
         clazz == String::class.java -> return "PLACEHOLDER_STRING"
 
-        clazz == Int::class.java || clazz == Integer::class.java || clazz == Integer::class.java || clazz == Long::class.java ||
+        clazz == Int::class.java || clazz == Integer::class.java || clazz == Long::class.java ||
             clazz == java.lang.Long::class.java -> return 999
 
         clazz == Boolean::class.java || clazz == java.lang.Boolean::class.java -> return false
@@ -187,34 +190,53 @@ private fun toJsonMapObject(
         .filter { !deniedFields.contains(it.name) }
         .sortedBy { it.name }
         .forEach { field ->
+            val isNullable =
+                field.annotations.any { ann ->
+                    ann.annotationClass.java.simpleName
+                        .contains("Nullable", ignoreCase = true)
+                } || !field.type.isPrimitive
+
             val customDesc = fieldCustomDescriptions.find { it.first == field.name }
             if (customDesc != null) {
+                val rawDesc = customDesc.second
                 try {
+                    // Try to parse as JSON first to keep structure
                     map[field.name] =
                         com.google.gson.JsonParser
-                            .parseString(customDesc.second)
+                            .parseString(rawDesc)
                 } catch (e: Exception) {
-                    map[field.name] = customDesc.second
+                    // Fallback to string with optional hint
+                    map[field.name] = if (isNullable) "$rawDesc (optional)" else rawDesc
                 }
             } else {
                 val fieldType = field.type
-                if (List::class.java.isAssignableFrom(fieldType) ||
-                    Array::class.java.isAssignableFrom(
-                        fieldType,
-                    )
-                ) {
-                    val genericType = field.genericType as? ParameterizedType
-                    val itemType = genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
-                    map[field.name] =
+                val value =
+                    if (List::class.java.isAssignableFrom(fieldType) ||
+                        Array::class.java.isAssignableFrom(fieldType)
+                    ) {
+                        val genericType = field.genericType as? ParameterizedType
+                        val itemType = genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
                         if (itemType != null) {
                             listOf(toJsonMapObject(itemType, filteredFields, emptyList(), visited))
                         } else {
                             emptyList<Any>()
                         }
-                } else {
-                    map[field.name] =
+                    } else {
                         toJsonMapObject(fieldType, filteredFields, emptyList(), visited)
-                }
+                    }
+
+                val finalValue =
+                    if (isNullable) {
+                        when (value) {
+                            is String -> "$value (optional)"
+                            is Number -> "$value (optional)"
+                            is Boolean -> "$value (optional)"
+                            else -> value // For Map/List we keep as is for now to avoid breaking structure
+                        }
+                    } else {
+                        value
+                    }
+                map[field.name] = finalValue
             }
         }
     visited.remove(clazz)
@@ -266,11 +288,8 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     return gson.toJson(this)
 }
 
-fun Any.toPromptVariables(): Map<String, String> {
-    val gson = GsonBuilder().create()
-    val json = gson.toJson(this)
-    val mapType = gsonTypeOfStringAnyMap()
-    val rawMap: Map<String, Any> = gson.fromJson(json, mapType)
+fun Any.asMap(): Map<String, String> {
+    val rawMap: Map<String, Any> = this.toRawMap()
 
     return rawMap.mapValues { (_, value) ->
         if (value is Double && value % 1 == 0.0) {
@@ -279,6 +298,17 @@ fun Any.toPromptVariables(): Map<String, String> {
             value.toString()
         }
     }
+}
+
+/**
+ * Converts any object into a Map<String, Any>, preserving nested structures.
+ * Uses Gson to ensure field names match serialization rules and noise is removed.
+ */
+fun Any.toRawMap(): Map<String, Any> {
+    val gson = GsonBuilder().create()
+    val json = gson.toJson(this)
+    val mapType = gsonTypeOfStringAnyMap()
+    return gson.fromJson(json, mapType)
 }
 
 fun doNothing() {
@@ -321,6 +351,82 @@ fun Long.formatHours(): String {
 }
 
 val jsonPattern = Regex("```json\\s*\\n?(.*?)\\n?\\s*```", RegexOption.DOT_MATCHES_ALL)
+
+/**
+ * Intelligently finds and extracts JSON content from a list of Gemini response parts.
+ *
+ * Uses a tiered search strategy:
+ * 1. First looks for parts containing fenced JSON blocks ```json...```
+ * 2. Falls back to parts containing JSON structure markers `{` or `[`
+ * 3. Selects the largest candidate (most complete content)
+ * 4. Returns a Pair of (extracted text, part index) or (null, -1) if no JSON found
+ *
+ * This allows the JSON extractor to work robustly across model changes where
+ * response structure may shift from part[0] to part[1], etc.
+ */
+fun List<GeminiResponsePart>?.findJsonContent(): Pair<String?, Int> {
+    val logTag = "GeminiJsonLocator"
+
+    if (this == null || this.isEmpty()) {
+        Timber.tag(logTag).w("Response parts list is null or empty")
+        return Pair(null, -1)
+    }
+
+    // Stage 1: Look for fenced JSON blocks (most reliable)
+    val fencedCandidates = mutableListOf<Pair<String, Int>>()
+    forEachIndexed { index, part ->
+        part.text?.let { text ->
+            val match = jsonPattern.find(text)
+            if (match != null) {
+                val extracted = match.groupValues[1].trim()
+                fencedCandidates.add(Pair(extracted, index))
+                Timber
+                    .tag(logTag)
+                    .d("Found fenced JSON in part[$index]: length=${extracted.length}")
+            }
+        }
+    }
+
+    if (fencedCandidates.isNotEmpty()) {
+        // Return the largest fenced block (most complete)
+        val best = fencedCandidates.maxByOrNull { it.first.length } ?: fencedCandidates[0]
+        Timber
+            .tag(logTag)
+            .i("Selected fenced JSON from part[${best.second}], length=${best.first.length}")
+        return best
+    }
+
+    // Stage 2: Fall back to parts with JSON structure markers
+    val jsonCandidates = mutableListOf<Pair<String, Int>>()
+    forEachIndexed { index, part ->
+        part.text?.let { text ->
+            if (text.contains("{") || text.contains("[")) {
+                jsonCandidates.add(Pair(text, index))
+                Timber.tag(logTag).d("Found JSON marker in part[$index]: length=${text.length}")
+            }
+        }
+    }
+
+    if (jsonCandidates.isNotEmpty()) {
+        // Return the largest block (most content = likely the main response)
+        val best = jsonCandidates.maxByOrNull { it.first.length } ?: jsonCandidates[0]
+        Timber
+            .tag(logTag)
+            .i("Selected JSON from part[${best.second}] (no fencing), length=${best.first.length}")
+        return best
+    }
+
+    // Stage 3: No JSON found - return any non-empty text part
+    val firstNonEmpty = this.firstOrNull { !it.text.isNullOrBlank() }
+    if (firstNonEmpty != null) {
+        val index = this.indexOf(firstNonEmpty)
+        Timber.tag(logTag).w("No JSON structure found. Returning raw text from part[$index]")
+        return Pair(firstNonEmpty.text, index)
+    }
+
+    Timber.tag(logTag).e("All response parts are empty or null")
+    return Pair(null, -1)
+}
 
 fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
@@ -498,14 +604,16 @@ private fun repairJsonStructure(
                     if (charIndex < currentJson.length) {
                         val firstChar = currentJson[charIndex]
 
-                        // Check if this is a JSON literal (null, true, false) or number - don't quote these
+                        // Check if this is a JSON literal (null, true, false), number, object or array - don't quote these
                         val remainingText = currentJson.substring(charIndex)
                         val isJsonLiteral =
                             remainingText.startsWith("null") ||
                                 remainingText.startsWith("true") ||
                                 remainingText.startsWith("false") ||
                                 firstChar.isDigit() ||
-                                firstChar == '-'
+                                firstChar == '-' ||
+                                firstChar == '{' ||
+                                firstChar == '['
 
                         if (isJsonLiteral) {
                             // Skip this field - it's a valid JSON literal, not a string needing quotes
@@ -839,11 +947,7 @@ private fun truncateForAi(
             "text" -> AI_MESSAGE_TEXT_MAX
             else -> AI_STRING_TRUNCATE_DEFAULT
         }
-    return if (value.length > limit) {
-        "${value.take(limit - 3)}..."
-    } else {
-        value
-    }
+    return value
 }
 
 fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
@@ -851,69 +955,70 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
     if (this is String || this is Number || this is Boolean || this is Enum<*>) {
         return this.toString()
     }
-    val fields = this::class.java.declaredFields
+
     val standardExclusions = listOf("\$stable", "companion")
     val allExclusions = fieldsToExclude + standardExclusions
 
-    return fields
-        .mapNotNull { field ->
-            if (field.name in allExclusions) return@mapNotNull null
-            field.isAccessible = true
-            val value = field.get(this) ?: return@mapNotNull null
-
-            val valueString =
-                when (value) {
-                    is List<*> -> {
-                        if (value.isEmpty()) {
-                            ""
-                        } else {
-                            value.normalizetoAIItems(
-                                fieldsToExclude,
-                            )
-                        }
-                    }
-
-                    is Array<*> -> {
-                        if (value.isEmpty()) {
-                            ""
-                        } else {
-                            value.normalizetoAIItems(
-                                fieldsToExclude,
-                            )
-                        }
-                    }
-
-                    is String -> truncateForAi(field.name, value)
-
-                    is Enum<*> -> {
-                        value.toString()
-                    }
-
-                    else -> {
-                        if (value::class.isData) {
-                            val normalized = value.toAINormalize(fieldsToExclude)
-                            if (normalized.isNotBlank()) {
-                                "\n${normalized.prependIndent("  ")}"
-                            } else {
-                                ""
-                            }
-                        } else {
-                            value.toString()
-                        }
-                    }
+    fun formatValue(
+        name: String,
+        value: Any,
+    ): String? {
+        val valueString =
+            when (value) {
+                is List<*> -> {
+                    if (value.isEmpty()) "" else value.normalizetoAIItems(fieldsToExclude)
                 }
 
-            if (valueString.isBlank() || valueString == "[]") {
-                null
-            } else {
-                val itemsSize =
-                    when (value) {
-                        is List<*> -> "[${value.size}]"
-                        is Array<*> -> "[${value.size}]"
-                        else -> emptyString()
+                is Array<*> -> {
+                    if (value.isEmpty()) "" else value.normalizetoAIItems(fieldsToExclude)
+                }
+
+                is String -> {
+                    truncateForAi(name, value)
+                }
+
+                is Enum<*> -> {
+                    value.toString()
+                }
+
+                else -> {
+                    if (value::class.isData || value is Map<*, *>) {
+                        val normalized = value.toAINormalize(fieldsToExclude)
+                        if (normalized.isNotBlank()) {
+                            "\n${normalized.prependIndent("  ")}"
+                        } else {
+                            ""
+                        }
+                    } else {
+                        value.toString()
                     }
-                "${field.name}$itemsSize: $valueString"
+                }
             }
+
+        return if (valueString.isBlank() || valueString == "[]") {
+            null
+        } else {
+            val itemsSize =
+                when (value) {
+                    is List<*> -> "[${value.size}]"
+                    is Array<*> -> "[${value.size}]"
+                    else -> emptyString()
+                }
+            "$name$itemsSize: $valueString"
+        }
+    }
+
+    val mapData =
+        when (this) {
+            is Map<*, *> -> this
+            else -> this.toRawMap()
+        }
+
+    return mapData.entries
+        .mapNotNull { (key, value) ->
+            val name = key.toString()
+            if (name in allExclusions || value == null) return@mapNotNull null
+            formatValue(name, value)
         }.joinToString("\n")
 }
 

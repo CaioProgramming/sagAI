@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
@@ -114,6 +115,8 @@ object SagaPrompts {
             "review",
             "emotionalReview",
             "isEnded",
+            "playTimeMs",
+            "emotionalProfile",
         )
 
     fun mainContext(
@@ -136,7 +139,7 @@ object SagaPrompts {
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             EndCreditsArgs(
                 sagaContext = mainContext(saga),
@@ -151,14 +154,14 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(SAGA_END_CREDITS_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SAGA_END_CREDITS_BLUEPRINT, args)
     }
 
     suspend fun generateSagaEnding(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val emotionalRanking = saga.flatMessages().rankEmotionalTone()
         val args =
             SagaEndingArgs(
@@ -181,14 +184,14 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(SAGA_ENDING_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SAGA_ENDING_BLUEPRINT, args)
     }
 
     suspend fun reviewGeneration(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val topInteractiveCharacters =
             saga.flatMessages().rankTopCharacters(saga.characters.map { it.data })
         val userMessages =
@@ -218,14 +221,14 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(REVIEW_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(REVIEW_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun generateStoryBriefing(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             StoryBriefingArgs(
                 sagaTitle = saga.data.title,
@@ -242,14 +245,14 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(STORY_BRIEFING_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(STORY_BRIEFING_BLUEPRINT, args)
     }
 
     suspend fun sagaResume(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             SagaResumeArgs(
                 sagaContext = mainContext(saga),
@@ -262,14 +265,14 @@ object SagaPrompts {
                 originalIntro = saga.data.description,
             )
 
-        return promptService.buildRemotePrompt(SAGA_RESUME_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SAGA_RESUME_BLUEPRINT, args)
     }
 
     suspend fun charactersInsight(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val mainChar = saga.mainCharacter
         val args =
             CharacterInsightArgs(
@@ -288,14 +291,14 @@ object SagaPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_INSIGHT_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_INSIGHT_BLUEPRINT, args)
     }
 
     suspend fun wikiInsight(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             WikiInsightArgs(
                 sagaMainContext = mainContext(saga),
@@ -311,24 +314,24 @@ object SagaPrompts {
                     saga
                         .flatMessages()
                         .takeLast(10)
-                    .joinToString("\n") { "${it.character?.name}: ${it.message.text}" },
-                        narrativeStyle = conversationDirective,
+                        .joinToString("\n") { "${it.character?.name}: ${it.message.text}" },
+                narrativeStyle = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(WIKI_INSIGHT_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(WIKI_INSIGHT_BLUEPRINT, args)
     }
 
     suspend fun timelineInsight(
         promptService: PromptService,
         saga: SagaContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             TimelineInsightArgs(
                 chapterTimeline = saga.acts.joinToString("\n") { it.actSummary(false) },
             )
 
-        return promptService.buildRemotePrompt(TIMELINE_INSIGHT_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(TIMELINE_INSIGHT_BLUEPRINT, args)
     }
 
     fun charactersSummary(saga: SagaContent): String =

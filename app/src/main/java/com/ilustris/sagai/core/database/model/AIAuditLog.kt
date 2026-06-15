@@ -19,6 +19,21 @@ data class AIAuditLog(
     val errorMessage: String? = null,
     val suggestion: String? = null,
     val responseTime: Long = 0,
+    val queueWaitMs: Long = 0,
     val usedTools: List<String>? = null,
     val safetyStatus: String? = null,
+    /** The final merged system instruction block sent to the Gemini API `system_instruction` field. */
+    val systemInstruction: String? = null,
+    /** JSON representation of the variables map sent to [com.ilustris.sagai.core.ai.services.PromptService.buildSplitBlueprint]. */
+    val sentVariables: String? = null,
+    val promptTokens: Int? = null,
+    val candidatesTokens: Int? = null,
+    val totalTokens: Int? = null,
+)
+
+data class AIStats(
+    val blueprintKey: String?,
+    val sentVariables: Map<String, String>?,
+    val missingVariables: List<String>?,
+    val systemInstructions: String,
 )

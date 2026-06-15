@@ -3,9 +3,12 @@ package com.ilustris.sagai.features.chapter.data.usecase
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -16,6 +19,7 @@ import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
@@ -28,6 +32,7 @@ import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -81,13 +86,17 @@ class ChapterUseCaseImpl
         override suspend fun generateChapter(chapterId: Int) =
             executeRequest {
                 val (saga, chapterContent) = fetchContext(chapterId)
+                val prompt =
+                    generateChapterPrompt(
+                        saga = saga,
+                        currentChapter = chapterContent,
+                    )
                 val genChapter =
                     gemmaClient
                         .generate<Chapter>(
-                            prompt =
-                                generateChapterPrompt(
-                                    saga = saga,
-                                    currentChapter = chapterContent,
+                            promptSplit =
+                                prompt.mergeInstructions(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -99,15 +108,14 @@ class ChapterUseCaseImpl
                                 ),
                             requireTranslation = true,
                             useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
-                            blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                            requirement = ModelRequirement.HIGH,
                         )!!
 
                 val updatedChapter =
                     updateChapter(
                         chapterContent.data.copy(
                             title = genChapter.title,
-                            overview = genChapter.overview,
+                            content = genChapter.content,
                             introduction = chapterContent.data.introduction, // Keep existing introduction
                             featuredCharacters = genChapter.featuredCharacters.take(2),
                             emotionalReview = genChapter.emotionalReview,
@@ -120,16 +128,20 @@ class ChapterUseCaseImpl
                 updatedChapter
             }
 
-        override suspend fun generateChapterStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+        override suspend fun generateChapterStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
+                    val prompt =
+                        generateChapterPrompt(
+                            saga = saga,
+                            currentChapter = chapterContent,
+                        )
                     gemmaClient
                         .generateStreaming<GeneratedContent<Chapter>>(
-                            prompt =
-                                generateChapterPrompt(
-                                    saga = saga,
-                                    currentChapter = chapterContent,
+                            promptSplit =
+                                prompt.mergeInstructions(
+                                    genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             filterOutputFields =
                                 listOf(
@@ -141,11 +153,10 @@ class ChapterUseCaseImpl
                                 ),
                             requireTranslation = true,
                             useCore = true,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
-                            blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
+                            requirement = ModelRequirement.HIGH,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val genChapter = state.data.data
+                                val genChapter = state.data!!.data
                                 val updatedChapter =
                                     updateChapter(
                                         genChapter.copy(
@@ -349,16 +360,14 @@ class ChapterUseCaseImpl
         private suspend fun generateChapterPrompt(
             saga: SagaContent,
             currentChapter: ChapterContent,
-        ): String {
-            val conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre)
-            return ChapterPrompts.chapterGeneration(
+        ): SplitPrompt =
+            ChapterPrompts.chapterGeneration(
                 promptService,
                 saga,
                 currentChapter,
                 remoteConfigService.getNarrativeRules(),
-                conversationDirective,
+                emptyString(),
             )
-        }
 
         override suspend fun generateChapterIntroduction(
             sagaId: Int,
@@ -371,22 +380,24 @@ class ChapterUseCaseImpl
                     promptService = promptService,
                     sagaContent = saga,
                     currentChapter = chapterContent,
-                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    conversationDirective = emptyString(),
                 )
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
-                    prompt,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     requireTranslation = true,
                     useCore = true,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
-                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                    requirement = ModelRequirement.HIGH,
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
             GeneratedContent(updatedChapter, intro.finalMessage)
         }
 
-        override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+        override suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapter) = fetchContext(chapterId)
@@ -396,35 +407,46 @@ class ChapterUseCaseImpl
                             promptService = promptService,
                             sagaContent = saga,
                             currentChapter = chapterContent,
-                            conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                            conversationDirective = emptyString(),
                         )
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<String>>(
-                                    prompt = prompt,
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                        ),
                                     requireTranslation = true,
                                     useCore = true,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
-                                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
+                                    requirement = ModelRequirement.HIGH,
                                 ),
                             "Generating chapter introduction...",
+                            genre = saga.data.genre,
                         ).collect { state ->
-                            if (state is StreamingState.Success) {
-                                val introContent = state.data
-                                val updatedChapter =
-                                    updateChapter(chapterContent.copy(introduction = introContent.data))
-                                emit(
-                                    StreamingState.Success(
-                                        GeneratedContent(
-                                            updatedChapter,
-                                            introContent.finalMessage,
+                            when (state) {
+                                is StreamingState.Success -> {
+                                    val introContent = state.data!!
+                                    val updatedChapter =
+                                        updateChapter(chapterContent.copy(introduction = introContent.data))
+                                    emit(
+                                        StreamingState.Success(
+                                            GeneratedContent(
+                                                updatedChapter,
+                                                introContent.finalMessage,
+                                            ),
                                         ),
-                                    ),
-                                )
-                            } else {
-                                emit(state as StreamingState<GeneratedContent<Chapter>>)
+                                    )
+                                }
+
+                                is StreamingState.Reasoning -> {
+                                    emit(state)
+                                }
+
+                                is StreamingState.Error -> {
+                                    emit(state)
+                                }
                             }
                         }
                 } catch (e: Exception) {
@@ -432,34 +454,41 @@ class ChapterUseCaseImpl
                 }
             }
 
-        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>> =
+        override fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>> =
             flow {
                 try {
                     val (saga, chapterContent) = fetchContext(chapterId)
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
                     val prompt =
                         ChapterPrompts.chapterSynthesisPrompt(
                             promptService = promptService,
                             saga = saga,
                             chapter = chapterContent,
                             narrativeRules = remoteConfigService.getNarrativeRules(),
-                            conversationDirective = conversationDirective,
+                            conversationDirective = emptyString(),
+                        )
+                    val actContext =
+                        promptService.buildSplitBlueprint(
+                            saga.getDirectiveKey(),
+                            emptyMap(),
                         )
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
-                                    prompt = prompt,
-                                    blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                            actContext.renderInstructions(),
+                                        ),
+                                    requirement = ModelRequirement.HIGH,
                                 ),
                             "Generating new chapter...",
+                            genre = saga.data.genre,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {
-                                    val synthesis = state.data.data
+                                    val synthesis = state.data!!.data
 
                                     // 1. Update Chapter details & Narrative Guide
                                     val updatedChapter =

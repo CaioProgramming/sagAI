@@ -85,8 +85,8 @@ fun SagaDetailInitialContent(
     gridState: LazyGridState = rememberLazyGridState(),
     onAction: (DetailAction) -> Unit = {},
     showTitleOnly: Boolean = false,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val columnCount = 2
     val genre = remember { saga.genre }
@@ -116,7 +116,8 @@ fun SagaDetailInitialContent(
                                 } else {
                                     Modifier
                                 },
-                            ).fillMaxWidth()
+                            )
+                            .fillMaxWidth()
                             .align(Alignment.Center)
                             .reactiveShimmer(true)
                             .padding(8.dp),
@@ -149,7 +150,8 @@ fun SagaDetailInitialContent(
                                                 } else {
                                                     Modifier
                                                 },
-                                            ).background(MaterialTheme.colorScheme.background)
+                                            )
+                                            .background(MaterialTheme.colorScheme.background)
                                             .height(400.dp)
                                             .fillMaxWidth(),
                                 ) {
@@ -189,7 +191,8 @@ fun SagaDetailInitialContent(
                                                             } else {
                                                                 Modifier
                                                             },
-                                                        ).fillMaxWidth()
+                                                        )
+                                                        .fillMaxWidth()
                                                         .padding(8.dp),
                                             )
                                         }
@@ -233,7 +236,8 @@ fun SagaDetailInitialContent(
                                                         } else {
                                                             Modifier
                                                         },
-                                                    ).padding(8.dp),
+                                                    )
+                                                    .padding(8.dp),
                                         )
                                     }
 
@@ -264,7 +268,8 @@ fun SagaDetailInitialContent(
                                                 } else {
                                                     Modifier
                                                 },
-                                            ).padding(16.dp),
+                                            )
+                                            .padding(16.dp),
                                 ) {
                                     Image(
                                         painterResource(genre.icon),
@@ -272,7 +277,8 @@ fun SagaDetailInitialContent(
                                         Modifier
                                             .clickable {
                                                 onAction(DetailAction.RegenerateIcon)
-                                            }.size(100.dp)
+                                            }
+                                            .size(100.dp)
                                             .gradientFill(
                                                 MaterialTheme.colorScheme.primary.gradientFade(),
                                             ),
@@ -294,7 +300,8 @@ fun SagaDetailInitialContent(
                                                     } else {
                                                         Modifier
                                                     },
-                                                ).padding(8.dp)
+                                                )
+                                                .padding(8.dp)
                                                 .fillMaxWidth()
                                                 .reactiveShimmer(
                                                     true,
@@ -506,7 +513,13 @@ fun SagaDetailInitialContent(
 
                     RequestSection.entries.forEach {
                         item(span = { GridItemSpan(columnCount) }) {
-                            section.miniSection(it, resume, onAction)
+                            section.miniSection(
+                                it,
+                                resume,
+                                onAction,
+                                sharedTransitionScope,
+                                animatedVisibilityScope,
+                            )
                         }
                     }
 

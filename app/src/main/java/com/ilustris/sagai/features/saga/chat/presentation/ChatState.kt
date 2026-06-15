@@ -71,6 +71,7 @@ data class ChatUiState(
     val isAudioInput: Boolean = false,
     val sceneSummary: SceneSummary? = null,
     val milestone: SagaMilestone? = null,
+    val showCurrentObjective: Boolean = false,
     val editingMessage: Message? = null,
     val showMessageOptions: Message? = null,
     val visualConfig: GenreVisualConfig? = null,

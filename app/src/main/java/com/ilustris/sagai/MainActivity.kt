@@ -13,6 +13,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,9 +23,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -37,15 +39,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.ilustris.sagai.core.media.SagaPlaybackService
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,17 +53,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.data.SideEffect
+import com.ilustris.sagai.core.media.SagaPlaybackService
+import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
-import com.ilustris.sagai.core.services.SideEffectService
-import com.ilustris.sagai.core.navigation.SagaNavigationTracker
 import com.ilustris.sagai.core.notifications.SagaNotificationRouter
+import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
@@ -315,26 +315,22 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
                                     Box(modifier = Modifier.fillMaxSize()) {
-                                        // Provide a navigation-specific AnimatedContent scope so
-                                        // all entries can use the same default transition (crossfade).
-                                        AnimatedContent(
-                                            targetState = resolveCurrentKey(),
-                                            transitionSpec = { fadeIn() togetherWith fadeOut() },
-                                        ) {
-                                            // `this` is an AnimatedContentScope — provide it to
-                                            // navigation entries via LocalNavAnimatedContentScope
-                                            CompositionLocalProvider(
-                                                LocalNavAnimatedContentScope provides this,
-                                            ) {
-                                                NavDisplay(
-                                                    entries =
-                                                        navigationState.toEntries(
-                                                            entryProvider,
-                                                        ),
-                                                    onBack = { navigator.goBack() },
-                                                )
-                                            }
-                                        }
+                                        NavDisplay(
+                                            entries =
+                                                navigationState.toEntries(
+                                                    entryProvider,
+                                                ),
+                                            onBack = { navigator.goBack() },
+                                            transitionSpec = {
+                                                fadeIn() togetherWith fadeOut()
+                                            },
+                                            popTransitionSpec = {
+                                                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
+                                            },
+                                            predictivePopTransitionSpec = {
+                                                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
+                                            },
+                                        )
 
                                         SagaInAppNotificationBanner(
                                             notification = inAppNotification,
@@ -377,6 +373,7 @@ class MainActivity : ComponentActivity() {
                             type = OnboardingType.PREMIUM_GUIDE,
                             force = true,
                             onDismiss = { activeSideEffect = null },
+                            genre = currentGenre,
                         )
                     }
 

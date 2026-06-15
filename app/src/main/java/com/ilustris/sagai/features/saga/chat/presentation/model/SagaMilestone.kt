@@ -64,15 +64,6 @@ sealed class SagaMilestone(
             delay = 2.seconds,
         )
 
-    data class CurrentObjective(
-        val timeline: Timeline,
-    ) : SagaMilestone(
-            R.string.current_objective,
-            timeline.currentObjective ?: "",
-            delay = 0.seconds,
-            isIntrusive = false,
-        )
-
     data class Introduction(
         val type: IntroductionType,
         val titleText: String,
@@ -101,8 +92,8 @@ sealed class SagaMilestone(
             when (this) {
                 is Loading,
                 is NewEvent,
-                is CurrentObjective,
                 -> false
+
                 else -> isIntrusive
             }
 }

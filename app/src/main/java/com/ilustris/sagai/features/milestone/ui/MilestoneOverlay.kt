@@ -16,7 +16,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
@@ -84,18 +83,8 @@ fun MilestoneOverlay(
                     ),
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
-            val titleModifier =
-                Modifier.sharedElement(
-                    rememberSharedContentState(
-                        key = "saga_${saga.data.id}_title",
-                    ),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                )
+            val titleModifier = Modifier
             when (it) {
-                is SagaMilestone.CurrentObjective -> {
-                    Box {}
-                }
-
                 is SagaMilestone.Introduction -> {
                     IntroductionOverlay(
                         it,

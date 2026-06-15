@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.theme.components
 
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,7 +28,6 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.themeShimmer
 
 @Composable
 fun SagaTopBar(
@@ -53,10 +53,7 @@ fun SagaTopBar(
                 contentDescription = stringResource(R.string.back_button_description),
                 modifier =
                     Modifier
-                        .reactiveShimmer(
-                            isLoading,
-                            shimmerColors = themeShimmer() ?: themeShimmer(),
-                        ).clip(CircleShape)
+                        .clip(CircleShape)
                         .clickable {
                             onBackClick()
                         }.size(24.dp)
@@ -67,7 +64,7 @@ fun SagaTopBar(
         Column(
             modifier =
                 Modifier
-                    .reactiveShimmer(isLoading, themeShimmer() ?: themeShimmer())
+                    .reactiveShimmer(isLoading, repeatMode = RepeatMode.Restart)
                     .padding(horizontal = 8.dp)
                     .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -86,8 +83,7 @@ fun SagaTopBar(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .then(titleModifier)
-                        .reactiveShimmer(isLoading, themeShimmer() ?: themeShimmer()),
+                        .then(titleModifier),
             )
 
             if (subtitle.isNotEmpty()) {

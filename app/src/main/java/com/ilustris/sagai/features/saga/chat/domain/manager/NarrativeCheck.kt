@@ -106,7 +106,7 @@ private fun TimelineMetadata.narrativelyCompleteTimeline(rules: NarrativeRules):
 private fun ChapterMetadata.narrativelyCompleteChapter(rules: NarrativeRules): Boolean =
     events.count { event -> event.narrativelyCompleteTimeline(rules) } >= rules.chapterUpdateLimit &&
         data.title.isNotEmpty() &&
-        data.overview.isNotEmpty()
+        data.content.isNotEmpty()
 
 private fun ActMetadata.narrativelyCompleteAct(rules: NarrativeRules): Boolean =
     chapters.count { chapter -> chapter.narrativelyCompleteChapter(rules) } >= rules.actUpdateLimit &&

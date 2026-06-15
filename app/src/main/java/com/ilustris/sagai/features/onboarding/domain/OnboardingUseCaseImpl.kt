@@ -1,6 +1,8 @@
 package com.ilustris.sagai.features.onboarding.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.model.mergeInstructions
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
@@ -45,23 +47,20 @@ class OnboardingUseCaseImpl
 
                 val persona =
                     if (type == OnboardingType.GAMEPLAY_GUIDE && genre != null) {
-                        genreConfigService.conversationBlueprint(genre)
+                        genreConfigService.conversationInstructions(genre)
                     } else {
-                        promptService.buildRemotePrompt(
-                            OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
-                            emptyMap<String, String>(),
-                        )
+                        promptService
+                            .buildSplitBlueprint(
+                                OnboardingPrompts.DEFAULT_ROLE_BLUEPRINT,
+                            ).renderInstructions()
                     }
 
-                val prompt = OnboardingPrompts.getOnboardingPrompt(promptService, config, persona)
+                val prompt = OnboardingPrompts.getOnboardingPrompt(promptService, config)
                 val content =
-                    runCatching {
-                        gemmaClient.generate<OnboardingContent>(
-                            prompt = prompt,
-                            requirement = GemmaClient.ModelRequirement.LOW,
-                            blueprintKey = OnboardingPrompts.ONBOARDING_BLUEPRINT,
-                        )
-                    }.getOrNull()
+                    gemmaClient.generate<OnboardingContent>(
+                        promptSplit = prompt.mergeInstructions(persona),
+                        requirement = ModelRequirement.MINIMAL,
+                    )
 
                 content ?: getFallbackContent(type)
             }
@@ -73,7 +72,7 @@ class OnboardingUseCaseImpl
                     OnboardingContent::class.java,
                 )
             return fallbacks?.get(type.name) ?: OnboardingContent()
-    }
+        }
 
         override suspend fun markSeen(type: OnboardingType) {
             if (type == OnboardingType.GAMEPLAY_GUIDE) return

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
@@ -34,7 +35,7 @@ object TimelinePrompts {
         sagaContent: SagaContent,
         currentTimeline: TimelineContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val recentEvents =
             sagaContent
                 .flatEvents()
@@ -90,7 +91,7 @@ object TimelinePrompts {
                         ?: "No established relationships.",
             )
 
-        return promptService.buildRemotePrompt(UNIFIED_LORE_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(UNIFIED_LORE_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun generateTimelinePrompt(
@@ -99,7 +100,7 @@ object TimelinePrompts {
         sagaContent: SagaContent,
         currentTimeline: TimelineContent,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val recentEvents =
             sagaContent
                 .flatEvents()
@@ -133,6 +134,6 @@ object TimelinePrompts {
                         ?: "None.",
             )
 
-        return promptService.buildRemotePrompt(PAGE_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(PAGE_GENERATION_BLUEPRINT, args)
     }
 }

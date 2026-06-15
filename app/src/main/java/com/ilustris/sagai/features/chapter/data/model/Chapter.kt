@@ -9,7 +9,7 @@ data class Chapter(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val title: String = "",
-    val overview: String = "",
+    val content: String = "",
     @ColumnInfo(defaultValue = "")
     val introduction: String = "",
     val currentEventId: Int? = null,
@@ -23,5 +23,5 @@ data class Chapter(
     @ColumnInfo(defaultValue = "")
     val narrativeGuide: String? = null,
 ) {
-    fun isEmpty() = title.isEmpty() && overview.isEmpty()
+    fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

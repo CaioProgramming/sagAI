@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 data class UnifiedImageArgs(
@@ -37,7 +38,7 @@ object ImagePrompts {
         imageConfig: ImageConfig,
         imageType: ImageType,
         context: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             UnifiedImageArgs(
                 genre = genre.name,
@@ -65,6 +66,6 @@ object ImagePrompts {
 
         val remoteConfigKey = "unified_${imageType.name.lowercase()}_blueprint"
 
-        return promptService.buildRemotePrompt(remoteConfigKey, args)
+        return promptService.buildSplitBlueprint(remoteConfigKey, args)
     }
 }

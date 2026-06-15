@@ -3,10 +3,13 @@ package com.ilustris.sagai.features.characters.data.usecase
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.prompts.CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
@@ -266,7 +269,10 @@ class CharacterUseCaseImpl
                 )
                 val newCharacter =
                     gemmaClient.generate<Character>(
-                        prompt,
+                        promptSplit =
+                            prompt.mergeInstructions(
+                                genreConfigService.conversationInstructions(sagaContent.data.genre),
+                            ),
                         useCore = true,
                         filterOutputFields =
                             listOf(
@@ -279,8 +285,7 @@ class CharacterUseCaseImpl
                                 "hexColor",
                                 "firstSceneId",
                             ),
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                        blueprintKey = CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT,
+                        requirement = ModelRequirement.HIGH,
                     )!!
 
                 val character = sagaContent.findCharacter(newCharacter.name)
@@ -314,7 +319,7 @@ class CharacterUseCaseImpl
             description: String,
             sceneSummary: SceneSummary?,
             candidateName: String?,
-        ): Flow<StreamingState<GeneratedContent<Character>>> =
+        ): Flow<StreamingState<GeneratedContent<Character>?>> =
             flow {
                 try {
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
@@ -339,7 +344,12 @@ class CharacterUseCaseImpl
                     val request =
                         gemmaClient
                             .generateStreaming<GeneratedContent<Character>>(
-                                prompt,
+                                promptSplit =
+                                    prompt.mergeInstructions(
+                                        genreConfigService.conversationInstructions(
+                                            sagaContent.data.genre,
+                                        ),
+                                    ),
                                 useCore = true,
                                 filterOutputFields =
                                     listOf(
@@ -352,17 +362,17 @@ class CharacterUseCaseImpl
                                         "hexColor",
                                         "firstSceneId",
                                     ),
-                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requirement = ModelRequirement.HIGH,
                             )
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             request,
                             "Bringing character to the story...",
-                            conversationStyle = genreConfigService.conversationBlueprint(sagaContent.data.genre),
+                            genre = sagaContent.data.genre,
                         ).collect { state ->
                             if (state is StreamingState.Success) {
-                                val newCharacter = state.data.data
+                                val newCharacter = state.data!!.data
                                 val character = sagaContent.findCharacter(newCharacter.name)
                                 if (character?.data?.fullName() == newCharacter.fullName()) {
                                     emit(
@@ -421,10 +431,9 @@ class CharacterUseCaseImpl
                     )
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
-                        prompt,
-                        requirement = GemmaClient.ModelRequirement.LOW,
+                        promptSplit = prompt,
+                        requirement = ModelRequirement.LOW,
                         temperatureRandomness = .3f,
-                        blueprintKey = CharacterPrompts.REFINE_CHARACTER_DRAFT_BLUEPRINT,
                     )!!
 
                 val updatedCharacters =
@@ -490,7 +499,7 @@ class CharacterUseCaseImpl
                         gemmaClient
                             .generate<NickNameGen>(
                                 prompt,
-                                requirement = GemmaClient.ModelRequirement.LOW,
+                                requirement = ModelRequirement.LOW,
                             )!!
                             .suggestions
 
@@ -544,9 +553,11 @@ class CharacterUseCaseImpl
                         config,
                     )
                 gemmaClient.generate<String>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.LOW,
-                    blueprintKey = CharacterPrompts.CHARACTER_RESUME_BLUEPRINT,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
+                    requirement = ModelRequirement.LOW,
                 )!!
             }
 
@@ -616,11 +627,18 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<CharacterDetailState> =
             executeRequest {
-                val prompt = emptyString()
+                val prompt =
+                    CharacterPrompts.characterEnrichmentPrompt(
+                        promptService,
+                        character,
+                        saga,
+                    )
                 gemmaClient.generate<CharacterDetailState>(
-                    prompt,
-                    requirement = GemmaClient.ModelRequirement.LOW,
-                    blueprintKey = CharacterPrompts.CHARACTER_ENRICHMENT_BLUEPRINT,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
+                    requirement = ModelRequirement.LOW,
                 )!!
             }
 

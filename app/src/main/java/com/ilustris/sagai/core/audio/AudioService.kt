@@ -9,6 +9,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.permissions.PermissionService
@@ -46,7 +47,6 @@ class AudioService
         private val permissionService: PermissionService,
         private val gemmaClient: GemmaClient,
     ) {
-
         fun transcribeAudio(
             prompt: String?,
             onResult: (TranscriptionState?) -> Unit,
@@ -168,9 +168,9 @@ class AudioService
             executeRequest {
                 val prompt = AudioPrompts.transcribeInstruction()
                 gemmaClient.generate<String>(
-                    prompt,
+                    promptSplit = prompt,
                     temperatureRandomness = .1f,
-                    requirement = GemmaClient.ModelRequirement.LOW,
-                blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT)!!
+                    requirement = ModelRequirement.LOW,
+                )!!
             }
     }

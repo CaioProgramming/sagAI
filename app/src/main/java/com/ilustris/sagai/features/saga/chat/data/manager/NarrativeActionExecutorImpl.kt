@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
-import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -33,7 +32,6 @@ class NarrativeActionExecutorImpl
         private val chapterUseCase: ChapterUseCase,
         private val timelineUseCase: TimelineUseCase,
         private val actUseCase: ActUseCase,
-        private val genreConfigService: GenreConfigService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val messageDao: MessageDao,
     ) : NarrativeActionExecutor {
@@ -160,14 +158,19 @@ class NarrativeActionExecutorImpl
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = flow,
                         context = "Generating act introduction for ${saga.data.title}",
-                        conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     )
                 }.collect { state ->
                     when (state) {
                         is StreamingState.Reasoning -> environment.onReasoningChunk(state.chunk)
-                        is StreamingState.Success -> finalAct = state.data
-                        is StreamingState.Error -> throw Exception(state.message)
+                        is StreamingState.Success -> {
+                            finalAct = state.data
+                            environment.onReasoningChunk(null)
+                        }
+                        is StreamingState.Error -> {
+                            environment.onReasoningChunk(null)
+                            throw Exception(state.message)
+                        }
                     }
                 }
             environment.onReasoningChunk(null)
@@ -213,14 +216,25 @@ class NarrativeActionExecutorImpl
                     reasoningSynthesizerService.synthesizeReasoning(
                         sourceFlow = flow,
                         context = "Generating chapter introduction for ${currentChapter.data.title}",
-                        conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre),
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     )
                 }.collect { state ->
                     when (state) {
-                        is StreamingState.Reasoning -> environment.onReasoningChunk(state.chunk)
-                        is StreamingState.Success -> finalChapter = state.data
-                        is StreamingState.Error -> throw Exception(state.message)
+                        is StreamingState.Reasoning -> {
+                            environment.onReasoningChunk(state.chunk)
+                        }
+
+                        is StreamingState.Success -> {
+                            state.data?.let {
+                                finalChapter = state.data
+                            }
+                            environment.onReasoningChunk(null)
+                        }
+
+                        is StreamingState.Error -> {
+                            environment.onReasoningChunk(null)
+                            throw Exception(state.message)
+                        }
                     }
                 }
             environment.onReasoningChunk(null)
@@ -408,15 +422,13 @@ class NarrativeActionExecutorImpl
                     sagaHistoryUseCase.getSagaById(sagaId).first()
                         ?: error("Saga not found")
                 val contextString = "Concluding your legend and weaving the final threads of fate..."
-                val style = genreConfigService.conversationBlueprint(saga.data.genre)
                 var generated: GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>? =
                     null
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(fullSaga),
                         context = contextString,
-                        conversationStyle = style,
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Reasoning -> {
