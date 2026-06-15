@@ -2,16 +2,16 @@
 
 🇺🇸 English
 
-The chat stopped ghosting you mid-scene. The advance button stays put, objectives show up without wiping the whole screen, and that "thinking" line actually leaves when the reply lands.
+We went through the app with a broom and a bad attitude—bugs out, rough edges filed down, the usual suspects behaving themselves again.
 
-Creating a saga now waits like opening a chronicle volume: closed book, title on the cover, the app murmuring underneath. Less theatre, more story.
+Nothing flashy. Just a quieter, smoother Sagas that stops getting in its own way while you're trying to live a story.
 
-You're welcome. Update.
+Update. Your saga deserves software that keeps up.
 
 🇧🇷 Português
 
-O chat parou de te dar ghost no meio da cena. O botão de avanço fica no lugar, o objetivo aparece sem apagar a tela inteira, e o "pensando" vai embora quando a resposta chega.
+A gente passou o app com vassoura e mau humor—bugs pra fora, arestas lisinhas, os suspeitos de sempre se comportando de novo.
 
-Criar saga agora espera igual abrir um volume na crônica: livro fechado, título na capa, o app murmurando embaixo. Menos teatro, mais história.
+Nada de foguete. Só um Sagas mais quieto e fluido, que para de tropeçar no próprio pé enquanto você tenta viver uma história.
 
-De nada. Atualiza.
+Atualiza. Sua saga merece um app que acompanha o ritmo.
