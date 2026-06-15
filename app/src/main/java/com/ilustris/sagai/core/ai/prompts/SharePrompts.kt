@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -68,7 +69,7 @@ object SharePrompts {
         promptService: PromptService,
         character: CharacterContent,
         sagaContent: SagaContent,
-    ): String {
+    ): SplitPrompt {
         val emotionalRanking =
             sagaContent
                 .flatMessages()
@@ -85,13 +86,13 @@ object SharePrompts {
                     ),
                 sagaMainContext = SagaPrompts.mainContext(sagaContent),
             )
-        return promptService.buildRemotePrompt(SHARE_PLAYSTYLE_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SHARE_PLAYSTYLE_BLUEPRINT, args)
     }
 
     suspend fun emotionalPrompt(
         promptService: PromptService,
         saga: SagaContent,
-    ): String {
+    ): SplitPrompt {
         val args =
             ShareEmotionalArgs(
                 emotionalReview = saga.data.emotionalReview ?: "",
@@ -102,38 +103,38 @@ object SharePrompts {
                         ?.profile
                         ?.toAINormalize() ?: "",
             )
-        return promptService.buildRemotePrompt(SHARE_EMOTIONAL_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SHARE_EMOTIONAL_BLUEPRINT, args)
     }
 
     suspend fun historyPrompt(
         promptService: PromptService,
         saga: SagaContent,
-    ): String {
+    ): SplitPrompt {
         val args =
             ShareHistoryArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 historyContext = saga.acts.joinToString(".\n") { it.actSummary(false) },
             )
-        return promptService.buildRemotePrompt(SHARE_HISTORY_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SHARE_HISTORY_BLUEPRINT, args)
     }
 
     suspend fun relationsPrompt(
         promptService: PromptService,
         saga: SagaContent,
-    ): String {
+    ): SplitPrompt {
         val args =
             ShareRelationsArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 relationshipContext = saga.mainCharacter?.summarizeRelationships() ?: "",
             )
-        return promptService.buildRemotePrompt(SHARE_RELATIONS_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SHARE_RELATIONS_BLUEPRINT, args)
     }
 
     suspend fun characterPrompt(
         promptService: PromptService,
         characterContent: CharacterContent,
         sagaContent: SagaContent,
-    ): String {
+    ): SplitPrompt {
         val emotionalRanking =
             sagaContent
                 .flatMessages()
@@ -151,6 +152,6 @@ object SharePrompts {
                         listOf("id", "characterId", "gameTimelineId", "createdAt"),
                     ),
             )
-        return promptService.buildRemotePrompt(SHARE_CHARACTER_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SHARE_CHARACTER_BLUEPRINT, args)
     }
 }

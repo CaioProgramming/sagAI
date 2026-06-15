@@ -1,10 +1,15 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.utils.asMap
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterArc
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
 data class SuggestionArgs(
@@ -23,44 +28,56 @@ object SuggestionPrompts {
     suspend fun generateSuggestionsPrompt(
         promptService: PromptService,
         saga: SagaContent,
-        character: Character,
+        character: CharacterContent,
+        characterArcs: List<CharacterArc>,
         sceneSummary: SceneSummary,
         updateLimit: Int,
-    ): String {
-        val charactersInScene =
+    ): SplitPrompt {
+        val presentCharacters =
             sceneSummary.charactersPresent.mapNotNull {
-                saga.findCharacter(it)
-            }
-
-        val nonMainCharacters =
-            charactersInScene
-                .filter { it.data.id != saga.mainCharacter?.data?.id }
-                .map { it.data }
-
-        val relationshipsBlock =
-            charactersInScene.joinToString("\n") { characterContent ->
-                "- ${characterContent.data.name} relationships: ${
-                    characterContent.summarizeRelationships(
-                        1,
-                    )
-                }"
+                saga.findCharacter(it)?.data
             }
 
         val args =
-            SuggestionArgs(
-                characterName = character.name,
-                sagaContext = SagaPrompts.mainContext(saga),
-                sceneContext = sceneSummary.toAINormalize(),
-                charactersPresent = CharacterPrompts.charactersOverview(nonMainCharacters),
-                relationships = relationshipsBlock,
-                conversationHistory =
-                    ChatPrompts.conversationHistory(
-                        updateLimit,
-                        saga,
-                        updateLimit / 2,
-                    ),
-            )
+            buildMap {
+                put(
+                    "characterContext",
+                    buildMap {
+                        putAll(character.data.asMap())
+                        characterArcs.lastOrNull()?.let {
+                            put("lastArc", it.toAINormalize())
+                        }
+                        character.events.lastOrNull()?.let {
+                            put("lastEvent", it.event.toAINormalize())
+                        }
+                        put(
+                            "relationshipsWithPresentCharacters",
+                            presentCharacters
+                                .mapNotNull {
+                                    character.findRelationship(it.id)?.summarizeRelation()
+                                }.normalizetoAIItems(),
+                        )
+                    }.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+                )
+                put(
+                    "storyContext",
+                    buildMap {
+                        put(
+                            "storyState",
+                            buildMap {
+                                putAll(sceneSummary.asMap())
+                                saga.flatMessages().lastOrNull()?.let {
+                                    put(
+                                        "latestMessage",
+                                        it.message.toAINormalize(ChatPrompts.messageExclusions),
+                                    )
+                                }
+                            },
+                        )
+                    },
+                )
+            }
 
-        return promptService.buildRemotePrompt(SAGA_INPUT_SUGGESTIONS_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SAGA_INPUT_SUGGESTIONS_BLUEPRINT, args)
     }
 }

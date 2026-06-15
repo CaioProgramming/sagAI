@@ -7,8 +7,18 @@ data class NarrativeUiState(
     val lastError: NarrativeError? = null,
     val isProcessing: Boolean = false,
 ) {
+    val displayAdvanceAction: NarrativeAction?
+        get() =
+            when (val currentPhase = phase) {
+                is NarrativePhase.AwaitingAdvance -> pendingAction
+                is NarrativePhase.Processing -> currentPhase.action
+                else -> null
+            }
+
     val showAdvanceTrigger: Boolean
-        get() = pendingAction != null && phase is NarrativePhase.AwaitingAdvance
+        get() =
+            displayAdvanceAction != null &&
+                (phase is NarrativePhase.AwaitingAdvance || phase is NarrativePhase.Processing)
 
     val showBackgroundBanner: Boolean
         get() = backgroundTask != null && phase is NarrativePhase.BackgroundProcessing

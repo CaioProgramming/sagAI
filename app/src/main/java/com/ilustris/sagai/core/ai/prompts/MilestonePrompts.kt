@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -30,14 +31,12 @@ object MilestonePrompts {
         milestone: SagaMilestone,
         saga: SagaContent,
         identity: String,
-    ): String? {
+    ): SplitPrompt? {
         if (milestone is SagaMilestone.Introduction) {
             return rewriteIntroduction(promptService, milestone, saga, identity)
         }
 
-        if (milestone is SagaMilestone.CurrentObjective ||
-            milestone is SagaMilestone.Loading
-        ) {
+        if (milestone is SagaMilestone.Loading) {
             return null
         }
 
@@ -49,7 +48,7 @@ object MilestonePrompts {
                 narrativeVoice = identity,
             )
 
-        return promptService.buildRemotePrompt(MILESTONE_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(MILESTONE_GENERATION_BLUEPRINT, args)
     }
 
     private fun getMilestoneDetails(milestone: SagaMilestone): String =
@@ -58,7 +57,6 @@ object MilestonePrompts {
             is SagaMilestone.NewEvent -> milestone.timeline.toAINormalize()
             is SagaMilestone.ChapterFinished -> milestone.chapter.toAINormalize()
             is SagaMilestone.ActFinished -> milestone.act.toAINormalize()
-            is SagaMilestone.CurrentObjective -> milestone.timeline.toAINormalize()
             else -> milestone.javaClass.simpleName
         }
 
@@ -67,7 +65,7 @@ object MilestonePrompts {
         milestone: SagaMilestone.Introduction,
         saga: SagaContent,
         identity: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             IntroMilestoneArgs(
                 genreName = saga.data.genre.name,
@@ -78,6 +76,6 @@ object MilestonePrompts {
                 narrativeVoice = identity,
             )
 
-        return promptService.buildRemotePrompt(INTRO_MILESTONE_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(INTRO_MILESTONE_BLUEPRINT, args)
     }
 }

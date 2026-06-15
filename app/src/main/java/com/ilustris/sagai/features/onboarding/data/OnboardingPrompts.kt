@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.onboarding.data
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.onboarding.data.model.OnboardingConfig
 
 data class OnboardingArgs(
@@ -17,13 +17,5 @@ object OnboardingPrompts {
     suspend fun getOnboardingPrompt(
         promptService: PromptService,
         config: OnboardingConfig,
-        persona: String,
-    ): String {
-        val args =
-            OnboardingArgs(
-                config = config.toAINormalize(),
-                persona = persona,
-            )
-        return promptService.buildRemotePrompt(ONBOARDING_BLUEPRINT, args)
-    }
+    ): SplitPrompt = promptService.buildSplitBlueprint(ONBOARDING_BLUEPRINT, emptyMap())
 }

@@ -22,6 +22,7 @@ class NarrativeCoordinator
             context: NarrativeEvaluationContext,
         ): NarrativeUiState {
             if (context.isNarrativeProcessing) {
+                schedulePendingReevaluation()
                 return _uiState.value
             }
 

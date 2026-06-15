@@ -22,5 +22,5 @@ class AIAuditLogRepositoryImpl
             aiAuditLogDao.clearLogs()
         }
 
-        override fun getRecentLogs(limit: Int): Flow<List<AIAuditLog>> = aiAuditLogDao.getRecentLogs(limit)
+        override fun getRecentLogs(): Flow<List<AIAuditLog>> = aiAuditLogDao.getRecentLogs()
     }

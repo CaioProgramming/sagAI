@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import kotlinx.coroutines.flow.Flow
 
 interface ChapterUseCase {
     suspend fun generateChapterIntroduction(
@@ -21,19 +22,19 @@ interface ChapterUseCase {
 
     suspend fun deleteAllChapters()
 
-    fun getChaptersInfoBySaga(sagaId: Int): kotlinx.coroutines.flow.Flow<List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo>>
+    fun getChaptersInfoBySaga(sagaId: Int): Flow<List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo>>
 
     suspend fun generateChapterCover(chapterId: Int): RequestResult<Chapter>
 
-    suspend fun generateChapterCoverStream(chapterId: Int): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
+    suspend fun generateChapterCoverStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>>>
 
     suspend fun generateChapter(chapterId: Int): RequestResult<Chapter>
 
-    suspend fun generateChapterStream(chapterId: Int): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
+    suspend fun generateChapterStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
 
     suspend fun reviewChapter(chapterId: Int): RequestResult<Chapter>
 
-    suspend fun generateChapterIntroductionStream(chapterId: Int): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
+    suspend fun generateChapterIntroductionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
 
-    fun synthesizeChapterEvolutionStream(chapterId: Int): kotlinx.coroutines.flow.Flow<StreamingState<GeneratedContent<Chapter>>>
+    fun synthesizeChapterEvolutionStream(chapterId: Int): Flow<StreamingState<GeneratedContent<Chapter>?>>
 }

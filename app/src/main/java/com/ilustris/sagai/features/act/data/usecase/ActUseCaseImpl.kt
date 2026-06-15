@@ -1,8 +1,11 @@
 package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -12,6 +15,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
@@ -24,6 +28,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.currentActInfo
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
@@ -67,7 +72,12 @@ class ActUseCaseImpl
                 val titlePrompt = generateActPrompt(saga)
                 val newAct =
                     gemmaClient.generate<Act>(
-                        titlePrompt,
+                        promptSplit =
+                            titlePrompt.mergeInstructions(
+                                genreConfigService.conversationInstructions(
+                                    saga.data.genre,
+                                ),
+                            ),
                         filterOutputFields =
                             listOf(
                                 "id",
@@ -76,7 +86,6 @@ class ActUseCaseImpl
                                 "introduction",
                             ),
                         useCore = true,
-                        blueprintKey = ActPrompts.ACT_CONCLUSION_BLUEPRINT,
                     )!!
 
                 updateAct(
@@ -100,7 +109,12 @@ class ActUseCaseImpl
                     .synthesizeReasoning(
                         gemmaClient
                             .generateStreaming<GeneratedContent<Act>>(
-                                prompt = titlePrompt,
+                                promptSplit =
+                                    titlePrompt.mergeInstructions(
+                                        genreConfigService.conversationInstructions(
+                                            saga.data.genre,
+                                        ),
+                                    ),
                                 filterOutputFields =
                                     listOf(
                                         "id",
@@ -111,10 +125,11 @@ class ActUseCaseImpl
                                 useCore = true,
                             ),
                         "Generating new act...",
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
-                                val newAct = state.data.data
+                                val newAct = state.data!!.data
                                 val updatedAct =
                                     updateAct(
                                         actContent.data.copy(
@@ -157,7 +172,7 @@ class ActUseCaseImpl
             }
         }
 
-        private suspend fun generateActPrompt(sagaMetadata: SagaMetadata): String {
+        private suspend fun generateActPrompt(sagaMetadata: SagaMetadata): SplitPrompt {
             remoteConfigService.getJson<NarrativeRules>("narrative_rules")!!
             val sagaId = sagaMetadata.data.id
             val fullSaga = sagaRepository.getSagaById(sagaId).first() as SagaContent
@@ -168,9 +183,7 @@ class ActUseCaseImpl
                 fullSaga,
                 fullSaga.acts.find { it.data.id == sagaMetadata.currentActInfo?.data?.id }
                     ?: fullSaga.acts.last(),
-                genreConfigService.conversationBlueprint(
-                    sagaMetadata.data.genre,
-                ),
+                emptyString(),
             )
         }
 
@@ -187,14 +200,18 @@ class ActUseCaseImpl
                     promptService = promptService,
                     saga = fullSaga,
                     narrativeRules = remoteConfigService.getNarrativeRules(),
-                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    conversationDirective = emptyString(),
                 )
+            val actContext = promptService.buildSplitBlueprint(saga.getDirectiveKey(), emptyMap())
 
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
-                    prompt,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                            actContext.renderInstructions(),
+                        ),
                     useCore = true,
-                    blueprintKey = ActPrompts.ACT_INTRODUCTION_BLUEPRINT,
                 )!!
             val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
             GeneratedContent(updatedAct, intro.finalMessage)
@@ -211,23 +228,32 @@ class ActUseCaseImpl
                         promptService = promptService,
                         saga = fullSaga,
                         narrativeRules = remoteConfigService.getNarrativeRules(),
-                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        conversationDirective = emptyString(),
                     )
+                val actContext =
+                    promptService.buildSplitBlueprint(saga.getDirectiveKey(), emptyMap())
+
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         gemmaClient
                             .generateStreaming<GeneratedContent<String>>(
-                                prompt = prompt,
+                                promptSplit =
+                                    prompt.mergeInstructions(
+                                        genreConfigService.conversationInstructions(saga.data.genre),
+                                        actContext.renderInstructions(),
+                                    ),
                                 requireTranslation = true,
                                 useCore = true,
-                                requirement = GemmaClient.ModelRequirement.HIGH,
+                                requirement = ModelRequirement.MEDIUM,
                             ),
                         "Starting a new act...",
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
                                 val introContent = state.data
-                                val updatedAct = updateAct(act.copy(introduction = introContent.data))
+                                val updatedAct =
+                                    updateAct(act.copy(introduction = introContent!!.data))
                                 emit(
                                     StreamingState.Success(
                                         GeneratedContent(
@@ -258,8 +284,6 @@ class ActUseCaseImpl
         ): Flow<StreamingState<GeneratedContent<Act>>> =
             flow {
                 try {
-                    val conversationDirective =
-                        genreConfigService.conversationBlueprint(saga.data.genre)
                     val fullSaga = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
 
                     val prompt =
@@ -268,22 +292,26 @@ class ActUseCaseImpl
                             saga = fullSaga,
                             act = actContent,
                             narrativeRules = remoteConfigService.getNarrativeRules(),
-                            conversationDirective = conversationDirective,
+                            conversationDirective = emptyString(),
                         )
 
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
-                                    prompt = prompt,
-                                    blueprintKey = ActPrompts.ACT_SYNTHESIS_BLUEPRINT,
-                                    requirement = GemmaClient.ModelRequirement.HIGH,
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                        ),
+                                    useCore = true,
+                                    requirement = ModelRequirement.HIGH,
                                 ),
                             "Finishing story act",
+                            genre = saga.data.genre,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Success -> {
-                                    val synthesis = state.data.data
+                                    val synthesis = state.data!!.data
 
                                     // 1. Update Act details & Narrative Guide
                                     val updatedAct =

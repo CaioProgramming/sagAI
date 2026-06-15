@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -13,6 +15,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -68,14 +71,16 @@ class TimelineUseCaseImpl
                     narrativeRules = narrativeRules,
                     sagaContent = fullSaga,
                     currentTimeline = fullSaga.findTimeline(timeline.id)!!,
-                    conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                    conversationDirective = emptyString(),
                 )
 
             val unifiedLore =
                 gemmaClient.generate<UnifiedLoreUpdate>(
-                    prompt = prompt,
-                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
-                    requirement = GemmaClient.ModelRequirement.HIGH,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
+                    requirement = ModelRequirement.HIGH,
                 )!!
 
             updateTimeline(
@@ -139,18 +144,20 @@ class TimelineUseCaseImpl
                         narrativeRules = narrativeRules,
                         sagaContent = fullSaga,
                         currentTimeline = TimelineContent(timeline, emptyList()),
-                        conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        conversationDirective = emptyString(),
                     )
-
-                val conversationStyle = genreConfigService.conversationBlueprint(saga.data.genre)
 
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         sourceFlow =
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
-                                    prompt = prompt,
-                                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            genreConfigService.conversationInstructions(
+                                                saga.data.genre,
+                                            ),
+                                        ),
                                     filterOutputFields =
                                         listOf(
                                             "id",
@@ -158,12 +165,11 @@ class TimelineUseCaseImpl
                                         ),
                                 ),
                         context = "Generating new lore...",
-                        conversationStyle = conversationStyle,
-                        genre = saga.data.genre.name,
+                        genre = saga.data.genre,
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
-                                val unifiedLore = state.data.data
+                                val unifiedLore = state.data!!.data
 
                                 // 1. Update Timeline Details
                                 val timelineUpdate =
@@ -255,15 +261,19 @@ class TimelineUseCaseImpl
                 val narrativeRules =
                     remoteConfigService.getJson<NarrativeRules>("narrative_rules") ?: NarrativeRules()
                 val fullSaga = sagaHistoryUseCase.getSagaById(saga.data.id).first() ?: return@flow
+                val prompt =
+                    TimelinePrompts.generateTimelinePrompt(
+                        promptService = promptService,
+                        narrativeRules = narrativeRules,
+                        sagaContent = fullSaga,
+                        currentTimeline = TimelineContent(currentTimeline, emptyList()),
+                        conversationDirective = emptyString(),
+                    )
                 gemmaClient
                     .generateStreaming<GeneratedContent<Timeline>>(
-                        prompt =
-                            TimelinePrompts.generateTimelinePrompt(
-                                promptService = promptService,
-                                narrativeRules = narrativeRules,
-                                sagaContent = fullSaga,
-                                currentTimeline = TimelineContent(currentTimeline, emptyList()),
-                                conversationDirective = genreConfigService.conversationBlueprint(saga.data.genre),
+                        promptSplit =
+                            prompt.mergeInstructions(
+                                genreConfigService.conversationInstructions(saga.data.genre),
                             ),
                         filterOutputFields =
                             listOf(
@@ -276,7 +286,7 @@ class TimelineUseCaseImpl
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
-                                val newLore = state.data.data
+                                val newLore = state.data!!.data
                                 val updatedTimeline =
                                     updateTimeline(
                                         currentTimeline.copy(
@@ -348,8 +358,8 @@ class TimelineUseCaseImpl
             val summary =
                 gemmaClient
                     .generate<SceneSummary>(
-                        objectivePrompt,
-                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                        promptSplit = objectivePrompt,
+                        requirement = ModelRequirement.MEDIUM,
                         useCore = true,
                     )!!
 

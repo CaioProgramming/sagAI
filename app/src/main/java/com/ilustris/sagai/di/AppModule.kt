@@ -16,8 +16,6 @@ import com.ilustris.sagai.core.ai.ImageGenerator
 import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
-import com.ilustris.sagai.core.ai.SafetyClient
-import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -52,7 +50,6 @@ import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.EmotionalToneVisualService
 import com.ilustris.sagai.core.services.FirebaseInstallationService
-import com.ilustris.sagai.core.services.LoadingService
 import com.ilustris.sagai.core.services.MascotEmotionService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.SideEffectService
@@ -296,30 +293,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesTextGenClient(remoteConfigService: RemoteConfigService): TextGenClient = TextGenClient(remoteConfigService)
-
-    @Provides
-    @Singleton
     fun providesAgeVerificationService(
         @ApplicationContext context: Context,
     ): AgeVerificationService = AgeVerificationService(context)
-
-    @Provides
-    @Singleton
-    fun providesSafetyClient(
-        remoteConfigService: RemoteConfigService,
-        ageVerificationService: AgeVerificationService,
-        geminiApiClient: GeminiApiClient,
-        promptService: PromptService,
-        aiAuditLogDao: AIAuditLogDao,
-    ): SafetyClient =
-        SafetyClient(
-            remoteConfigService,
-            ageVerificationService,
-            promptService,
-            geminiApiClient,
-            aiAuditLogDao,
-        )
 
     @Provides
     @Singleton
@@ -327,17 +303,17 @@ object AppModule {
         remoteConfigService: RemoteConfigService,
         promptService: PromptService,
         aiAuditLogDao: AIAuditLogDao,
-        safetyClient: SafetyClient,
         sideEffectService: SideEffectService,
         geminiApiClient: GeminiApiClient,
+        ageVerificationService: AgeVerificationService,
     ): GemmaClient =
         GemmaClient(
-            remoteConfigService = remoteConfigService,
-            safetyClient = safetyClient,
+            remoteConfig = remoteConfigService,
             sideEffectService = sideEffectService,
             geminiApiClient = geminiApiClient,
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
+            ageVerificationService = ageVerificationService,
         )
 
     @Provides
@@ -390,16 +366,6 @@ object AppModule {
         timelineMapper,
         wikiMapper,
         emotionalUseCase,
-    )
-
-    @Provides
-    @Singleton
-    fun providesLoadingService(
-        gemmaClient: GemmaClient,
-        promptService: PromptService,
-    ) = LoadingService(
-        gemmaClient,
-        promptService,
     )
 
     @Provides

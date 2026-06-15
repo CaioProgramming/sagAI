@@ -23,7 +23,7 @@ interface ChapterDao {
     suspend fun deleteChapterById(chapterId: Int)
 
     @Query(
-        "SELECT id, title, overview, coverImage, actId, :sagaId as sagaId, featuredCharacters, emotionalReview, createdAt FROM Chapter WHERE actId IN (SELECT id FROM acts WHERE sagaId = :sagaId)",
+        "SELECT id, title, content, coverImage, actId, :sagaId as sagaId, featuredCharacters, emotionalReview, createdAt FROM Chapter WHERE actId IN (SELECT id FROM acts WHERE sagaId = :sagaId)",
     )
     fun getChaptersInfoBySaga(sagaId: Int): kotlinx.coroutines.flow.Flow<List<com.ilustris.sagai.features.chapter.data.model.ChapterInfo>>
 

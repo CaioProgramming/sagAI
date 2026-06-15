@@ -536,6 +536,7 @@
     <string name="releasing_act_introduction">Preparing the opening...</string>
     <string name="advance_start_story">Continue story</string>
     <string name="releasing_start_story">Setting up the next event...</string>
+    <string name="advance_close_scene">Complete event</string>
     <string name="releasing_close_scene">Saving this event...</string>
     <string name="advance_saga_ending">Write the finale</string>
     <string name="releasing_ending">Writing the finale...</string>
@@ -674,7 +675,13 @@
     <string name="audit_logs_clear_button">Clear</string>
     <string name="audit_logs_reasoning">Reasoning (Chain-of-Thought):</string>
     <string name="audit_logs_raw_response">Raw Response:</string>
+    <string name="audit_logs_system_instruction">System Instruction:</string>
+    <string name="audit_logs_sent_variables">Sent Variables:</string>
     <string name="audit_logs_error_label">Error:</string>
+    <string name="audit_logs_token_usage">Token Usage:</string>
+    <string name="audit_logs_tokens_prompt">Prompt: %d</string>
+    <string name="audit_logs_tokens_candidates">Candidates: %d</string>
+    <string name="audit_logs_tokens_total">Total: %d</string>
     <string name="story_guides">Story Guides</string>
     <string name="story_guides_description">Show introductory guides when starting a new saga universe.</string>
     <string name="onboarding_dont_show_again">Don\'t show again</string>
@@ -737,6 +744,8 @@
     <string name="guardrail_age_message">This content is not appropriate for your verified age.</string>
     <string name="guardrail_explicit_title">Explicit Content Violation</string>
     <string name="guardrail_explicit_message">Your input contains explicit sexual or graphic content that is prohibited for all users. Please maintain a safe environment.</string>
+    <string name="guardrail_unknown_title">System Interruption</string>
+    <string name="guardrail_unknown_message">Something unexpected happened during processing. Please try again.</string>
     <string name="guardrail_dismiss">Got it</string>
     <string name="mascot_insight_label">Mascot\'s Emotional Insight</string>
 </resources>

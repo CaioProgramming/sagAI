@@ -6,7 +6,7 @@ package com.ilustris.sagai.features.chapter.data.model
 data class ChapterInfo(
     val id: Int,
     val title: String,
-    val overview: String,
+    val content: String,
     val coverImage: String,
     val actId: Int,
     val sagaId: Int,

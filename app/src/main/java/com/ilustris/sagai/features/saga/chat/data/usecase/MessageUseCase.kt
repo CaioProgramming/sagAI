@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -22,7 +23,6 @@ interface MessageUseCase {
         saga: SagaMetadata,
         message: Message,
         isFromUser: Boolean,
-        sceneSummary: SceneSummary?,
     ): RequestResult<Message>
 
     suspend fun deleteMessage(messageId: Long)
@@ -32,8 +32,7 @@ interface MessageUseCase {
     suspend fun generateMessage(
         saga: SagaMetadata,
         message: MessageContent,
-        sceneSummary: SceneSummary?,
-    ): Flow<StreamingState<AIReply>>
+    ): Flow<StreamingState<AIReply?>>
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
 
@@ -63,14 +62,13 @@ interface MessageUseCase {
     suspend fun generateAudio(
         saga: SagaMetadata,
         savedMessage: Message,
-        characterReference: com.ilustris.sagai.features.characters.data.model.Character?,
+        characterReference: Character?,
     ): RequestResult<Unit>
 
     suspend fun generateExtraContent(
         saga: SagaMetadata,
         message: Message,
-        sceneSummary: SceneSummary?,
-        characterReference: com.ilustris.sagai.features.characters.data.model.Character?,
+        characterReference: Character?,
         generateAudio: Boolean,
         isFromUser: Boolean,
     )

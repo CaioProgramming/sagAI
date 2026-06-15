@@ -1,11 +1,14 @@
 package com.ilustris.sagai.features.saga.detail.review.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
@@ -33,29 +36,28 @@ class SagaReviewUseCaseImpl
 
                     ReviewSteps.entries.forEach { step ->
                         val prompt =
-                            promptService.buildRemotePrompt(
+                            promptService.buildSplitBlueprint(
                                 step.blueprintKey,
                                 step.buildArgs(
                                     content,
-                                    genreConfigService.conversationBlueprint(
-                                        content.data.genre,
-                                    ),
+                                    emptyString(),
                                 ),
                             )
 
                         val sourceFlow =
                             gemmaClient.generateStreaming<ReviewStage>(
-                                prompt,
-                                requirement = GemmaClient.ModelRequirement.HIGH,
-                                blueprintKey = step.blueprintKey,
+                                promptSplit =
+                                    prompt.mergeInstructions(
+                                        genreConfigService.conversationInstructions(content.data.genre),
+                                    ),
+                                requirement = ModelRequirement.HIGH,
                             )
 
                         synthesizerService
                             .synthesizeReasoning(
                                 sourceFlow = sourceFlow,
                                 context = step.name,
-                                conversationStyle = genreConfigService.conversationBlueprint(content.data.genre),
-                                genre = content.data.genre.name,
+                                genre = content.data.genre,
                             ).collect { state ->
                                 when (state) {
                                     is StreamingState.Reasoning -> emit(ReviewState.Loading(state.chunk))

@@ -18,5 +18,5 @@ interface EmotionalUseCase {
         timelineContent: Timeline?,
     ): RequestResult<String>
 
-    fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding>>
+    fun streamEmotionalConclusion(sagaContent: SagaContent): Flow<StreamingState<SagaEnding?>>
 }

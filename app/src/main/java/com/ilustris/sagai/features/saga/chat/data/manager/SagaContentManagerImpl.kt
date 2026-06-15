@@ -39,12 +39,10 @@ import com.ilustris.sagai.features.home.data.model.currentChapterInfo
 import com.ilustris.sagai.features.home.data.model.currentEventInfo
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.hasActiveSceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
@@ -115,6 +113,8 @@ class SagaContentManagerImpl
         private val _sceneSummary = MutableStateFlow<SceneSummary?>(null)
         override val sceneSummary: StateFlow<SceneSummary?> = _sceneSummary.asStateFlow()
         override val milestoneUpdate = MutableStateFlow<SagaMilestone?>(null)
+        private val _showObjectiveOverlay = MutableStateFlow(false)
+        override val showObjectiveOverlay: StateFlow<Boolean> = _showObjectiveOverlay.asStateFlow()
         override val isOnboardingVisible = MutableStateFlow(false)
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
@@ -166,6 +166,10 @@ class SagaContentManagerImpl
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
         override suspend fun advanceNarrative() {
+            if (isProcessingNarrative.get()) {
+                Timber.d("advanceNarrative: already in progress, ignoring duplicate request")
+                return
+            }
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
             narrativeCoordinator.onUserAdvanceRequested(action)
@@ -214,9 +218,7 @@ class SagaContentManagerImpl
                     is NarrativeExecutionResult.Success -> {
                         handlePostAction(sagaMetadata, action, result.value)
                         awaitMilestoneDismissalIfNeeded()
-                        managerScope.launch {
-                            requestNarrativeProgression(isRetry = false)
-                        }
+                        requestNarrativeProgression(isRetry = false, force = true)
                     }
 
                     is NarrativeExecutionResult.Failure -> {
@@ -231,6 +233,7 @@ class SagaContentManagerImpl
                 Timber.e(e, "Unexpected error executing narrative action")
                 handleNarrativeActionFailure(action, canRetry = true)
             } finally {
+                contentReasoning.value = null
                 narrativeCoordinator.markProcessing(false)
                 setNarrativeProcessingStatus(false)
             }
@@ -283,10 +286,14 @@ class SagaContentManagerImpl
         override suspend fun showObjective() {
             val saga = content.value ?: return
             val currentTimeline = saga.getCurrentTimeLine() ?: return
-            val objective = currentTimeline.data.currentObjective
-            if (objective?.isNotBlank() == true) {
-                milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
+            val objective = currentTimeline.data.displayObjective()
+            if (objective.isNullOrBlank().not()) {
+                _showObjectiveOverlay.value = true
             }
+        }
+
+        override fun dismissObjective() {
+            _showObjectiveOverlay.value = false
         }
 
         override fun resetSagaSession() {
@@ -300,6 +307,7 @@ class SagaContentManagerImpl
             _sceneSummary.value = null
             isMilestoneActive.value = false
             milestoneUpdate.value = null
+            _showObjectiveOverlay.value = false
             notificationUpdate.value = null
             isOnboardingVisible.value = false
             content.value = null
@@ -600,6 +608,7 @@ class SagaContentManagerImpl
         private suspend fun requestNarrativeProgression(
             isRetry: Boolean = false,
             fallbackSaga: SagaMetadata? = null,
+            force: Boolean = false,
         ) {
             if (progressionMutex.isLocked) {
                 Timber.i("requestNarrativeProgression: already in progress, queueing reevaluation.")
@@ -610,8 +619,9 @@ class SagaContentManagerImpl
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
-                if (isProcessingNarrative.get()) {
-                    Timber.i("requestNarrativeProgression: narrative processing, skipping.")
+                if (!force && isProcessingNarrative.get()) {
+                    Timber.i("requestNarrativeProgression: narrative processing, queueing reevaluation.")
+                    narrativeCoordinator.schedulePendingReevaluation()
                     return@withLock
                 }
 
@@ -901,7 +911,7 @@ class SagaContentManagerImpl
                     val timeline = resultValue as? Timeline
                     if (timeline != null && timeline.hasActiveSceneSummary()) {
                         timeline.sceneSummary?.let { _sceneSummary.value = it }
-                        emitMilestone(SagaMilestone.CurrentObjective(timeline))
+                        showObjective()
                     } else {
                         dismissMilestone()
                     }
@@ -1032,10 +1042,7 @@ class SagaContentManagerImpl
                         )
                         fakeCharacter
                     } else {
-                        var generated: GeneratedContent<Character>? =
-                            null
-                        "Evaluating potential characters for the story..."
-                        genreConfigService.conversationBlueprint(currentSaga.data.genre)
+                        var generated: GeneratedContent<Character>? = null
                         characterUseCase
                             .generateCharacterStream(
                                 currentSaga,
@@ -1073,11 +1080,12 @@ class SagaContentManagerImpl
                         emitMilestone(
                             SagaMilestone.NewCharacter(
                                 generatedCharacter,
-                                generated.finalMessage,
+                                generated!!.finalMessage,
                                 saga = currentSaga.data,
                             ),
                         )
 
+                        setProcessing(false)
                         generatedCharacter
                     }
                 } catch (e: Exception) {
@@ -1129,10 +1137,8 @@ class SagaContentManagerImpl
         override suspend fun getSagaContent(): SagaContent? = sagaHistoryUseCase.getSagaById(content.value?.data?.id).first()
 
         override suspend fun updateSummary(sceneSummary: SceneSummary) {
-            val saga = content.value ?: return
-            val currentTimeline = saga.flatEvents().lastOrNull() ?: return
-            val updatedTimeline = currentTimeline.data.copy(sceneSummary = sceneSummary)
-            timelineUseCase.updateTimeline(updatedTimeline)
+            val currentTimeline = content.value?.getCurrentTimeLine() ?: return
+            timelineUseCase.updateTimeline(currentTimeline.data.copy(sceneSummary = sceneSummary))
         }
 
         private suspend fun handleStreamingState(state: StreamingState<GeneratedContent<*>>) {

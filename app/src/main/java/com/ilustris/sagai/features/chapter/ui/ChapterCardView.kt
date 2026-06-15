@@ -76,7 +76,7 @@ fun ChapterCardView(
             )
 
             Text(
-                chapterIndex.toRoman(),
+                (chapterIndex + 1).toRoman(),
                 style =
                     MaterialTheme.typography.headlineMedium.copy(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
@@ -116,7 +116,7 @@ fun ChapterCardViewPreview() {
         listOf(
             Chapter(
                 title = "The Beginning",
-                overview = "This is the first chapter of the saga.",
+                content = "This is the first chapter of the saga.",
                 coverImage = "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
                 createdAt = System.currentTimeMillis(),
                 actId = 1,
@@ -124,14 +124,14 @@ fun ChapterCardViewPreview() {
             Chapter(
                 actId = 1,
                 title = "The Journey",
-                overview = "The adventure continues.",
+                content = "The adventure continues.",
                 coverImage = "https://i.pinimg.com/564x/0f/c0/2c/0fc02cf3c9f28d6c70607900b3e77f0c.jpg",
                 createdAt = System.currentTimeMillis(),
             ),
             Chapter(
                 actId = 1,
                 title = "The End",
-                overview = "The final chapter of the saga.",
+                content = "The final chapter of the saga.",
                 coverImage = "https://i.pinimg.com/564x/6c/9b/7f/6c9b7f5f4c02f10b78c93a9d941846c4.jpg",
                 createdAt = System.currentTimeMillis(),
             ),

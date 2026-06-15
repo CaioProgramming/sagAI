@@ -5,9 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
-import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.services.LoadingService
-import com.ilustris.sagai.core.services.LoadingType
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -25,10 +22,8 @@ class EmotionalReviewViewModel
     @Inject
     constructor(
         private val emotionalUseCase: EmotionalUseCase,
-        private val loadingService: LoadingService,
         private val genreConfigService: GenreConfigService,
         private val sagaRepository: SagaRepository,
-        private val promptService: PromptService,
         private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _isGenerating = MutableStateFlow(false)
@@ -50,12 +45,6 @@ class EmotionalReviewViewModel
                 }
                 _isGenerating.value = true
                 genreConfigService.getGenreConfig(sagaContent.data.genre)
-                val emotionalTask = promptService.buildPrompt("emotional_loading", emptyMap())
-                _loadingMessage.value =
-                    loadingService.generateLoadingMessage(
-                        LoadingType(emotionalTask),
-                        genreConfigService.conversationBlueprint(sagaContent.data.genre),
-                    )
 
                 emotionalUseCase.streamEmotionalConclusion(sagaContent).collect { state ->
                     when (state) {
@@ -66,7 +55,7 @@ class EmotionalReviewViewModel
                         is StreamingState.Success -> {
                             sagaRepository.updateSaga(
                                 sagaContent.data.copy(
-                                    emotionalProfile = state.data.emotionalProfile,
+                                    emotionalProfile = state.data!!.emotionalProfile,
                                     emotionalReview = state.data.emotionalProfile.emotionalContent,
                                     endMessage = state.data.endingMessage,
                                 ),

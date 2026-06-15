@@ -6,5 +6,5 @@ data class SagaDraft(
     val title: String = "",
     val description: String = "",
     val genre: Genre = Genre.entries.random(),
-    val id: String = UUID.randomUUID().toString(),
+    val id: String? = UUID.randomUUID().toString(),
 )

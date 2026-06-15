@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.ai
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
@@ -93,9 +94,9 @@ class ImagenClientImpl
                     var finalStringPrompt: String? = null
                     val sourceStream =
                         gemmaClient.generateStreaming<String>(
-                            prompt = prompt,
+                            promptSplit = prompt,
                             useCore = false,
-                            requirement = GemmaClient.ModelRequirement.HIGH,
+                            requirement = ModelRequirement.HIGH,
                             requireTranslation = false,
                         )
 
@@ -103,8 +104,7 @@ class ImagenClientImpl
                         .synthesizeReasoning(
                             sourceFlow = sourceStream,
                             context = context,
-                            conversationStyle = genreConfigService.conversationBlueprint(genre),
-                            genre = genre.name,
+                            genre = genre,
                         ).collect { state ->
                             when (state) {
                                 is StreamingState.Reasoning -> {
@@ -194,9 +194,9 @@ class ImagenClientImpl
 
                 val finalStringPrompt =
                     gemmaClient.generate<String>(
-                        prompt = prompt,
+                        promptSplit = prompt,
                         useCore = true,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = ModelRequirement.HIGH,
                         requireTranslation = false,
                     )!!
 

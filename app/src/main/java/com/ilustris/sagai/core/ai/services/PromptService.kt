@@ -1,38 +1,23 @@
 package com.ilustris.sagai.core.ai.services
 
 import com.ilustris.sagai.core.ai.model.PromptBlueprint
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toPromptVariables
 import timber.log.Timber
 import javax.inject.Inject
 
 interface PromptService {
-    /**
-     * Replaces `{key}` placeholders in the [template] with the corresponding values from the [variables] map.
-     * Use this when you already have the template string in hand (e.g. from a local config object).
-     */
-    fun buildPrompt(
-        template: String,
-        variables: Map<String, String>,
-        logEnabled: Boolean = true,
-    ): String
-
-    /**
-     * Converts a Data Class to a Map<String, String> and injects its properties into the [template].
-     * Use this when you already have the template string in hand.
-     */
-    fun <T : Any> buildPrompt(
-        template: String,
-        variablesDataClass: T,
-        logEnabled: Boolean = true,
-    ): String
-
-    /**
-     * Fetches a template from Remote Config by [remoteConfigKey] and replaces `{key}` placeholders
-     * with the corresponding values from the [variables] map.
-     */
+    @Deprecated(
+        message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+        replaceWith =
+            ReplaceWith(
+                expression = "buildSplitBlueprint(remoteConfigKey, variables, logEnabled)",
+                imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+            ),
+    )
     suspend fun buildRemotePrompt(
         remoteConfigKey: String,
         variables: Map<String, String> = emptyMap(),
@@ -42,13 +27,51 @@ interface PromptService {
     /**
      * Fetches a template from Remote Config by [remoteConfigKey] and injects the data class properties.
      */
+    @Deprecated(
+        message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+        replaceWith =
+            ReplaceWith(
+                expression = "buildSplitBlueprint(remoteConfigKey, variablesDataClass, logEnabled)",
+                imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+            ),
+    )
     suspend fun <T : Any> buildRemotePrompt(
         remoteConfigKey: String,
         variablesDataClass: T,
         logEnabled: Boolean = true,
     ): String
 
+    /**
+     * Fetches a [PromptBlueprint] from Remote Config and splits it into static instruction buckets
+     * and a processed dynamic template, ready for the **"Split & Merge"** architecture.
+     *
+     * - Static fields (`role`, `directives`, `rules`, `instructions`) are promoted to
+     *   [SplitPrompt.instructionBuckets] with **no placeholder substitution**.
+     * - Dynamic fields (`template`, `examples`) are processed with `{key}` substitution using
+     *   the provided [variables] map, and returned as [SplitPrompt.processedTemplate].
+     *
+     * @param remoteConfigKey Remote Config key pointing to a [PromptBlueprint] JSON.
+     * @param variables Map of `{placeholder}` values used only in the template and examples.
+     * @param logEnabled Whether to emit Timber logs for variable resolution.
+     */
+    suspend fun buildSplitBlueprint(
+        remoteConfigKey: String,
+        variables: Map<String, String> = emptyMap(),
+        logEnabled: Boolean = false,
+    ): SplitPrompt
+
+    suspend fun buildSplitBlueprint(
+        remoteConfigKey: String,
+        variables: Any,
+        logEnabled: Boolean = false,
+    ): SplitPrompt
+
     suspend fun getPromptDirectives(): PromptDirectives
+
+    suspend fun fetchBlueprintData(
+        remoteConfigKey: String,
+        logEnabled: Boolean = false,
+    ): PromptBlueprint
 }
 
 class PromptServiceImpl
@@ -61,15 +84,21 @@ class PromptServiceImpl
                 remoteConfigService.getJsonMapStringString("prompt_directives") ?: emptyMap(),
             )
 
-        override fun buildPrompt(
+        override suspend fun fetchBlueprintData(
+            remoteConfigKey: String,
+            logEnabled: Boolean,
+        ): PromptBlueprint = remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
+
+        private fun buildPrompt(
             template: String,
             variables: Map<String, String>,
             logEnabled: Boolean,
+            blueprint: String? = null,
         ): String {
             if (logEnabled) {
                 Timber
                     .tag("PromptService")
-                    .i("buildPrompt: Received vars ->\n${variables.toJsonFormat()}")
+                    .i("buildPrompt($blueprint): Received vars ->\n${variables.toJsonFormat()}")
             }
 
             val placeholders =
@@ -81,7 +110,7 @@ class PromptServiceImpl
                     .tag(
                         "PromptService",
                     ).i(
-                        "buildPrompt: Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
+                        "buildPrompt($blueprint): Found ${placeholders.size} placeholders (${uniquePlaceholders.size} unique) in template: $uniquePlaceholders",
                     )
             }
 
@@ -97,29 +126,26 @@ class PromptServiceImpl
                 } else {
                     Timber
                         .tag("PromptService")
-                        .e("buildPrompt($key): CRITICAL - Variable '{$key}' not found in provided args!")
+                        .e("buildPrompt($blueprint): CRITICAL - Variable '{$key}' not found in provided args!")
                 }
             }
 
             if (logEnabled) {
-                Timber.tag("PromptService").d("buildPrompt: Final Prompt Construction Complete.")
+                Timber
+                    .tag("PromptService")
+                    .d("buildPrompt($blueprint): Final Prompt Construction Complete.")
             }
             return result
         }
 
-        override fun <T : Any> buildPrompt(
-            template: String,
-            variablesDataClass: T,
-            logEnabled: Boolean,
-        ): String {
-            val stringMap = variablesDataClass.toPromptVariables()
-            Timber
-                .tag(
-                    "PromptService",
-                ).d("buildPrompt: Converted ${variablesDataClass::class.java.simpleName} to Map with ${stringMap.size} keys")
-            return buildPrompt(template, stringMap, logEnabled)
-        }
-
+        @Deprecated(
+            message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+            replaceWith =
+                ReplaceWith(
+                    expression = "buildSplitBlueprint(remoteConfigKey, variables, logEnabled)",
+                    imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+                ),
+        )
         override suspend fun buildRemotePrompt(
             remoteConfigKey: String,
             variables: Map<String, String>,
@@ -146,7 +172,14 @@ class PromptServiceImpl
                     if (blueprint.rules.isNotEmpty()) {
                         blueprint.rules.values.forEach { appendLine(it) }
                     }
-                    appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                    appendLine(
+                        buildPrompt(
+                            blueprint.template,
+                            variables,
+                            logEnabled,
+                            remoteConfigKey,
+                        ),
+                    )
                 } else {
                     // 1. Identity
                     if (blueprint.role.isNotBlank()) {
@@ -187,17 +220,176 @@ class PromptServiceImpl
 
                     // 5. The Core Template
                     appendLine("# TASK DEFINITION")
-                    appendLine(buildPrompt(blueprint.template, variables, logEnabled))
+                    appendLine(
+                        buildPrompt(
+                            blueprint.template,
+                            variables,
+                            logEnabled,
+                            remoteConfigKey,
+                        ),
+                    )
                 }
             }.trimIndent()
         }
 
+        @Deprecated(
+            message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+            replaceWith =
+                ReplaceWith(
+                    expression = "buildSplitBlueprint(remoteConfigKey, variablesDataClass, logEnabled)",
+                    imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+                ),
+        )
         override suspend fun <T : Any> buildRemotePrompt(
             remoteConfigKey: String,
             variablesDataClass: T,
             logEnabled: Boolean,
         ): String {
-            val stringMap = variablesDataClass.toPromptVariables()
+            val stringMap = variablesDataClass.asMap()
             return buildRemotePrompt(remoteConfigKey, stringMap, logEnabled)
+        }
+
+        override suspend fun buildSplitBlueprint(
+            remoteConfigKey: String,
+            variables: Map<String, String>,
+            logEnabled: Boolean,
+        ): SplitPrompt {
+            val blueprint =
+                remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
+
+            if (logEnabled) {
+                Timber
+                    .tag("PromptService")
+                    .d("buildSplitBlueprint: Found Blueprint for '$remoteConfigKey'")
+            }
+
+            // --- Build instruction buckets (static — no placeholder substitution) ---
+            val buckets = mutableMapOf<String, Any>()
+
+            // Promote legacy fields into named buckets
+            if (blueprint.role.isNotBlank()) {
+                buckets.putAll(mapOf("Persona" to blueprint.role))
+            }
+            if (blueprint.directives.isNotEmpty()) {
+                buckets.putAll(blueprint.directives.asMap())
+            }
+            if (blueprint.rules.isNotEmpty()) {
+                buckets.putAll(blueprint.rules.asMap())
+            }
+
+            // Merge extra instruction buckets defined in Remote Config (these can override legacy ones)
+
+            blueprint.instructions?.let {
+                buckets.putAll(it)
+            }
+
+            // --- Build processed template (dynamic — placeholder substitution applied) ---
+            val processedTemplate =
+                buildString {
+                    if (blueprint.examples.isNotEmpty()) {
+                        appendLine("# FEW-SHOT EXAMPLES")
+                        blueprint.examples.forEachIndexed { index, example ->
+                            appendLine("## EXAMPLE ${index + 1}")
+                            appendLine(example.toJsonFormat())
+                        }
+                        appendLine()
+                    }
+
+                    if (blueprint.template.isNotBlank()) {
+                        appendLine("# TASK DEFINITION")
+                        appendLine(
+                            buildPrompt(
+                                blueprint.template,
+                                variables,
+                                logEnabled,
+                                remoteConfigKey,
+                            ),
+                        )
+                    }
+                }.trimIndent()
+
+            val placeholders =
+                Regex("\\{(\\w+)\\}").findAll(blueprint.template).map { it.groupValues[1] }.toList()
+            val missingVariables = placeholders.filter { it !in variables }
+
+            return SplitPrompt(
+                blueprintKey = remoteConfigKey,
+                instructionBuckets = buckets,
+                processedTemplate = processedTemplate,
+                sentVariables = variables,
+                missingVariables = missingVariables,
+            )
+        }
+
+        override suspend fun buildSplitBlueprint(
+            remoteConfigKey: String,
+            variables: Any,
+            logEnabled: Boolean,
+        ): SplitPrompt {
+            val blueprint =
+                remoteConfigService.getJson<PromptBlueprint>(remoteConfigKey, logEnabled)!!
+
+            if (logEnabled) {
+                Timber
+                    .tag("PromptService")
+                    .d("buildSplitBlueprint: Found Blueprint for '$remoteConfigKey'")
+            }
+
+            // --- Build instruction buckets (static — no placeholder substitution) ---
+            val buckets = mutableMapOf<String, Any>()
+
+            // Promote legacy fields into named buckets
+            if (blueprint.role.isNotBlank()) {
+                buckets.putAll(mapOf("Persona" to blueprint.role))
+            }
+            if (blueprint.directives.isNotEmpty()) {
+                buckets.putAll(blueprint.directives.asMap())
+            }
+            if (blueprint.rules.isNotEmpty()) {
+                buckets.putAll(blueprint.rules.asMap())
+            }
+
+            // Merge extra instruction buckets defined in Remote Config (these can override legacy ones)
+
+            blueprint.instructions?.let {
+                buckets.putAll(it)
+            }
+
+            // --- Build processed template (dynamic — placeholder substitution applied) ---
+            val processedTemplate =
+                buildString {
+                    if (blueprint.examples.isNotEmpty()) {
+                        appendLine("# FEW-SHOT EXAMPLES")
+                        blueprint.examples.forEachIndexed { index, example ->
+                            appendLine("## EXAMPLE ${index + 1}")
+                            appendLine(example.toJsonFormat())
+                        }
+                        appendLine()
+                    }
+
+                    if (blueprint.template.isNotBlank()) {
+                        appendLine("# TASK DEFINITION")
+                        appendLine(
+                            buildPrompt(
+                                blueprint.template,
+                                variables.asMap(),
+                                logEnabled,
+                                remoteConfigKey,
+                            ),
+                        )
+                    }
+                }.trimIndent()
+
+            val placeholders =
+                Regex("\\{(\\w+)\\}").findAll(blueprint.template).map { it.groupValues[1] }.toList()
+            val missingVariables = placeholders.filter { it !in variables.asMap() }
+
+            return SplitPrompt(
+                blueprintKey = remoteConfigKey,
+                instructionBuckets = buckets,
+                processedTemplate = processedTemplate,
+                sentVariables = variables.asMap(),
+                missingVariables = missingVariables,
+            )
         }
     }

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.model.Voice
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -20,14 +21,20 @@ data class AudioConfigArgs(
 object AudioPrompts {
     const val AUDIO_CONFIG_BLUEPRINT = "audio_config_blueprint"
 
-    fun transcribeInstruction() = "Generate a short, playful message about listening to the user. Example: 'I'm all ears!'"
+    fun transcribeInstruction(): SplitPrompt =
+        SplitPrompt(
+            blueprintKey = AUDIO_CONFIG_BLUEPRINT,
+            instructionBuckets = emptyMap(),
+            processedTemplate =
+                "Generate a short, playful message about listening to the user. Example: 'I'm all ears!'",
+        )
 
     suspend fun audioConfigPrompt(
         promptService: PromptService,
         sagaContent: SagaContent,
         message: Message,
         character: CharacterContent?,
-    ): String {
+    ): SplitPrompt {
         val senderTypeInfo =
             if (message.senderType == SenderType.NARRATOR) {
                 """
@@ -76,6 +83,6 @@ object AudioPrompts {
                 voiceSelectionGuide = Voice.getVoiceSelectionGuide(),
             )
 
-        return promptService.buildRemotePrompt(AUDIO_CONFIG_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(AUDIO_CONFIG_BLUEPRINT, args)
     }
 }

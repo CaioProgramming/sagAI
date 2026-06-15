@@ -43,7 +43,7 @@ fun String.hexToColor(): Color? {
     return Color(color)
 }
 
-fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
+fun Modifier.saturation(saturationFactor: Float = 1f): Modifier {
     val saturationMatrix = ColorMatrix().apply { setToSaturation(saturationFactor) }
     val saturationFilter = ColorFilter.colorMatrix(saturationMatrix)
     val paint = Paint().apply { colorFilter = saturationFilter }
@@ -59,7 +59,6 @@ fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
         }
     }
 }
-
 
 fun Modifier.invertedColors(): Modifier {
     val invertMatrix =
@@ -108,7 +107,6 @@ fun Color.toHex(): String {
     val alpha = (this.alpha * 255).toInt()
     return String.format("#%02x%02x%02x%02x", alpha, red, green, blue)
 }
-
 
 fun Modifier.brightness(brightnessFactor: Float): Modifier {
     val brightnessMatrix =

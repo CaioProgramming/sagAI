@@ -1,6 +1,10 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
+import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -16,6 +20,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 data class CharacterReplyArgs(
@@ -97,12 +102,12 @@ object CharacterPrompts {
     const val CHARACTER_ENRICHMENT_BLUEPRINT = "character_enrichment_blueprint"
 
     suspend fun conversationalCharacterReply(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         currentCharacterInfo: CharacterInfo,
         userInput: String,
         conversationHistory: List<com.ilustris.sagai.features.newsaga.data.model.ChatMessage>,
         sagaContext: SagaDraft?,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterReplyArgs(
                 currentCharacterState = currentCharacterInfo.toAINormalize(),
@@ -114,13 +119,13 @@ object CharacterPrompts {
                 userInput = userInput,
             )
 
-        return promptService.buildRemotePrompt(CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT, args)
     }
 
     suspend fun characterIntroPrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         sagaContext: SagaDraft?,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterIntroArgs(
                 sagaWorld = sagaContext?.description ?: "",
@@ -128,21 +133,21 @@ object CharacterPrompts {
                 genreName = sagaContext?.genre?.name ?: "FANTASY",
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_INTRO_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_INTRO_BLUEPRINT, args)
     }
 
     suspend fun characterAdaptationPrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         currentCharacterInfo: CharacterInfo,
         newGenre: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterAdaptationArgs(
                 newGenre = newGenre,
                 currentCharacterDraft = currentCharacterInfo.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_ADAPTATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_ADAPTATION_BLUEPRINT, args)
     }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
@@ -245,14 +250,14 @@ object CharacterPrompts {
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun characterGeneration(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
+        config: GenreConfig,
         description: String,
         bannedNames: List<String> = emptyList(),
         themeColor: String? = null,
-        sceneSummary: com.ilustris.sagai.features.saga.chat.data.model.SceneSummary? = null,
-    ): String {
+        sceneSummary: SceneSummary? = null,
+    ): SplitPrompt {
         val themeColorContext =
             themeColor?.let {
                 buildString {
@@ -316,26 +321,17 @@ object CharacterPrompts {
                         .normalizetoAIItems(excludingFields = messageExclusions),
                 appearanceGuidelines = config.appearanceGuidelines,
                 sceneContext =
-                    sceneSummary?.let {
-                        buildString {
-                            appendLine("## 🎭 CURRENT SCENE CONTEXT 🎭")
-                            appendLine("Location: ${it.currentLocation}")
-                            appendLine("Mood: ${it.mood}")
-                            appendLine("Conflict: ${it.currentConflict}")
-                            appendLine("Tension Level: ${it.tensionLevel}/10")
-                            appendLine("Spatial Context: ${it.spatialContext}")
-                        }
-                    } ?: "",
+                    sceneSummary?.toAINormalize() ?: "",
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_GENERATION_BLUEPRINT, args.asMap())
     }
 
     suspend fun characterLoreGeneration(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         timeline: Timeline,
         characters: List<Character>,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterLoreArgs(
                 timelineContext =
@@ -348,17 +344,17 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_LORE_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_LORE_BLUEPRINT, args)
     }
 
     @Suppress("ktlint:standard:max-line-length")
     suspend fun findNickNames(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         characters: List<Character>,
         messages: List<Message>,
         timeline: Timeline,
         saga: Saga,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterNicknamesArgs(
                 sagaContext = saga.toAINormalize(ChatPrompts.sagaExclusions),
@@ -374,14 +370,14 @@ object CharacterPrompts {
                 recentMessages = messages.normalizetoAIItems(messageExclusions),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_NICKNAME_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_NICKNAME_BLUEPRINT, args)
     }
 
     suspend fun generateCharacterRelation(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         timeline: Timeline,
         saga: SagaContent,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterRelationArgs(
                 timelineEvent =
@@ -398,16 +394,16 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_RELATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_RELATION_BLUEPRINT, args)
     }
 
     suspend fun characterResume(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         promptDirectives: PromptDirectives,
         character: CharacterContent,
         saga: SagaContent,
-        config: com.ilustris.sagai.core.ai.model.GenreConfig,
-    ): String {
+        config: GenreConfig,
+    ): SplitPrompt {
         val characterData = character.data
         val journeyEvents =
             if (character.events.isEmpty()) {
@@ -446,29 +442,29 @@ object CharacterPrompts {
                 toneStyle = "",
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_RESUME_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_RESUME_BLUEPRINT, args)
     }
 
     suspend fun knowledgeUpdatePrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         event: Timeline,
         characters: List<Character>,
-    ): String {
+    ): SplitPrompt {
         val args =
             KnowledgeUpdateArgs(
                 eventContext = event.toAINormalize(listOf("id", "chapterId")),
                 charactersContext = characters.normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
             )
 
-        return promptService.buildRemotePrompt(KNOWLEDGE_UPDATE_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(KNOWLEDGE_UPDATE_BLUEPRINT, args)
     }
 
     suspend fun refineCharacterDraftPrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         rawInput: String,
         sagaContext: SagaDraft?,
         appearanceGuidelines: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             RefineDraftArgs(
                 userInput = rawInput,
@@ -476,25 +472,25 @@ object CharacterPrompts {
                 appearanceGuidelines = appearanceGuidelines,
             )
 
-        return promptService.buildRemotePrompt(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
+    }
 
-        suspend fun characterEnrichmentPrompt(
-            promptService: com.ilustris.sagai.core.ai.services.PromptService,
-            character: CharacterContent,
-            saga: SagaContent,
-        ): String {
-            val args =
-                CharacterResumeArgs(
-                    sagaContext = SagaPrompts.mainContext(saga, character),
-                    characterIdentity = character.data.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
-                    journeyEvents =
-                        character.events
-                            .takeLast(10)
-                            .joinToString("\n") { "- ${it.event.summary}" },
-                    relationships = character.summarizeRelationships(),
-                    toneStyle = saga.data.genre.name,
-                )
-            return promptService.buildRemotePrompt(CHARACTER_ENRICHMENT_BLUEPRINT, args)
-        }
+    suspend fun characterEnrichmentPrompt(
+        promptService: PromptService,
+        character: CharacterContent,
+        saga: SagaContent,
+    ): SplitPrompt {
+        val args =
+            CharacterResumeArgs(
+                sagaContext = SagaPrompts.mainContext(saga, character),
+                characterIdentity = character.data.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+                journeyEvents =
+                    character.events
+                        .takeLast(10)
+                        .joinToString("\n") { "- ${it.event.summary}" },
+                relationships = character.summarizeRelationships(),
+                toneStyle = saga.data.genre.name,
+            )
+        return promptService.buildSplitBlueprint(CHARACTER_ENRICHMENT_BLUEPRINT, args)
     }
 }

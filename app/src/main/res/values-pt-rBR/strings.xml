@@ -466,6 +466,7 @@
     <string name="releasing_act_introduction">Preparando a abertura...</string>
     <string name="advance_start_story">Continuar história</string>
     <string name="releasing_start_story">Preparando o próximo evento...</string>
+    <string name="advance_close_scene">Concluir evento</string>
     <string name="releasing_close_scene">Salvando este evento...</string>
     <string name="advance_saga_ending">Escrever o desfecho</string>
     <string name="releasing_ending">Escrevendo o desfecho...</string>
@@ -592,7 +593,13 @@
     <string name="audit_logs_clear_button">Limpar</string>
     <string name="audit_logs_reasoning">Raciocínio (Chain-of-Thought):</string>
     <string name="audit_logs_raw_response">Resposta Bruta:</string>
+    <string name="audit_logs_system_instruction">Instrução de Sistema:</string>
+    <string name="audit_logs_sent_variables">Variáveis Enviadas:</string>
     <string name="audit_logs_error_label">Erro:</string>
+    <string name="audit_logs_token_usage">Uso de Tokens:</string>
+    <string name="audit_logs_tokens_prompt">Prompt: %d</string>
+    <string name="audit_logs_tokens_candidates">Candidatos: %d</string>
+    <string name="audit_logs_tokens_total">Total: %d</string>
     <string name="clear_preferences">Limpar preferências</string>
     <string name="backup_loading_restoring_database">Restaurando banco de dados...</string>
     <string name="backup_loading_creating">Criando backup</string>
@@ -791,5 +798,7 @@
     <string name="guardrail_age_message">Este conteúdo não é apropriado para a sua idade verificada.</string>
     <string name="guardrail_explicit_title">Conteúdo Explícito Detectado</string>
     <string name="guardrail_explicit_message">Sua mensagem contém conteúdo sexual ou gráfico explícito que é proibido para todos os usuários. Por favor, mantenha um ambiente seguro.</string>
+    <string name="guardrail_unknown_title">Interrupção do Sistema</string>
+    <string name="guardrail_unknown_message">Algo inesperado aconteceu durante o processamento. Por favor, tente novamente.</string>
     <string name="guardrail_dismiss">Entendi</string>
 </resources>

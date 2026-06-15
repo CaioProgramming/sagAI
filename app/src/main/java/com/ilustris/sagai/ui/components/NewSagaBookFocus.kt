@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
-import com.ilustris.sagai.features.newsaga.ui.presentation.AgenticAction
+import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaIntent
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
 import com.ilustris.sagai.ui.theme.levitate
@@ -33,7 +33,8 @@ fun SharedTransitionScope.NewSagaBookFocus(
     sharedContentKey: String,
     lockedCharacter: com.ilustris.sagai.features.characters.data.model.CharacterInfo? = null,
     onToggle: () -> Unit = {},
-    onAction: (AgenticAction) -> Unit = {},
+    onIntent: (NewSagaIntent) -> Unit = {},
+    showReasoning: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val genre = book.draft.genre
@@ -54,7 +55,7 @@ fun SharedTransitionScope.NewSagaBookFocus(
             isLoading = isLoading,
             reasoning = null,
             onToggle = onToggle,
-            onAction = onAction,
+            onIntent = onIntent,
             modifier =
                 Modifier
                     .sharedBounds(
@@ -62,17 +63,19 @@ fun SharedTransitionScope.NewSagaBookFocus(
                         animatedVisibilityScope,
                     )
                     .width(280.dp)
-                    .fillMaxHeight(0.5f)
+                    .fillMaxHeight(0.55f)
                     .levitate(true)
                     .divineAura()
                     .chromaticAberration(),
         )
 
-        BookGenerationReasoning(
-            reasoning = reasoning,
-            genre = genre,
-            visualConfig = visualConfig,
-            modifier = Modifier.padding(top = 20.dp),
-        )
+        if (showReasoning) {
+            BookGenerationReasoning(
+                reasoning = reasoning,
+                genre = genre,
+                visualConfig = visualConfig,
+                modifier = Modifier.padding(top = 20.dp),
+            )
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -182,6 +184,8 @@ fun DetailSectionView.InitialSection.miniSection(
     section: RequestSection,
     resume: SagaDetailResume,
     onAction: (DetailAction) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val saga = resume.saga
     val genre = saga.genre
@@ -191,211 +195,218 @@ fun DetailSectionView.InitialSection.miniSection(
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
 
-    Column(
-        modifier =
-            Modifier
-                .padding(vertical = 8.dp)
-                .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        when (section) {
-            RequestSection.ACTS -> {
-                if (resume.completedActsCount < 1) return@Column
-                RowHeader(
-                    title = stringResource(R.string.the_chronicles),
-                    textStyle = sectionStyle,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    onAction(DetailAction.OpenChronicles(null))
-                }
-
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                ) {
-                    items(resume.generatedBooks) { book ->
-                        val sagaBook =
-                            remember(book) {
-                                SagaBook(
-                                    draft =
-                                        SagaDraft(
-                                            id = book.id.toString(),
-                                            title = book.actTitle,
-                                            description = book.authorNote ?: "",
-                                            genre = saga.genre,
-                                        ),
-                                )
-                            }
-                        CosmicBook(
-                            book = sagaBook,
-                            visualConfig =
-                                com.ilustris.sagai.core.ai.model
-                                    .GenreVisualConfig(),
-                            isOpened = false,
-                            isLoading = false,
-                            onToggle = {
-                                onAction(DetailAction.OpenChronicles(book.actId))
-                            },
-                            onAction = {},
-                            modifier =
-                                Modifier
-                                    .width(160.dp)
-                                    .height(240.dp),
-                            titleModifier = Modifier,
-                        )
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .clip(sagaShape())
-                            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
-                            .clickable {
-                                onAction(DetailAction.OpenStoryReader)
-                            }
-                            .padding(16.dp),
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.Start,
-                        modifier =
-                            Modifier.weight(
-                                1f,
-                            ),
+    with(sharedTransitionScope) {
+        Column(
+            modifier =
+                Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            when (section) {
+                RequestSection.ACTS -> {
+                    if (resume.completedActsCount < 1) return@Column
+                    RowHeader(
+                        title = stringResource(R.string.the_chronicles),
+                        textStyle = sectionStyle,
+                        modifier = Modifier.padding(horizontal = 16.dp),
                     ) {
-                        Text(
-                            stringResource(R.string.saga_detail_read_story_title),
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                        )
-                        Text(
-                            stringResource(R.string.saga_detail_read_story_subtitle),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                ),
-                            modifier = Modifier.alpha(0.6f),
-                        )
+                        onAction(DetailAction.OpenChronicles(null))
                     }
 
-                    Icon(
-                        painterResource(R.drawable.round_arrow_forward_ios_24),
-                        contentDescription = null,
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                    ) {
+                        items(resume.generatedBooks) { book ->
+                            val sagaBook =
+                                remember(book) {
+                                    SagaBook(
+                                        draft =
+                                            SagaDraft(
+                                                id = book.id.toString(),
+                                                title = book.actTitle,
+                                                description = book.authorNote ?: "",
+                                                genre = saga.genre,
+                                            ),
+                                    )
+                                }
+                            CosmicBook(
+                                book = sagaBook,
+                                visualConfig =
+                                    com.ilustris.sagai.core.ai.model
+                                        .GenreVisualConfig(),
+                                isOpened = false,
+                                isLoading = false,
+                                onToggle = {
+                                    onAction(DetailAction.OpenChronicles(book.actId))
+                                },
+                                onIntent = {},
+                                modifier =
+                                    Modifier
+                                        .width(160.dp)
+                                        .height(240.dp),
+                                titleModifier = Modifier,
+                            )
+                        }
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier =
                             Modifier
                                 .padding(16.dp)
-                                .size(24.dp),
-                    )
-                }
-            }
-
-            RequestSection.CHAPTERS -> {
-                // Chapters are now managed autonomously in ChapterContentView, removed from detail overview.
-            }
-
-            RequestSection.CHARACTERS -> {
-                if (resume.topCharacters.isEmpty()) return@Column
-                RowHeader(
-                    stringResource(R.string.saga_detail_section_title_characters),
-                    sectionStyle,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
-                }
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                ) {
-                    items(resume.topCharacters) { char ->
+                                .fillMaxWidth()
+                                .clip(sagaShape())
+                                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
+                                .clickable {
+                                    onAction(DetailAction.OpenStoryReader)
+                                }.padding(16.dp),
+                    ) {
                         Column(
+                            horizontalAlignment = Alignment.Start,
                             modifier =
-                                Modifier
-                                    .clip(sagaShape())
-                                    .clickable {
-                                        onAction(DetailAction.OpenCharacter(char.data.id))
-                                    }
-                                    .padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                                Modifier.weight(
+                                    1f,
+                                ),
                         ) {
-                            CharacterAvatar(
-                                character = char.data,
-                                genre = genre,
-                                modifier = Modifier.size(100.dp),
+                            Text(
+                                stringResource(R.string.saga_detail_read_story_title),
+                                style =
+                                    MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
                             )
                             Text(
-                                char.data.name,
+                                stringResource(R.string.saga_detail_read_story_subtitle),
                                 style =
-                                    MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                        textAlign = TextAlign.Center,
+                                    MaterialTheme.typography.labelSmall.copy(
                                         fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
+                                modifier = Modifier.alpha(0.6f),
+                            )
+                        }
+
+                        Icon(
+                            painterResource(R.drawable.round_arrow_forward_ios_24),
+                            contentDescription = null,
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .size(24.dp),
+                        )
+                    }
+                }
+
+                RequestSection.CHAPTERS -> {
+                    // Chapters are now managed autonomously in ChapterContentView, removed from detail overview.
+                }
+
+                RequestSection.CHARACTERS -> {
+                    if (resume.topCharacters.isEmpty()) return@Column
+                    RowHeader(
+                        stringResource(R.string.saga_detail_section_title_characters),
+                        sectionStyle,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    ) {
+                        onAction(DetailAction.OpenSection(RequestSection.CHARACTERS))
+                    }
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                    ) {
+                        items(resume.topCharacters) { char ->
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .clip(sagaShape())
+                                        .clickable {
+                                            onAction(DetailAction.OpenCharacter(char.data.id))
+                                        }.padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                CharacterAvatar(
+                                    character = char.data,
+                                    genre = genre,
+                                    modifier =
+                                        Modifier
+                                            .size(100.dp)
+                                            .sharedElement(
+                                                rememberSharedContentState(key = "character_${char.data.id}_icon"),
+                                                animatedVisibilityScope,
+                                            ),
+                                )
+                                Text(
+                                    char.data.name,
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Light,
+                                            textAlign = TextAlign.Center,
+                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                RequestSection.EVENTS -> {
+                    lastEvent?.let {
+                        RowHeader(
+                            stringResource(R.string.saga_detail_timeline_section_title),
+                            sectionStyle,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        ) {
+                            onAction(DetailAction.OpenSection(RequestSection.EVENTS))
+                        }
+
+                        TimelineContentViewCard(
+                            saga = saga,
+                            eventCard = it,
+                            onAction = onAction,
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .fillMaxWidth(),
+                        )
+                    }
+                }
+
+                RequestSection.WIKI -> {
+                    if (resume.latestWikis.isEmpty()) return@Column
+                    RowHeader(
+                        stringResource(R.string.saga_detail_section_title_wiki),
+                        sectionStyle,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    ) {
+                        onAction(DetailAction.OpenSection(RequestSection.WIKI))
+                    }
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                    ) {
+                        items(resume.latestWikis) { wiki ->
+                            WikiCard(
+                                wiki = wiki,
+                                genre = genre,
+                                modifier =
+                                    Modifier
+                                        .size(100.dp)
+                                        .clickable {
+                                            onAction(DetailAction.OpenSection(RequestSection.WIKI))
+                                        },
                             )
                         }
                     }
                 }
+
+                else -> {}
             }
-
-            RequestSection.EVENTS -> {
-                lastEvent?.let {
-                    RowHeader(
-                        stringResource(R.string.saga_detail_timeline_section_title),
-                        sectionStyle,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    ) {
-                        onAction(DetailAction.OpenSection(RequestSection.EVENTS))
-                    }
-
-                    TimelineContentViewCard(
-                        saga = saga,
-                        eventCard = it,
-                        onAction = onAction,
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp)
-                                .fillMaxWidth(),
-                    )
-                }
-            }
-
-            RequestSection.WIKI -> {
-                if (resume.latestWikis.isEmpty()) return@Column
-                RowHeader(
-                    stringResource(R.string.saga_detail_section_title_wiki),
-                    sectionStyle,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    onAction(DetailAction.OpenSection(RequestSection.WIKI))
-                }
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                ) {
-                    items(resume.latestWikis) { wiki ->
-                        WikiCard(
-                            wiki = wiki,
-                            genre = genre,
-                            modifier =
-                                Modifier
-                                    .size(100.dp)
-                                    .clickable {
-                                        onAction(DetailAction.OpenSection(RequestSection.WIKI))
-                                    },
-                        )
-                    }
-                }
-            }
-
-            else -> {}
         }
     }
 }

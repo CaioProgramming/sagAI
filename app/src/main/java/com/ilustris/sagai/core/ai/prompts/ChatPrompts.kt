@@ -1,18 +1,21 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
+import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.getDirectiveKey
 import com.ilustris.sagai.features.home.data.model.historySummary
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -106,28 +109,6 @@ object ChatPrompts {
             "narratorVoice",
         )
 
-    private fun characterResolutionProtocol(): String =
-        buildString {
-            appendLine("### Character Resolution Hierarchy")
-            appendLine("1. LOCAL: If the player addresses someone in CHARACTERS PRESENT, that character MUST respond.")
-            appendLine(
-                "2. GLOBAL: If the addressed name is in KNOWN CAST (NOT PRESENT) or the saga cast, use that character — do NOT set newCharacter.",
-            )
-            appendLine(
-                "3. DISCOVERY: Only set optional newCharacter when a genuinely NEW character enters and speaks for the first time.",
-            )
-            appendLine(
-                "4. CONTINUITY: Identify message.speakerName from the player turn. Do NOT respond as that same character.",
-            )
-            appendLine()
-            appendLine("newCharacter rules (when DISCOVERY applies):")
-            appendLine("- Omit newCharacter (null) in most replies.")
-            appendLine("- name MUST match message.speakerName.")
-            appendLine("- discoveryContext: voice, role, how they entered, dialogue seed for profile generation.")
-            appendLine("- Never for NARRATOR senderType.")
-            appendLine("- Never if the speaker already exists in the cast.")
-        }
-
     val CHARACTER_EXCLUSIONS =
         listOf(
             "id",
@@ -152,7 +133,7 @@ object ChatPrompts {
         conversationDirective: String,
         updateLimit: Int,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
-    ): String {
+    ): SplitPrompt {
         val charactersInScene =
             sceneSummary?.charactersPresent?.mapNotNull {
                 saga.findCharacter(it)
@@ -162,46 +143,95 @@ object ChatPrompts {
         val externalCharacters =
             saga.getCharacters(true).filter { it.id !in sceneCharacterIds }
 
-        val argsMap =
-            mutableMapOf(
-                "sceneContext" to (sceneSummary?.toAINormalize() ?: "No context founded"),
-                "charactersPresent" to
-                    CharacterPrompts.sceneCharactersContext(
-                        characters = charactersInScene,
-                        arcsByCharacterId = characterArcsById,
-                        protagonist = saga.mainCharacter,
-                    ),
-                "relationshipsBlock" to "",
-                "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
-                "conversationHistory" to conversationHistory(updateLimit, saga),
-                "actDirective" to
-                    promptService.buildRemotePrompt(
-                        saga.getDirectiveKey(),
-                        emptyMap(),
-                    ),
-                "sagaMainContext" to SagaPrompts.mainContext(saga),
-                "conversationDirective" to conversationDirective,
-                "latestMessage" to message.toAINormalize(messageExclusions),
-                "genreConversationSoul" to conversationDirective,
-                "characterResolutionProtocol" to characterResolutionProtocol(),
-                "reactionProtocol" to
-                    buildString {
-                        appendLine("### 🎭 EMOTIONAL REACTION PROTOCOL 🎭")
-                        appendLine(
-                            "Along with the message, you MUST generate emotional reactions for ALL other characters present in the scene.",
-                        )
-                        if (charactersInScene.isNotEmpty()) {
-                            appendLine("Characters present to react: ${charactersInScene.joinToString { it.data.name }}")
-                            appendLine("Each character reaction must contain their NAME, an Emoji, and a hidden Thought.")
-                        } else {
-                            appendLine(
-                                "No specific characters present to react, but you can still generate reactions for the narrator if applicable.",
+        val messageSender = saga.findCharacter(message.speakerName)
+
+        val mentionedWikis =
+            saga.wikis.filter {
+                it.title.contains(message.text, ignoreCase = true) ||
+                    it.content.contains(message.text, ignoreCase = true)
+            }
+
+        val worldContext =
+            buildMap {
+                put(
+                    "sagaContext",
+                    saga.data.asMap(),
+                )
+                sceneSummary?.let {
+                    put("currentStoryContext", sceneSummary.asMap())
+                }
+
+                put(
+                    "storyCharacters",
+                    saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}" },
+                )
+
+                messageSender?.let {
+                    put(
+                        "messageSender",
+                        buildMap {
+                            putAll(messageSender.data.asMap())
+                            val storyArcs = characterArcsById[it.data.id]
+                            storyArcs?.let {
+                                put(
+                                    "CharacterArcs",
+                                    storyArcs.takeLast(3).normalizetoAIItems(),
+                                )
+                            }
+                            put(
+                                "LatestCharacterEvents",
+                                it.events
+                                    .map {
+                                        "${it.character.name} - ${it.event.title}\n${it.event.summary}"
+                                    }.takeLast(3)
+                                    .normalizetoAIItems(),
                             )
-                        }
-                    },
+                            put(
+                                "relationshipsWithPresentCharacters",
+                                charactersInScene
+                                    .mapNotNull {
+                                        messageSender
+                                            .findRelationship(it.data.id)
+                                            ?.summarizeRelation()
+                                    }.normalizetoAIItems(),
+                            )
+                        }.toAINormalize(CHARACTER_EXCLUSIONS),
+                    )
+                }
+
+                if (mentionedWikis.isNotEmpty()) {
+                    put("mentionedWikis", mentionedWikis.normalizetoAIItems())
+                }
+            }.toAINormalize(
+                buildList {
+                    addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
+                    addAll(CHARACTER_EXCLUSIONS)
+                },
             )
 
-        return promptService.buildRemotePrompt(REPLY_GENERATION_BLUEPRINT, argsMap)
+        val argsMap =
+            mutableMapOf(
+                "worldContext" to worldContext,
+                "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
+                "conversationHistory" to conversationHistory(updateLimit, saga),
+                "latestMessage" to message.toAINormalize(messageExclusions),
+                "userToneProtocol" to
+                    """
+                    Analyze the 'latestMessage' from the user and extract its EmotionalTone.
+                    Valid tones: ${EmotionalTone.entries.joinToString { it.name }}.
+                    Return the tone in the 'userTone' field.
+                    """.trimIndent(),
+                "userReactionProtocol" to
+                    """
+                    Based on the 'latestMessage' from the user and the 'sceneSummary', generate reactions from characters present in the scene.
+                    Characters should react to what the user just said/did.
+                    Return these in the 'userReactions' field as a list of AIReaction objects { "character": "Name", "reaction": "Emoji", "thought": "Brief thought" }.
+                    Exclude the message sender from reacting to their own message.
+                    """.trimIndent(),
+            )
+
+        return promptService
+            .buildSplitBlueprint(REPLY_GENERATION_BLUEPRINT, argsMap)
     }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -211,7 +241,7 @@ object ChatPrompts {
         conversationDirective: String,
         updateLimit: Int,
         message: String,
-    ): String {
+    ): SplitPrompt {
         val recentContext =
             conversationHistory(
                 updateLimit,
@@ -228,7 +258,7 @@ object ChatPrompts {
                 message = message,
             )
 
-        return promptService.buildRemotePrompt(CHAT_WRITING_PAL_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAT_WRITING_PAL_BLUEPRINT, args)
     }
 
     suspend fun generateReactionPrompt(
@@ -237,7 +267,7 @@ object ChatPrompts {
         saga: SagaContent,
         messageToReact: Message,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val mainCharacter = saga.mainCharacter!!
         val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
         val relationshipsBlock =
@@ -249,7 +279,7 @@ object ChatPrompts {
                 }
             }
 
-        val args =
+        val reactionArgs =
             ReactionArgs(
                 sagaMainContext = SagaPrompts.mainContext(saga),
                 sceneSummary = summary.toAINormalize(),
@@ -260,14 +290,53 @@ object ChatPrompts {
                 genreName = saga.data.genre.name,
             )
 
-        return promptService.buildRemotePrompt(CHAT_REACTION_BLUEPRINT, args)
+        val messageSender = saga.findCharacter(messageToReact.speakerName)
+        val charactersInScene =
+            summary.charactersPresent.mapNotNull {
+                saga.findCharacter(it)
+            }
+
+        val args =
+            mapOf(
+                "worldContext" to
+                    buildMap {
+                        put("sagaContext", saga.data)
+                        summary.let {
+                            put("currentStoryContext", summary.toAINormalize())
+                        }
+
+                        messageSender?.let {
+                            put(
+                                "messageSender",
+                                buildMap {
+                                    putAll(messageSender.data.asMap())
+                                    put(
+                                        "LatestCharacterEvents",
+                                        it.events.takeLast(3).normalizetoAIItems(),
+                                    )
+                                    put(
+                                        "relationshipsWithPresentCharacters",
+                                        charactersInScene
+                                            .mapNotNull {
+                                                messageSender
+                                                    .findRelationship(it.data.id)
+                                                    ?.summarizeRelation()
+                                            }.normalizetoAIItems(),
+                                    )
+                                },
+                            )
+                        }
+                    }.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS.plus(CHARACTER_EXCLUSIONS)),
+            )
+
+        return promptService.buildSplitBlueprint(CHAT_REACTION_BLUEPRINT, args.asMap())
     }
 
     suspend fun sceneSummarizationPrompt(
         promptService: PromptService,
         saga: SagaContent,
         rules: NarrativeRules,
-    ): String {
+    ): SplitPrompt {
         val latestMessage = saga.flatMessages().maxByOrNull { it.message.timestamp }?.message
         val latestMessageContent = latestMessage?.toAINormalize(messageExclusions) ?: ""
 
@@ -279,7 +348,7 @@ object ChatPrompts {
                 latestMessage = latestMessageContent,
             )
 
-        return promptService.buildRemotePrompt(SCENE_SUMMARIZATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SCENE_SUMMARIZATION_BLUEPRINT, args)
     }
 
     suspend fun scheduledNotificationPrompt(
@@ -288,7 +357,7 @@ object ChatPrompts {
         selectedCharacter: CharacterContent,
         sceneSummary: SceneSummary,
         conversationDirective: String,
-    ): String {
+    ): SplitPrompt {
         val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
         val relationshipBlock = relationWithCharacter?.summarizeRelation(1) ?: ""
 
@@ -304,7 +373,7 @@ object ChatPrompts {
                 conversationDirective = conversationDirective,
             )
 
-        return promptService.buildRemotePrompt(CHAT_NOTIFICATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHAT_NOTIFICATION_BLUEPRINT, args)
     }
 
     fun conversationHistory(

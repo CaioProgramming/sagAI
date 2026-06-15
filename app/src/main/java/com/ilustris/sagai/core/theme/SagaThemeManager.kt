@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.theme
 
 import android.net.Uri
+import android.os.SystemClock
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.file.FileCacheService
@@ -9,7 +10,6 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.ui.components.SagaSnackBarMessage
-import android.os.SystemClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -201,6 +201,17 @@ class SagaThemeManager
             _vfxTrigger.emit(Unit)
         }
 
+        fun playHaptics() {
+            val genre = _currentGenre.value ?: return
+            managerScope.launch {
+                val visual = visualConfigService.getVisualConfig(genre)
+                val pattern = genre.vibrationPattern(visual)
+                if (pattern != null) {
+                    soundFxService.vibrate(pattern)
+                }
+            }
+        }
+
         /** Clear the active genre, reverting to the default brand identity. */
         fun resetTheme() {
             themeFetchJob?.cancel()
@@ -229,7 +240,7 @@ class SagaThemeManager
 
         fun dismissSnackBar() {
             snackBarDismissJob?.cancel()
-        snackBarDismissJob = null
-        _snackBarMessage.value = null
+            snackBarDismissJob = null
+            _snackBarMessage.value = null
+        }
     }
-}

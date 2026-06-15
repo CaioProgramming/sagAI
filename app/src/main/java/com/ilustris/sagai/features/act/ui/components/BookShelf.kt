@@ -19,13 +19,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,24 +30,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.ui.animations.chromaticAberration
 import com.ilustris.sagai.ui.animations.divineAura
 import com.ilustris.sagai.ui.components.BookGenerationReasoning
 import com.ilustris.sagai.ui.components.CosmicBook
-import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.levitate
-import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.saturation
 
 @Composable
 fun BookShelf(
@@ -137,13 +129,14 @@ private fun SharedTransitionScope.GeneratingBookFocus(
             isLoading = true,
             reasoning = null,
             onToggle = {},
-            onAction = {},
+            onIntent = {},
             modifier =
                 Modifier
                     .sharedBounds(
                         rememberSharedContentState(key = "book-${act.data.id}"),
                         animatedVisibilityScope,
-                    ).width(280.dp)
+                    )
+                    .width(280.dp)
                     .fillMaxHeight(0.55f)
                     .levitate(true)
                     .divineAura()
@@ -226,13 +219,13 @@ private fun BookShelfPager(
                     isLoading = false,
                     reasoning = null,
                     onToggle = { onBookSelected(act) },
-                    onAction = {},
+                    onIntent = {},
                     modifier =
                         Modifier
                             .sharedBounds(
                                 rememberSharedContentState(key = "book-${act.data.id}"),
                                 animatedVisibilityScope,
-                            ).grayScale(if (act.book == null) 0f else 1f)
+                            ).saturation(if (act.book == null) 0f else 1f)
                             .width(280.dp)
                             .fillMaxHeight(.75f)
                             .padding(vertical = 16.dp)

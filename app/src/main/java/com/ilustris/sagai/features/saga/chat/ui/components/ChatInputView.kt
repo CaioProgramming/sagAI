@@ -447,7 +447,8 @@ fun ChatInputView(
                                                     inputField,
                                                 ),
                                             )
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                             )
                         }
                     }
@@ -461,7 +462,8 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    ).fillMaxWidth()
+                    )
+                    .fillMaxWidth()
                     .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
@@ -550,7 +552,8 @@ fun ChatInputView(
                                                             .clickable {
                                                                 onSelectCharacter(character)
                                                                 characterMenu = false
-                                                            }.padding(8.dp),
+                                                            }
+                                                            .padding(8.dp),
                                                 ) {
                                                     CharacterAvatar(
                                                         character,
@@ -601,8 +604,7 @@ fun ChatInputView(
                         decorationBox = { inner ->
                             Box(
                                 Modifier
-                                    .padding(8.dp)
-                                    .reactiveShimmer(isGenerating),
+                                    .padding(8.dp),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
                                 Box {
@@ -612,6 +614,7 @@ fun ChatInputView(
                                             sendType.hint(),
                                             style = textStyle,
                                             modifier = Modifier.alpha(.4f),
+                                            maxLines = 1,
                                         )
                                     }
                                 }
@@ -755,8 +758,7 @@ fun ChatInputView(
                                                         alpha = .1f,
                                                     ),
                                                     CircleShape,
-                                                )
-                                                .clip(CircleShape)
+                                                ).clip(CircleShape)
                                                 .clickable(currentTagInside == null) {
                                                     type.tag?.let {
                                                         onUpdateInput(
@@ -766,8 +768,7 @@ fun ChatInputView(
                                                             ),
                                                         )
                                                     }
-                                                }
-                                                .size(24.dp)
+                                                }.size(24.dp)
                                                 .padding(4.dp),
                                     )
                                 }
@@ -1143,11 +1144,11 @@ fun ChatInputView(
                                                                         1.dp,
                                                                         col.copy(alpha = .3f),
                                                                         CircleShape,
-                                                                    ).background(
+                                                                    )
+                                                                    .background(
                                                                         col.copy(alpha = .1f),
                                                                         CircleShape,
-                                                                    )
-                                                                    .clip(CircleShape)
+                                                                    ).clip(CircleShape)
                                                                     .clickable {
                                                                         handleCharacterSelection(
                                                                             character,
