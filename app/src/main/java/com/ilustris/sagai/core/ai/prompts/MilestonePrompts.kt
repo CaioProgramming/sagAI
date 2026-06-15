@@ -36,9 +36,7 @@ object MilestonePrompts {
             return rewriteIntroduction(promptService, milestone, saga, identity)
         }
 
-        if (milestone is SagaMilestone.CurrentObjective ||
-            milestone is SagaMilestone.Loading
-        ) {
+        if (milestone is SagaMilestone.Loading) {
             return null
         }
 
@@ -59,7 +57,6 @@ object MilestonePrompts {
             is SagaMilestone.NewEvent -> milestone.timeline.toAINormalize()
             is SagaMilestone.ChapterFinished -> milestone.chapter.toAINormalize()
             is SagaMilestone.ActFinished -> milestone.act.toAINormalize()
-            is SagaMilestone.CurrentObjective -> milestone.timeline.toAINormalize()
             else -> milestone.javaClass.simpleName
         }
 

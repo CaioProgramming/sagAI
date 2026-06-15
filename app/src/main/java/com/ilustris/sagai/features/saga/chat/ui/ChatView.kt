@@ -142,7 +142,6 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
-import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDialog
@@ -430,22 +429,19 @@ fun ChatContent(
                         animationSpec = tween(500, easing = FastOutSlowInEasing),
                     )
             },
-        ) {
-            val displayMilestone = it != null && it !is SagaMilestone.CurrentObjective
-            if (displayMilestone) {
-                milestoneState?.let { milestone ->
-                    MilestoneOverlay(
-                        milestone,
-                        saga = content,
-                        isLoading = uiState.isGenerating || uiState.isLoading,
-                        reasoningChunk = uiState.reasoningChunk,
-                        onDismiss = {
-                            onAction(ChatUiAction.ContinueMilestone)
-                        },
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                }
+        ) { milestone ->
+            if (milestone != null) {
+                MilestoneOverlay(
+                    milestone,
+                    saga = content,
+                    isLoading = uiState.isGenerating || uiState.isLoading,
+                    reasoningChunk = uiState.reasoningChunk,
+                    onDismiss = {
+                        onAction(ChatUiAction.ContinueMilestone)
+                    },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
             } else {
                 Box(
                     Modifier
@@ -830,6 +826,18 @@ fun ChatContent(
                             }
                         }
 
+                        val currentObjectiveText =
+                            content.getCurrentTimeLine()?.data?.displayObjective()
+                        val showObjective =
+                            uiState.showCurrentObjective && !currentObjectiveText.isNullOrBlank()
+                        val objectiveSparkModifier =
+                            Modifier.sharedElement(
+                                rememberSharedContentState(
+                                    key = "saga_${saga.id}_spark",
+                                ),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+
                         val alpha by animateFloatAsState(
                             if (listState.canScrollForward.not()) 0f else 1f,
                             animationSpec = tween(450, easing = EaseIn),
@@ -847,42 +855,48 @@ fun ChatContent(
                                     },
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Image(
-                                painterResource(saga.genre.icon),
-                                contentDescription = null,
-                                colorFilter =
-                                    ColorFilter.tint(
-                                        MaterialTheme.colorScheme.onBackground.copy(
-                                            alpha = .5f,
-                                        ),
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .sharedElement(
-                                            rememberSharedContentState(
-                                                key = "saga_${saga.id}_spark",
+                            AnimatedVisibility(
+                                visible = !showObjective,
+                                enter = fadeIn(tween(300)),
+                                exit = fadeOut(tween(200)),
+                            ) {
+                                Image(
+                                    painterResource(saga.genre.icon),
+                                    contentDescription = null,
+                                    colorFilter =
+                                        ColorFilter.tint(
+                                            MaterialTheme.colorScheme.onBackground.copy(
+                                                alpha = .5f,
                                             ),
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                        ).genreVfx(
-                                            saga.genre,
-                                            isPlaying =
-                                                uiState.isGenerating ||
-                                                    uiState.isLoading ||
-                                                    genreVfxPulse,
-                                        ).size(32.dp)
-                                        .clip(CircleShape)
-                                        .clickable {
-                                            onAction(ChatUiAction.ShowObjective)
-                                        }.gradientFill(
-                                            progressiveBrush(
-                                                resolvedColor,
-                                                progressState.value,
-                                            ),
-                                        ).reactiveShimmer(
-                                            uiState.isGenerating || uiState.isLoading,
-                                            shimmerColors = themeShimmer(),
                                         ),
-                            )
+                                    modifier =
+                                        Modifier
+                                            .sharedElement(
+                                                rememberSharedContentState(
+                                                    key = "saga_${saga.id}_spark",
+                                                ),
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                            ).genreVfx(
+                                                saga.genre,
+                                                isPlaying =
+                                                    uiState.isGenerating ||
+                                                        uiState.isLoading ||
+                                                        genreVfxPulse,
+                                            ).size(32.dp)
+                                            .clip(CircleShape)
+                                            .clickable {
+                                                onAction(ChatUiAction.ShowObjective)
+                                            }.gradientFill(
+                                                progressiveBrush(
+                                                    resolvedColor,
+                                                    progressState.value,
+                                                ),
+                                            ).reactiveShimmer(
+                                                uiState.isGenerating || uiState.isLoading,
+                                                shimmerColors = themeShimmer(),
+                                            ),
+                                )
+                            }
 
                             val subtitle =
                                 if (saga.isEnded) {
@@ -950,26 +964,23 @@ fun ChatContent(
                         }
 
                         AnimatedVisibility(
-                            uiState.milestone is SagaMilestone.CurrentObjective,
-                            enter = fadeIn() + slideInVertically { +it },
-                            exit = fadeOut() + slideOutVertically { it },
+                            showObjective,
+                            enter = fadeIn(tween(300)) + slideInVertically { -it / 2 },
+                            exit = fadeOut(tween(200)) + slideOutVertically { -it / 2 },
                             modifier =
                                 Modifier.constrainAs(objectiveOverlay) {
-                                    top.linkTo(parent.top)
                                     top.linkTo(parent.top)
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                 },
                         ) {
-                            (uiState.milestone as? SagaMilestone.CurrentObjective)?.let {
-                                ObjectiveOverlay(
-                                    stringResource(it.title),
-                                    it.subtitle,
-                                    genre = saga.genre,
-                                    Modifier,
-                                ) {
-                                    onAction(ChatUiAction.DismissMilestone)
-                                }
+                            ObjectiveOverlay(
+                                title = stringResource(R.string.current_objective),
+                                objective = currentObjectiveText.orEmpty(),
+                                progress = progressState.value,
+                                sparkModifier = objectiveSparkModifier,
+                            ) {
+                                onAction(ChatUiAction.DismissObjective)
                             }
                         }
 

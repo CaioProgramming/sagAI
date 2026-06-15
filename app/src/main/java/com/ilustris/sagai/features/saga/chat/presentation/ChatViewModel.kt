@@ -107,6 +107,7 @@ class ChatViewModel
         private var mediaObserverJob: kotlinx.coroutines.Job? = null
         private var processingObserverJob: kotlinx.coroutines.Job? = null
         private var sceneSummaryObserverJob: kotlinx.coroutines.Job? = null
+        private var objectiveObserverJob: kotlinx.coroutines.Job? = null
         private var reasoningObserverJob: kotlinx.coroutines.Job? = null
         private var characterObserverJob: kotlinx.coroutines.Job? = null
         private var topCharacterObserverJob: kotlinx.coroutines.Job? = null
@@ -236,6 +237,10 @@ class ChatViewModel
                     sagaContentManager.dismissMilestone()
                 }
 
+                is ChatUiAction.DismissObjective -> {
+                    sagaContentManager.dismissObjective()
+                }
+
                 is ChatUiAction.ContinueMilestone -> {
                     viewModelScope.launch {
                         sagaContentManager.continueMilestone()
@@ -359,6 +364,9 @@ class ChatViewModel
             sceneSummaryObserverJob?.cancel()
             sceneSummaryObserverJob = observeSceneSummary()
 
+            objectiveObserverJob?.cancel()
+            objectiveObserverJob = observeObjectiveOverlay()
+
             reasoningObserverJob?.cancel()
             reasoningObserverJob = observeReasoning()
 
@@ -413,6 +421,13 @@ class ChatViewModel
                     stateManager.updateState { it.copy(sceneSummary = summary) }
                 }
             }
+
+        private fun observeObjectiveOverlay() =
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.showObjectiveOverlay.collect { show ->
+                    stateManager.updateShowCurrentObjective(show)
+                }
+        }
 
         private fun observeReasoning() =
             viewModelScope.launch(Dispatchers.IO) {

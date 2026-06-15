@@ -124,6 +124,10 @@ class ChatStateManager {
         _uiState.update { it.copy(milestone = milestone) }
     }
 
+    fun updateShowCurrentObjective(show: Boolean) {
+        _uiState.update { it.copy(showCurrentObjective = show) }
+    }
+
     fun showMessageOptions(message: com.ilustris.sagai.features.saga.chat.data.model.Message?) {
         _uiState.update { it.copy(showMessageOptions = message) }
     }

@@ -25,6 +25,7 @@ interface SagaContentManager {
     var notificationUpdate: MutableStateFlow<SagaNotificationEvent?>
 
     val milestoneUpdate: MutableStateFlow<SagaMilestone?>
+    val showObjectiveOverlay: StateFlow<Boolean>
     val isOnboardingVisible: MutableStateFlow<Boolean>
 
     suspend fun advanceNarrative()
@@ -77,6 +78,8 @@ interface SagaContentManager {
     )
 
     suspend fun showObjective()
+
+    fun dismissObjective()
 
     suspend fun getCurrentObjective(sceneSummary: SceneSummary)
 

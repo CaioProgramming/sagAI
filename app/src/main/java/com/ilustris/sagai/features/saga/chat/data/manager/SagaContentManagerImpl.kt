@@ -113,6 +113,8 @@ class SagaContentManagerImpl
         private val _sceneSummary = MutableStateFlow<SceneSummary?>(null)
         override val sceneSummary: StateFlow<SceneSummary?> = _sceneSummary.asStateFlow()
         override val milestoneUpdate = MutableStateFlow<SagaMilestone?>(null)
+        private val _showObjectiveOverlay = MutableStateFlow(false)
+        override val showObjectiveOverlay: StateFlow<Boolean> = _showObjectiveOverlay.asStateFlow()
         override val isOnboardingVisible = MutableStateFlow(false)
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
@@ -281,12 +283,14 @@ class SagaContentManagerImpl
         override suspend fun showObjective() {
             val saga = content.value ?: return
             val currentTimeline = saga.getCurrentTimeLine() ?: return
-            val objective =
-                currentTimeline.data.sceneSummary?.immediateObjective
-                    ?: currentTimeline.data.currentObjective
-            if (objective?.isNotBlank() == true) {
-                milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
+            val objective = currentTimeline.data.displayObjective()
+            if (objective.isNullOrBlank().not()) {
+                _showObjectiveOverlay.value = true
             }
+        }
+
+        override fun dismissObjective() {
+            _showObjectiveOverlay.value = false
         }
 
         override fun resetSagaSession() {
@@ -300,6 +304,7 @@ class SagaContentManagerImpl
             _sceneSummary.value = null
             isMilestoneActive.value = false
             milestoneUpdate.value = null
+            _showObjectiveOverlay.value = false
             notificationUpdate.value = null
             isOnboardingVisible.value = false
             content.value = null
@@ -901,7 +906,7 @@ class SagaContentManagerImpl
                     val timeline = resultValue as? Timeline
                     if (timeline != null && timeline.hasActiveSceneSummary()) {
                         timeline.sceneSummary?.let { _sceneSummary.value = it }
-                        emitMilestone(SagaMilestone.CurrentObjective(timeline))
+                        showObjective()
                     } else {
                         dismissMilestone()
                     }
