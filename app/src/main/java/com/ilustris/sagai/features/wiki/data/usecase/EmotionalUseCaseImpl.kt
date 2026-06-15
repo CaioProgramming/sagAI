@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.wiki.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -41,14 +42,11 @@ class EmotionalUseCaseImpl
 
                 val result =
                     gemmaClient.generate<SagaEnding>(
-                        prompt = prompt.processedTemplate,
-                        systemInstructions =
-                            prompt.renderInstructions().plus(
+                        promptSplit =
+                            prompt.mergeInstructions(
                                 genreConfigService.conversationInstructions(sagaContent.data.genre),
                             ),
                         requirement = ModelRequirement.HIGH,
-                        blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
-                        aiStats = prompt.getAIStats(),
                     )!!
                 result
             }
@@ -81,14 +79,11 @@ class EmotionalUseCaseImpl
                 reasoningSynthesizerService
                     .synthesizeReasoning(
                         gemmaClient.generateStreaming<SagaEnding>(
-                            prompt = prompt.processedTemplate,
-                            systemInstructions =
-                                prompt.renderInstructions().plus(
+                            promptSplit =
+                                prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(sagaContent.data.genre),
                                 ),
                             requirement = ModelRequirement.HIGH,
-                            blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
-                            aiStats = prompt.getAIStats(),
                         ),
                         "Generating emotional conclusion...",
                         genre = sagaContent.data.genre,

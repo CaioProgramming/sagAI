@@ -110,11 +110,12 @@ object ChapterPrompts {
                 narrativeStyle = conversationDirective,
                 storyHistory = sagaContent.historySummary(),
                 volumeContext =
-                    promptService.buildRemotePrompt(
-                        sagaContent.getDirectiveKey(
-                            sagaContent.findAct(currentChapter.actId)?.data,
-                        ),
-                    ),
+                    promptService
+                        .buildSplitBlueprint(
+                            sagaContent.getDirectiveKey(
+                                sagaContent.findAct(currentChapter.actId)?.data,
+                            ),
+                        ).processedTemplate,
                 lastStateContext = lastState,
                 storyContext = storyContext.toAINormalize(),
             )

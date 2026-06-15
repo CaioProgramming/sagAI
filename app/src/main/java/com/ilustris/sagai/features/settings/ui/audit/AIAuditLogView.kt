@@ -506,7 +506,13 @@ fun AuditLogItem(
                     Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = String.format("%.1fs", log.responseTime / 1000.0),
+                        text =
+                            buildString {
+                                append(String.format("%.1fs", log.responseTime / 1000.0))
+                                if (log.queueWaitMs > 0) {
+                                    append(String.format(" (+%.1fs queue)", log.queueWaitMs / 1000.0))
+                                }
+                            },
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontWeight = FontWeight.Bold,

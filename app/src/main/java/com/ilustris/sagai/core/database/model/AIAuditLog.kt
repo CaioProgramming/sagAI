@@ -19,6 +19,7 @@ data class AIAuditLog(
     val errorMessage: String? = null,
     val suggestion: String? = null,
     val responseTime: Long = 0,
+    val queueWaitMs: Long = 0,
     val usedTools: List<String>? = null,
     val safetyStatus: String? = null,
     /** The final merged system instruction block sent to the Gemini API `system_instruction` field. */

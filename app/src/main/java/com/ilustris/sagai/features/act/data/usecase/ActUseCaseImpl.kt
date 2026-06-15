@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -71,14 +72,12 @@ class ActUseCaseImpl
                 val titlePrompt = generateActPrompt(saga)
                 val newAct =
                     gemmaClient.generate<Act>(
-                        titlePrompt.processedTemplate,
-                        systemInstructions =
-                            titlePrompt.renderInstructions().plus(
+                        promptSplit =
+                            titlePrompt.mergeInstructions(
                                 genreConfigService.conversationInstructions(
                                     saga.data.genre,
                                 ),
                             ),
-                        aiStats = titlePrompt.getAIStats(),
                         filterOutputFields =
                             listOf(
                                 "id",
@@ -87,7 +86,6 @@ class ActUseCaseImpl
                                 "introduction",
                             ),
                         useCore = true,
-                        blueprintKey = ActPrompts.ACT_CONCLUSION_BLUEPRINT,
                     )!!
 
                 updateAct(
@@ -111,9 +109,8 @@ class ActUseCaseImpl
                     .synthesizeReasoning(
                         gemmaClient
                             .generateStreaming<GeneratedContent<Act>>(
-                                prompt = titlePrompt.processedTemplate,
-                                systemInstructions =
-                                    titlePrompt.renderInstructions().plus(
+                                promptSplit =
+                                    titlePrompt.mergeInstructions(
                                         genreConfigService.conversationInstructions(
                                             saga.data.genre,
                                         ),
@@ -126,7 +123,6 @@ class ActUseCaseImpl
                                         "introduction",
                                     ),
                                 useCore = true,
-                                aiStats = titlePrompt.getAIStats(),
                             ),
                         "Generating new act...",
                         genre = saga.data.genre,
@@ -210,16 +206,12 @@ class ActUseCaseImpl
 
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
-                    prompt.processedTemplate,
-                    systemInstructions =
-                        buildMap {
-                            putAll(genreConfigService.conversationInstructions(saga.data.genre))
-                            putAll(actContext.renderInstructions())
-                            putAll(prompt.renderInstructions())
-                        },
-                    aiStats = prompt.getAIStats(),
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                            actContext.renderInstructions(),
+                        ),
                     useCore = true,
-                    blueprintKey = prompt.blueprintKey,
                 )!!
             val updatedAct = actRepository.updateAct(act.copy(introduction = intro.data))
             GeneratedContent(updatedAct, intro.finalMessage)
@@ -245,15 +237,11 @@ class ActUseCaseImpl
                     .synthesizeReasoning(
                         gemmaClient
                             .generateStreaming<GeneratedContent<String>>(
-                                prompt = prompt.processedTemplate,
-                                blueprintKey = prompt.blueprintKey,
-                                aiStats = prompt.getAIStats(),
-                                systemInstructions =
-                                    buildMap {
-                                        putAll(genreConfigService.conversationInstructions(saga.data.genre))
-                                        putAll(actContext.renderInstructions())
-                                        putAll(prompt.renderInstructions())
-                                    },
+                                promptSplit =
+                                    prompt.mergeInstructions(
+                                        genreConfigService.conversationInstructions(saga.data.genre),
+                                        actContext.renderInstructions(),
+                                    ),
                                 requireTranslation = true,
                                 useCore = true,
                                 requirement = ModelRequirement.MEDIUM,
@@ -311,14 +299,11 @@ class ActUseCaseImpl
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedActUpdate>>(
-                                    prompt = prompt.processedTemplate,
-                                    systemInstructions =
-                                        prompt
-                                            .renderInstructions()
-                                            .plus(genreConfigService.conversationInstructions(saga.data.genre)),
-                                    aiStats = prompt.getAIStats(),
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                        ),
                                     useCore = true,
-                                    blueprintKey = prompt.blueprintKey,
                                     requirement = ModelRequirement.HIGH,
                                 ),
                             "Finishing story act",

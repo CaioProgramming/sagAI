@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.onboarding.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -57,9 +58,7 @@ class OnboardingUseCaseImpl
                 val prompt = OnboardingPrompts.getOnboardingPrompt(promptService, config)
                 val content =
                     gemmaClient.generate<OnboardingContent>(
-                        prompt.copy(
-                            instructionBuckets = prompt.renderInstructions().plus(persona),
-                        ),
+                        promptSplit = prompt.mergeInstructions(persona),
                         requirement = ModelRequirement.MINIMAL,
                     )
 

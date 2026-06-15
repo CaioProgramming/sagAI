@@ -47,17 +47,17 @@ class WikiUseCaseImpl
         ) = executeRequest {
             val sagaContent = sagaRepository.getSagaById(saga.data.id).first() as SagaContent
             val genreConfig = genreConfigService.getGenreConfig(sagaContent.data.genre)
+            val splitPrompt =
+                WikiPrompts.generateWiki(
+                    promptService = promptService,
+                    saga = sagaContent,
+                    event = event,
+                    config = genreConfig,
+                )
             gemmaClient
                 .generate<WikiGen>(
-                    prompt =
-                        WikiPrompts.generateWiki(
-                            promptService = promptService,
-                            saga = sagaContent,
-                            event = event,
-                            config = genreConfig,
-                        ),
-                    requirement =
-                        ModelRequirement.MEDIUM,
+                    promptSplit = splitPrompt,
+                    requirement = ModelRequirement.MEDIUM,
                 )!!
                 .wikis
         }
@@ -76,7 +76,7 @@ class WikiUseCaseImpl
                 val mergedWikis =
                     gemmaClient
                         .generate<MergeWikiGen>(
-                            prompt = prompt,
+                            promptSplit = prompt,
                             requirement = ModelRequirement.MEDIUM,
                         )!!
                         .mergedItems

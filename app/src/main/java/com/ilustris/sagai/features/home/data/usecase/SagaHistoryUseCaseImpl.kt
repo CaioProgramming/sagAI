@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -55,13 +56,10 @@ class SagaHistoryUseCaseImpl
                 val prompt = SagaPrompts.endCredits(promptService, saga, emptyString())
                 gemmaClient
                     .generate<String>(
-                        prompt.processedTemplate,
-                        systemInstructions =
-                            prompt.renderInstructions().plus(
+                        promptSplit =
+                            prompt.mergeInstructions(
                                 genreConfigService.conversationInstructions(saga.data.genre),
                             ),
-                        blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
-                        aiStats = prompt.getAIStats(),
                     )!!
             }
 
@@ -72,16 +70,13 @@ class SagaHistoryUseCaseImpl
                     val prompt = SagaPrompts.endCredits(promptService, saga, emptyString())
                     gemmaClient
                         .generateStreaming<GeneratedContent<String>>(
-                            prompt = prompt.processedTemplate,
-                            systemInstructions =
-                                prompt.renderInstructions().plus(
+                            promptSplit =
+                                prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             requireTranslation = true,
                             useCore = true,
                             requirement = ModelRequirement.HIGH,
-                            blueprintKey = SagaPrompts.SAGA_END_CREDITS_BLUEPRINT,
-                            aiStats = prompt.getAIStats(),
                         ).collect { state ->
                             emit(state)
                         }
@@ -104,16 +99,13 @@ class SagaHistoryUseCaseImpl
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<SagaEnding>>(
-                                    prompt = prompt.processedTemplate,
-                                    systemInstructions =
-                                        prompt.renderInstructions().plus(
+                                    promptSplit =
+                                        prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requireTranslation = true,
                                     useCore = true,
                                     requirement = ModelRequirement.HIGH,
-                                    blueprintKey = SagaPrompts.SAGA_ENDING_BLUEPRINT,
-                                    aiStats = prompt.getAIStats(),
                                 ),
                             "Generating saga ending... ",
                             genre = saga.data.genre,

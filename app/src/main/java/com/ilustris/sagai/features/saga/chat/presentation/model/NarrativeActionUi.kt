@@ -54,7 +54,7 @@ fun NarrativeAction.toUi(): NarrativeActionUi {
             }
 
             is NarrativeAction.CloseTimeline -> {
-                null to R.string.releasing_close_scene
+                R.string.advance_close_scene to R.string.releasing_close_scene
             }
         }
     return NarrativeActionUi(titleRes, holdingTextRes, mode)

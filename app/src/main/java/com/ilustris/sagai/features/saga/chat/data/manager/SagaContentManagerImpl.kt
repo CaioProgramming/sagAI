@@ -166,6 +166,10 @@ class SagaContentManagerImpl
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
         override suspend fun advanceNarrative() {
+            if (isProcessingNarrative.get()) {
+                Timber.d("advanceNarrative: already in progress, ignoring duplicate request")
+                return
+            }
             val action = narrativeCoordinator.uiState.value.pendingAction ?: return
             Timber.d("Manually advancing narrative: ${action.javaClass.simpleName}")
             narrativeCoordinator.onUserAdvanceRequested(action)
@@ -214,9 +218,7 @@ class SagaContentManagerImpl
                     is NarrativeExecutionResult.Success -> {
                         handlePostAction(sagaMetadata, action, result.value)
                         awaitMilestoneDismissalIfNeeded()
-                        managerScope.launch {
-                            requestNarrativeProgression(isRetry = false)
-                        }
+                        requestNarrativeProgression(isRetry = false, force = true)
                     }
 
                     is NarrativeExecutionResult.Failure -> {
@@ -231,6 +233,7 @@ class SagaContentManagerImpl
                 Timber.e(e, "Unexpected error executing narrative action")
                 handleNarrativeActionFailure(action, canRetry = true)
             } finally {
+                contentReasoning.value = null
                 narrativeCoordinator.markProcessing(false)
                 setNarrativeProcessingStatus(false)
             }
@@ -605,6 +608,7 @@ class SagaContentManagerImpl
         private suspend fun requestNarrativeProgression(
             isRetry: Boolean = false,
             fallbackSaga: SagaMetadata? = null,
+            force: Boolean = false,
         ) {
             if (progressionMutex.isLocked) {
                 Timber.i("requestNarrativeProgression: already in progress, queueing reevaluation.")
@@ -615,8 +619,9 @@ class SagaContentManagerImpl
             progressionMutex.withLock {
                 val currentSaga = content.value ?: fallbackSaga ?: return@withLock
 
-                if (isProcessingNarrative.get()) {
-                    Timber.i("requestNarrativeProgression: narrative processing, skipping.")
+                if (!force && isProcessingNarrative.get()) {
+                    Timber.i("requestNarrativeProgression: narrative processing, queueing reevaluation.")
+                    narrativeCoordinator.schedulePendingReevaluation()
                     return@withLock
                 }
 

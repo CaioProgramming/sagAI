@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -93,9 +94,8 @@ class ChapterUseCaseImpl
                 val genChapter =
                     gemmaClient
                         .generate<Chapter>(
-                            prompt = prompt.processedTemplate,
-                            systemInstructions =
-                                prompt.renderInstructions().plus(
+                            promptSplit =
+                                prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             filterOutputFields =
@@ -109,8 +109,6 @@ class ChapterUseCaseImpl
                             requireTranslation = true,
                             useCore = true,
                             requirement = ModelRequirement.HIGH,
-                            blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
-                            aiStats = prompt.getAIStats(),
                         )!!
 
                 val updatedChapter =
@@ -141,9 +139,8 @@ class ChapterUseCaseImpl
                         )
                     gemmaClient
                         .generateStreaming<GeneratedContent<Chapter>>(
-                            prompt = prompt.processedTemplate,
-                            systemInstructions =
-                                prompt.renderInstructions().plus(
+                            promptSplit =
+                                prompt.mergeInstructions(
                                     genreConfigService.conversationInstructions(saga.data.genre),
                                 ),
                             filterOutputFields =
@@ -157,8 +154,6 @@ class ChapterUseCaseImpl
                             requireTranslation = true,
                             useCore = true,
                             requirement = ModelRequirement.HIGH,
-                            blueprintKey = ChapterPrompts.CHAPTER_GENERATION_BLUEPRINT,
-                            aiStats = prompt.getAIStats(),
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val genChapter = state.data!!.data
@@ -389,16 +384,13 @@ class ChapterUseCaseImpl
                 )
             val intro =
                 gemmaClient.generate<GeneratedContent<String>>(
-                    prompt.processedTemplate,
-                    systemInstructions =
-                        prompt.renderInstructions().plus(
+                    promptSplit =
+                        prompt.mergeInstructions(
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
                     requireTranslation = true,
                     useCore = true,
                     requirement = ModelRequirement.HIGH,
-                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
-                    aiStats = prompt.getAIStats(),
                 )!!
             val updated = chapterContent.copy(introduction = intro.data)
             val updatedChapter = chapterRepository.updateChapter(updated)
@@ -422,16 +414,13 @@ class ChapterUseCaseImpl
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<String>>(
-                                    prompt = prompt.processedTemplate,
-                                    systemInstructions =
-                                        prompt.renderInstructions().plus(
+                                    promptSplit =
+                                        prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(saga.data.genre),
                                         ),
                                     requireTranslation = true,
                                     useCore = true,
                                     requirement = ModelRequirement.HIGH,
-                                    blueprintKey = ChapterPrompts.CHAPTER_INTRODUCTION_BLUEPRINT,
-                                    aiStats = prompt.getAIStats(),
                                 ),
                             "Generating chapter introduction...",
                             genre = saga.data.genre,
@@ -487,16 +476,12 @@ class ChapterUseCaseImpl
                         .synthesizeReasoning(
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedChapterUpdate>>(
-                                    prompt = prompt.processedTemplate,
-                                    systemInstructions =
-                                        buildMap {
-                                            putAll(genreConfigService.conversationInstructions(saga.data.genre))
-                                            putAll(actContext.renderInstructions())
-                                            putAll(prompt.renderInstructions())
-                                        },
-                                    blueprintKey = ChapterPrompts.CHAPTER_SYNTHESIS_BLUEPRINT,
+                                    promptSplit =
+                                        prompt.mergeInstructions(
+                                            genreConfigService.conversationInstructions(saga.data.genre),
+                                            actContext.renderInstructions(),
+                                        ),
                                     requirement = ModelRequirement.HIGH,
-                                    aiStats = prompt.getAIStats(),
                                 ),
                             "Generating new chapter...",
                             genre = saga.data.genre,

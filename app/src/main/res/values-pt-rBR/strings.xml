@@ -466,6 +466,7 @@
     <string name="releasing_act_introduction">Preparando a abertura...</string>
     <string name="advance_start_story">Continuar história</string>
     <string name="releasing_start_story">Preparando o próximo evento...</string>
+    <string name="advance_close_scene">Concluir evento</string>
     <string name="releasing_close_scene">Salvando este evento...</string>
     <string name="advance_saga_ending">Escrever o desfecho</string>
     <string name="releasing_ending">Escrevendo o desfecho...</string>

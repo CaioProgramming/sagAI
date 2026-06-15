@@ -87,10 +87,11 @@ object ActPrompts {
             }
 
         val actPurposeRule =
-            promptService.buildRemotePrompt(
-                currentActContent.getDirectiveKey(sagaContent),
-                emptyMap(),
-            )
+            promptService
+                .buildSplitBlueprint(
+                    currentActContent.getDirectiveKey(sagaContent),
+                    emptyMap(),
+                ).processedTemplate
 
         val args =
             ActConclusionArgs(

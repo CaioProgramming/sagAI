@@ -269,6 +269,13 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_20_21 =
+        object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE ai_audit_logs ADD COLUMN `queueWaitMs` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -290,5 +297,6 @@ object DatabaseMigrations {
             MIGRATION_17_18,
             MIGRATION_18_19,
             MIGRATION_19_20,
+            MIGRATION_20_21,
         )
 }

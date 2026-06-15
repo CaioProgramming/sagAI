@@ -10,6 +10,14 @@ import timber.log.Timber
 import javax.inject.Inject
 
 interface PromptService {
+    @Deprecated(
+        message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+        replaceWith =
+            ReplaceWith(
+                expression = "buildSplitBlueprint(remoteConfigKey, variables, logEnabled)",
+                imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+            ),
+    )
     suspend fun buildRemotePrompt(
         remoteConfigKey: String,
         variables: Map<String, String> = emptyMap(),
@@ -19,6 +27,14 @@ interface PromptService {
     /**
      * Fetches a template from Remote Config by [remoteConfigKey] and injects the data class properties.
      */
+    @Deprecated(
+        message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+        replaceWith =
+            ReplaceWith(
+                expression = "buildSplitBlueprint(remoteConfigKey, variablesDataClass, logEnabled)",
+                imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+            ),
+    )
     suspend fun <T : Any> buildRemotePrompt(
         remoteConfigKey: String,
         variablesDataClass: T,
@@ -122,6 +138,14 @@ class PromptServiceImpl
             return result
         }
 
+        @Deprecated(
+            message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+            replaceWith =
+                ReplaceWith(
+                    expression = "buildSplitBlueprint(remoteConfigKey, variables, logEnabled)",
+                    imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+                ),
+        )
         override suspend fun buildRemotePrompt(
             remoteConfigKey: String,
             variables: Map<String, String>,
@@ -208,6 +232,14 @@ class PromptServiceImpl
             }.trimIndent()
         }
 
+        @Deprecated(
+            message = "Use buildSplitBlueprint for auditability and Split & Merge architecture",
+            replaceWith =
+                ReplaceWith(
+                    expression = "buildSplitBlueprint(remoteConfigKey, variablesDataClass, logEnabled)",
+                    imports = ["com.ilustris.sagai.core.ai.services.PromptService"],
+                ),
+        )
         override suspend fun <T : Any> buildRemotePrompt(
             remoteConfigKey: String,
             variablesDataClass: T,

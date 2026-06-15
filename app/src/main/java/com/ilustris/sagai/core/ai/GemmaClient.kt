@@ -123,6 +123,14 @@ class GemmaClient
         /**
          * @param blueprintKey Optional key identifying the prompt blueprint used. Providing this greatly helps trace prompt generation in the local debugging ai_audit_logs database.
          */
+        @Deprecated(
+            message = "Use SplitPrompt overload for auditability",
+            replaceWith =
+                ReplaceWith(
+                    expression = "generate(promptSplit = SplitPrompt(processedTemplate = prompt))",
+                    imports = ["com.ilustris.sagai.core.ai.model.SplitPrompt"],
+                ),
+        )
         suspend inline fun <reified T> generate(
             prompt: String,
             userInteraction: Boolean = false,
@@ -143,7 +151,6 @@ class GemmaClient
                 val model = modelName(requirement)
 
                 val maxAttempts = maxAttempts(requirement)
-                val startTime = System.currentTimeMillis()
 
                 val (type, structure) =
                     buildDataStructure(
@@ -164,8 +171,12 @@ class GemmaClient
                     )
 
                 for (currentAttempt in 1..maxAttempts) {
+                    var queueWaitMs = 0L
+                    var inferenceMs = 0L
                     try {
+                        val queueStartTime = System.currentTimeMillis()
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
+                            queueWaitMs = System.currentTimeMillis() - queueStartTime
                             val promptLength =
                                 prompt.length +
                                     references.filterNotNull().sumOf {
@@ -216,12 +227,14 @@ class GemmaClient
                                 )
 
                             val formattedModel = model.replace("models/", "")
+                            val inferenceStart = System.currentTimeMillis()
                             val response =
                                 callGenerateContent(
                                     formattedModel,
                                     apiConfig(useCore),
                                     geminiRequest,
                                 )
+                            inferenceMs = System.currentTimeMillis() - inferenceStart
 
                             // Check for API error
                             response.error?.let { error ->
@@ -285,7 +298,6 @@ class GemmaClient
                             aiGeneration.error?.let {
                                 throw GuardrailsException(it.type)
                             }
-                            val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
@@ -295,7 +307,8 @@ class GemmaClient
                                         status = "SUCCESS",
                                         reasoning = nativeThoughts,
                                         rawResponse = requiredText,
-                                        responseTime = duration,
+                                        responseTime = inferenceMs,
+                                        queueWaitMs = queueWaitMs,
                                         systemInstruction = finalInstructions.toJsonFormat(),
                                         sentVariables = aiStats?.sentVariables.toJsonFormat(),
                                         promptTokens = response.usageMetadata?.promptTokenCount,
@@ -303,7 +316,11 @@ class GemmaClient
                                         totalTokens = response.usageMetadata?.totalTokenCount,
                                     ),
                                 )
-                                Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
+                                Timber.i(
+                                    "Generation Bench: $model took ${inferenceMs}ms" +
+                                        (if (queueWaitMs > 0) " (queue: ${queueWaitMs}ms)" else "") +
+                                        " (Prompt: $promptLength chars)",
+                                )
                             }
                             val data = aiGeneration.data
                             if (logEnabled) Timber.d("AI data ->\n$data\n")
@@ -320,7 +337,6 @@ class GemmaClient
                         )
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
-                                val duration = System.currentTimeMillis() - startTime
                                 val safetyStatus =
                                     if (e is GuardrailsException) e.status.name else null
                                 aiAuditLogDao.insertLog(
@@ -330,7 +346,8 @@ class GemmaClient
                                         dataType = type,
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
-                                        responseTime = duration,
+                                        responseTime = inferenceMs,
+                                        queueWaitMs = queueWaitMs,
                                         safetyStatus = safetyStatus,
                                         systemInstruction = finalInstructions.toJsonFormat(),
                                         sentVariables = aiStats?.sentVariables.toJsonFormat(),
@@ -447,7 +464,6 @@ class GemmaClient
                 val model = modelName(requirement)
 
                 val maxAttempts = maxAttempts(requirement)
-                val startTime = System.currentTimeMillis()
 
                 val (dataTypeName, systemInstructionMap) =
                     buildStructure<T>(
@@ -470,8 +486,12 @@ class GemmaClient
                     ).toAINormalize()
 
                 for (currentAttempt in 1..maxAttempts) {
+                    var queueWaitMs = 0L
+                    var inferenceMs = 0L
                     try {
+                        val queueStartTime = System.currentTimeMillis()
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
+                            queueWaitMs = System.currentTimeMillis() - queueStartTime
                             val fullPrompt = prompt
 
                             val promptLength =
@@ -524,12 +544,14 @@ class GemmaClient
                                 )
 
                             val formattedModel = model.replace("models/", "")
+                            val inferenceStart = System.currentTimeMillis()
                             val response =
                                 callGenerateContent(
                                     formattedModel,
                                     apiConfig(useCore),
                                     geminiRequest,
                                 )
+                            inferenceMs = System.currentTimeMillis() - inferenceStart
 
                             // Check for API error
                             response.error?.let { error ->
@@ -593,7 +615,6 @@ class GemmaClient
                             aiGeneration.error?.let {
                                 throw GuardrailsException(it.type)
                             }
-                            val duration = System.currentTimeMillis() - startTime
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
                                     AIAuditLog(
@@ -603,7 +624,8 @@ class GemmaClient
                                         status = "SUCCESS",
                                         reasoning = nativeThoughts,
                                         rawResponse = requiredText,
-                                        responseTime = duration,
+                                        responseTime = inferenceMs,
+                                        queueWaitMs = queueWaitMs,
                                         systemInstruction = systemInstruction,
                                         sentVariables = promptSplit.sentVariables.toJsonFormat(),
                                         promptTokens = response.usageMetadata?.promptTokenCount,
@@ -611,7 +633,11 @@ class GemmaClient
                                         totalTokens = response.usageMetadata?.totalTokenCount,
                                     ),
                                 )
-                                Timber.i("Generation Bench: $model took ${duration}ms (Prompt: $promptLength chars)")
+                                Timber.i(
+                                    "Generation Bench: $model took ${inferenceMs}ms" +
+                                        (if (queueWaitMs > 0) " (queue: ${queueWaitMs}ms)" else "") +
+                                        " (Prompt: $promptLength chars)",
+                                )
                             }
                             val data = aiGeneration.data
                             if (logEnabled) Timber.d("AI data ->\n$data\n")
@@ -628,7 +654,6 @@ class GemmaClient
                         )
                         if (BuildConfig.DEBUG && logEnabled) {
                             try {
-                                val duration = System.currentTimeMillis() - startTime
                                 val safetyStatus =
                                     if (e is GuardrailsException) e.status.name else null
                                 aiAuditLogDao.insertLog(
@@ -638,7 +663,8 @@ class GemmaClient
                                         dataType = this.javaClass.simpleName,
                                         status = "ERROR",
                                         errorMessage = "${e.javaClass.simpleName}: ${e.message}",
-                                        responseTime = duration,
+                                        responseTime = inferenceMs,
+                                        queueWaitMs = queueWaitMs,
                                         safetyStatus = safetyStatus,
                                         systemInstruction = systemInstruction,
                                         sentVariables = promptSplit.sentVariables.toJsonFormat(),
@@ -770,6 +796,14 @@ class GemmaClient
          * Streams the generation of T, emitting chunks of reasoning as they arrive,
          * and finally emitting Success with the data, or Error if it fails.
          */
+        @Deprecated(
+            message = "Use SplitPrompt overload for auditability",
+            replaceWith =
+                ReplaceWith(
+                    expression = "generateStreaming(promptSplit = SplitPrompt(processedTemplate = prompt))",
+                    imports = ["com.ilustris.sagai.core.ai.model.SplitPrompt"],
+                ),
+        )
         suspend inline fun <reified T> generateStreaming(
             prompt: String,
             references: List<ImageReference?> = emptyList(),

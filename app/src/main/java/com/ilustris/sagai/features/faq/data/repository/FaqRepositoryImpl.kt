@@ -26,6 +26,6 @@ class FaqRepositoryImpl
             context: FAQContent,
         ) = executeRequest {
             val prompt = FAQPrompts.getAskAiPrompt(promptService, query, context)
-            gemmaClient.generate<String>(prompt, requireTranslation = false)!!
+            gemmaClient.generate<String>(promptSplit = prompt, requireTranslation = false)!!
         }
     }

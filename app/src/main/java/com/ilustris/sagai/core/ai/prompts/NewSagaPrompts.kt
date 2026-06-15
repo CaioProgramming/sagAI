@@ -1,7 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
@@ -128,7 +130,7 @@ object NewSagaPrompts {
         conversationHistory: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
         identity: String,
-    ): String {
+    ): SplitPrompt {
         val variationsBlock =
             availableVariations.entries.joinToString("\n") { (id, config) ->
                 "- **$id**: ${config.name} - ${config.description}"
@@ -147,7 +149,7 @@ object NewSagaPrompts {
                 availableVariations = variationsBlock,
             )
 
-        return promptService.buildRemotePrompt(CONVERSATIONAL_SAGA_REPLY_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CONVERSATIONAL_SAGA_REPLY_BLUEPRINT, args)
     }
 
     suspend fun generateProcessPrompt(
@@ -157,7 +159,7 @@ object NewSagaPrompts {
         character: CharacterInfo?,
         identity: String = "",
         instruction: String = "",
-    ): String {
+    ): SplitPrompt {
         val args =
             GenerateProcessArgs(
                 companionPersona = identity,
@@ -168,22 +170,23 @@ object NewSagaPrompts {
                 characterBrief = character.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt(SAGA_PROCESS_INTERLUDE_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SAGA_PROCESS_INTERLUDE_BLUEPRINT, args)
     }
 
     suspend fun suggestingCharacters(
         sagaDraft: SagaDraft?,
         promptService: PromptService,
-    ): String {
+    ): SplitPrompt {
         val args =
             mapOf(
                 "context" to sagaDraft.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_IDEATION_PROCESS, args)
+        return promptService.buildSplitBlueprint(CHARACTER_IDEATION_PROCESS, args)
     }
 
-    suspend fun suggestingSagas(promptService: PromptService): String = promptService.buildRemotePrompt(UNIVERSE_ECHOES_BLUEPRINT)
+    suspend fun suggestingSagas(promptService: PromptService): SplitPrompt =
+        promptService.buildSplitBlueprint(UNIVERSE_ECHOES_BLUEPRINT)
 
     suspend fun createSagaPrompt(
         promptService: PromptService,
@@ -191,7 +194,7 @@ object NewSagaPrompts {
         miniChatContent: List<ChatMessage>,
         availableVariations: Map<String, GenreConfig.VariationConfig> = emptyMap(),
         identity: String,
-    ): String {
+    ): SplitPrompt {
         val variationsBlock =
             availableVariations.entries.joinToString("\n") { (id, config) ->
                 "- **$id**: ${config.name} - ${config.description}"
@@ -206,13 +209,13 @@ object NewSagaPrompts {
                 availableVariations = variationsBlock,
             )
 
-        return promptService.buildRemotePrompt(INITIAL_SAGA_KICKOFF_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(INITIAL_SAGA_KICKOFF_BLUEPRINT, args)
     }
 
     suspend fun introPrompt(
         promptService: PromptService,
         identity: String = "",
-    ): String {
+    ): SplitPrompt {
         val args =
             IntroPromptArgs(
                 companionPersona = identity,
@@ -220,14 +223,14 @@ object NewSagaPrompts {
                 genreEnumNames = Genre.entries.joinToString(", ") { it.name },
             )
 
-        return promptService.buildRemotePrompt(CREATION_INTRO_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CREATION_INTRO_BLUEPRINT, args)
     }
 
     suspend fun genreAdaptationPrompt(
         promptService: PromptService,
         currentDraft: SagaDraft,
         identity: String = "",
-    ): String {
+    ): SplitPrompt {
         val args =
             GenreAdaptationArgs(
                 companionPersona = identity,
@@ -236,14 +239,14 @@ object NewSagaPrompts {
                 currentDraft = currentDraft.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt(GENRE_ADAPTATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(GENRE_ADAPTATION_BLUEPRINT, args)
     }
 
     suspend fun genreSuggestionsPrompt(
         promptService: PromptService,
         genre: Genre,
         identity: String = "",
-    ): String {
+    ): SplitPrompt {
         val args =
             GenreSuggestionsArgs(
                 companionPersona = identity,
@@ -251,7 +254,7 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt(GENRE_SUGGESTIONS_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(GENRE_SUGGESTIONS_BLUEPRINT, args)
     }
 
     suspend fun refineDraftPrompt(
@@ -259,7 +262,7 @@ object NewSagaPrompts {
         rawInput: String,
         genre: Genre,
         identity: String = "",
-    ): String {
+    ): SplitPrompt {
         val args =
             NewSagaRefineDraftArgs(
                 companionPersona = identity,
@@ -268,23 +271,22 @@ object NewSagaPrompts {
                 genreName = genre.name,
             )
 
-        return promptService.buildRemotePrompt(REFINE_SAGA_DRAFT_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(REFINE_SAGA_DRAFT_BLUEPRINT, args)
     }
 
     suspend fun sacredBindingPrompt(
         promptService: PromptService,
         sagaDraft: SagaDraft,
         characterInfo: CharacterInfo,
-        identity: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             SacredBindingArgs(
-                companionPersona = identity,
+                companionPersona = emptyString(),
                 sagaDraft = sagaDraft.toAINormalize(),
                 characterInfo = characterInfo.toAINormalize(),
                 genreName = sagaDraft.genre.name,
-                themeStyle = identity,
+                themeStyle = emptyString(),
             )
-        return promptService.buildRemotePrompt(SACRED_BINDING_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(SACRED_BINDING_BLUEPRINT, args)
     }
 }

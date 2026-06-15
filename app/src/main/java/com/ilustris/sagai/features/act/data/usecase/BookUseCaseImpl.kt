@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.BookGenerationArgs
 import com.ilustris.sagai.core.ai.prompts.BookPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
@@ -59,13 +60,10 @@ class BookUseCaseImpl
                     val sourceFlow =
                         gemmaClient
                             .generateStreaming<GeneratedContent<Book>>(
-                                prompt = prompt.processedTemplate,
-                                systemInstructions =
-                                    prompt.renderInstructions().plus(
+                                promptSplit =
+                                    prompt.mergeInstructions(
                                         genreConfigService.conversationInstructions(saga.data.genre),
                                     ),
-                                blueprintKey = prompt.blueprintKey,
-                                aiStats = prompt.getAIStats(),
                                 useCore = true,
                                 requirement = ModelRequirement.HIGH,
                             )

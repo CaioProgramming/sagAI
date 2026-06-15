@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.milestone.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.MilestonePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.data.RequestResult
@@ -41,15 +42,12 @@ class MilestoneUseCaseImpl
                     ) ?: return@executeRequest null
 
                 gemmaClient.generate<String>(
-                    prompt = prompt.processedTemplate,
-                    systemInstructions =
-                        prompt.renderInstructions().plus(
+                    promptSplit =
+                        prompt.mergeInstructions(
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
                     temperatureRandomness = 1f,
                     requirement = ModelRequirement.LOW,
-                    blueprintKey = prompt.blueprintKey,
-                    aiStats = prompt.getAIStats(),
                 )
             }
     }

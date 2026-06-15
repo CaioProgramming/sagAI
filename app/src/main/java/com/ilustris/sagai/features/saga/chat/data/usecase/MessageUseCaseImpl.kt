@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.AudioConfig
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.Voice
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
@@ -98,12 +99,10 @@ class MessageUseCaseImpl
                         message = message,
                     )
                 gemmaClient.generate<TypoFix>(
-                    prompt.processedTemplate,
-                    systemInstructions =
-                        prompt.renderInstructions().plus(
+                    promptSplit =
+                        prompt.mergeInstructions(
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
-                    blueprintKey = ChatPrompts.CHAT_WRITING_PAL_BLUEPRINT,
                     userInteraction = true,
                     requireTranslation = true,
                     requirement = ModelRequirement.LOW,
@@ -120,11 +119,8 @@ class MessageUseCaseImpl
                         remoteConfigService.getNarrativeRules(),
                     )
                 gemmaClient.generate<SceneSummary>(
-                    prompt = prompt.processedTemplate,
-                    systemInstructions = prompt.renderInstructions(),
-                    blueprintKey = ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT,
+                    promptSplit = prompt,
                     requirement = ModelRequirement.LOW,
-                    aiStats = prompt.getAIStats(),
                 )
             }
 
@@ -160,12 +156,9 @@ class MessageUseCaseImpl
             val raw =
                 gemmaClient
                     .generate<String>(
-                        prompt.processedTemplate,
-                        blueprintKey = prompt.blueprintKey,
+                        promptSplit = prompt,
                         requireTranslation = false,
                         requirement = ModelRequirement.MINIMAL,
-                        systemInstructions = prompt.renderInstructions(),
-                        aiStats = prompt.getAIStats(),
                     )?.trim()
                     ?.uppercase()
             EmotionalTone.getTone(raw)
@@ -229,15 +222,9 @@ class MessageUseCaseImpl
                     val generateStream =
                         gemmaClient.generateStreaming<AIReply>(
                             promptSplit =
-                                prompt.copy(
-                                    instructionBuckets =
-                                        prompt.renderInstructions().plus(
-                                            buildMap {
-                                                putAll(conversationInstructions)
-                                                putAll(actContext.renderInstructions())
-                                                putAll(prompt.renderInstructions())
-                                            },
-                                        ),
+                                prompt.mergeInstructions(
+                                    conversationInstructions,
+                                    actContext.renderInstructions(),
                                 ),
                             userInteraction = true,
                             filterOutputFields = ChatPrompts.messageExclusions,
@@ -375,14 +362,11 @@ class MessageUseCaseImpl
 
             val reaction =
                 gemmaClient.generate<ReactionGen>(
-                    prompt.processedTemplate,
-                    blueprintKey = prompt.blueprintKey,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     requirement = ModelRequirement.LOW,
-                    systemInstructions =
-                        prompt
-                            .renderInstructions()
-                            .plus(genreConfigService.conversationInstructions(saga.data.genre)),
-                    aiStats = prompt.getAIStats(),
                 )!!
             Timber.d("generateReaction: ${reaction.reactions.size} reactions generated.")
             reaction.reactions.distinctBy { it.character }.forEach { reaction ->
@@ -429,13 +413,13 @@ class MessageUseCaseImpl
 
                 val audioConfig =
                     gemmaClient.generate<AudioConfig>(
-                        AudioPrompts.audioConfigPrompt(
-                            promptService,
-                            sagaContent,
-                            message = savedMessage,
-                            character = characterReference?.let { CharacterContent(it) },
-                        ),
-                        blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
+                        promptSplit =
+                            AudioPrompts.audioConfigPrompt(
+                                promptService,
+                                sagaContent,
+                                message = savedMessage,
+                                character = characterReference?.let { CharacterContent(it) },
+                            ),
                         requireTranslation = false,
                         requirement = ModelRequirement.MEDIUM,
                     )!!

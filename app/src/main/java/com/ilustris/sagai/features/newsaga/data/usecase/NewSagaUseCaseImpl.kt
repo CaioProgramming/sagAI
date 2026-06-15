@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -23,7 +22,6 @@ class NewSagaUseCaseImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
-        private val genreConfigService: GenreConfigService,
         private val characterUseCase: CharacterUseCase,
         private val sagaIdeationService: SagaIdeationService,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
@@ -50,15 +48,12 @@ class NewSagaUseCaseImpl
         ): Flow<SagaCreationState> =
             flow {
                 try {
-                    val identity = genreConfigService.conversationBlueprint(sagaDraft.genre)
-
                     reasoningSynthesizerService
                         .synthesizeReasoning(
                             sourceFlow =
                                 sagaIdeationService.sealSacredContract(
                                     sagaDraft,
                                     characterInfo,
-                                    identity,
                                 ),
                             context = "Sealing the Sacred Contract for ${sagaDraft.title}",
                             genre = sagaDraft.genre,

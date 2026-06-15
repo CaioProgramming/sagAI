@@ -13,6 +13,7 @@ import androidx.work.WorkerParameters
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -96,15 +97,12 @@ class NotificationGenerationWorker
 
                             val message =
                                 gemmaClient.generate<String>(
-                                    prompt = prompt.processedTemplate,
-                                    systemInstructions =
-                                        prompt.renderInstructions().plus(
+                                    promptSplit =
+                                        prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(
                                                 sagaContent.data.genre,
                                             ),
                                         ),
-                                    blueprintKey = prompt.blueprintKey,
-                                    aiStats = prompt.getAIStats(),
                                     useCore = true,
                                 )
 

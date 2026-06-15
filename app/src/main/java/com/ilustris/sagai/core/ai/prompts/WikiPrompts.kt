@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.GenreConfig
+import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -30,7 +31,7 @@ object WikiPrompts {
         saga: SagaContent,
         event: Timeline,
         config: GenreConfig,
-    ): String {
+    ): SplitPrompt {
         val wikiExclusion = listOf("createdAt", "sagaId", "id", "timelineId", "type")
 
         val eventRawText = "${event.title} ${event.content}".lowercase()
@@ -66,13 +67,13 @@ object WikiPrompts {
                 wikiTypes = WikiType.entries.joinToString(", "),
             )
 
-        return promptService.buildRemotePrompt(WIKI_GENERATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(WIKI_GENERATION_BLUEPRINT, args)
     }
 
     suspend fun mergeWiki(
         promptService: PromptService,
         wikis: List<Wiki>,
-    ): String {
+    ): SplitPrompt {
         val wikiExclusion = listOf("id", "sagaId", "timelineId", "createdAt")
 
         val args =
@@ -80,6 +81,6 @@ object WikiPrompts {
                 wikiList = wikis.formatToJsonArray(excludingFields = wikiExclusion),
             )
 
-        return promptService.buildRemotePrompt(MERGE_WIKI_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(MERGE_WIKI_BLUEPRINT, args)
     }
 }

@@ -136,6 +136,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
@@ -645,7 +646,10 @@ fun ChatContent(
                             when {
                                 narrativeState.showAdvanceTrigger &&
                                     !uiState.selectionState.isSelectionMode -> {
-                                    BottomInputState.Advance(narrativeState.pendingAction!!)
+                                    BottomInputState.Advance(
+                                        action = narrativeState.displayAdvanceAction!!,
+                                        isProcessing = narrativeState.phase is NarrativePhase.Processing,
+                                    )
                                 }
 
                                 narrativeState.showBackgroundBanner &&
@@ -686,7 +690,10 @@ fun ChatContent(
                                         genre = saga.genre,
                                         onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
                                         Modifier.fillMaxWidth(),
-                                        uiState.isGenerating || uiState.isLoading,
+                                        isGenerating =
+                                            inputState.isProcessing ||
+                                                uiState.isGenerating ||
+                                                uiState.isLoading,
                                     )
                                 }
 
@@ -1624,6 +1631,7 @@ private sealed interface BottomInputState {
 
     data class Advance(
         val action: NarrativeAction,
+        val isProcessing: Boolean = false,
     ) : BottomInputState
 
     data class Background(

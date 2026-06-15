@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
@@ -75,14 +76,11 @@ class TimelineUseCaseImpl
 
             val unifiedLore =
                 gemmaClient.generate<UnifiedLoreUpdate>(
-                    prompt = prompt.processedTemplate,
-                    blueprintKey = prompt.blueprintKey,
-                    systemInstructions =
-                        prompt
-                            .renderInstructions()
-                            .plus(genreConfigService.conversationInstructions(saga.data.genre)),
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     requirement = ModelRequirement.HIGH,
-                    aiStats = prompt.getAIStats(),
                 )!!
 
             updateTimeline(
@@ -154,14 +152,12 @@ class TimelineUseCaseImpl
                         sourceFlow =
                             gemmaClient
                                 .generateStreaming<GeneratedContent<UnifiedLoreUpdate>>(
-                                    prompt = prompt.processedTemplate,
-                                    systemInstructions =
-                                        prompt.renderInstructions().plus(
+                                    promptSplit =
+                                        prompt.mergeInstructions(
                                             genreConfigService.conversationInstructions(
                                                 saga.data.genre,
                                             ),
                                         ),
-                                    blueprintKey = TimelinePrompts.UNIFIED_LORE_GENERATION_BLUEPRINT,
                                     filterOutputFields =
                                         listOf(
                                             "id",
@@ -275,9 +271,8 @@ class TimelineUseCaseImpl
                     )
                 gemmaClient
                     .generateStreaming<GeneratedContent<Timeline>>(
-                        prompt = prompt.processedTemplate,
-                        systemInstructions =
-                            prompt.renderInstructions().plus(
+                        promptSplit =
+                            prompt.mergeInstructions(
                                 genreConfigService.conversationInstructions(saga.data.genre),
                             ),
                         filterOutputFields =
@@ -288,8 +283,6 @@ class TimelineUseCaseImpl
                                 "currentObjective",
                             ),
                         useCore = true,
-                        blueprintKey = prompt.blueprintKey,
-                        aiStats = prompt.getAIStats(),
                     ).collect { state ->
                         when (state) {
                             is StreamingState.Success -> {
@@ -365,7 +358,7 @@ class TimelineUseCaseImpl
             val summary =
                 gemmaClient
                     .generate<SceneSummary>(
-                        objectivePrompt.processedTemplate,
+                        promptSplit = objectivePrompt,
                         requirement = ModelRequirement.MEDIUM,
                         useCore = true,
                     )!!

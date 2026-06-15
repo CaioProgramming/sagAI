@@ -56,7 +56,7 @@ class AIAuditLogUseCaseImpl
 
                 val suggestionResult =
                     gemmaClient.generate<String>(
-                        prompt,
+                        promptSplit = prompt,
                     )
 
                 repository.updateLog(log.copy(suggestion = suggestionResult))
@@ -89,7 +89,7 @@ class AIAuditLogUseCaseImpl
                     )
 
                 gemmaClient.generate<String>(
-                    prompt,
+                    promptSplit = prompt,
                     describeOutput = false,
                 )!!
             }

@@ -107,7 +107,7 @@ object CharacterPrompts {
         userInput: String,
         conversationHistory: List<com.ilustris.sagai.features.newsaga.data.model.ChatMessage>,
         sagaContext: SagaDraft?,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterReplyArgs(
                 currentCharacterState = currentCharacterInfo.toAINormalize(),
@@ -119,13 +119,13 @@ object CharacterPrompts {
                 userInput = userInput,
             )
 
-        return promptService.buildRemotePrompt(CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CONVERSATIONAL_CHARACTER_REPLY_BLUEPRINT, args)
     }
 
     suspend fun characterIntroPrompt(
         promptService: PromptService,
         sagaContext: SagaDraft?,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterIntroArgs(
                 sagaWorld = sagaContext?.description ?: "",
@@ -133,21 +133,21 @@ object CharacterPrompts {
                 genreName = sagaContext?.genre?.name ?: "FANTASY",
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_INTRO_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_INTRO_BLUEPRINT, args)
     }
 
     suspend fun characterAdaptationPrompt(
         promptService: PromptService,
         currentCharacterInfo: CharacterInfo,
         newGenre: String,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterAdaptationArgs(
                 newGenre = newGenre,
                 currentCharacterDraft = currentCharacterInfo.toAINormalize(),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_ADAPTATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_ADAPTATION_BLUEPRINT, args)
     }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
@@ -331,7 +331,7 @@ object CharacterPrompts {
         promptService: PromptService,
         timeline: Timeline,
         characters: List<Character>,
-    ): String {
+    ): SplitPrompt {
         val args =
             CharacterLoreArgs(
                 timelineContext =
@@ -344,7 +344,7 @@ object CharacterPrompts {
                     ),
             )
 
-        return promptService.buildRemotePrompt(CHARACTER_LORE_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(CHARACTER_LORE_BLUEPRINT, args)
     }
 
     @Suppress("ktlint:standard:max-line-length")

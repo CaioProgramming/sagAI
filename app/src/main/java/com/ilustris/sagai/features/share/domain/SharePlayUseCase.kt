@@ -10,7 +10,6 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileCacheService
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.ui.PageItem
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -130,11 +129,11 @@ class SharePlayUseCaseImpl
                         }
 
                         else -> {
-                            emptyString()
+                            error("Share type $shareType not supported for message generation")
                         }
                     }
 
-                gemmaClient.generate<ShareText>(prompt, blueprintKey = SharePrompts.SHARE_PLAYSTYLE_BLUEPRINT)!!
+                gemmaClient.generate<ShareText>(promptSplit = prompt)!!
             }
 
         override suspend fun generateBookPDF(

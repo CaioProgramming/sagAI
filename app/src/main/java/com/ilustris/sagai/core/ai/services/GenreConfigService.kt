@@ -39,15 +39,18 @@ class GenreConfigService
             )
         }.getSuccess()!!
 
-        suspend fun conversationBlueprint(genre: Genre): String =
-            promptService.buildRemotePrompt(
-                "${genre.name.lowercase()}_conversation_blueprint",
-                emptyMap(),
-            )
-
         suspend fun conversationInstructions(genre: Genre) =
             promptService
                 .fetchBlueprintData(
                     "${genre.name.lowercase()}_conversation_blueprint",
                 ).asMap()
+
+        @Deprecated(
+            message = "Use conversationInstructions() merged into SplitPrompt via mergeInstructions()",
+            replaceWith = ReplaceWith("conversationInstructions(genre)"),
+        )
+        suspend fun conversationBlueprint(genre: Genre): String =
+            promptService
+                .buildSplitBlueprint("${genre.name.lowercase()}_conversation_blueprint")
+                .processedTemplate
     }

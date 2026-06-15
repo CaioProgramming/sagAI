@@ -168,10 +168,9 @@ class AudioService
             executeRequest {
                 val prompt = AudioPrompts.transcribeInstruction()
                 gemmaClient.generate<String>(
-                    prompt,
+                    promptSplit = prompt,
                     temperatureRandomness = .1f,
                     requirement = ModelRequirement.LOW,
-                    blueprintKey = AudioPrompts.AUDIO_CONFIG_BLUEPRINT,
                 )!!
             }
     }

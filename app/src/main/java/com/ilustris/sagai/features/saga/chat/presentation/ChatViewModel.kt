@@ -1207,6 +1207,7 @@ class ChatViewModel
                 )
 
             updateLoading(true)
+            var streamTerminal = false
             messageUseCase
                 .generateMessage(
                     saga = saga,
@@ -1214,10 +1215,13 @@ class ChatViewModel
                 ).collect { streamingState ->
                     when (streamingState) {
                         is StreamingState.Reasoning -> {
-                            stateManager.updateState { it.copy(reasoningChunk = streamingState.chunk) }
+                            if (!streamTerminal) {
+                                stateManager.updateState { it.copy(reasoningChunk = streamingState.chunk) }
+                            }
                         }
 
                         is StreamingState.Success -> {
+                            streamTerminal = true
                             stateManager.updateState { it.copy(reasoningChunk = null) }
                             updateLoading(false)
                             sagaThemeManager.playHaptics()
@@ -1264,6 +1268,7 @@ class ChatViewModel
                         }
 
                         is StreamingState.Error -> {
+                            streamTerminal = true
                             stateManager.updateState { it.copy(reasoningChunk = null) }
 
                             updateLoading(false)

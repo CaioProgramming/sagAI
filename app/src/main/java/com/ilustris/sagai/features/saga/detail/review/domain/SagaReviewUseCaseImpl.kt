@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.detail.review.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -45,14 +46,11 @@ class SagaReviewUseCaseImpl
 
                         val sourceFlow =
                             gemmaClient.generateStreaming<ReviewStage>(
-                                prompt = prompt.processedTemplate,
-                                systemInstructions =
-                                    prompt.renderInstructions().plus(
+                                promptSplit =
+                                    prompt.mergeInstructions(
                                         genreConfigService.conversationInstructions(content.data.genre),
                                     ),
                                 requirement = ModelRequirement.HIGH,
-                                blueprintKey = prompt.blueprintKey,
-                                aiStats = prompt.getAIStats(),
                             )
 
                         synthesizerService

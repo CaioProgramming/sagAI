@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -207,13 +208,10 @@ class SagaDetailUseCaseImpl
                         emptyString(),
                     )
                 textGenClient.generate<StoryDailyBriefing>(
-                    prompt.processedTemplate,
-                    systemInstructions =
-                        prompt.renderInstructions().plus(
+                    promptSplit =
+                        prompt.mergeInstructions(
                             genreConfigService.conversationInstructions(saga.data.genre),
                         ),
-                    blueprintKey = SagaPrompts.STORY_BRIEFING_BLUEPRINT,
-                    aiStats = prompt.getAIStats(),
                 )!!
             }
     }

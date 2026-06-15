@@ -42,3 +42,13 @@ data class SplitPrompt(
             systemInstructions = renderInstructions().toJsonFormat(),
         )
 }
+
+/** Merges extra instruction buckets into [instructionBuckets] for the Split & Merge API. */
+fun SplitPrompt.mergeInstructions(vararg extras: Map<String, Any>): SplitPrompt =
+    copy(
+        instructionBuckets =
+            buildMap {
+                putAll(renderInstructions())
+                extras.forEach { putAll(it) }
+            },
+    )

@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT
@@ -268,12 +269,10 @@ class CharacterUseCaseImpl
                 )
                 val newCharacter =
                     gemmaClient.generate<Character>(
-                        prompt.processedTemplate,
-                        systemInstructions =
-                            prompt
-                                .renderInstructions()
-                                .plus(genreConfigService.conversationInstructions(sagaContent.data.genre)),
-                        aiStats = prompt.getAIStats(),
+                        promptSplit =
+                            prompt.mergeInstructions(
+                                genreConfigService.conversationInstructions(sagaContent.data.genre),
+                            ),
                         useCore = true,
                         filterOutputFields =
                             listOf(
@@ -287,7 +286,6 @@ class CharacterUseCaseImpl
                                 "firstSceneId",
                             ),
                         requirement = ModelRequirement.HIGH,
-                        blueprintKey = CHARACTER_GENERATION_BLUEPRINT,
                     )!!
 
                 val character = sagaContent.findCharacter(newCharacter.name)
@@ -346,16 +344,12 @@ class CharacterUseCaseImpl
                     val request =
                         gemmaClient
                             .generateStreaming<GeneratedContent<Character>>(
-                                prompt.processedTemplate,
-                                systemInstructions =
-                                    prompt
-                                        .renderInstructions()
-                                        .plus(
-                                            genreConfigService.conversationInstructions(
-                                                sagaContent.data.genre,
-                                            ),
+                                promptSplit =
+                                    prompt.mergeInstructions(
+                                        genreConfigService.conversationInstructions(
+                                            sagaContent.data.genre,
                                         ),
-                                blueprintKey = prompt.blueprintKey,
+                                    ),
                                 useCore = true,
                                 filterOutputFields =
                                     listOf(
@@ -369,7 +363,6 @@ class CharacterUseCaseImpl
                                         "firstSceneId",
                                     ),
                                 requirement = ModelRequirement.HIGH,
-                                aiStats = prompt.getAIStats(),
                             )
 
                     reasoningSynthesizerService
@@ -438,10 +431,9 @@ class CharacterUseCaseImpl
                     )
                 val request =
                     gemmaClient.generate<CharacterUpdateGen>(
-                        prompt,
+                        promptSplit = prompt,
                         requirement = ModelRequirement.LOW,
                         temperatureRandomness = .3f,
-                        blueprintKey = CharacterPrompts.REFINE_CHARACTER_DRAFT_BLUEPRINT,
                     )!!
 
                 val updatedCharacters =
@@ -561,13 +553,10 @@ class CharacterUseCaseImpl
                         config,
                     )
                 gemmaClient.generate<String>(
-                    prompt.copy(
-                        instructionBuckets =
-                            buildMap {
-                                putAll(genreConfigService.conversationInstructions(saga.data.genre))
-                                putAll(prompt.renderInstructions())
-                            },
-                    ),
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     requirement = ModelRequirement.LOW,
                 )!!
             }
@@ -638,11 +627,18 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<CharacterDetailState> =
             executeRequest {
-                val prompt = emptyString()
+                val prompt =
+                    CharacterPrompts.characterEnrichmentPrompt(
+                        promptService,
+                        character,
+                        saga,
+                    )
                 gemmaClient.generate<CharacterDetailState>(
-                    prompt,
+                    promptSplit =
+                        prompt.mergeInstructions(
+                            genreConfigService.conversationInstructions(saga.data.genre),
+                        ),
                     requirement = ModelRequirement.LOW,
-                    blueprintKey = CharacterPrompts.CHARACTER_ENRICHMENT_BLUEPRINT,
                 )!!
             }
 

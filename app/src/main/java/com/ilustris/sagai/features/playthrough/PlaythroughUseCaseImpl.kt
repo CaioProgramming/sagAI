@@ -31,9 +31,7 @@ class PlaythroughUseCaseImpl
                     )
 
                 textGenClient.generate<PlayThroughData>(
-                    prompt = splitPrompt.processedTemplate,
-                    systemInstructions = splitPrompt.renderInstructions(),
-                    aiStats = splitPrompt.getAIStats(),
+                    promptSplit = splitPrompt,
                 ) ?: error(
                     GemmaClient.lastGenerateFailure
                         ?: "Playthrough review generation failed",
