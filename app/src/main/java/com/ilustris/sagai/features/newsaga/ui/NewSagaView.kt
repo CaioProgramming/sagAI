@@ -102,7 +102,11 @@ fun NewSagaView(
         genre = currentGenre,
     ) {
         val reasoningMessage =
-            uiState.statusMessage ?: defaultCreationMessage.takeIf { uiState.showWelcome }
+            if (uiState.isSaving) {
+                null
+            } else {
+                uiState.statusMessage ?: defaultCreationMessage.takeIf { uiState.showWelcome }
+            }
 
         with(sharedTransitionScope) {
             Box(
@@ -228,13 +232,13 @@ private fun NewSagaMainContent(
                     NewSagaBookFocus(
                         book = entry.first,
                         visualConfig = entry.second,
-                        reasoning = null,
-                        isOpened = true,
+                        reasoning = uiState.statusMessage,
+                        isOpened = false,
                         isLoading = true,
                         lockedCharacter = uiState.lockedCharacter,
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedContentKey = "new-saga-book-${entry.first.draft.id}",
-                        showReasoning = false,
+                        showReasoning = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

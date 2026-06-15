@@ -63,7 +63,7 @@ fun SharedTransitionScope.NewSagaBookFocus(
                         animatedVisibilityScope,
                     )
                     .width(280.dp)
-                    .fillMaxHeight(0.5f)
+                    .fillMaxHeight(0.55f)
                     .levitate(true)
                     .divineAura()
                     .chromaticAberration(),
