@@ -176,11 +176,11 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaHighlight
-import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIcon
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
@@ -350,7 +350,7 @@ fun ChatView(
                                     Modifier
                                         .fillMaxSize()
                                         .gradientFill(
-                                            Brush.horizontalGradient(themeBrushColors()),
+                                            Brush.horizontalGradient(morphingGradient()),
                                         ),
                             ) {
                                 StarryTextPlaceholder(

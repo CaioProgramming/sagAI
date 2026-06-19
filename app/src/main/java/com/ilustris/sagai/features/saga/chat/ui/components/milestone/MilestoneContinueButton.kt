@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestoneTransitions
+import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
@@ -32,11 +34,14 @@ fun MilestoneContinueButton(
         exit = MilestoneTransitions.fadeExit,
         modifier = modifier,
     ) {
-        val themeBrush = Brush.verticalGradient(themeBrushColors())
+        val themeBrush = Brush.horizontalGradient(themeBrushColors())
         Button(
             onClick = onDismiss,
             shape = MaterialTheme.shapes.medium,
-            colors = ButtonDefaults.elevatedButtonColors(),
+            colors =
+                ButtonDefaults.buttonColors().copy(
+                    containerColor = MaterialTheme.colorScheme.background,
+                ),
             modifier =
                 Modifier
                     .padding(32.dp)
@@ -45,11 +50,17 @@ fun MilestoneContinueButton(
                         {
                             brush = themeBrush
                             radius = 10f
-                            spread = 2f
+                            spread = 5f
                         },
-                    ).fillMaxWidth(),
+                    )
+                    .fillMaxWidth(),
         ) {
-            Text(stringResource(R.string.continue_button))
+            Text(
+                stringResource(R.string.continue_button),
+                modifier =
+                    Modifier
+                        .gradientFill(Brush.verticalGradient(morphingGradient())),
+            )
         }
     }
 }

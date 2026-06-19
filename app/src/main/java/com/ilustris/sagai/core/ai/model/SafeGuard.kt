@@ -9,12 +9,11 @@ import com.ilustris.sagai.R
 
 @Keep
 enum class SafeGuard(
-    @StringRes val titleRes: Int,
-    @StringRes val messageRes: Int,
+    @StringRes val titleRes: Int? = null,
+    @StringRes val messageRes: Int? = null,
     @DrawableRes val iconRes: Int = R.drawable.ic_spark,
     val color: (ColorScheme) -> Color = { it.error },
 ) {
-    OK(0, 0, color = { Color.Transparent }),
     BLOCKED(
         R.string.guardrail_blocked_title,
         R.string.guardrail_blocked_message,
@@ -39,4 +38,9 @@ enum class SafeGuard(
         color = { it.error },
         iconRes = R.drawable.ic_violation,
     ),
+    ;
+
+    companion object {
+        fun findValue(value: String): SafeGuard? = entries.find { it.name == value }
+    }
 }

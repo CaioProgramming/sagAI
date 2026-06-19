@@ -427,7 +427,7 @@ class ChatViewModel
                 sagaContentManager.showObjectiveOverlay.collect { show ->
                     stateManager.updateShowCurrentObjective(show)
                 }
-        }
+            }
 
         private fun observeReasoning() =
             viewModelScope.launch(Dispatchers.IO) {
@@ -1227,6 +1227,13 @@ class ChatViewModel
                             sagaThemeManager.playHaptics()
                             withContext(Dispatchers.IO) {
                                 messageUseCase.updateMessage(newMessage.message.copy(status = MessageStatus.OK))
+                                sceneSummary?.let {
+                                    generateSuggestions(it)
+                                    sagaContentManager.updateSummary(it)
+                                }
+                                sagaContentManager.checkNarrativeProgression(
+                                    uiState.value.sagaContent,
+                                )
                             }
 
                             streamingState.data?.newCharacter?.let { discovery ->
@@ -1254,16 +1261,6 @@ class ChatViewModel
                                             )
                                         }
                                 }
-                            }
-
-                            viewModelScope.launch(Dispatchers.IO) {
-                                sceneSummary?.let {
-                                    generateSuggestions(it)
-                                    sagaContentManager.updateSummary(it)
-                                }
-                                sagaContentManager.checkNarrativeProgression(
-                                    uiState.value.sagaContent,
-                                )
                             }
                         }
 

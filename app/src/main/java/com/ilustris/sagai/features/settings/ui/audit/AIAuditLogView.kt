@@ -606,14 +606,14 @@ fun AuditLogItem(
                         modifier = Modifier.padding(top = 4.dp),
                     ) {
                         val safeguard =
-                            runCatching {
-                                SafeGuard.valueOf(
-                                    log.safetyStatus ?: "OK",
-                                )
-                            }.getOrDefault(SafeGuard.OK)
-                        val color = safeguard.color(MaterialTheme.colorScheme)
+                            SafeGuard.findValue(
+                                log.safetyStatus,
+                            )
+                        val color =
+                            safeguard?.color(MaterialTheme.colorScheme)
+                                ?: MaterialTheme.colorScheme.primaryContainer
                         Icon(
-                            painter = painterResource(safeguard.iconRes),
+                            painter = painterResource(safeguard?.iconRes ?: R.drawable.ic_spark),
                             contentDescription = "Safety Status",
                             modifier = Modifier.size(12.dp),
                             tint = color,

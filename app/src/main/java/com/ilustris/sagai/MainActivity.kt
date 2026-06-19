@@ -411,21 +411,25 @@ class MainActivity : ComponentActivity() {
 
                                 Spacer(modifier = Modifier.size(16.dp))
 
-                                Text(
-                                    text = stringResource(effect.status.titleRes),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    textAlign = TextAlign.Center,
-                                )
+                                effect.status.titleRes?.let {
+                                    Text(
+                                        text = stringResource(it),
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.size(8.dp))
 
-                                Text(
-                                    text = stringResource(effect.status.messageRes),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                effect.status.messageRes?.let {
+                                    Text(
+                                        text = stringResource(it),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.size(32.dp))
 

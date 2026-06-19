@@ -296,7 +296,7 @@ class GemmaClient
                             val aiGeneration =
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
                             aiGeneration.error?.let {
-                                throw GuardrailsException(it.type)
+                                it.type?.let { status -> throw GuardrailsException(status) }
                             }
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
@@ -613,7 +613,7 @@ class GemmaClient
                             val aiGeneration =
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
                             aiGeneration.error?.let {
-                                throw GuardrailsException(it.type)
+                                it.type?.let { status -> throw GuardrailsException(status) }
                             }
                             if (BuildConfig.DEBUG && logEnabled) {
                                 aiAuditLogDao.insertLog(
@@ -989,7 +989,7 @@ class GemmaClient
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
 
                             aiGeneration.error?.let {
-                                throw GuardrailsException(it.type)
+                                it.type?.let { status -> throw GuardrailsException(status) }
                             }
 
                             val duration = System.currentTimeMillis() - startTime
@@ -1271,7 +1271,9 @@ class GemmaClient
                                 parseAIGenerationFromJson<T>(Gson(), cleanedJsonString)
 
                             aiGeneration.error?.let {
-                                throw GuardrailsException(it.type)
+                                it.type?.let {
+                                    throw GuardrailsException(it)
+                                }
                             }
 
                             val duration = System.currentTimeMillis() - startTime

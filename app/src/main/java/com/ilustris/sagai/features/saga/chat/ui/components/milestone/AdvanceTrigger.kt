@@ -171,7 +171,6 @@ fun AdvanceTrigger(
                                 }.uppercase(),
                             style =
                                 MaterialTheme.typography.labelLarge.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     color =
                                         if (progress > 0.6f) {
                                             MaterialTheme.colorScheme.onPrimary
