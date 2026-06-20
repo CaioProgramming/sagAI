@@ -746,6 +746,8 @@
     <string name="guardrail_explicit_message">Your input contains explicit sexual or graphic content that is prohibited for all users. Please maintain a safe environment.</string>
     <string name="guardrail_unknown_title">System Interruption</string>
     <string name="guardrail_unknown_message">Something unexpected happened during processing. Please try again.</string>
+    <string name="guardrail_continuity_title">Narrative Inconsistency</string>
+    <string name="guardrail_continuity_message">Your input doesn\'t seem to fit the current story world. Please keep it consistent with the setting.</string>
     <string name="guardrail_dismiss">Got it</string>
     <string name="mascot_insight_label">Mascot\'s Emotional Insight</string>
 </resources>

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlin.time.Duration.Companion.seconds
@@ -95,7 +96,7 @@ fun LoadingMilestoneOverlay(
                                         MaterialTheme.colorScheme.primary,
                                         blurRadius = 10f,
                                     ),
-                                brush = Brush.horizontalGradient(themeBrushColors()),
+                                brush = Brush.horizontalGradient(morphingGradient()),
                             ),
                         modifier =
                             Modifier

@@ -69,7 +69,7 @@ class GemmaClient
 
         companion object {
             const val CORE_FLAG = "SAGA_CORE"
-            const val INPUT_TOKEN_LIMIT = 15000
+            const val INPUT_TOKEN_LIMIT = 16000
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
 
             fun maxAttempts(requirement: ModelRequirement): Int =
@@ -185,7 +185,7 @@ class GemmaClient
                             if (logEnabled) Timber.i("Requesting $model\nPrompt with $promptLength chars.")
 
                             if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
-                                throw IllegalArgumentException("Prompt is too long. verify your prompt and try again.")
+                                throw IllegalArgumentException("Prompt is too long($promptLength). verify your prompt and try again.")
                             }
 
                             val parts = mutableListOf<GeminiPart>()
@@ -502,7 +502,7 @@ class GemmaClient
                             if (logEnabled) Timber.i("Requesting $model\nPrompt with $promptLength chars.")
 
                             if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
-                                throw IllegalArgumentException("Prompt is too long. verify your prompt and try again.")
+                                throw IllegalArgumentException("Prompt is too long($promptLength). verify your prompt and try again.")
                             }
 
                             val parts = mutableListOf<GeminiPart>()

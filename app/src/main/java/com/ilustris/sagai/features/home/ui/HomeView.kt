@@ -606,10 +606,7 @@ fun ChatCard(
                     Box(
                         modifier =
                             Modifier
-                                .sharedElement(
-                                    rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
-                                    animatedContentScope,
-                                ).dropShadow(CircleShape) {
+                                .dropShadow(CircleShape) {
                                     radius = 5f
                                     color = genreColor
                                     brush = genreBrush

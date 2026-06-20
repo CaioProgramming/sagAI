@@ -800,5 +800,7 @@
     <string name="guardrail_explicit_message">Sua mensagem contém conteúdo sexual ou gráfico explícito que é proibido para todos os usuários. Por favor, mantenha um ambiente seguro.</string>
     <string name="guardrail_unknown_title">Interrupção do Sistema</string>
     <string name="guardrail_unknown_message">Algo inesperado aconteceu durante o processamento. Por favor, tente novamente.</string>
+    <string name="guardrail_continuity_title">Inconsistência Narrativa</string>
+    <string name="guardrail_continuity_message">Sua mensagem não parece se encaixar no mundo da história atual. Por favor, mantenha a consistência com o cenário.</string>
     <string name="guardrail_dismiss">Entendi</string>
 </resources>

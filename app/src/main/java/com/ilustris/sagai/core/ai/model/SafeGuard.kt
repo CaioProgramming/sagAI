@@ -38,6 +38,12 @@ enum class SafeGuard(
         color = { it.error },
         iconRes = R.drawable.ic_violation,
     ),
+    CONTINUITY(
+        R.string.guardrail_continuity_title,
+        R.string.guardrail_continuity_message,
+        color = { it.secondary },
+        iconRes = R.drawable.ic_spark,
+    ),
     ;
 
     companion object {

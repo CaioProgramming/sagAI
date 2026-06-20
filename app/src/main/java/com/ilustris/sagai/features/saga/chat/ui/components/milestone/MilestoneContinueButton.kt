@@ -2,10 +2,11 @@ package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,9 +18,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.animation.MilestoneTransitions
-import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.morphingGradient
-import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
 fun MilestoneContinueButton(
@@ -34,14 +34,13 @@ fun MilestoneContinueButton(
         exit = MilestoneTransitions.fadeExit,
         modifier = modifier,
     ) {
-        val themeBrush = Brush.horizontalGradient(themeBrushColors())
-        Button(
+        val themeBrush = Brush.horizontalGradient(morphingGradient())
+        ElevatedButton(
             onClick = onDismiss,
             shape = MaterialTheme.shapes.medium,
             colors =
-                ButtonDefaults.buttonColors().copy(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
+                ButtonDefaults.buttonColors(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.gradientFade()),
             modifier =
                 Modifier
                     .padding(32.dp)
@@ -49,17 +48,13 @@ fun MilestoneContinueButton(
                         MaterialTheme.shapes.medium,
                         {
                             brush = themeBrush
-                            radius = 10f
-                            spread = 5f
+                            radius = 5f
+                            spread = 3f
                         },
-                    )
-                    .fillMaxWidth(),
+                    ).fillMaxWidth(),
         ) {
             Text(
                 stringResource(R.string.continue_button),
-                modifier =
-                    Modifier
-                        .gradientFill(Brush.verticalGradient(morphingGradient())),
             )
         }
     }

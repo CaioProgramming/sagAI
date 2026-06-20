@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,30 +34,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.utils.vibrate
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
-import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.themeIcon
+import com.ilustris.sagai.ui.theme.themeShimmer
+import com.ilustris.sagai.ui.theme.themeVfx
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun AdvanceTrigger(
     action: NarrativeAction,
-    genre: Genre,
     onAdvance: () -> Unit,
     modifier: Modifier = Modifier,
     isGenerating: Boolean,
@@ -66,9 +63,8 @@ fun AdvanceTrigger(
     var isHolding by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val view = LocalView.current
-    val visualConfig = LocalGenreVisualConfig.current
     val primaryColor = MaterialTheme.colorScheme.primary
-    val colors = genre.colorPalette(visualConfig)
+    val colors = themeShimmer()
 
     val progress by animateFloatAsState(
         targetValue = if (isHolding) 1f else 0f,
@@ -82,19 +78,19 @@ fun AdvanceTrigger(
         label = "scale",
     )
 
-    val shape = RoundedCornerShape(genre.cornerSize())
+    val shape = MaterialTheme.shapes.medium
 
     AnimatedContent(isGenerating) {
         if (it) {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Image(
-                    painterResource(genre.icon),
+                    themeIcon(),
                     contentDescription = stringResource(R.string.milestone_loading_cd),
                     modifier =
                         Modifier
                             .gradientFill(Brush.verticalGradient(colors))
                             .size(50.dp)
-                            .genreVfx(genre),
+                            .themeVfx(),
                 )
             }
         } else {
@@ -106,6 +102,7 @@ fun AdvanceTrigger(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val genreBrush = Brush.linearGradient(colors)
+                val shadowBrush = Brush.linearGradient(morphingGradient())
                 Surface(
                     color = MaterialTheme.colorScheme.background,
                     shape = shape,
@@ -119,9 +116,12 @@ fun AdvanceTrigger(
                                 radius = 35f * progress
                                 color = primaryColor
                                 spread = 20f * progress
-                                brush = genreBrush
-                            }.border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
-                            .clip(shape)
+                                brush = shadowBrush
+                            }.border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = .3f),
+                                shape,
+                            ).clip(shape)
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onPress = {
@@ -130,11 +130,11 @@ fun AdvanceTrigger(
 
                                         val holdJob =
                                             scope.launch {
-                                                delay(1000)
+                                                delay(1.seconds)
                                                 if (isHolding) {
                                                     view.context.vibrate(longArrayOf(0, 60))
                                                 }
-                                                delay(500)
+                                                delay(500.milliseconds)
                                                 if (isHolding) {
                                                     view.context.vibrate(longArrayOf(0, 400))
                                                     onAdvance()
@@ -162,6 +162,16 @@ fun AdvanceTrigger(
                                     ),
                         )
 
+                        val textColor by animateColorAsState(
+                            targetValue =
+                                if (progress > 0.6f) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            animationSpec = tween(500),
+                        )
+
                         Text(
                             text =
                                 if (isHolding) {
@@ -171,17 +181,7 @@ fun AdvanceTrigger(
                                 }.uppercase(),
                             style =
                                 MaterialTheme.typography.labelLarge.copy(
-                                    color =
-                                        if (progress > 0.6f) {
-                                            MaterialTheme.colorScheme.onPrimary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface
-                                        },
-                                    shadow =
-                                        Shadow(
-                                            color = primaryColor,
-                                            blurRadius = 15f * progress,
-                                        ),
+                                    color = textColor,
                                 ),
                             modifier = Modifier.align(Alignment.Center),
                         )

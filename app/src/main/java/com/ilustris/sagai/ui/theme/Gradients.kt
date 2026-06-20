@@ -279,9 +279,11 @@ fun Color.solidGradient() = SolidColor(this)
 fun Color.shimmerize() =
     listOf(
         Color.Transparent,
-        this.copy(alpha = .2f),
+        this.copy(alpha = .1f),
         this.copy(alpha = .5f),
         this,
+        this.copy(alpha = .3f),
+        this.copy(alpha = .1f),
         Color.Transparent,
     )
 

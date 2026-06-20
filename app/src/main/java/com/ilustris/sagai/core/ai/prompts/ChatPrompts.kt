@@ -11,10 +11,10 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.historySummary
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -337,18 +337,47 @@ object ChatPrompts {
         saga: SagaContent,
         rules: NarrativeRules,
     ): SplitPrompt {
-        val latestMessage = saga.flatMessages().maxByOrNull { it.message.timestamp }?.message
-        val latestMessageContent = latestMessage?.toAINormalize(messageExclusions) ?: ""
+        val currentAct = saga.currentActInfo
+        val currentChapter = saga.currentActInfo?.currentChapterInfo
+        val lastEvent = saga.flatEvents().lastOrNull { it.data.id != currentChapter?.data?.id }
+        val latestMessages = saga.flatMessages().takeLast(rules.loreUpdateLimit)
+        val storyContext =
+            buildMap {
+                put("sagaContext", saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS))
+                saga.mainCharacter?.let {
+                    put("mainCharacter", it.data.toAINormalize(CHARACTER_EXCLUSIONS))
+                }
+                put(
+                    "storyCharacters",
+                    saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}\n${it.data.backstory}" },
+                )
+                currentAct?.let {
+                    put("ActualArc", it.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS))
+                }
+                currentChapter?.let {
+                    put("ActualChapter", it.data.toAINormalize())
+                }
 
-        val args =
-            SceneSummaryArgs(
-                sagaContext = SagaPrompts.mainContext(saga),
-                recentActivity = saga.historySummary(),
-                conversationHistory = conversationHistory(rules.loreUpdateLimit, saga),
-                latestMessage = latestMessageContent,
-            )
+                lastEvent?.let {
+                    put(
+                        "LastEvent",
+                        it.data.toAINormalize(TimelinePrompts.timelineExclusions),
+                    )
+                }
+                if (latestMessages.isNotEmpty()) {
+                    put(
+                        "LatestMessages",
+                        latestMessages.map { it.message }.normalizetoAIItems(messageExclusions),
+                    )
+                }
+            }.toAINormalize()
 
-        return promptService.buildSplitBlueprint(SCENE_SUMMARIZATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(
+            SCENE_SUMMARIZATION_BLUEPRINT,
+            mapOf(
+                "sagaContext" to storyContext,
+            ),
+        )
     }
 
     suspend fun scheduledNotificationPrompt(

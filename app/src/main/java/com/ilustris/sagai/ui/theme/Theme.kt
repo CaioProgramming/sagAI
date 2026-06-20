@@ -68,6 +68,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 
 private val DarkColorScheme =
@@ -110,6 +111,12 @@ fun themeIcon(): Painter {
     val genre = LocalSagaGenre.current
     val iconRes = genre?.icon ?: R.drawable.ic_spark
     return painterResource(iconRes)
+}
+
+@Composable
+fun Modifier.themeVfx(): Modifier {
+    val genre = LocalSagaGenre.current
+    return this.genreVfx(genre)
 }
 
 private const val THEME_ANIMATION_DURATION = 600
