@@ -50,6 +50,7 @@ class BrainStoryNavigation
                 BrainNodeType.ACT -> actScene(focusNodeId, graph, presence, storyPath)
                 BrainNodeType.CHAPTER -> chapterScene(focusNodeId, graph, presence, storyPath)
                 BrainNodeType.EVENT -> eventScene(focusNodeId, graph, presence, storyPath)
+                BrainNodeType.CHARACTER_EVENT -> eventScene(focusNodeId, graph, presence, storyPath)
                 BrainNodeType.CHARACTER -> characterLensScene(focusNodeId, graph, storyPath)
                 BrainNodeType.RELATION -> relationBridgeScene(focusNodeId, graph, storyPath)
                 BrainNodeType.WIKI -> wikiAmbientScene(focusNodeId, graph, presence, storyPath)
@@ -68,15 +69,9 @@ class BrainStoryNavigation
         fun resolveCharacterScene(
             focusNodeId: String,
             graph: BrainGraph,
-        ): BrainScene {
-            val focus = graph.nodeById(focusNodeId) ?: return emptyCharacterScene(graph.centerNodeId)
-            return when (focus.type) {
-                BrainNodeType.RELATION -> relationBridgeScene(focusNodeId, graph)
-                BrainNodeType.CHARACTER -> characterCenterScene(focusNodeId, graph)
-                BrainNodeType.EVENT, BrainNodeType.WIKI -> leafCharacterScene(focusNodeId, graph)
-                else -> characterCenterScene(graph.centerNodeId, graph)
-            }
-        }
+        ): BrainScene = characterConstellationScene(graph)
+
+        private fun characterConstellationScene(graph: BrainGraph): BrainScene = characterCenterScene(graph.centerNodeId, graph)
 
         private fun sagaScene(
             graph: BrainGraph,
@@ -221,9 +216,14 @@ class BrainStoryNavigation
                             .filter { it.type == BrainNodeType.CHARACTER && it.id != focusId }
                             .map { it.id }
                     }.toSet()
-            val eventIds =
+            val characterEventIds =
                 graph
                     .neighborsOf(focusId)
+                    .filter { it.type == BrainNodeType.CHARACTER_EVENT }
+                    .map { it.id }
+                    .toSet()
+            val storyEventIds =
+                graph.nodes
                     .filter { it.type == BrainNodeType.EVENT }
                     .map { it.id }
                     .toSet()
@@ -233,11 +233,16 @@ class BrainStoryNavigation
                     .filter { it.type == BrainNodeType.WIKI }
                     .map { it.id }
                     .toSet()
+                    .union(
+                        graph.nodes
+                            .filter { it.type == BrainNodeType.WIKI }
+                            .map { it.id },
+                    )
 
-            val structural = setOf(focusId) + relationIds + eventIds
-            val satellites = linkedCharacterIds + wikiIds
+            val structural = setOf(focusId) + relationIds + characterEventIds
+            val satellites = linkedCharacterIds + storyEventIds + wikiIds
 
-            val bridgeEdges =
+            val relationBridgeEdges =
                 graph.edges
                     .filter { edge ->
                         edge.type == BrainEdgeType.RELATED_TO &&
@@ -249,6 +254,23 @@ class BrainStoryNavigation
                             )
                     }.map { it.id }
                     .toSet()
+
+            val eventBridgeEdges =
+                graph.edges
+                    .filter { edge ->
+                        edge.type in CHARACTER_EVENT_LINK_TYPES &&
+                            (
+                                (edge.fromId == focusId && edge.toId in characterEventIds) ||
+                                    (edge.toId == focusId && edge.fromId in characterEventIds) ||
+                                    (edge.fromId in characterEventIds && edge.toId in storyEventIds) ||
+                                    (edge.toId in characterEventIds && edge.fromId in storyEventIds) ||
+                                    (edge.fromId == focusId && edge.toId in storyEventIds && edge.type == BrainEdgeType.DEBUT) ||
+                                    (edge.toId == focusId && edge.fromId in storyEventIds && edge.type == BrainEdgeType.DEBUT)
+                            )
+                    }.map { it.id }
+                    .toSet()
+
+            val bridgeEdges = relationBridgeEdges + eventBridgeEdges
 
             val charSpine =
                 characterEventSpineEdges(
@@ -513,5 +535,12 @@ class BrainStoryNavigation
                 BrainEdgeType.PARTICIPATED,
                 BrainEdgeType.DEBUT,
                 BrainEdgeType.FEATURED_IN,
+            )
+
+    private val CHARACTER_EVENT_LINK_TYPES =
+        setOf(
+            BrainEdgeType.PARTICIPATED,
+                BrainEdgeType.FEATURED_IN,
+                BrainEdgeType.DEBUT,
             )
     }

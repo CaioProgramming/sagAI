@@ -808,4 +808,6 @@
     <string name="saga_brain_chapter_in_progress">Capítulo %1$d – em progresso</string>
     <string name="saga_brain_event_in_progress">Evento %1$d – em progresso</string>
     <string name="saga_brain_stage_in_progress_body">Continue jogando para saber mais sobre essa etapa da história.</string>
+    <string name="saga_brain_story_event_subtitle">Evento da história</string>
+    <string name="see_your_universe">Veja seu universo</string>
 </resources>

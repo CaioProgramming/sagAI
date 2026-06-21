@@ -24,6 +24,11 @@ object BrainNodeGlow {
         return Color(0xFF, 0xE6, 0xFF, alpha).value.toLong()
     }
 
+    fun characterEvent(emotionalAlpha: Float = 0.85f): Long {
+        val alpha = (emotionalAlpha * 255).toInt().coerceIn(90, 255)
+        return Color(0xFF, 0xD4, 0xA8, alpha).value.toLong()
+    }
+
     fun actOrChapter(genre: Genre?): Long = genrePrimaryArgb(genre, boost = 0.85f)
 
     fun relation(genre: Genre?): Long = genrePrimaryArgb(genre, boost = 0.72f)
@@ -51,6 +56,7 @@ object BrainNodeGlow {
             BrainNodeType.SAGA -> saga(genre)
             BrainNodeType.ACT, BrainNodeType.CHAPTER -> actOrChapter(genre)
             BrainNodeType.EVENT -> event()
+            BrainNodeType.CHARACTER_EVENT -> characterEvent()
             BrainNodeType.RELATION -> relation(genre)
             BrainNodeType.CHARACTER -> Color(0xFF90E0EF).value.toLong()
             BrainNodeType.WIKI -> wiki(null)

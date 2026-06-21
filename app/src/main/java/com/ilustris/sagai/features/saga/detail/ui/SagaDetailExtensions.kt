@@ -36,7 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.brain.ui.components.BrainMiniPreview
+import com.ilustris.sagai.features.brain.ui.components.UniverseConstellationEntry
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
@@ -409,11 +409,10 @@ fun DetailSectionView.InitialSection.miniSection(
                 }
 
                 RequestSection.BRAIN -> {
-                    BrainMiniPreview(
-                        sagaId = saga.id,
+                    UniverseConstellationEntry(
+                        completedActsCount = resume.completedActsCount,
                         genre = genre,
-                        sectionTitle = stringResource(R.string.saga_brain_section_title),
-                        onOpenBrain = { onAction(DetailAction.OpenSection(RequestSection.BRAIN)) },
+                        onClick = { onAction(DetailAction.OpenSection(RequestSection.BRAIN)) },
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }

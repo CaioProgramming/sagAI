@@ -189,7 +189,9 @@
     <string name="saga_brain_chapter_in_progress">Chapter %1$d – in progress</string>
     <string name="saga_brain_event_in_progress">Event %1$d – in progress</string>
     <string name="saga_brain_stage_in_progress_body">Keep playing to learn more about this stage of the story.</string>
+    <string name="saga_brain_story_event_subtitle">Story event</string>
     <string name="character_brain_open">View constellation</string>
+    <string name="see_your_universe">See your universe</string>
     <string name="saga_detail_status_ended">Finished on %s</string>
     <string name="saga_detail_status_created">Created on %s</string>
     <string name="saga_detail_journey_of">The journey of</string>

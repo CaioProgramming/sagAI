@@ -4,20 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.usecase.PaletteUseCase
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.characters.data.model.CharacterArc
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.data.model.CharacterSagaInfo
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,6 +31,8 @@ class CharacterDetailsViewModel
     constructor(
         private val characterUseCase: CharacterUseCase,
         private val paletteUseCase: PaletteUseCase,
+        private val sagaRepository: SagaRepository,
+        private val remoteConfigService: RemoteConfigService,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val stringResourceHelper: StringResourceHelper,
@@ -44,6 +50,7 @@ class CharacterDetailsViewModel
         val isSummarizing = MutableStateFlow(false)
         val isEnriching = MutableStateFlow(false)
         val showPremiumSheet = MutableStateFlow(false)
+        val completedActsCount = MutableStateFlow(0)
 
         /** Tracks the currently loaded character to prevent stale data from previous loads. */
         private var currentCharacterId: Int? = null
@@ -90,6 +97,7 @@ class CharacterDetailsViewModel
             characterDetailState.value = null
             imagePalette.value = null
             messageCount.value = 0
+            completedActsCount.value = 0
 
             arcsJob =
                 viewModelScope.launch(Dispatchers.IO) {
@@ -105,6 +113,7 @@ class CharacterDetailsViewModel
                         data?.let {
                             ensureGenreTheme(it.sagaInfo.genre)
                             messageCount.value = it.messageCount
+                            loadCompletedActs(it.sagaInfo.id)
                             if (characterResume.value == null) {
                                 generateResume(it)
                             }
@@ -117,6 +126,14 @@ class CharacterDetailsViewModel
                         }
                     }
                 }
+        }
+
+        private fun loadCompletedActs(sagaId: Int) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val content = sagaRepository.getSagaById(sagaId).first() ?: return@launch
+                val rules = remoteConfigService.getNarrativeRules()
+                completedActsCount.value = content.completedActs(rules)
+            }
         }
 
         private fun extractPalette(imageUrl: String) {

@@ -179,6 +179,7 @@ class ConstellationLayoutEngine
                 BrainNodeType.ACT -> 2
                 BrainNodeType.CHAPTER -> 3
                 BrainNodeType.EVENT -> 4
+                BrainNodeType.CHARACTER_EVENT -> 3
                 BrainNodeType.RELATION -> 2
                 BrainNodeType.WIKI -> 5
                 BrainNodeType.SAGA -> 0

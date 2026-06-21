@@ -233,6 +233,7 @@ private fun nodeTypeLabel(type: BrainNodeType): String =
         BrainNodeType.ACT -> "Act"
         BrainNodeType.CHAPTER -> "Chapter"
         BrainNodeType.EVENT -> "Event"
+        BrainNodeType.CHARACTER_EVENT -> "Character moment"
         BrainNodeType.CHARACTER -> "Character"
         BrainNodeType.RELATION -> "Relation"
         BrainNodeType.WIKI -> "Lore"

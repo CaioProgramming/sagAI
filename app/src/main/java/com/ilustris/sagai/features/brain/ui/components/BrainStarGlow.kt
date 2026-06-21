@@ -25,6 +25,7 @@ object BrainStarGlow {
                 BrainNodeType.ACT -> primary.darker(0.08f)
                 BrainNodeType.CHAPTER -> primary.darker(0.16f)
                 BrainNodeType.EVENT -> primary.darker(0.24f)
+                BrainNodeType.CHARACTER_EVENT -> primary.darker(0.2f)
                 BrainNodeType.RELATION -> primary.darker(0.12f)
                 BrainNodeType.CHARACTER -> node.glowColor()
                 BrainNodeType.WIKI -> secondary

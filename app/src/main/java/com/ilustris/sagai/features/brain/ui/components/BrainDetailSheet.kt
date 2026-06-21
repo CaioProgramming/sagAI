@@ -136,8 +136,7 @@ fun BrainDetailSheet(
             Box(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                        .fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
                 IconButton(onClick = onRecenter) {
@@ -145,7 +144,7 @@ fun BrainDetailSheet(
                         painter = themeIcon(),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
@@ -189,10 +188,9 @@ private fun BrainDetailSheetPage(
     Column(
         modifier =
             modifier
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 12.dp)
+                .padding(8.dp)
                 .verticalScroll(scrollState, enabled = expanded),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(

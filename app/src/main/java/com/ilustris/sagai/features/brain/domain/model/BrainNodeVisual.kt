@@ -8,6 +8,7 @@ fun BrainNodeType.starScale(isCenter: Boolean): Float =
         BrainNodeType.ACT -> 1.15f
         BrainNodeType.CHAPTER -> 1.05f
         BrainNodeType.EVENT -> 1f
+        BrainNodeType.CHARACTER_EVENT -> 0.85f
         BrainNodeType.RELATION -> 0.8f
         BrainNodeType.WIKI -> 0.65f
     }
@@ -16,6 +17,7 @@ fun BrainNodeType.starScale(isCenter: Boolean): Float =
 fun BrainNodeType.satelliteScale(): Float =
     when (this) {
         BrainNodeType.CHARACTER -> 1f
+        BrainNodeType.CHARACTER_EVENT -> 0.75f
         BrainNodeType.RELATION -> 0.7f
         BrainNodeType.WIKI -> 0.55f
         else -> 0.75f

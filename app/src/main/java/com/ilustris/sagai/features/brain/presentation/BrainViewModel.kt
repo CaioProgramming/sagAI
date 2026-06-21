@@ -74,12 +74,11 @@ class BrainViewModel
             val graph = _state.value.graph ?: return
             if (graph.mode == BrainMode.CHARACTER) {
                 graph.nodeById(nodeId) ?: return
-                val scene = storyNavigation.resolveCharacterScene(nodeId, graph)
-                applyCharacterScene(
-                    graph = graph,
-                    scene = scene,
-                    selectedNodeId = nodeId,
-                )
+                _state.value =
+                    _state.value.copy(
+                        selectedNodeId = nodeId,
+                        orbitNodes = graph.orbitNodes(nodeId),
+                    )
                 return
             }
 
@@ -124,7 +123,11 @@ class BrainViewModel
         fun recenter() {
             val graph = _state.value.graph ?: return
             if (graph.mode == BrainMode.CHARACTER) {
-                focusNode(graph.centerNodeId)
+                _state.value =
+                    _state.value.copy(
+                        selectedNodeId = graph.centerNodeId,
+                        orbitNodes = graph.orbitNodes(graph.centerNodeId),
+                    )
                 return
             }
             val currentPresence = presence ?: return
@@ -173,21 +176,6 @@ class BrainViewModel
                     layout = layout,
                     selectedNodeId = selectedNodeId,
                     storyPath = storyPathNodes(graph, scene.storyPath),
-                )
-        }
-
-        private fun applyCharacterScene(
-            graph: BrainGraph,
-            scene: BrainScene,
-            selectedNodeId: String,
-        ) {
-            val layout = layoutEngine.layoutScene(graph, scene)
-            _state.value =
-                _state.value.copy(
-                    scene = scene,
-                    layout = layout,
-                    selectedNodeId = selectedNodeId,
-                    orbitNodes = graph.orbitNodes(selectedNodeId),
                 )
         }
 

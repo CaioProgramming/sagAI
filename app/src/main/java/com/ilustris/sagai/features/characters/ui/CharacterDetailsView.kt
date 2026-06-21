@@ -29,11 +29,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -61,6 +58,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.brain.ui.components.UniverseConstellationEntry
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterDetailData
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
@@ -231,6 +229,7 @@ private fun CharacterDetailsLoaded(
     val characterRelations = detailData.relationships
     val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
     val characterArcs by viewModel.characterArcs.collectAsStateWithLifecycle()
+    val completedActsCount by viewModel.completedActsCount.collectAsStateWithLifecycle()
     var showCharacterShare by remember { mutableStateOf(false) }
 
     // Lite wrapper to satisfy legacy components that still need SagaContent
@@ -467,39 +466,15 @@ private fun CharacterDetailsLoaded(
                     }
 
                     item {
-                        OutlinedButton(
+                        UniverseConstellationEntry(
+                            completedActsCount = completedActsCount,
+                            genre = genre,
+                            magical = true,
                             onClick = {
                                 onOpenCharacterBrain(sagaInfo.id, characterData.id)
                             },
-                            modifier =
-                                Modifier
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    .fillMaxWidth(),
-                            colors =
-                                ButtonDefaults.outlinedButtonColors(
-                                    contentColor = characterColor,
-                                ),
-                            border =
-                                androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    characterColor.copy(alpha = 0.6f),
-                                ),
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_spark),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = characterColor,
-                            )
-                            Text(
-                                text = stringResource(R.string.character_brain_open),
-                                modifier = Modifier.padding(start = 8.dp),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    ),
-                            )
-                        }
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
                     }
 
                     item {

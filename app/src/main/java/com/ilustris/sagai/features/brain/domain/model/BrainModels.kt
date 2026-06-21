@@ -13,6 +13,7 @@ enum class BrainNodeType {
     CHAPTER,
     EVENT,
     CHARACTER,
+    CHARACTER_EVENT,
     RELATION,
     WIKI,
 }
@@ -74,6 +75,7 @@ data class BrainGraph(
                 .sortedWith(
                     compareByDescending<BrainNode> { it.type == BrainNodeType.CHARACTER }
                         .thenByDescending { it.type == BrainNodeType.RELATION }
+                        .thenByDescending { it.type == BrainNodeType.CHARACTER_EVENT }
                         .thenByDescending { it.importance }
                         .thenBy { it.label },
                 )
@@ -106,6 +108,8 @@ object BrainNodeIds {
     fun event(id: Int) = "event_$id"
 
     fun character(id: Int) = "char_$id"
+
+    fun characterEvent(id: Int) = "char_event_$id"
 
     fun relation(id: Int) = "relation_$id"
 

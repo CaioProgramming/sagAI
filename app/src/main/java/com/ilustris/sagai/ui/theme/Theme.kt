@@ -69,6 +69,7 @@ import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.animations.genreVfx
+import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 
 private val DarkColorScheme =
@@ -296,6 +297,12 @@ fun Modifier.sagaHighlight(): Modifier =
         selectiveColorHighlight(
             LocalSagaGenre.current?.selectiveHighlight(LocalGenreVisualConfig.current),
         ),
+    )
+
+@Composable
+fun Modifier.sagaShader(): Modifier =
+    this.then(
+        effectForGenre(LocalSagaGenre.current, LocalGenreVisualConfig.current),
     )
 
 // ── Theme Extension Functions ─────────────────────────────────────────

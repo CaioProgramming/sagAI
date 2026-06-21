@@ -382,36 +382,56 @@ class BrainGraphMapper
             val timelineEvents = sagaContent.flatEvents().map { it.data }
             character.sortEventsByTimeline(timelineEvents).forEachIndexed { eventIndex, eventDetail ->
                 val eventNumber = eventIndex + 1
-                val eventId = BrainNodeIds.event(eventDetail.timeline?.id ?: return@forEachIndexed)
                 val timeline = eventDetail.timeline ?: return@forEachIndexed
+                val charEvent = eventDetail.event
+                val charEventId = BrainNodeIds.characterEvent(charEvent.id)
+                val storyEventId = BrainNodeIds.event(timeline.id)
                 val eventBody =
-                    eventDetail.event.summary
+                    charEvent.summary
                         .orEmpty()
                         .ifBlank { timeline.content }
                 val eventIncomplete =
-                    eventDetail.event.title.isBlank() &&
+                    charEvent.title.isBlank() &&
                         timeline.title.isBlank() &&
                         eventBody.isBlank()
-                val eventLabel =
+                val charEventLabel =
                     if (eventIncomplete) {
                         context.getString(R.string.saga_brain_event_in_progress, eventNumber)
                     } else {
-                        eventDetail.event.title.ifBlank { timeline.title }.ifBlank {
+                        charEvent.title.ifBlank { timeline.title }.ifBlank {
                             context.getString(R.string.saga_brain_event_in_progress, eventNumber)
                         }
                     }
                 nodes +=
                     BrainNode(
-                        id = eventId,
-                        type = BrainNodeType.EVENT,
-                        label = eventLabel,
-                        subtitle = if (eventIncomplete) "" else timeline.title,
-                        entityId = timeline.id,
-                        importance = 0.6f,
-                        glowColorArgb = BrainNodeGlow.event(),
+                        id = charEventId,
+                        type = BrainNodeType.CHARACTER_EVENT,
+                        label = charEventLabel,
+                        subtitle = if (eventIncomplete) "" else charEvent.summary.take(80),
+                        entityId = charEvent.id,
+                        importance = 0.65f,
+                        glowColorArgb = BrainNodeGlow.characterEvent(),
                         detailBody = if (eventIncomplete) inProgressBody else eventBody,
                     )
-                connect(centerId, eventId, BrainEdgeType.PARTICIPATED, eventDetail.event.title)
+                if (nodes.none { it.id == storyEventId }) {
+                    val storyLabel =
+                        timeline.title.ifBlank {
+                            context.getString(R.string.saga_brain_event_in_progress, eventNumber)
+                        }
+                    nodes +=
+                        BrainNode(
+                            id = storyEventId,
+                            type = BrainNodeType.EVENT,
+                            label = storyLabel,
+                            subtitle = context.getString(R.string.saga_brain_story_event_subtitle),
+                            entityId = timeline.id,
+                            importance = 0.55f,
+                            glowColorArgb = BrainNodeGlow.event(),
+                            detailBody = timeline.content,
+                        )
+                }
+                connect(centerId, charEventId, BrainEdgeType.PARTICIPATED, charEvent.title)
+                connect(charEventId, storyEventId, BrainEdgeType.FEATURED_IN, timeline.title)
             }
 
             character.data.firstSceneId?.let { debutId ->
