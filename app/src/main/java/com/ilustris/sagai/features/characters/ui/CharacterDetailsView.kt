@@ -29,8 +29,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -100,6 +103,7 @@ import com.ilustris.sagai.ui.theme.shimmerize
 fun CharacterDetailsView(
     characterId: Int? = null,
     onBack: () -> Unit = {},
+    onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
@@ -126,6 +130,7 @@ fun CharacterDetailsView(
             if (it != null) {
                 CharacterDetailsContent(
                     it,
+                    onOpenCharacterBrain = onOpenCharacterBrain,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -141,6 +146,7 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     detailData: CharacterDetailData,
+    onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     openEvent: (Timeline?) -> Unit = {},
@@ -161,6 +167,7 @@ fun CharacterDetailsContent(
         CharacterDetailsLoaded(
             detailData = detailData,
             openEvent = openEvent,
+            onOpenCharacterBrain = onOpenCharacterBrain,
             viewModel = viewModel,
             imagePalette = imagePalette,
             sharedTransitionScope = sharedTransitionScope,
@@ -198,6 +205,7 @@ fun CharacterDetailsContent(
 private fun CharacterDetailsLoaded(
     detailData: CharacterDetailData,
     viewModel: CharacterDetailsViewModel,
+    onOpenCharacterBrain: (sagaId: Int, characterId: Int) -> Unit = { _, _ -> },
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
     imagePalette: ImagePalette? = null,
@@ -277,8 +285,7 @@ private fun CharacterDetailsLoaded(
                                                 rememberSharedContentState(key = "character_${character.id}_icon"),
                                                 animatedVisibilityScope,
                                                 renderInOverlayDuringTransition = false,
-                                            )
-                                            .fillParentMaxHeight(.6f)
+                                            ).fillParentMaxHeight(.6f)
                                             .fillMaxSize()
                                             .clickable(enabled = characterData.emojified || characterData.image.isEmpty()) {
                                                 viewModel.regenerate(
@@ -292,8 +299,7 @@ private fun CharacterDetailsLoaded(
                                             .fillMaxSize()
                                             .effectForGenre(
                                                 genre,
-                                            )
-                                            .graphicsLayer(
+                                            ).graphicsLayer(
                                                 translationY = 100f,
                                             ),
                                 ) {
@@ -322,8 +328,7 @@ private fun CharacterDetailsLoaded(
                                                 Modifier
                                                     .background(
                                                         fadeGradientTop(adaptiveColor),
-                                                    )
-                                                    .fillMaxWidth()
+                                                    ).fillMaxWidth()
                                                     .statusBarsPadding()
                                                     .padding(horizontal = 16.dp, vertical = 4.dp)
                                                     .gradientFill(titleGradient)
@@ -459,6 +464,42 @@ private fun CharacterDetailsLoaded(
                             genre = genre,
                             contentColor = adaptiveTextColor,
                         )
+                    }
+
+                    item {
+                        OutlinedButton(
+                            onClick = {
+                                onOpenCharacterBrain(sagaInfo.id, characterData.id)
+                            },
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .fillMaxWidth(),
+                            colors =
+                                ButtonDefaults.outlinedButtonColors(
+                                    contentColor = characterColor,
+                                ),
+                            border =
+                                androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    characterColor.copy(alpha = 0.6f),
+                                ),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_spark),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = characterColor,
+                            )
+                            Text(
+                                text = stringResource(R.string.character_brain_open),
+                                modifier = Modifier.padding(start = 8.dp),
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                    ),
+                            )
+                        }
                     }
 
                     item {

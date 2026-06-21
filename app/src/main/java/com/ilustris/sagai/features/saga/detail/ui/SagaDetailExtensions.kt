@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.brain.ui.components.BrainMiniPreview
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
@@ -263,7 +264,8 @@ fun DetailSectionView.InitialSection.miniSection(
                                 .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f))
                                 .clickable {
                                     onAction(DetailAction.OpenStoryReader)
-                                }.padding(16.dp),
+                                }
+                                .padding(16.dp),
                     ) {
                         Column(
                             horizontalAlignment = Alignment.Start,
@@ -325,7 +327,8 @@ fun DetailSectionView.InitialSection.miniSection(
                                         .clip(sagaShape())
                                         .clickable {
                                             onAction(DetailAction.OpenCharacter(char.data.id))
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
@@ -403,6 +406,16 @@ fun DetailSectionView.InitialSection.miniSection(
                             )
                         }
                     }
+                }
+
+                RequestSection.BRAIN -> {
+                    BrainMiniPreview(
+                        sagaId = saga.id,
+                        genre = genre,
+                        sectionTitle = stringResource(R.string.saga_brain_section_title),
+                        onOpenBrain = { onAction(DetailAction.OpenSection(RequestSection.BRAIN)) },
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
                 }
 
                 else -> {}

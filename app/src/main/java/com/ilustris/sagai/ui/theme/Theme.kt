@@ -166,9 +166,9 @@ fun SagAITheme(
     // Target colors: remote config when available, else compiled genre defaults
     val targetPrimary = activeGenre?.resolveColor(activeVisualConfig) ?: baseScheme.primary
     val targetSecondary =
-        activeGenre?.resolveColor(activeVisualConfig)?.copy(alpha = 0.7f) ?: baseScheme.secondary
+        activeGenre?.resolveColor(activeVisualConfig)?.darker(.25f) ?: baseScheme.secondary
     val targetTertiary =
-        activeGenre?.resolveColor(activeVisualConfig)?.copy(alpha = 0.5f) ?: baseScheme.tertiary
+        activeGenre?.resolveColor(activeVisualConfig)?.lighter(.25f) ?: baseScheme.tertiary
     val onPrimary = activeGenre?.resolveIconColor(activeVisualConfig) ?: baseScheme.onPrimary
 
     // Smooth animated transitions

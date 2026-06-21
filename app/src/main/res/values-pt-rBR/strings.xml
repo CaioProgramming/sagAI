@@ -803,4 +803,9 @@
     <string name="guardrail_continuity_title">Inconsistência Narrativa</string>
     <string name="guardrail_continuity_message">Sua mensagem não parece se encaixar no mundo da história atual. Por favor, mantenha a consistência com o cenário.</string>
     <string name="guardrail_dismiss">Entendi</string>
+
+    <string name="saga_brain_act_in_progress">Ato %1$d – em progresso</string>
+    <string name="saga_brain_chapter_in_progress">Capítulo %1$d – em progresso</string>
+    <string name="saga_brain_event_in_progress">Evento %1$d – em progresso</string>
+    <string name="saga_brain_stage_in_progress_body">Continue jogando para saber mais sobre essa etapa da história.</string>
 </resources>
