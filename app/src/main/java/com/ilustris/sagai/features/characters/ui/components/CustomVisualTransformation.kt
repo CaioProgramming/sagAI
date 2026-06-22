@@ -37,12 +37,14 @@ fun transformTextWithContent(
     textColor: Color = Color.Unspecified,
     headerFont: FontFamily?,
     bodyFont: FontFamily?,
+    tagMarkerLabels: Map<String, String> = emptyMap(),
 ): TransformedText {
     val (transformedText, offsetMapping) =
         transformExpressiveTags(
             text,
             tagBackgroundColor,
             textColor,
+            tagMarkerLabels,
         )
 
     // Then apply character/wiki annotations on the transformed text
@@ -67,28 +69,33 @@ fun transformTextWithContent(
 }
 
 /**
- * Transform text by removing tag markers and applying styles to content
- * Returns the transformed AnnotatedString and an OffsetMapping for cursor positioning
+ * Transform text by replacing tag markup with visible opening markers and styled content.
+ * Returns the transformed AnnotatedString and an OffsetMapping for cursor positioning.
  */
 private fun transformExpressiveTags(
     text: String,
     tagBackgroundColor: Color,
     textColor: Color,
+    tagMarkerLabels: Map<String, String>,
 ): Pair<AnnotatedString, OffsetMapping> {
     val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
     val thinkRegex = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+    val legacyThinkRegex =
+        Regex("<" + "think" + ">(.*?)</" + "think" + ">", RegexOption.DOT_MATCHES_ALL)
     val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
 
-    // Find all tag matches
     data class TagMatch(
         val range: IntRange,
         val content: String,
         val type: String,
         val openTagLength: Int,
         val closeTagLength: Int,
+        val markerLabel: String,
     )
 
     val matches = mutableListOf<TagMatch>()
+
+    fun markerFor(type: String): String = tagMarkerLabels[type] ?: type.replaceFirstChar { it.uppercase() }
 
     actionRegex.findAll(text).forEach { match ->
         matches.add(
@@ -98,6 +105,7 @@ private fun transformExpressiveTags(
                 type = "action",
                 openTagLength = "<action>".length,
                 closeTagLength = "</action>".length,
+                markerLabel = markerFor("action"),
             ),
         )
     }
@@ -110,8 +118,24 @@ private fun transformExpressiveTags(
                 type = "think",
                 openTagLength = "<think>".length,
                 closeTagLength = "</think>".length,
+                markerLabel = markerFor("think"),
             ),
         )
+    }
+
+    legacyThinkRegex.findAll(text).forEach { match ->
+        if (matches.none { it.range == match.range }) {
+            matches.add(
+                TagMatch(
+                    range = match.range,
+                    content = match.groupValues[1],
+                    type = "think",
+                    openTagLength = ("<" + "think" + ">").length,
+                    closeTagLength = ("</" + "think" + ">").length,
+                    markerLabel = markerFor("think"),
+                ),
+            )
+        }
     }
 
     narratorRegex.findAll(text).forEach { match ->
@@ -122,6 +146,7 @@ private fun transformExpressiveTags(
                 type = "narrator",
                 openTagLength = "<narrator>".length,
                 closeTagLength = "</narrator>".length,
+                markerLabel = markerFor("narrator"),
             ),
         )
     }
@@ -159,13 +184,44 @@ private fun transformExpressiveTags(
                     currentOriginalIndex = match.range.first
                 }
 
-                // Map opening tag to the start of the content
-                val contentStartInTransformed = transformedBuilder.length
-                repeat(match.openTagLength) {
-                    originalToTransformed.add(contentStartInTransformed)
+                val markerText = "〔${match.markerLabel}〕 "
+                val markerAccentColor =
+                    when (match.type) {
+                        "action" -> MaterialColor.Amber400
+                        "think" ->
+                            if (textColor != Color.Unspecified) {
+                                textColor.copy(alpha = 0.7f)
+                            } else {
+                                Color.Gray.copy(alpha = 0.7f)
+                            }
+                        else -> tagBackgroundColor
+                    }
+
+                val markerStartInTransformed = transformedBuilder.length
+                repeat(match.openTagLength) { index ->
+                    originalToTransformed.add(
+                        markerStartInTransformed + index.coerceAtMost(markerText.length),
+                    )
                 }
 
-                // Append and style content
+                val markerStyleStart = length
+                append(markerText)
+                val markerStyleEnd = length
+                addStyle(
+                    SpanStyle(
+                        color = markerAccentColor,
+                        fontWeight = FontWeight.Medium,
+                        background = markerAccentColor.copy(alpha = 0.12f),
+                    ),
+                    markerStyleStart,
+                    markerStyleEnd,
+                )
+                for (char in markerText) {
+                    originalToTransformed.add(transformedBuilder.length)
+                    transformedBuilder.append(char)
+                }
+
+                val contentStartInTransformed = transformedBuilder.length
                 val startStyle = length
                 append(match.content)
                 val endStyle = length
@@ -178,6 +234,7 @@ private fun transformExpressiveTags(
                                     SpanStyle(
                                         color = MaterialColor.Amber400,
                                         fontWeight = FontWeight.Bold,
+                                        background = MaterialColor.Amber400.copy(alpha = 0.08f),
                                     ),
                                     startStyle,
                                     endStyle,
@@ -191,11 +248,25 @@ private fun transformExpressiveTags(
                                     } else {
                                         Color.Gray.copy(alpha = 0.5f)
                                     }
-                                addStyle(SpanStyle(color = thinkColor), startStyle, endStyle)
+                                addStyle(
+                                    SpanStyle(
+                                        color = thinkColor,
+                                        background = thinkColor.copy(alpha = 0.08f),
+                                    ),
+                                    startStyle,
+                                    endStyle,
+                                )
                             }
 
                             "narrator" -> {
-                                addStyle(SpanStyle(fontStyle = FontStyle.Italic), startStyle, endStyle)
+                                addStyle(
+                                    SpanStyle(
+                                        fontStyle = FontStyle.Italic,
+                                        background = tagBackgroundColor.copy(alpha = 0.12f),
+                                    ),
+                                    startStyle,
+                                    endStyle,
+                                )
                             }
                         }
                     } catch (e: Exception) {
@@ -203,13 +274,11 @@ private fun transformExpressiveTags(
                     }
                 }
 
-                // Update mapping and builder for content
                 for (char in match.content) {
                     originalToTransformed.add(transformedBuilder.length)
                     transformedBuilder.append(char)
                 }
 
-                // Map closing tag to the end of the content
                 val contentEndInTransformed = transformedBuilder.length
                 repeat(match.closeTagLength) {
                     originalToTransformed.add(contentEndInTransformed)

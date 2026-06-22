@@ -45,10 +45,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -94,17 +91,14 @@ import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
-import com.ilustris.sagai.features.saga.chat.data.model.filterUserInputTypes
 import com.ilustris.sagai.features.saga.chat.data.model.icon
 import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
-import com.ilustris.sagai.features.saga.chat.data.model.tag
 import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.morphingGradient
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
@@ -210,7 +204,8 @@ fun ChatInputView(
     maxContentLength: Int = 2000,
     onStopGeneration: () -> Unit = {},
 ) {
-    var focusModeEnabled by remember { mutableStateOf(false) }
+    var characterMenu by remember { mutableStateOf(false) }
+    var speechModeSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(inputField.text) {
@@ -251,6 +246,13 @@ fun ChatInputView(
     val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
     val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
 
+    val tagMarkerLabels =
+        mapOf(
+            "action" to stringResource(R.string.sender_type_action_title),
+            "think" to stringResource(R.string.sender_type_thought_title),
+            "narrator" to stringResource(R.string.sender_type_narrator_title),
+        )
+
     val visualTransformation =
         remember(
             genre,
@@ -260,6 +262,7 @@ fun ChatInputView(
             resolvedColor,
             tagBg,
             textColor,
+            tagMarkerLabels,
         ) {
             VisualTransformation { text ->
                 transformTextWithContent(
@@ -272,6 +275,7 @@ fun ChatInputView(
                     textColor = textColor,
                     headerFont = headerFont,
                     bodyFont = bodyFont,
+                    tagMarkerLabels = tagMarkerLabels,
                 )
             }
         }
@@ -468,16 +472,66 @@ fun ChatInputView(
                     .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Bottom,
+                BasicTextField(
+                    inputField,
+                    enabled = !isGenerating,
+                    maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
+                    onValueChange = { newValue ->
+                        processInputChange(inputField, newValue, maxContentLength)?.let {
+                            onUpdateInput(it)
+                        }
+                    },
+                    textStyle = textStyle,
+                    visualTransformation = visualTransformation,
+                    cursorBrush = resolvedColor.solidGradient(),
+                    decorationBox = { inner ->
+                        Box(
+                            Modifier.padding(8.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Box {
+                                inner()
+                                if (inputField.text.isEmpty()) {
+                                    Text(
+                                        sendType.hint(),
+                                        style = textStyle,
+                                        modifier =
+                                            Modifier
+                                                .alpha(.5f)
+                                                .fillMaxWidth(),
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default),
+                    keyboardActions =
+                        KeyboardActions(onNext = {
+                            if (currentTagInside != null) {
+                                onUpdateInput(escapeCursorFromTagAndClean(inputField))
+                            }
+                        }),
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .weight(1f, fill = false),
-                ) {
-                    var characterMenu by remember { mutableStateOf(false) }
+                            .heightIn(min = 40.dp)
+                            .verticalScroll(scrollState),
+                )
 
+                val activeSpeechMode =
+                    currentTagInside?.let { SenderType.senderForTag(it) } ?: SenderType.CHARACTER
+                val isLoading = isSendingPending || isGenerating
+                val cleanLength = getCleanTextLength(inputField.text)
+                val progress = cleanLength.toFloat() / maxContentLength
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     AnimatedContent(
                         targetState =
                             actualCharacter?.let { it.id to it.image }
@@ -489,346 +543,106 @@ fun ChatInputView(
                                 .clickable { characterMenu = true },
                         label = "ChatInputAvatar",
                     ) {
-                        Box {
-                            val character = actualCharacter ?: content.mainCharacter
-                            character?.let {
-                                CharacterAvatar(
-                                    it,
-                                    genre = genre,
-                                    grainRadius = 0f,
-                                    pixelation = 0f,
-                                    useFallback = false,
-                                    modifier = Modifier.fillMaxSize(),
-                                    borderSize = 1.dp,
-                                    innerPadding = 0.dp,
-                                )
-                            }
-
-                            if (characterMenu) {
-                                ModalBottomSheet(
-                                    onDismissRequest = { characterMenu = false },
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    shape = MaterialTheme.shapes.large,
-                                ) {
-                                    Column(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                    ) {
-                                        Text(
-                                            stringResource(R.string.select_character),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            textAlign = TextAlign.Center,
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth(),
-                                        )
-                                        LazyVerticalGrid(
-                                            columns =
-                                                GridCells.Adaptive(
-                                                    100.dp,
-                                                ),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(bottom = 32.dp),
-                                        ) {
-                                            items(
-                                                count = characters.size,
-                                                key = { index ->
-                                                    val c = characters[index]
-                                                    "${c.id}-${c.image}"
-                                                },
-                                            ) { index ->
-                                                val character = characters[index]
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    modifier =
-                                                        Modifier
-                                                            .clip(MaterialTheme.shapes.medium)
-                                                            .clickable {
-                                                                onSelectCharacter(character)
-                                                                characterMenu = false
-                                                            }.padding(8.dp),
-                                                ) {
-                                                    CharacterAvatar(
-                                                        character,
-                                                        genre = genre,
-                                                        modifier = Modifier.size(64.dp),
-                                                        grainRadius = 0f,
-                                                        pixelation = 0f,
-                                                    )
-                                                    Text(
-                                                        character.name,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        textAlign = TextAlign.Center,
-                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                        modifier = Modifier.padding(top = 8.dp),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        val character = actualCharacter ?: content.mainCharacter
+                        character?.let {
+                            CharacterAvatar(
+                                it,
+                                genre = genre,
+                                grainRadius = 0f,
+                                pixelation = 0f,
+                                useFallback = false,
+                                modifier = Modifier.fillMaxSize(),
+                                borderSize = 1.dp,
+                                innerPadding = 0.dp,
+                            )
                         }
                     }
 
-                    BasicTextField(
-                        inputField,
-                        enabled = !isGenerating,
-                        maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
-                        onValueChange = { newValue ->
-                            if (newValue.text.length == inputField.text.length - 1 && handleSmartBackspace(
-                                    inputField,
-                                ) != null
-                            ) {
-                                handleSmartBackspace(inputField)?.let {
-                                    onUpdateInput(it)
-                                    return@BasicTextField
-                                }
-                            }
-                            if (getCleanTextLength(newValue.text) <= maxContentLength) {
-                                onUpdateInput(
-                                    newValue,
-                                )
-                            }
-                        },
-                        textStyle = textStyle,
-                        visualTransformation = visualTransformation,
-                        cursorBrush = resolvedColor.solidGradient(),
-                        decorationBox = { inner ->
-                            Box(
-                                Modifier
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Box {
-                                    inner()
-                                    if (inputField.text.isEmpty()) {
-                                        Text(
-                                            sendType.hint(),
-                                            style = textStyle,
-                                            modifier =
-                                                Modifier
-                                                    .alpha(.5f)
-                                                    .fillMaxWidth(),
-                                            maxLines = 1,
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default),
-                        keyboardActions =
-                            KeyboardActions(onNext = {
-                                if (currentTagInside != null) {
-                                    onUpdateInput(escapeCursorFromTagAndClean(inputField))
-                                }
-                            }),
+                    Row(
                         modifier =
                             Modifier
-                                .weight(1f)
-                                .heightIn(min = 40.dp)
-                                .verticalScroll(scrollState),
-                    )
-
-                    AnimatedContent(inputField.text.isEmpty()) {
-                        if (it && !isGenerating) {
-                            IconButton(onClick = {
-                                focusModeEnabled = true
-                            }, modifier = Modifier.size(24.dp)) {
-                                Icon(
-                                    painterResource(R.drawable.ic_expand),
-                                    stringResource(R.string.chat_input_expand),
-                                    modifier =
-                                        Modifier
-                                            .padding(4.dp)
-                                            .fillMaxSize(),
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                )
-                            }
-                        } else {
-                            Box(contentAlignment = Alignment.Center) {
-                                val isLoading = isSendingPending || isGenerating
-                                val cleanLength = getCleanTextLength(inputField.text)
-                                val progress = cleanLength.toFloat() / maxContentLength
-
-                                IconButton(
-                                    onClick = {
-                                        if (isLoading) {
-                                            onStopGeneration()
-                                        } else {
-                                            sendMessage()
-                                            onUpdateInput(
-                                                escapeCursorFromTagAndClean(
-                                                    inputField,
-                                                ),
-                                            )
-                                        }
-                                    },
-                                    enabled = (inputField.text.isNotBlank() || isGenerating),
-                                    colors =
-                                        IconButtonDefaults.filledIconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(4.dp)
-                                            .size(32.dp),
-                                ) {
-                                    AnimatedContent(isLoading) { loading ->
-                                        val icon =
-                                            if (loading) {
-                                                R.drawable.ic_stop
-                                            } else {
-                                                if (inputField.text.isNotEmpty()) R.drawable.ic_send else null
-                                            }
-                                        icon?.let {
-                                            Icon(
-                                                painterResource(it),
-                                                null,
-                                                modifier =
-                                                    Modifier
-                                                        .padding(8.dp)
-                                                        .fillMaxSize(),
-                                            )
-                                        }
-                                    }
-                                }
-
-                                if (isLoading || inputField.text.isNotEmpty()) {
-                                    if (isLoading) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(32.dp),
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            trackColor = Color.Transparent,
-                                            strokeWidth = 1.dp,
-                                        )
-                                    } else {
-                                        CircularProgressIndicator(
-                                            progress = { progress.coerceIn(0f, 1f) },
-                                            modifier = Modifier.size(32.dp),
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            trackColor = Color.Transparent,
-                                            strokeWidth = 1.dp,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                AnimatedVisibility(isImeVisible) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                .clip(MaterialTheme.shapes.extraLarge)
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .clickable { speechModeSheet = true }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        SenderType
-                            .filterUserInputTypes()
-                            .filter { it.icon() != null }
-                            .forEach { type ->
-                                val sel = currentTagInside == type.tag
-                                val col by animateColorAsState(
-                                    if (sel) {
-                                        resolvedIconColor
-                                    } else {
-                                        MaterialTheme.colorScheme.onBackground.copy(
-                                            alpha = .5f,
-                                        )
-                                    },
-                                )
+                        activeSpeechMode.icon()?.let {
+                            Icon(
+                                painterResource(it),
+                                contentDescription = null,
+                                tint = resolvedColor,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                        Text(
+                            activeSpeechMode.title(),
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                ),
+                        )
+                    }
 
-                                type.icon()?.let {
+                    Spacer(Modifier.weight(1f))
+
+                    Box(contentAlignment = Alignment.Center) {
+                        IconButton(
+                            onClick = {
+                                if (isLoading) {
+                                    onStopGeneration()
+                                } else {
+                                    sendMessage()
+                                    onUpdateInput(escapeCursorFromTagAndClean(inputField))
+                                }
+                            },
+                            enabled = (inputField.text.isNotBlank() || isGenerating),
+                            colors =
+                                IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .size(32.dp),
+                        ) {
+                            AnimatedContent(isLoading) { loading ->
+                                val icon =
+                                    if (loading) {
+                                        R.drawable.ic_stop
+                                    } else {
+                                        if (inputField.text.isNotEmpty()) R.drawable.ic_send else null
+                                    }
+                                icon?.let {
                                     Icon(
                                         painterResource(it),
                                         null,
-                                        tint = col,
                                         modifier =
                                             Modifier
-                                                .border(
-                                                    1.dp,
-                                                    MaterialTheme.colorScheme.onBackground.copy(
-                                                        alpha = .1f,
-                                                    ),
-                                                    CircleShape,
-                                                ).clip(CircleShape)
-                                                .clickable(currentTagInside == null) {
-                                                    type.tag?.let {
-                                                        onUpdateInput(
-                                                            insertExpressiveTag(
-                                                                inputField,
-                                                                it,
-                                                            ),
-                                                        )
-                                                    }
-                                                }.size(24.dp)
-                                                .padding(4.dp),
+                                                .padding(8.dp)
+                                                .fillMaxSize(),
                                     )
                                 }
                             }
-                        Box {
-                            var menu by remember { mutableStateOf(false) }
-                            Icon(
-                                painterResource(R.drawable.ic_menu),
-                                null,
-                                tint = MaterialTheme.colorScheme.onBackground,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .clip(CircleShape)
-                                        .size(24.dp)
-                                        .clickable { menu = true },
-                            )
-                            DropdownMenu(menu, { menu = false }) {
-                                DropdownMenuItem(
-                                    { Text(stringResource(R.string.chat_input_mention_character)) },
-                                    {
-                                        menu = false
-                                        onUpdateInput(
-                                            TextFieldValue(
-                                                inputField.text + "@",
-                                                TextRange(inputField.text.length + 1),
-                                            ),
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            painterResource(R.drawable.ic_mail),
-                                            null,
-                                            tint = resolvedColor,
-                                            modifier = Modifier.size(24.dp),
-                                        )
-                                    },
+                        }
+
+                        if (isLoading || inputField.text.isNotEmpty()) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    trackColor = Color.Transparent,
+                                    strokeWidth = 1.dp,
                                 )
-                                DropdownMenuItem(
-                                    { Text(stringResource(R.string.chat_input_mention_wiki)) },
-                                    {
-                                        menu = false
-                                        onUpdateInput(
-                                            TextFieldValue(
-                                                inputField.text + "/",
-                                                TextRange(inputField.text.length + 1),
-                                            ),
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            painterResource(R.drawable.ic_slash),
-                                            null,
-                                            tint = resolvedColor,
-                                            modifier = Modifier.size(24.dp),
-                                        )
-                                    },
+                            } else {
+                                CircularProgressIndicator(
+                                    progress = { progress.coerceIn(0f, 1f) },
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    trackColor = Color.Transparent,
+                                    strokeWidth = 1.dp,
                                 )
                             }
                         }
@@ -925,6 +739,92 @@ fun ChatInputView(
                 }
             }
         }
+        if (characterMenu) {
+            ModalBottomSheet(
+                onDismissRequest = { characterMenu = false },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = MaterialTheme.shapes.large,
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.select_character),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(100.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 32.dp),
+                    ) {
+                        items(
+                            count = characters.size,
+                            key = { index ->
+                                val c = characters[index]
+                                "${c.id}-${c.image}"
+                            },
+                        ) { index ->
+                            val character = characters[index]
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier =
+                                    Modifier
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .clickable {
+                                            onSelectCharacter(character)
+                                            characterMenu = false
+                                        }.padding(8.dp),
+                            ) {
+                                CharacterAvatar(
+                                    character,
+                                    genre = genre,
+                                    modifier = Modifier.size(64.dp),
+                                    grainRadius = 0f,
+                                    pixelation = 0f,
+                                )
+                                Text(
+                                    character.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    textAlign = TextAlign.Center,
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (speechModeSheet) {
+            SpeechModeSheet(
+                activeTag = currentTagInside,
+                accentColor = resolvedColor,
+                canInsertTag = currentTagInside == null,
+                onSelectSpeak = {
+                    if (currentTagInside != null) {
+                        onUpdateInput(escapeCursorFromTagAndClean(inputField))
+                    }
+                },
+                onSelectTag = { tag ->
+                    onUpdateInput(insertExpressiveTag(inputField, tag))
+                },
+                onDismiss = { speechModeSheet = false },
+            )
+        }
+
         val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         typoFix?.let {
             if (it.status != TypoStatus.OK) {
@@ -955,418 +855,6 @@ fun ChatInputView(
                             }
                             sendMessage(true)
                         }) { Text(stringResource(R.string.chat_input_fix)) }
-                    }
-                }
-            }
-        }
-        if (focusModeEnabled) {
-            ModalBottomSheet({ focusModeEnabled = false }) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .animateContentSize(),
-                ) {
-                    val isLoading = isSendingPending || isGenerating
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton({
-                            focusModeEnabled = false
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                painterResource(R.drawable.ic_back_left),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(4.dp)
-                                        .fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-
-                        Text(
-                            stringResource(R.string.chat_input_focus_title),
-                            style =
-                                MaterialTheme.typography.titleSmall.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            modifier = Modifier.weight(1f),
-                        )
-
-                        Box(Modifier.size(24.dp))
-                    }
-
-                    HorizontalDivider(
-                        modifier =
-                            Modifier
-                                .padding(vertical = 8.dp)
-                                .fillMaxWidth(),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    )
-
-                    AnimatedVisibility(
-                        currentTagInside != null,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                    ) {
-                        currentTagInside?.let { tag ->
-                            SenderType.senderForTag(tag)?.let { senderType ->
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier =
-                                        Modifier
-                                            .clip(
-                                                MaterialTheme.shapes.extraLarge,
-                                            ).background(
-                                                resolvedColor,
-                                                MaterialTheme.shapes.extraLarge,
-                                            ).clickable {
-                                                onUpdateInput(
-                                                    escapeCursorFromTagAndClean(
-                                                        inputField,
-                                                    ),
-                                                )
-                                            }.padding(8.dp),
-                                ) {
-                                    senderType.icon()?.let {
-                                        Icon(
-                                            painterResource(it),
-                                            null,
-                                            modifier = Modifier.size(12.dp),
-                                            tint = resolvedIconColor,
-                                        )
-                                    }
-                                    Text(
-                                        stringResource(
-                                            R.string.tag_inside_hint,
-                                            senderType.title(),
-                                        ),
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = resolvedIconColor,
-                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            ),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopStart) {
-                        val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
-                        val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
-                        BasicTextField(
-                            inputField,
-                            enabled = !isGenerating,
-                            maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
-                            onValueChange = { newValue ->
-                                if (newValue.text.length == inputField.text.length - 1 && handleSmartBackspace(
-                                        inputField,
-                                    ) != null
-                                ) {
-                                    handleSmartBackspace(inputField)?.let {
-                                        onUpdateInput(it)
-                                        return@BasicTextField
-                                    }
-                                }
-                                if (getCleanTextLength(newValue.text) <= maxContentLength) {
-                                    onUpdateInput(
-                                        newValue,
-                                    )
-                                }
-                            },
-                            textStyle =
-                                textStyle.copy(
-                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                                ),
-                            visualTransformation = {
-                                transformTextWithContent(
-                                    content.mainCharacter,
-                                    content.characters,
-                                    content.wikis,
-                                    inputField.text,
-                                    resolvedColor,
-                                    tagBg,
-                                    textColor,
-                                    headerFont,
-                                    bodyFont,
-                                )
-                            },
-                            cursorBrush = resolvedColor.solidGradient(),
-                            decorationBox = { inner ->
-                                val alpha by animateFloatAsState(if (inputField.text.isEmpty()) .5f else 1f)
-                                Column(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .alpha(alpha)
-                                        .padding(8.dp)
-                                        .reactiveShimmer(isGenerating),
-                                ) {
-                                    inner()
-                                    if (inputField.text.isEmpty()) {
-                                        Text(
-                                            sendType.hint(),
-                                            style = textStyle,
-                                            modifier = Modifier.alpha(.4f),
-                                        )
-                                    }
-                                    AnimatedVisibility(queryItemsType != null) {
-                                        queryItemsType?.let { itemsType ->
-                                            LazyRow(
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 4.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                contentPadding = PaddingValues(horizontal = 8.dp),
-                                            ) {
-                                                when (itemsType) {
-                                                    is ItemsType.Characters -> {
-                                                        items(itemsType.filteredCharacters) { character ->
-                                                            val col =
-                                                                character.hexColor.hexToColor()
-                                                                    ?: resolvedColor
-                                                            Row(
-                                                                Modifier
-                                                                    .border(
-                                                                        1.dp,
-                                                                        col.copy(alpha = .3f),
-                                                                        CircleShape,
-                                                                    ).background(
-                                                                        col.copy(alpha = .1f),
-                                                                        CircleShape,
-                                                                    ).clip(CircleShape)
-                                                                    .clickable {
-                                                                        handleCharacterSelection(
-                                                                            character,
-                                                                            inputField,
-                                                                            onUpdateInput,
-                                                                        )
-                                                                    }.padding(
-                                                                        horizontal = 12.dp,
-                                                                        vertical = 6.dp,
-                                                                    ),
-                                                                verticalAlignment = Alignment.CenterVertically,
-                                                                horizontalArrangement =
-                                                                    Arrangement.spacedBy(
-                                                                        8.dp,
-                                                                    ),
-                                                            ) {
-                                                                CharacterAvatar(
-                                                                    character,
-                                                                    genre = genre,
-                                                                    modifier = Modifier.size(20.dp),
-                                                                    grainRadius = 0f,
-                                                                    pixelation = 0f,
-                                                                )
-                                                                Text(
-                                                                    character.name,
-                                                                    style =
-                                                                        MaterialTheme.typography.labelSmall.copy(
-                                                                            color = col,
-                                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                                        ),
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-
-                                                    is ItemsType.Wikis -> {
-                                                        items(itemsType.filteredWikis) { wiki ->
-                                                            Row(
-                                                                Modifier
-                                                                    .border(
-                                                                        1.dp,
-                                                                        resolvedColor.copy(alpha = .3f),
-                                                                        CircleShape,
-                                                                    ).background(
-                                                                        resolvedColor.copy(alpha = .1f),
-                                                                        CircleShape,
-                                                                    ).clip(CircleShape)
-                                                                    .clickable {
-                                                                        handleWikiSelection(
-                                                                            wiki,
-                                                                            inputField,
-                                                                            onUpdateInput,
-                                                                        )
-                                                                    }.padding(
-                                                                        horizontal = 12.dp,
-                                                                        vertical = 6.dp,
-                                                                    ),
-                                                                verticalAlignment = Alignment.CenterVertically,
-                                                                horizontalArrangement =
-                                                                    Arrangement.spacedBy(
-                                                                        8.dp,
-                                                                    ),
-                                                            ) {
-                                                                Text(
-                                                                    wiki.emojiTag ?: "📖",
-                                                                    style = MaterialTheme.typography.labelSmall,
-                                                                )
-                                                                Text(
-                                                                    wiki.title,
-                                                                    style =
-                                                                        MaterialTheme.typography.labelSmall.copy(
-                                                                            color = resolvedColor,
-                                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                                        ),
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    imeAction =
-                                        if (currentTagInside !=
-                                            null
-                                        ) {
-                                            ImeAction.Next
-                                        } else {
-                                            ImeAction.Default
-                                        },
-                                ),
-                            keyboardActions =
-                                KeyboardActions(onNext = {
-                                    if (currentTagInside != null) {
-                                        onUpdateInput(escapeCursorFromTagAndClean(inputField))
-                                    }
-                                }),
-                            modifier =
-                                Modifier.fillMaxWidth(),
-                        )
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            SenderType
-                                .filterUserInputTypes()
-                                .filter { it.icon() != null }
-                                .forEach { type ->
-                                    val sel = currentTagInside == type.tag
-                                    val col by animateColorAsState(
-                                        if (sel) {
-                                            resolvedIconColor
-                                        } else {
-                                            MaterialTheme.colorScheme.background.copy(
-                                                alpha = .5f,
-                                            )
-                                        },
-                                    )
-
-                                    type.icon()?.let {
-                                        Icon(
-                                            painterResource(it),
-                                            null,
-                                            tint = col,
-                                            modifier =
-                                                Modifier
-                                                    .clip(CircleShape)
-                                                    .size(24.dp)
-                                                    .background(
-                                                        resolvedColor.copy(alpha = .3f),
-                                                        shape = MaterialTheme.shapes.extraLarge,
-                                                    ).padding(4.dp)
-                                                    .clickable(currentTagInside == null) {
-                                                        type.tag?.let {
-                                                            onUpdateInput(
-                                                                insertExpressiveTag(
-                                                                    inputField,
-                                                                    it,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                        )
-                                    }
-                                }
-
-                            Icon(
-                                painterResource(R.drawable.ic_mail),
-                                null,
-                                tint = resolvedIconColor,
-                                modifier =
-                                    Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            resolvedColor.copy(alpha = .3f),
-                                            shape = MaterialTheme.shapes.extraLarge,
-                                        ).padding(4.dp)
-                                        .clickable {
-                                            onUpdateInput(
-                                                TextFieldValue(
-                                                    inputField.text + " @",
-                                                    TextRange(inputField.text.length + 1),
-                                                ),
-                                            )
-                                        },
-                            )
-
-                            Icon(
-                                painterResource(R.drawable.ic_slash),
-                                null,
-                                tint = resolvedIconColor,
-                                modifier =
-                                    Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            resolvedColor.copy(alpha = .3f),
-                                            shape = CircleShape,
-                                        ).padding(4.dp)
-                                        .clickable {
-                                            onUpdateInput(
-                                                TextFieldValue(
-                                                    inputField.text + "/",
-                                                    TextRange(inputField.text.length + 1),
-                                                ),
-                                            )
-                                        },
-                            )
-                        }
-
-                        Spacer(Modifier.weight(1f))
-
-                        Button(
-                            {
-                                onSendMessage(false)
-                                focusModeEnabled = false
-                            },
-                            colors =
-                                ButtonDefaults.buttonColors().copy(
-                                    resolvedColor,
-                                    resolvedIconColor,
-                                ),
-                            enabled = inputField.text.isNotEmpty() && isLoading.not(),
-                            modifier = Modifier.padding(16.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.chat_input_send),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    ),
-                            )
-                        }
                     }
                 }
             }

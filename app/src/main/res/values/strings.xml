@@ -717,6 +717,7 @@
     <string name="chat_input_fix">Fix</string>
     <string name="chat_input_send">Send</string>
     <string name="chat_input_focus_title">Write message</string>
+    <string name="chat_input_speech_mode_title">Speech mode</string>
     <string name="chat_input_mention_characters_title">Characters</string>
     <string name="chat_input_mention_wiki_title">Wiki</string>
     <string name="chat_input_search_query">Searching \"%s\"</string>
