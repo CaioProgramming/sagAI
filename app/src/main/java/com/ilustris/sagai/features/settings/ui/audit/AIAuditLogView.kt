@@ -88,6 +88,7 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -232,7 +233,8 @@ fun AIAuditLogView(
                             .fillMaxWidth()
                             .horizontalScroll(
                                 rememberScrollState(),
-                            ).padding(bottom = 8.dp),
+                            )
+                            .padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -411,7 +413,8 @@ fun AIAuditLogView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(12.dp),
-                            ).verticalScroll(rememberScrollState()),
+                            )
+                            .verticalScroll(rememberScrollState()),
                 ) {
                     if (section.isJson) {
                         JsonCodeBlock(jsonString = section.content)
@@ -542,7 +545,8 @@ fun AuditLogItem(
                                         1.dp,
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         RoundedCornerShape(4.dp),
-                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    )
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                     .padding(8.dp),
                         )
                     }
@@ -784,7 +788,8 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    ).padding(12.dp),
+                                    )
+                                    .padding(12.dp),
                         )
                     } else {
                         Button(
@@ -796,7 +801,7 @@ fun AuditLogItem(
                                     .reactiveShimmer(isLoadingSuggestion)
                                     .gradientFill(
                                         Brush.horizontalGradient(
-                                            holographicGradient,
+                                            themeBrushColors(),
                                         ),
                                     ),
                             colors =
@@ -934,7 +939,8 @@ fun JsonCodeBlock(jsonString: String) {
                 .background(
                     MaterialTheme.colorScheme.surfaceVariant,
                     shape = MaterialTheme.shapes.small,
-                ).padding(12.dp),
+                )
+                .padding(12.dp),
     )
 }
 
@@ -1083,7 +1089,8 @@ fun PipelineInsightCard(
                                 .alpha(alpha)
                                 .padding(
                                     16.dp,
-                                ).clickable {
+                                )
+                                .clickable {
                                     expanded = !expanded
                                 },
                     )

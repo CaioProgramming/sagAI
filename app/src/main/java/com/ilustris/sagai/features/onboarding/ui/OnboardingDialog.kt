@@ -533,7 +533,7 @@ fun PremiumBackground() {
     Box(
         modifier =
             Modifier
-                .reactiveShimmer(true, holographicGradient.plus(Color.Transparent))
+                .reactiveShimmer(true)
                 .fillMaxSize(),
     ) {
         StarryTextPlaceholder(

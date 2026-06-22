@@ -91,7 +91,6 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
@@ -240,7 +239,7 @@ fun ChatInputView(
     val glowRadiusState =
         animateFloatAsState(if (isGenerating.not()) 10f else 25f, label = "glowRadius")
     val inputShape = sagaShape()
-    val palette = genre.colorPalette()
+    val palette = themeBrushColors()
     val infiniteTransition = rememberInfiniteTransition(label = "border")
     val rotationState =
         infiniteTransition.animateFloat(
@@ -614,7 +613,10 @@ fun ChatInputView(
                                         Text(
                                             sendType.hint(),
                                             style = textStyle,
-                                            modifier = Modifier.alpha(.4f),
+                                            modifier =
+                                                Modifier
+                                                    .alpha(.5f)
+                                                    .fillMaxWidth(),
                                             maxLines = 1,
                                         )
                                     }

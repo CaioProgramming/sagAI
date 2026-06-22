@@ -105,10 +105,10 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -379,7 +379,7 @@ private fun ChatList(
                                     ),
                                 titleStyle =
                                     MaterialTheme.typography.titleLarge,
-                                brush = Brush.linearGradient(holographicGradient),
+                                brush = Brush.linearGradient(themeBrushColors()),
                             )
                         } else {
                             SagaTitle(
