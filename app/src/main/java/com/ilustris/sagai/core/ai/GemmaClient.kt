@@ -9,6 +9,8 @@ import com.google.gson.JsonSyntaxException
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.model.AIGeneration
 import com.ilustris.sagai.core.ai.model.GeminiContent
+import com.ilustris.sagai.core.ai.model.GeminiError
+import com.ilustris.sagai.core.ai.model.GeminiErrorResponse
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
 import com.ilustris.sagai.core.ai.model.GeminiInlineData
 import com.ilustris.sagai.core.ai.model.GeminiPart
@@ -36,9 +38,11 @@ import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.sync.Mutex
@@ -173,19 +177,24 @@ class GemmaClient
                 for (currentAttempt in 1..maxAttempts) {
                     var queueWaitMs = 0L
                     var inferenceMs = 0L
+                    var lastRequestParts = emptyList<GeminiPart>()
+                    var fullPromptText = ""
                     try {
                         val queueStartTime = System.currentTimeMillis()
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
                             queueWaitMs = System.currentTimeMillis() - queueStartTime
-                            val promptLength =
-                                prompt.length +
-                                    references.filterNotNull().sumOf {
-                                        it.description.length
-                                    }
-                            if (logEnabled) Timber.i("Requesting $model\nPrompt with $promptLength chars.")
-
-                            if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
-                                throw IllegalArgumentException("Prompt is too long($promptLength). verify your prompt and try again.")
+                            val normalizedInstructions = finalInstructions.toAINormalize()
+                            fullPromptText =
+                                buildFullPromptText(
+                                    taskPrompt = prompt,
+                                    referenceDescriptions =
+                                        references
+                                            .filterNotNull()
+                                            .map { it.description },
+                                    systemInstruction = normalizedInstructions,
+                                )
+                            if (logEnabled) {
+                                Timber.i("Requesting $model\nPrompt with ${fullPromptText.length} chars.")
                             }
 
                             val parts = mutableListOf<GeminiPart>()
@@ -203,11 +212,12 @@ class GemmaClient
                                 )
                                 parts.add(GeminiPart(text = reference.description))
                             }
+                            lastRequestParts = parts.toList()
 
                             val geminiRequest =
                                 GeminiRequest(
                                     contents = listOf(GeminiContent(parts = parts)),
-                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = finalInstructions.toAINormalize()))),
+                                    systemInstruction = GeminiContent(parts = listOf(GeminiPart(text = normalizedInstructions))),
                                     generationConfig =
                                         GeminiGenerationConfig(
                                             temperature =
@@ -226,6 +236,15 @@ class GemmaClient
                                         ),
                                 )
 
+                            ensurePromptWithinTokenLimit(
+                                model = model.replace("models/", ""),
+                                apiKey = apiConfig(useCore),
+                                request = geminiRequest,
+                                parts = lastRequestParts,
+                                fullPromptText = fullPromptText,
+                                systemInstruction = normalizedInstructions,
+                            )
+
                             val formattedModel = model.replace("models/", "")
                             val inferenceStart = System.currentTimeMillis()
                             val response =
@@ -239,6 +258,7 @@ class GemmaClient
                             // Check for API error
                             response.error?.let { error ->
                                 if (logEnabled) Timber.e("Gemini API error: ${error.code} - ${error.message}")
+                                throwIfApiInputTokenLimitError(error, fullPromptText)
                                 throw Exception("Gemini API error: ${error.message}")
                             }
 
@@ -319,7 +339,7 @@ class GemmaClient
                                 Timber.i(
                                     "Generation Bench: $model took ${inferenceMs}ms" +
                                         (if (queueWaitMs > 0) " (queue: ${queueWaitMs}ms)" else "") +
-                                        " (Prompt: $promptLength chars)",
+                                        " (Prompt: ${fullPromptText.length} chars)",
                                 )
                             }
                             val data = aiGeneration.data
@@ -328,6 +348,11 @@ class GemmaClient
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        classifyPromptLimitFailure(
+                            e,
+                            fullPromptText,
+                            INPUT_TOKEN_LIMIT,
+                        )?.let { throw it }
                         recordGenerationFailure(
                             dataType = this.javaClass.simpleName,
                             model = model,
@@ -371,7 +396,7 @@ class GemmaClient
                         // Check if it's a parsing error (no delay needed) or network error (delay recommended)
                         val isParsingError =
                             e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
-                        var extractedDelay: Long? = null
+                        var extractedDelay: Long? = extractRetryDelayFromException(e)
 
                         if (e is GeminiHttpException) {
                             val errorBody = e.errorBody
@@ -384,16 +409,15 @@ class GemmaClient
                             try {
                                 val errorResponse =
                                     GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
-                                val retryInfo =
-                                    errorResponse.error?.details?.find {
-                                        it.type == "type.googleapis.com/google.rpc.RetryInfo"
-                                    }
                                 extractedDelay =
-                                    retryInfo
+                                    errorResponse.error
+                                        ?.details
+                                        ?.find { it.type == "type.googleapis.com/google.rpc.RetryInfo" }
                                         ?.retryDelay
                                         ?.removeSuffix("s")
                                         ?.toDoubleOrNull()
                                         ?.toLong()
+                                        ?: extractedDelay
 
                                 errorResponse.error?.details?.forEach { detail ->
                                     detail.violations?.forEach { violation ->
@@ -420,6 +444,14 @@ class GemmaClient
                         }
 
                         if (currentAttempt < maxAttempts) {
+                            logEstimatedPromptTokensOnFailure(
+                                parts = lastRequestParts,
+                                tokenLimit = INPUT_TOKEN_LIMIT,
+                                context = "generate",
+                                logEnabled = logEnabled,
+                                cause = e,
+                                systemInstruction = finalInstructions.toAINormalize(),
+                            )
                             val delayToApply =
                                 retryDelaySeconds(e, isParsingError, extractedDelay)
 
@@ -488,21 +520,24 @@ class GemmaClient
                 for (currentAttempt in 1..maxAttempts) {
                     var queueWaitMs = 0L
                     var inferenceMs = 0L
+                    var lastRequestParts = emptyList<GeminiPart>()
+                    var fullPromptText = ""
                     try {
                         val queueStartTime = System.currentTimeMillis()
                         return@withContext requestMutexes.getOrPut(model) { Mutex() }.withLock {
                             queueWaitMs = System.currentTimeMillis() - queueStartTime
                             val fullPrompt = prompt
-
-                            val promptLength =
-                                fullPrompt.length +
-                                    references.filterNotNull().sumOf {
-                                        it.description.length
-                                    }
-                            if (logEnabled) Timber.i("Requesting $model\nPrompt with $promptLength chars.")
-
-                            if (promptLength > (INPUT_TOKEN_LIMIT * 5)) {
-                                throw IllegalArgumentException("Prompt is too long($promptLength). verify your prompt and try again.")
+                            fullPromptText =
+                                buildFullPromptText(
+                                    taskPrompt = fullPrompt,
+                                    referenceDescriptions =
+                                        references
+                                            .filterNotNull()
+                                            .map { it.description },
+                                    systemInstruction = systemInstruction,
+                                )
+                            if (logEnabled) {
+                                Timber.i("Requesting $model\nPrompt with ${fullPromptText.length} chars.")
                             }
 
                             val parts = mutableListOf<GeminiPart>()
@@ -520,6 +555,7 @@ class GemmaClient
                                 )
                                 parts.add(GeminiPart(text = reference.description))
                             }
+                            lastRequestParts = parts.toList()
 
                             val geminiRequest =
                                 GeminiRequest(
@@ -543,6 +579,15 @@ class GemmaClient
                                         ),
                                 )
 
+                            ensurePromptWithinTokenLimit(
+                                model = model.replace("models/", ""),
+                                apiKey = apiConfig(useCore),
+                                request = geminiRequest,
+                                parts = lastRequestParts,
+                                fullPromptText = fullPromptText,
+                                systemInstruction = systemInstruction,
+                            )
+
                             val formattedModel = model.replace("models/", "")
                             val inferenceStart = System.currentTimeMillis()
                             val response =
@@ -556,6 +601,7 @@ class GemmaClient
                             // Check for API error
                             response.error?.let { error ->
                                 if (logEnabled) Timber.e("Gemini API error: ${error.code} - ${error.message}")
+                                throwIfApiInputTokenLimitError(error, fullPromptText)
                                 throw Exception("Gemini API error: ${error.message}")
                             }
 
@@ -636,7 +682,7 @@ class GemmaClient
                                 Timber.i(
                                     "Generation Bench: $model took ${inferenceMs}ms" +
                                         (if (queueWaitMs > 0) " (queue: ${queueWaitMs}ms)" else "") +
-                                        " (Prompt: $promptLength chars)",
+                                        " (Prompt: ${fullPromptText.length} chars)",
                                 )
                             }
                             val data = aiGeneration.data
@@ -645,6 +691,11 @@ class GemmaClient
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        classifyPromptLimitFailure(
+                            e,
+                            fullPromptText,
+                            INPUT_TOKEN_LIMIT,
+                        )?.let { throw it }
                         recordGenerationFailure(
                             dataType = this.javaClass.simpleName,
                             model = model,
@@ -688,7 +739,7 @@ class GemmaClient
                         // Check if it's a parsing error (no delay needed) or network error (delay recommended)
                         val isParsingError =
                             e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
-                        var extractedDelay: Long? = null
+                        var extractedDelay: Long? = extractRetryDelayFromException(e)
 
                         if (e is GeminiHttpException) {
                             val errorBody = e.errorBody
@@ -700,16 +751,15 @@ class GemmaClient
 
                             try {
                                 val errorResponse = GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
-                                val retryInfo =
-                                    errorResponse.error?.details?.find {
-                                        it.type == "type.googleapis.com/google.rpc.RetryInfo"
-                                    }
                                 extractedDelay =
-                                    retryInfo
+                                    errorResponse.error
+                                        ?.details
+                                        ?.find { it.type == "type.googleapis.com/google.rpc.RetryInfo" }
                                         ?.retryDelay
                                         ?.removeSuffix("s")
                                         ?.toDoubleOrNull()
                                         ?.toLong()
+                                        ?: extractedDelay
 
                                 errorResponse.error?.details?.forEach { detail ->
                                     detail.violations?.forEach { violation ->
@@ -736,6 +786,14 @@ class GemmaClient
                         }
 
                         if (currentAttempt < maxAttempts) {
+                            logEstimatedPromptTokensOnFailure(
+                                parts = lastRequestParts,
+                                tokenLimit = INPUT_TOKEN_LIMIT,
+                                context = "generate",
+                                logEnabled = logEnabled,
+                                cause = e,
+                                systemInstruction = systemInstruction,
+                            )
                             val delayToApply =
                                 retryDelaySeconds(e, isParsingError, extractedDelay)
 
@@ -818,8 +876,10 @@ class GemmaClient
             logEnabled: Boolean = true,
             aiStats: AIStats? = null,
             systemInstructions: Map<String, Any> = emptyMap(),
-        ): Flow<StreamingState<T?>> =
-            flow {
+        ): Flow<StreamingState<T?>> {
+            val lastRequestParts = mutableListOf<GeminiPart>()
+            val lastFullPromptText = StringBuilder()
+            return flow {
                 val (dataTypeName, baseSystemInstruction) =
                     buildStructure<T>(
                         describeOutput,
@@ -847,8 +907,20 @@ class GemmaClient
                     val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
+                        var fullPromptText = ""
                         try {
                             val fullPrompt = prompt
+                            fullPromptText =
+                                buildFullPromptText(
+                                    taskPrompt = fullPrompt,
+                                    referenceDescriptions =
+                                        references
+                                            .filterNotNull()
+                                            .map { it.description },
+                                    systemInstruction = systemInstruction,
+                                )
+                            lastFullPromptText.clear()
+                            lastFullPromptText.append(fullPromptText)
 
                             val parts = mutableListOf<GeminiPart>()
                             parts.add(GeminiPart(text = fullPrompt))
@@ -865,6 +937,8 @@ class GemmaClient
                                 )
                                 parts.add(GeminiPart(text = reference.description))
                             }
+                            lastRequestParts.clear()
+                            lastRequestParts.addAll(parts)
 
                             val geminiRequest =
                                 GeminiRequest(
@@ -887,6 +961,15 @@ class GemmaClient
                                                 ),
                                         ),
                                 )
+
+                            ensurePromptWithinTokenLimit(
+                                model = model.replace("models/", ""),
+                                apiKey = apiConfig(useCore),
+                                request = geminiRequest,
+                                parts = lastRequestParts,
+                                fullPromptText = fullPromptText,
+                                systemInstruction = systemInstruction,
+                            )
 
                             val formattedModel = model.replace("models/", "")
 
@@ -924,55 +1007,59 @@ class GemmaClient
                                     if (trimmed.isEmpty()) continue
                                     val jsonStr = trimmed
 
-                                    try {
+                                    if (logEnabled) {
+                                        Timber.i("generateStreaming: Trying to parse $jsonStr")
+                                    }
+                                    val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+                                    partialResponse.error?.let { streamError ->
+                                        throwIfApiInputTokenLimitError(streamError, fullPromptText)
+                                        throw GeminiHttpException(streamError.code ?: 400, jsonStr)
+                                    }
+
+                                    if (partialResponse.usageMetadata != null) {
+                                        usageMetadata = partialResponse.usageMetadata
+                                    }
+
+                                    val candidate = partialResponse.candidates?.firstOrNull()
+                                    if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
                                         if (logEnabled) {
-                                            Timber.i("generateStreaming: Trying to parse $jsonStr")
+                                            Timber.w(
+                                                "Streaming API blocked content with reason: ${candidate.finishReason}",
+                                            )
                                         }
-                                        val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+                                        throw GuardrailsException(SafeGuard.BLOCKED)
+                                    }
 
-                                        if (partialResponse.usageMetadata != null) {
-                                            usageMetadata = partialResponse.usageMetadata
-                                        }
-
-                                        val candidate = partialResponse.candidates?.firstOrNull()
-                                        if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
-                                            if (logEnabled) Timber.w("Streaming API blocked content with reason: ${candidate.finishReason}")
-                                            throw GuardrailsException(SafeGuard.BLOCKED)
-                                        }
-
-                                        candidate?.content?.parts?.forEach { part ->
-                                            if (part.text != null) {
-                                                if (part.thought == true) {
-                                                    accumulatedThoughts.append(part.text)
-                                                    emit(
-                                                        StreamingState.Reasoning(
-                                                            accumulatedThoughts.toString(),
-                                                        ),
-                                                    )
-                                                } else {
-                                                    accumulatedText.append(part.text)
-                                                }
-                                            }
-                                        }
-                                        candidate?.let {
-                                            if (logEnabled) {
-                                                Timber.d("Instructions: \n${systemInstruction}\n")
-
-                                                Timber.d("Prompt requested:\n$prompt\n")
-
-                                                Timber.d(
-                                                    "Input JSON: ${
-                                                        geminiRequest.toJsonFormatExcludingFields(
-                                                            AI_EXCLUDED_FIELDS,
-                                                        )
-                                                    }",
+                                    candidate?.content?.parts?.forEach { part ->
+                                        if (part.text != null) {
+                                            if (part.thought == true) {
+                                                accumulatedThoughts.append(part.text)
+                                                emit(
+                                                    StreamingState.Reasoning(
+                                                        accumulatedThoughts.toString(),
+                                                    ),
                                                 )
-
-                                                Timber.d("Request stats: \n${it.content.toJsonFormat()}\n")
+                                            } else {
+                                                accumulatedText.append(part.text)
                                             }
                                         }
-                                    } catch (e: Exception) {
-                                        Timber.w("Failed to parse stream chunk: $jsonStr => ${e.message}")
+                                    }
+                                    candidate?.let {
+                                        if (logEnabled) {
+                                            Timber.d("Instructions: \n${systemInstruction}\n")
+
+                                            Timber.d("Prompt requested:\n$prompt\n")
+
+                                            Timber.d(
+                                                "Input JSON: ${
+                                                    geminiRequest.toJsonFormatExcludingFields(
+                                                        AI_EXCLUDED_FIELDS,
+                                                    )
+                                                }",
+                                            )
+
+                                            Timber.d("Request stats: \n${it.content.toJsonFormat()}\n")
+                                        }
                                     }
                                 }
                             }
@@ -1017,9 +1104,14 @@ class GemmaClient
                             emit(StreamingState.Success(aiGeneration.data))
                             return@flow
                         } catch (e: Exception) {
-                            if (e.isFlowCancellation()) {
+                            if (e.isFlowCancellation() || e is CancellationException) {
                                 throw e
                             }
+                            classifyPromptLimitFailure(
+                                e,
+                                lastFullPromptText.toString(),
+                                INPUT_TOKEN_LIMIT,
+                            )?.let { throw it }
                             recordGenerationFailure(
                                 dataType = javaClass.simpleName,
                                 model = model,
@@ -1040,7 +1132,7 @@ class GemmaClient
 
                             val isParsingError =
                                 e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
-                            var extractedDelay: Long? = null
+                            var extractedDelay: Long? = extractRetryDelayFromException(e)
 
                             if (e is GuardrailsException) {
                                 sideEffectService.emit(SideEffect.GuardrailBlock(e.status))
@@ -1051,23 +1143,29 @@ class GemmaClient
                                 try {
                                     val errorResponse =
                                         GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
-                                    val retryInfo =
-                                        errorResponse.error?.details?.find {
-                                            it.type ==
-                                                "type.googleapis.com/google.rpc.RetryInfo"
-                                        }
                                     extractedDelay =
-                                        retryInfo
+                                        errorResponse.error
+                                            ?.details
+                                            ?.find { it.type == "type.googleapis.com/google.rpc.RetryInfo" }
                                             ?.retryDelay
                                             ?.removeSuffix("s")
                                             ?.toDoubleOrNull()
                                             ?.toLong()
+                                            ?: extractedDelay
                                 } catch (parseEx: Exception) {
                                     Timber.e(parseEx)
                                 }
                             }
 
                             if (currentAttempt < maxAttempts) {
+                                logEstimatedPromptTokensOnFailure(
+                                    parts = lastRequestParts,
+                                    tokenLimit = INPUT_TOKEN_LIMIT,
+                                    context = "generateStreaming",
+                                    logEnabled = logEnabled,
+                                    cause = e,
+                                    systemInstruction = systemInstruction,
+                                )
                                 val delayToApply =
                                     retryDelaySeconds(e, isParsingError, extractedDelay)
                                 if (delayToApply > 0) delay(delayToApply.seconds)
@@ -1090,18 +1188,46 @@ class GemmaClient
                                         ),
                                     )
                                 }
-                                emit(StreamingState.Error(e.message ?: "Unknown error", e))
-                                return@flow
+                                throw e
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    if (e.isFlowCancellation()) {
+                    if (e.isFlowCancellation() || e is CancellationException) {
                         throw e
                     }
-                    emit(StreamingState.Error(e.message ?: "Unknown error", e))
+                    throw e
                 }
+            }.catch { e ->
+                if (e.isFlowCancellation() || e is CancellationException) throw e
+
+                val resolved =
+                    classifyPromptLimitFailure(
+                        e,
+                        lastFullPromptText.toString(),
+                        INPUT_TOKEN_LIMIT,
+                    ) ?: e
+                logEstimatedPromptTokensOnFailure(
+                    parts = lastRequestParts,
+                    tokenLimit = INPUT_TOKEN_LIMIT,
+                    context = "generateStreaming",
+                    logEnabled = logEnabled,
+                    cause = resolved,
+                    systemInstruction = null,
+                )
+                emit(
+                    StreamingState.Error(
+                        message =
+                            appendEstimatedTokenDiagnostics(
+                                message = resolved.message ?: "Unknown error",
+                                parts = lastRequestParts,
+                                tokenLimit = INPUT_TOKEN_LIMIT,
+                            ),
+                        throwable = resolved,
+                    ),
+                )
             }.flowOn(Dispatchers.IO)
+        }
 
         suspend inline fun <reified T> generateStreaming(
             promptSplit: SplitPrompt,
@@ -1114,8 +1240,10 @@ class GemmaClient
             requirement: ModelRequirement = ModelRequirement.MEDIUM,
             userInteraction: Boolean = false,
             logEnabled: Boolean = true,
-        ): Flow<StreamingState<T?>> =
-            flow {
+        ): Flow<StreamingState<T?>> {
+            val lastRequestParts = mutableListOf<GeminiPart>()
+            val lastFullPromptText = StringBuilder()
+            return flow {
                 val prompt = promptSplit.processedTemplate
                 val (dataTypeName, baseSystemInstruction) =
                     buildStructure<T>(
@@ -1144,8 +1272,20 @@ class GemmaClient
                     val startTime = System.currentTimeMillis()
 
                     for (currentAttempt in 1..maxAttempts) {
+                        var fullPromptText = ""
                         try {
                             val fullPrompt = prompt
+                            fullPromptText =
+                                buildFullPromptText(
+                                    taskPrompt = fullPrompt,
+                                    referenceDescriptions =
+                                        references
+                                            .filterNotNull()
+                                            .map { it.description },
+                                    systemInstruction = systemInstruction,
+                                )
+                            lastFullPromptText.clear()
+                            lastFullPromptText.append(fullPromptText)
 
                             val parts = mutableListOf<GeminiPart>()
                             parts.add(GeminiPart(text = fullPrompt))
@@ -1162,6 +1302,8 @@ class GemmaClient
                                 )
                                 parts.add(GeminiPart(text = reference.description))
                             }
+                            lastRequestParts.clear()
+                            lastRequestParts.addAll(parts)
 
                             val geminiRequest =
                                 GeminiRequest(
@@ -1184,6 +1326,15 @@ class GemmaClient
                                                 ),
                                         ),
                                 )
+
+                            ensurePromptWithinTokenLimit(
+                                model = model.replace("models/", ""),
+                                apiKey = apiConfig(useCore),
+                                request = geminiRequest,
+                                parts = lastRequestParts,
+                                fullPromptText = fullPromptText,
+                                systemInstruction = systemInstruction,
+                            )
 
                             val formattedModel = model.replace("models/", "")
 
@@ -1221,38 +1372,42 @@ class GemmaClient
                                     if (trimmed.isEmpty()) continue
                                     val jsonStr = trimmed
 
-                                    try {
+                                    if (logEnabled) {
+                                        Timber.i("generateStreaming: Trying to parse $jsonStr")
+                                    }
+                                    val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+                                    partialResponse.error?.let { streamError ->
+                                        throwIfApiInputTokenLimitError(streamError, fullPromptText)
+                                        throw GeminiHttpException(streamError.code ?: 400, jsonStr)
+                                    }
+
+                                    if (partialResponse.usageMetadata != null) {
+                                        usageMetadata = partialResponse.usageMetadata
+                                    }
+
+                                    val candidate = partialResponse.candidates?.firstOrNull()
+                                    if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
                                         if (logEnabled) {
-                                            Timber.i("generateStreaming: Trying to parse $jsonStr")
+                                            Timber.w(
+                                                "Streaming API blocked content with reason: ${candidate.finishReason}",
+                                            )
                                         }
-                                        val partialResponse = GeminiApiCodec.decodeResponse(jsonStr)
+                                        throw GuardrailsException(SafeGuard.BLOCKED)
+                                    }
 
-                                        if (partialResponse.usageMetadata != null) {
-                                            usageMetadata = partialResponse.usageMetadata
-                                        }
-
-                                        val candidate = partialResponse.candidates?.firstOrNull()
-                                        if (candidate?.finishReason == "SAFETY" || candidate?.finishReason == "OTHER") {
-                                            if (logEnabled) Timber.w("Streaming API blocked content with reason: ${candidate.finishReason}")
-                                            throw GuardrailsException(SafeGuard.BLOCKED)
-                                        }
-
-                                        candidate?.content?.parts?.forEach { part ->
-                                            if (part.text != null) {
-                                                if (part.thought == true) {
-                                                    accumulatedThoughts.append(part.text)
-                                                    emit(
-                                                        StreamingState.Reasoning(
-                                                            accumulatedThoughts.toString(),
-                                                        ),
-                                                    )
-                                                } else {
-                                                    accumulatedText.append(part.text)
-                                                }
+                                    candidate?.content?.parts?.forEach { part ->
+                                        if (part.text != null) {
+                                            if (part.thought == true) {
+                                                accumulatedThoughts.append(part.text)
+                                                emit(
+                                                    StreamingState.Reasoning(
+                                                        accumulatedThoughts.toString(),
+                                                    ),
+                                                )
+                                            } else {
+                                                accumulatedText.append(part.text)
                                             }
                                         }
-                                    } catch (e: Exception) {
-                                        Timber.w("Failed to parse stream chunk: $jsonStr => ${e.message}")
                                     }
                                 }
                             }
@@ -1300,9 +1455,14 @@ class GemmaClient
                             emit(StreamingState.Success(aiGeneration.data))
                             return@flow
                         } catch (e: Exception) {
-                            if (e.isFlowCancellation()) {
+                            if (e.isFlowCancellation() || e is CancellationException) {
                                 throw e
                             }
+                            classifyPromptLimitFailure(
+                                e,
+                                lastFullPromptText.toString(),
+                                INPUT_TOKEN_LIMIT,
+                            )?.let { throw it }
                             recordGenerationFailure(
                                 dataType = javaClass.simpleName,
                                 model = model,
@@ -1323,7 +1483,7 @@ class GemmaClient
 
                             val isParsingError =
                                 e is JsonSyntaxException || e is JsonParseException || e is IllegalArgumentException
-                            var extractedDelay: Long? = null
+                            var extractedDelay: Long? = extractRetryDelayFromException(e)
 
                             if (e is GuardrailsException) {
                                 sideEffectService.emit(SideEffect.GuardrailBlock(e.status))
@@ -1334,23 +1494,29 @@ class GemmaClient
                                 try {
                                     val errorResponse =
                                         GeminiApiCodec.decodeErrorResponse(errorBody ?: "")
-                                    val retryInfo =
-                                        errorResponse.error?.details?.find {
-                                            it.type ==
-                                                "type.googleapis.com/google.rpc.RetryInfo"
-                                        }
                                     extractedDelay =
-                                        retryInfo
+                                        errorResponse.error
+                                            ?.details
+                                            ?.find { it.type == "type.googleapis.com/google.rpc.RetryInfo" }
                                             ?.retryDelay
                                             ?.removeSuffix("s")
                                             ?.toDoubleOrNull()
                                             ?.toLong()
+                                            ?: extractedDelay
                                 } catch (parseEx: Exception) {
                                     Timber.e(parseEx)
                                 }
                             }
 
                             if (currentAttempt < maxAttempts) {
+                                logEstimatedPromptTokensOnFailure(
+                                    parts = lastRequestParts,
+                                    tokenLimit = INPUT_TOKEN_LIMIT,
+                                    context = "generateStreaming",
+                                    logEnabled = logEnabled,
+                                    cause = e,
+                                    systemInstruction = systemInstruction,
+                                )
                                 val delayToApply =
                                     retryDelaySeconds(e, isParsingError, extractedDelay)
                                 if (delayToApply > 0) delay(delayToApply.seconds)
@@ -1373,18 +1539,102 @@ class GemmaClient
                                         ),
                                     )
                                 }
-                                emit(StreamingState.Error(e.message ?: "Unknown error", e))
-                                return@flow
+                                throw e
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    if (e.isFlowCancellation()) {
+                    if (e.isFlowCancellation() || e is CancellationException) {
                         throw e
                     }
-                    emit(StreamingState.Error(e.message ?: "Unknown error", e))
+                    throw e
                 }
+            }.catch { e ->
+                if (e.isFlowCancellation() || e is CancellationException) throw e
+
+                val resolved =
+                    classifyPromptLimitFailure(
+                        e,
+                        lastFullPromptText.toString(),
+                        INPUT_TOKEN_LIMIT,
+                    ) ?: e
+                logEstimatedPromptTokensOnFailure(
+                    parts = lastRequestParts,
+                    tokenLimit = INPUT_TOKEN_LIMIT,
+                    context = "generateStreaming",
+                    logEnabled = logEnabled,
+                    cause = resolved,
+                    systemInstruction = null,
+                )
+                emit(
+                    StreamingState.Error(
+                        message =
+                            appendEstimatedTokenDiagnostics(
+                                message = resolved.message ?: "Unknown error",
+                                parts = lastRequestParts,
+                                tokenLimit = INPUT_TOKEN_LIMIT,
+                            ),
+                        throwable = resolved,
+                    ),
+                )
             }.flowOn(Dispatchers.IO)
+        }
+
+        @PublishedApi
+        internal suspend fun ensurePromptWithinTokenLimit(
+            model: String,
+            apiKey: String,
+            request: GeminiRequest,
+            parts: List<GeminiPart>,
+            fullPromptText: String,
+            systemInstruction: String? = null,
+        ) {
+            val tokenCount =
+                runCatching {
+                    geminiApiClient.countTokens(model, apiKey, request).totalTokens
+                }.getOrNull()
+                    ?: (
+                        GeminiTokenEstimator.estimateRequestTokens(parts) +
+                            GeminiTokenEstimator.estimateSystemInstructionTokens(
+                                systemInstruction,
+                            )
+                    )
+
+            if (tokenCount > INPUT_TOKEN_LIMIT) {
+                throw PromptTooLargeException(
+                    message =
+                        buildPromptTooLargeMessage(
+                            tokenCount = tokenCount,
+                            tokenLimit = INPUT_TOKEN_LIMIT,
+                            fullPrompt = fullPromptText,
+                        ),
+                    tokenCount = tokenCount,
+                    tokenLimit = INPUT_TOKEN_LIMIT,
+                    fullPrompt = fullPromptText,
+                )
+            }
+        }
+
+        @PublishedApi
+        internal fun throwIfApiInputTokenLimitError(
+            error: GeminiError,
+            fullPromptText: String,
+        ) {
+            if (isInputTokenLimitError(null, error.message, GeminiErrorResponse(error))) {
+                throw PromptTooLargeException(
+                    message =
+                        buildPromptTooLargeMessage(
+                            tokenCount = null,
+                            tokenLimit = INPUT_TOKEN_LIMIT,
+                            fullPrompt = fullPromptText,
+                            apiMessage = error.message,
+                        ),
+                    tokenCount = null,
+                    tokenLimit = INPUT_TOKEN_LIMIT,
+                    fullPrompt = fullPromptText,
+                )
+            }
+        }
 
         @PublishedApi
         internal suspend fun callGenerateContent(

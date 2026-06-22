@@ -51,7 +51,15 @@ object LorePrompts {
         )
 
     val TIMELINE_EXCLUDED_FIELDS =
-        listOf("id", "timelineId", "createdAt", "chapterId", "sceneSummary", "currentObjective")
+        listOf(
+            "id",
+            "timelineId",
+            "createdAt",
+            "chapterId",
+            "sceneSummary",
+            "currentObjective",
+            "emotionalReview",
+        )
 
     val CHAPTER_EXCLUDED_FIELDS =
         listOf(
@@ -62,10 +70,11 @@ object LorePrompts {
             "featuredCharacters",
             "coverImage",
             "createdAt",
+            "emotionalReview",
         )
 
     val ACT_EXCLUDED_FIELDS =
-        listOf("id", "sagaId", "currentChapterId", "createdAt")
+        listOf("id", "sagaId", "currentChapterId", "createdAt", "emotionalReview")
 
     fun storyContext(
         sagaContent: SagaContent,

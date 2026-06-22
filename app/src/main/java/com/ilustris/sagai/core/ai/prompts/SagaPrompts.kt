@@ -6,10 +6,13 @@ import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
+import com.ilustris.sagai.features.saga.chat.domain.model.rankTimelineEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 
 data class EndCreditsArgs(
@@ -162,26 +165,23 @@ object SagaPrompts {
         saga: SagaContent,
         conversationDirective: String,
     ): SplitPrompt {
-        val emotionalRanking = saga.flatMessages().rankEmotionalTone()
+        val emotionalRanking = saga.flatEvents().rankTimelineEmotionalTone()
+        val charactersMap =
+            saga.characters.joinToString { "${it.data.fullName()}(${it.data.nicknames?.joinToString()}): ${it.data.backstory}" }
         val args =
-            SagaEndingArgs(
-                sagaContext = mainContext(saga),
-                sagaHistory = saga.acts.joinToString("\n") { it.actSummary(false) },
-                sagaCast =
-                    saga.characters
-                        .map { it.data }
-                        .normalizetoAIItems(ChatPrompts.CHARACTER_EXCLUSIONS),
-                emotionalJourney = saga.emotionalSummary(),
-                emotionalFlow =
-                    emotionalRanking.joinToString("\n") {
-                        "${it.first.name} - ${it.second.size} messages."
-                    },
-                dominantTones =
-                    emotionalRanking
-                        .take(3)
-                        .joinToString(", ") { it.first.name },
-                dominantTone = emotionalRanking.firstOrNull()?.first?.name ?: "NEUTRAL",
-                conversationDirective = conversationDirective,
+            mapOf(
+                "sagaContext" to
+                    buildMap {
+                        put("description", saga.data.toAINormalize(SAGA_EXCLUDED_FIELDS))
+                        put("charactersCast", charactersMap)
+                        put(
+                            "sagaStory",
+                            saga.acts
+                                .map { it.data }
+                                .normalizetoAIItems(ActPrompts.ACT_EXCLUSIONS),
+                        )
+                        put("emotionalJourney", saga.emotionalSummary())
+                    }.toAINormalize(),
             )
 
         return promptService.buildSplitBlueprint(SAGA_ENDING_BLUEPRINT, args)

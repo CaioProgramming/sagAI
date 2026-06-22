@@ -88,7 +88,6 @@ class SagaHistoryUseCaseImpl
         override fun generateSagaEndingStream(saga: SagaContent): Flow<StreamingState<GeneratedContent<SagaEnding>?>> =
             flow {
                 try {
-                    genreConfigService.getGenreConfig(saga.data.genre)
                     val prompt =
                         SagaPrompts.generateSagaEnding(
                             promptService,
@@ -126,6 +125,7 @@ class SagaHistoryUseCaseImpl
                             emit(state)
                         }
                 } catch (e: Exception) {
+                    e.printStackTrace()
                     emit(StreamingState.Error(e.message ?: "Unknown error"))
                 }
             }

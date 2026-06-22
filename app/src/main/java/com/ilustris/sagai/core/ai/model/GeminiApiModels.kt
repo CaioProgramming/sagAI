@@ -126,6 +126,11 @@ data class GeminiQuotaViolation(
     val quotaValue: String? = null,
 )
 
+data class GeminiCountTokensResponse(
+    val totalTokens: Int?,
+    val totalBillableCharacters: Int?,
+)
+
 // endregion
 
 // region Builder Extensions

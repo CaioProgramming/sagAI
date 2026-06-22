@@ -80,7 +80,7 @@ fun SagaContent.toSagaInfo() =
         genre = data.genre,
         variationId = data.variationId,
         icon = data.icon,
-)
+    )
 
 fun SagaContent.historySummary() =
     acts.joinToString(";\n---\n") {
@@ -228,13 +228,7 @@ fun SagaContent.rankByHour() =
             date.get(Calendar.HOUR_OF_DAY)
         }.toSortedMap()
 
-fun SagaContent.emotionalSummary() =
-    buildString {
-        acts.forEach {
-            appendLine(it.emotionalSummary())
-            appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
-        }
-    }
+fun SagaContent.emotionalSummary() = acts.joinToString { it.emotionalSummary() }
 
 @Suppress("ktlint:standard:max-line-length")
 fun SagaContent.generateCharacterRelationsSummary(filterNames: List<String>? = null): String {
