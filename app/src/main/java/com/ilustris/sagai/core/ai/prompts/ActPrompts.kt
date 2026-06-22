@@ -58,7 +58,7 @@ object ActPrompts {
             "currentChapterId",
             "isComplete",
             "introduction",
-        )
+        ) + LorePrompts.LORE_OUTPUT_ONLY_FIELDS
 
     /**
      * Generates a prompt to conclude an Act (Volume) of the saga.

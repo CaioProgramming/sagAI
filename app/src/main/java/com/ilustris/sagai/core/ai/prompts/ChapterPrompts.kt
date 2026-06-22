@@ -46,7 +46,8 @@ object ChapterPrompts {
     const val CHAPTER_SYNTHESIS_BLUEPRINT = "chapter_synthesis_blueprint"
 
     val CHAPTER_EXCLUSIONS =
-        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
+        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters") +
+            LorePrompts.LORE_OUTPUT_ONLY_FIELDS
 
     suspend fun chapterIntroductionPrompt(
         promptService: PromptService,

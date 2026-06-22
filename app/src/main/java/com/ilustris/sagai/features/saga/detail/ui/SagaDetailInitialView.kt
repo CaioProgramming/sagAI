@@ -198,7 +198,7 @@ fun SagaDetailInitialContent(
                                         saga.title,
                                         modifier =
                                             Modifier
-                                                .padding(16.dp)
+                                                .padding(horizontal = 16.dp, vertical = 36.dp)
                                                 .fillMaxWidth()
                                                 .padding(8.dp),
                                     )

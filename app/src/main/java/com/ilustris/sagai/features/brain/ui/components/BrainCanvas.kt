@@ -50,17 +50,55 @@ import com.ilustris.sagai.features.brain.domain.model.connectionScale
 import com.ilustris.sagai.features.brain.domain.model.satelliteScale
 import com.ilustris.sagai.features.brain.domain.model.starScale
 import com.ilustris.sagai.ui.animations.draw4PointCosmicStar
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 private const val MOBILE_BASE_ZOOM = 4.4f
-private const val FOCUS_SELECTION_ZOOM = 5.75f
 private const val MIN_ZOOM = 2.25f
-private const val MAX_ZOOM = 6.5f
-private const val FOCUS_ANIM_MS = 2000
+private const val MAX_ZOOM = 11.5f
+private const val FOCUS_ANIM_MS = 1400
 private const val EDGE_REVEAL_MS = 2800
 private const val OVERVIEW_ZOOM_THRESHOLD = 0.92f
+private val FOCUS_TARGET_STAR_SIZE = 32.dp
+private val PINCH_MAX_DRIFT = 56.dp
 private val CanvasLabelColor = Color.White.copy(alpha = 0.92f)
+
+private fun focusAnchorUserOffset(
+    focusId: String,
+    layout: BrainLayoutResult,
+    effectiveScale: Float,
+    focusOffsetX: Float,
+    focusOffsetY: Float,
+): Pair<Float, Float> {
+    val nodeLayout = layout.layouts[focusId] ?: return 0f to 0f
+    val idealTotalX = -nodeLayout.x * effectiveScale
+    val idealTotalY = -nodeLayout.y * effectiveScale
+    return (idealTotalX - focusOffsetX) to (idealTotalY - focusOffsetY)
+}
+
+private fun clampUserOffsetToFocusAnchor(
+    userOffsetX: Float,
+    userOffsetY: Float,
+    anchorUserX: Float,
+    anchorUserY: Float,
+    maxDriftPx: Float,
+): Pair<Float, Float> {
+    val driftX = (userOffsetX - anchorUserX).coerceIn(-maxDriftPx, maxDriftPx)
+    val driftY = (userOffsetY - anchorUserY).coerceIn(-maxDriftPx, maxDriftPx)
+    return (anchorUserX + driftX) to (anchorUserY + driftY)
+}
+
+private fun focusZoomForNode(
+    node: BrainNode,
+    nodeLayout: com.ilustris.sagai.features.brain.domain.model.BrainNodeLayout,
+    centerNodeId: String,
+    targetStarRadiusPx: Float,
+): Float {
+    val typeScale = node.type.starScale(node.id == centerNodeId)
+    val layoutRadius = (nodeLayout.radius * typeScale).coerceAtLeast(4f)
+    return (targetStarRadiusPx / layoutRadius).coerceIn(MOBILE_BASE_ZOOM, MAX_ZOOM)
+}
 
 @Composable
 fun BrainCosmicBackground(
@@ -103,6 +141,9 @@ fun BrainCanvas(
     val totalOffsetY = focusOffsetY.value + userOffsetY
 
     val focusNode = graph.nodeById(focusId)
+    val canvasPrimary = remember(genrePrimary) { BrainStarGlow.themeAccentForCanvas(genrePrimary) }
+    val density = LocalDensity.current
+    val focusTargetStarRadiusPx = with(density) { FOCUS_TARGET_STAR_SIZE.toPx() }
     val focusGlowColor =
         focusNode?.let { node ->
             BrainStarGlow.color(
@@ -112,7 +153,7 @@ fun BrainCanvas(
                 primary = genrePrimary,
                 secondary = genreSecondary,
             )
-        } ?: genrePrimary
+        } ?: canvasPrimary
 
     val visibleEdges =
         remember(focusId, visibleNodeIds, graph.edges) {
@@ -226,7 +267,17 @@ fun BrainCanvas(
             when {
                 focusId == graph.centerNodeId || nodeLayout == null -> MOBILE_BASE_ZOOM
                 mergedScale <= MOBILE_BASE_ZOOM * OVERVIEW_ZOOM_THRESHOLD -> mergedScale
-                else -> FOCUS_SELECTION_ZOOM
+
+                else -> {
+                    focusNode?.let { node ->
+                        focusZoomForNode(
+                            node = node,
+                            nodeLayout = nodeLayout,
+                            centerNodeId = graph.centerNodeId,
+                            targetStarRadiusPx = focusTargetStarRadiusPx,
+                        )
+                    } ?: MOBILE_BASE_ZOOM
+                }
             }
         val targetX =
             if (focusId == graph.centerNodeId || nodeLayout == null) {
@@ -297,11 +348,29 @@ fun BrainCanvas(
             ),
         label = "twinkle_alpha",
     )
+    val nebulaBreathe by twinkleTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(9000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "nebula_breathe",
+    )
+
+    val nebulaColors = themeBrushColors()
+    val nebulae =
+        remember(graph.centerNodeId, sceneSignature, nebulaColors) {
+            generateBrainNebulae(
+                seed = graph.centerNodeId.hashCode() xor sceneSignature,
+                colors = nebulaColors,
+            )
+        }
 
     val starPresenceAlphas = rememberBrainStarPresenceAlphas(visibleNodeIds)
 
     BrainCosmicBackground(modifier = modifier) {
-        val density = LocalDensity.current
         val labelGapPx = with(density) { 10.dp.toPx() }
         val labelLineHeightPx =
             with(density) {
@@ -317,25 +386,55 @@ fun BrainCanvas(
                     .onSizeChanged { canvasSize = it }
                     .then(
                         if (interactive) {
-                            Modifier.pointerInput(Unit) {
+                            Modifier.pointerInput(
+                                layout,
+                                focusId,
+                                focusScaleAnim.value,
+                                focusOffsetX.value,
+                                focusOffsetY.value,
+                            ) {
+                                val maxDriftPx = PINCH_MAX_DRIFT.toPx()
                                 detectTransformGestures { _, pan, zoom, _ ->
-                                    val newScale =
-                                        (focusScaleAnim.value * pinchScale * zoom)
-                                            .coerceIn(MIN_ZOOM, MAX_ZOOM)
+                                    val oldEffectiveScale = focusScaleAnim.value * pinchScale
+                                    val newEffectiveScale =
+                                        (oldEffectiveScale * zoom).coerceIn(MIN_ZOOM, MAX_ZOOM)
                                     pinchScale =
-                                        (newScale / focusScaleAnim.value)
-                                            .coerceIn(
-                                                MIN_ZOOM / focusScaleAnim.value.coerceAtLeast(0.01f),
-                                                MAX_ZOOM / focusScaleAnim.value.coerceAtLeast(0.01f),
-                                            )
-                                    userOffsetX += pan.x
-                                    userOffsetY += pan.y
+                                        (newEffectiveScale / focusScaleAnim.value).coerceIn(
+                                            MIN_ZOOM / focusScaleAnim.value.coerceAtLeast(0.01f),
+                                            MAX_ZOOM / focusScaleAnim.value.coerceAtLeast(0.01f),
+                                        )
+                                    val effectiveAfterPinch = focusScaleAnim.value * pinchScale
+                                    val scaledDrift =
+                                        maxDriftPx *
+                                            (effectiveAfterPinch / MOBILE_BASE_ZOOM)
+                                                .coerceIn(0.55f, 1.6f)
+                                    val (anchorUserX, anchorUserY) =
+                                        focusAnchorUserOffset(
+                                            focusId = focusId,
+                                            layout = layout,
+                                            effectiveScale = effectiveAfterPinch,
+                                            focusOffsetX = focusOffsetX.value,
+                                            focusOffsetY = focusOffsetY.value,
+                                        )
+                                    val startUserX = if (zoom != 1f) anchorUserX else userOffsetX
+                                    val startUserY = if (zoom != 1f) anchorUserY else userOffsetY
+                                    val (clampedX, clampedY) =
+                                        clampUserOffsetToFocusAnchor(
+                                            userOffsetX = startUserX + pan.x,
+                                            userOffsetY = startUserY + pan.y,
+                                            anchorUserX = anchorUserX,
+                                            anchorUserY = anchorUserY,
+                                            maxDriftPx = scaledDrift,
+                                        )
+                                    userOffsetX = clampedX
+                                    userOffsetY = clampedY
                                 }
                             }
                         } else {
                             Modifier
                         },
-                    ).then(
+                    )
+                    .then(
                         if (interactive) {
                             Modifier.pointerInput(
                                 graph,
@@ -387,7 +486,18 @@ fun BrainCanvas(
                 val centerY = size.height / 2f
                 val reveal = edgeReveal.value
 
+                drawCosmicNebulae(
+                    nebulae = nebulae,
+                    centerX = centerX,
+                    centerY = centerY,
+                    breathePhase = nebulaBreathe,
+                )
+
                 ambientEdges.forEach { edge ->
+                    val fromPresence = starPresenceAlphas[edge.fromId] ?: 1f
+                    val toPresence = starPresenceAlphas[edge.toId] ?: 1f
+                    val endpointPresence = minOf(fromPresence, toPresence)
+                    if (endpointPresence < 0.02f) return@forEach
                     drawBrainEdge(
                         edge = edge,
                         graph = graph,
@@ -398,7 +508,9 @@ fun BrainCanvas(
                         centerNodeId = graph.centerNodeId,
                         satelliteNodeIds = satelliteNodeIds,
                         twinkle = twinkle,
-                        revealProgress = reveal,
+                        themePrimary = canvasPrimary,
+                        revealProgress = reveal * endpointPresence,
+                        endpointPresence = endpointPresence,
                         isSpine = false,
                         isFocusLink = false,
                         linkGlowColor = focusGlowColor,
@@ -406,9 +518,13 @@ fun BrainCanvas(
                 }
 
                 spineEdges.forEachIndexed { index, edge ->
+                    val fromPresence = starPresenceAlphas[edge.fromId] ?: 1f
+                    val toPresence = starPresenceAlphas[edge.toId] ?: 1f
+                    val endpointPresence = minOf(fromPresence, toPresence)
+                    if (endpointPresence < 0.02f) return@forEachIndexed
                     val stagger =
                         ((reveal * spineEdges.size) - index * 0.35f)
-                            .coerceIn(0f, 1f)
+                            .coerceIn(0f, 1f) * endpointPresence
                     drawBrainEdge(
                         edge = edge,
                         graph = graph,
@@ -419,7 +535,9 @@ fun BrainCanvas(
                         centerNodeId = graph.centerNodeId,
                         satelliteNodeIds = satelliteNodeIds,
                         twinkle = twinkle,
+                        themePrimary = canvasPrimary,
                         revealProgress = stagger,
+                        endpointPresence = endpointPresence,
                         isSpine = true,
                         isFocusLink = false,
                         linkGlowColor = focusGlowColor,
@@ -427,9 +545,13 @@ fun BrainCanvas(
                 }
 
                 focusLinkedEdges.forEachIndexed { index, edge ->
+                    val fromPresence = starPresenceAlphas[edge.fromId] ?: 1f
+                    val toPresence = starPresenceAlphas[edge.toId] ?: 1f
+                    val endpointPresence = minOf(fromPresence, toPresence)
+                    if (endpointPresence < 0.02f) return@forEachIndexed
                     val stagger =
                         ((reveal * focusLinkedEdges.size) - index * 0.28f)
-                            .coerceIn(0f, 1f)
+                            .coerceIn(0f, 1f) * endpointPresence
                     drawBrainEdge(
                         edge = edge,
                         graph = graph,
@@ -440,7 +562,9 @@ fun BrainCanvas(
                         centerNodeId = graph.centerNodeId,
                         satelliteNodeIds = satelliteNodeIds,
                         twinkle = twinkle,
+                        themePrimary = canvasPrimary,
                         revealProgress = stagger,
+                        endpointPresence = endpointPresence,
                         isSpine = edge.id in spineEdgeIds,
                         isFocusLink = true,
                         linkGlowColor = focusGlowColor,
@@ -509,11 +633,11 @@ fun BrainCanvas(
                                 translationX = (selectedLayout.x * effectiveScale) + totalOffsetX
                                 translationY =
                                     (selectedLayout.y * effectiveScale) +
-                                    totalOffsetY +
-                                    starSizePx +
-                                    glowPaddingPx +
-                                    labelGapPx +
-                                    (labelLineHeightPx * 0.5f)
+                                            totalOffsetY +
+                                            starSizePx +
+                                            glowPaddingPx +
+                                            labelGapPx +
+                                            (labelLineHeightPx * 0.5f)
                             },
                 )
             }
@@ -542,6 +666,7 @@ fun BrainMiniCanvas(
     )
 
     BrainCosmicBackground(modifier = modifier) {
+        val canvasPrimary = BrainStarGlow.themeAccentForCanvas(genrePrimary)
         Canvas(modifier = Modifier.fillMaxSize()) {
             val focusId = graph.centerNodeId
             graph.edges
@@ -557,6 +682,7 @@ fun BrainMiniCanvas(
                         centerNodeId = graph.centerNodeId,
                         satelliteNodeIds = emptySet(),
                         twinkle = 0.75f,
+                        themePrimary = canvasPrimary,
                     )
                 }
             graph.nodes.forEach { node ->
@@ -603,50 +729,27 @@ private fun DrawScope.drawBrainEdge(
     centerNodeId: String,
     satelliteNodeIds: Set<String>,
     twinkle: Float,
+    themePrimary: Color,
     revealProgress: Float = 1f,
+    endpointPresence: Float = 1f,
     isSpine: Boolean = false,
     isFocusLink: Boolean = false,
-    linkGlowColor: Color = Color.White,
+    linkGlowColor: Color = themePrimary,
 ) {
-    val fromNode = graph.nodeById(edge.fromId) ?: return
-    val toNode = graph.nodeById(edge.toId) ?: return
     val fromLayout = layout.layouts[edge.fromId] ?: return
     val toLayout = layout.layouts[edge.toId] ?: return
 
-    val fromSelected = edge.fromId == focusId
-    val toSelected = edge.toId == focusId
-    val fromRadius =
-        BrainStarGlow.starVisualRadius(
-            node = fromNode,
-            layout = fromLayout,
-            centerNodeId = centerNodeId,
-            isSatellite = edge.fromId in satelliteNodeIds,
-            isSelected = fromSelected,
-        )
-    val toRadius =
-        BrainStarGlow.starVisualRadius(
-            node = toNode,
-            layout = toLayout,
-            centerNodeId = centerNodeId,
-            isSatellite = edge.toId in satelliteNodeIds,
-            isSelected = toSelected,
-        )
+    val start = Offset(centerX + fromLayout.x, centerY + fromLayout.y)
+    val end = Offset(centerX + toLayout.x, centerY + toLayout.y)
 
-    val startCenter = Offset(centerX + fromLayout.x, centerY + fromLayout.y)
-    val endCenter = Offset(centerX + toLayout.x, centerY + toLayout.y)
-    val (start, end) =
-        trimEdgeToStars(
-            start = startCenter,
-            end = endCenter,
-            startRadius = fromRadius,
-            endRadius = toRadius,
-        )
+    val visibility = (revealProgress * endpointPresence).coerceIn(0f, 1f)
+    if (visibility < 0.02f) return
 
     val alpha =
         when {
-            isFocusLink -> (0.14f + twinkle * 0.2f) * revealProgress
-            isSpine -> (0.07f + twinkle * 0.12f) * edge.type.connectionScale() * revealProgress
-            else -> (0.025f + twinkle * 0.035f) * revealProgress
+            isFocusLink -> (0.16f + twinkle * 0.22f) * visibility
+            isSpine -> (0.14f + twinkle * 0.16f) * edge.type.connectionScale() * visibility
+            else -> (0.08f + twinkle * 0.1f) * visibility
         }
     val stroke =
         when {
@@ -669,22 +772,9 @@ private fun DrawScope.drawBrainEdge(
         }
     val color =
         when {
-            isFocusLink -> {
-                linkGlowColor
-            }
-
-            isSpine -> {
-                when (edge.type) {
-                    BrainEdgeType.RELATED_TO -> Color(0xFFFFB4A2)
-                    BrainEdgeType.DEBUT -> Color(0xFFE040FB)
-                    BrainEdgeType.LORE_LINK -> Color(0xFF4ECDC4)
-                    else -> Color.White
-                }
-            }
-
-            else -> {
-                Color.White
-            }
+            isFocusLink -> linkGlowColor
+            isSpine -> themePrimary
+            else -> themePrimary
         }
 
     if (isFocusLink) {
@@ -693,7 +783,7 @@ private fun DrawScope.drawBrainEdge(
             end = end,
             color = linkGlowColor,
             twinkle = twinkle,
-            revealProgress = revealProgress,
+            revealProgress = visibility,
             baseStrokeWidth = stroke,
         )
     }
@@ -735,30 +825,7 @@ private fun DrawScope.drawConstellationGlow(
     )
 }
 
-/** Shorten the segment so lines meet the star edge, not its center. */
-private fun trimEdgeToStars(
-    start: Offset,
-    end: Offset,
-    startRadius: Float,
-    endRadius: Float,
-    edgeInset: Float = 1.5f,
-): Pair<Offset, Offset> {
-    val dx = end.x - start.x
-    val dy = end.y - start.y
-    val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(0.01f)
-    val nx = dx / dist
-    val ny = dy / dist
-    val startTrim = (startRadius + edgeInset).coerceAtMost(dist * 0.45f)
-    val endTrim = (endRadius + edgeInset).coerceAtMost(dist * 0.45f)
-    if (startTrim + endTrim >= dist) {
-        val midX = (start.x + end.x) / 2f
-        val midY = (start.y + end.y) / 2f
-        return Offset(midX, midY) to Offset(midX, midY)
-    }
-    return Offset(start.x + nx * startTrim, start.y + ny * startTrim) to
-        Offset(end.x - nx * endTrim, end.y - ny * endTrim)
-}
-
+/** Lines originate at star centers — stars are drawn on top. */
 private fun DrawScope.drawBrainStar(
     node: BrainNode,
     x: Float,
@@ -786,8 +853,8 @@ private fun DrawScope.drawBrainStar(
             else -> 0.9f
         }
     val starSize = baseRadius * typeScale * presenceScale
-    val coreColor = BrainStarGlow.starCoreColor(isSelected, twinkle)
-    val whiteStar = coreColor.copy(alpha = coreColor.alpha * fade)
+    val coreColor = BrainStarGlow.starCoreColor(glowColor, isSelected, twinkle)
+    val starColor = coreColor.copy(alpha = coreColor.alpha * fade)
     val haloAlpha = BrainStarGlow.haloAlpha(node, isSelected, twinkle) * fade
     val glowBlur = if (isSelected) BrainStarGlow.selectedGlowBlurFactor(node) else 1.8f
     val glowSpread = if (isSelected) BrainStarGlow.selectedGlowSpreadFactor(node) else 1.35f
@@ -795,7 +862,7 @@ private fun DrawScope.drawBrainStar(
     draw4PointCosmicStar(
         center = Offset(x, y),
         size = starSize,
-        color = whiteStar,
+        color = starColor,
         glowColor = glowColor.copy(alpha = glowColor.alpha.coerceIn(0f, 1f)),
         glowAlpha = haloAlpha,
         glowBlurFactor = glowBlur,
@@ -804,10 +871,11 @@ private fun DrawScope.drawBrainStar(
     )
 
     if (isSelected) {
+        val accent = BrainStarGlow.selectedAccentColor(glowColor, twinkle)
         draw4PointCosmicStar(
             center = Offset(x, y),
             size = starSize * 0.28f,
-            color = Color.White.copy(alpha = 0.95f * twinkle * fade),
+            color = accent.copy(alpha = accent.alpha * fade),
             glowColor = glowColor.copy(alpha = 0.35f * twinkle * fade),
             glowAlpha = 1f,
             glowBlurFactor = glowBlur * 0.6f,

@@ -493,13 +493,7 @@ class ChapterUseCaseImpl
                                     // 1. Update Chapter details & Narrative Guide
                                     val updatedChapter =
                                         updateChapter(
-                                            synthesis.chapter.copy(
-                                                id = chapterContent.data.id,
-                                                currentEventId = chapterContent.data.currentEventId,
-                                                actId = chapterContent.data.actId,
-                                                coverImage = chapterContent.data.coverImage,
-                                                createdAt = chapterContent.data.createdAt,
-                                            ),
+                                            synthesis.chapter.mergeInto(chapterContent.data),
                                         )
 
                                     // 2. Save Landmark Wikis

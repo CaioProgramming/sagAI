@@ -15,7 +15,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
@@ -60,7 +59,7 @@ class BrainGraphMapper
                     id = sagaNodeId,
                     type = BrainNodeType.SAGA,
                     label = saga.title.ifBlank { "Saga" },
-                    subtitle = genre?.name.orEmpty(),
+                    subtitle = "",
                     entityId = saga.id,
                     importance = 1f,
                     glowColorArgb = BrainNodeGlow.saga(genre),
@@ -130,7 +129,7 @@ class BrainGraphMapper
                         id = actId,
                         type = BrainNodeType.ACT,
                         label = actLabel,
-                        subtitle = if (actIncomplete) "" else act.data.content.take(80),
+                        subtitle = "",
                         entityId = act.data.id,
                         importance = 0.7f,
                         glowColorArgb = BrainNodeGlow.actOrChapter(genre),
@@ -165,12 +164,7 @@ class BrainGraphMapper
                             id = chapterId,
                             type = BrainNodeType.CHAPTER,
                             label = chapterLabel,
-                            subtitle =
-                                if (chapterIncomplete) {
-                                    ""
-                                } else {
-                                    "${chapter.events.size} events"
-                                },
+                            subtitle = "",
                             entityId = chapter.data.id,
                             importance = 0.55f,
                             glowColorArgb = BrainNodeGlow.actOrChapter(genre),
@@ -190,10 +184,14 @@ class BrainGraphMapper
                         val eventNumber = eventIndex + 1
                         val eventId = BrainNodeIds.event(event.data.id)
                         val isCurrent = event.data.id == currentEventId
-                        val eventBody =
-                            buildEventDetailBody(event.data.sceneSummary, event.data.content)
                         val eventIncomplete =
-                            event.data.title.isBlank() && eventBody.isBlank()
+                            event.data.title.isBlank() && event.data.content.isBlank()
+                        val eventBody =
+                            if (eventIncomplete) {
+                                inProgressBody
+                            } else {
+                                event.data.content
+                            }
                         val eventLabel =
                             if (eventIncomplete) {
                                 context.getString(R.string.saga_brain_event_in_progress, eventNumber)
@@ -205,29 +203,16 @@ class BrainGraphMapper
                                     )
                                 }
                             }
-                        val eventDetail =
-                            if (eventIncomplete) {
-                                inProgressBody
-                            } else {
-                                eventBody
-                            }
                         nodes +=
                             BrainNode(
                                 id = eventId,
                                 type = BrainNodeType.EVENT,
                                 label = eventLabel,
-                                subtitle =
-                                    if (eventIncomplete) {
-                                        ""
-                                    } else {
-                                        event.data.sceneSummary
-                                            ?.currentLocation
-                                            .orEmpty()
-                                    },
+                                subtitle = "",
                                 entityId = event.data.id,
                                 importance = if (isCurrent) 0.9f else 0.45f,
                                 glowColorArgb = BrainNodeGlow.event(if (isCurrent) 1f else 0.7f),
-                                detailBody = eventDetail,
+                                detailBody = eventBody,
                             )
                         connect(chapterId, eventId, BrainEdgeType.CONTAINS)
 
@@ -250,7 +235,7 @@ class BrainGraphMapper
                         id = wikiId,
                         type = BrainNodeType.WIKI,
                         label = wiki.title,
-                        subtitle = wiki.type?.name.orEmpty(),
+                        subtitle = "",
                         entityId = wiki.id,
                         importance = 0.35f,
                         glowColorArgb = BrainNodeGlow.wiki(wiki.type),
@@ -386,14 +371,17 @@ class BrainGraphMapper
                 val charEvent = eventDetail.event
                 val charEventId = BrainNodeIds.characterEvent(charEvent.id)
                 val storyEventId = BrainNodeIds.event(timeline.id)
-                val eventBody =
-                    charEvent.summary
-                        .orEmpty()
-                        .ifBlank { timeline.content }
                 val eventIncomplete =
                     charEvent.title.isBlank() &&
                         timeline.title.isBlank() &&
-                        eventBody.isBlank()
+                        charEvent.summary.isBlank() &&
+                        timeline.content.isBlank()
+                val eventBody =
+                    if (eventIncomplete) {
+                        inProgressBody
+                    } else {
+                        charEvent.summary.ifBlank { timeline.content }
+                    }
                 val charEventLabel =
                     if (eventIncomplete) {
                         context.getString(R.string.saga_brain_event_in_progress, eventNumber)
@@ -407,7 +395,7 @@ class BrainGraphMapper
                         id = charEventId,
                         type = BrainNodeType.CHARACTER_EVENT,
                         label = charEventLabel,
-                        subtitle = if (eventIncomplete) "" else charEvent.summary.take(80),
+                        subtitle = "",
                         entityId = charEvent.id,
                         importance = 0.65f,
                         glowColorArgb = BrainNodeGlow.characterEvent(),
@@ -423,7 +411,7 @@ class BrainGraphMapper
                             id = storyEventId,
                             type = BrainNodeType.EVENT,
                             label = storyLabel,
-                            subtitle = context.getString(R.string.saga_brain_story_event_subtitle),
+                            subtitle = "",
                             entityId = timeline.id,
                             importance = 0.55f,
                             glowColorArgb = BrainNodeGlow.event(),
@@ -438,10 +426,8 @@ class BrainGraphMapper
                 val debutNodeId = BrainNodeIds.event(debutId)
                 if (nodes.none { it.id == debutNodeId }) {
                     sagaContent.findTimeline(debutId)?.let { event ->
-                        val eventBody =
-                            buildEventDetailBody(event.data.sceneSummary, event.data.content)
                         val eventIncomplete =
-                            event.data.title.isBlank() && eventBody.isBlank()
+                            event.data.title.isBlank() && event.data.content.isBlank()
                         val eventLabel =
                             if (eventIncomplete) {
                                 context.getString(R.string.saga_brain_event_in_progress, 1)
@@ -453,11 +439,11 @@ class BrainGraphMapper
                                 id = debutNodeId,
                                 type = BrainNodeType.EVENT,
                                 label = eventLabel,
-                                subtitle = if (eventIncomplete) "" else "First appearance",
+                                subtitle = "",
                                 entityId = event.data.id,
                                 importance = 0.8f,
                                 glowColorArgb = BrainNodeGlow.event(1f),
-                                detailBody = if (eventIncomplete) inProgressBody else eventBody,
+                                detailBody = if (eventIncomplete) inProgressBody else event.data.content,
                             )
                     }
                 }
@@ -475,7 +461,7 @@ class BrainGraphMapper
                             id = wikiId,
                             type = BrainNodeType.WIKI,
                             label = wiki.title,
-                            subtitle = wiki.type?.name.orEmpty(),
+                            subtitle = "",
                             entityId = wiki.id,
                             importance = 0.4f,
                             glowColorArgb = BrainNodeGlow.wiki(wiki.type),
@@ -576,23 +562,6 @@ class BrainGraphMapper
                 }
             return graph.copy(nodes = finalNodes, edges = edges)
         }
-
-        private fun buildEventDetailBody(
-            sceneSummary: SceneSummary?,
-            content: String,
-        ): String =
-            sceneSummary
-                ?.let { summary ->
-                    buildString {
-                        if (summary.currentLocation.isNotBlank()) {
-                            appendLine("Location: ${summary.currentLocation}")
-                        }
-                        summary.immediateObjective?.let { appendLine("Objective: $it") }
-                        summary.currentConflict?.let { appendLine("Conflict: $it") }
-                        summary.mood?.let { appendLine("Mood: $it") }
-                    }.trim()
-                }.orEmpty()
-                .ifBlank { content }
     }
 
 private fun CharacterContent.fullName() = data.fullName()

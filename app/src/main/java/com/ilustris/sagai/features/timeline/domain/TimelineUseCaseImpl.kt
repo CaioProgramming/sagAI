@@ -84,9 +84,7 @@ class TimelineUseCaseImpl
                 )!!
 
             updateTimeline(
-                unifiedLore.event.copy(
-                    id = timeline.id,
-                ),
+                unifiedLore.event.mergeInto(timeline),
             )
 
             // 2. Save Wiki Updates
@@ -160,7 +158,6 @@ class TimelineUseCaseImpl
                                         ),
                                     filterOutputFields =
                                         listOf(
-                                            "id",
                                             "timelineId",
                                         ),
                                 ),
@@ -174,11 +171,7 @@ class TimelineUseCaseImpl
                                 // 1. Update Timeline Details
                                 val timelineUpdate =
                                     updateTimeline(
-                                        unifiedLore.event.copy(
-                                            id = timeline.id,
-                                            chapterId = timeline.chapterId,
-                                            createdAt = timeline.createdAt,
-                                        ),
+                                        unifiedLore.event.mergeInto(timeline),
                                     )
 
                                 // 2. Save Wiki Updates

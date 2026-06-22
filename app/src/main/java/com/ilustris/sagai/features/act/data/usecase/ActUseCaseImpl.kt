@@ -316,13 +316,7 @@ class ActUseCaseImpl
                                     // 1. Update Act details & Narrative Guide
                                     val updatedAct =
                                         updateAct(
-                                            actContent.data.copy(
-                                                title = synthesis.actTitle,
-                                                introduction = synthesis.actIntroduction,
-                                                content = synthesis.actContent,
-                                                narrativeGuide = synthesis.narrativeGuide,
-                                                emotionalReview = synthesis.emotionalReview,
-                                            ),
+                                            synthesis.act.mergeInto(actContent.data),
                                         )
 
                                     // 2. Save Landmark Wikis

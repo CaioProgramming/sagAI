@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -40,18 +39,11 @@ fun MilestoneContinueButton(
             shape = MaterialTheme.shapes.medium,
             colors =
                 ButtonDefaults.buttonColors(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.gradientFade()),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.onPrimary.gradientFade()),
             modifier =
                 Modifier
                     .padding(32.dp)
-                    .dropShadow(
-                        MaterialTheme.shapes.medium,
-                        {
-                            brush = themeBrush
-                            radius = 5f
-                            spread = 3f
-                        },
-                    ).fillMaxWidth(),
+                    .fillMaxWidth(),
         ) {
             Text(
                 stringResource(R.string.continue_button),

@@ -1,9 +1,10 @@
 package com.ilustris.sagai.features.timeline.data.model
 
+import com.ilustris.sagai.core.ai.model.GeneratedTimeline
 import com.ilustris.sagai.features.wiki.data.model.WikiType
 
 data class UnifiedLoreUpdate(
-    val event: Timeline,
+    val event: GeneratedTimeline,
     val charactersUpdates: List<CharacterUpdates> = emptyList(),
     val wikiUpdates: List<GeneratedWikiUpdate> = emptyList(),
 )

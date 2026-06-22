@@ -198,6 +198,8 @@ fun SagAITheme(
             secondary = animatedSecondary.value,
             tertiary = animatedTertiary.value,
             onPrimary = onPrimary,
+            primaryContainer = animatedPrimary.value.darker(.3f),
+            tertiaryContainer = animatedPrimary.value.lighter(.3f),
         )
 
     // Dynamic Typography: remote fonts when loaded, else system default
