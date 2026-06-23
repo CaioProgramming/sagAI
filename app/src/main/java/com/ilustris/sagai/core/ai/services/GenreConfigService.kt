@@ -45,6 +45,12 @@ class GenreConfigService
                     "${genre.name.lowercase()}_conversation_blueprint",
                 ).asMap()
 
+        suspend fun renderingInstructions(genre: Genre) =
+            promptService
+                .fetchBlueprintData(
+                    "${genre.name.lowercase()}_rendering_blueprint",
+                ).asMap()
+
         @Deprecated(
             message = "Use conversationInstructions() merged into SplitPrompt via mergeInstructions()",
             replaceWith = ReplaceWith("conversationInstructions(genre)"),

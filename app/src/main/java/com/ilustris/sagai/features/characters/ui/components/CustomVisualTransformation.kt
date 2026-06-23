@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.saga.chat.ui.components.ExpressiveTag
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.lighter
@@ -38,6 +39,7 @@ fun transformTextWithContent(
     headerFont: FontFamily?,
     bodyFont: FontFamily?,
     tagMarkerLabels: Map<String, String> = emptyMap(),
+    thinkTagSurfaceColor: Color? = null,
 ): TransformedText {
     val (transformedText, offsetMapping) =
         transformExpressiveTags(
@@ -45,6 +47,7 @@ fun transformTextWithContent(
             tagBackgroundColor,
             textColor,
             tagMarkerLabels,
+            thinkTagSurfaceColor,
         )
 
     // Then apply character/wiki annotations on the transformed text
@@ -72,11 +75,24 @@ fun transformTextWithContent(
  * Transform text by replacing tag markup with visible opening markers and styled content.
  * Returns the transformed AnnotatedString and an OffsetMapping for cursor positioning.
  */
+private fun findNextExpressiveTagOpen(
+    text: String,
+    fromIndex: Int,
+): Int? {
+    val legacyOpen = "<" + "think" + ">"
+    val openings =
+        ExpressiveTag.entries.map { it.openingTag() } + legacyOpen
+    return openings
+        .mapNotNull { tag -> text.indexOf(tag, fromIndex).takeIf { it != -1 } }
+        .minOrNull()
+}
+
 private fun transformExpressiveTags(
     text: String,
     tagBackgroundColor: Color,
     textColor: Color,
     tagMarkerLabels: Map<String, String>,
+    thinkTagSurfaceColor: Color?,
 ): Pair<AnnotatedString, OffsetMapping> {
     val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
     val thinkRegex = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
@@ -151,6 +167,41 @@ private fun transformExpressiveTags(
         )
     }
 
+    ExpressiveTag.entries.forEach { expressiveTag ->
+        val openTag = expressiveTag.openingTag()
+        val closeTag = expressiveTag.closingTag()
+        val type =
+            when (expressiveTag) {
+                ExpressiveTag.ACTION -> "action"
+                ExpressiveTag.THINK -> "think"
+                ExpressiveTag.NARRATOR -> "narrator"
+            }
+        var searchFrom = 0
+        while (true) {
+            val openIndex = text.indexOf(openTag, searchFrom)
+            if (openIndex == -1) break
+
+            val contentStart = openIndex + openTag.length
+            val closeIndex = text.indexOf(closeTag, contentStart)
+            val alreadyMatched = matches.any { it.range.first == openIndex }
+            if (!alreadyMatched && closeIndex == -1) {
+                val contentEnd = findNextExpressiveTagOpen(text, contentStart) ?: text.length
+                matches.add(
+                    TagMatch(
+                        range = openIndex until contentEnd,
+                        content = text.substring(contentStart, contentEnd),
+                        type = type,
+                        openTagLength = openTag.length,
+                        closeTagLength = 0,
+                        markerLabel = markerFor(type),
+                    ),
+                )
+            }
+
+            searchFrom = openIndex + openTag.length
+        }
+    }
+
     // Sort matches by start position and handle nesting (prefer outermost tags)
     val filteredMatches =
         matches.sortedBy { it.range.first }.let { sorted ->
@@ -169,6 +220,10 @@ private fun transformExpressiveTags(
     val originalToTransformed = mutableListOf<Int>()
     val transformedBuilder = StringBuilder()
     var currentOriginalIndex = 0
+
+    val thinkSurface =
+        thinkTagSurfaceColor
+            ?: tagBackgroundColor.copy(alpha = 0.4f)
 
     val annotatedString =
         buildAnnotatedString {
@@ -190,18 +245,23 @@ private fun transformExpressiveTags(
                         "action" -> MaterialColor.Amber400
                         "think" ->
                             if (textColor != Color.Unspecified) {
-                                textColor.copy(alpha = 0.7f)
+                                textColor.copy(alpha = 0.85f)
                             } else {
-                                Color.Gray.copy(alpha = 0.7f)
+                                Color.LightGray
                             }
                         else -> tagBackgroundColor
                     }
 
+                val markerBackground =
+                    when (match.type) {
+                        "action" -> MaterialColor.Amber400.copy(alpha = 0.12f)
+                        "think" -> thinkSurface
+                        else -> tagBackgroundColor.copy(alpha = 0.12f)
+                    }
+
                 val markerStartInTransformed = transformedBuilder.length
-                repeat(match.openTagLength) { index ->
-                    originalToTransformed.add(
-                        markerStartInTransformed + index.coerceAtMost(markerText.length),
-                    )
+                repeat(match.openTagLength) {
+                    originalToTransformed.add(markerStartInTransformed)
                 }
 
                 val markerStyleStart = length
@@ -211,17 +271,13 @@ private fun transformExpressiveTags(
                     SpanStyle(
                         color = markerAccentColor,
                         fontWeight = FontWeight.Medium,
-                        background = markerAccentColor.copy(alpha = 0.12f),
+                        background = markerBackground,
                     ),
                     markerStyleStart,
                     markerStyleEnd,
                 )
-                for (char in markerText) {
-                    originalToTransformed.add(transformedBuilder.length)
-                    transformedBuilder.append(char)
-                }
+                transformedBuilder.append(markerText)
 
-                val contentStartInTransformed = transformedBuilder.length
                 val startStyle = length
                 append(match.content)
                 val endStyle = length
@@ -242,16 +298,17 @@ private fun transformExpressiveTags(
                             }
 
                             "think" -> {
-                                val thinkColor =
+                                val thinkContentColor =
                                     if (textColor != Color.Unspecified) {
-                                        textColor.copy(alpha = 0.5f)
+                                        textColor
                                     } else {
-                                        Color.Gray.copy(alpha = 0.5f)
+                                        Color.White.copy(alpha = 0.9f)
                                     }
                                 addStyle(
                                     SpanStyle(
-                                        color = thinkColor,
-                                        background = thinkColor.copy(alpha = 0.08f),
+                                        color = thinkContentColor,
+                                        fontWeight = FontWeight.Medium,
+                                        background = thinkSurface,
                                     ),
                                     startStyle,
                                     endStyle,
@@ -280,8 +337,10 @@ private fun transformExpressiveTags(
                 }
 
                 val contentEndInTransformed = transformedBuilder.length
-                repeat(match.closeTagLength) {
-                    originalToTransformed.add(contentEndInTransformed)
+                if (match.closeTagLength > 0) {
+                    repeat(match.closeTagLength) {
+                        originalToTransformed.add(contentEndInTransformed)
+                    }
                 }
 
                 currentOriginalIndex = match.range.last + 1
@@ -302,32 +361,55 @@ private fun transformExpressiveTags(
         }
 
     val finalTransformedText = transformedBuilder.toString()
-    val transformedToOriginal = IntArray(finalTransformedText.length + 1)
-    for (originalIdx in originalToTransformed.indices) {
-        val transformedIdx = originalToTransformed[originalIdx]
-        if (transformedIdx < transformedToOriginal.size) {
-            transformedToOriginal[transformedIdx] = originalIdx
-        }
-    }
 
     val offsetMapping =
         object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int =
-                if (offset >= 0 && offset < originalToTransformed.size) {
-                    originalToTransformed[offset]
-                } else {
-                    finalTransformedText.length
+                when {
+                    offset <= 0 -> 0
+                    offset >= originalToTransformed.size -> finalTransformedText.length
+                    else -> originalToTransformed[offset]
                 }
 
             override fun transformedToOriginal(offset: Int): Int =
-                if (offset >= 0 && offset < transformedToOriginal.size) {
-                    transformedToOriginal[offset]
-                } else {
-                    text.length
+                when {
+                    offset <= 0 -> {
+                        0
+                    }
+
+                    offset >= finalTransformedText.length -> {
+                        text.length
+                    }
+
+                    else -> {
+                        findOriginalOffsetForTransformed(
+                            offset,
+                        originalToTransformed,
+                        text.length,
+                        )
+                    }
                 }
         }
 
     return Pair(annotatedString, offsetMapping)
+}
+
+private fun findOriginalOffsetForTransformed(
+    transformedOffset: Int,
+    originalToTransformed: List<Int>,
+    originalLength: Int,
+): Int {
+    var low = 0
+    var high = originalToTransformed.size - 1
+    while (low < high) {
+        val mid = (low + high + 1) / 2
+        if (originalToTransformed[mid] <= transformedOffset) {
+            low = mid
+        } else {
+            high = mid - 1
+        }
+    }
+    return low.coerceIn(0, originalLength)
 }
 
 /**

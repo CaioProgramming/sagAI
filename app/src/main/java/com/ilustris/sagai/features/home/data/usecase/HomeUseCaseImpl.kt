@@ -104,11 +104,8 @@ class HomeUseCaseImpl
             executeRequest {
                 val isBackupEnabled = backupService.backupEnabled().first()
                 if (isBackupEnabled) {
-                    Timber.d("Auto-backup triggered, backing up all sagas...")
-                    val sagas = sagaRepository.getChats().first()
-                    sagas.forEach { saga ->
-                        backupService.backupSaga(saga)
-                    }
+                    Timber.d("Auto-backup triggered, backing up database...")
+                    backupService.backupDatabase()
                 }
             }
     }

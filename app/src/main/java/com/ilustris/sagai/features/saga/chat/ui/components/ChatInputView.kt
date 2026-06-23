@@ -103,48 +103,51 @@ import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
 
+private fun isIndexInsideTagMarkup(
+    text: String,
+    index: Int,
+): Boolean {
+    val open = text.lastIndexOf('<', index)
+    if (open == -1) return false
+    val close = text.indexOf('>', open)
+    return close == -1 || index <= close
+}
+
 private fun detectQueryType(
     text: String,
+    cursorPosition: Int,
     characters: List<Character>,
     wikis: List<Wiki>,
 ): ItemsType? {
-    val lastAtIndex = text.lastIndexOf('@')
-    val lastSlashIndex = text.lastIndexOf('/')
+    val cursor = cursorPosition.coerceIn(0, text.length)
+    val textBeforeCursor = text.substring(0, cursor)
+    val lastAtIndex = textBeforeCursor.lastIndexOf('@')
+    val lastSlashIndex = textBeforeCursor.lastIndexOf('/')
     val isCharacterQuery = lastAtIndex != -1 && lastAtIndex > lastSlashIndex
     val isWikiQuery = lastSlashIndex != -1 && lastSlashIndex > lastAtIndex
     return when {
-        isCharacterQuery && lastAtIndex < text.length -> {
-            val query = text.substring(lastAtIndex + 1)
-            if (!query.contains(' ')) {
-                val filtered = characters.filter { it.name.contains(query, ignoreCase = true) }
-                if (filtered.isNotEmpty()) {
-                    ItemsType.Characters(
-                        filtered,
-                        query,
-                    )
-                } else {
-                    null
+        isCharacterQuery -> {
+            if (isIndexInsideTagMarkup(text, lastAtIndex)) return null
+            val query = textBeforeCursor.substring(lastAtIndex + 1)
+            if (query.contains(' ') || query.contains('\n')) return null
+            val filtered =
+                characters.filter { character ->
+                    character.name.isNotBlank() &&
+                        (query.isEmpty() || character.name.contains(query, ignoreCase = true))
                 }
-            } else {
-                null
-            }
+            if (filtered.isNotEmpty()) ItemsType.Characters(filtered, query) else null
         }
 
-        isWikiQuery && lastSlashIndex < text.length -> {
-            val query = text.substring(lastSlashIndex + 1)
-            if (!query.contains(' ')) {
-                val filtered = wikis.filter { it.title.contains(query, ignoreCase = true) }
-                if (filtered.isNotEmpty()) {
-                    ItemsType.Wikis(
-                        filtered,
-                        query,
-                    )
-                } else {
-                    null
+        isWikiQuery -> {
+            if (isIndexInsideTagMarkup(text, lastSlashIndex)) return null
+            val query = textBeforeCursor.substring(lastSlashIndex + 1)
+            if (query.contains(' ') || query.contains('\n')) return null
+            val filtered =
+                wikis.filter { wiki ->
+                    wiki.title.isNotBlank() &&
+                        (query.isEmpty() || wiki.title.contains(query, ignoreCase = true))
                 }
-            } else {
-                null
-            }
+            if (filtered.isNotEmpty()) ItemsType.Wikis(filtered, query) else null
         }
 
         else -> {
@@ -157,9 +160,15 @@ private fun replaceQueryInText(
     text: String,
     symbol: Char,
     replacement: String,
+    cursorPosition: Int,
 ): String {
-    val startIndex = text.lastIndexOf(symbol)
-    return text.replaceRange(startIndex, text.length, "$replacement ")
+    val cursor = cursorPosition.coerceIn(0, text.length)
+    val textBeforeCursor = text.substring(0, cursor)
+    val startIndex = textBeforeCursor.lastIndexOf(symbol)
+    if (startIndex == -1) return text
+    val bounds = getTagContentBounds(text, cursor)
+    val replaceEnd = cursor.coerceAtMost(bounds?.contentEnd ?: text.length)
+    return text.substring(0, startIndex) + replacement + " " + text.substring(replaceEnd)
 }
 
 private fun handleCharacterSelection(
@@ -167,8 +176,14 @@ private fun handleCharacterSelection(
     currentInput: TextFieldValue,
     onUpdateInput: (TextFieldValue) -> Unit,
 ) {
-    val newText = replaceQueryInText(currentInput.text, '@', character.name)
-    onUpdateInput(TextFieldValue(newText, TextRange(newText.length)))
+    val cursor = currentInput.selection.start
+    val textBeforeCursor =
+        currentInput.text.substring(0, cursor.coerceIn(0, currentInput.text.length))
+    val startIndex = textBeforeCursor.lastIndexOf('@')
+    if (startIndex == -1) return
+    val newText = replaceQueryInText(currentInput.text, '@', character.name, cursor)
+    val newCursor = startIndex + character.name.length + 1
+    onUpdateInput(TextFieldValue(newText, TextRange(newCursor.coerceIn(0, newText.length))))
 }
 
 private fun handleWikiSelection(
@@ -176,8 +191,14 @@ private fun handleWikiSelection(
     currentInput: TextFieldValue,
     onUpdateInput: (TextFieldValue) -> Unit,
 ) {
-    val newText = replaceQueryInText(currentInput.text, '/', wiki.title)
-    onUpdateInput(TextFieldValue(newText, TextRange(newText.length)))
+    val cursor = currentInput.selection.start
+    val textBeforeCursor =
+        currentInput.text.substring(0, cursor.coerceIn(0, currentInput.text.length))
+    val startIndex = textBeforeCursor.lastIndexOf('/')
+    if (startIndex == -1) return
+    val newText = replaceQueryInText(currentInput.text, '/', wiki.title, cursor)
+    val newCursor = startIndex + wiki.title.length + 1
+    onUpdateInput(TextFieldValue(newText, TextRange(newCursor.coerceIn(0, newText.length))))
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -220,17 +241,23 @@ fun ChatInputView(
         Brush.horizontalGradient(
             if (isGenerating) morphingGradient() else themeBrushColors(),
         )
-    var queryItemsType by remember { mutableStateOf<ItemsType?>(null) }
     val textStyle =
         MaterialTheme.typography.labelMedium.copy(
             color = MaterialTheme.colorScheme.onBackground,
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
     val tagBg = MaterialTheme.colorScheme.background
+    val thinkTagSurface = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
     val textColor = textStyle.color
-    LaunchedEffect(inputField.text, characters, content.wikis) {
-        queryItemsType = detectQueryType(inputField.text, characters, content.wikis)
-    }
+    val queryItemsType =
+        remember(inputField.text, inputField.selection, characters, content.wikis) {
+            detectQueryType(
+                inputField.text,
+                inputField.selection.start,
+                characters,
+                content.wikis,
+            )
+        }
     val glowRadiusState =
         animateFloatAsState(if (isGenerating.not()) 10f else 25f, label = "glowRadius")
     val inputShape = sagaShape()
@@ -263,6 +290,7 @@ fun ChatInputView(
             tagBg,
             textColor,
             tagMarkerLabels,
+            thinkTagSurface,
         ) {
             VisualTransformation { text ->
                 transformTextWithContent(
@@ -276,6 +304,7 @@ fun ChatInputView(
                     headerFont = headerFont,
                     bodyFont = bodyFont,
                     tagMarkerLabels = tagMarkerLabels,
+                    thinkTagSurfaceColor = thinkTagSurface,
                 )
             }
         }
@@ -283,6 +312,8 @@ fun ChatInputView(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     fun sendMessage(confirmed: Boolean = false) {
+        val finalized = finalizeInputForSend(inputField)
+        onUpdateInput(finalized)
         onSendMessage(confirmed)
         focusManager.clearFocus()
         keyboardController?.hide()
@@ -400,7 +431,8 @@ fun ChatInputView(
                         } else {
                             drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
                         }
-                    }.border(1.dp, inputBrush, inputShape)
+                    }
+                    .border(1.dp, inputBrush, inputShape)
                     .background(bubbleColorState.value, inputShape),
         ) {
             AnimatedVisibility(currentTagInside != null) {
@@ -454,7 +486,8 @@ fun ChatInputView(
                                                     inputField,
                                                 ),
                                             )
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                             )
                         }
                     }
@@ -468,7 +501,8 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    ).fillMaxWidth()
+                    )
+                    .fillMaxWidth()
                     .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
@@ -587,6 +621,8 @@ fun ChatInputView(
 
                     Spacer(Modifier.weight(1f))
 
+                    val canSend = inputField.text.isNotBlank() || isGenerating
+
                     Box(contentAlignment = Alignment.Center) {
                         IconButton(
                             onClick = {
@@ -594,14 +630,17 @@ fun ChatInputView(
                                     onStopGeneration()
                                 } else {
                                     sendMessage()
-                                    onUpdateInput(escapeCursorFromTagAndClean(inputField))
                                 }
                             },
-                            enabled = (inputField.text.isNotBlank() || isGenerating),
+                            enabled = canSend,
                             colors =
                                 IconButtonDefaults.filledIconButtonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
                                     contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    disabledContainerColor =
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    disabledContentColor =
+                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
                                 ),
                             modifier =
                                 Modifier
@@ -609,42 +648,34 @@ fun ChatInputView(
                                     .size(32.dp),
                         ) {
                             AnimatedContent(isLoading) { loading ->
-                                val icon =
-                                    if (loading) {
-                                        R.drawable.ic_stop
-                                    } else {
-                                        if (inputField.text.isNotEmpty()) R.drawable.ic_send else null
-                                    }
-                                icon?.let {
-                                    Icon(
-                                        painterResource(it),
-                                        null,
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .fillMaxSize(),
-                                    )
-                                }
+                                Icon(
+                                    painterResource(
+                                        if (loading) R.drawable.ic_stop else R.drawable.ic_send,
+                                    ),
+                                    contentDescription = stringResource(R.string.chat_input_send),
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxSize(),
+                                )
                             }
                         }
 
-                        if (isLoading || inputField.text.isNotEmpty()) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(32.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    trackColor = Color.Transparent,
-                                    strokeWidth = 1.dp,
-                                )
-                            } else {
-                                CircularProgressIndicator(
-                                    progress = { progress.coerceIn(0f, 1f) },
-                                    modifier = Modifier.size(32.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    trackColor = Color.Transparent,
-                                    strokeWidth = 1.dp,
-                                )
-                            }
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                trackColor = Color.Transparent,
+                                strokeWidth = 1.dp,
+                            )
+                        } else if (inputField.text.isNotEmpty()) {
+                            CircularProgressIndicator(
+                                progress = { progress.coerceIn(0f, 1f) },
+                                modifier = Modifier.size(32.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                trackColor = Color.Transparent,
+                                strokeWidth = 1.dp,
+                            )
                         }
                     }
                 }
@@ -673,7 +704,8 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -705,17 +737,20 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            ).clip(CircleShape)
+                                            )
+                                            .clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -785,7 +820,8 @@ fun ChatInputView(
                                         .clickable {
                                             onSelectCharacter(character)
                                             characterMenu = false
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                             ) {
                                 CharacterAvatar(
                                     character,

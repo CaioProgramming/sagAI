@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.model.ImageConfig
 import com.ilustris.sagai.core.ai.model.ImageType
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 data class UnifiedImageArgs(
@@ -15,7 +16,6 @@ data class UnifiedImageArgs(
     val colorPalette: String,
     val validationRules: String,
     val criticalRules: String,
-    val renderingInstructions: String,
     val aspectRatio: String,
 )
 
@@ -32,7 +32,7 @@ object ImagePrompts {
     }
 
     suspend fun buildUnifiedImagePrompt(
-        promptService: com.ilustris.sagai.core.ai.services.PromptService,
+        promptService: PromptService,
         genre: Genre,
         config: GenreConfig,
         imageConfig: ImageConfig,
@@ -49,7 +49,6 @@ object ImagePrompts {
                 colorPalette = config.colorPalette,
                 validationRules = config.getValidationRules(genre.name),
                 criticalRules = imageConfig.criticalRules,
-                renderingInstructions = config.renderingInstructions,
                 aspectRatio =
                     when (imageType) {
                         ImageType.ICON -> {

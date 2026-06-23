@@ -176,7 +176,8 @@ object AppModule {
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
         fileHelper: FileHelper,
-    ) = BackupService(context, preferences, fileHelper)
+        database: SagaDatabase,
+    ) = BackupService(context, preferences, fileHelper, database)
 
     @Provides
     @Singleton

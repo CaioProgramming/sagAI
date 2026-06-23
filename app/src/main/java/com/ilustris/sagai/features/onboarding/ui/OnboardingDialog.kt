@@ -37,8 +37,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,6 +68,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -75,6 +78,7 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -107,20 +111,84 @@ fun OnboardingDialog(
 ) {
     val viewModel: OnboardingViewModel = hiltViewModel()
     val uiState by viewModel.onboardingState.collectAsStateWithLifecycle()
+    val purchaseFlowResult by viewModel.purchaseFlowResult.collectAsStateWithLifecycle()
+    val isPurchaseInProgress by viewModel.isPurchaseInProgress.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.checkOnboarding(type, genre, saga, force)
     }
 
+    val dismissOnboarding = {
+        viewModel.markAsSeen(type)
+        viewModel.dismissPurchaseResult()
+        onDismiss()
+        viewModel.clearState()
+    }
+
     if (uiState is OnboardingUiState.Content && uiState.type == type) {
         OnboardingContentSheet(
             state = uiState as OnboardingUiState.Content,
-            onDismiss = {
-                viewModel.markAsSeen(type)
-                onDismiss()
-                viewModel.clearState()
-            },
+            isPurchaseInProgress = isPurchaseInProgress,
+            onDismiss = dismissOnboarding,
         )
+
+        if (type == OnboardingType.PREMIUM_GUIDE) {
+            when (val result = purchaseFlowResult) {
+                is BillingService.PurchaseFlowResult.DebugFallback -> {
+                    DebugBillingSimulationSheet(
+                        reason = result.reason,
+                        isLoading = isPurchaseInProgress,
+                        onConfirm = viewModel::confirmDebugPurchase,
+                        onCancel = viewModel::cancelDebugPurchase,
+                        onSyncSubscription = viewModel::syncSubscription,
+                    )
+                }
+
+                is BillingService.PurchaseFlowResult.Success -> {
+                    BillingResultSheet(
+                        title = stringResource(R.string.billing_result_success_title),
+                        message = stringResource(R.string.billing_result_success_message),
+                        onDismiss = dismissOnboarding,
+                    )
+                }
+
+                BillingService.PurchaseFlowResult.DebugSimulationSuccess -> {
+                    BillingResultSheet(
+                        title = stringResource(R.string.billing_debug_simulation_success_title),
+                        message = stringResource(R.string.billing_debug_simulation_success_message),
+                        onDismiss = {
+                            viewModel.dismissPurchaseResult()
+                        },
+                    )
+                }
+
+                is BillingService.PurchaseFlowResult.Cancelled -> {
+                    BillingResultSheet(
+                        title = stringResource(R.string.billing_result_cancelled_title),
+                        message = stringResource(R.string.billing_result_cancelled_message),
+                        onDismiss = {
+                            viewModel.dismissPurchaseResult()
+                        },
+                    )
+                }
+
+                is BillingService.PurchaseFlowResult.Error -> {
+                    BillingResultSheet(
+                        title = stringResource(R.string.billing_error_generic),
+                        message = result.message,
+                        isLoading = isPurchaseInProgress,
+                        onSyncSubscription = viewModel::syncSubscription,
+                        onDismiss = {
+                            viewModel.dismissPurchaseResult()
+                        },
+                    )
+                }
+
+                BillingService.PurchaseFlowResult.Idle -> {
+                    Unit
+                }
+            }
+        }
     } else if (uiState is OnboardingUiState.Error && uiState.type == type) {
         SideEffect {
             onDismiss()
@@ -175,9 +243,192 @@ fun OnboardingDialog(
 }
 
 @Composable
+private fun DebugBillingSimulationSheet(
+    reason: String,
+    isLoading: Boolean,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    onSyncSubscription: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onCancel,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            )
+        },
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.billing_debug_fallback_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(R.string.billing_debug_fallback_message),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = reason,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            )
+            Button(
+                onClick = onConfirm,
+                enabled = !isLoading,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                shape = MaterialTheme.shapes.large,
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.billing_simulate_confirm).uppercase(),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    )
+                }
+            }
+            TextButton(
+                onClick = onSyncSubscription,
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.billing_check_subscription).uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+            TextButton(
+                onClick = onCancel,
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(R.string.billing_simulate_cancel).uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BillingResultSheet(
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    isLoading: Boolean = false,
+    onSyncSubscription: (() -> Unit)? = null,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            )
+        },
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_spark),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+            )
+            onSyncSubscription?.let { onSync ->
+                TextButton(
+                    onClick = onSync,
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.billing_check_subscription).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
+            }
+            Button(
+                onClick = onDismiss,
+                enabled = !isLoading,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                shape = MaterialTheme.shapes.large,
+            ) {
+                Text(
+                    text = stringResource(R.string.billing_result_ok).uppercase(),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun OnboardingContentSheet(
     state: OnboardingUiState.Content,
     genre: Genre? = null,
+    isPurchaseInProgress: Boolean = false,
     onDismiss: () -> Unit,
 ) {
     val viewModel: OnboardingViewModel = hiltViewModel()
@@ -338,6 +589,8 @@ private fun OnboardingContentSheet(
                         }
 
                         uiPage.primaryButton?.let { button ->
+                            val isSubscribeLoading =
+                                button.action is OnboardingAction.Subscribe && isPurchaseInProgress
                             Button(
                                 onClick = {
                                     if (button.action is OnboardingAction.Next) {
@@ -348,6 +601,8 @@ private fun OnboardingContentSheet(
                                         } else {
                                             onDismiss()
                                         }
+                                    } else if (button.action is OnboardingAction.Dismiss) {
+                                        onDismiss()
                                     } else {
                                         viewModel.handleAction(
                                             button.action,
@@ -355,6 +610,7 @@ private fun OnboardingContentSheet(
                                         )
                                     }
                                 },
+                                enabled = !isSubscribeLoading,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -366,11 +622,22 @@ private fun OnboardingContentSheet(
                                     ),
                                 shape = MaterialTheme.shapes.large,
                             ) {
-                                AnimatedContent(button) {
-                                    Text(
-                                        text = it.text.uppercase(),
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                if (isSubscribeLoading) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        strokeWidth = 2.dp,
                                     )
+                                } else {
+                                    AnimatedContent(button) {
+                                        Text(
+                                            text = it.text.uppercase(),
+                                            style =
+                                                MaterialTheme.typography.labelLarge.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                ),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -389,6 +656,14 @@ private fun OnboardingContentSheet(
                                             onDismiss()
                                         }
 
+                                        is OnboardingAction.DeactivateTutorials -> {
+                                            viewModel.handleAction(
+                                                button.action,
+                                                context as? MainActivity,
+                                            )
+                                            onDismiss()
+                                        }
+
                                         else -> {
                                             viewModel.handleAction(
                                                 button.action,
@@ -397,6 +672,7 @@ private fun OnboardingContentSheet(
                                         }
                                     }
                                 },
+                                enabled = !isPurchaseInProgress,
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 AnimatedContent(button) {

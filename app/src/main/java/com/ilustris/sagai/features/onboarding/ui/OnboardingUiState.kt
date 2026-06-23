@@ -10,8 +10,6 @@ sealed class OnboardingAction {
 
     data object Dismiss : OnboardingAction()
 
-    data object Restore : OnboardingAction()
-
     data class Subscribe(
         val productId: String,
     ) : OnboardingAction()

@@ -13,7 +13,9 @@ enum class ExpressiveTag(
     val hint: String,
 ) {
     ACTION("action", R.string.sender_type_action_title, "Physical movements"),
-    THINK("redacted_thinking", R.string.sender_type_thought_title, "Internal thoughts"),
+
+    /** Renders as `<think>…</think>` in message text. */
+    THINK("think", R.string.sender_type_thought_title, "Internal thoughts"),
     NARRATOR("narrator", R.string.sender_type_narrator_title, "Narrator voice"),
     ;
 
@@ -54,14 +56,12 @@ fun insertExpressiveTag(
             selection = TextRange(newCursorPosition),
         )
     } else {
-        // No selection - insert tags with cursor between them with a breathing space
-        // The space tricks the OS keyboard into allowing smart-space/predictions
+        // No selection - insert opening tag only; closing is added on exit/send
         val opening = tag.openingTag()
-        val closing = tag.closingTag()
         val insertPosition = selection.start
         val newText =
             currentText.substring(0, insertPosition) +
-                opening + " " + closing +
+                opening +
                 currentText.substring(insertPosition)
         val newCursorPosition = insertPosition + opening.length
 
@@ -134,6 +134,39 @@ fun completeTag(
 }
 
 /**
+ * Bounds of editable content when the cursor is inside an expressive tag.
+ */
+data class TagContentBounds(
+    val contentStart: Int,
+    val contentEnd: Int,
+)
+
+fun getTagContentBounds(
+    text: String,
+    cursorPosition: Int,
+): TagContentBounds? {
+    val normalized = normalizeThinkTags(text)
+    val tag = getCursorInsideTag(normalized, cursorPosition) ?: return null
+    val openTag = tag.openingTag()
+    val closeTag = tag.closingTag()
+    val textBeforeCursor = normalized.substring(0, cursorPosition.coerceIn(0, normalized.length))
+    val openIndex = textBeforeCursor.lastIndexOf(openTag)
+    if (openIndex == -1) return null
+
+    val contentStart = openIndex + openTag.length
+    val afterOpen = normalized.substring(openIndex + openTag.length)
+    val closeRelative = afterOpen.indexOf(closeTag)
+    val contentEnd =
+        if (closeRelative == -1) {
+            normalized.length
+        } else {
+            openIndex + openTag.length + closeRelative
+        }
+
+    return TagContentBounds(contentStart, contentEnd)
+}
+
+/**
  * Check if the cursor is currently inside an expressive tag
  *
  * @param text Current text
@@ -144,7 +177,7 @@ fun getCursorInsideTag(
     text: String,
     cursorPosition: Int,
 ): ExpressiveTag? {
-    val normalized = normalizeLegacyThinkTags(text)
+    val normalized = normalizeThinkTags(text)
     for (tag in ExpressiveTag.entries) {
         val openTag = tag.openingTag()
         val closeTag = tag.closingTag()
@@ -157,9 +190,15 @@ fun getCursorInsideTag(
         val afterOpenTag = normalized.substring(lastOpenIndex + openTag.length)
         val closeIndex = afterOpenTag.indexOf(closeTag)
 
-        if (closeIndex == -1) continue
-
         val contentStart = lastOpenIndex + openTag.length
+
+        if (closeIndex == -1) {
+            if (cursorPosition >= contentStart) {
+                return tag
+            }
+            continue
+        }
+
         val contentEnd = lastOpenIndex + openTag.length + closeIndex
 
         if (cursorPosition >= contentStart && cursorPosition <= contentEnd) {
@@ -176,27 +215,64 @@ fun getCursorInsideTag(
  * @return Updated text field value with cursor after the closing tag, or same value if not in tag
  */
 fun escapeCursorFromTag(currentValue: TextFieldValue): TextFieldValue {
-    val text = currentValue.text
+    val text = normalizeThinkTags(currentValue.text)
     val cursorPosition = currentValue.selection.start
 
     val tag = getCursorInsideTag(text, cursorPosition) ?: return currentValue
 
-    tag.openingTag()
+    val openTag = tag.openingTag()
     val closeTag = tag.closingTag()
 
-    // Find the closing tag position after cursor
-    val afterCursor = text.substring(cursorPosition)
-    val closeIndexRelative = afterCursor.indexOf(closeTag)
+    val textBeforeCursor = text.substring(0, cursorPosition.coerceIn(0, text.length))
+    val openIndex = textBeforeCursor.lastIndexOf(openTag)
+    if (openIndex == -1) return currentValue
 
-    if (closeIndexRelative == -1) return currentValue
+    val afterOpen = text.substring(openIndex + openTag.length)
+    val closeRelative = afterOpen.indexOf(closeTag)
 
-    // Move cursor after the closing tag
-    val newCursorPosition = cursorPosition + closeIndexRelative + closeTag.length
+    if (closeRelative == -1) {
+        val newText = text + closeTag
+        return TextFieldValue(newText, TextRange(newText.length))
+    }
+
+    val closeStart = openIndex + openTag.length + closeRelative
+    val newCursorPosition = closeStart + closeTag.length
 
     return TextFieldValue(
         text = text,
         selection = TextRange(newCursorPosition),
     )
+}
+
+/**
+ * Closes any expressive tags that were left open while editing.
+ */
+fun ensureExpressiveTagsClosed(text: String): String {
+    var result = normalizeThinkTags(text)
+    for (tag in ExpressiveTag.entries) {
+        val openTag = tag.openingTag()
+        val closeTag = tag.closingTag()
+        var searchFrom = 0
+        while (true) {
+            val openIndex = result.indexOf(openTag, searchFrom)
+            if (openIndex == -1) break
+            val contentStart = openIndex + openTag.length
+            val closeIndex = result.indexOf(closeTag, contentStart)
+            if (closeIndex == -1) {
+                result += closeTag
+                break
+            }
+            searchFrom = closeIndex + closeTag.length
+        }
+    }
+    return result
+}
+
+fun finalizeInputForSend(currentValue: TextFieldValue): TextFieldValue {
+    val escaped = escapeCursorFromTagAndClean(currentValue)
+    val closed = ensureExpressiveTagsClosed(escaped.text)
+    val cursor = escaped.selection.start.coerceIn(0, closed.length)
+    return TextFieldValue(closed, TextRange(cursor))
 }
 
 /**
@@ -206,28 +282,35 @@ fun escapeCursorFromTag(currentValue: TextFieldValue): TextFieldValue {
  * @param text The text to clean
  * @return Text with empty tags removed
  */
-private val EXPRESSIVE_TAG_NAMES = listOf("action", "narrator", "redacted_thinking", "think")
+private val EXPRESSIVE_TAG_NAMES = listOf("action", "narrator", "think")
+
+private val LEGACY_THINK_OPEN = "<" + "redacted_thinking" + ">"
+private val LEGACY_THINK_CLOSE = "</" + "redacted_thinking" + ">"
 
 private val COMPLETE_TAG_REGEX =
     Regex(
-        "<(action|narrator|redacted_thinking|think)>(.*?)</\\1>",
+        "<(action|narrator|think)>(.*?)</\\1>",
         RegexOption.DOT_MATCHES_ALL,
     )
 
 private val TAG_MARKUP_REGEX =
-    Regex("</?(?:action|narrator|redacted_thinking|think)>")
+    Regex("</?(?:action|narrator|think)>")
 
 fun cleanEmptyTags(text: String): String {
-    val normalized = normalizeLegacyThinkTags(text)
-    val emptyTagPattern =
-        Regex("<(action|narrator|redacted_thinking|think)>\\s*</(\\1)>")
-    return emptyTagPattern.replace(normalized, "").trim()
+    val normalized = normalizeThinkTags(text)
+    val emptyTagPattern = Regex("<(action|narrator|think)>\\s*</(\\1)>")
+    var result = emptyTagPattern.replace(normalized, "").trim()
+    for (tag in ExpressiveTag.entries) {
+        val openOnlyPattern = Regex("${Regex.escape(tag.openingTag())}\\s*$")
+        result = openOnlyPattern.replace(result, "")
+    }
+    return result
 }
 
-private fun normalizeLegacyThinkTags(text: String): String =
+private fun normalizeThinkTags(text: String): String =
     text
-        .replace("<think>", "<redacted_thinking>")
-        .replace("</think>", "</redacted_thinking>")
+        .replace(LEGACY_THINK_OPEN, ExpressiveTag.THINK.openingTag())
+        .replace(LEGACY_THINK_CLOSE, ExpressiveTag.THINK.closingTag())
 
 /**
  * Escapes cursor from tag and cleans up empty tags.
@@ -257,11 +340,8 @@ fun escapeCursorFromTagAndClean(currentValue: TextFieldValue): TextFieldValue {
  * @return The length of content without tag overhead
  */
 fun getCleanTextLength(text: String): Int {
-    val tagPattern =
-        Regex(
-            "<(action|narrator|redacted_thinking|think)>|</(action|narrator|redacted_thinking|think)>",
-        )
-    return tagPattern.replace(normalizeLegacyThinkTags(text), "").length
+    val tagPattern = Regex("<(action|narrator|think)>|</(action|narrator|think)>")
+    return tagPattern.replace(normalizeThinkTags(text), "").length
 }
 
 /**
@@ -294,7 +374,7 @@ fun getCursorAfterClosingTag(
 fun handleTagAwareBackspace(currentValue: TextFieldValue): TextFieldValue? {
     if (currentValue.selection.start != currentValue.selection.end) return null
 
-    val text = normalizeLegacyThinkTags(currentValue.text)
+    val text = normalizeThinkTags(currentValue.text)
     val cursorPosition = currentValue.selection.start
 
     getCursorAfterClosingTag(text, cursorPosition)?.let { tag ->
@@ -311,9 +391,16 @@ fun handleTagAwareBackspace(currentValue: TextFieldValue): TextFieldValue? {
 
         val afterOpenTag = text.substring(openTagIndex + openTag.length)
         val closeIndexRelative = afterOpenTag.indexOf(closeTag)
-        if (closeIndexRelative == -1) return null
 
         val contentStart = openTagIndex + openTag.length
+
+        if (closeIndexRelative == -1) {
+            if (cursorPosition == contentStart) {
+                return deleteTagPair(text, openTagIndex, text.length, openTagIndex)
+            }
+            return null
+        }
+
         val contentEnd = openTagIndex + openTag.length + closeIndexRelative
         val content = text.substring(contentStart, contentEnd).trim()
 
@@ -321,7 +408,7 @@ fun handleTagAwareBackspace(currentValue: TextFieldValue): TextFieldValue? {
             return deleteTagPair(text, openTagIndex, contentEnd + closeTag.length, openTagIndex)
         }
 
-        if (cursorPosition == contentStart || cursorPosition == contentStart + 1 && content.startsWith(" ")) {
+        if (cursorPosition == contentStart) {
             return deleteTagPair(text, openTagIndex, contentEnd + closeTag.length, openTagIndex)
         }
     }
@@ -347,7 +434,7 @@ fun handleSmartBackspace(currentValue: TextFieldValue): TextFieldValue? = handle
 fun handleTagAwareDelete(currentValue: TextFieldValue): TextFieldValue? {
     if (currentValue.selection.start != currentValue.selection.end) return null
 
-    val text = normalizeLegacyThinkTags(currentValue.text)
+    val text = normalizeThinkTags(currentValue.text)
     val cursorPosition = currentValue.selection.start
     if (cursorPosition >= text.length) return null
 
@@ -399,13 +486,14 @@ private fun isInsidePartialTagMarkup(
     val end = text.indexOf('>', start)
     if (end == -1 || index > end) return false
     val fragment = text.substring(start, end + 1)
-    return EXPRESSIVE_TAG_NAMES.any { name -> fragment.contains(name) }
+    return EXPRESSIVE_TAG_NAMES.any { name -> fragment.contains(name) } ||
+        fragment.contains("redacted_thinking")
 }
 
 private fun repairAtCursor(
     text: String,
     cursorPosition: Int,
-): String? {
+): String {
     val tagInside = getCursorInsideTag(text, cursorPosition)
     if (tagInside != null) {
         return stripTag(TextFieldValue(text, TextRange(cursorPosition))).text
@@ -417,7 +505,7 @@ private fun repairAtCursor(
  * Removes orphan/partial tag markup while preserving readable content.
  */
 fun repairBrokenTags(text: String): String {
-    var result = normalizeLegacyThinkTags(text)
+    var result = normalizeThinkTags(text)
     if (!TAG_MARKUP_REGEX.containsMatchIn(result)) return result
 
     val completeRanges = mutableListOf<IntRange>()
@@ -434,27 +522,88 @@ fun repairBrokenTags(text: String): String {
 }
 
 fun hasBrokenTagMarkup(text: String): Boolean {
-    val normalized = normalizeLegacyThinkTags(text)
+    val normalized = normalizeThinkTags(text)
+    if (hasTrailingOpenExpressiveTag(normalized)) return false
     val withoutComplete = COMPLETE_TAG_REGEX.replace(normalized, "$2")
     return TAG_MARKUP_REGEX.containsMatchIn(withoutComplete)
 }
 
+private fun hasTrailingOpenExpressiveTag(text: String): Boolean {
+    for (tag in ExpressiveTag.entries) {
+        val openTag = tag.openingTag()
+        val closeTag = tag.closingTag()
+        var searchFrom = 0
+        while (true) {
+            val openIndex = text.indexOf(openTag, searchFrom)
+            if (openIndex == -1) break
+            val contentStart = openIndex + openTag.length
+            val closeIndex = text.indexOf(closeTag, contentStart)
+            if (closeIndex == -1) return true
+            searchFrom = closeIndex + closeTag.length
+        }
+    }
+    return false
+}
+
+private fun textNeedsTagSanitization(text: String): Boolean =
+    text.contains('<') &&
+        (
+            TAG_MARKUP_REGEX.containsMatchIn(text) ||
+                text.contains(LEGACY_THINK_OPEN) ||
+                hasBrokenTagMarkup(text)
+        )
+
 /**
  * Sanitizes text after edits so partial tag markup is never left exposed.
+ * Preserves IME composition so keyboard suggestions keep working.
  */
 fun sanitizeExpressiveTagsOnChange(
     @Suppress("UNUSED_PARAMETER") oldValue: TextFieldValue,
     newValue: TextFieldValue,
 ): TextFieldValue {
-    var text = normalizeLegacyThinkTags(newValue.text)
-    var cursor = newValue.selection.start.coerceIn(0, text.length)
-
-    if (hasBrokenTagMarkup(text)) {
-        text = repairBrokenTags(text)
-        cursor = cursor.coerceIn(0, text.length)
+    if (!textNeedsTagSanitization(newValue.text)) {
+        return newValue
     }
 
-    return TextFieldValue(text, TextRange(cursor))
+    var text = normalizeThinkTags(newValue.text)
+    if (text == newValue.text && !hasBrokenTagMarkup(text)) {
+        return newValue
+    }
+
+    var selection = newValue.selection
+    var composition = newValue.composition
+
+    if (hasBrokenTagMarkup(text)) {
+        val beforeLength = text.length
+        text = repairBrokenTags(text)
+        val delta = text.length - beforeLength
+        if (delta != 0) {
+            selection =
+                TextRange(
+                    (selection.start + delta).coerceIn(0, text.length),
+                    (selection.end + delta).coerceIn(0, text.length),
+                )
+            composition =
+                composition?.let {
+                    TextRange(
+                        (it.start + delta).coerceIn(0, text.length),
+                        (it.end + delta).coerceIn(0, text.length),
+                    )
+                }
+        }
+    }
+
+    selection =
+        TextRange(
+            selection.start.coerceIn(0, text.length),
+            selection.end.coerceIn(0, text.length),
+        )
+
+    return TextFieldValue(
+        text = text,
+        selection = selection,
+        composition = composition,
+    )
 }
 
 fun processInputChange(
@@ -555,9 +704,16 @@ fun stripTag(currentValue: TextFieldValue): TextFieldValue {
     val textAfterOpenTag = text.substring(openTagIndex + openTag.length)
     val closeIndexRelative = textAfterOpenTag.indexOf(closeTag)
 
-    if (closeIndexRelative == -1) return currentValue
-
     val contentStart = openTagIndex + openTag.length
+
+    if (closeIndexRelative == -1) {
+        val beforeTag = text.substring(0, openTagIndex)
+        val content = text.substring(contentStart)
+        val newText = beforeTag + content
+        val newCursorPosition = maxOf(0, cursorPosition - openTag.length)
+        return TextFieldValue(newText, TextRange(newCursorPosition))
+    }
+
     val contentEnd = openTagIndex + openTag.length + closeIndexRelative
 
     val beforeTag = text.substring(0, openTagIndex)

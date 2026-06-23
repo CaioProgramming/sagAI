@@ -3,9 +3,9 @@ package com.ilustris.sagai.core.ai
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.model.GeneratedContent
-import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -82,14 +82,17 @@ class ImagenClientImpl
                     val imageConfig = imageConfigService.getImageConfig()
 
                     val prompt =
-                        ImagePrompts.buildUnifiedImagePrompt(
-                            promptService,
-                            genre,
-                            genreConfig,
-                            imageConfig,
-                            imageType,
-                            context,
-                        )
+                        ImagePrompts
+                            .buildUnifiedImagePrompt(
+                                promptService,
+                                genre,
+                                genreConfig,
+                                imageConfig,
+                                imageType,
+                                context,
+                            ).mergeInstructions(
+                                genreConfigService.renderingInstructions(genre),
+                            )
 
                     var finalStringPrompt: String? = null
                     val sourceStream =
@@ -183,14 +186,17 @@ class ImagenClientImpl
                 val imageConfig = imageConfigService.getImageConfig()
 
                 val prompt =
-                    ImagePrompts.buildUnifiedImagePrompt(
-                        promptService,
-                        genre,
-                        genreConfig,
-                        imageConfig,
-                        imageType,
-                        context,
-                    )
+                    ImagePrompts
+                        .buildUnifiedImagePrompt(
+                            promptService,
+                            genre,
+                            genreConfig,
+                            imageConfig,
+                            imageType,
+                            context,
+                        ).mergeInstructions(
+                            genreConfigService.renderingInstructions(genre),
+                        )
 
                 val finalStringPrompt =
                     gemmaClient.generate<String>(

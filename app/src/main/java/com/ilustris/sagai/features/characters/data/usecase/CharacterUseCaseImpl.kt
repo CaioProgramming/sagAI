@@ -6,10 +6,9 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.GeneratedContent
-import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
-import com.ilustris.sagai.core.ai.prompts.CharacterPrompts.CHARACTER_GENERATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
@@ -26,7 +25,6 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdateGen
 import com.ilustris.sagai.features.characters.data.model.NickNameGen
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
-import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.source.CharacterArcDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
@@ -36,9 +34,11 @@ import com.ilustris.sagai.features.characters.ui.CharacterDetailState
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.findCharacterStrict
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.home.data.model.hasConflictingCharacterIdentity
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -233,7 +233,7 @@ class CharacterUseCaseImpl
         ) {
             val name = candidateName?.trim().orEmpty()
             if (name.isBlank()) return
-            sagaContent.findCharacter(name)?.let {
+            sagaContent.findCharacterStrict(name)?.let {
                 error("Character already exists")
             }
         }
@@ -288,9 +288,7 @@ class CharacterUseCaseImpl
                         requirement = ModelRequirement.HIGH,
                     )!!
 
-                val character = sagaContent.findCharacter(newCharacter.name)
-
-                if (character?.data?.fullName() == newCharacter.fullName()) {
+                if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
                     error("Character already exists")
                 }
                 val characterTransaction =
@@ -373,8 +371,7 @@ class CharacterUseCaseImpl
                         ).collect { state ->
                             if (state is StreamingState.Success) {
                                 val newCharacter = state.data!!.data
-                                val character = sagaContent.findCharacter(newCharacter.name)
-                                if (character?.data?.fullName() == newCharacter.fullName()) {
+                                if (sagaContent.hasConflictingCharacterIdentity(newCharacter)) {
                                     emit(
                                         StreamingState
                                             .Error("Character already exists"),

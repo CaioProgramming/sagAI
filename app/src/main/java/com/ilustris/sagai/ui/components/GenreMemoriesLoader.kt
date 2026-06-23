@@ -103,7 +103,7 @@ private fun GenreMemoryItem(
                 .height(100.dp)
                 .dropShadow(shape) {
                     this.radius = 15f
-                    this.spread = 10f
+                    this.spread = 5f
                     this.brush = brush
                 }.clip(shape)
                 .background(color)

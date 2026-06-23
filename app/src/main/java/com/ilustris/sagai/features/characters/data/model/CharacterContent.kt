@@ -68,3 +68,43 @@ data class CharacterContent(
 }
 
 fun Character.fullName() = "$name ${lastName ?: ""}".trim()
+
+private fun Character.displayNameTokens(): List<String> {
+    val tokens = mutableListOf<String>()
+    tokens.addAll(name.lowercase().split(" "))
+    lastName
+        ?.lowercase()
+        ?.split(" ")
+        ?.let { tokens.addAll(it) }
+    nicknames?.forEach { nickname -> tokens.addAll(nickname.lowercase().split(" ")) }
+    return tokens.filter { it.isNotBlank() }
+}
+
+fun Character.matchesDisplayNameStrict(query: String): Boolean {
+    val normalizedQuery = query.trim().lowercase()
+    return fullName().lowercase() == normalizedQuery ||
+        nicknames.orEmpty().any { it.trim().lowercase() == normalizedQuery }
+}
+
+/**
+ * Resolves a spoken or written name to a saga character (exact full name / nickname first,
+ * then token-based fuzzy matching for chat and narrative references).
+ */
+fun List<Character>.findByDisplayName(query: String?): Character? {
+    if (query.isNullOrBlank()) return null
+
+    find { it.matchesDisplayNameStrict(query) }?.let { return it }
+
+    val normalizedInput = query.lowercase().trim()
+    val normalizedInputTokens = normalizedInput.split(" ").filter { it.isNotBlank() }
+
+    find { character ->
+        val allTokens = character.displayNameTokens()
+        normalizedInputTokens.all { inputToken -> allTokens.contains(inputToken) }
+    }?.let { return it }
+
+    return find { character ->
+        val allTokens = character.displayNameTokens()
+        normalizedInputTokens.any { inputToken -> allTokens.contains(inputToken) }
+    }
+}

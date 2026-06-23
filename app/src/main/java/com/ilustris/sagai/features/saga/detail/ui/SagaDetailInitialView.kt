@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -73,6 +74,7 @@ import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaHighlight
 import com.ilustris.sagai.ui.theme.sagaShader
 import com.ilustris.sagai.ui.theme.sagaShape
@@ -132,79 +134,13 @@ fun SagaDetailInitialContent(
                     state = gridState,
                 ) {
                     item(span = { GridItemSpan(columnCount) }) {
-                        Box(
+                        sagaHeaderComponent(
+                            saga,
                             modifier =
-                                Modifier
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .height(400.dp)
-                                    .fillMaxWidth(),
-                        ) {
-                            AsyncImage(
-                                model =
-                                    ImageRequest
-                                        .Builder(LocalContext.current)
-                                        .data(saga.icon)
-                                        .crossfade(true)
-                                        .build(),
-                                contentDescription = saga.title,
-                                contentScale = ContentScale.Crop,
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .sagaShader()
-                                        .sagaHighlight(),
-                            )
-
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        fadeGradientBottom(),
-                                    ),
-                                contentAlignment = Alignment.BottomCenter,
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    if (saga.isEnded) {
-                                        Row(
-                                            Modifier
-                                                .background(
-                                                    MaterialTheme.colorScheme.secondary,
-                                                    MaterialTheme.shapes.large,
-                                                ).padding(4.dp)
-                                                .alpha(.6f),
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Icon(
-                                                themeIcon(),
-                                                null,
-                                                Modifier.size(12.dp),
-                                                tint = MaterialTheme.colorScheme.onPrimary,
-                                            )
-
-                                            Text(
-                                                stringResource(R.string.chat_card_saga_ended),
-                                                style =
-                                                    MaterialTheme.typography.labelSmall.copy(
-                                                        color = MaterialTheme.colorScheme.onPrimary,
-                                                    ),
-                                            )
-                                        }
-                                    }
-                                    genre.stylisedText(
-                                        saga.title,
-                                        modifier =
-                                            Modifier
-                                                .padding(horizontal = 16.dp, vertical = 36.dp)
-                                                .fillMaxWidth()
-                                                .padding(8.dp),
-                                    )
-                                }
-                            }
-                        }
+                                Modifier.clickable(enabled = saga.icon.isBlank()) {
+                                    onAction(DetailAction.RegenerateIcon)
+                                },
+                        )
                     }
 
                     item(span = { GridItemSpan(columnCount) }) {
@@ -528,6 +464,105 @@ fun SagaDetailInitialContent(
                                 .padding(16.dp),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun sagaHeaderComponent(
+    saga: Saga,
+    modifier: Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxWidth()
+                .animateContentSize(),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        if (saga.icon.isBlank()) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    themeIcon(),
+                    null,
+                    Modifier
+                        .size(64.dp)
+                        .gradientFill(sagaBrush()),
+                )
+                saga.genre.stylisedText(
+                    saga.title,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 36.dp)
+                            .fillMaxWidth(),
+                )
+            }
+        } else {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(saga.icon)
+                        .crossfade(true)
+                        .build(),
+                contentDescription = saga.title,
+                contentScale = ContentScale.Crop,
+                placeholder = themeIcon(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(.45f)
+                        .sagaShader()
+                        .sagaHighlight(),
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(fadeGradientBottom()),
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (saga.isEnded) {
+                    Row(
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.secondary,
+                                MaterialTheme.shapes.large,
+                            ).padding(4.dp)
+                            .alpha(.6f),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            themeIcon(),
+                            null,
+                            Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+
+                        Text(
+                            stringResource(R.string.chat_card_saga_ended),
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                        )
+                    }
+                }
+
+                saga.genre.stylisedText(
+                    saga.title,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 36.dp)
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                )
             }
         }
     }

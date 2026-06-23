@@ -153,6 +153,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBa
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
+import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -160,8 +161,6 @@ import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -169,8 +168,6 @@ import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
-import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
@@ -178,7 +175,6 @@ import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
-import com.ilustris.sagai.ui.theme.sagaHighlight
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIcon
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -644,6 +640,7 @@ fun ChatContent(
                         val bottomInputState =
                             when {
                                 narrativeState.showAdvanceTrigger &&
+                                    uiState.onboardingType == null &&
                                     !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Advance(
                                         action = narrativeState.displayAdvanceAction!!,
@@ -850,6 +847,7 @@ fun ChatContent(
                         Column(
                             modifier =
                                 Modifier
+                                    .alpha(alpha)
                                     .background(MaterialTheme.colorScheme.background)
                                     .fillMaxWidth()
                                     .animateContentSize()
@@ -1209,72 +1207,21 @@ fun SagaHeader(
     saga: Saga,
     modifier: Modifier,
     openSaga: () -> Unit,
-    originalBitmap: Bitmap? = null,
-    segmentedBitmap: Bitmap? = null,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedContentScope,
 ) {
     Column(
         modifier.clickable {
             openSaga()
         },
     ) {
-        if (saga.icon.isEmpty()) {
-            saga.genre.stylisedText(
-                saga.title,
-                modifier =
-                    Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(8.dp),
-            )
-        }
-        AnimatedVisibility(saga.icon.isNotEmpty()) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(400.dp),
-            ) {
-                with(sharedTransitionScope) {
-                    DepthLayout(
-                        imagePath = saga.icon,
-                        modifier = Modifier.fillMaxSize(),
-                        imageModifier =
-                            Modifier
-                                .sharedBounds(
-                                    rememberSharedContentState(key = "saga_${saga.id}_icon"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                ).effectForGenre(saga.genre)
-                                .sagaHighlight(),
-                    ) {
-                        Text(
-                            saga.title,
-                            style =
-                                MaterialTheme.typography.headlineLarge.copy(
-                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                                ),
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                                    .genreVfx(saga.genre)
-                                    .clickable {
-                                        openSaga()
-                                    },
-                        )
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .background(
-                                    fadedGradientTopAndBottom(),
-                                ),
-                        )
-                    }
-                }
-            }
-        }
+        sagaHeaderComponent(
+            saga,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        openSaga()
+                    },
+        )
 
         var isDescriptionExpanded by remember { mutableStateOf(false) }
         val textColor by animateColorAsState(
@@ -1350,7 +1297,7 @@ fun ChatList(
         reverseLayout = true,
     ) {
         item {
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(150.dp))
         }
 
         reasoningChunk?.let {
@@ -1610,10 +1557,6 @@ fun ChatList(
                     Modifier
                         .fillMaxWidth(),
                 openSaga = { onAction(ChatUiAction.OpenSagaDetails) },
-                originalBitmap = originalBitmap,
-                segmentedBitmap = segmentedBitmap,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
     }

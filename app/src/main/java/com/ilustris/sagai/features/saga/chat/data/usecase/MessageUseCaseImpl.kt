@@ -6,8 +6,8 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.AudioConfig
-import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.model.Voice
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
@@ -257,20 +257,14 @@ class MessageUseCaseImpl
                                     reply.message.speakerName ?: reply.newCharacter?.name
                                 val savedMessage =
                                     messageRepository.saveMessage(
-                                        reply.message.copy(
+                                        Message(
+                                            id = 0,
                                             sagaId = saga.data.id,
+                                            text = reply.message.text,
+                                            senderType = reply.message.senderType,
                                             timelineId = saga.getCurrentTimeLine()!!.data.id,
-                                            speakerName = resolvedSpeaker,
-                                            characterId =
-                                                resolvedSpeaker
-                                                    ?.let { name ->
-                                                        sagaContent
-                                                            .findCharacter(name)
-                                                            ?.data
-                                                            ?.id
-                                                    },
                                             status = MessageStatus.OK,
-                                            timestamp = System.currentTimeMillis(),
+                                            speakerName = reply.message.speakerName,
                                         ),
                                     )
                                 reply.sceneSummary?.let { summary ->
@@ -284,10 +278,10 @@ class MessageUseCaseImpl
                                 }
                                 withContext(Dispatchers.IO) {
                                     handleAIReplyReactions(saga, savedMessage, reply.reactions)
-                                    reply?.userTone?.let { tone ->
+                                    reply.userTone?.let { tone ->
                                         updateMessage(message.message.copy(emotionalTone = tone))
                                     }
-                                    reply?.userReactions?.let { reactions ->
+                                    reply.userReactions?.let { reactions ->
                                         handleAIReplyReactions(saga, message.message, reactions)
                                     }
                                 }

@@ -10,6 +10,7 @@ import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.file.backup.SagaManifest
@@ -30,12 +31,14 @@ class BackupService(
     private val context: Context,
     private val preferences: DataStorePreferences,
     private val fileHelper: FileHelper,
+    private val database: SagaDatabase,
 ) {
     companion object {
         private const val BACKUP_FOLDER_NAME = "sagai_backups"
         private const val MANIFEST_FILE_NAME = "sagai_manifest.json"
         private const val SAGA_JSON_FILE = "saga.json"
         private const val IMAGES_FOLDER = "images"
+        const val DATABASE_BACKUP_FILE_NAME = "sagai_database_backup.db"
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -173,6 +176,30 @@ class BackupService(
             outputStream.write(updatedJson.toByteArray())
         }
     }
+
+    suspend fun backupDatabase(): RequestResult<Uri> =
+        executeRequest {
+            val backupRoot = getBackupRoot() ?: error("Could not access backup directory")
+
+            database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
+
+            val dbFile = context.getDatabasePath(SagaDatabase.NAME)
+            if (!dbFile.exists()) error("Database file not found")
+
+            backupRoot.findFile(DATABASE_BACKUP_FILE_NAME)?.delete()
+
+            val backupDbFile =
+                backupRoot.createFile("application/octet-stream", DATABASE_BACKUP_FILE_NAME)
+                    ?: error("Could not create backup database file.")
+
+            context.contentResolver.openOutputStream(backupDbFile.uri, "w")?.use { output ->
+                dbFile.inputStream().use { input ->
+                    input.copyTo(output)
+                }
+            } ?: error("Could not open output stream for backup file")
+
+            backupDbFile.uri
+        }
 
     suspend fun backupSaga(saga: SagaContent): RequestResult<Uri> =
         executeRequest {
