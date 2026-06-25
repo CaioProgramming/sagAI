@@ -478,6 +478,7 @@
     <string name="releasing_close_scene">Salvando este evento...</string>
     <string name="advance_saga_ending">Escrever o desfecho</string>
     <string name="releasing_ending">Escrevendo o desfecho...</string>
+    <string name="advance_pull_hint">Deslize para cima para continuar</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Parabéns! Continue assim!</string>

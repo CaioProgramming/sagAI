@@ -606,9 +606,7 @@ class ChatViewModel
         }
 
         fun updateCharacter(character: Character?) {
-            viewModelScope.launch(Dispatchers.IO) {
-                stateManager.updateCharacter(character)
-            }
+            stateManager.updateCharacter(character)
         }
 
         private fun openMessageOptions(message: Message?) {

@@ -1,13 +1,16 @@
 package com.ilustris.sagai.ui.theme
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -53,6 +56,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
@@ -103,8 +107,11 @@ private val LightColorScheme =
 
 @Composable
 fun themeBrushColors(): List<Color> {
-    val genre = LocalSagaGenre.current
-    return genre?.colorPalette() ?: iridescentGradient
+    val genre = LocalSagaGenre.current ?: return iridescentGradient
+    val animatedPrimary = LocalAnimatedThemePrimary.current
+    val palette = genre.colorPalette()
+    if (animatedPrimary == Color.Unspecified || palette.isEmpty()) return palette
+    return listOf(animatedPrimary) + palette.drop(1)
 }
 
 @Composable
@@ -122,6 +129,73 @@ fun Modifier.themeVfx(): Modifier {
 
 private const val THEME_ANIMATION_DURATION = 600
 
+private val themeColorAnimationSpec =
+    tween<Color>(THEME_ANIMATION_DURATION, easing = FastOutSlowInEasing)
+
+private data class SagaThemeTargets(
+    val primary: Color,
+    val secondary: Color,
+    val tertiary: Color,
+    val onPrimary: Color,
+    val primaryContainer: Color,
+    val tertiaryContainer: Color,
+    val background: Color,
+    val surfaceContainer: Color,
+    val onBackground: Color,
+    val onSurface: Color,
+    val cornerSize: Dp?,
+)
+
+private data class SagaThemeAnimationKey(
+    val genre: Genre?,
+    val darkTheme: Boolean,
+    val targets: SagaThemeTargets,
+)
+
+private fun baseColorScheme(darkTheme: Boolean) = if (darkTheme) DarkColorScheme else LightColorScheme
+
+private fun resolveCornerSize(
+    genre: Genre?,
+    visualConfig: GenreVisualConfig?,
+): Dp? {
+    if (genre == null) return null
+    if (visualConfig != null && visualConfig.cornerSizeDp > 0f) return visualConfig.cornerSizeDp.dp
+    return when (genre) {
+        Genre.CYBERPUNK -> 20.dp
+        Genre.FANTASY -> 16.dp
+        Genre.HORROR -> 4.dp
+        Genre.HEROES -> 14.dp
+        Genre.CRIME -> 18.dp
+        Genre.SHINOBI -> 10.dp
+        Genre.SPACE_OPERA -> 24.dp
+        Genre.COWBOY -> 12.dp
+        Genre.PUNK_ROCK -> 2.dp
+    }
+}
+
+private fun resolveSagaThemeTargets(
+    genre: Genre?,
+    visualConfig: GenreVisualConfig?,
+    darkTheme: Boolean,
+): SagaThemeTargets {
+    val baseScheme = baseColorScheme(darkTheme)
+    val genrePrimary = genre?.resolveColor(visualConfig)
+    val primary = genrePrimary ?: baseScheme.primary
+    return SagaThemeTargets(
+        primary = primary,
+        secondary = genrePrimary?.darker(.25f) ?: baseScheme.secondary,
+        tertiary = genrePrimary?.lighter(.25f) ?: baseScheme.tertiary,
+        onPrimary = genre?.resolveIconColor(visualConfig) ?: baseScheme.onPrimary,
+        primaryContainer = primary.darker(.3f),
+        tertiaryContainer = primary.lighter(.3f),
+        background = baseScheme.background,
+        surfaceContainer = baseScheme.surfaceContainer,
+        onBackground = baseScheme.onBackground,
+        onSurface = baseScheme.onSurface,
+        cornerSize = resolveCornerSize(genre, visualConfig),
+    )
+}
+
 /**
  * CompositionLocal providing the currently active [Genre].
  * - On genre-immersed screens (SagaDetail, Chat): holds the saga's genre.
@@ -132,6 +206,9 @@ private const val THEME_ANIMATION_DURATION = 600
  */
 val LocalSagaGenre = compositionLocalOf<Genre?> { null }
 
+/** Animated primary color from [SagAITheme]; drives [themeBrushColors] during crossfade. */
+internal val LocalAnimatedThemePrimary = compositionLocalOf { Color.Unspecified }
+
 @Composable
 fun SagAITheme(
     genre: Genre? = null,
@@ -141,7 +218,9 @@ fun SagAITheme(
     val themeServices = rememberGenreThemeServices()
     val activeGenre = genre
 
-    var activeVisualConfig by remember(activeGenre) { mutableStateOf<GenreVisualConfig?>(null) }
+    var activeVisualConfig by remember(activeGenre) {
+        mutableStateOf(activeGenre?.let { themeServices.visualConfigService.peekVisualConfig(it) })
+    }
 
     LaunchedEffect(activeGenre) {
         activeVisualConfig =
@@ -162,44 +241,68 @@ fun SagAITheme(
             remember { mutableStateOf<ResolvedGenreFonts?>(null) }
         }
 
-    val baseScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val targets = resolveSagaThemeTargets(activeGenre, activeVisualConfig, darkTheme)
+    val animationKey =
+        SagaThemeAnimationKey(
+            genre = activeGenre,
+            darkTheme = darkTheme,
+            targets = targets,
+        )
+    val transition = updateTransition(animationKey, label = "SagAITheme")
 
-    // Target colors: remote config when available, else compiled genre defaults
-    val targetPrimary = activeGenre?.resolveColor(activeVisualConfig) ?: baseScheme.primary
-    val targetSecondary =
-        activeGenre?.resolveColor(activeVisualConfig)?.darker(.25f) ?: baseScheme.secondary
-    val targetTertiary =
-        activeGenre?.resolveColor(activeVisualConfig)?.lighter(.25f) ?: baseScheme.tertiary
-    val onPrimary = activeGenre?.resolveIconColor(activeVisualConfig) ?: baseScheme.onPrimary
-
-    // Smooth animated transitions
-    val animatedPrimary =
-        animateColorAsState(
-            targetValue = targetPrimary,
-            animationSpec = tween(THEME_ANIMATION_DURATION),
-            label = "themePrimary",
-        )
-    val animatedSecondary =
-        animateColorAsState(
-            targetValue = targetSecondary,
-            animationSpec = tween(THEME_ANIMATION_DURATION),
-            label = "themeSecondary",
-        )
-    val animatedTertiary =
-        animateColorAsState(
-            targetValue = targetTertiary,
-            animationSpec = tween(THEME_ANIMATION_DURATION),
-            label = "themeTertiary",
-        )
+    val animatedPrimary by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themePrimary",
+    ) { it.targets.primary }
+    val animatedSecondary by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeSecondary",
+    ) { it.targets.secondary }
+    val animatedTertiary by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeTertiary",
+    ) { it.targets.tertiary }
+    val animatedOnPrimary by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeOnPrimary",
+    ) { it.targets.onPrimary }
+    val animatedPrimaryContainer by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themePrimaryContainer",
+    ) { it.targets.primaryContainer }
+    val animatedTertiaryContainer by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeTertiaryContainer",
+    ) { it.targets.tertiaryContainer }
+    val animatedBackground by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeBackground",
+    ) { it.targets.background }
+    val animatedSurfaceContainer by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeSurfaceContainer",
+    ) { it.targets.surfaceContainer }
+    val animatedOnBackground by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeOnBackground",
+    ) { it.targets.onBackground }
+    val animatedOnSurface by transition.animateColor(
+        transitionSpec = { themeColorAnimationSpec },
+        label = "themeOnSurface",
+    ) { it.targets.onSurface }
 
     val colorScheme =
-        baseScheme.copy(
-            primary = animatedPrimary.value,
-            secondary = animatedSecondary.value,
-            tertiary = animatedTertiary.value,
-            onPrimary = onPrimary,
-            primaryContainer = animatedPrimary.value.darker(.3f),
-            tertiaryContainer = animatedPrimary.value.lighter(.3f),
+        baseColorScheme(darkTheme).copy(
+            primary = animatedPrimary,
+            secondary = animatedSecondary,
+            tertiary = animatedTertiary,
+            onPrimary = animatedOnPrimary,
+            primaryContainer = animatedPrimaryContainer,
+            tertiaryContainer = animatedTertiaryContainer,
+            background = animatedBackground,
+            surfaceContainer = animatedSurfaceContainer,
+            onBackground = animatedOnBackground,
+            onSurface = animatedOnSurface,
         )
 
     // Dynamic Typography: remote fonts when loaded, else system default
@@ -231,23 +334,27 @@ fun SagAITheme(
         }
 
     // Dynamic Shapes: corner radii from remote config or genre defaults (buttons use extraLarge, etc.)
-    val genreCornerSize = activeGenre?.cornerSize(activeVisualConfig)
+    val targetCorner = targets.cornerSize
+    val animatedCorner by animateDpAsState(
+        targetValue = targetCorner ?: 16.dp,
+        animationSpec = tween(THEME_ANIMATION_DURATION, easing = FastOutSlowInEasing),
+        label = "themeCorner",
+    )
     val dynamicShapes =
-        remember(activeGenre, activeVisualConfig, genreCornerSize) {
-            genreCornerSize?.let { corner ->
-                Shapes(
-                    extraSmall = RoundedCornerShape(corner * 0.1f),
-                    small = RoundedCornerShape(corner * 0.2f),
-                    medium = RoundedCornerShape(corner * 0.3f),
-                    large = RoundedCornerShape(corner * 0.4f),
-                    extraLarge = RoundedCornerShape(corner),
-                )
-            }
+        targetCorner?.let {
+            Shapes(
+                extraSmall = RoundedCornerShape(animatedCorner * 0.1f),
+                small = RoundedCornerShape(animatedCorner * 0.2f),
+                medium = RoundedCornerShape(animatedCorner * 0.3f),
+                large = RoundedCornerShape(animatedCorner * 0.4f),
+                extraLarge = RoundedCornerShape(animatedCorner),
+            )
         }
 
     CompositionLocalProvider(
         LocalSagaGenre provides activeGenre,
         LocalGenreVisualConfig provides activeVisualConfig,
+        LocalAnimatedThemePrimary provides animatedPrimary,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

@@ -7,7 +7,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -103,6 +102,23 @@ import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
 
+private val ChatInputTextMaxHeight = 160.dp
+
+@Composable
+private fun generatingBorderRotation(isGenerating: Boolean): Float {
+    if (isGenerating) {
+        val infiniteTransition = rememberInfiniteTransition(label = "border")
+        val rotation by infiniteTransition.animateFloat(
+            0f,
+            360f,
+            infiniteRepeatable(tween(3000, easing = LinearEasing)),
+            label = "rotation",
+        )
+        return rotation
+    }
+    return 0f
+}
+
 private fun isIndexInsideTagMarkup(
     text: String,
     index: Int,
@@ -121,6 +137,7 @@ private fun detectQueryType(
 ): ItemsType? {
     val cursor = cursorPosition.coerceIn(0, text.length)
     val textBeforeCursor = text.substring(0, cursor)
+    if (!textBeforeCursor.contains('@') && !textBeforeCursor.contains('/')) return null
     val lastAtIndex = textBeforeCursor.lastIndexOf('@')
     val lastSlashIndex = textBeforeCursor.lastIndexOf('/')
     val isCharacterQuery = lastAtIndex != -1 && lastAtIndex > lastSlashIndex
@@ -229,8 +246,8 @@ fun ChatInputView(
     var speechModeSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(inputField.text) {
-        scrollState.animateScrollTo(scrollState.maxValue)
+    LaunchedEffect(inputField.text.length) {
+        scrollState.scrollTo(scrollState.maxValue)
     }
 
     val actualCharacter = selectedCharacter ?: content.mainCharacter
@@ -262,16 +279,7 @@ fun ChatInputView(
         animateFloatAsState(if (isGenerating.not()) 10f else 25f, label = "glowRadius")
     val inputShape = sagaShape()
     val palette = themeBrushColors()
-    val infiniteTransition = rememberInfiniteTransition(label = "border")
-    val rotationState =
-        infiniteTransition.animateFloat(
-            0f,
-            360f,
-            infiniteRepeatable(tween(3000, easing = LinearEasing)),
-            label = "rotation",
-        )
-    val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
-    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
+    val rotation = generatingBorderRotation(isGenerating)
 
     val tagMarkerLabels =
         mapOf(
@@ -281,30 +289,21 @@ fun ChatInputView(
         )
 
     val visualTransformation =
-        remember(
-            genre,
-            content.mainCharacter,
-            characters,
-            content.wikis,
-            resolvedColor,
-            tagBg,
-            textColor,
-            tagMarkerLabels,
-            thinkTagSurface,
-        ) {
+        remember(tagBg, textColor, tagMarkerLabels, thinkTagSurface) {
             VisualTransformation { text ->
                 transformTextWithContent(
-                    mainCharacter = content.mainCharacter,
-                    characters = characters,
-                    wiki = content.wikis,
+                    mainCharacter = null,
+                    characters = emptyList(),
+                    wiki = emptyList(),
                     text = text.text,
                     genreColor = resolvedColor,
                     tagBackgroundColor = tagBg,
                     textColor = textColor,
-                    headerFont = headerFont,
-                    bodyFont = bodyFont,
+                    headerFont = null,
+                    bodyFont = null,
                     tagMarkerLabels = tagMarkerLabels,
                     thinkTagSurfaceColor = thinkTagSurface,
+                    annotateMentions = false,
                 )
             }
         }
@@ -404,7 +403,6 @@ fun ChatInputView(
                         spread = 10f
                     })
                     .fillMaxWidth()
-                    .animateContentSize()
                     .clip(inputShape)
                     .drawWithContent {
                         drawContent()
@@ -419,7 +417,7 @@ fun ChatInputView(
                                             )
                                         val matrix = Matrix()
                                         matrix.setRotate(
-                                            rotationState.value,
+                                            rotation,
                                             size.width / 2,
                                             size.height / 2,
                                         )
@@ -503,7 +501,6 @@ fun ChatInputView(
                         inputShape,
                     )
                     .fillMaxWidth()
-                    .heightIn(max = 400.dp)
                     .padding(8.dp),
             ) {
                 BasicTextField(
@@ -549,14 +546,17 @@ fun ChatInputView(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 40.dp)
+                            .heightIn(min = 40.dp, max = ChatInputTextMaxHeight)
                             .verticalScroll(scrollState),
                 )
 
                 val activeSpeechMode =
                     currentTagInside?.let { SenderType.senderForTag(it) } ?: SenderType.CHARACTER
                 val isLoading = isSendingPending || isGenerating
-                val cleanLength = getCleanTextLength(inputField.text)
+                val cleanLength =
+                    remember(inputField.text) {
+                        getCleanTextLength(inputField.text)
+                    }
                 val progress = cleanLength.toFloat() / maxContentLength
 
                 Row(
@@ -616,6 +616,27 @@ fun ChatInputView(
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                 ),
+                        )
+                    }
+
+                    if (currentTagInside != null) {
+                        Text(
+                            stringResource(R.string.next),
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    color = resolvedIconColor,
+                                ),
+                            modifier =
+                                Modifier
+                                    .clip(MaterialTheme.shapes.extraLarge)
+                                    .background(resolvedColor)
+                                    .clickable {
+                                        onUpdateInput(
+                                            escapeCursorFromTagAndClean(inputField),
+                                        )
+                                    }.padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
 

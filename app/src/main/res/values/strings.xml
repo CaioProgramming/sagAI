@@ -569,6 +569,7 @@
     <string name="releasing_close_scene">Saving this event...</string>
     <string name="advance_saga_ending">Write the finale</string>
     <string name="releasing_ending">Writing the finale...</string>
+    <string name="advance_pull_hint">Swipe up to continue</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>

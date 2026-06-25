@@ -69,6 +69,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -134,7 +135,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
@@ -148,7 +148,8 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvanceTrigger
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvancePullContainer
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvancePullIndicator
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
@@ -397,6 +398,7 @@ fun ChatContent(
     val content = uiState.sagaContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
+    var advancePullProgress by remember { mutableFloatStateOf(0f) }
 
     var showReactions by remember {
         mutableStateOf<MessageContent?>(null)
@@ -478,7 +480,26 @@ fun ChatContent(
                             ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
-                        val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay) = createRefs()
+                        val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay, advancePullIndicator) =
+                            createRefs()
+
+                        val narrativeState = uiState.narrativeUiState
+                        val showAdvancePull =
+                            narrativeState.showAdvanceTrigger &&
+                                uiState.onboardingType == null &&
+                                !uiState.selectionState.isSelectionMode
+                        val advanceIsGenerating =
+                            narrativeState.phase is NarrativePhase.Processing ||
+                                uiState.isGenerating ||
+                                uiState.isLoading
+
+                        LaunchedEffect(showAdvancePull) {
+                            if (!showAdvancePull) {
+                                advancePullProgress = 0f
+                            } else {
+                                listState.animateScrollToItem(0)
+                            }
+                        }
 
                         val onSendMessage: (Boolean) -> Unit =
                             remember(onAction, uiState.editingMessage) {
@@ -541,18 +562,14 @@ fun ChatContent(
                                 { onAction(ChatUiAction.CancelEdit) }
                             }
 
-                        ChatList(
-                            saga = content,
-                            actList = uiState.messages,
-                            mainCharacter = uiState.mainCharacter,
-                            characters = uiState.characters,
-                            wikis = uiState.wikis,
-                            activeGenre = uiState.activeGenre,
-                            flatEvents = uiState.flatEvents,
+                        AdvancePullContainer(
                             listState = listState,
-                            reasoningChunk = uiState.reasoningChunk,
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
+                            enabled = showAdvancePull && !advanceIsGenerating,
+                            isProcessing = showAdvancePull && advanceIsGenerating,
+                            onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
+                            onPullProgress = { progress ->
+                                advancePullProgress = if (showAdvancePull) progress else 0f
+                            },
                             modifier =
                                 Modifier
                                     .constrainAs(messages) {
@@ -563,68 +580,87 @@ fun ChatContent(
                                         width = Dimension.fillToConstraints
                                         height = Dimension.fillToConstraints
                                     },
-                            onMessageAction =
-                                remember(onAction, content) {
-                                    { action ->
-                                        when (action) {
-                                            is MessageAction.PlayAudio -> {
-                                                onAction(ChatUiAction.PlayOrPauseAudio(action.message))
-                                            }
+                        ) {
+                            ChatList(
+                                saga = content,
+                                actList = uiState.messages,
+                                mainCharacter = uiState.mainCharacter,
+                                characters = uiState.characters,
+                                wikis = uiState.wikis,
+                                activeGenre = uiState.activeGenre,
+                                flatEvents = uiState.flatEvents,
+                                listState = listState,
+                                reasoningChunk = uiState.reasoningChunk,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                modifier = Modifier.fillMaxSize(),
+                                onMessageAction =
+                                    remember(onAction, content) {
+                                        { action ->
+                                            when (action) {
+                                                is MessageAction.PlayAudio -> {
+                                                    onAction(ChatUiAction.PlayOrPauseAudio(action.message))
+                                                }
 
-                                            is MessageAction.RetryMessage -> {
-                                                onAction(ChatUiAction.RetryAiResponse(action.message.message))
-                                            }
+                                                is MessageAction.RetryMessage -> {
+                                                    onAction(ChatUiAction.RetryAiResponse(action.message.message))
+                                                }
 
-                                            is MessageAction.ClickCharacter -> {
-                                                action.character?.let {
+                                                is MessageAction.ClickCharacter -> {
+                                                    action.character?.let {
+                                                        onAction(
+                                                            ChatUiAction.OpenCharacter(
+                                                                it.id,
+                                                            ),
+                                                        )
+                                                    }
+                                                }
+
+                                                is MessageAction.RegenerateAudio -> {
+                                                    onAction(ChatUiAction.RegenerateAudio(action.message))
+                                                }
+
+                                                is MessageAction.ClickReactions -> {
+                                                    showReactions = action.message
+                                                }
+
+                                                is MessageAction.RequestNewCharacter -> {
                                                     onAction(
-                                                        ChatUiAction.OpenCharacter(
-                                                            it.id,
+                                                        ChatUiAction.RequestNewCharacter(
+                                                            action.name,
+                                                            action.message,
                                                         ),
                                                     )
                                                 }
-                                            }
 
-                                            is MessageAction.RegenerateAudio -> {
-                                                onAction(ChatUiAction.RegenerateAudio(action.message))
-                                            }
+                                                is MessageAction.ToggleSelection -> {
+                                                    onAction(
+                                                        ChatUiAction.ToggleMessageSelection(
+                                                            action.messageId,
+                                                        ),
+                                                    )
+                                                }
 
-                                            is MessageAction.ClickReactions -> {
-                                                showReactions = action.message
-                                            }
-
-                                            is MessageAction.RequestNewCharacter -> {
-                                                onAction(
-                                                    ChatUiAction.RequestNewCharacter(
-                                                        action.name,
-                                                        action.message,
-                                                    ),
-                                                )
-                                            }
-
-                                            is MessageAction.ToggleSelection -> {
-                                                onAction(ChatUiAction.ToggleMessageSelection(action.messageId))
-                                            }
-
-                                            is MessageAction.LongPress -> {
-                                                val message =
-                                                    content
-                                                        .flatMessages()
-                                                        .find { it.message.id == action.messageId }
-                                                        ?.message
-                                                onAction(ChatUiAction.OpenMessageOptions(message))
+                                                is MessageAction.LongPress -> {
+                                                    val message =
+                                                        content
+                                                            .flatMessages()
+                                                            .find { it.message.id == action.messageId }
+                                                            ?.message
+                                                    onAction(ChatUiAction.OpenMessageOptions(message))
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                            onAction = onAction,
-                            messageEffectsEnabled = uiState.messageEffectsEnabled,
-                            originalBitmap = uiState.originalBitmap,
-                            segmentedBitmap = uiState.segmentedBitmap,
-                            isSelectionMode = uiState.selectionState.isSelectionMode,
-                            selectedMessageIds = uiState.selectionState.selectedMessageIds,
-                            audioPlaybackState = uiState.audioPlaybackState,
-                        )
+                                    },
+                                onAction = onAction,
+                                messageEffectsEnabled = uiState.messageEffectsEnabled,
+                                originalBitmap = uiState.originalBitmap,
+                                segmentedBitmap = uiState.segmentedBitmap,
+                                isSelectionMode = uiState.selectionState.isSelectionMode,
+                                selectedMessageIds = uiState.selectionState.selectedMessageIds,
+                                audioPlaybackState = uiState.audioPlaybackState,
+                            )
+                        }
 
                         Box(
                             Modifier
@@ -635,25 +671,16 @@ fun ChatContent(
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
 
-                        val narrativeState = uiState.narrativeUiState
                         val hasActiveTimeline = content.getCurrentTimeLine() != null
                         val bottomInputState =
                             when {
-                                narrativeState.showAdvanceTrigger &&
-                                    uiState.onboardingType == null &&
-                                    !uiState.selectionState.isSelectionMode -> {
-                                    BottomInputState.Advance(
-                                        action = narrativeState.displayAdvanceAction!!,
-                                        isProcessing = narrativeState.phase is NarrativePhase.Processing,
-                                    )
-                                }
-
                                 narrativeState.showBackgroundBanner &&
                                     !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Background(narrativeState.backgroundTask!!)
                                 }
 
                                 hasActiveTimeline &&
+                                    !showAdvancePull &&
                                     !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Chat
                                 }
@@ -680,18 +707,6 @@ fun ChatContent(
                             },
                         ) { inputState ->
                             when (inputState) {
-                                is BottomInputState.Advance -> {
-                                    AdvanceTrigger(
-                                        action = inputState.action,
-                                        onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
-                                        Modifier.fillMaxWidth(),
-                                        isGenerating =
-                                            inputState.isProcessing ||
-                                                uiState.isGenerating ||
-                                                uiState.isLoading,
-                                    )
-                                }
-
                                 is BottomInputState.Background -> {
                                     NarrativeBackgroundBanner(
                                         task = inputState.task,
@@ -740,6 +755,23 @@ fun ChatContent(
                                     Unit
                                 }
                             }
+                        }
+
+                        if (showAdvancePull && narrativeState.displayAdvanceAction != null) {
+                            AdvancePullIndicator(
+                                action = narrativeState.displayAdvanceAction!!,
+                                pullProgress = advancePullProgress,
+                                isGenerating = advanceIsGenerating,
+                                modifier =
+                                    Modifier
+                                        .zIndex(3f)
+                                        .constrainAs(advancePullIndicator) {
+                                            bottom.linkTo(parent.bottom)
+                                            start.linkTo(parent.start)
+                                            end.linkTo(parent.end)
+                                        }.padding(bottom = padding.calculateBottomPadding() + 24.dp)
+                                        .imePadding(),
+                            )
                         }
 
                         AnimatedVisibility(
@@ -1570,11 +1602,6 @@ private fun ActDisplayData.hasConclusionContent(): Boolean {
 
 private sealed interface BottomInputState {
     data object Chat : BottomInputState
-
-    data class Advance(
-        val action: NarrativeAction,
-        val isProcessing: Boolean = false,
-    ) : BottomInputState
 
     data class Background(
         val task: BackgroundTask,

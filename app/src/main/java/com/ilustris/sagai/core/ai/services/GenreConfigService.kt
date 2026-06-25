@@ -41,9 +41,9 @@ class GenreConfigService
 
         suspend fun conversationInstructions(genre: Genre) =
             promptService
-                .fetchBlueprintData(
+                .buildSplitBlueprint(
                     "${genre.name.lowercase()}_conversation_blueprint",
-                ).asMap()
+                ).renderInstructions()
 
         suspend fun renderingInstructions(genre: Genre) =
             promptService

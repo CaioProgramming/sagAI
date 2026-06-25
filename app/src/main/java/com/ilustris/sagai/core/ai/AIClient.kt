@@ -1,8 +1,11 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient.Companion.CORE_FLAG
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import timber.log.Timber
@@ -21,6 +24,7 @@ abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
     protected val promptService: PromptService,
     protected val ageVerificationService: AgeVerificationService,
+    @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
 ) {
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
@@ -122,12 +126,11 @@ abstract class AIClient(
                         blueprintKey,
                         mapOf(
                             "userAge" to userAge.name,
-                            "userInput" to prompt,
                         ),
                     )
                 buildMap {
-                    put("Safety Verification", safetyPrompt.processedTemplate)
                     putAll(safetyPrompt.renderInstructions())
+                    put("SafetyVerification", safetyPrompt.processedTemplate)
                 }
             } else {
                 emptyMap()
@@ -135,8 +138,8 @@ abstract class AIClient(
 
         return buildMap {
             putAll(coreInstructions)
-            putAll(systemInstructions)
             putAll(safetyInstructions)
+            putAll(systemInstructions)
         }
     }
 
@@ -191,6 +194,27 @@ abstract class AIClient(
                 error("Couldn't fetch firebase key")
             } ?: error("Flag Value unavailable.")
         }
+
+    @PublishedApi
+    internal fun assembleGeminiRequest(block: GeminiRequestBuilder.() -> Unit): GeminiRequestAssembly = geminiRequest(block)
+
+    @PublishedApi
+    internal suspend fun recordAudit(
+        snapshot: AIAuditSnapshot,
+        logEnabled: Boolean = true,
+    ) {
+        if (!BuildConfig.DEBUG || !logEnabled) return
+        persistAuditLog(snapshot.toEntity())
+    }
+
+    @PublishedApi
+    internal suspend fun persistAuditLog(log: AIAuditLog) {
+        try {
+            aiAuditLogDao.insertLog(log)
+        } catch (e: Exception) {
+            Timber.tag(javaClass.simpleName).e("Error saving audit log: ${e.message}")
+        }
+    }
 }
 
 val AI_EXCLUDED_FIELDS =

@@ -40,6 +40,7 @@ fun transformTextWithContent(
     bodyFont: FontFamily?,
     tagMarkerLabels: Map<String, String> = emptyMap(),
     thinkTagSurfaceColor: Color? = null,
+    annotateMentions: Boolean = true,
 ): TransformedText {
     val (transformedText, offsetMapping) =
         transformExpressiveTags(
@@ -50,21 +51,24 @@ fun transformTextWithContent(
             thinkTagSurfaceColor,
         )
 
-    // Then apply character/wiki annotations on the transformed text
     val annotatedString =
-        try {
-            buildWikiAndCharactersAnnotationOnTransformed(
-                transformedText,
-                mainCharacter,
-                characters,
-                wiki,
-                genreColor,
-                tagBackgroundColor,
-                headerFont,
-                bodyFont,
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
+        if (annotateMentions) {
+            try {
+                buildWikiAndCharactersAnnotationOnTransformed(
+                    transformedText,
+                    mainCharacter,
+                    characters,
+                    wiki,
+                    genreColor,
+                    tagBackgroundColor,
+                    headerFont,
+                    bodyFont,
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                transformedText
+            }
+        } else {
             transformedText
         }
 

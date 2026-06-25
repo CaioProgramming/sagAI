@@ -4,9 +4,8 @@ import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
-import com.ilustris.sagai.core.ai.model.GeneratedContent
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
-import com.ilustris.sagai.core.ai.model.mergeInstructions
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -32,11 +31,13 @@ class ReasoningSynthesizerService
         promptService: PromptService,
         remoteConfigService: RemoteConfigService,
         ageVerificationService: AgeVerificationService,
+        aiAuditLogDao: AIAuditLogDao,
         @PublishedApi internal val genreConfigService: GenreConfigService,
     ) : AIClient(
             remoteConfigService,
             promptService,
             ageVerificationService,
+            aiAuditLogDao,
         ) {
         @OptIn(ExperimentalCoroutinesApi::class)
         inline fun <reified T> synthesizeReasoning(
@@ -105,30 +106,20 @@ class ReasoningSynthesizerService
 
             try {
                 val conversationStyle =
-                    genre?.let {
-                        genreConfigService.conversationInstructions(it)
-                    }
+                    genre?.let { genreConfigService.conversationInstructions(it) }
 
                 val sanitizedReasoning = sanitizeReasoning(reasoning).takeLast(400)
 
-                val variables =
-                    mapOf(
-                        "context" to context,
-                        "thoughtStream" to sanitizedReasoning,
-                        "language" to targetLanguage,
-                    )
-
-                val prompt =
-                    promptService.buildSplitBlueprint(
-                        REASONING_SYNTHESIZER_BLUEPRINT,
-                        variables,
-                        logEnabled = false,
-                    )
-
                 val translation =
-                    gemmaClient.generate<String>(
-                        promptSplit =
-                            conversationStyle?.let { prompt.mergeInstructions(it) } ?: prompt,
+                    gemmaClient.generateBlueprint<String>(
+                        remoteConfigKey = REASONING_SYNTHESIZER_BLUEPRINT,
+                        variables =
+                            mapOf(
+                                "context" to context,
+                                "thoughtStream" to sanitizedReasoning,
+                                "language" to targetLanguage,
+                            ),
+                        mergedInstructionMaps = listOfNotNull(conversationStyle),
                         requirement = ModelRequirement.MINIMAL,
                         logEnabled = false,
                         temperatureRandomness = 1f,
@@ -185,16 +176,14 @@ class ReasoningSynthesizerService
             }
         }
 
-        fun sanitizeReasoning(text: String): String {
-            // Remove JSON-like structures (braces and brackets content) which are often technical noise
-            return text
+        fun sanitizeReasoning(text: String): String =
+            text
                 .replace(Regex("\\{[^}]*\\}|\\[[^]]*\\]"), "")
-                .replace(Regex("\"\\w+\"\\s*:\\s*\"[^\"]*\""), "") // Remove "key": "value" pairs
-                .replace(Regex("\"\\w+\"\\s*:\\s*[^,}]*"), "") // Remove "key": value pairs
-                .replace(Regex("[,{}:]"), " ") // Remove remaining technical markers
-                .replace(Regex("\\s+"), " ") // Cleanup whitespace
+                .replace(Regex("\"\\w+\"\\s*:\\s*\"[^\"]*\""), "")
+                .replace(Regex("\"\\w+\"\\s*:\\s*[^,}]*"), "")
+                .replace(Regex("[,{}:]"), " ")
+                .replace(Regex("\\s+"), " ")
                 .trim()
-        }
 
         companion object {
             const val REASONING_SYNTHESIZER_BLUEPRINT = "reasoning_synthesizer_blueprint"

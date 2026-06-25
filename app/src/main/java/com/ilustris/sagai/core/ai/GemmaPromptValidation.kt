@@ -7,7 +7,7 @@ import com.ilustris.sagai.core.network.GeminiHttpException
 import timber.log.Timber
 
 /**
- * Raised when the prompt exceeds [GemmaClient.INPUT_TOKEN_LIMIT], either from a pre-flight
+ * Raised when the prompt exceeds [GeminiAIClient.INPUT_TOKEN_LIMIT], either from a pre-flight
  * countTokens check or from a non-retryable API rejection.
  */
 class PromptTooLargeException(
