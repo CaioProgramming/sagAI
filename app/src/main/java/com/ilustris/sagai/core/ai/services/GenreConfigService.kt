@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.ai.services
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,17 +33,11 @@ class GenreConfigService
 
         suspend fun aesthetic(genre: Genre): String = getGenreConfig(genre).aesthetic
 
-        suspend fun formatGenreAesthetics(genres: Collection<Genre> = Genre.entries): String =
-            buildString {
-                genres.forEach { genre ->
-                    val summary = getGenreConfig(genre).aesthetic
-                    if (summary.isBlank()) {
-                        appendLine("- **${genre.name}**")
-                    } else {
-                        appendLine("- **${genre.name}**: $summary")
-                    }
-                }
-        }.trimEnd()
+        suspend fun formatGenreAesthetics(): String =
+            Genre.entries
+                .map {
+                    "${it.name}(${aesthetic(it)})"
+                }.joinToString()
 
         suspend fun conversationInstructions(genre: Genre) =
             promptService
@@ -56,13 +49,17 @@ class GenreConfigService
             promptService
                 .buildSplitBlueprint(
                     "${genre.name.lowercase()}_appearance_blueprint",
-            ).renderInstructions()
+                ).renderInstructions()
+
+        suspend fun buildAesthetic(genre: Genre) = mapOf("ThemeAesthetic" to getGenreConfig(genre).aesthetic)
 
         suspend fun renderingInstructions(genre: Genre) =
-            promptService
-                .fetchBlueprintData(
-                    "${genre.name.lowercase()}_rendering_blueprint",
-                ).asMap()
+            buildAesthetic(genre).plus(
+                promptService
+                    .buildSplitBlueprint(
+                        "${genre.name.lowercase()}_rendering_blueprint",
+                    ).renderInstructions(),
+            )
 
         @Deprecated(
             message = "Use conversationInstructions() merged into SplitPrompt via mergeInstructions()",

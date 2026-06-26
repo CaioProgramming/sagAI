@@ -158,7 +158,7 @@ fun HomeView(
     }
 
     with(sharedTransitionScope) {
-        AnimatedContent(sagas.isEmpty(), transitionSpec = {
+        AnimatedContent(isStarting, transitionSpec = {
             fadeIn(tween(1200)) togetherWith fadeOut(tween(400))
         }) {
             if (it) {

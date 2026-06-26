@@ -31,13 +31,13 @@ class SagaIdeationService
         ): Flow<StreamingState<LibraryPitchesResponse?>> {
             val availableGenres = Genre.entries - excludedGenres.toSet()
             val themes = availableGenres.joinToString(", ") { it.name }
-            val genreAesthetics = genreConfigService.formatGenreAesthetics(availableGenres)
+            val genreAesthetics = genreConfigService.formatGenreAesthetics()
             val splitPrompt =
                 promptService.buildSplitBlueprint(
                     NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
                     CosmicLibraryArgs(
                         userPrompt = userPrompt,
-                        themes = themes,
+                        themes = genreConfigService.formatGenreAesthetics(),
                         genreAesthetics = genreAesthetics,
                     ),
                 )
@@ -57,8 +57,7 @@ class SagaIdeationService
                     promptService.buildSplitBlueprint(
                         NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
                         mapOf(
-                            "themes" to themes,
-                            "genreAesthetics" to genreAesthetics,
+                            "themes" to genreAesthetics,
                         ),
                     )
                 gemmaClient.generate<UniverseSuggestions>(

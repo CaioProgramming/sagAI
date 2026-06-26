@@ -8,7 +8,6 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
@@ -20,16 +19,9 @@ import javax.inject.Singleton
 
 @OptIn(PublicPreviewAPI::class)
 interface ImageGenerator {
-    suspend fun generateImage(
-        prompt: String,
-        aspectRatio: String? = null,
-        references: List<ImageReference> = emptyList(),
-    ): Bitmap?
+    suspend fun generateImage(prompt: String): Bitmap?
 
-    suspend fun generateImageRequest(
-        prompt: String,
-        aspectRatio: String? = null,
-    ): RequestResult<Bitmap>
+    suspend fun generateImageRequest(prompt: String): RequestResult<Bitmap>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -44,11 +36,7 @@ class ImageGeneratorImpl
             remoteConfigService.getString("imageGenModelPremium")
                 ?: error("Couldn't find model for Image generation")
 
-        override suspend fun generateImage(
-            prompt: String,
-            aspectRatio: String?,
-            references: List<ImageReference>,
-        ): Bitmap? {
+        override suspend fun generateImage(prompt: String): Bitmap? {
             val modelName = modelName()
             val trimmedPrompt = prompt.trim()
             Timber.tag(TAG).i("Generating image with ➡ $modelName")
@@ -72,10 +60,6 @@ class ImageGeneratorImpl
                 val promptBuilder =
                     content {
                         text(trimmedPrompt)
-                        references.forEach {
-                            image(it.bitmap)
-                            text(it.description)
-                        }
                     }
 
                 val content = imageModel.generateContent(promptBuilder)
@@ -90,12 +74,9 @@ class ImageGeneratorImpl
             }
         }
 
-        override suspend fun generateImageRequest(
-            prompt: String,
-            aspectRatio: String?,
-        ): RequestResult<Bitmap> =
+        override suspend fun generateImageRequest(prompt: String): RequestResult<Bitmap> =
             executeRequest {
-                generateImage(prompt, aspectRatio) ?: error("Failed to generate image bitmap")
+                generateImage(prompt) ?: error("Failed to generate image bitmap")
             }
 
         companion object {

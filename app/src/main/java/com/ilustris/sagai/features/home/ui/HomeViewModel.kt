@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -37,6 +38,7 @@ class HomeViewModel
         private val homeUseCase: HomeUseCase,
         private val backupService: BackupService,
         private val stringResourceHelper: StringResourceHelper,
+        private val appLifecycleManager: AppLifecycleManager,
     ) : ViewModel() {
         val sagas: MutableStateFlow<List<SagaSummary>> = MutableStateFlow(emptyList())
 
@@ -55,7 +57,7 @@ class HomeViewModel
         private val _isLoading = MutableStateFlow<Boolean>(false)
         val isLoading = _isLoading.asStateFlow()
 
-        private val _isStarting = MutableStateFlow<Boolean>(sagas.value.isEmpty())
+        private val _isStarting = MutableStateFlow<Boolean>(true)
         val isStarting = _isStarting.asStateFlow()
         val loadingMessage = MutableStateFlow<String?>(null)
 
@@ -64,19 +66,22 @@ class HomeViewModel
 
         val billingState = homeUseCase.billingState
 
+        private var dynamicPromptsRequested = false
+
         init {
             loadSagas()
             checkDebug()
-            getDynamicPrompts()
+            observeDynamicPromptsWhenActive()
         }
 
         private fun loadSagas() {
             viewModelScope.launch(Dispatchers.IO) {
                 homeUseCase.getSagas().collect { sagaList ->
-                    if (sagas.value.isEmpty()) {
+                    if (sagas.value.isEmpty() && _isStarting.value) {
                         delay(1.seconds)
                     }
                     sagas.emit(sagaList)
+                    _isStarting.emit(false)
                 }
             }
         }
@@ -94,6 +99,17 @@ class HomeViewModel
                         it.filterBackups(availableSagas.map { it.data }).isNotEmpty(),
                     )
                 }*/
+            }
+        }
+
+        private fun observeDynamicPromptsWhenActive() {
+            viewModelScope.launch {
+                appLifecycleManager.isAppInForeground.collect { inForeground ->
+                    if (inForeground && !dynamicPromptsRequested) {
+                        dynamicPromptsRequested = true
+                        getDynamicPrompts()
+                    }
+            }
             }
         }
 

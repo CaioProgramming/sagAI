@@ -265,8 +265,8 @@ class CharacterUseCaseImpl
                     gemmaClient.generate<Character>(
                         promptSplit =
                             prompt.mergeInstructions(
+                                genreConfigService.buildAesthetic(sagaContent.data.genre),
                                 genreConfigService.appearanceInstructions(sagaContent.data.genre),
-                                genreConfigService.conversationInstructions(sagaContent.data.genre),
                             ),
                         useCore = true,
                         filterOutputFields =
@@ -333,12 +333,8 @@ class CharacterUseCaseImpl
                             .generateStreaming<GeneratedContent<Character>>(
                                 promptSplit =
                                     prompt.mergeInstructions(
-                                        genreConfigService.appearanceInstructions(
-                                            sagaContent.data.genre,
-                                        ),
-                                        genreConfigService.conversationInstructions(
-                                            sagaContent.data.genre,
-                                        ),
+                                        genreConfigService.buildAesthetic(sagaContent.data.genre),
+                                        genreConfigService.appearanceInstructions(sagaContent.data.genre),
                                     ),
                                 useCore = true,
                                 filterOutputFields =
@@ -349,7 +345,6 @@ class CharacterUseCaseImpl
                                         "sagaId",
                                         "smartZoom",
                                         "voice",
-                                        "hexColor",
                                         "firstSceneId",
                                     ),
                                 requirement = ModelRequirement.HIGH,
