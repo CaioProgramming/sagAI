@@ -33,7 +33,6 @@ import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeIcon
-import com.ilustris.sagai.ui.theme.themeShimmer
 import com.ilustris.sagai.ui.theme.themeVfx
 
 private const val PULL_PROGRESS_ANIMATION_MS = 16
@@ -47,7 +46,6 @@ fun AdvancePullIndicator(
 ) {
     val actionUi = action.toUi()
     val primaryColor = MaterialTheme.colorScheme.primary
-    val colors = themeShimmer()
     val shadowBrush = sagaBrush()
     val dragProgress = pullProgress.coerceIn(0f, 1f)
 
@@ -101,10 +99,11 @@ fun AdvancePullIndicator(
                                 radius = 15f * dragProgress
                                 spread = 8f * dragProgress
                                 brush = shadowBrush
-                            }
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.background, CircleShape)
-                            .gradientFill(
+                            }.clip(CircleShape)
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = dragProgress),
+                                CircleShape,
+                            ).gradientFill(
                                 progressiveBrush(
                                     tintColor = primaryColor,
                                     progress = dragProgress,

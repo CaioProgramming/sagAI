@@ -5,6 +5,7 @@ billingKtx = "8.0.0"
 composeCharts = "0.1.10"
 datastorePreferences = "1.1.7"
 faceDetection = "16.1.7"
+genaiPrompt = "1.0.0-beta2"
 generativeai = "0.9.0"
 googleGenai = "1.10.0"
 hiltWork = "1.2.0"
@@ -55,6 +56,7 @@ androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWo
 billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billingKtx" }
 compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
 face-detection = { module = "com.google.mlkit:face-detection", version.ref = "faceDetection" }
+mlkit-genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "genaiPrompt" }
 firebase-installations-ktx = { module = "com.google.firebase:firebase-installations-ktx" }
 google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
 hypnoticcanvas = { module = "com.mikepenz.hypnoticcanvas:hypnoticcanvas", version.ref = "hypnoticcanvas" }
