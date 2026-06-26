@@ -4,6 +4,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.prompts.HomePrompts
+import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -34,6 +35,7 @@ class HomeUseCaseImpl
         private val sagaBackupService: SagaBackupService,
         private val remoteConfig: RemoteConfigService,
         private val promptService: PromptService,
+        private val genreConfigService: GenreConfigService,
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val billingService: BillingService,
     ) : HomeUseCase {
@@ -50,7 +52,11 @@ class HomeUseCaseImpl
             executeRequest {
                 Timber.d("Fetching new dynamic saga texts...")
                 try {
-                    val prompt = HomePrompts.dynamicSagaCreationPrompt(promptService)
+                    val prompt =
+                        HomePrompts.dynamicSagaCreationPrompt(
+                            promptService,
+                            genreAesthetics = genreConfigService.formatGenreAesthetics(),
+                        )
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
                             promptSplit = prompt,

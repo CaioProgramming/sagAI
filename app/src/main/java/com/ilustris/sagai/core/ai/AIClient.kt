@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient.Companion.CORE_FLAG
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.database.model.AIAuditLog
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
@@ -102,45 +103,72 @@ abstract class AIClient(
         structure: String,
     ) = buildMap {
         val config = buildCorePrompt(requirement, requireTranslation, dataTypeName, structure)
-        put("task", config.processedTemplate)
-        putAll(config.renderInstructions())
+        put("core", config.renderInstructions())
+        put("structure", config.processedTemplate)
     }
 
     suspend fun buildUnifiedInstructions(
         requirement: ModelRequirement,
         requireTranslation: Boolean,
         dataTypeName: String,
-        structure: String,
+        outputStructure: String,
         userInteraction: Boolean,
-        prompt: String,
-        systemInstructions: Map<String, Any>,
+        blueprintInstructions: Map<String, Any>,
     ): Map<String, Any> {
         val coreInstructions =
-            buildCoreInstructions(requirement, requireTranslation, dataTypeName, structure)
+            buildCoreInstructions(requirement, requireTranslation, dataTypeName, outputStructure)
         val safetyInstructions =
             if (userInteraction) {
-                val userAge = ageVerificationService.getUserAgeGroup()
-                val blueprintKey = "safety_guardrails_blueprint"
-                val safetyPrompt =
-                    promptService.buildSplitBlueprint(
-                        blueprintKey,
-                        mapOf(
-                            "userAge" to userAge.name,
-                        ),
-                    )
-                buildMap {
-                    putAll(safetyPrompt.renderInstructions())
-                    put("SafetyVerification", safetyPrompt.processedTemplate)
-                }
+                buildSafetyInstructions()
             } else {
                 emptyMap()
             }
 
         return buildMap {
-            putAll(coreInstructions)
-            putAll(safetyInstructions)
-            putAll(systemInstructions)
+            put(
+                "CoreDefinitions",
+                buildMap {
+                    putAll(coreInstructions)
+                    if (safetyInstructions.isNotEmpty()) {
+                        put("SafetyGuardRails", safetyInstructions)
+                    }
+                },
+            )
+            if (blueprintInstructions.isNotEmpty()) {
+                put("TaskInstructions", blueprintInstructions)
+            }
         }
+    }
+
+    suspend fun buildSafetyInstructions(): Map<String, Any> {
+        val userAge = ageVerificationService.getUserAgeGroup()
+        val safetyPrompt =
+            promptService.buildSplitBlueprint(
+                "safety_guardrails_blueprint",
+                mapOf(
+                    "userAge" to userAge.name,
+                ),
+            )
+        return buildMap {
+            putAll(safetyPrompt.renderInstructions())
+            put("SafetyVerification", safetyPrompt.processedTemplate)
+        }
+    }
+
+    suspend fun buildBlueprintPrompt(
+        remoteConfigKey: String,
+        variables: Map<String, String> = emptyMap(),
+        mergedInstructionMaps: List<Map<String, Any>> = emptyList(),
+        logEnabled: Boolean = true,
+    ): SplitPrompt {
+        var prompt =
+            promptService.buildSplitBlueprint(
+                remoteConfigKey,
+                variables,
+                logEnabled = logEnabled,
+            )
+        mergedInstructionMaps.forEach { prompt = prompt.mergeInstructions(it) }
+        return prompt
     }
 
     fun getCoreBlueprintKey(requirement: ModelRequirement): String =

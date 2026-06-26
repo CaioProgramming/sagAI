@@ -28,22 +28,35 @@ class GenreConfigService
                 baseConfig.variations?.get(variationId) ?: return@executeRequest baseConfig
 
             baseConfig.copy(
-                artStyle = variation.artStyle ?: baseConfig.artStyle,
-                renderingInstructions =
-                    variation.renderingInstructions
-                        ?: baseConfig.renderingInstructions,
-                appearanceGuidelines =
-                    variation.appearanceGuidelines
-                        ?: baseConfig.appearanceGuidelines,
-                criticalRules = variation.criticalRules ?: baseConfig.criticalRules,
+                aesthetic = variation.aesthetic?.takeIf { it.isNotBlank() } ?: baseConfig.aesthetic,
             )
         }.getSuccess()!!
+
+        suspend fun aesthetic(genre: Genre): String = getGenreConfig(genre).aesthetic
+
+        suspend fun formatGenreAesthetics(genres: Collection<Genre> = Genre.entries): String =
+            buildString {
+                genres.forEach { genre ->
+                    val summary = getGenreConfig(genre).aesthetic
+                    if (summary.isBlank()) {
+                        appendLine("- **${genre.name}**")
+                    } else {
+                        appendLine("- **${genre.name}**: $summary")
+                    }
+                }
+        }.trimEnd()
 
         suspend fun conversationInstructions(genre: Genre) =
             promptService
                 .buildSplitBlueprint(
                     "${genre.name.lowercase()}_conversation_blueprint",
                 ).renderInstructions()
+
+        suspend fun appearanceInstructions(genre: Genre) =
+            promptService
+                .buildSplitBlueprint(
+                    "${genre.name.lowercase()}_appearance_blueprint",
+            ).renderInstructions()
 
         suspend fun renderingInstructions(genre: Genre) =
             promptService

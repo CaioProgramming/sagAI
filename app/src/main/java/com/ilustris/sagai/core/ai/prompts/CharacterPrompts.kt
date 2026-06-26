@@ -47,7 +47,6 @@ data class CharacterGenerationArgs(
     val discoverySeed: String,
     val bannedNamesContext: String,
     val conversationHistory: String,
-    val appearanceGuidelines: String,
     val sceneContext: String = "",
 )
 
@@ -84,7 +83,6 @@ data class KnowledgeUpdateArgs(
 data class RefineDraftArgs(
     val userInput: String,
     val sagaContext: String,
-    val appearanceGuidelines: String,
 )
 
 @Suppress("ktlint:standard:max-line-length")
@@ -252,7 +250,6 @@ object CharacterPrompts {
     suspend fun characterGeneration(
         promptService: PromptService,
         saga: SagaContent,
-        config: GenreConfig,
         description: String,
         bannedNames: List<String> = emptyList(),
         themeColor: String? = null,
@@ -319,7 +316,6 @@ object CharacterPrompts {
                         .take(5)
                         .map { it.message }
                         .normalizetoAIItems(excludingFields = messageExclusions),
-                appearanceGuidelines = config.appearanceGuidelines,
                 sceneContext =
                     sceneSummary?.toAINormalize() ?: "",
             )
@@ -439,7 +435,7 @@ object CharacterPrompts {
                     """.trimIndent(),
                 journeyEvents = journeyEvents,
                 relationships = relationshipsBlock,
-                toneStyle = "",
+                toneStyle = config.aesthetic,
             )
 
         return promptService.buildSplitBlueprint(CHARACTER_RESUME_BLUEPRINT, args)
@@ -463,13 +459,11 @@ object CharacterPrompts {
         promptService: PromptService,
         rawInput: String,
         sagaContext: SagaDraft?,
-        appearanceGuidelines: String,
     ): SplitPrompt {
         val args =
             RefineDraftArgs(
                 userInput = rawInput,
                 sagaContext = sagaContext?.toAINormalize() ?: "",
-                appearanceGuidelines = appearanceGuidelines,
             )
 
         return promptService.buildSplitBlueprint(REFINE_CHARACTER_DRAFT_BLUEPRINT, args)
@@ -479,6 +473,7 @@ object CharacterPrompts {
         promptService: PromptService,
         character: CharacterContent,
         saga: SagaContent,
+        config: GenreConfig,
     ): SplitPrompt {
         val args =
             CharacterResumeArgs(
@@ -489,7 +484,7 @@ object CharacterPrompts {
                         .takeLast(10)
                         .joinToString("\n") { "- ${it.event.summary}" },
                 relationships = character.summarizeRelationships(),
-                toneStyle = saga.data.genre.name,
+                toneStyle = config.aesthetic,
             )
         return promptService.buildSplitBlueprint(CHARACTER_ENRICHMENT_BLUEPRINT, args)
     }

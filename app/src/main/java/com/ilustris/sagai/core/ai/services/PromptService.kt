@@ -280,7 +280,7 @@ class PromptServiceImpl
             }
 
             if (blueprint.examples.isNotEmpty()) {
-                buckets["examples"] = blueprint.examples.normalizetoAIItems()
+                buckets["examples"] = blueprint.examples.normalizetoAIItems(describeName = false)
             }
 
             if (blueprint.rules.isNotEmpty()) {

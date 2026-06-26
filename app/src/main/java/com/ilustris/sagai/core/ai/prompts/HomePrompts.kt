@@ -7,15 +7,20 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 data class DynamicSagaCreationArgs(
     val genreEnumNames: String,
+    val genreAesthetics: String = "",
 )
 
 object HomePrompts {
     const val DYNAMIC_SAGA_CREATION_BLUEPRINT = "dynamic_saga_creation_blueprint"
 
-    suspend fun dynamicSagaCreationPrompt(promptService: PromptService): SplitPrompt {
+    suspend fun dynamicSagaCreationPrompt(
+        promptService: PromptService,
+        genreAesthetics: String = "",
+    ): SplitPrompt {
         val args =
             DynamicSagaCreationArgs(
                 genreEnumNames = Genre.entries.joinToString(", ") { it.name },
+                genreAesthetics = genreAesthetics,
             )
 
         return promptService.buildSplitBlueprint(DYNAMIC_SAGA_CREATION_BLUEPRINT, args.asMap())

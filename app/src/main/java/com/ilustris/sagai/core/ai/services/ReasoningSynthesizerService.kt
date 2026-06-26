@@ -5,6 +5,8 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.ReasoningFallbacks
+import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.prepareFromSplitPrompt
 import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
@@ -105,24 +107,33 @@ class ReasoningSynthesizerService
             if (terminal.get() || scope.isClosedForSend) return
 
             try {
-                val conversationStyle =
-                    genre?.let { genreConfigService.conversationInstructions(it) }
+                val aesthetic =
+                    if (genre != null) {
+                        genreConfigService.aesthetic(genre)
+                    } else {
+                        genreConfigService.formatGenreAesthetics()
+                    }
 
                 val sanitizedReasoning = sanitizeReasoning(reasoning).takeLast(400)
 
-                val translation =
-                    gemmaClient.generateBlueprint<String>(
+                val promptSplit =
+                    buildBlueprintPrompt(
                         remoteConfigKey = REASONING_SYNTHESIZER_BLUEPRINT,
                         variables =
                             mapOf(
                                 "context" to context,
                                 "thoughtStream" to sanitizedReasoning,
                                 "language" to targetLanguage,
+                                "aesthetic" to aesthetic,
                             ),
-                        mergedInstructionMaps = listOfNotNull(conversationStyle),
-                        requirement = ModelRequirement.MINIMAL,
                         logEnabled = false,
+                    )
+                val translation =
+                    executeBlueprintGeneration<String>(
+                        promptSplit = promptSplit,
+                        requirement = ModelRequirement.MINIMAL,
                         temperatureRandomness = 1f,
+                        logEnabled = false,
                     )
 
                 if (terminal.get() || scope.isClosedForSend) return
@@ -145,6 +156,33 @@ class ReasoningSynthesizerService
                 Timber.w("Failed to synthesize reasoning: ${e.message}, using fallback...")
                 useFallback(genre, scope, terminal)
             }
+        }
+
+        private suspend inline fun <reified T> executeBlueprintGeneration(
+            promptSplit: SplitPrompt,
+            requirement: ModelRequirement,
+            requireTranslation: Boolean = true,
+            describeOutput: Boolean = true,
+            filterOutputFields: List<String> = emptyList(),
+            userInteraction: Boolean = false,
+            temperatureRandomness: Float = .5f,
+            logEnabled: Boolean = true,
+        ): T? {
+            val prepared =
+                prepareFromSplitPrompt<T>(
+                    promptSplit = promptSplit,
+                    requirement = requirement,
+                    requireTranslation = requireTranslation,
+                    describeOutput = describeOutput,
+                    filterOutputFields = filterOutputFields,
+                    userInteraction = userInteraction,
+                )
+            return gemmaClient.executePrepared(
+                prepared = prepared,
+                requirement = requirement,
+                temperatureRandomness = temperatureRandomness,
+                logEnabled = logEnabled,
+            )
         }
 
         private suspend fun <T> useFallback(

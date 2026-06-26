@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeIcon
@@ -78,7 +80,7 @@ fun AdvancePullIndicator(
                     contentDescription = stringResource(R.string.milestone_loading_cd),
                     modifier =
                         Modifier
-                            .gradientFill(Brush.verticalGradient(colors))
+                            .gradientFill(Brush.verticalGradient(morphingGradient()))
                             .size(36.dp)
                             .themeVfx(),
                 )
@@ -95,11 +97,13 @@ fun AdvancePullIndicator(
                             .size(36.dp)
                             .scale(scale)
                             .dropShadow(CircleShape) {
+                                if (dragProgress == 0f) return@dropShadow
                                 radius = 15f * dragProgress
-                                color = primaryColor
                                 spread = 8f * dragProgress
                                 brush = shadowBrush
-                            }.clip(CircleShape)
+                            }
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.background, CircleShape)
                             .gradientFill(
                                 progressiveBrush(
                                     tintColor = primaryColor,

@@ -16,6 +16,7 @@ data class WikiGenerationArgs(
     val existingWikis: String,
     val globalWikiIndex: String,
     val wikiTypes: String,
+    val aesthetic: String,
 )
 
 data class MergeWikiArgs(
@@ -65,6 +66,7 @@ object WikiPrompts {
                     },
                 globalWikiIndex = globalWikiIndex,
                 wikiTypes = WikiType.entries.joinToString(", "),
+                aesthetic = config.aesthetic,
             )
 
         return promptService.buildSplitBlueprint(WIKI_GENERATION_BLUEPRINT, args)

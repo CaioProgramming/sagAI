@@ -161,7 +161,6 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -911,12 +910,6 @@ fun ChatContent(
                                                     key = "saga_${saga.id}_spark",
                                                 ),
                                                 animatedVisibilityScope = animatedVisibilityScope,
-                                            ).genreVfx(
-                                                saga.genre,
-                                                isPlaying =
-                                                    uiState.isGenerating ||
-                                                        uiState.isLoading ||
-                                                        genreVfxPulse,
                                             ).size(32.dp)
                                             .clip(CircleShape)
                                             .clickable {

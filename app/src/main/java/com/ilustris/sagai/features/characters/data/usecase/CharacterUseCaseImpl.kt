@@ -249,16 +249,10 @@ class CharacterUseCaseImpl
                 val bannedNames = repository.getAllCharacterNames()
                 // Generate theme color first to pass to AI for appearance guidance
                 val themeColor = getRandomColorHex()
-                val config =
-                    genreConfigService.getGenreConfig(
-                        sagaContent.data.genre,
-                        sagaContent.data.variationId,
-                    )
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         promptService,
                         sagaContent,
-                        config,
                         description,
                         bannedNames,
                         themeColor,
@@ -271,6 +265,7 @@ class CharacterUseCaseImpl
                     gemmaClient.generate<Character>(
                         promptSplit =
                             prompt.mergeInstructions(
+                                genreConfigService.appearanceInstructions(sagaContent.data.genre),
                                 genreConfigService.conversationInstructions(sagaContent.data.genre),
                             ),
                         useCore = true,
@@ -323,16 +318,10 @@ class CharacterUseCaseImpl
                     assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
                     val bannedNames = repository.getAllCharacterNames()
                     val themeColor = getRandomColorHex()
-                    val config =
-                        genreConfigService.getGenreConfig(
-                            sagaContent.data.genre,
-                            sagaContent.data.variationId,
-                        )
                     val prompt =
                         CharacterPrompts.characterGeneration(
                             promptService,
                             sagaContent,
-                            config,
                             description,
                             bannedNames,
                             themeColor,
@@ -344,6 +333,9 @@ class CharacterUseCaseImpl
                             .generateStreaming<GeneratedContent<Character>>(
                                 promptSplit =
                                     prompt.mergeInstructions(
+                                        genreConfigService.appearanceInstructions(
+                                            sagaContent.data.genre,
+                                        ),
                                         genreConfigService.conversationInstructions(
                                             sagaContent.data.genre,
                                         ),
@@ -624,11 +616,14 @@ class CharacterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<CharacterDetailState> =
             executeRequest {
+                val config =
+                    genreConfigService.getGenreConfig(saga.data.genre, saga.data.variationId)
                 val prompt =
                     CharacterPrompts.characterEnrichmentPrompt(
                         promptService,
                         character,
                         saga,
+                        config,
                     )
                 gemmaClient.generate<CharacterDetailState>(
                     promptSplit =

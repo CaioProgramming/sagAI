@@ -31,8 +31,6 @@ data class ImageTypeConfig(
  * Dynamic configuration for the image generation pipeline, fetched from Remote Config.
  */
 data class ImageConfig(
-    @SerializedName("criticalRules")
-    val criticalRules: String = "",
     @SerializedName("typeConfigs")
     val typeConfigs: Map<String, ImageTypeConfig> = emptyMap(),
 )
