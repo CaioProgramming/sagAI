@@ -44,7 +44,7 @@ fun SpeechModeSheet(
     onSelectTag: (ExpressiveTag) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val options =
         listOf(
             SpeechModeOption(SenderType.CHARACTER, null),
@@ -65,6 +65,7 @@ fun SpeechModeSheet(
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 stringResource(R.string.chat_input_speech_mode_title),
