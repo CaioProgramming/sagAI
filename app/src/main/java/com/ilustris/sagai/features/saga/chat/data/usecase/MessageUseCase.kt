@@ -34,6 +34,13 @@ interface MessageUseCase {
         message: MessageContent,
     ): Flow<StreamingState<AIReply?>>
 
+    suspend fun saveGeneratedReply(
+        saga: SagaMetadata,
+        reply: AIReply,
+        userMessage: Message,
+        character: Character?,
+    ): RequestResult<Message>
+
     suspend fun updateMessage(message: Message): RequestResult<Message>
 
     fun setDebugMode(enabled: Boolean)

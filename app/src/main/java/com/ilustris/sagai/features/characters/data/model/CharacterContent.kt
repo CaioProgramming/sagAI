@@ -86,25 +86,57 @@ fun Character.matchesDisplayNameStrict(query: String): Boolean {
         nicknames.orEmpty().any { it.trim().lowercase() == normalizedQuery }
 }
 
+private data class DisplayNameMatch(
+    val character: Character,
+    val matchedTokenCount: Int,
+    val allQueryTokensMatch: Boolean,
+)
+
 /**
  * Resolves a spoken or written name to a saga character (exact full name / nickname first,
  * then token-based fuzzy matching for chat and narrative references).
+ *
+ * Ambiguous matches (e.g. shared surnames) return null instead of picking an arbitrary character.
  */
 fun List<Character>.findByDisplayName(query: String?): Character? {
     if (query.isNullOrBlank()) return null
 
     find { it.matchesDisplayNameStrict(query) }?.let { return it }
 
-    val normalizedInput = query.lowercase().trim()
-    val normalizedInputTokens = normalizedInput.split(" ").filter { it.isNotBlank() }
+    val normalizedInputTokens =
+        query
+            .lowercase()
+            .trim()
+            .split(" ")
+            .filter { it.isNotBlank() }
+    if (normalizedInputTokens.isEmpty()) return null
 
-    find { character ->
-        val allTokens = character.displayNameTokens()
-        normalizedInputTokens.all { inputToken -> allTokens.contains(inputToken) }
-    }?.let { return it }
+    val candidates =
+        mapNotNull { character ->
+            val characterTokens = character.displayNameTokens()
+            val matchedTokenCount = normalizedInputTokens.count { it in characterTokens }
+            if (matchedTokenCount == 0) return@mapNotNull null
+            DisplayNameMatch(
+                character = character,
+                matchedTokenCount = matchedTokenCount,
+                allQueryTokensMatch = normalizedInputTokens.all { it in characterTokens },
+            )
+        }
 
-    return find { character ->
-        val allTokens = character.displayNameTokens()
-        normalizedInputTokens.any { inputToken -> allTokens.contains(inputToken) }
+    val fullQueryMatches = candidates.filter { it.allQueryTokensMatch }
+    if (normalizedInputTokens.size > 1) {
+        if (fullQueryMatches.isEmpty()) return null
+        return fullQueryMatches
+            .maxWithOrNull(
+                compareBy<DisplayNameMatch> { it.matchedTokenCount }
+                    .thenBy { -it.character.displayNameTokens().size },
+            )?.character
     }
+
+    val singleTokenMatches = candidates.filter { it.matchedTokenCount >= 1 }
+    if (singleTokenMatches.size == 1) {
+        return singleTokenMatches.first().character
+    }
+
+    return null
 }

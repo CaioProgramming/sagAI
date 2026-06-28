@@ -26,6 +26,7 @@ import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
@@ -36,8 +37,10 @@ import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaMetadataUIMapper
+import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.NewCharacterDiscovery
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
@@ -941,7 +944,7 @@ class ChatViewModel
                     messageUseCase.updateMessage(
                         messageContent.message.copy(
                             characterId = character.id,
-                            speakerName = character.name,
+                            speakerName = character.fullName(),
                         ),
                     )
                 }
@@ -1225,8 +1228,14 @@ class ChatViewModel
                         is StreamingState.Success -> {
                             streamTerminal = true
                             stateManager.updateState { it.copy(reasoningChunk = null) }
-                            updateLoading(false)
-                            sagaThemeManager.playHaptics()
+                            val reply = streamingState.data
+                            val deferCharacterCreation =
+                                reply?.newCharacter != null &&
+                                    reply.message.senderType != SenderType.NARRATOR
+                            if (!deferCharacterCreation) {
+                                updateLoading(false)
+                                sagaThemeManager.playHaptics()
+                            }
                             withContext(Dispatchers.IO) {
                                 messageUseCase.updateMessage(newMessage.message.copy(status = MessageStatus.OK))
                                 sceneSummary?.let {
@@ -1238,31 +1247,15 @@ class ChatViewModel
                                 )
                             }
 
-                            streamingState.data?.newCharacter?.let { discovery ->
-                                val generatedMessage = streamingState.data.message
-
-                                if (generatedMessage.senderType == SenderType.NARRATOR) return@let
-                                withContext(Dispatchers.IO) {
-                                    sagaContentManager
-                                        .generateCharacter(
-                                            discovery.toAINormalize(),
-                                            sceneSummary = sceneSummary,
-                                            candidateName = discovery.name,
-                                        ).onSuccessAsync { newCharacter ->
-                                            linkMessageToCharacter(generatedMessage, newCharacter)
-                                        }.onFailureAsync {
-                                            sagaThemeManager.showSnackBar(
-                                                message = context.getString(R.string.character_create_error),
-                                                action =
-                                                    context.getString(R.string.try_again) to {
-                                                        requestNewCharacter(
-                                                            discovery.name,
-                                                            generatedMessage,
-                                                        )
-                                                    },
-                                            )
-                                        }
-                                }
+                            reply?.let { aiReply ->
+                                val discovery = aiReply.newCharacter ?: return@let
+                                if (aiReply.message.senderType == SenderType.NARRATOR) return@let
+                                generateCharacterAndSaveReply(
+                                    discovery = discovery,
+                                    reply = aiReply,
+                                    userMessage = message,
+                                    sceneSummary = sceneSummary,
+                                )
                             }
                         }
 
@@ -1303,6 +1296,66 @@ class ChatViewModel
                 }
         }
 
+    private fun generateCharacterAndSaveReply(
+            discovery: NewCharacterDiscovery,
+            reply: AIReply,
+            userMessage: Message,
+            sceneSummary: SceneSummary?,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager
+                    .generateCharacter(
+                        discovery.toAINormalize(),
+                        sceneSummary = sceneSummary,
+                        candidateName = discovery.name,
+                    ).onSuccessAsync { newCharacter ->
+                        saveGeneratedReplyWithCharacter(reply, userMessage, newCharacter)
+                        updateLoading(false)
+                        sagaThemeManager.playHaptics()
+                    }.onFailureAsync {
+                        updateLoading(false)
+                        sagaThemeManager.showSnackBar(
+                            message = context.getString(R.string.character_create_error),
+                            action =
+                                context.getString(R.string.try_again) to {
+                                    generateCharacterAndSaveReply(
+                                        discovery = discovery,
+                                        reply = reply,
+                                        userMessage = userMessage,
+                                        sceneSummary = sceneSummary,
+                                    )
+                                },
+                        )
+                    }
+            }
+        }
+
+        private suspend fun saveGeneratedReplyWithCharacter(
+            reply: AIReply,
+            userMessage: Message,
+            character: Character,
+        ) {
+            val saga = uiState.value.sagaContent ?: return
+            messageUseCase
+                .saveGeneratedReply(
+                    saga = saga,
+                    reply = reply,
+                    userMessage = userMessage,
+                    character = character,
+                ).onFailureAsync {
+                    updateLoading(false)
+                    sagaThemeManager.showSnackBar(
+                        message = context.getString(R.string.message_save_error),
+                        action =
+                            context.getString(R.string.try_again) to {
+                                viewModelScope.launch(Dispatchers.IO) {
+                                    saveGeneratedReplyWithCharacter(reply, userMessage, character)
+                            }
+                        },
+                )
+            }
+    }
+
         fun createCharacter(
             contextDescription: String,
             message: Message,
@@ -1336,7 +1389,7 @@ class ChatViewModel
             messageUseCase.updateMessage(
                 message.copy(
                     characterId = character.id,
-                    speakerName = character.name,
+                    speakerName = character.fullName(),
                 ),
             )
         }

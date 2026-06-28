@@ -13,6 +13,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -429,8 +433,7 @@ fun ChatInputView(
                         } else {
                             drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
                         }
-                    }
-                    .border(1.dp, inputBrush, inputShape)
+                    }.border(1.dp, inputBrush, inputShape)
                     .background(bubbleColorState.value, inputShape),
         ) {
             AnimatedVisibility(currentTagInside != null) {
@@ -442,50 +445,24 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                senderType.icon()?.let {
-                                    Icon(
-                                        painterResource(it),
-                                        null,
-                                        modifier = Modifier.size(12.dp),
-                                        tint = resolvedIconColor,
-                                    )
-                                }
-                                Text(
-                                    stringResource(R.string.tag_inside_hint, senderType.title()),
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = resolvedIconColor,
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                        ),
+                            senderType.icon()?.let {
+                                Icon(
+                                    painterResource(it),
+                                    null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = resolvedIconColor,
                                 )
                             }
                             Text(
-                                stringResource(R.string.next),
+                                stringResource(R.string.tag_inside_hint, senderType.title()),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = resolvedIconColor,
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
-                                modifier =
-                                    Modifier
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.background)
-                                        .clickable {
-                                            onUpdateInput(
-                                                escapeCursorFromTagAndClean(
-                                                    inputField,
-                                                ),
-                                            )
-                                        }
-                                        .padding(8.dp),
                             )
                         }
                     }
@@ -499,8 +476,7 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    )
-                    .fillMaxWidth()
+                    ).fillMaxWidth()
                     .padding(8.dp),
             ) {
                 BasicTextField(
@@ -592,52 +568,78 @@ fun ChatInputView(
                         }
                     }
 
+                    val speechModeChipShape = MaterialTheme.shapes.extraLarge
+                    val isInsideTag = currentTagInside != null
                     Row(
                         modifier =
                             Modifier
-                                .clip(MaterialTheme.shapes.extraLarge)
-                                .background(MaterialTheme.colorScheme.surfaceContainer)
-                                .clickable { speechModeSheet = true }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .clip(speechModeChipShape)
+                                .background(
+                                    if (isInsideTag) {
+                                        resolvedColor.copy(alpha = .2f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainer
+                                    },
+                                ),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        activeSpeechMode.icon()?.let {
-                            Icon(
-                                painterResource(it),
-                                contentDescription = null,
-                                tint = resolvedColor,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                        Text(
-                            activeSpeechMode.title(),
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                ),
-                        )
-                    }
-
-                    if (currentTagInside != null) {
-                        Text(
-                            stringResource(R.string.next),
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    color = resolvedIconColor,
-                                ),
+                        Row(
                             modifier =
                                 Modifier
-                                    .clip(MaterialTheme.shapes.extraLarge)
-                                    .background(resolvedColor)
-                                    .clickable {
-                                        onUpdateInput(
-                                            escapeCursorFromTagAndClean(inputField),
-                                        )
-                                    }.padding(horizontal = 12.dp, vertical = 8.dp),
-                        )
+                                    .clickable { speechModeSheet = true }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            activeSpeechMode.icon()?.let {
+                                Icon(
+                                    painterResource(it),
+                                    contentDescription = null,
+                                    tint = resolvedColor,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                            Text(
+                                activeSpeechMode.title(),
+                                style =
+                                    MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = isInsideTag,
+                            enter =
+                                expandHorizontally(expandFrom = Alignment.Start) +
+                                    fadeIn(
+                                        tween(
+                                            200,
+                                        ),
+                                    ),
+                            exit =
+                                shrinkHorizontally(shrinkTowards = Alignment.Start) +
+                                    fadeOut(
+                                        tween(150),
+                                    ),
+                        ) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.background.copy(alpha = .2f),
+                                            speechModeChipShape,
+                                        ).clickable {
+                                            onUpdateInput(
+                                                escapeCursorFromTagAndClean(inputField),
+                                            )
+                                        }.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    stringResource(R.string.next),
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                )
+                            }
+                        }
                     }
 
                     Spacer(Modifier.weight(1f))
@@ -725,8 +727,7 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -758,20 +759,17 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            )
-                                            .background(
+                                            ).background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            )
-                                            .clip(CircleShape)
+                                            ).clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
