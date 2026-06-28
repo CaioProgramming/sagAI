@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.chapter.data.model
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
 
 @Entity
 data class Chapter(
@@ -22,6 +24,8 @@ data class Chapter(
     val featuredCharacters: List<Int> = emptyList(),
     @ColumnInfo(defaultValue = "")
     val narrativeGuide: String? = null,
+    @Embedded(prefix = "continuity_")
+    val continuitySummary: ContinuitySummary? = null,
 ) {
     fun isEmpty() = title.isEmpty() && content.isEmpty()
 }

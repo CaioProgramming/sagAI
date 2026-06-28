@@ -14,6 +14,8 @@ import com.ilustris.sagai.features.brain.domain.model.BrainNode
 import com.ilustris.sagai.features.brain.domain.model.BrainNodeType
 import com.ilustris.sagai.features.brain.domain.model.BrainScene
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.animations.ChapterKnowledgeCluster
+import com.ilustris.sagai.ui.animations.buildChapterKnowledgeClusters
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,7 @@ data class BrainUiState(
     val storyPath: List<BrainNode> = emptyList(),
     val orbitNodes: List<BrainNode> = emptyList(),
     val genre: Genre? = null,
+    val chapterKnowledgeClusters: List<ChapterKnowledgeCluster> = emptyList(),
 )
 
 @HiltViewModel
@@ -191,6 +194,7 @@ class BrainViewModel
             presence = content.presence
             val centerId = content.graph.centerNodeId
             val selectedId = if (selectCenter) centerId else _state.value.selectedNodeId ?: centerId
+            val knowledgeClusters = content.sagaContent.buildChapterKnowledgeClusters()
 
             if (content.graph.mode == BrainMode.CHARACTER) {
                 _state.value =
@@ -202,6 +206,7 @@ class BrainViewModel
                         orbitNodes = content.graph.orbitNodes(selectedId),
                         scene = content.scene,
                         genre = content.sagaContent.data.genre,
+                        chapterKnowledgeClusters = knowledgeClusters,
                     )
             } else {
                 val scene = content.scene
@@ -214,6 +219,7 @@ class BrainViewModel
                         scene = scene,
                         storyPath = storyPathNodes(content.graph, scene.storyPath),
                         genre = content.sagaContent.data.genre,
+                        chapterKnowledgeClusters = knowledgeClusters,
                     )
             }
         }

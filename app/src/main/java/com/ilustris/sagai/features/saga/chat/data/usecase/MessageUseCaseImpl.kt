@@ -210,6 +210,7 @@ class MessageUseCaseImpl
                             sceneSummary = sceneSummary,
                             conversationDirective = emptyString(),
                             updateLimit = narrativeRules.loreUpdateLimit,
+                            narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
                         )
                     val conversationInstructions =
@@ -385,6 +386,7 @@ class MessageUseCaseImpl
                     it.characterTwo.id in charactersInScene.map { character -> character.data.id }
             }
 
+            val narrativeRules = fetchNarrativeRules()
             val prompt =
                 ChatPrompts.generateReactionPrompt(
                     promptService = promptService,
@@ -392,6 +394,7 @@ class MessageUseCaseImpl
                     saga = sagaContent,
                     messageToReact = message,
                     conversationDirective = emptyString(),
+                    narrativeRules = narrativeRules,
                 )
 
             val reaction =

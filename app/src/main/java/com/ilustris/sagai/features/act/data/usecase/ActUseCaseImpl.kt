@@ -314,9 +314,14 @@ class ActUseCaseImpl
                                     val synthesis = state.data!!.data
 
                                     // 1. Update Act details & Narrative Guide
+                                    val mergedAct = synthesis.act.mergeInto(actContent.data)
                                     val updatedAct =
                                         updateAct(
-                                            synthesis.act.mergeInto(actContent.data),
+                                            mergedAct.copy(
+                                                continuitySummary =
+                                                    synthesis.continuitySummary
+                                                        ?: mergedAct.continuitySummary,
+                                            ),
                                         )
 
                                     // 2. Save Landmark Wikis

@@ -45,7 +45,7 @@ import com.ilustris.sagai.features.brain.domain.model.BrainMode
 import com.ilustris.sagai.features.brain.presentation.BrainViewModel
 import com.ilustris.sagai.features.brain.ui.components.BrainCanvas
 import com.ilustris.sagai.features.brain.ui.components.BrainDetailSheet
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.animations.ConstellationCanvas
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 
@@ -246,13 +246,14 @@ private fun BrainScreenContent(
                             .padding(innerPadding)
                             .fillMaxSize(),
                 ) {
-                    StarryTextPlaceholder(
+                    ConstellationCanvas(
                         modifier =
                             Modifier
                                 .fillMaxSize()
                                 .alpha(ambientAlpha),
-                        starCount = 150,
-                        twinkleDurationMillis = 5000,
+                        starCount = 90 + state.chapterKnowledgeClusters.sumOf { it.satelliteCount },
+                        knowledgeColor = accent.copy(alpha = 0.85f),
+                        chapterClusters = state.chapterKnowledgeClusters,
                     )
 
                     AnimatedContent(graph != null && layout != null) {

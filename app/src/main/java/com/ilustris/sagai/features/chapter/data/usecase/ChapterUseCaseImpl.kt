@@ -491,9 +491,14 @@ class ChapterUseCaseImpl
                                     val synthesis = state.data!!.data
 
                                     // 1. Update Chapter details & Narrative Guide
+                                    val mergedChapter = synthesis.chapter.mergeInto(chapterContent.data)
                                     val updatedChapter =
                                         updateChapter(
-                                            synthesis.chapter.mergeInto(chapterContent.data),
+                                            mergedChapter.copy(
+                                                continuitySummary =
+                                                    synthesis.continuitySummary
+                                                        ?: mergedChapter.continuitySummary,
+                                            ),
                                         )
 
                                     // 2. Save Landmark Wikis

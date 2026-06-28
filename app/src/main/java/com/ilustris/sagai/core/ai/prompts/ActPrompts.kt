@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.act.data.model.UnifiedActUpdate
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getDirectiveKey
@@ -47,6 +48,12 @@ object ActPrompts {
     const val ACT_CONCLUSION_BLUEPRINT = "act_conclusion_blueprint"
     const val ACT_INTRODUCTION_BLUEPRINT = "act_introduction_blueprint"
     const val ACT_SYNTHESIS_BLUEPRINT = "act_synthesis_blueprint"
+
+    /**
+     * [ACT_SYNTHESIS_BLUEPRINT] must return `continuitySummary` in [UnifiedActUpdate],
+     * consolidating chapter-level canon into act-level `establishedFacts`, `openThreads`,
+     * `consequences`, `characterStates`, and `persistentSetups`.
+     */
 
     /**
      * Fields to exclude when normalizing Act data for the AI.

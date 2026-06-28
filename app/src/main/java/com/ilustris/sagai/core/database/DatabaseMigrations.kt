@@ -276,6 +276,24 @@ object DatabaseMigrations {
             }
         }
 
+    val MIGRATION_21_22 =
+        object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val continuityColumns =
+                    listOf(
+                        "establishedFacts",
+                        "openThreads",
+                        "consequences",
+                        "characterStates",
+                        "persistentSetups",
+                    )
+                continuityColumns.forEach { column ->
+                    db.execSQL("ALTER TABLE Chapter ADD COLUMN `continuity_$column` TEXT")
+                    db.execSQL("ALTER TABLE acts ADD COLUMN `continuity_$column` TEXT")
+                }
+            }
+        }
+
     fun getAllMigrations(): Array<Migration> =
         arrayOf(
             MIGRATION_1_2,
@@ -298,5 +316,6 @@ object DatabaseMigrations {
             MIGRATION_18_19,
             MIGRATION_19_20,
             MIGRATION_20_21,
+            MIGRATION_21_22,
         )
 }
