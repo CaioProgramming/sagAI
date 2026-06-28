@@ -1,6 +1,7 @@
 package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
+import android.graphics.BlurMaskFilter
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -24,13 +25,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -189,6 +195,38 @@ fun Modifier.gradientFill(
             )
         }
     }
+
+fun Modifier.iconDropShadow(
+    brush: Brush,
+    progress: Float,
+    blurRadius: Dp = 15.dp,
+    spread: Dp = 8.dp,
+): Modifier {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    if (clampedProgress <= 0f) return this
+
+    return drawWithCache {
+        val blurPx = (blurRadius.toPx() + spread.toPx()) * clampedProgress
+        onDrawWithContent {
+            drawIntoCanvas { canvas ->
+                val bounds = Rect(Offset.Zero, size)
+                val glowPaint =
+                    Paint().apply {
+                        asFrameworkPaint().maskFilter =
+                            BlurMaskFilter(
+                                blurPx.coerceAtLeast(0.1f),
+                                BlurMaskFilter.Blur.NORMAL,
+                            )
+                    }
+                canvas.saveLayer(bounds, glowPaint)
+                drawContent()
+                canvas.restore()
+                drawRect(brush = brush, size = size, blendMode = BlendMode.SrcIn)
+            }
+            drawContent()
+        }
+    }
+}
 
 fun Color.fadeColors() =
     listOf(

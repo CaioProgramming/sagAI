@@ -412,6 +412,7 @@ fun ChatBubble(
                                         when (sender) {
                                             SenderType.USER -> {
                                                 Modifier
+                                                    .clip(bubbleShape)
                                                     .combinedClickable(
                                                         interactionSource = interactionSource,
                                                         indication = ripple(),
