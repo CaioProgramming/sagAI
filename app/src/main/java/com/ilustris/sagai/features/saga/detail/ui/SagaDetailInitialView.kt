@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +33,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,8 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -65,16 +68,17 @@ import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaHighlight
+import com.ilustris.sagai.ui.theme.sagaShader
 import com.ilustris.sagai.ui.theme.sagaShape
-import kotlin.time.Duration.Companion.seconds
+import com.ilustris.sagai.ui.theme.themeIcon
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -116,8 +120,7 @@ fun SagaDetailInitialContent(
                                 } else {
                                     Modifier
                                 },
-                            )
-                            .fillMaxWidth()
+                            ).fillMaxWidth()
                             .align(Alignment.Center)
                             .reactiveShimmer(true)
                             .padding(8.dp),
@@ -131,186 +134,13 @@ fun SagaDetailInitialContent(
                     state = gridState,
                 ) {
                     item(span = { GridItemSpan(columnCount) }) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            if (saga.icon.isNotBlank() && !iconError) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .then(
-                                                if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                                    with(sharedTransitionScope) {
-                                                        Modifier.sharedBounds(
-                                                            rememberSharedContentState(key = "saga_${saga.id}_icon"),
-                                                            animatedVisibilityScope = animatedVisibilityScope,
-                                                        )
-                                                    }
-                                                } else {
-                                                    Modifier
-                                                },
-                                            )
-                                            .background(MaterialTheme.colorScheme.background)
-                                            .height(400.dp)
-                                            .fillMaxWidth(),
-                                ) {
-                                    val currentModifier =
-                                        Modifier
-                                            .align(Alignment.TopCenter)
-                                            .padding(16.dp)
-                                            .reactiveShimmer(
-                                                true,
-                                                duration = 5.seconds,
-                                            )
-                                    if (section.segmentedImage != null) {
-                                        DepthLayout(
-                                            originalImage = section.segmentedImage.first,
-                                            segmentedImage = section.segmentedImage.second,
-                                            modifier = Modifier.fillMaxSize(),
-                                            imageModifier =
-                                                Modifier
-                                                    .clipToBounds()
-                                                    .effectForGenre(genre)
-                                                    .sagaHighlight(),
-                                        ) {
-                                            genre.stylisedText(
-                                                saga.title,
-                                                modifier =
-                                                    currentModifier
-                                                        .then(
-                                                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                                                with(sharedTransitionScope) {
-                                                                    Modifier.sharedBounds(
-                                                                        rememberSharedContentState(
-                                                                            key = "saga_${saga.id}_title",
-                                                                        ),
-                                                                        animatedVisibilityScope = animatedVisibilityScope,
-                                                                    )
-                                                                }
-                                                            } else {
-                                                                Modifier
-                                                            },
-                                                        )
-                                                        .fillMaxWidth()
-                                                        .padding(8.dp),
-                                            )
-                                        }
-                                    } else {
-                                        AsyncImage(
-                                            model =
-                                                ImageRequest
-                                                    .Builder(LocalContext.current)
-                                                    .data(saga.icon)
-                                                    .crossfade(true)
-                                                    .build(),
-                                            contentDescription = saga.title,
-                                            onState = {
-                                                if (it is AsyncImagePainter.State.Error) {
-                                                    iconError = true
-                                                }
-                                            },
-                                            modifier =
-                                                Modifier
-                                                    .background(MaterialTheme.colorScheme.background)
-                                                    .fillMaxSize()
-                                                    .effectForGenre(genre)
-                                                    .sagaHighlight(),
-                                            contentScale = ContentScale.Crop,
-                                        )
-
-                                        genre.stylisedText(
-                                            saga.title,
-                                            modifier =
-                                                currentModifier
-                                                    .then(
-                                                        if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                                            with(sharedTransitionScope) {
-                                                                Modifier.sharedBounds(
-                                                                    rememberSharedContentState(
-                                                                        key = "saga_${saga.id}_title",
-                                                                    ),
-                                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                                )
-                                                            }
-                                                        } else {
-                                                            Modifier
-                                                        },
-                                                    )
-                                                    .padding(8.dp),
-                                        )
-                                    }
-
-                                    Box(
-                                        Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .fillMaxWidth()
-                                            .fillMaxHeight(.6f)
-                                            .background(fadeGradientBottom()),
-                                    )
-                                }
-                            } else {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                    modifier =
-                                        Modifier
-                                            .then(
-                                                if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                                    with(sharedTransitionScope) {
-                                                        Modifier.sharedBounds(
-                                                            rememberSharedContentState(
-                                                                key = "saga_${saga.id}_icon",
-                                                            ),
-                                                            animatedVisibilityScope = animatedVisibilityScope,
-                                                        )
-                                                    }
-                                                } else {
-                                                    Modifier
-                                                },
-                                            )
-                                            .padding(16.dp),
-                                ) {
-                                    Image(
-                                        painterResource(genre.icon),
-                                        null,
-                                        Modifier
-                                            .clickable {
-                                                onAction(DetailAction.RegenerateIcon)
-                                            }
-                                            .size(100.dp)
-                                            .gradientFill(
-                                                MaterialTheme.colorScheme.primary.gradientFade(),
-                                            ),
-                                    )
-                                    genre.stylisedText(
-                                        saga.title,
-                                        modifier =
-                                            Modifier
-                                                .then(
-                                                    if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                                        with(sharedTransitionScope) {
-                                                            Modifier.sharedBounds(
-                                                                rememberSharedContentState(
-                                                                    key = "saga_${saga.id}_title",
-                                                                ),
-                                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                            )
-                                                        }
-                                                    } else {
-                                                        Modifier
-                                                    },
-                                                )
-                                                .padding(8.dp)
-                                                .fillMaxWidth()
-                                                .reactiveShimmer(
-                                                    true,
-                                                    duration = 5.seconds,
-                                                ),
-                                    )
-                                }
-                            }
-                        }
+                        sagaHeaderComponent(
+                            saga,
+                            modifier =
+                                Modifier.clickable(enabled = saga.icon.isBlank()) {
+                                    onAction(DetailAction.RegenerateIcon)
+                                },
+                        )
                     }
 
                     item(span = { GridItemSpan(columnCount) }) {
@@ -634,6 +464,105 @@ fun SagaDetailInitialContent(
                                 .padding(16.dp),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun sagaHeaderComponent(
+    saga: Saga,
+    modifier: Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxWidth()
+                .animateContentSize(),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        if (saga.icon.isBlank()) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    themeIcon(),
+                    null,
+                    Modifier
+                        .size(64.dp)
+                        .gradientFill(sagaBrush()),
+                )
+                saga.genre.stylisedText(
+                    saga.title,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 36.dp)
+                            .fillMaxWidth(),
+                )
+            }
+        } else {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(saga.icon)
+                        .crossfade(true)
+                        .build(),
+                contentDescription = saga.title,
+                contentScale = ContentScale.Crop,
+                placeholder = themeIcon(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(.45f)
+                        .sagaShader()
+                        .sagaHighlight(),
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(fadeGradientBottom()),
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (saga.isEnded) {
+                    Row(
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.secondary,
+                                MaterialTheme.shapes.large,
+                            ).padding(4.dp)
+                            .alpha(.6f),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            themeIcon(),
+                            null,
+                            Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                        )
+
+                        Text(
+                            stringResource(R.string.chat_card_saga_ended),
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                        )
+                    }
+                }
+
+                saga.genre.stylisedText(
+                    saga.title,
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 16.dp, vertical = 36.dp)
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                )
             }
         }
     }

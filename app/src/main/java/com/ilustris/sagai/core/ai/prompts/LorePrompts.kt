@@ -15,6 +15,31 @@ data class LoreGenerationArgs(
 object LorePrompts {
     const val LORE_GENERATION_BLUEPRINT = "lore_generation_blueprint"
 
+    val LORE_OUTPUT_ONLY_FIELDS = listOf("emotionalReview")
+
+    val LORE_CONTENT_FIELDS =
+        listOf(
+            "title",
+            "content",
+            "emotionalReview",
+            "narrativeGuide",
+            "emotionalTone",
+        )
+
+    val GENERATED_TIMELINE_EXCLUSIONS =
+        listOf(
+            "sceneSummary",
+            "currentObjective",
+        )
+
+    val GENERATED_CHAPTER_EXCLUSIONS =
+        listOf(
+            "introduction",
+            "featuredCharacters",
+        )
+
+    val GENERATED_ACT_EXCLUSIONS = listOf("introduction")
+
     private val CHARACTER_EXCLUDED_FIELDS =
         listOf(
             "id",
@@ -26,7 +51,15 @@ object LorePrompts {
         )
 
     val TIMELINE_EXCLUDED_FIELDS =
-        listOf("id", "timelineId", "createdAt", "chapterId", "sceneSummary", "currentObjective")
+        listOf(
+            "id",
+            "timelineId",
+            "createdAt",
+            "chapterId",
+            "sceneSummary",
+            "currentObjective",
+            "emotionalReview",
+        )
 
     val CHAPTER_EXCLUDED_FIELDS =
         listOf(
@@ -37,10 +70,11 @@ object LorePrompts {
             "featuredCharacters",
             "coverImage",
             "createdAt",
+            "emotionalReview",
         )
 
     val ACT_EXCLUDED_FIELDS =
-        listOf("id", "sagaId", "currentChapterId", "createdAt")
+        listOf("id", "sagaId", "currentChapterId", "createdAt", "emotionalReview")
 
     fun storyContext(
         sagaContent: SagaContent,

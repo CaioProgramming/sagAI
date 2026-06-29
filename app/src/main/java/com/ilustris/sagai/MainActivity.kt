@@ -89,7 +89,6 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -173,15 +172,6 @@ class MainActivity : ComponentActivity() {
                 var activeSideEffect by remember { mutableStateOf<SideEffect?>(null) }
                 val globalSnackBar by sagaThemeManager.snackBarMessage.collectAsState()
                 val inAppNotification by sagaNotificationRouter.inAppNotification.collectAsState()
-                var showGenreTransition by remember { mutableStateOf(false) }
-
-                LaunchedEffect(currentGenre) {
-                    if (currentGenre != null) {
-                        showGenreTransition = true
-                        delay(600)
-                        showGenreTransition = false
-                    }
-                }
 
                 LaunchedEffect(Unit) {
                     sideEffectService.sideEffects.collect { effect ->
@@ -411,21 +401,25 @@ class MainActivity : ComponentActivity() {
 
                                 Spacer(modifier = Modifier.size(16.dp))
 
-                                Text(
-                                    text = stringResource(effect.status.titleRes),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    textAlign = TextAlign.Center,
-                                )
+                                effect.status.titleRes?.let {
+                                    Text(
+                                        text = stringResource(it),
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.size(8.dp))
 
-                                Text(
-                                    text = stringResource(effect.status.messageRes),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                effect.status.messageRes?.let {
+                                    Text(
+                                        text = stringResource(it),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        textAlign = TextAlign.Center,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
 
                                 Spacer(modifier = Modifier.size(32.dp))
 

@@ -18,10 +18,13 @@ import com.ilustris.sagai.core.services.getNarrativeRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.narrative.domain.rollupContinuity
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.model.CharacterUpdates
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -47,6 +50,7 @@ class TimelineUseCaseImpl
         private val wikiUseCase: WikiUseCase,
         private val characterUseCase: CharacterUseCase,
         private val characterRelationUseCase: CharacterRelationUseCase,
+        private val chapterUseCase: ChapterUseCase,
         private val sagaHistoryUseCase: com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase,
         private val gemmaClient: GemmaClient,
         private val promptService: PromptService,
@@ -84,9 +88,7 @@ class TimelineUseCaseImpl
                 )!!
 
             updateTimeline(
-                unifiedLore.event.copy(
-                    id = timeline.id,
-                ),
+                unifiedLore.event.mergeInto(timeline),
             )
 
             // 2. Save Wiki Updates
@@ -116,6 +118,20 @@ class TimelineUseCaseImpl
                     unifiedLore.charactersUpdates,
                 )
             Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
+            refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
+        }
+
+        private suspend fun refreshChapterContinuityRollup(
+            sagaId: Int,
+            chapterId: Int,
+        ) {
+            val refreshedSaga = sagaHistoryUseCase.getSagaById(sagaId).first() as SagaContent
+            val chapterContent = refreshedSaga.flatChapters().find { it.data.id == chapterId } ?: return
+            val rollup = chapterContent.rollupContinuity()
+            if (rollup.isBlank()) return
+            chapterUseCase.updateChapter(
+                chapterContent.data.copy(continuitySummary = rollup),
+            )
         }
 
         private suspend fun updateCharactersFromLore(
@@ -160,7 +176,6 @@ class TimelineUseCaseImpl
                                         ),
                                     filterOutputFields =
                                         listOf(
-                                            "id",
                                             "timelineId",
                                         ),
                                 ),
@@ -174,11 +189,7 @@ class TimelineUseCaseImpl
                                 // 1. Update Timeline Details
                                 val timelineUpdate =
                                     updateTimeline(
-                                        unifiedLore.event.copy(
-                                            id = timeline.id,
-                                            chapterId = timeline.chapterId,
-                                            createdAt = timeline.createdAt,
-                                        ),
+                                        unifiedLore.event.mergeInto(timeline),
                                     )
 
                                 // 2. Save Wiki Updates
@@ -214,6 +225,8 @@ class TimelineUseCaseImpl
                                         updates = unifiedLore.charactersUpdates,
                                     )
                                 Timber.d("generateFullLoreUpdate: Updated characters based on lore updates: ${charactersUpdates.size}")
+
+                                refreshChapterContinuityRollup(saga.data.id, timeline.chapterId)
 
                                 emit(
                                     StreamingState.Success(

@@ -22,10 +22,10 @@ import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 enum class RequestSection {
     CHARACTERS,
     EVENTS,
-
     WIKI,
     CHAPTERS,
     ACTS,
+    BRAIN,
     START,
 }
 

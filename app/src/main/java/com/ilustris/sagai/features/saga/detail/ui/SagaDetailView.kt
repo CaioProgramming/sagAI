@@ -85,6 +85,7 @@ fun SagaDetailView(
     onDeleted: () -> Unit = {},
     onCharacterDetails: (Int) -> Unit = {},
     onLoreDebug: () -> Unit = {},
+    onBrain: () -> Unit = {},
     viewModel: SagaDetailViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -164,6 +165,7 @@ fun SagaDetailView(
                                 RequestSection.WIKI -> onWiki()
                                 RequestSection.CHAPTERS -> onChapters()
                                 RequestSection.ACTS -> onActs()
+                                RequestSection.BRAIN -> onBrain()
                                 RequestSection.START -> viewModel.loadInitialSection()
                             }
                         }

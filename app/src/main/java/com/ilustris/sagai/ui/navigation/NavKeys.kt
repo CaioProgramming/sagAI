@@ -58,6 +58,17 @@ data class SagaStoryReaderKey(
 ) : NavKey
 
 @Serializable
+data class SagaBrainKey(
+    val sagaId: String,
+) : NavKey
+
+@Serializable
+data class CharacterBrainKey(
+    val sagaId: String,
+    val characterId: Int,
+) : NavKey
+
+@Serializable
 data class CharacterDetailKey(
     val characterId: Int,
 ) : NavKey
@@ -92,6 +103,15 @@ fun NavKey.isSameDestinationAs(other: NavKey?): Boolean {
         this is SagaEventsKey && other is SagaEventsKey -> sagaId == other.sagaId
         this is SagaActsKey && other is SagaActsKey -> sagaId == other.sagaId
         this is SagaStoryReaderKey && other is SagaStoryReaderKey -> sagaId == other.sagaId
+
+        this is SagaBrainKey && other is SagaBrainKey -> {
+            sagaId == other.sagaId
+        }
+
+        this is CharacterBrainKey && other is CharacterBrainKey -> {
+            sagaId == other.sagaId && characterId == other.characterId
+        }
+
         this is SagaChaptersKey && other is SagaChaptersKey -> sagaId == other.sagaId
         this is CharacterDetailKey && other is CharacterDetailKey -> characterId == other.characterId
         this is LoreDebugKey && other is LoreDebugKey -> sagaId == other.sagaId
@@ -179,6 +199,19 @@ fun String.findNavKey(): NavKey? {
 
         this.startsWith("saga://story_reader/") -> {
             SagaStoryReaderKey(this.removePrefix("saga://story_reader/"))
+        }
+
+        this.startsWith("saga://saga_brain/") -> {
+            SagaBrainKey(this.removePrefix("saga://saga_brain/"))
+        }
+
+        this.startsWith("saga://character_brain/") -> {
+            val parts = this.removePrefix("saga://character_brain/").split("/")
+            if (parts.size >= 2) {
+                CharacterBrainKey(parts[0], parts[1].toIntOrNull() ?: 0)
+            } else {
+                null
+            }
         }
 
         else -> {

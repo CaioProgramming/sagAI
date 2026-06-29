@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.onboarding.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.billingclient.api.ProductDetails
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
@@ -11,15 +10,20 @@ import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingStateMapper
-import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
+import com.ilustris.sagai.features.onboarding.data.model.OnboardingContent
 import com.ilustris.sagai.features.onboarding.domain.OnboardingUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class OnboardingViewModel
@@ -35,11 +39,17 @@ class OnboardingViewModel
         val onboardingState = _onboardingState.asStateFlow()
 
         val billingState = billingService.state
+        val purchaseFlowResult = billingService.purchaseFlowResult
+
+        private val _isPurchaseInProgress = MutableStateFlow(false)
+        val isPurchaseInProgress = _isPurchaseInProgress.asStateFlow()
 
         val currentConfig = MutableStateFlow<GenreVisualConfig?>(null)
 
         private var fetchJob: kotlinx.coroutines.Job? = null
         private var currentType: OnboardingType? = null
+        private var currentGenre: Genre? = null
+        private var currentSaga: Saga? = null
 
         private val _visualConfigs = MutableStateFlow<Map<Genre, GenreVisualConfig>>(emptyMap())
         val visualConfigs = _visualConfigs.asStateFlow()
@@ -50,6 +60,19 @@ class OnboardingViewModel
             viewModelScope.launch {
                 billingService.checkPurchases()
                 loadAllConfigs()
+            }
+            viewModelScope.launch {
+                billingService.state
+                    .drop(1)
+                    .filter { currentType == OnboardingType.PREMIUM_GUIDE }
+                    .collect { refreshPremiumOnboarding() }
+            }
+            viewModelScope.launch {
+                billingService.purchaseFlowResult.collect { result ->
+                    if (result != BillingService.PurchaseFlowResult.Idle) {
+                        _isPurchaseInProgress.value = false
+                    }
+                }
             }
         }
 
@@ -81,15 +104,10 @@ class OnboardingViewModel
             if (cachedContent.containsKey(cacheKey)) {
                 viewModelScope.launch {
                     val content = cachedContent[cacheKey]!!
-                    _onboardingState.emit(
-                        onboardingStateMapper.buildOnboardingState(
-                            type,
-                            content,
-                            genre,
-                            saga,
-                        ),
-                    )
+                    emitOnboardingState(type, content, genre, saga)
                     currentType = type
+                    currentGenre = genre
+                    currentSaga = saga
                 }
                 return
             }
@@ -101,18 +119,13 @@ class OnboardingViewModel
                     if (force || onboardingUseCase.shouldShow(type)) {
                         _onboardingState.emit(OnboardingUiState.Loading)
                         currentType = type
+                        currentGenre = genre
+                        currentSaga = saga
                         onboardingUseCase
                             .getContent(type, genre)
                             .onSuccessAsync { content ->
                                 cachedContent[cacheKey] = content
-                                _onboardingState.emit(
-                                    onboardingStateMapper.buildOnboardingState(
-                                        type,
-                                        content,
-                                        genre,
-                                        saga,
-                                    ),
-                                )
+                                emitOnboardingState(type, content, genre, saga)
                                 onboardingUseCase.markSeen(type)
                             }.onFailureAsync {
                                 _onboardingState.emit(
@@ -122,9 +135,39 @@ class OnboardingViewModel
                                     ),
                                 )
                                 currentType = null
+                                currentGenre = null
+                                currentSaga = null
                             }
                     }
                 }
+        }
+
+        private suspend fun emitOnboardingState(
+            type: OnboardingType,
+            content: OnboardingContent,
+            genre: Genre?,
+            saga: Saga?,
+        ) {
+            _onboardingState.emit(
+                onboardingStateMapper.buildOnboardingState(
+                    type,
+                    content,
+                    genre,
+                    saga,
+                ),
+            )
+        }
+
+        private suspend fun refreshPremiumOnboarding() {
+            val type = currentType ?: return
+            if (type != OnboardingType.PREMIUM_GUIDE) return
+            val genre = currentGenre
+            val saga = currentSaga
+            val cacheKey = "${type.name}_${genre?.name ?: "default"}"
+            val content = cachedContent[cacheKey] ?: return
+            if (onboardingState.value is OnboardingUiState.Content) {
+                emitOnboardingState(type, content, genre, saga)
+            }
         }
 
         fun switchVisualConfig(genre: Genre) {
@@ -137,6 +180,8 @@ class OnboardingViewModel
             viewModelScope.launch {
                 _onboardingState.emit(OnboardingUiState.Idle)
                 currentType = null
+                currentGenre = null
+                currentSaga = null
             }
         }
 
@@ -144,34 +189,71 @@ class OnboardingViewModel
             action: OnboardingAction,
             activity: MainActivity? = null,
         ) {
-            if (currentType == OnboardingType.PREMIUM_GUIDE && BuildConfig.DEBUG) {
-                currentType = null
-                handleAction(OnboardingAction.Dismiss)
-            }
             viewModelScope.launch {
                 when (action) {
                     is OnboardingAction.Subscribe -> {
-                        val disabledState =
-                            billingService.state.value as? BillingService.BillingState.SignatureDisabled
-                        val product = disabledState?.products?.firstOrNull()
-                        val offerToken = product?.subscriptionOfferDetails?.firstOrNull()?.offerToken
-                        if (activity != null && product != null && offerToken != null) {
-                            purchasePremium(activity, product, offerToken)
+                        _isPurchaseInProgress.value = true
+                        billingService.resetPurchaseFlowResult()
+                        val productDetails = resolveSignatureProduct()
+                        val offerToken =
+                            productDetails
+                                ?.subscriptionOfferDetails
+                                ?.firstOrNull()
+                                ?.offerToken
+                        if (activity != null && productDetails != null && offerToken != null) {
+                            val launched =
+                                billingService.purchaseSignature(
+                                    activity,
+                                    productDetails,
+                                    offerToken,
+                                )
+                            if (!launched) {
+                                _isPurchaseInProgress.value = false
+                            }
+                        } else {
+                            val loaded = billingService.loadSignatureProduct(duringPurchase = true)
+                            if (!loaded) {
+                                _isPurchaseInProgress.value = false
+                                return@launch
+                            }
+                            val refreshedProduct = resolveSignatureProduct()
+                            val refreshedOfferToken =
+                                refreshedProduct
+                                    ?.subscriptionOfferDetails
+                                    ?.firstOrNull()
+                                    ?.offerToken
+                            if (activity != null && refreshedProduct != null && refreshedOfferToken != null) {
+                                val launched =
+                                    billingService.purchaseSignature(
+                                        activity,
+                                        refreshedProduct,
+                                        refreshedOfferToken,
+                                    )
+                                if (!launched) {
+                                    _isPurchaseInProgress.value = false
+                                }
+                            } else if (activity != null) {
+                                billingService.loadSignatureProduct(duringPurchase = true)
+                            } else {
+                                _isPurchaseInProgress.value = false
+                            }
                         }
                     }
 
-                    is OnboardingAction.Restore -> {
-                        restorePurchases()
-                    }
-
                     is OnboardingAction.Dismiss -> {
+                        billingService.resetPurchaseFlowResult()
                         _onboardingState.value = OnboardingUiState.Idle
                         currentType = null
+                        currentGenre = null
+                        currentSaga = null
                     }
 
                     is OnboardingAction.DeactivateTutorials -> {
                         settingsUseCase.setShowTutorials(false)
-                        handleAction(OnboardingAction.Dismiss)
+                        _onboardingState.value = OnboardingUiState.Idle
+                        currentType = null
+                        currentGenre = null
+                        currentSaga = null
                     }
 
                     else -> { // UI-internal actions like Next/Skip are handled by PagerState
@@ -180,19 +262,46 @@ class OnboardingViewModel
             }
         }
 
-        fun purchasePremium(
-            activity: MainActivity,
-            productDetails: ProductDetails,
-            offerToken: String,
-        ) {
+        private suspend fun resolveSignatureProduct(): ProductDetails? =
+            when (val currentState = billingService.state.value) {
+                is BillingService.BillingState.SignatureDisabled -> {
+                    currentState.products.firstOrNull()
+                }
+
+                else -> {
+                    billingService.loadSignatureProduct(duringPurchase = false)
+                    withTimeoutOrNull(5.seconds) {
+                        billingService.state
+                            .filter { it is BillingService.BillingState.SignatureDisabled }
+                            .first()
+                    }?.let { state ->
+                        (state as? BillingService.BillingState.SignatureDisabled)?.products?.firstOrNull()
+                    }
+                }
+            }
+
+        fun syncSubscription() {
             viewModelScope.launch {
-                billingService.purchaseSignature(activity, productDetails, offerToken)
+                _isPurchaseInProgress.value = true
+                billingService.resetPurchaseFlowResult()
+                billingService.syncSubscription()
+                _isPurchaseInProgress.value = false
             }
         }
 
-        fun restorePurchases() {
+        fun confirmDebugPurchase() {
             viewModelScope.launch {
-                billingService.loadSignatureProduct()
+                billingService.simulatePurchase(confirmed = true)
             }
+        }
+
+        fun cancelDebugPurchase() {
+            viewModelScope.launch {
+                billingService.simulatePurchase(confirmed = false)
+            }
+        }
+
+        fun dismissPurchaseResult() {
+            billingService.resetPurchaseFlowResult()
         }
     }

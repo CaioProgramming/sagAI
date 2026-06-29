@@ -69,6 +69,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -128,14 +129,12 @@ import com.ilustris.sagai.features.home.data.model.subtitleActAndChapterOrdinals
 import com.ilustris.sagai.features.home.data.model.toInfo
 import com.ilustris.sagai.features.milestone.ui.MilestoneOverlay
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveBackground
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.BackgroundTask
-import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativePhase
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
@@ -149,20 +148,19 @@ import com.ilustris.sagai.features.saga.chat.ui.components.DeleteConfirmationDia
 import com.ilustris.sagai.features.saga.chat.ui.components.MessageOptionsSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
-import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvanceTrigger
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvancePullContainer
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.AdvancePullIndicator
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBackgroundBanner
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
+import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineContentViewCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.components.stylisedText
-import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -170,16 +168,13 @@ import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
-import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
-import com.ilustris.sagai.ui.theme.sagaHighlight
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIcon
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -326,7 +321,7 @@ fun ChatView(
 
                             if (uiState.showAudioTranscript) {
                                 AudioRecordingSheet(
-                                    sagaContent.data.genre?.colorPalette() ?: holographicGradient,
+                                    themeBrushColors(),
                                     onDismiss = {
                                         onAction(ChatUiAction.RequestAudioTranscript(false))
                                     },
@@ -350,7 +345,7 @@ fun ChatView(
                                     Modifier
                                         .fillMaxSize()
                                         .gradientFill(
-                                            Brush.horizontalGradient(themeBrushColors()),
+                                            Brush.horizontalGradient(morphingGradient()),
                                         ),
                             ) {
                                 StarryTextPlaceholder(
@@ -402,6 +397,7 @@ fun ChatContent(
     val content = uiState.sagaContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
+    var advancePullProgress by remember { mutableFloatStateOf(0f) }
 
     var showReactions by remember {
         mutableStateOf<MessageContent?>(null)
@@ -483,7 +479,26 @@ fun ChatContent(
                             ).fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
-                        val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay) = createRefs()
+                        val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay, advancePullIndicator) =
+                            createRefs()
+
+                        val narrativeState = uiState.narrativeUiState
+                        val showAdvancePull =
+                            narrativeState.showAdvanceTrigger &&
+                                uiState.onboardingType == null &&
+                                !uiState.selectionState.isSelectionMode
+                        val advanceIsGenerating =
+                            narrativeState.phase is NarrativePhase.Processing ||
+                                uiState.isGenerating ||
+                                uiState.isLoading
+
+                        LaunchedEffect(showAdvancePull) {
+                            if (!showAdvancePull) {
+                                advancePullProgress = 0f
+                            } else {
+                                listState.animateScrollToItem(0)
+                            }
+                        }
 
                         val onSendMessage: (Boolean) -> Unit =
                             remember(onAction, uiState.editingMessage) {
@@ -546,18 +561,14 @@ fun ChatContent(
                                 { onAction(ChatUiAction.CancelEdit) }
                             }
 
-                        ChatList(
-                            saga = content,
-                            actList = uiState.messages,
-                            mainCharacter = uiState.mainCharacter,
-                            characters = uiState.characters,
-                            wikis = uiState.wikis,
-                            activeGenre = uiState.activeGenre,
-                            flatEvents = uiState.flatEvents,
+                        AdvancePullContainer(
                             listState = listState,
-                            reasoningChunk = uiState.reasoningChunk,
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
+                            enabled = showAdvancePull && !advanceIsGenerating,
+                            isProcessing = showAdvancePull && advanceIsGenerating,
+                            onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
+                            onPullProgress = { progress ->
+                                advancePullProgress = if (showAdvancePull) progress else 0f
+                            },
                             modifier =
                                 Modifier
                                     .constrainAs(messages) {
@@ -568,68 +579,87 @@ fun ChatContent(
                                         width = Dimension.fillToConstraints
                                         height = Dimension.fillToConstraints
                                     },
-                            onMessageAction =
-                                remember(onAction, content) {
-                                    { action ->
-                                        when (action) {
-                                            is MessageAction.PlayAudio -> {
-                                                onAction(ChatUiAction.PlayOrPauseAudio(action.message))
-                                            }
+                        ) {
+                            ChatList(
+                                saga = content,
+                                actList = uiState.messages,
+                                mainCharacter = uiState.mainCharacter,
+                                characters = uiState.characters,
+                                wikis = uiState.wikis,
+                                activeGenre = uiState.activeGenre,
+                                flatEvents = uiState.flatEvents,
+                                listState = listState,
+                                reasoningChunk = uiState.reasoningChunk,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                modifier = Modifier.fillMaxSize(),
+                                onMessageAction =
+                                    remember(onAction, content) {
+                                        { action ->
+                                            when (action) {
+                                                is MessageAction.PlayAudio -> {
+                                                    onAction(ChatUiAction.PlayOrPauseAudio(action.message))
+                                                }
 
-                                            is MessageAction.RetryMessage -> {
-                                                onAction(ChatUiAction.RetryAiResponse(action.message.message))
-                                            }
+                                                is MessageAction.RetryMessage -> {
+                                                    onAction(ChatUiAction.RetryAiResponse(action.message.message))
+                                                }
 
-                                            is MessageAction.ClickCharacter -> {
-                                                action.character?.let {
+                                                is MessageAction.ClickCharacter -> {
+                                                    action.character?.let {
+                                                        onAction(
+                                                            ChatUiAction.OpenCharacter(
+                                                                it.id,
+                                                            ),
+                                                        )
+                                                    }
+                                                }
+
+                                                is MessageAction.RegenerateAudio -> {
+                                                    onAction(ChatUiAction.RegenerateAudio(action.message))
+                                                }
+
+                                                is MessageAction.ClickReactions -> {
+                                                    showReactions = action.message
+                                                }
+
+                                                is MessageAction.RequestNewCharacter -> {
                                                     onAction(
-                                                        ChatUiAction.OpenCharacter(
-                                                            it.id,
+                                                        ChatUiAction.RequestNewCharacter(
+                                                            action.name,
+                                                            action.message,
                                                         ),
                                                     )
                                                 }
-                                            }
 
-                                            is MessageAction.RegenerateAudio -> {
-                                                onAction(ChatUiAction.RegenerateAudio(action.message))
-                                            }
+                                                is MessageAction.ToggleSelection -> {
+                                                    onAction(
+                                                        ChatUiAction.ToggleMessageSelection(
+                                                            action.messageId,
+                                                        ),
+                                                    )
+                                                }
 
-                                            is MessageAction.ClickReactions -> {
-                                                showReactions = action.message
-                                            }
-
-                                            is MessageAction.RequestNewCharacter -> {
-                                                onAction(
-                                                    ChatUiAction.RequestNewCharacter(
-                                                        action.name,
-                                                        action.message,
-                                                    ),
-                                                )
-                                            }
-
-                                            is MessageAction.ToggleSelection -> {
-                                                onAction(ChatUiAction.ToggleMessageSelection(action.messageId))
-                                            }
-
-                                            is MessageAction.LongPress -> {
-                                                val message =
-                                                    content
-                                                        .flatMessages()
-                                                        .find { it.message.id == action.messageId }
-                                                        ?.message
-                                                onAction(ChatUiAction.OpenMessageOptions(message))
+                                                is MessageAction.LongPress -> {
+                                                    val message =
+                                                        content
+                                                            .flatMessages()
+                                                            .find { it.message.id == action.messageId }
+                                                            ?.message
+                                                    onAction(ChatUiAction.OpenMessageOptions(message))
+                                                }
                                             }
                                         }
-                                    }
-                                },
-                            onAction = onAction,
-                            messageEffectsEnabled = uiState.messageEffectsEnabled,
-                            originalBitmap = uiState.originalBitmap,
-                            segmentedBitmap = uiState.segmentedBitmap,
-                            isSelectionMode = uiState.selectionState.isSelectionMode,
-                            selectedMessageIds = uiState.selectionState.selectedMessageIds,
-                            audioPlaybackState = uiState.audioPlaybackState,
-                        )
+                                    },
+                                onAction = onAction,
+                                messageEffectsEnabled = uiState.messageEffectsEnabled,
+                                originalBitmap = uiState.originalBitmap,
+                                segmentedBitmap = uiState.segmentedBitmap,
+                                isSelectionMode = uiState.selectionState.isSelectionMode,
+                                selectedMessageIds = uiState.selectionState.selectedMessageIds,
+                                audioPlaybackState = uiState.audioPlaybackState,
+                            )
+                        }
 
                         Box(
                             Modifier
@@ -640,24 +670,16 @@ fun ChatContent(
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
 
-                        val narrativeState = uiState.narrativeUiState
                         val hasActiveTimeline = content.getCurrentTimeLine() != null
                         val bottomInputState =
                             when {
-                                narrativeState.showAdvanceTrigger &&
-                                    !uiState.selectionState.isSelectionMode -> {
-                                    BottomInputState.Advance(
-                                        action = narrativeState.displayAdvanceAction!!,
-                                        isProcessing = narrativeState.phase is NarrativePhase.Processing,
-                                    )
-                                }
-
                                 narrativeState.showBackgroundBanner &&
                                     !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Background(narrativeState.backgroundTask!!)
                                 }
 
                                 hasActiveTimeline &&
+                                    !showAdvancePull &&
                                     !uiState.selectionState.isSelectionMode -> {
                                     BottomInputState.Chat
                                 }
@@ -684,19 +706,6 @@ fun ChatContent(
                             },
                         ) { inputState ->
                             when (inputState) {
-                                is BottomInputState.Advance -> {
-                                    AdvanceTrigger(
-                                        action = inputState.action,
-                                        genre = saga.genre,
-                                        onAdvance = { onAction(ChatUiAction.AdvanceNarrative) },
-                                        Modifier.fillMaxWidth(),
-                                        isGenerating =
-                                            inputState.isProcessing ||
-                                                uiState.isGenerating ||
-                                                uiState.isLoading,
-                                    )
-                                }
-
                                 is BottomInputState.Background -> {
                                     NarrativeBackgroundBanner(
                                         task = inputState.task,
@@ -745,6 +754,23 @@ fun ChatContent(
                                     Unit
                                 }
                             }
+                        }
+
+                        if (showAdvancePull && narrativeState.displayAdvanceAction != null) {
+                            AdvancePullIndicator(
+                                action = narrativeState.displayAdvanceAction!!,
+                                pullProgress = advancePullProgress,
+                                isGenerating = advanceIsGenerating,
+                                modifier =
+                                    Modifier
+                                        .zIndex(3f)
+                                        .constrainAs(advancePullIndicator) {
+                                            bottom.linkTo(parent.bottom)
+                                            start.linkTo(parent.start)
+                                            end.linkTo(parent.end)
+                                        }.padding(bottom = padding.calculateBottomPadding() + 24.dp)
+                                        .imePadding(),
+                            )
                         }
 
                         AnimatedVisibility(
@@ -852,6 +878,7 @@ fun ChatContent(
                         Column(
                             modifier =
                                 Modifier
+                                    .alpha(alpha)
                                     .background(MaterialTheme.colorScheme.background)
                                     .fillMaxWidth()
                                     .animateContentSize()
@@ -883,12 +910,6 @@ fun ChatContent(
                                                     key = "saga_${saga.id}_spark",
                                                 ),
                                                 animatedVisibilityScope = animatedVisibilityScope,
-                                            ).genreVfx(
-                                                saga.genre,
-                                                isPlaying =
-                                                    uiState.isGenerating ||
-                                                        uiState.isLoading ||
-                                                        genreVfxPulse,
                                             ).size(32.dp)
                                             .clip(CircleShape)
                                             .clickable {
@@ -1211,72 +1232,21 @@ fun SagaHeader(
     saga: Saga,
     modifier: Modifier,
     openSaga: () -> Unit,
-    originalBitmap: Bitmap? = null,
-    segmentedBitmap: Bitmap? = null,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedContentScope,
 ) {
     Column(
         modifier.clickable {
             openSaga()
         },
     ) {
-        if (saga.icon.isEmpty()) {
-            saga.genre.stylisedText(
-                saga.title,
-                modifier =
-                    Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(8.dp),
-            )
-        }
-        AnimatedVisibility(saga.icon.isNotEmpty()) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(400.dp),
-            ) {
-                with(sharedTransitionScope) {
-                    DepthLayout(
-                        imagePath = saga.icon,
-                        modifier = Modifier.fillMaxSize(),
-                        imageModifier =
-                            Modifier
-                                .sharedBounds(
-                                    rememberSharedContentState(key = "saga_${saga.id}_icon"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                ).effectForGenre(saga.genre)
-                                .sagaHighlight(),
-                    ) {
-                        Text(
-                            saga.title,
-                            style =
-                                MaterialTheme.typography.headlineLarge.copy(
-                                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                                ),
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                                    .genreVfx(saga.genre)
-                                    .clickable {
-                                        openSaga()
-                                    },
-                        )
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .background(
-                                    fadedGradientTopAndBottom(),
-                                ),
-                        )
-                    }
-                }
-            }
-        }
+        sagaHeaderComponent(
+            saga,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        openSaga()
+                    },
+        )
 
         var isDescriptionExpanded by remember { mutableStateOf(false) }
         val textColor by animateColorAsState(
@@ -1352,7 +1322,7 @@ fun ChatList(
         reverseLayout = true,
     ) {
         item {
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(150.dp))
         }
 
         reasoningChunk?.let {
@@ -1371,9 +1341,10 @@ fun ChatList(
                                 shadow =
                                     Shadow(
                                         MaterialTheme.colorScheme.primary,
-                                        blurRadius = 10f,
+                                        blurRadius = 5f,
                                     ),
                                 fontWeight = FontWeight.Normal,
+                                brush = Brush.horizontalGradient(morphingGradient()),
                             ),
                         textAlign = TextAlign.Center,
                         overflow = TextOverflow.Ellipsis,
@@ -1382,8 +1353,8 @@ fun ChatList(
                                 .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .alpha(.6f)
-                                .reactiveShimmer(true),
+                                .reactiveShimmer(true)
+                                .alpha(.5f),
                     )
                 }
             }
@@ -1611,10 +1582,6 @@ fun ChatList(
                     Modifier
                         .fillMaxWidth(),
                 openSaga = { onAction(ChatUiAction.OpenSagaDetails) },
-                originalBitmap = originalBitmap,
-                segmentedBitmap = segmentedBitmap,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
             )
         }
     }
@@ -1628,11 +1595,6 @@ private fun ActDisplayData.hasConclusionContent(): Boolean {
 
 private sealed interface BottomInputState {
     data object Chat : BottomInputState
-
-    data class Advance(
-        val action: NarrativeAction,
-        val isProcessing: Boolean = false,
-    ) : BottomInputState
 
     data class Background(
         val task: BackgroundTask,

@@ -14,8 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.components.AutoResizeText
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shimmerize
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
 fun SagaTopBar(
@@ -64,8 +66,11 @@ fun SagaTopBar(
         Column(
             modifier =
                 Modifier
-                    .reactiveShimmer(isLoading, repeatMode = RepeatMode.Restart)
-                    .padding(horizontal = 8.dp)
+                    .reactiveShimmer(
+                        isLoading,
+                        repeatMode = RepeatMode.Restart,
+                        shimmerColors = Color.White.shimmerize(),
+                    ).padding(horizontal = 8.dp)
                     .weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -74,10 +79,7 @@ fun SagaTopBar(
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                        brush =
-                            Brush.verticalGradient(
-                                genre?.colorPalette() ?: holographicGradient,
-                            ),
+                        brush = Brush.verticalGradient(themeBrushColors()),
                         textAlign = TextAlign.Center,
                     ),
                 modifier =
@@ -90,12 +92,11 @@ fun SagaTopBar(
                 Text(
                     subtitle,
                     style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Light,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                             textAlign = TextAlign.Center,
                         ),
+                    modifier = Modifier.alpha(.4f),
                 )
             }
         }

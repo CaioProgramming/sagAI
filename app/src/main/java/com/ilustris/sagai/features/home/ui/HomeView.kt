@@ -105,10 +105,10 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.iridescentGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -158,8 +158,8 @@ fun HomeView(
     }
 
     with(sharedTransitionScope) {
-        AnimatedContent(sagas.isEmpty(), transitionSpec = {
-            fadeIn(tween(700)) togetherWith fadeOut(tween(400))
+        AnimatedContent(isStarting, transitionSpec = {
+            fadeIn(tween(1200)) togetherWith fadeOut(tween(400))
         }) {
             if (it) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -379,7 +379,7 @@ private fun ChatList(
                                     ),
                                 titleStyle =
                                     MaterialTheme.typography.titleLarge,
-                                brush = Brush.linearGradient(holographicGradient),
+                                brush = Brush.linearGradient(themeBrushColors()),
                             )
                         } else {
                             SagaTitle(
@@ -606,10 +606,7 @@ fun ChatCard(
                     Box(
                         modifier =
                             Modifier
-                                .sharedElement(
-                                    rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
-                                    animatedContentScope,
-                                ).dropShadow(CircleShape) {
+                                .dropShadow(CircleShape) {
                                     radius = 5f
                                     color = genreColor
                                     brush = genreBrush

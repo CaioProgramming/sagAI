@@ -66,7 +66,6 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.morphingGradient
@@ -119,7 +118,7 @@ fun NewSagaView(
                 Box(
                     modifier =
                         Modifier
-                            .background(fadedGradientTopAndBottom())
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = .3f))
                             .fillMaxSize(),
                 )
 

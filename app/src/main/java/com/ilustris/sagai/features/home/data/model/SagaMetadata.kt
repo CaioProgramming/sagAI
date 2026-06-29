@@ -10,6 +10,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.findByDisplayName
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
@@ -277,11 +278,7 @@ fun SagaMetadata.chapterNumber(chapterId: Int?): Int =
 
 fun SagaMetadata.findCharacter(characterId: Int?) = if (characterId == null) null else characters.find { it.id == characterId }
 
-fun SagaMetadata.findCharacter(name: String?) =
-    characters.find {
-        it.name.equals(name, true) || it.lastName?.equals(name, true) == true ||
-            it.nicknames?.any { nick -> nick.equals(name, true) } == true
-    }
+fun SagaMetadata.findCharacter(name: String?) = characters.findByDisplayName(name)
 
 fun SagaMetadata.historySummary() =
     acts.joinToString(";\n---\n") {

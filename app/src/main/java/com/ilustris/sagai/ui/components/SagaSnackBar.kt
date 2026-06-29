@@ -23,15 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 
 data class SagaSnackBarMessage(
@@ -85,11 +83,10 @@ fun SagaSnackBar(
                                 color = mainColor.darker(),
                                 offset = DpOffset.Zero,
                             ),
-                    )
-                    .clip(shape)
+                    ).clip(shape)
                     .border(
                         1.dp,
-                        genre?.gradient() ?: Brush.verticalGradient(holographicGradient),
+                        sagaBrush(),
                         shape,
                     ).background(mainColor, shape)
                     .fillMaxWidth()

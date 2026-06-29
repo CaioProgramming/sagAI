@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.ai.services
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
-import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,22 +27,39 @@ class GenreConfigService
                 baseConfig.variations?.get(variationId) ?: return@executeRequest baseConfig
 
             baseConfig.copy(
-                artStyle = variation.artStyle ?: baseConfig.artStyle,
-                renderingInstructions =
-                    variation.renderingInstructions
-                        ?: baseConfig.renderingInstructions,
-                appearanceGuidelines =
-                    variation.appearanceGuidelines
-                        ?: baseConfig.appearanceGuidelines,
-                criticalRules = variation.criticalRules ?: baseConfig.criticalRules,
+                aesthetic = variation.aesthetic?.takeIf { it.isNotBlank() } ?: baseConfig.aesthetic,
             )
         }.getSuccess()!!
 
+        suspend fun aesthetic(genre: Genre): String = getGenreConfig(genre).aesthetic
+
+        suspend fun formatGenreAesthetics(): String =
+            Genre.entries
+                .map {
+                    "${it.name}(${aesthetic(it)})"
+                }.joinToString()
+
         suspend fun conversationInstructions(genre: Genre) =
             promptService
-                .fetchBlueprintData(
+                .buildSplitBlueprint(
                     "${genre.name.lowercase()}_conversation_blueprint",
-                ).asMap()
+                ).renderInstructions()
+
+        suspend fun appearanceInstructions(genre: Genre) =
+            promptService
+                .buildSplitBlueprint(
+                    "${genre.name.lowercase()}_appearance_blueprint",
+                ).renderInstructions()
+
+        suspend fun buildAesthetic(genre: Genre) = mapOf("ThemeAesthetic" to getGenreConfig(genre).aesthetic)
+
+        suspend fun renderingInstructions(genre: Genre) =
+            buildAesthetic(genre).plus(
+                promptService
+                    .buildSplitBlueprint(
+                        "${genre.name.lowercase()}_rendering_blueprint",
+                    ).renderInstructions(),
+            )
 
         @Deprecated(
             message = "Use conversationInstructions() merged into SplitPrompt via mergeInstructions()",

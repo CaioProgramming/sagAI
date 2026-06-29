@@ -27,8 +27,8 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
 fun TrophyPinItem(
@@ -60,8 +60,7 @@ fun TrophyPinItem(
                             radius = 15f
                             color = genreColor
                             spread = 5f
-                        }
-                        .border(1.dp, borderBrush, CircleShape)
+                        }.border(1.dp, borderBrush, CircleShape)
                         .clip(CircleShape)
                         .background(genreColor.darker(.2f), CircleShape),
             ) {
@@ -98,6 +97,7 @@ fun TrophyOverflowPinItem(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(avatarSize + 8.dp),
     ) {
+        val themeBrush = themeBrushColors()
         Box(
             contentAlignment = Alignment.Center,
             modifier =
@@ -107,15 +107,14 @@ fun TrophyOverflowPinItem(
                         radius = 8f
                         brush =
                             Brush
-                                .linearGradient(holographicGradient)
+                                .linearGradient(themeBrush)
                         spread = 4f
-                    }
-                    .clip(CircleShape)
+                    }.clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .border(
                         1.dp,
                         Brush
-                            .linearGradient(holographicGradient),
+                            .linearGradient(themeBrush),
                         CircleShape,
                     ),
         ) {

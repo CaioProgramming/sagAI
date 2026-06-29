@@ -101,6 +101,7 @@ data class SacredBindingArgs(
 data class CosmicLibraryArgs(
     val userPrompt: String,
     val themes: String,
+    val genreAesthetics: String = "",
 )
 
 @Suppress("ktlint:standard:max-line-length")
@@ -278,6 +279,7 @@ object NewSagaPrompts {
         promptService: PromptService,
         sagaDraft: SagaDraft,
         characterInfo: CharacterInfo,
+        themeStyle: String = "",
     ): SplitPrompt {
         val args =
             SacredBindingArgs(
@@ -285,7 +287,7 @@ object NewSagaPrompts {
                 sagaDraft = sagaDraft.toAINormalize(),
                 characterInfo = characterInfo.toAINormalize(),
                 genreName = sagaDraft.genre.name,
-                themeStyle = emptyString(),
+                themeStyle = themeStyle,
             )
         return promptService.buildSplitBlueprint(SACRED_BINDING_BLUEPRINT, args)
     }

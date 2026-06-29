@@ -33,7 +33,10 @@ fun sortCharactersContentByMessageCount(
 
 fun List<*>.toAINormalize(excludingFields: List<String> = emptyList()): String = normalizetoAIItems(excludingFields)
 
-fun List<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): String {
+fun List<*>.normalizetoAIItems(
+    excludingFields: List<String> = emptyList(),
+    describeName: Boolean = true,
+): String {
     if (isEmpty()) return ""
     val firstItem = first()
 
@@ -45,10 +48,11 @@ fun List<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): Str
         filterNotNull()
             .mapIndexed { index, item ->
                 val normalizedItem = item.toAINormalize(excludingFields)
+                val className = if (describeName) item.javaClass.simpleName else ""
                 if (normalizedItem.isNotBlank()) {
-                    "${item.javaClass.simpleName}[$index]: \n${normalizedItem.prependIndent("    ")}"
+                    "$className[$index]: \n${normalizedItem.prependIndent("    ")}"
                 } else {
-                    "${item.javaClass.simpleName}[$index]: (empty)"
+                    "$className[$index]: (empty)"
                 }
             }.joinToString("\n")
     }

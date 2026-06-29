@@ -43,12 +43,74 @@ data class SplitPrompt(
         )
 }
 
+/**
+ * Deep-merges instruction bucket maps for the Split & Merge architecture.
+ *
+ * Shallow [putAll] drops earlier content when keys collide (`Persona`, `Directives`, `rules`, etc.),
+ * which breaks layering task blueprints with genre/act conversation styles.
+ */
+fun mergeInstructionBuckets(
+    base: Map<String, Any>,
+    vararg extras: Map<String, Any>,
+): Map<String, Any> = extras.fold(base) { acc, extra -> mergeInstructionBucketPair(acc, extra) }
+
+internal fun mergeInstructionBucketPair(
+    base: Map<String, Any>,
+    extra: Map<String, Any>,
+): Map<String, Any> {
+    if (extra.isEmpty()) return base
+    if (base.isEmpty()) return extra
+
+    return buildMap {
+        (base.keys + extra.keys).forEach { key ->
+            put(key, mergeInstructionBucketValue(base[key], extra[key]))
+        }
+    }
+}
+
+private fun mergeInstructionBucketValue(
+    left: Any?,
+    right: Any?,
+): Any =
+    when {
+        left == null -> {
+            right!!
+        }
+
+        right == null -> {
+            left
+        }
+
+        left is String && right is String -> {
+            mergeInstructionText(left, right)
+        }
+
+        left is Map<*, *> && right is Map<*, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            mergeInstructionBucketPair(left as Map<String, Any>, right as Map<String, Any>)
+        }
+
+        left is List<*> && right is List<*> -> {
+            left + right
+        }
+
+        else -> {
+            mergeInstructionText(left.toString(), right.toString())
+        }
+    }
+
+private fun mergeInstructionText(
+    base: String,
+    extra: String,
+): String =
+    when {
+        base.isBlank() -> extra.trim()
+        extra.isBlank() -> base.trim()
+        else -> "${base.trim()}\n\n${extra.trim()}"
+    }
+
 /** Merges extra instruction buckets into [instructionBuckets] for the Split & Merge API. */
 fun SplitPrompt.mergeInstructions(vararg extras: Map<String, Any>): SplitPrompt =
     copy(
-        instructionBuckets =
-            buildMap {
-                putAll(renderInstructions())
-                extras.forEach { putAll(it) }
-            },
+        instructionBuckets = mergeInstructionBuckets(renderInstructions(), *extras),
     )

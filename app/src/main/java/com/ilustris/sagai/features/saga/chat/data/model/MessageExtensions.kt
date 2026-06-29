@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 fun MessageContent.joinMessage(showType: Boolean = false): Pair<String, String> {
     val key =
@@ -30,6 +31,8 @@ fun List<MessageContent>.filterCharacterMessages(character: Character?) =
 fun List<MessageContent>.filterMessageType(type: SenderType) = filter { it.message.senderType == type }
 
 fun List<MessageContent>.filterEmotionalTone(tone: EmotionalTone) = filter { it.message.emotionalTone == tone }
+
+fun List<TimelineContent>.filterTimelineEmotionalTone(tone: EmotionalTone) = filter { it.data.emotionalTone == tone }
 
 fun List<MessageContent>.filterMention(name: String) =
     filter {
@@ -64,5 +67,12 @@ fun List<MessageContent>.rankEmotionalTone() =
     EmotionalTone.entries
         .map {
             it to this.filterEmotionalTone(it)
+        }.filter { it.second.isNotEmpty() }
+        .sortedByDescending { it.second.size }
+
+fun List<TimelineContent>.rankTimelineEmotionalTone() =
+    EmotionalTone.entries
+        .map {
+            it to this.filterTimelineEmotionalTone(it)
         }.filter { it.second.isNotEmpty() }
         .sortedByDescending { it.second.size }

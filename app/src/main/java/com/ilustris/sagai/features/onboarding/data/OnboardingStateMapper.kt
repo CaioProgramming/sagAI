@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.onboarding.data
 
 import androidx.compose.runtime.Composable
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.services.BillingService
@@ -214,8 +215,12 @@ class OnboardingStateMapper
                                             ?.pricingPhases
                                             ?.pricingPhaseList
                                             ?.firstOrNull()
-                                            ?.formattedPrice ?: ""
-                                    "${stringResourceHelper.getString(R.string.subscribe)} $price"
+                                            ?.formattedPrice
+                                    if (price.isNullOrBlank() && BuildConfig.DEBUG) {
+                                        stringResourceHelper.getString(R.string.subscribe_debug_fallback)
+                                    } else {
+                                        "${stringResourceHelper.getString(R.string.subscribe)} ${price.orEmpty()}"
+                                    }
                                 }
                             }
                         OnboardingButton(text, action)
@@ -231,10 +236,8 @@ class OnboardingStateMapper
                         when (type) {
                             OnboardingType.PREMIUM_GUIDE -> {
                                 OnboardingButton(
-                                    stringResourceHelper.getString(
-                                        R.string.restore_purchases,
-                                    ),
-                                    OnboardingAction.Restore,
+                                    stringResourceHelper.getString(R.string.premium_not_now),
+                                    OnboardingAction.Dismiss,
                                 )
                             }
 

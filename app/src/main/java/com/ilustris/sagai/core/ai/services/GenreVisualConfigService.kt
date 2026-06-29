@@ -43,4 +43,7 @@ class GenreVisualConfigService(
         }
         return config
     }
+
+    /** Returns an in-memory cached config without fetching; null if not yet loaded. */
+    fun peekVisualConfig(genre: Genre?): GenreVisualConfig? = genre?.let { cache[it] }
 }
