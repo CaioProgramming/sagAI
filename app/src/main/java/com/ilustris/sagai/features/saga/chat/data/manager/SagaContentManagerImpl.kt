@@ -176,6 +176,14 @@ class SagaContentManagerImpl
             executeNarrativeAction(action, isRetry = false)
         }
 
+        override suspend fun completeGameplayOnboarding(saga: SagaMetadata?) {
+            requestNarrativeProgression(isRetry = false, fallbackSaga = saga, force = false)
+            isOnboardingVisible.value = false
+            if (narrativeCoordinator.uiState.value.pendingAction == NarrativeAction.CreateAct) {
+                advanceNarrative()
+            }
+    }
+
         private fun handleNarrativeActionFailure(
             action: NarrativeAction,
             canRetry: Boolean = true,

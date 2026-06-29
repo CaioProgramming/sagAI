@@ -8,5 +8,5 @@ data class AIError(
     @SerializedName("message")
     val message: String,
     @SerializedName("type")
-    val type: SafeGuard,
+    val type: SafeGuard?,
 )

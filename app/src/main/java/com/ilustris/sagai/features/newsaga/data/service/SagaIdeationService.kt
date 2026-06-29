@@ -31,10 +31,15 @@ class SagaIdeationService
         ): Flow<StreamingState<LibraryPitchesResponse?>> {
             val availableGenres = Genre.entries - excludedGenres.toSet()
             val themes = availableGenres.joinToString(", ") { it.name }
+            val genreAesthetics = genreConfigService.formatGenreAesthetics()
             val splitPrompt =
                 promptService.buildSplitBlueprint(
                     NewSagaPrompts.COSMIC_LIBRARY_BLUEPRINT,
-                    CosmicLibraryArgs(userPrompt = userPrompt, themes = themes),
+                    CosmicLibraryArgs(
+                        userPrompt = userPrompt,
+                        themes = genreConfigService.formatGenreAesthetics(),
+                        genreAesthetics = genreAesthetics,
+                    ),
                 )
             return gemmaClient.generateStreaming<LibraryPitchesResponse>(
                 promptSplit = splitPrompt,
@@ -47,10 +52,13 @@ class SagaIdeationService
         suspend fun suggestUniverseEchoes() =
             executeRequest {
                 val themes = Genre.entries.joinToString(", ") { it.name }
+                val genreAesthetics = genreConfigService.formatGenreAesthetics()
                 val splitPrompt =
                     promptService.buildSplitBlueprint(
                         NewSagaPrompts.UNIVERSE_ECHOES_BLUEPRINT,
-                        mapOf("themes" to themes),
+                        mapOf(
+                            "themes" to genreAesthetics,
+                        ),
                     )
                 gemmaClient.generate<UniverseSuggestions>(
                     promptSplit = splitPrompt,
@@ -65,8 +73,12 @@ class SagaIdeationService
         ): Flow<StreamingState<SacredContract?>> {
             val splitPrompt =
                 NewSagaPrompts
-                    .sacredBindingPrompt(promptService, sagaDraft, characterInfo)
-                    .mergeInstructions(genreConfigService.conversationInstructions(sagaDraft.genre))
+                    .sacredBindingPrompt(
+                        promptService,
+                        sagaDraft,
+                        characterInfo,
+                        themeStyle = genreConfigService.aesthetic(sagaDraft.genre),
+                    ).mergeInstructions(genreConfigService.conversationInstructions(sagaDraft.genre))
             return gemmaClient.generateStreaming<SacredContract>(
                 promptSplit = splitPrompt,
                 requirement = ModelRequirement.HIGH,

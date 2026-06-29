@@ -9,6 +9,8 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.findByDisplayName
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
@@ -80,7 +82,7 @@ fun SagaContent.toSagaInfo() =
         genre = data.genre,
         variationId = data.variationId,
         icon = data.icon,
-)
+    )
 
 fun SagaContent.historySummary() =
     acts.joinToString(";\n---\n") {
@@ -114,48 +116,31 @@ fun SagaContent.findAct(actId: Int?) = acts.find { it.data.id == actId }
 
 fun SagaContent.findCharacter(characterId: Int?) = characters.find { it.data.id == characterId }
 
+/**
+ * Exact identity lookup for duplicate checks. Matches only when [query] equals a character's
+ * full name (name + lastName) or one of their nicknames — shared surnames alone do not match.
+ */
+fun SagaContent.findCharacterStrict(query: String?): CharacterContent? {
+    if (query.isNullOrBlank()) return null
+    val normalizedQuery = query.trim().lowercase()
+
+    return characters.find { character ->
+        character.data.fullName().lowercase() == normalizedQuery ||
+            character.data.nicknames
+                .orEmpty()
+                .any { it.trim().lowercase() == normalizedQuery }
+    }
+}
+
+fun SagaContent.hasConflictingCharacterIdentity(character: Character): Boolean {
+    if (findCharacterStrict(character.fullName()) != null) return true
+    return character.nicknames.orEmpty().any { findCharacterStrict(it) != null }
+}
+
 fun SagaContent.findCharacter(name: String?): CharacterContent? {
     if (name == null) return null
-    val normalizedInput = name.lowercase().trim()
-    val normalizedInputTokens = normalizedInput.split(" ").filter { it.isNotBlank() }
-
-    // Helper to get all name tokens (name + lastName + nicknames)
-    fun CharacterContent.getAllNameTokens(): List<String> {
-        val tokens = mutableListOf<String>()
-        tokens.addAll(data.name.lowercase().split(" "))
-        data.lastName
-            ?.lowercase()
-            ?.split(" ")
-            ?.let { tokens.addAll(it) }
-        data.nicknames?.forEach { nickname -> tokens.addAll(nickname.lowercase().split(" ")) }
-        return tokens.filter { it.isNotBlank() }
-    }
-
-    // Helper to get full name (name + lastName)
-    fun CharacterContent.getFullName(): String =
-        buildString {
-            append(data.name.lowercase().trim())
-            data.lastName?.takeIf { it.isNotBlank() }?.let {
-                append(" ")
-                append(it.lowercase().trim())
-            }
-        }
-
-    // 1. Try exact full name match first (name + lastName)
-    characters.find { it.getFullName() == normalizedInput }?.let { return it }
-
-    // 2. Try to find a character where all input tokens match (e.g., "John Wick" matches name="John" lastName="Wick")
-    characters
-        .find { characterContent ->
-            val allTokens = characterContent.getAllNameTokens()
-            normalizedInputTokens.all { inputToken -> allTokens.contains(inputToken) }
-        }?.let { return it }
-
-    // 3. Fall back to finding first character where any input token matches
-    return characters.find { characterContent ->
-        val allTokens = characterContent.getAllNameTokens()
-        normalizedInputTokens.any { inputToken -> allTokens.contains(inputToken) }
-    }
+    val character = characters.map { it.data }.findByDisplayName(name) ?: return null
+    return characters.find { it.data.id == character.id }
 }
 
 fun SagaContent.findTimelineChapter(timeline: Timeline) = flatChapters().find { it.data.id == timeline.chapterId }
@@ -228,13 +213,7 @@ fun SagaContent.rankByHour() =
             date.get(Calendar.HOUR_OF_DAY)
         }.toSortedMap()
 
-fun SagaContent.emotionalSummary() =
-    buildString {
-        acts.forEach {
-            appendLine(it.emotionalSummary())
-            appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
-        }
-    }
+fun SagaContent.emotionalSummary() = acts.joinToString { it.emotionalSummary() }
 
 @Suppress("ktlint:standard:max-line-length")
 fun SagaContent.generateCharacterRelationsSummary(filterNames: List<String>? = null): String {

@@ -30,6 +30,8 @@ interface SagaContentManager {
 
     suspend fun advanceNarrative()
 
+    suspend fun completeGameplayOnboarding(saga: com.ilustris.sagai.features.home.data.model.SagaMetadata?)
+
     suspend fun loadSaga(sagaId: String)
 
     suspend fun generateCharacter(

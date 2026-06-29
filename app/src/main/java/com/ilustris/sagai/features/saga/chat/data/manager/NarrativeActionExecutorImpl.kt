@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.home.data.model.SagaEnding
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecutor
@@ -21,9 +22,11 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class NarrativeActionExecutorImpl
     @Inject
@@ -162,11 +165,15 @@ class NarrativeActionExecutorImpl
                     )
                 }.collect { state ->
                     when (state) {
-                        is StreamingState.Reasoning -> environment.onReasoningChunk(state.chunk)
+                        is StreamingState.Reasoning -> {
+                            environment.onReasoningChunk(state.chunk)
+                        }
+
                         is StreamingState.Success -> {
                             finalAct = state.data
                             environment.onReasoningChunk(null)
                         }
+
                         is StreamingState.Error -> {
                             environment.onReasoningChunk(null)
                             throw Exception(state.message)
@@ -417,46 +424,44 @@ class NarrativeActionExecutorImpl
                     ),
                 )
             } else {
-                environment.dismissMilestone()
                 val fullSaga =
                     sagaHistoryUseCase.getSagaById(sagaId).first()
                         ?: error("Saga not found")
-                val contextString = "Concluding your legend and weaving the final threads of fate..."
-                var generated: GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>? =
-                    null
-                reasoningSynthesizerService
-                    .synthesizeReasoning(
-                        sourceFlow = sagaHistoryUseCase.generateSagaEndingStream(fullSaga),
-                        context = contextString,
-                        genre = saga.data.genre,
-                    ).collect { state ->
-                        when (state) {
-                            is StreamingState.Reasoning -> {
-                                environment.onReasoningChunk(state.chunk)
+                var generated: GeneratedContent<SagaEnding>? = null
+
+                sagaHistoryUseCase.generateSagaEndingStream(fullSaga).collect { state ->
+                    when (state) {
+                        is StreamingState.Reasoning -> {
+                            environment.onReasoningChunk(state.chunk)
+                        }
+
+                        is StreamingState.Success -> {
+                            environment.onReasoningChunk(state.data?.finalMessage)
+
+                            state.data?.data?.let { ending ->
+                                sagaHistoryUseCase.updateSaga(
+                                    saga.data.copy(
+                                        endMessage = ending.endingMessage,
+                                        isEnded = true,
+                                        endedAt = System.currentTimeMillis(),
+                                        emotionalProfile = ending.emotionalProfile,
+                                        emotionalReview = ending.emotionalProfile.emotionalContent,
+                                    ),
+                                )
                             }
 
-                            is StreamingState.Success -> {
-                                generated =
-                                    state.data as? GeneratedContent<com.ilustris.sagai.features.home.data.model.SagaEnding>
-                                environment.onReasoningChunk(null)
-                            }
+                            delay(1.seconds)
+                            environment.onReasoningChunk(null)
+                            environment.dismissMilestone()
+                        }
 
-                            is StreamingState.Error -> {
-                                environment.onReasoningChunk(null)
-                                error(state.message)
-                            }
+                        is StreamingState.Error -> {
+                            environment.onReasoningChunk(null)
+                            environment.dismissMilestone()
+                            error(state.message)
                         }
                     }
-                val ending = generated?.data ?: error("Failed to generate ending")
-                sagaHistoryUseCase.updateSaga(
-                    saga.data.copy(
-                        endMessage = ending.endingMessage,
-                        isEnded = true,
-                        endedAt = System.currentTimeMillis(),
-                        emotionalProfile = ending.emotionalProfile,
-                        emotionalReview = ending.emotionalProfile.emotionalContent,
-                    ),
-                )
+                }
             }
         }
     }

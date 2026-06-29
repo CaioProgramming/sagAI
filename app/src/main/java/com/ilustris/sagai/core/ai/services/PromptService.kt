@@ -5,6 +5,8 @@ import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.PromptDirectives
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.asMap
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import timber.log.Timber
 import javax.inject.Inject
@@ -268,13 +270,24 @@ class PromptServiceImpl
 
             // Promote legacy fields into named buckets
             if (blueprint.role.isNotBlank()) {
-                buckets.putAll(mapOf("Persona" to blueprint.role))
+                buckets["Persona"] = blueprint.role
             }
             if (blueprint.directives.isNotEmpty()) {
-                buckets.putAll(blueprint.directives.asMap())
+                buckets["Directives"] =
+                    buildMap {
+                        putAll(blueprint.directives)
+                    }.toAINormalize()
             }
+
+            if (blueprint.examples.isNotEmpty()) {
+                buckets["examples"] = blueprint.examples.normalizetoAIItems(describeName = false)
+            }
+
             if (blueprint.rules.isNotEmpty()) {
-                buckets.putAll(blueprint.rules.asMap())
+                buckets["rules"] =
+                    buildMap {
+                        putAll(blueprint.rules)
+                    }.toAINormalize()
             }
 
             // Merge extra instruction buckets defined in Remote Config (these can override legacy ones)
@@ -286,17 +299,7 @@ class PromptServiceImpl
             // --- Build processed template (dynamic — placeholder substitution applied) ---
             val processedTemplate =
                 buildString {
-                    if (blueprint.examples.isNotEmpty()) {
-                        appendLine("# FEW-SHOT EXAMPLES")
-                        blueprint.examples.forEachIndexed { index, example ->
-                            appendLine("## EXAMPLE ${index + 1}")
-                            appendLine(example.toJsonFormat())
-                        }
-                        appendLine()
-                    }
-
                     if (blueprint.template.isNotBlank()) {
-                        appendLine("# TASK DEFINITION")
                         appendLine(
                             buildPrompt(
                                 blueprint.template,

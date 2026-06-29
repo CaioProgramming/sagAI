@@ -3,9 +3,8 @@ package com.ilustris.sagai.core.ai
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.model.GeneratedContent
-import com.ilustris.sagai.core.ai.model.mergeInstructions
-import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.model.ImageType
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -39,10 +38,7 @@ interface ImagenClient {
         variationId: String? = null,
     ): Flow<StreamingState<GeneratedContent<Bitmap>>>
 
-    suspend fun generateImage(
-        prompt: String,
-        aspectRatio: String?,
-    ): RequestResult<Bitmap>
+    suspend fun generateImage(prompt: String): RequestResult<Bitmap>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -64,10 +60,7 @@ class ImagenClientImpl
             private const val TAG = "🖼️ Image Generation"
         }
 
-        override suspend fun generateImage(
-            prompt: String,
-            aspectRatio: String?,
-        ): RequestResult<Bitmap> = imageGenerator.generateImageRequest(prompt, aspectRatio)
+        override suspend fun generateImage(prompt: String): RequestResult<Bitmap> = imageGenerator.generateImageRequest(prompt)
 
         override suspend fun generateIntegratedImageStream(
             genre: Genre,
@@ -82,14 +75,17 @@ class ImagenClientImpl
                     val imageConfig = imageConfigService.getImageConfig()
 
                     val prompt =
-                        ImagePrompts.buildUnifiedImagePrompt(
-                            promptService,
-                            genre,
-                            genreConfig,
-                            imageConfig,
-                            imageType,
-                            context,
-                        )
+                        ImagePrompts
+                            .buildUnifiedImagePrompt(
+                                promptService,
+                                genre,
+                                genreConfig,
+                                imageConfig,
+                                imageType,
+                                context,
+                            ).mergeInstructions(
+                                genreConfigService.renderingInstructions(genre),
+                            )
 
                     var finalStringPrompt: String? = null
                     val sourceStream =
@@ -122,31 +118,10 @@ class ImagenClientImpl
                         }
 
                     if (finalStringPrompt != null) {
-                        val typeConfig = imageConfig.typeConfigs[imageType.name]
-
-                        val finalAspectRatio =
-                            when (imageType) {
-                                ImageType.ICON -> {
-                                    genreConfig.iconAspectRatio
-                                        ?: typeConfig?.aspectRatio
-                                }
-
-                                ImageType.COVER -> {
-                                    genreConfig.coverAspectRatio
-                                        ?: typeConfig?.aspectRatio
-                                }
-                            } ?: ""
-
-                        val referenceList =
-                            imageReference?.let { listOf(ImageReference(it.first, it.second)) }
-                                ?: emptyList()
-
                         emit(StreamingState.Reasoning("\nRendering scene..."))
                         val generatedImage =
                             imageGenerator.generateImage(
                                 prompt = finalStringPrompt!!,
-                                references = referenceList,
-                                aspectRatio = finalAspectRatio,
                             )
 
                         if (generatedImage != null) {
@@ -183,14 +158,17 @@ class ImagenClientImpl
                 val imageConfig = imageConfigService.getImageConfig()
 
                 val prompt =
-                    ImagePrompts.buildUnifiedImagePrompt(
-                        promptService,
-                        genre,
-                        genreConfig,
-                        imageConfig,
-                        imageType,
-                        context,
-                    )
+                    ImagePrompts
+                        .buildUnifiedImagePrompt(
+                            promptService,
+                            genre,
+                            genreConfig,
+                            imageConfig,
+                            imageType,
+                            context,
+                        ).mergeInstructions(
+                            genreConfigService.renderingInstructions(genre),
+                        )
 
                 val finalStringPrompt =
                     gemmaClient.generate<String>(
@@ -200,26 +178,8 @@ class ImagenClientImpl
                         requireTranslation = false,
                     )!!
 
-                val typeConfig = imageConfig.typeConfigs[imageType.name]
-                val finalAspectRatio =
-                    when (imageType) {
-                        ImageType.ICON -> {
-                            typeConfig?.aspectRatio
-                        }
-
-                        ImageType.COVER -> {
-                            typeConfig?.aspectRatio
-                        }
-                    } ?: ""
-
-                val referenceList =
-                    imageReference?.let { listOf(ImageReference(it.first, it.second)) }
-                        ?: emptyList()
-
                 imageGenerator.generateImage(
                     prompt = finalStringPrompt,
-                    references = referenceList,
-                    aspectRatio = finalAspectRatio,
                 )!!
             }
     }

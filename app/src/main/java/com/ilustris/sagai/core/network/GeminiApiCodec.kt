@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.ilustris.sagai.core.ai.model.GeminiCandidate
 import com.ilustris.sagai.core.ai.model.GeminiContent
+import com.ilustris.sagai.core.ai.model.GeminiCountTokensResponse
 import com.ilustris.sagai.core.ai.model.GeminiError
 import com.ilustris.sagai.core.ai.model.GeminiErrorDetail
 import com.ilustris.sagai.core.ai.model.GeminiGenerationConfig
@@ -39,6 +40,38 @@ object GeminiApiCodec {
         return root.toString()
     }
 
+    /**
+     * countTokens accepts either top-level [contents] or a nested [generateContentRequest].
+     * System instruction and generation config must live inside that wrapper — not at the root.
+     *
+     * @see <a href="https://ai.google.dev/api/tokens">Gemini countTokens API</a>
+     */
+    fun encodeCountTokensRequest(
+        model: String,
+        request: GeminiRequest,
+    ): RequestBody = encodeCountTokensRequestJson(model, request).toRequestBody(JSON_MEDIA)
+
+    fun encodeCountTokensRequestJson(
+        model: String,
+        request: GeminiRequest,
+    ): String {
+        val normalizedModel = if (model.startsWith("models/")) model else "models/$model"
+        val generateContentRequest = JsonObject()
+        generateContentRequest.addProperty("model", normalizedModel)
+        generateContentRequest.add("contents", encodeContents(request.contents))
+        generateContentRequest.add(
+            "generationConfig",
+            encodeGenerationConfig(request.generationConfig),
+        )
+        request.systemInstruction?.let {
+            generateContentRequest.add("system_instruction", encodeContent(it))
+        }
+        return JsonObject()
+            .also { root ->
+                root.add("generateContentRequest", generateContentRequest)
+            }.toString()
+    }
+
     fun decodeErrorResponse(json: String): com.ilustris.sagai.core.ai.model.GeminiErrorResponse {
         if (json.isBlank()) return com.ilustris.sagai.core.ai.model.GeminiErrorResponse(error = null)
         val root = JsonParser.parseString(json).asJsonObject
@@ -54,6 +87,20 @@ object GeminiApiCodec {
             candidates = root.optJsonArray("candidates")?.let(::decodeCandidates),
             usageMetadata = root.optJsonObject("usageMetadata")?.let(::decodeUsageMetadata),
             error = root.optJsonObject("error")?.let(::decodeError),
+        )
+    }
+
+    fun decodeCountTokensResponse(json: String): GeminiCountTokensResponse {
+        if (json.isBlank()) {
+            return GeminiCountTokensResponse(
+                totalTokens = null,
+                totalBillableCharacters = null,
+            )
+        }
+        val root = JsonParser.parseString(json).asJsonObject
+        return GeminiCountTokensResponse(
+            totalTokens = root.optInt("totalTokens"),
+            totalBillableCharacters = root.optInt("totalBillableCharacters"),
         )
     }
 

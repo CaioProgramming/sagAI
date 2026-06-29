@@ -41,8 +41,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.onboarding.data.OnboardingAsset
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -146,20 +146,21 @@ fun MorphingAvatarBackground(icons: List<String>) {
                     .fillMaxSize()
                     .gradientFill(
                         Brush.verticalGradient(
-                            holographicGradient,
+                            themeBrushColors(),
                         ),
                     ),
         )
         AnimatedContent(fixedCharacter, transitionSpec = {
             scaleIn() + fadeIn() togetherWith scaleOut()
         }, modifier = Modifier.clip(CircleShape)) {
+            val brushColors = themeBrushColors()
             AsyncImage(
                 it,
                 contentDescription = null,
                 modifier =
                     Modifier
                         .dropShadow(CircleShape) {
-                            this.brush = Brush.verticalGradient(holographicGradient)
+                            this.brush = Brush.verticalGradient(brushColors)
                             this.radius = 15f
                             this.spread = 10f
                         }.background(MaterialTheme.colorScheme.background, CircleShape)

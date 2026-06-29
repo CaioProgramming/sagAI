@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
@@ -55,12 +56,10 @@ class GetInputSuggestionsUseCaseImpl
 
                 gemmaClient
                     .generate<SuggestionGen>(
-                        prompt.copy(
-                            instructionBuckets =
-                                prompt.renderInstructions().plus(
-                                    genreConfigService.conversationInstructions(saga.data.genre),
-                                ),
-                        ),
+                        promptSplit =
+                            prompt.mergeInstructions(
+                                genreConfigService.conversationInstructions(saga.data.genre),
+                            ),
                         requirement = ModelRequirement.MINIMAL,
                     )!!
                     .suggestions

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.network
 
+import com.ilustris.sagai.core.ai.model.GeminiCountTokensResponse
 import com.ilustris.sagai.core.ai.model.GeminiRequest
 import com.ilustris.sagai.core.ai.model.GeminiResponse
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,29 @@ class GeminiApiClient
                     throw GeminiHttpException(response.code, errBody)
                 }
                 body
+            }
+
+        suspend fun countTokens(
+            model: String,
+            apiKey: String,
+            request: GeminiRequest,
+        ): GeminiCountTokensResponse =
+            withContext(Dispatchers.IO) {
+                val httpRequest =
+                    Request
+                        .Builder()
+                        .url("$BASE_URL/models/$model:countTokens")
+                        .header("x-goog-api-key", apiKey)
+                        .post(GeminiApiCodec.encodeCountTokensRequest(model, request))
+                        .build()
+
+                okHttpClient.newCall(httpRequest).execute().use { response ->
+                    val bodyString = response.body?.string().orEmpty()
+                    if (!response.isSuccessful) {
+                        throw GeminiHttpException(response.code, bodyString)
+                    }
+                    GeminiApiCodec.decodeCountTokensResponse(bodyString)
+            }
             }
 
         companion object {

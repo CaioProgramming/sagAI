@@ -8,6 +8,8 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.features.act.ui.BookReaderView
 import com.ilustris.sagai.features.act.ui.SagaActsView
 import com.ilustris.sagai.features.act.ui.SagaStoryReaderView
+import com.ilustris.sagai.features.brain.ui.CharacterBrainView
+import com.ilustris.sagai.features.brain.ui.SagaBrainView
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.SagaCharactersView
@@ -124,6 +126,7 @@ fun createSagaEntryProvider(
                 navigator.navigate(CharacterDetailKey(characterId))
             },
             onLoreDebug = { navigator.navigate(LoreDebugKey(key.sagaId)) },
+            onBrain = { navigator.navigate(SagaBrainKey(key.sagaId)) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
@@ -173,6 +176,9 @@ fun createSagaEntryProvider(
         CharacterDetailsView(
             characterId = key.characterId,
             onBack = { navigator.goBack() },
+            onOpenCharacterBrain = { sagaId, characterId ->
+                navigator.navigate(CharacterBrainKey(sagaId.toString(), characterId))
+            },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )
@@ -203,6 +209,31 @@ fun createSagaEntryProvider(
             sagaId = key.sagaId,
             initialActId = key.initialActId,
             onBack = { navigator.goBack() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<SagaBrainKey> { key ->
+        SagaBrainView(
+            sagaId = key.sagaId,
+            onBack = { navigator.goBack() },
+            onOpenCharacterBrain = { characterId ->
+                navigator.navigate(CharacterBrainKey(key.sagaId, characterId))
+            },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+        )
+    }
+
+    entry<CharacterBrainKey> { key ->
+        CharacterBrainView(
+            sagaId = key.sagaId,
+            characterId = key.characterId,
+            onBack = { navigator.goBack() },
+            onOpenCharacterBrain = { characterId ->
+                navigator.navigate(CharacterBrainKey(key.sagaId, characterId))
+            },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

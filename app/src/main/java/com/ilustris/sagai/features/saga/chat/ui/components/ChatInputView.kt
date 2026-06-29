@@ -7,13 +7,16 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,10 +48,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawOutline
@@ -90,66 +91,84 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
-import com.ilustris.sagai.features.saga.chat.data.model.filterUserInputTypes
 import com.ilustris.sagai.features.saga.chat.data.model.icon
 import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
-import com.ilustris.sagai.features.saga.chat.data.model.tag
 import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
-import kotlin.time.Duration.Companion.seconds
+import com.ilustris.sagai.ui.theme.themeBrushColors
+
+private val ChatInputTextMaxHeight = 160.dp
+
+@Composable
+private fun generatingBorderRotation(isGenerating: Boolean): Float {
+    if (isGenerating) {
+        val infiniteTransition = rememberInfiniteTransition(label = "border")
+        val rotation by infiniteTransition.animateFloat(
+            0f,
+            360f,
+            infiniteRepeatable(tween(3000, easing = LinearEasing)),
+            label = "rotation",
+        )
+        return rotation
+    }
+    return 0f
+}
+
+private fun isIndexInsideTagMarkup(
+    text: String,
+    index: Int,
+): Boolean {
+    val open = text.lastIndexOf('<', index)
+    if (open == -1) return false
+    val close = text.indexOf('>', open)
+    return close == -1 || index <= close
+}
 
 private fun detectQueryType(
     text: String,
+    cursorPosition: Int,
     characters: List<Character>,
     wikis: List<Wiki>,
 ): ItemsType? {
-    val lastAtIndex = text.lastIndexOf('@')
-    val lastSlashIndex = text.lastIndexOf('/')
+    val cursor = cursorPosition.coerceIn(0, text.length)
+    val textBeforeCursor = text.substring(0, cursor)
+    if (!textBeforeCursor.contains('@') && !textBeforeCursor.contains('/')) return null
+    val lastAtIndex = textBeforeCursor.lastIndexOf('@')
+    val lastSlashIndex = textBeforeCursor.lastIndexOf('/')
     val isCharacterQuery = lastAtIndex != -1 && lastAtIndex > lastSlashIndex
     val isWikiQuery = lastSlashIndex != -1 && lastSlashIndex > lastAtIndex
     return when {
-        isCharacterQuery && lastAtIndex < text.length -> {
-            val query = text.substring(lastAtIndex + 1)
-            if (!query.contains(' ')) {
-                val filtered = characters.filter { it.name.contains(query, ignoreCase = true) }
-                if (filtered.isNotEmpty()) {
-                    ItemsType.Characters(
-                        filtered,
-                        query,
-                    )
-                } else {
-                    null
+        isCharacterQuery -> {
+            if (isIndexInsideTagMarkup(text, lastAtIndex)) return null
+            val query = textBeforeCursor.substring(lastAtIndex + 1)
+            if (query.contains(' ') || query.contains('\n')) return null
+            val filtered =
+                characters.filter { character ->
+                    character.name.isNotBlank() &&
+                        (query.isEmpty() || character.name.contains(query, ignoreCase = true))
                 }
-            } else {
-                null
-            }
+            if (filtered.isNotEmpty()) ItemsType.Characters(filtered, query) else null
         }
 
-        isWikiQuery && lastSlashIndex < text.length -> {
-            val query = text.substring(lastSlashIndex + 1)
-            if (!query.contains(' ')) {
-                val filtered = wikis.filter { it.title.contains(query, ignoreCase = true) }
-                if (filtered.isNotEmpty()) {
-                    ItemsType.Wikis(
-                        filtered,
-                        query,
-                    )
-                } else {
-                    null
+        isWikiQuery -> {
+            if (isIndexInsideTagMarkup(text, lastSlashIndex)) return null
+            val query = textBeforeCursor.substring(lastSlashIndex + 1)
+            if (query.contains(' ') || query.contains('\n')) return null
+            val filtered =
+                wikis.filter { wiki ->
+                    wiki.title.isNotBlank() &&
+                        (query.isEmpty() || wiki.title.contains(query, ignoreCase = true))
                 }
-            } else {
-                null
-            }
+            if (filtered.isNotEmpty()) ItemsType.Wikis(filtered, query) else null
         }
 
         else -> {
@@ -162,9 +181,15 @@ private fun replaceQueryInText(
     text: String,
     symbol: Char,
     replacement: String,
+    cursorPosition: Int,
 ): String {
-    val startIndex = text.lastIndexOf(symbol)
-    return text.replaceRange(startIndex, text.length, "$replacement ")
+    val cursor = cursorPosition.coerceIn(0, text.length)
+    val textBeforeCursor = text.substring(0, cursor)
+    val startIndex = textBeforeCursor.lastIndexOf(symbol)
+    if (startIndex == -1) return text
+    val bounds = getTagContentBounds(text, cursor)
+    val replaceEnd = cursor.coerceAtMost(bounds?.contentEnd ?: text.length)
+    return text.substring(0, startIndex) + replacement + " " + text.substring(replaceEnd)
 }
 
 private fun handleCharacterSelection(
@@ -172,8 +197,14 @@ private fun handleCharacterSelection(
     currentInput: TextFieldValue,
     onUpdateInput: (TextFieldValue) -> Unit,
 ) {
-    val newText = replaceQueryInText(currentInput.text, '@', character.name)
-    onUpdateInput(TextFieldValue(newText, TextRange(newText.length)))
+    val cursor = currentInput.selection.start
+    val textBeforeCursor =
+        currentInput.text.substring(0, cursor.coerceIn(0, currentInput.text.length))
+    val startIndex = textBeforeCursor.lastIndexOf('@')
+    if (startIndex == -1) return
+    val newText = replaceQueryInText(currentInput.text, '@', character.name, cursor)
+    val newCursor = startIndex + character.name.length + 1
+    onUpdateInput(TextFieldValue(newText, TextRange(newCursor.coerceIn(0, newText.length))))
 }
 
 private fun handleWikiSelection(
@@ -181,8 +212,14 @@ private fun handleWikiSelection(
     currentInput: TextFieldValue,
     onUpdateInput: (TextFieldValue) -> Unit,
 ) {
-    val newText = replaceQueryInText(currentInput.text, '/', wiki.title)
-    onUpdateInput(TextFieldValue(newText, TextRange(newText.length)))
+    val cursor = currentInput.selection.start
+    val textBeforeCursor =
+        currentInput.text.substring(0, cursor.coerceIn(0, currentInput.text.length))
+    val startIndex = textBeforeCursor.lastIndexOf('/')
+    if (startIndex == -1) return
+    val newText = replaceQueryInText(currentInput.text, '/', wiki.title, cursor)
+    val newCursor = startIndex + wiki.title.length + 1
+    onUpdateInput(TextFieldValue(newText, TextRange(newCursor.coerceIn(0, newText.length))))
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -209,65 +246,68 @@ fun ChatInputView(
     maxContentLength: Int = 2000,
     onStopGeneration: () -> Unit = {},
 ) {
-    var focusModeEnabled by remember { mutableStateOf(false) }
+    var characterMenu by remember { mutableStateOf(false) }
+    var speechModeSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
-    LaunchedEffect(inputField.text) {
-        scrollState.animateScrollTo(scrollState.maxValue)
+    LaunchedEffect(inputField.text.length) {
+        scrollState.scrollTo(scrollState.maxValue)
     }
 
     val actualCharacter = selectedCharacter ?: content.mainCharacter
     val genre = content.data.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
-    val inputBrush = genre.gradient(isGenerating, duration = 2.seconds)
-    var queryItemsType by remember { mutableStateOf<ItemsType?>(null) }
+    val inputBrush =
+        Brush.horizontalGradient(
+            if (isGenerating) morphingGradient() else themeBrushColors(),
+        )
     val textStyle =
         MaterialTheme.typography.labelMedium.copy(
             color = MaterialTheme.colorScheme.onBackground,
             fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
         )
     val tagBg = MaterialTheme.colorScheme.background
+    val thinkTagSurface = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
     val textColor = textStyle.color
-    LaunchedEffect(inputField.text, characters, content.wikis) {
-        queryItemsType = detectQueryType(inputField.text, characters, content.wikis)
-    }
+    val queryItemsType =
+        remember(inputField.text, inputField.selection, characters, content.wikis) {
+            detectQueryType(
+                inputField.text,
+                inputField.selection.start,
+                characters,
+                content.wikis,
+            )
+        }
     val glowRadiusState =
         animateFloatAsState(if (isGenerating.not()) 10f else 25f, label = "glowRadius")
     val inputShape = sagaShape()
-    val palette = genre.colorPalette()
-    val infiniteTransition = rememberInfiniteTransition(label = "border")
-    val rotationState =
-        infiniteTransition.animateFloat(
-            0f,
-            360f,
-            infiniteRepeatable(tween(3000, easing = LinearEasing)),
-            label = "rotation",
+    val palette = themeBrushColors()
+    val rotation = generatingBorderRotation(isGenerating)
+
+    val tagMarkerLabels =
+        mapOf(
+            "action" to stringResource(R.string.sender_type_action_title),
+            "think" to stringResource(R.string.sender_type_thought_title),
+            "narrator" to stringResource(R.string.sender_type_narrator_title),
         )
-    val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
-    val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
 
     val visualTransformation =
-        remember(
-            genre,
-            content.mainCharacter,
-            characters,
-            content.wikis,
-            resolvedColor,
-            tagBg,
-            textColor,
-        ) {
+        remember(tagBg, textColor, tagMarkerLabels, thinkTagSurface) {
             VisualTransformation { text ->
                 transformTextWithContent(
-                    mainCharacter = content.mainCharacter,
-                    characters = characters,
-                    wiki = content.wikis,
+                    mainCharacter = null,
+                    characters = emptyList(),
+                    wiki = emptyList(),
                     text = text.text,
                     genreColor = resolvedColor,
                     tagBackgroundColor = tagBg,
                     textColor = textColor,
-                    headerFont = headerFont,
-                    bodyFont = bodyFont,
+                    headerFont = null,
+                    bodyFont = null,
+                    tagMarkerLabels = tagMarkerLabels,
+                    thinkTagSurfaceColor = thinkTagSurface,
+                    annotateMentions = false,
                 )
             }
         }
@@ -275,6 +315,8 @@ fun ChatInputView(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     fun sendMessage(confirmed: Boolean = false) {
+        val finalized = finalizeInputForSend(inputField)
+        onUpdateInput(finalized)
         onSendMessage(confirmed)
         focusManager.clearFocus()
         keyboardController?.hide()
@@ -365,7 +407,6 @@ fun ChatInputView(
                         spread = 10f
                     })
                     .fillMaxWidth()
-                    .animateContentSize()
                     .clip(inputShape)
                     .drawWithContent {
                         drawContent()
@@ -380,7 +421,7 @@ fun ChatInputView(
                                             )
                                         val matrix = Matrix()
                                         matrix.setRotate(
-                                            rotationState.value,
+                                            rotation,
                                             size.width / 2,
                                             size.height / 2,
                                         )
@@ -392,8 +433,7 @@ fun ChatInputView(
                         } else {
                             drawOutline(outline, inputBrush, style = Stroke(1.dp.toPx()))
                         }
-                    }
-                    .border(1.dp, inputBrush, inputShape)
+                    }.border(1.dp, inputBrush, inputShape)
                     .background(bubbleColorState.value, inputShape),
         ) {
             AnimatedVisibility(currentTagInside != null) {
@@ -405,50 +445,24 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                senderType.icon()?.let {
-                                    Icon(
-                                        painterResource(it),
-                                        null,
-                                        modifier = Modifier.size(12.dp),
-                                        tint = resolvedIconColor,
-                                    )
-                                }
-                                Text(
-                                    stringResource(R.string.tag_inside_hint, senderType.title()),
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = resolvedIconColor,
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                        ),
+                            senderType.icon()?.let {
+                                Icon(
+                                    painterResource(it),
+                                    null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = resolvedIconColor,
                                 )
                             }
                             Text(
-                                stringResource(R.string.next),
+                                stringResource(R.string.tag_inside_hint, senderType.title()),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = resolvedIconColor,
+                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
                                     ),
-                                modifier =
-                                    Modifier
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.background)
-                                        .clickable {
-                                            onUpdateInput(
-                                                escapeCursorFromTagAndClean(
-                                                    inputField,
-                                                ),
-                                            )
-                                        }
-                                        .padding(8.dp),
                             )
                         }
                     }
@@ -462,21 +476,72 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
                         inputShape,
-                    )
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                    ).fillMaxWidth()
                     .padding(8.dp),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.Bottom,
+                BasicTextField(
+                    inputField,
+                    enabled = !isGenerating,
+                    maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
+                    onValueChange = { newValue ->
+                        processInputChange(inputField, newValue, maxContentLength)?.let {
+                            onUpdateInput(it)
+                        }
+                    },
+                    textStyle = textStyle,
+                    visualTransformation = visualTransformation,
+                    cursorBrush = resolvedColor.solidGradient(),
+                    decorationBox = { inner ->
+                        Box(
+                            Modifier.padding(8.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Box {
+                                inner()
+                                if (inputField.text.isEmpty()) {
+                                    Text(
+                                        sendType.hint(),
+                                        style = textStyle,
+                                        modifier =
+                                            Modifier
+                                                .alpha(.5f)
+                                                .fillMaxWidth(),
+                                        maxLines = 1,
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default),
+                    keyboardActions =
+                        KeyboardActions(onNext = {
+                            if (currentTagInside != null) {
+                                onUpdateInput(escapeCursorFromTagAndClean(inputField))
+                            }
+                        }),
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .weight(1f, fill = false),
-                ) {
-                    var characterMenu by remember { mutableStateOf(false) }
+                            .heightIn(min = 40.dp, max = ChatInputTextMaxHeight)
+                            .verticalScroll(scrollState),
+                )
 
+                val activeSpeechMode =
+                    currentTagInside?.let { SenderType.senderForTag(it) } ?: SenderType.CHARACTER
+                val isLoading = isSendingPending || isGenerating
+                val cleanLength =
+                    remember(inputField.text) {
+                        getCleanTextLength(inputField.text)
+                    }
+                val progress = cleanLength.toFloat() / maxContentLength
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     AnimatedContent(
                         targetState =
                             actualCharacter?.let { it.id to it.image }
@@ -488,346 +553,152 @@ fun ChatInputView(
                                 .clickable { characterMenu = true },
                         label = "ChatInputAvatar",
                     ) {
-                        Box {
-                            val character = actualCharacter ?: content.mainCharacter
-                            character?.let {
-                                CharacterAvatar(
-                                    it,
-                                    genre = genre,
-                                    grainRadius = 0f,
-                                    pixelation = 0f,
-                                    useFallback = false,
-                                    modifier = Modifier.fillMaxSize(),
-                                    borderSize = 1.dp,
-                                    innerPadding = 0.dp,
-                                )
-                            }
-
-                            if (characterMenu) {
-                                ModalBottomSheet(
-                                    onDismissRequest = { characterMenu = false },
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    shape = MaterialTheme.shapes.large,
-                                ) {
-                                    Column(
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                    ) {
-                                        Text(
-                                            stringResource(R.string.select_character),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            textAlign = TextAlign.Center,
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth(),
-                                        )
-                                        LazyVerticalGrid(
-                                            columns =
-                                                GridCells.Adaptive(
-                                                    100.dp,
-                                                ),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(bottom = 32.dp),
-                                        ) {
-                                            items(
-                                                count = characters.size,
-                                                key = { index ->
-                                                    val c = characters[index]
-                                                    "${c.id}-${c.image}"
-                                                },
-                                            ) { index ->
-                                                val character = characters[index]
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    modifier =
-                                                        Modifier
-                                                            .clip(MaterialTheme.shapes.medium)
-                                                            .clickable {
-                                                                onSelectCharacter(character)
-                                                                characterMenu = false
-                                                            }
-                                                            .padding(8.dp),
-                                                ) {
-                                                    CharacterAvatar(
-                                                        character,
-                                                        genre = genre,
-                                                        modifier = Modifier.size(64.dp),
-                                                        grainRadius = 0f,
-                                                        pixelation = 0f,
-                                                    )
-                                                    Text(
-                                                        character.name,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        textAlign = TextAlign.Center,
-                                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                        modifier = Modifier.padding(top = 8.dp),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        val character = actualCharacter ?: content.mainCharacter
+                        character?.let {
+                            CharacterAvatar(
+                                it,
+                                genre = genre,
+                                grainRadius = 0f,
+                                pixelation = 0f,
+                                useFallback = false,
+                                modifier = Modifier.fillMaxSize(),
+                                borderSize = 1.dp,
+                                innerPadding = 0.dp,
+                            )
                         }
                     }
 
-                    BasicTextField(
-                        inputField,
-                        enabled = !isGenerating,
-                        maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
-                        onValueChange = { newValue ->
-                            if (newValue.text.length == inputField.text.length - 1 && handleSmartBackspace(
-                                    inputField,
-                                ) != null
-                            ) {
-                                handleSmartBackspace(inputField)?.let {
-                                    onUpdateInput(it)
-                                    return@BasicTextField
-                                }
-                            }
-                            if (getCleanTextLength(newValue.text) <= maxContentLength) {
-                                onUpdateInput(
-                                    newValue,
-                                )
-                            }
-                        },
-                        textStyle = textStyle,
-                        visualTransformation = visualTransformation,
-                        cursorBrush = resolvedColor.solidGradient(),
-                        decorationBox = { inner ->
-                            Box(
-                                Modifier
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.CenterStart,
-                            ) {
-                                Box {
-                                    inner()
-                                    if (inputField.text.isEmpty()) {
-                                        Text(
-                                            sendType.hint(),
-                                            style = textStyle,
-                                            modifier = Modifier.alpha(.4f),
-                                            maxLines = 1,
-                                        )
-                                    }
-                                }
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default),
-                        keyboardActions =
-                            KeyboardActions(onNext = {
-                                if (currentTagInside != null) {
-                                    onUpdateInput(escapeCursorFromTagAndClean(inputField))
-                                }
-                            }),
+                    val speechModeChipShape = MaterialTheme.shapes.extraLarge
+                    val isInsideTag = currentTagInside != null
+                    Row(
                         modifier =
                             Modifier
-                                .weight(1f)
-                                .heightIn(min = 40.dp)
-                                .verticalScroll(scrollState),
-                    )
-
-                    AnimatedContent(inputField.text.isEmpty()) {
-                        if (it && !isGenerating) {
-                            IconButton(onClick = {
-                                focusModeEnabled = true
-                            }, modifier = Modifier.size(24.dp)) {
+                                .clip(speechModeChipShape)
+                                .background(
+                                    if (isInsideTag) {
+                                        resolvedColor.copy(alpha = .2f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainer
+                                    },
+                                ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .clickable { speechModeSheet = true }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            activeSpeechMode.icon()?.let {
                                 Icon(
-                                    painterResource(R.drawable.ic_expand),
-                                    stringResource(R.string.chat_input_expand),
-                                    modifier =
-                                        Modifier
-                                            .padding(4.dp)
-                                            .fillMaxSize(),
-                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    painterResource(it),
+                                    contentDescription = null,
+                                    tint = resolvedColor,
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
-                        } else {
-                            Box(contentAlignment = Alignment.Center) {
-                                val isLoading = isSendingPending || isGenerating
-                                val cleanLength = getCleanTextLength(inputField.text)
-                                val progress = cleanLength.toFloat() / maxContentLength
-
-                                IconButton(
-                                    onClick = {
-                                        if (isLoading) {
-                                            onStopGeneration()
-                                        } else {
-                                            sendMessage()
-                                            onUpdateInput(
-                                                escapeCursorFromTagAndClean(
-                                                    inputField,
-                                                ),
-                                            )
-                                        }
-                                    },
-                                    enabled = (inputField.text.isNotBlank() || isGenerating),
-                                    colors =
-                                        IconButtonDefaults.filledIconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            Text(
+                                activeSpeechMode.title(),
+                                style =
+                                    MaterialTheme.typography.labelSmall,
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = isInsideTag,
+                            enter =
+                                expandHorizontally(expandFrom = Alignment.Start) +
+                                    fadeIn(
+                                        tween(
+                                            200,
                                         ),
-                                    modifier =
-                                        Modifier
-                                            .padding(4.dp)
-                                            .size(32.dp),
-                                ) {
-                                    AnimatedContent(isLoading) { loading ->
-                                        val icon =
-                                            if (loading) {
-                                                R.drawable.ic_stop
-                                            } else {
-                                                if (inputField.text.isNotEmpty()) R.drawable.ic_send else null
-                                            }
-                                        icon?.let {
-                                            Icon(
-                                                painterResource(it),
-                                                null,
-                                                modifier =
-                                                    Modifier
-                                                        .padding(8.dp)
-                                                        .fillMaxSize(),
+                                    ),
+                            exit =
+                                shrinkHorizontally(shrinkTowards = Alignment.Start) +
+                                    fadeOut(
+                                        tween(150),
+                                    ),
+                        ) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .background(
+                                            MaterialTheme.colorScheme.background.copy(alpha = .2f),
+                                            speechModeChipShape,
+                                        ).clickable {
+                                            onUpdateInput(
+                                                escapeCursorFromTagAndClean(inputField),
                                             )
-                                        }
-                                    }
-                                }
-
-                                if (isLoading || inputField.text.isNotEmpty()) {
-                                    if (isLoading) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(32.dp),
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            trackColor = Color.Transparent,
-                                            strokeWidth = 1.dp,
-                                        )
-                                    } else {
-                                        CircularProgressIndicator(
-                                            progress = { progress.coerceIn(0f, 1f) },
-                                            modifier = Modifier.size(32.dp),
-                                            color = MaterialTheme.colorScheme.onPrimary,
-                                            trackColor = Color.Transparent,
-                                            strokeWidth = 1.dp,
-                                        )
-                                    }
-                                }
+                                        }.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    stringResource(R.string.next),
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                )
                             }
                         }
                     }
-                }
 
-                AnimatedVisibility(isImeVisible) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SenderType
-                            .filterUserInputTypes()
-                            .filter { it.icon() != null }
-                            .forEach { type ->
-                                val sel = currentTagInside == type.tag
-                                val col by animateColorAsState(
-                                    if (sel) {
-                                        resolvedIconColor
-                                    } else {
-                                        MaterialTheme.colorScheme.onBackground.copy(
-                                            alpha = .5f,
-                                        )
-                                    },
-                                )
+                    Spacer(Modifier.weight(1f))
 
-                                type.icon()?.let {
-                                    Icon(
-                                        painterResource(it),
-                                        null,
-                                        tint = col,
-                                        modifier =
-                                            Modifier
-                                                .border(
-                                                    1.dp,
-                                                    MaterialTheme.colorScheme.onBackground.copy(
-                                                        alpha = .1f,
-                                                    ),
-                                                    CircleShape,
-                                                ).clip(CircleShape)
-                                                .clickable(currentTagInside == null) {
-                                                    type.tag?.let {
-                                                        onUpdateInput(
-                                                            insertExpressiveTag(
-                                                                inputField,
-                                                                it,
-                                                            ),
-                                                        )
-                                                    }
-                                                }.size(24.dp)
-                                                .padding(4.dp),
-                                    )
+                    val canSend = inputField.text.isNotBlank() || isGenerating
+
+                    Box(contentAlignment = Alignment.Center) {
+                        IconButton(
+                            onClick = {
+                                if (isLoading) {
+                                    onStopGeneration()
+                                } else {
+                                    sendMessage()
                                 }
+                            },
+                            enabled = canSend,
+                            colors =
+                                IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    disabledContainerColor =
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    disabledContentColor =
+                                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .size(32.dp),
+                        ) {
+                            AnimatedContent(isLoading) { loading ->
+                                Icon(
+                                    painterResource(
+                                        if (loading) R.drawable.ic_stop else R.drawable.ic_send,
+                                    ),
+                                    contentDescription = stringResource(R.string.chat_input_send),
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxSize(),
+                                )
                             }
-                        Box {
-                            var menu by remember { mutableStateOf(false) }
-                            Icon(
-                                painterResource(R.drawable.ic_menu),
-                                null,
-                                tint = MaterialTheme.colorScheme.onBackground,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .clip(CircleShape)
-                                        .size(24.dp)
-                                        .clickable { menu = true },
+                        }
+
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                trackColor = Color.Transparent,
+                                strokeWidth = 1.dp,
                             )
-                            DropdownMenu(menu, { menu = false }) {
-                                DropdownMenuItem(
-                                    { Text(stringResource(R.string.chat_input_mention_character)) },
-                                    {
-                                        menu = false
-                                        onUpdateInput(
-                                            TextFieldValue(
-                                                inputField.text + "@",
-                                                TextRange(inputField.text.length + 1),
-                                            ),
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            painterResource(R.drawable.ic_mail),
-                                            null,
-                                            tint = resolvedColor,
-                                            modifier = Modifier.size(24.dp),
-                                        )
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    { Text(stringResource(R.string.chat_input_mention_wiki)) },
-                                    {
-                                        menu = false
-                                        onUpdateInput(
-                                            TextFieldValue(
-                                                inputField.text + "/",
-                                                TextRange(inputField.text.length + 1),
-                                            ),
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            painterResource(R.drawable.ic_slash),
-                                            null,
-                                            tint = resolvedColor,
-                                            modifier = Modifier.size(24.dp),
-                                        )
-                                    },
-                                )
-                            }
+                        } else if (inputField.text.isNotEmpty()) {
+                            CircularProgressIndicator(
+                                progress = { progress.coerceIn(0f, 1f) },
+                                modifier = Modifier.size(32.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                trackColor = Color.Transparent,
+                                strokeWidth = 1.dp,
+                            )
                         }
                     }
                 }
@@ -856,8 +727,7 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -889,20 +759,17 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            )
-                                            .background(
+                                            ).background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            )
-                                            .clip(CircleShape)
+                                            ).clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -926,6 +793,93 @@ fun ChatInputView(
                 }
             }
         }
+        if (characterMenu) {
+            ModalBottomSheet(
+                onDismissRequest = { characterMenu = false },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = MaterialTheme.shapes.large,
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.select_character),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(100.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 32.dp),
+                    ) {
+                        items(
+                            count = characters.size,
+                            key = { index ->
+                                val c = characters[index]
+                                "${c.id}-${c.image}"
+                            },
+                        ) { index ->
+                            val character = characters[index]
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier =
+                                    Modifier
+                                        .clip(MaterialTheme.shapes.medium)
+                                        .clickable {
+                                            onSelectCharacter(character)
+                                            characterMenu = false
+                                        }
+                                        .padding(8.dp),
+                            ) {
+                                CharacterAvatar(
+                                    character,
+                                    genre = genre,
+                                    modifier = Modifier.size(64.dp),
+                                    grainRadius = 0f,
+                                    pixelation = 0f,
+                                )
+                                Text(
+                                    character.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    textAlign = TextAlign.Center,
+                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (speechModeSheet) {
+            SpeechModeSheet(
+                activeTag = currentTagInside,
+                accentColor = resolvedColor,
+                canInsertTag = currentTagInside == null,
+                onSelectSpeak = {
+                    if (currentTagInside != null) {
+                        onUpdateInput(escapeCursorFromTagAndClean(inputField))
+                    }
+                },
+                onSelectTag = { tag ->
+                    onUpdateInput(insertExpressiveTag(inputField, tag))
+                },
+                onDismiss = { speechModeSheet = false },
+            )
+        }
+
         val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         typoFix?.let {
             if (it.status != TypoStatus.OK) {
@@ -956,429 +910,6 @@ fun ChatInputView(
                             }
                             sendMessage(true)
                         }) { Text(stringResource(R.string.chat_input_fix)) }
-                    }
-                }
-            }
-        }
-        if (focusModeEnabled) {
-            ModalBottomSheet({ focusModeEnabled = false }) {
-                Column(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .animateContentSize(),
-                ) {
-                    val isLoading = isSendingPending || isGenerating
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton({
-                            focusModeEnabled = false
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                painterResource(R.drawable.ic_back_left),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(4.dp)
-                                        .fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.onBackground,
-                            )
-                        }
-
-                        Text(
-                            stringResource(R.string.chat_input_focus_title),
-                            style =
-                                MaterialTheme.typography.titleSmall.copy(
-                                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            modifier = Modifier.weight(1f),
-                        )
-
-                        Box(Modifier.size(24.dp))
-                    }
-
-                    HorizontalDivider(
-                        modifier =
-                            Modifier
-                                .padding(vertical = 8.dp)
-                                .fillMaxWidth(),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    )
-
-                    AnimatedVisibility(
-                        currentTagInside != null,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                    ) {
-                        currentTagInside?.let { tag ->
-                            SenderType.senderForTag(tag)?.let { senderType ->
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier =
-                                        Modifier
-                                            .clip(
-                                                MaterialTheme.shapes.extraLarge,
-                                            )
-                                            .background(
-                                                resolvedColor,
-                                                MaterialTheme.shapes.extraLarge,
-                                            )
-                                            .clickable {
-                                                onUpdateInput(
-                                                    escapeCursorFromTagAndClean(
-                                                        inputField,
-                                                    ),
-                                                )
-                                            }
-                                            .padding(8.dp),
-                                ) {
-                                    senderType.icon()?.let {
-                                        Icon(
-                                            painterResource(it),
-                                            null,
-                                            modifier = Modifier.size(12.dp),
-                                            tint = resolvedIconColor,
-                                        )
-                                    }
-                                    Text(
-                                        stringResource(
-                                            R.string.tag_inside_hint,
-                                            senderType.title(),
-                                        ),
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = resolvedIconColor,
-                                                fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                            ),
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.TopStart) {
-                        val headerFont = MaterialTheme.typography.headlineMedium.fontFamily
-                        val bodyFont = MaterialTheme.typography.bodyLarge.fontFamily
-                        BasicTextField(
-                            inputField,
-                            enabled = !isGenerating,
-                            maxLines = if (!isImeVisible) 1 else Int.MAX_VALUE,
-                            onValueChange = { newValue ->
-                                if (newValue.text.length == inputField.text.length - 1 && handleSmartBackspace(
-                                        inputField,
-                                    ) != null
-                                ) {
-                                    handleSmartBackspace(inputField)?.let {
-                                        onUpdateInput(it)
-                                        return@BasicTextField
-                                    }
-                                }
-                                if (getCleanTextLength(newValue.text) <= maxContentLength) {
-                                    onUpdateInput(
-                                        newValue,
-                                    )
-                                }
-                            },
-                            textStyle =
-                                textStyle.copy(
-                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                                ),
-                            visualTransformation = {
-                                transformTextWithContent(
-                                    content.mainCharacter,
-                                    content.characters,
-                                    content.wikis,
-                                    inputField.text,
-                                    resolvedColor,
-                                    tagBg,
-                                    textColor,
-                                    headerFont,
-                                    bodyFont,
-                                )
-                            },
-                            cursorBrush = resolvedColor.solidGradient(),
-                            decorationBox = { inner ->
-                                val alpha by animateFloatAsState(if (inputField.text.isEmpty()) .5f else 1f)
-                                Column(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .alpha(alpha)
-                                        .padding(8.dp)
-                                        .reactiveShimmer(isGenerating),
-                                ) {
-                                    inner()
-                                    if (inputField.text.isEmpty()) {
-                                        Text(
-                                            sendType.hint(),
-                                            style = textStyle,
-                                            modifier = Modifier.alpha(.4f),
-                                        )
-                                    }
-                                    AnimatedVisibility(queryItemsType != null) {
-                                        queryItemsType?.let { itemsType ->
-                                            LazyRow(
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 4.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                contentPadding = PaddingValues(horizontal = 8.dp),
-                                            ) {
-                                                when (itemsType) {
-                                                    is ItemsType.Characters -> {
-                                                        items(itemsType.filteredCharacters) { character ->
-                                                            val col =
-                                                                character.hexColor.hexToColor()
-                                                                    ?: resolvedColor
-                                                            Row(
-                                                                Modifier
-                                                                    .border(
-                                                                        1.dp,
-                                                                        col.copy(alpha = .3f),
-                                                                        CircleShape,
-                                                                    )
-                                                                    .background(
-                                                                        col.copy(alpha = .1f),
-                                                                        CircleShape,
-                                                                    ).clip(CircleShape)
-                                                                    .clickable {
-                                                                        handleCharacterSelection(
-                                                                            character,
-                                                                            inputField,
-                                                                            onUpdateInput,
-                                                                        )
-                                                                    }
-                                                                    .padding(
-                                                                        horizontal = 12.dp,
-                                                                        vertical = 6.dp,
-                                                                    ),
-                                                                verticalAlignment = Alignment.CenterVertically,
-                                                                horizontalArrangement =
-                                                                    Arrangement.spacedBy(
-                                                                        8.dp,
-                                                                    ),
-                                                            ) {
-                                                                CharacterAvatar(
-                                                                    character,
-                                                                    genre = genre,
-                                                                    modifier = Modifier.size(20.dp),
-                                                                    grainRadius = 0f,
-                                                                    pixelation = 0f,
-                                                                )
-                                                                Text(
-                                                                    character.name,
-                                                                    style =
-                                                                        MaterialTheme.typography.labelSmall.copy(
-                                                                            color = col,
-                                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                                        ),
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-
-                                                    is ItemsType.Wikis -> {
-                                                        items(itemsType.filteredWikis) { wiki ->
-                                                            Row(
-                                                                Modifier
-                                                                    .border(
-                                                                        1.dp,
-                                                                        resolvedColor.copy(alpha = .3f),
-                                                                        CircleShape,
-                                                                    )
-                                                                    .background(
-                                                                        resolvedColor.copy(alpha = .1f),
-                                                                        CircleShape,
-                                                                    )
-                                                                    .clip(CircleShape)
-                                                                    .clickable {
-                                                                        handleWikiSelection(
-                                                                            wiki,
-                                                                            inputField,
-                                                                            onUpdateInput,
-                                                                        )
-                                                                    }
-                                                                    .padding(
-                                                                        horizontal = 12.dp,
-                                                                        vertical = 6.dp,
-                                                                    ),
-                                                                verticalAlignment = Alignment.CenterVertically,
-                                                                horizontalArrangement =
-                                                                    Arrangement.spacedBy(
-                                                                        8.dp,
-                                                                    ),
-                                                            ) {
-                                                                Text(
-                                                                    wiki.emojiTag ?: "📖",
-                                                                    style = MaterialTheme.typography.labelSmall,
-                                                                )
-                                                                Text(
-                                                                    wiki.title,
-                                                                    style =
-                                                                        MaterialTheme.typography.labelSmall.copy(
-                                                                            color = resolvedColor,
-                                                                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                                                        ),
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    imeAction =
-                                        if (currentTagInside !=
-                                            null
-                                        ) {
-                                            ImeAction.Next
-                                        } else {
-                                            ImeAction.Default
-                                        },
-                                ),
-                            keyboardActions =
-                                KeyboardActions(onNext = {
-                                    if (currentTagInside != null) {
-                                        onUpdateInput(escapeCursorFromTagAndClean(inputField))
-                                    }
-                                }),
-                            modifier =
-                                Modifier.fillMaxWidth(),
-                        )
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            SenderType
-                                .filterUserInputTypes()
-                                .filter { it.icon() != null }
-                                .forEach { type ->
-                                    val sel = currentTagInside == type.tag
-                                    val col by animateColorAsState(
-                                        if (sel) {
-                                            resolvedIconColor
-                                        } else {
-                                            MaterialTheme.colorScheme.background.copy(
-                                                alpha = .5f,
-                                            )
-                                        },
-                                    )
-
-                                    type.icon()?.let {
-                                        Icon(
-                                            painterResource(it),
-                                            null,
-                                            tint = col,
-                                            modifier =
-                                                Modifier
-                                                    .clip(CircleShape)
-                                                    .size(24.dp)
-                                                    .background(
-                                                        resolvedColor.copy(alpha = .3f),
-                                                        shape = MaterialTheme.shapes.extraLarge,
-                                                    )
-                                                    .padding(4.dp)
-                                                    .clickable(currentTagInside == null) {
-                                                        type.tag?.let {
-                                                            onUpdateInput(
-                                                                insertExpressiveTag(
-                                                                    inputField,
-                                                                    it,
-                                                                ),
-                                                            )
-                                                        }
-                                                    },
-                                        )
-                                    }
-                                }
-
-                            Icon(
-                                painterResource(R.drawable.ic_mail),
-                                null,
-                                tint = resolvedIconColor,
-                                modifier =
-                                    Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            resolvedColor.copy(alpha = .3f),
-                                            shape = MaterialTheme.shapes.extraLarge,
-                                        )
-                                        .padding(4.dp)
-                                        .clickable {
-                                            onUpdateInput(
-                                                TextFieldValue(
-                                                    inputField.text + " @",
-                                                    TextRange(inputField.text.length + 1),
-                                                ),
-                                            )
-                                        },
-                            )
-
-                            Icon(
-                                painterResource(R.drawable.ic_slash),
-                                null,
-                                tint = resolvedIconColor,
-                                modifier =
-                                    Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            resolvedColor.copy(alpha = .3f),
-                                            shape = CircleShape,
-                                        )
-                                        .padding(4.dp)
-                                        .clickable {
-                                            onUpdateInput(
-                                                TextFieldValue(
-                                                    inputField.text + "/",
-                                                    TextRange(inputField.text.length + 1),
-                                                ),
-                                            )
-                                        },
-                            )
-                        }
-
-                        Spacer(Modifier.weight(1f))
-
-                        Button(
-                            {
-                                onSendMessage(false)
-                                focusModeEnabled = false
-                            },
-                            colors =
-                                ButtonDefaults.buttonColors().copy(
-                                    resolvedColor,
-                                    resolvedIconColor,
-                                ),
-                            enabled = inputField.text.isNotEmpty() && isLoading.not(),
-                            modifier = Modifier.padding(16.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.chat_input_send),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                                    ),
-                            )
-                        }
                     }
                 }
             }

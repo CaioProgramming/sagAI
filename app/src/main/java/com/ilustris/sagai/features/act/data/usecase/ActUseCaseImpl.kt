@@ -314,14 +314,13 @@ class ActUseCaseImpl
                                     val synthesis = state.data!!.data
 
                                     // 1. Update Act details & Narrative Guide
+                                    val mergedAct = synthesis.act.mergeInto(actContent.data)
                                     val updatedAct =
                                         updateAct(
-                                            actContent.data.copy(
-                                                title = synthesis.actTitle,
-                                                introduction = synthesis.actIntroduction,
-                                                content = synthesis.actContent,
-                                                narrativeGuide = synthesis.narrativeGuide,
-                                                emotionalReview = synthesis.emotionalReview,
+                                            mergedAct.copy(
+                                                continuitySummary =
+                                                    synthesis.continuitySummary
+                                                        ?: mergedAct.continuitySummary,
                                             ),
                                         )
 

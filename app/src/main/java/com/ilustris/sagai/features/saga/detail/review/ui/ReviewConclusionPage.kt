@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.review.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +32,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -114,8 +112,7 @@ class ReviewConclusionPage(
                             strokeWidth = 15f,
                             modifier =
                                 Modifier
-                                    .offset(y = 100.dp)
-                                    .reactiveShimmer(true, repeatMode = RepeatMode.Restart),
+                                    .offset(y = 100.dp),
                         )
                     }
 

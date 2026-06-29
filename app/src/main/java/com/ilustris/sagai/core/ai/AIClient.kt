@@ -1,8 +1,12 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient.Companion.CORE_FLAG
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.model.mergeInstructions
 import com.ilustris.sagai.core.ai.services.PromptService
+import com.ilustris.sagai.core.database.model.AIAuditLog
+import com.ilustris.sagai.core.database.source.AIAuditLogDao
 import com.ilustris.sagai.core.services.AgeVerificationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import timber.log.Timber
@@ -21,6 +25,7 @@ abstract class AIClient(
     protected val remoteConfigService: RemoteConfigService,
     protected val promptService: PromptService,
     protected val ageVerificationService: AgeVerificationService,
+    @PublishedApi internal val aiAuditLogDao: AIAuditLogDao,
 ) {
     fun getLanguage(requireTranslation: Boolean = true): String {
         val locale = if (requireTranslation) Locale.getDefault() else Locale.US
@@ -98,46 +103,72 @@ abstract class AIClient(
         structure: String,
     ) = buildMap {
         val config = buildCorePrompt(requirement, requireTranslation, dataTypeName, structure)
-        put("task", config.processedTemplate)
-        putAll(config.renderInstructions())
+        put("core", config.renderInstructions())
+        put("structure", config.processedTemplate)
     }
 
     suspend fun buildUnifiedInstructions(
         requirement: ModelRequirement,
         requireTranslation: Boolean,
         dataTypeName: String,
-        structure: String,
+        outputStructure: String,
         userInteraction: Boolean,
-        prompt: String,
-        systemInstructions: Map<String, Any>,
+        blueprintInstructions: Map<String, Any>,
     ): Map<String, Any> {
         val coreInstructions =
-            buildCoreInstructions(requirement, requireTranslation, dataTypeName, structure)
+            buildCoreInstructions(requirement, requireTranslation, dataTypeName, outputStructure)
         val safetyInstructions =
             if (userInteraction) {
-                val userAge = ageVerificationService.getUserAgeGroup()
-                val blueprintKey = "safety_guardrails_blueprint"
-                val safetyPrompt =
-                    promptService.buildSplitBlueprint(
-                        blueprintKey,
-                        mapOf(
-                            "userAge" to userAge.name,
-                            "userInput" to prompt,
-                        ),
-                    )
-                buildMap {
-                    put("Safety Verification", safetyPrompt.processedTemplate)
-                    putAll(safetyPrompt.renderInstructions())
-                }
+                buildSafetyInstructions()
             } else {
                 emptyMap()
             }
 
         return buildMap {
-            putAll(coreInstructions)
-            putAll(systemInstructions)
-            putAll(safetyInstructions)
+            put(
+                "CoreDefinitions",
+                buildMap {
+                    putAll(coreInstructions)
+                    if (safetyInstructions.isNotEmpty()) {
+                        put("SafetyGuardRails", safetyInstructions)
+                    }
+                },
+            )
+            if (blueprintInstructions.isNotEmpty()) {
+                put("TaskInstructions", blueprintInstructions)
+            }
         }
+    }
+
+    suspend fun buildSafetyInstructions(): Map<String, Any> {
+        val userAge = ageVerificationService.getUserAgeGroup()
+        val safetyPrompt =
+            promptService.buildSplitBlueprint(
+                "safety_guardrails_blueprint",
+                mapOf(
+                    "userAge" to userAge.name,
+                ),
+            )
+        return buildMap {
+            putAll(safetyPrompt.renderInstructions())
+            put("SafetyVerification", safetyPrompt.processedTemplate)
+        }
+    }
+
+    suspend fun buildBlueprintPrompt(
+        remoteConfigKey: String,
+        variables: Map<String, String> = emptyMap(),
+        mergedInstructionMaps: List<Map<String, Any>> = emptyList(),
+        logEnabled: Boolean = true,
+    ): SplitPrompt {
+        var prompt =
+            promptService.buildSplitBlueprint(
+                remoteConfigKey,
+                variables,
+                logEnabled = logEnabled,
+            )
+        mergedInstructionMaps.forEach { prompt = prompt.mergeInstructions(it) }
+        return prompt
     }
 
     fun getCoreBlueprintKey(requirement: ModelRequirement): String =
@@ -191,6 +222,27 @@ abstract class AIClient(
                 error("Couldn't fetch firebase key")
             } ?: error("Flag Value unavailable.")
         }
+
+    @PublishedApi
+    internal fun assembleGeminiRequest(block: GeminiRequestBuilder.() -> Unit): GeminiRequestAssembly = geminiRequest(block)
+
+    @PublishedApi
+    internal suspend fun recordAudit(
+        snapshot: AIAuditSnapshot,
+        logEnabled: Boolean = true,
+    ) {
+        if (!BuildConfig.DEBUG || !logEnabled) return
+        persistAuditLog(snapshot.toEntity())
+    }
+
+    @PublishedApi
+    internal suspend fun persistAuditLog(log: AIAuditLog) {
+        try {
+            aiAuditLogDao.insertLog(log)
+        } catch (e: Exception) {
+            Timber.tag(javaClass.simpleName).e("Error saving audit log: ${e.message}")
+        }
+    }
 }
 
 val AI_EXCLUDED_FIELDS =

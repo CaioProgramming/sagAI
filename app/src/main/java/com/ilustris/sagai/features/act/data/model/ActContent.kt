@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -43,34 +44,16 @@ data class ActContent(
             data.content.isNotEmpty()
 
     fun emotionalSummary() =
-        buildString {
-            appendLine(
-                this.toAINormalize(
-                    listOf(
-                        "id",
-                        "currentChapterId",
-                        "sagaId",
-                        "actId",
-                        "featuredCharacters",
-                        "coverImage",
-                        "createdAt",
-                        "content",
-                    ),
-                ),
+        buildMap {
+            put("Act", data.title)
+            put(
+                "ChaptersEmotionalReview",
+                chapters.joinToString {
+                    "${it.data.title}: ${it.data.emotionalReview}"
+                },
             )
-            chapters.normalizetoAIItems(
-                listOf(
-                    "id",
-                    "currentEventId",
-                    "sagaId",
-                    "actId",
-                    "featuredCharacters",
-                    "coverImage",
-                    "createdAt",
-                    "content",
-                ),
-            )
-        }
+            put("ActEmotionalConclusion", data.emotionalReview)
+        }.toJsonFormat()
 
     fun actSummary(showEvents: Boolean = true) =
         buildString {

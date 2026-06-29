@@ -491,14 +491,13 @@ class ChapterUseCaseImpl
                                     val synthesis = state.data!!.data
 
                                     // 1. Update Chapter details & Narrative Guide
+                                    val mergedChapter = synthesis.chapter.mergeInto(chapterContent.data)
                                     val updatedChapter =
                                         updateChapter(
-                                            synthesis.chapter.copy(
-                                                id = chapterContent.data.id,
-                                                currentEventId = chapterContent.data.currentEventId,
-                                                actId = chapterContent.data.actId,
-                                                coverImage = chapterContent.data.coverImage,
-                                                createdAt = chapterContent.data.createdAt,
+                                            mergedChapter.copy(
+                                                continuitySummary =
+                                                    synthesis.continuitySummary
+                                                        ?: mergedChapter.continuitySummary,
                                             ),
                                         )
 

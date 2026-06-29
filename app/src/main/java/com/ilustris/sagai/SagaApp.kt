@@ -2,7 +2,6 @@ package com.ilustris.sagai
 
 import android.app.ActivityManager
 import android.app.Application
-import android.content.Context
 import android.os.Build
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
@@ -11,6 +10,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.mlkit.common.sdkinternal.MlKitContext
+import com.ilustris.sagai.core.ai.local.MlKitLocalAiExecutor
 import com.ilustris.sagai.core.error.SagasExceptionHandler
 import com.ilustris.sagai.core.permissions.NotificationUtils
 import com.ilustris.sagai.core.services.BillingService
@@ -31,6 +31,9 @@ class SagaApp :
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var mlKitLocalAiExecutor: MlKitLocalAiExecutor
+
     override fun onCreate() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler(SagasExceptionHandler(this, defaultHandler))
@@ -46,6 +49,7 @@ class SagaApp :
             NotificationUtils.createChatNotificationChannel(this)
             CoroutineScope(Dispatchers.IO).launch {
                 billingService.checkPurchases()
+                mlKitLocalAiExecutor.warmup()
             }
         }
     }

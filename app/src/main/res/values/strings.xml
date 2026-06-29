@@ -176,6 +176,21 @@
     <string name="saga_detail_section_subtitle_wiki">%d items</string>
     <string name="saga_detail_section_title_acts">Volumes</string>
     <string name="saga_detail_section_subtitle_acts">%d volumes</string>
+    <string name="saga_brain_section_title">Constellation</string>
+    <string name="saga_brain_title">Your universe</string>
+    <string name="saga_brain_subtitle">Cosmic navigation</string>
+    <string name="saga_brain_character_title">Character universe</string>
+    <string name="saga_brain_character_subtitle">Personal constellation</string>
+    <string name="saga_brain_expand">Expand</string>
+    <string name="saga_brain_open_character">Character universe</string>
+    <string name="saga_brain_hint">Tap a star to explore · Swipe the card to navigate connections</string>
+    <string name="saga_brain_connections_count">%d connections</string>
+    <string name="saga_brain_act_in_progress">Act %1$d – in progress</string>
+    <string name="saga_brain_chapter_in_progress">Chapter %1$d – in progress</string>
+    <string name="saga_brain_event_in_progress">Event %1$d – in progress</string>
+    <string name="saga_brain_stage_in_progress_body">Keep playing to learn more about this stage of the story.</string>
+    <string name="character_brain_open">See connections</string>
+    <string name="see_your_universe">See your universe</string>
     <string name="saga_detail_status_ended">Finished on %s</string>
     <string name="saga_detail_status_created">Created on %s</string>
     <string name="saga_detail_journey_of">The journey of</string>
@@ -284,11 +299,25 @@
     <string name="clear_cache">Clear cache</string>
     <string name="clear_preferences">Clear Preferences</string>
     <string name="clear_preferences_explanation">Reset all your preferences and onboarding progress. Useful for testing or starting fresh.</string>
-    <string name="restore_purchases">Restore purchases</string>
+    <string name="billing_check_subscription">Check subscription</string>
     <string name="not_premium_title_label">Join</string>
     <string name="premium_label_title">You are</string>
     <string name="subscribe">Subscribe</string>
+    <string name="subscribe_debug_fallback">Subscribe (test)</string>
+    <string name="premium_not_now">Not now</string>
     <string name="premium_already">Subscription active</string>
+    <string name="billing_debug_fallback_title">Test environment</string>
+    <string name="billing_debug_fallback_message">Play Billing is unavailable on this DEBUG build. Simulate the subscription result to validate the premium flow.</string>
+    <string name="billing_simulate_confirm">Confirm subscription</string>
+    <string name="billing_simulate_cancel">Cancel</string>
+    <string name="billing_result_success_title">Subscription confirmed</string>
+    <string name="billing_result_success_message">Your Sagas Pro subscription is now active.</string>
+    <string name="billing_debug_simulation_success_title">Flow validated</string>
+    <string name="billing_debug_simulation_success_message">Subscription flow validated. Premium features remain blocked in DEBUG builds to protect API usage.</string>
+    <string name="billing_result_cancelled_title">Subscription cancelled</string>
+    <string name="billing_result_cancelled_message">No changes were made to your subscription.</string>
+    <string name="billing_error_generic">Subscription error</string>
+    <string name="billing_result_ok">OK</string>
     <string name="chapter_number_label">Chapter %s</string>
     <string name="try_again">Try again</string>
     <string name="chapter_finished">Chapter %s Finished</string>
@@ -540,6 +569,7 @@
     <string name="releasing_close_scene">Saving this event...</string>
     <string name="advance_saga_ending">Write the finale</string>
     <string name="releasing_ending">Writing the finale...</string>
+    <string name="advance_pull_hint">Swipe up to continue</string>
 
     <!-- Milestone Overlay -->
     <string name="milestone_encouragement">Congratulations! Keep going!</string>
@@ -702,6 +732,7 @@
     <string name="chat_input_fix">Fix</string>
     <string name="chat_input_send">Send</string>
     <string name="chat_input_focus_title">Write message</string>
+    <string name="chat_input_speech_mode_title">Speech mode</string>
     <string name="chat_input_mention_characters_title">Characters</string>
     <string name="chat_input_mention_wiki_title">Wiki</string>
     <string name="chat_input_search_query">Searching \"%s\"</string>
@@ -746,6 +777,8 @@
     <string name="guardrail_explicit_message">Your input contains explicit sexual or graphic content that is prohibited for all users. Please maintain a safe environment.</string>
     <string name="guardrail_unknown_title">System Interruption</string>
     <string name="guardrail_unknown_message">Something unexpected happened during processing. Please try again.</string>
+    <string name="guardrail_continuity_title">Narrative Inconsistency</string>
+    <string name="guardrail_continuity_message">Your input doesn\'t seem to fit the current story world. Please keep it consistent with the setting.</string>
     <string name="guardrail_dismiss">Got it</string>
     <string name="mascot_insight_label">Mascot\'s Emotional Insight</string>
 </resources>

@@ -15,4 +15,8 @@ data class NarrativeRules(
     val loreUpdateLimit: Int = 15,
     @SerializedName("CHAPTER_UPDATE_LIMIT")
     val chapterUpdateLimit: Int = 5,
+    @SerializedName("CONTINUITY_RECENT_CHAPTERS")
+    val continuityRecentChapters: Int = 3,
+    @SerializedName("CONTINUITY_DISTANT_FACTS_LIMIT")
+    val continuityDistantFactsLimit: Int = 20,
 )

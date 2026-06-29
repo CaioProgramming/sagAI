@@ -11,10 +11,11 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.historySummary
+import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -79,6 +80,19 @@ object ChatPrompts {
     const val REPLY_GENERATION_BLUEPRINT = "reply_generation_blueprint"
     const val SCENE_SUMMARIZATION_BLUEPRINT = "scene_summarization_blueprint"
 
+    /**
+     * Remote Config blueprint expectations for hierarchical narrative memory:
+     *
+     * - [REPLY_GENERATION_BLUEPRINT]: `worldContext.narrativeContinuity` carries layered canon
+     *   (currentChapterRollup, recentChapterCanon, distantCanon, actContinuity, globalWorldState).
+     *   Never contradict `establishedFacts`; weave `openThreads` and `persistentSetups` subtly.
+     *
+     * - [SCENE_SUMMARIZATION_BLUEPRINT]: `sagaContext.narrativeContinuity` must inform scene facts
+     *   without overwriting long-range canon.
+     *
+     * - [CHAT_REACTION_BLUEPRINT]: same continuity block as reply generation for off-thread reactions.
+     */
+
     val messageExclusions =
         listOf(
             "id",
@@ -132,6 +146,7 @@ object ChatPrompts {
         sceneSummary: SceneSummary?,
         conversationDirective: String,
         updateLimit: Int,
+        narrativeRules: NarrativeRules,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
     ): SplitPrompt {
         val charactersInScene =
@@ -151,6 +166,8 @@ object ChatPrompts {
                     it.content.contains(message.text, ignoreCase = true)
             }
 
+        val narrativeContinuity = saga.buildChatContinuityContext(narrativeRules).toContextMap()
+
         val worldContext =
             buildMap {
                 put(
@@ -159,6 +176,12 @@ object ChatPrompts {
                 )
                 sceneSummary?.let {
                     put("currentStoryContext", sceneSummary.asMap())
+                }
+                if (narrativeContinuity.isNotEmpty()) {
+                    put("narrativeContinuity", narrativeContinuity)
+                }
+                saga.data.worldState?.takeIf { it.isNotBlank() }?.let {
+                    put("globalWorldState", it)
                 }
 
                 put(
@@ -267,6 +290,7 @@ object ChatPrompts {
         saga: SagaContent,
         messageToReact: Message,
         conversationDirective: String,
+        narrativeRules: NarrativeRules,
     ): SplitPrompt {
         val mainCharacter = saga.mainCharacter!!
         val characters = summary.charactersPresent.mapNotNull { saga.findCharacter(it)?.data }
@@ -296,6 +320,8 @@ object ChatPrompts {
                 saga.findCharacter(it)
             }
 
+        val narrativeContinuity = saga.buildChatContinuityContext(narrativeRules).toContextMap()
+
         val args =
             mapOf(
                 "worldContext" to
@@ -303,6 +329,12 @@ object ChatPrompts {
                         put("sagaContext", saga.data)
                         summary.let {
                             put("currentStoryContext", summary.toAINormalize())
+                        }
+                        if (narrativeContinuity.isNotEmpty()) {
+                            put("narrativeContinuity", narrativeContinuity)
+                        }
+                        saga.data.worldState?.takeIf { it.isNotBlank() }?.let {
+                            put("globalWorldState", it)
                         }
 
                         messageSender?.let {
@@ -337,18 +369,54 @@ object ChatPrompts {
         saga: SagaContent,
         rules: NarrativeRules,
     ): SplitPrompt {
-        val latestMessage = saga.flatMessages().maxByOrNull { it.message.timestamp }?.message
-        val latestMessageContent = latestMessage?.toAINormalize(messageExclusions) ?: ""
+        val currentAct = saga.currentActInfo
+        val currentChapter = saga.currentActInfo?.currentChapterInfo
+        val lastEvent = saga.flatEvents().lastOrNull { it.data.id != currentChapter?.data?.id }
+        val latestMessages = saga.flatMessages().takeLast(rules.loreUpdateLimit)
+        val narrativeContinuity = saga.buildChatContinuityContext(rules).toContextMap()
+        val storyContext =
+            buildMap {
+                put("sagaContext", saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS))
+                if (narrativeContinuity.isNotEmpty()) {
+                    put("narrativeContinuity", narrativeContinuity)
+                }
+                saga.data.worldState?.takeIf { it.isNotBlank() }?.let {
+                    put("globalWorldState", it)
+                }
+                saga.mainCharacter?.let {
+                    put("mainCharacter", it.data.toAINormalize(CHARACTER_EXCLUSIONS))
+                }
+                put(
+                    "storyCharacters",
+                    saga.characters.joinToString { "${it.data.fullName()} - ${it.data.profile.occupation}\n${it.data.backstory}" },
+                )
+                currentAct?.let {
+                    put("ActualArc", it.data.toAINormalize(ActPrompts.ACT_EXCLUSIONS))
+                }
+                currentChapter?.let {
+                    put("ActualChapter", it.data.toAINormalize())
+                }
 
-        val args =
-            SceneSummaryArgs(
-                sagaContext = SagaPrompts.mainContext(saga),
-                recentActivity = saga.historySummary(),
-                conversationHistory = conversationHistory(rules.loreUpdateLimit, saga),
-                latestMessage = latestMessageContent,
-            )
+                lastEvent?.let {
+                    put(
+                        "LastEvent",
+                        it.data.toAINormalize(TimelinePrompts.timelineExclusions),
+                    )
+                }
+                if (latestMessages.isNotEmpty()) {
+                    put(
+                        "LatestMessages",
+                        latestMessages.map { it.message }.normalizetoAIItems(messageExclusions),
+                    )
+                }
+            }.toAINormalize()
 
-        return promptService.buildSplitBlueprint(SCENE_SUMMARIZATION_BLUEPRINT, args)
+        return promptService.buildSplitBlueprint(
+            SCENE_SUMMARIZATION_BLUEPRINT,
+            mapOf(
+                "sagaContext" to storyContext,
+            ),
+        )
     }
 
     suspend fun scheduledNotificationPrompt(

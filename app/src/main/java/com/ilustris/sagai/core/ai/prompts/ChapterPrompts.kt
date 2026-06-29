@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.UnifiedChapterUpdate
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.findChapterAct
@@ -45,8 +46,18 @@ object ChapterPrompts {
     const val CHAPTER_INTRODUCTION_BLUEPRINT = "chapter_introduction_blueprint"
     const val CHAPTER_SYNTHESIS_BLUEPRINT = "chapter_synthesis_blueprint"
 
+    /**
+     * [CHAPTER_SYNTHESIS_BLUEPRINT] must return `continuitySummary` in [UnifiedChapterUpdate]:
+     * - `establishedFacts`: immutable canon from this chapter
+     * - `openThreads`: unresolved setups
+     * - `consequences`: cause-effect pairs
+     * - `characterStates`: where key characters ended
+     * - `persistentSetups`: long-range seeds that may pay off many chapters later
+     */
+
     val CHAPTER_EXCLUSIONS =
-        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
+        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters") +
+            LorePrompts.LORE_OUTPUT_ONLY_FIELDS
 
     suspend fun chapterIntroductionPrompt(
         promptService: PromptService,

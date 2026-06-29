@@ -1,10 +1,12 @@
 package com.ilustris.sagai.features.act.data.model
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.narrative.data.model.ContinuitySummary
 
 @Entity(
     tableName = "acts",
@@ -33,4 +35,6 @@ data class Act(
     val currentChapterId: Int? = null,
     @ColumnInfo(defaultValue = "")
     val narrativeGuide: String? = null,
+    @Embedded(prefix = "continuity_")
+    val continuitySummary: ContinuitySummary? = null,
 )

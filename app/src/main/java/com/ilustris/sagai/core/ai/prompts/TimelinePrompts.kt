@@ -27,7 +27,8 @@ object TimelinePrompts {
     const val PAGE_GENERATION_BLUEPRINT = "page_generation_blueprint"
     const val UNIFIED_LORE_GENERATION_BLUEPRINT = "unified_lore_generation_blueprint"
 
-    val timelineExclusions = listOf("id", "chapterId", "createdAt", "emotionalReview")
+    val timelineExclusions =
+        listOf("id", "chapterId", "createdAt") + LorePrompts.LORE_OUTPUT_ONLY_FIELDS
 
     suspend fun generateUnifiedLorePrompt(
         promptService: PromptService,

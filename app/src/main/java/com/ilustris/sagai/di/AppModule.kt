@@ -16,6 +16,9 @@ import com.ilustris.sagai.core.ai.ImageGenerator
 import com.ilustris.sagai.core.ai.ImageGeneratorImpl
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
+import com.ilustris.sagai.core.ai.local.LocalAiConfigLoader
+import com.ilustris.sagai.core.ai.local.LocalAiExecutor
+import com.ilustris.sagai.core.ai.local.MlKitLocalAiExecutor
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.GenreVisualConfigService
 import com.ilustris.sagai.core.ai.services.ImageConfigService
@@ -176,7 +179,8 @@ object AppModule {
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
         fileHelper: FileHelper,
-    ) = BackupService(context, preferences, fileHelper)
+        database: SagaDatabase,
+    ) = BackupService(context, preferences, fileHelper, database)
 
     @Provides
     @Singleton
@@ -299,6 +303,15 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun providesLocalAiExecutor(executor: MlKitLocalAiExecutor): LocalAiExecutor = executor
+
+    @Provides
+    @Singleton
+    fun providesLocalAiConfigLoader(remoteConfigService: RemoteConfigService): LocalAiConfigLoader =
+        LocalAiConfigLoader(remoteConfigService)
+
+    @Provides
+    @Singleton
     fun providesSummarizationClient(
         remoteConfigService: RemoteConfigService,
         promptService: PromptService,
@@ -306,6 +319,8 @@ object AppModule {
         sideEffectService: SideEffectService,
         geminiApiClient: GeminiApiClient,
         ageVerificationService: AgeVerificationService,
+        localAiExecutor: LocalAiExecutor,
+        localAiConfigLoader: LocalAiConfigLoader,
     ): GemmaClient =
         GemmaClient(
             remoteConfig = remoteConfigService,
@@ -314,6 +329,8 @@ object AppModule {
             promptService = promptService,
             aiAuditLogDao = aiAuditLogDao,
             ageVerificationService = ageVerificationService,
+            localAiExecutor = localAiExecutor,
+            localAiConfigLoader = localAiConfigLoader,
         )
 
     @Provides
