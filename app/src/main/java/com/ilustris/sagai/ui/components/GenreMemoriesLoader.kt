@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,20 +29,20 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.ThemeIcon
+import com.ilustris.sagai.ui.theme.genreIconVector
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.iconDropShadow
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlinx.coroutines.delay
 
 private const val GENRE_MEMORY_CROSSFADE_MS = 300
+private val GENRE_MEMORY_ICON_SIZE = 40.dp
 
 @Composable
 fun GenreMemoriesLoader(
@@ -114,16 +113,12 @@ private fun GenreMemoryItem(
             exit = fadeOut(tween(GENRE_MEMORY_CROSSFADE_MS)),
         ) {
             val morphBrush = Brush.verticalGradient(morphingGradient())
-            Image(
-                painter = painterResource(genre.icon),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(40.dp)
-                        .iconDropShadow(
-                            brush = morphBrush,
-                            progress = 1f,
-                        ).gradientFill(morphBrush),
+            ThemeIcon(
+                modifier = Modifier.size(GENRE_MEMORY_ICON_SIZE),
+                imageVector = genreIconVector(genre),
+                brush = morphBrush,
+                glowBrush = morphBrush,
+                glowIntensity = 1f,
             )
         }
 
@@ -136,7 +131,8 @@ private fun GenreMemoryItem(
                         radius = 15f
                         spread = 5f
                         brush = shadowBrush
-                    }.clip(shape),
+                    }
+                    .clip(shape),
         ) {
             AsyncImage(
                 model = imageUrl,

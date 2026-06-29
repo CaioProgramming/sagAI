@@ -129,7 +129,8 @@ fun LoreDebugView(
                                     .sharedElement(
                                         rememberSharedContentState(key = "saga_${saga?.data?.id}_icon"),
                                         animatedVisibilityScope,
-                                    ).reactiveShimmer(
+                                    )
+                                    .reactiveShimmer(
                                         true,
                                         themeShimmer(),
                                         1.seconds,
@@ -193,7 +194,7 @@ fun LoreDebugView(
                             StoryCard(
                                 saga = saga,
                                 actContent = it,
-                                isLoading = uiState.generatingSections.contains(it.data.id.toString()) && uiState.reasoning != null,
+                                isLoading = uiState.generatingSections.contains(it.data.id.toString()),
                                 reasoning = uiState.reasoning,
                                 onRegenerate = { content, section ->
                                     viewModel.regenerateData(
@@ -387,10 +388,12 @@ fun StoryCard(
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     shape,
-                ).padding(8.dp)
+                )
+                .padding(8.dp)
                 .clickable {
                     isExpanded = !isExpanded
-                }.animateContentSize(tween(500, easing = EaseIn)),
+                }
+                .animateContentSize(tween(500, easing = EaseIn)),
     ) {
         val act = actContent.data
         val actNumber = saga.actNumber(act.id)
@@ -481,11 +484,13 @@ fun StoryCard(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .4f),
                             shape = shape,
-                        ).fillMaxWidth()
+                        )
+                        .fillMaxWidth()
                         .padding(8.dp)
                         .clickable {
                             chapterExpanded = !chapterExpanded
-                        }.animateContentSize(
+                        }
+                        .animateContentSize(
                             tween(300, easing = EaseIn),
                         ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -554,9 +559,11 @@ fun StoryCard(
                                     .background(
                                         MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                         shape = shape,
-                                    ).clickable {
+                                    )
+                                    .clickable {
                                         eventExpanded = !eventExpanded
-                                    }.fillMaxWidth()
+                                    }
+                                    .fillMaxWidth()
                                     .padding(8.dp)
                                     .animateContentSize(),
                             ) {
@@ -614,7 +621,8 @@ fun StoryCard(
                                                 .background(
                                                     MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                                     shape,
-                                                ).padding(8.dp),
+                                                )
+                                                .padding(8.dp),
                                     )
                                 }
                             }
@@ -637,7 +645,8 @@ fun StoryCard(
                                     .background(
                                         MaterialTheme.colorScheme.background.copy(alpha = .3f),
                                         shape,
-                                    ).padding(8.dp),
+                                    )
+                                    .padding(8.dp),
                         )
 
                         TextButton(onClick = {
@@ -682,7 +691,8 @@ fun StoryCard(
                         .background(
                             MaterialTheme.colorScheme.background.copy(alpha = .3f),
                             shape,
-                        ).padding(8.dp),
+                        )
+                        .padding(8.dp),
             )
 
             if (act.content.isNotEmpty()) {
@@ -776,15 +786,17 @@ fun DebugSection(
             }
         }
 
-        if (isGenerating && reasoning != null) {
-            AnimatedContent(reasoning) {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
-                    textAlign = TextAlign.Justify,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
-                )
+        if (isGenerating) {
+            AnimatedContent(reasoning ?: "") {
+                if (it.isNotBlank()) {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                        textAlign = TextAlign.Justify,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f),
+                    )
+                }
             }
             return@Column
         }
