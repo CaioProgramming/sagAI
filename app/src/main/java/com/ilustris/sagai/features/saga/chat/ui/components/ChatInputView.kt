@@ -99,6 +99,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.senderForTag
 import com.ilustris.sagai.features.saga.chat.data.model.title
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.morphingGradient
@@ -110,17 +111,15 @@ private val ChatInputTextMaxHeight = 160.dp
 
 @Composable
 private fun generatingBorderRotation(isGenerating: Boolean): Float {
-    if (isGenerating) {
-        val infiniteTransition = rememberInfiniteTransition(label = "border")
-        val rotation by infiniteTransition.animateFloat(
-            0f,
-            360f,
-            infiniteRepeatable(tween(3000, easing = LinearEasing)),
-            label = "rotation",
-        )
-        return rotation
-    }
-    return 0f
+    if (!isGenerating || !rememberLifecycleAnimationsActive()) return 0f
+    val infiniteTransition = rememberInfiniteTransition(label = "border")
+    val rotation by infiniteTransition.animateFloat(
+        0f,
+        360f,
+        infiniteRepeatable(tween(3000, easing = LinearEasing)),
+        label = "rotation",
+    )
+    return rotation
 }
 
 private fun isIndexInsideTagMarkup(
@@ -839,8 +838,7 @@ fun ChatInputView(
                                         .clickable {
                                             onSelectCharacter(character)
                                             characterMenu = false
-                                        }
-                                        .padding(8.dp),
+                                        }.padding(8.dp),
                             ) {
                                 CharacterAvatar(
                                     character,

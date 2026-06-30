@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,8 +24,8 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.sagaShape
-import com.ilustris.sagai.ui.theme.themeIcon
 
 @Composable
 fun ObjectiveOverlay(
@@ -56,7 +55,8 @@ fun ObjectiveOverlay(
                             color = resolvedColor,
                             offset = DpOffset.Zero,
                         ),
-                ).clip(shape)
+                )
+                .clip(shape)
                 .background(cardColor, shape)
                 .clickable(onClick = onDismiss),
     ) {
@@ -74,11 +74,10 @@ fun ObjectiveOverlay(
                         .size(40.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    themeIcon(),
-                    contentDescription = null,
+                MorphingThemeIcon(
                     modifier = sparkModifier.size(22.dp),
                     tint = resolvedColor,
+                    glowIntensity = 0.4f,
                 )
             }
 

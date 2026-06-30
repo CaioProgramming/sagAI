@@ -1,7 +1,6 @@
 package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
-import android.graphics.BlurMaskFilter
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -16,7 +15,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,23 +22,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -102,6 +97,10 @@ fun gradientAnimation(
     gradientType: GradientType = GradientType.LINEAR,
     isAnimating: Boolean = false,
 ): Brush {
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isAnimating || !animationsActive) {
+        return gradientType.toBrush(colors, targetValue)
+    }
     val infiniteTransition = rememberInfiniteTransition(label = "gradientTransition")
     val offsetAnimation =
         infiniteTransition.animateFloat(
@@ -197,34 +196,19 @@ fun Modifier.gradientFill(
     }
 
 fun Modifier.iconDropShadow(
+    shape: Shape,
     brush: Brush,
     progress: Float,
     blurRadius: Dp = 15.dp,
-    spread: Dp = 8.dp,
+    spreadRadius: Dp = 8.dp,
 ): Modifier {
     val clampedProgress = progress.coerceIn(0f, 1f)
     if (clampedProgress <= 0f) return this
 
-    return drawWithCache {
-        val blurPx = (blurRadius.toPx() + spread.toPx()) * clampedProgress
-        onDrawWithContent {
-            drawIntoCanvas { canvas ->
-                val bounds = Rect(Offset.Zero, size)
-                val glowPaint =
-                    Paint().apply {
-                        asFrameworkPaint().maskFilter =
-                            BlurMaskFilter(
-                                blurPx.coerceAtLeast(0.1f),
-                                BlurMaskFilter.Blur.NORMAL,
-                            )
-                    }
-                canvas.saveLayer(bounds, glowPaint)
-                drawContent()
-                canvas.restore()
-                drawRect(brush = brush, size = size, blendMode = BlendMode.SrcIn)
-            }
-            drawContent()
-        }
+    return dropShadow(shape) {
+        this.brush = brush
+        radius = blurRadius.value * clampedProgress
+        spread = spreadRadius.value * clampedProgress
     }
 }
 
@@ -341,6 +325,9 @@ fun Modifier.reactiveShimmer(
     targetValue: Float = 500f,
     repeatMode: RepeatMode = RepeatMode.Reverse,
 ): Modifier {
+    val animationsActive = rememberLifecycleAnimationsActive()
+    if (!isPlaying || !animationsActive) return this
+
     val infiniteTransition = rememberInfiniteTransition()
     val offsetAnimation =
         infiniteTransition.animateFloat(
@@ -454,7 +441,7 @@ fun rememberAnimatedShuffledGradientBrush(
 
 @Composable
 fun progressiveBrush(
-    tintColor: Color,
+    tintColor: Color = MaterialTheme.colorScheme.primary,
     progress: Float,
     animationDuration: Int = 1000,
 ): Brush {
@@ -480,23 +467,10 @@ fun morphingGradient(
 ): List<Color> {
     // Use a mutable state so updates trigger recomposition and the animated targets change.
     var brushColors by remember { mutableStateOf(colors) }
+    val animationsActive = rememberLifecycleAnimationsActive()
 
-    // Only run the shuffle loop while the composable's lifecycle is at least STARTED
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val lifecycle = lifecycleOwner.lifecycle
-    var isStarted by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
-
-    DisposableEffect(lifecycle) {
-        val observer =
-            LifecycleEventObserver { _, _ ->
-                isStarted = lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-            }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
-
-    LaunchedEffect(isStarted) {
-        if (!isStarted) return@LaunchedEffect
+    LaunchedEffect(animationsActive) {
+        if (!animationsActive) return@LaunchedEffect
         while (true) {
             delay(duration)
             brushColors = brushColors.shuffled()

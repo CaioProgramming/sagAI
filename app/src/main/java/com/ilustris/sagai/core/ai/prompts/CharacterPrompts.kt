@@ -4,7 +4,6 @@ import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.ai.model.SplitPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.ai.services.PromptService
-import com.ilustris.sagai.core.utils.asMap
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -251,76 +250,48 @@ object CharacterPrompts {
         promptService: PromptService,
         saga: SagaContent,
         description: String,
-        bannedNames: List<String> = emptyList(),
         themeColor: String? = null,
         sceneSummary: SceneSummary? = null,
     ): SplitPrompt {
-        val themeColorContext =
-            themeColor?.let {
-                buildString {
-                    appendLine("## 🎨 CHARACTER THEME COLOR: $it 🎨")
-                    appendLine("This character has a signature theme color that should influence their visual identity.")
-                    appendLine("**USE THIS COLOR AS A GUIDE** for hair, eyes, outfit accents, or accessories.")
-                }
-            } ?: ""
-
-        val bannedNamesContext =
-            if (bannedNames.isNotEmpty()) {
-                buildString {
-                    appendLine("## 🚫 BANNED NAMES (CREATIVITY CHALLENGE) 🚫")
-                    appendLine(
-                        "Avoid these names unless explicitly requested in the discovery seed: ${
-                            bannedNames.joinToString(
-                                ", ",
-                            )
-                        }",
-                    )
-                }
+        val latestMessages =
+            if (saga.flatMessages().isEmpty()) {
+                emptyList()
             } else {
-                ""
+                saga
+                    .flatMessages()
+                    .sortedByDescending { it.message.timestamp }
+                    .take(5)
             }
 
-        val args =
-            CharacterGenerationArgs(
-                sagaMainContext =
-                    buildString {
-                        appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
-                        if (sceneSummary != null) {
-                            appendLine()
-                            appendLine("## 🎭 CURRENT NARRATIVE STATE (CRITICAL CONTEXT) 🎭")
-                            appendLine("The character is appearing IN THIS EXACT MOMENT:")
-                            appendLine("Location: ${sceneSummary.currentLocation}")
-                            appendLine("Mood: ${sceneSummary.mood}")
-                            appendLine("Current Conflict: ${sceneSummary.currentConflict}")
-                            appendLine("Tension Level: ${sceneSummary.tensionLevel}/10")
-                            if (!sceneSummary.spatialContext.isNullOrBlank()) {
-                                appendLine("Atmosphere: ${sceneSummary.spatialContext}")
-                            }
-                        }
-                    },
-                themeColorContext = themeColorContext,
-                discoverySeed =
-                    buildString {
-                        appendLine("### 🆔 IDENTITY PROTOCOL 🆔")
-                        appendLine("The character MUST have a distinct, personal name AND a separate role/job.")
-                        appendLine(
-                            "STRICTLY FORBIDDEN: Using a role as a name (e.g., Avoid naming someone 'Inquisitor' or 'Black Knight').",
+        return promptService.buildSplitBlueprint(
+            CHARACTER_GENERATION_BLUEPRINT,
+            mapOf(
+                "context" to
+                    buildMap {
+                        put(
+                            "SagaContext",
+                            saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
                         )
-                        appendLine("User Original Intent: $description")
+                        put(
+                            "CharactersCast",
+                            saga.characters.joinToString { it.data.fullName() },
+                        )
+                        sceneSummary?.let {
+                            put("CurrentStoryState", it.toAINormalize())
+                        }
+                        if (latestMessages.isNotEmpty()) {
+                            put(
+                                "LatestMessages",
+                                latestMessages
+                                    .map { it.message }
+                                    .normalizetoAIItems(excludingFields = messageExclusions),
+                            )
+                        }
+                        put("NewCharacterContext", description)
+                        put("NewCharacterFavoriteColor", themeColor)
                     },
-                bannedNamesContext = bannedNamesContext,
-                conversationHistory =
-                    saga
-                        .flatMessages()
-                        .sortedByDescending { it.message.timestamp }
-                        .take(5)
-                        .map { it.message }
-                        .normalizetoAIItems(excludingFields = messageExclusions),
-                sceneContext =
-                    sceneSummary?.toAINormalize() ?: "",
-            )
-
-        return promptService.buildSplitBlueprint(CHARACTER_GENERATION_BLUEPRINT, args.asMap())
+            ),
+        )
     }
 
     suspend fun characterLoreGeneration(

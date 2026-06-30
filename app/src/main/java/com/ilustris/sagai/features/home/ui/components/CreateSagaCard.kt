@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,10 +29,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.saturation
-import com.ilustris.sagai.ui.theme.themeIcon
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -51,7 +50,8 @@ fun CreateSagaCard(
             Modifier
                 .clickable {
                     onCreateNewChat()
-                }.alpha(.5f)
+                }
+                .alpha(.5f)
                 .saturation(.2f),
         ) {
             Row(
@@ -70,18 +70,21 @@ fun CreateSagaCard(
                                 color = genreColor
                                 brush = genreBrush
                                 spread = 5f
-                            }.size(50.dp)
+                            }
+                            .size(50.dp)
                             .clip(CircleShape)
                             .background(
                                 brush = Brush.verticalGradient(genreColor.darkerPalette(factor = .5f)),
-                            ).padding(8.dp),
+                            )
+                            .padding(8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        themeIcon(),
-                        contentDescription = null,
+                    MorphingThemeIcon(
                         modifier = Modifier.fillMaxSize(),
+                        genre = genre,
+                        brush = genreBrush,
                         tint = MaterialTheme.colorScheme.onPrimary,
+                        glowIntensity = 0.4f,
                     )
                 }
 

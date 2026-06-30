@@ -30,6 +30,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.animations.draw4PointCosmicStar
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
@@ -53,18 +54,12 @@ fun UniverseConstellationEntry(
         }
     val glowPrimary = genreUniverseGlow(genre)
     val glowSecondary = genreUniverseGlowSecondary(genre)
-
-    val twinkleTransition = rememberInfiniteTransition(label = "universe_entry_twinkle")
-    val twinkle by twinkleTransition.animateFloat(
-        initialValue = 0.65f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(2800, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "universe_entry_twinkle_alpha",
-    )
+    val twinkle =
+        if (rememberLifecycleAnimationsActive()) {
+            rememberUniverseEntryTwinkle()
+        } else {
+            0.85f
+        }
 
     Column(
         modifier =
@@ -210,3 +205,19 @@ private fun genreUniverseGlowSecondary(genre: Genre?): Color =
         Genre.PUNK_ROCK -> Color(0xFFFFAB91)
         null -> Color(0xFFB0BEC5)
     }
+
+@Composable
+private fun rememberUniverseEntryTwinkle(): Float {
+    val twinkleTransition = rememberInfiniteTransition(label = "universe_entry_twinkle")
+    val twinkle by twinkleTransition.animateFloat(
+        initialValue = 0.65f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "universe_entry_twinkle_alpha",
+    )
+    return twinkle
+}

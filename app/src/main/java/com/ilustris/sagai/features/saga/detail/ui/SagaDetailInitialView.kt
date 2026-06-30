@@ -33,7 +33,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,8 +65,10 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.playthrough.toPlaytimeFormat
 import com.ilustris.sagai.features.saga.detail.data.model.SagaDetailResume
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSectionView
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -86,6 +87,7 @@ fun SagaDetailInitialContent(
     saga: Saga,
     section: DetailSectionView.InitialSection,
     resume: SagaDetailResume,
+    reviewGenerationState: ReviewGenerationState,
     gridState: LazyGridState = rememberLazyGridState(),
     onAction: (DetailAction) -> Unit = {},
     showTitleOnly: Boolean = false,
@@ -215,6 +217,7 @@ fun SagaDetailInitialContent(
                                 chaptersCount = resume.chaptersCount,
                                 charactersCount = resume.charactersCount,
                                 messagesCount = resume.messagesCount,
+                                reviewGenerationState = reviewGenerationState,
                                 modifier =
                                     Modifier
                                         .padding(16.dp)
@@ -484,12 +487,10 @@ fun sagaHeaderComponent(
     ) {
         if (saga.icon.isBlank()) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    themeIcon(),
-                    null,
-                    Modifier
-                        .size(64.dp)
-                        .gradientFill(sagaBrush()),
+                MorphingThemeIcon(
+                    modifier = Modifier.size(64.dp),
+                    brush = sagaBrush(),
+                    glowIntensity = 0.5f,
                 )
                 saga.genre.stylisedText(
                     saga.title,
@@ -538,11 +539,10 @@ fun sagaHeaderComponent(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            themeIcon(),
-                            null,
-                            Modifier.size(12.dp),
+                        MorphingThemeIcon(
+                            modifier = Modifier.size(12.dp),
                             tint = MaterialTheme.colorScheme.onPrimary,
+                            glowIntensity = 0.35f,
                         )
 
                         Text(

@@ -53,6 +53,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themeBrushColors
@@ -93,7 +94,7 @@ fun StarryLoader(
         }
     }
 
-    if (isLoading) {
+    if (isLoading && rememberLifecycleAnimationsActive()) {
         val paint =
             remember {
                 Paint().apply {

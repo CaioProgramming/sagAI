@@ -36,6 +36,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.ui.CharacterCard
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.components.LocalBlurState
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.gradient
@@ -90,18 +91,12 @@ fun CharacterRevealOverlay(
                     .clickable { onDismiss() },
             contentAlignment = Alignment.Center,
         ) {
-            val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
-
-            val floatOffset by infiniteTransition.animateFloat(
-                initialValue = -10f,
-                targetValue = 10f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(2000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "floating",
-            )
+            val floatOffset =
+                if (rememberLifecycleAnimationsActive()) {
+                    rememberCharacterRevealFloatOffset()
+                } else {
+                    0f
+                }
 
             Box(
                 modifier =
@@ -142,8 +137,7 @@ fun CharacterRevealOverlay(
                                             10.dp,
                                             revealGradient,
                                         ),
-                                    )
-                                    .clip(shape)
+                                    ).clip(shape)
                                     .border(1.dp, revealGradient, shape)
                                     .background(MaterialTheme.colorScheme.primary, shape),
                             showWatermark = false,
@@ -153,4 +147,20 @@ fun CharacterRevealOverlay(
             }
         }
     }
+}
+
+@Composable
+private fun rememberCharacterRevealFloatOffset(): Float {
+    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+    val floatOffset by infiniteTransition.animateFloat(
+        initialValue = -10f,
+        targetValue = 10f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "floating",
+    )
+    return floatOffset
 }

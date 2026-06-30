@@ -40,6 +40,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.iconDropShadow
 import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import kotlinx.coroutines.delay
 
@@ -114,6 +115,7 @@ private fun GenreMemoryItem(
             exit = fadeOut(tween(GENRE_MEMORY_CROSSFADE_MS)),
         ) {
             val morphBrush = Brush.verticalGradient(morphingGradient())
+            val iconShape = rememberVectorShape(genre.icon)
             Image(
                 painter = painterResource(genre.icon),
                 contentDescription = null,
@@ -121,9 +123,11 @@ private fun GenreMemoryItem(
                     Modifier
                         .size(40.dp)
                         .iconDropShadow(
+                            shape = iconShape,
                             brush = morphBrush,
                             progress = 1f,
-                        ).gradientFill(morphBrush),
+                        )
+                        .gradientFill(morphBrush),
             )
         }
 
@@ -136,7 +140,8 @@ private fun GenreMemoryItem(
                         radius = 15f
                         spread = 5f
                         brush = shadowBrush
-                    }.clip(shape),
+                    }
+                    .clip(shape),
         ) {
             AsyncImage(
                 model = imageUrl,

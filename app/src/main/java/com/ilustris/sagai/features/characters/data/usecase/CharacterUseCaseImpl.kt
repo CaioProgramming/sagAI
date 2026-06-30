@@ -246,15 +246,12 @@ class CharacterUseCaseImpl
         ): RequestResult<Character> =
             executeRequest {
                 assertCharacterNotAlreadyInSaga(sagaContent, candidateName)
-                val bannedNames = repository.getAllCharacterNames()
-                // Generate theme color first to pass to AI for appearance guidance
                 val themeColor = getRandomColorHex()
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         promptService,
                         sagaContent,
                         description,
-                        bannedNames,
                         themeColor,
                         sceneSummary,
                     )
@@ -323,7 +320,6 @@ class CharacterUseCaseImpl
                             promptService,
                             sagaContent,
                             description,
-                            bannedNames,
                             themeColor,
                             sceneSummary,
                         )

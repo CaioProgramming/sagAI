@@ -163,6 +163,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -176,7 +177,6 @@ import com.ilustris.sagai.ui.theme.progressiveBrush
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeBrushColors
-import com.ilustris.sagai.ui.theme.themeIcon
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -1162,14 +1162,11 @@ private fun SagaChatSparkPlaceholder(modifier: Modifier = Modifier) {
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            painter = themeIcon(),
-            contentDescription = null,
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .gradientFill(sagaBrush(gradientType = GradientType.VERTICAL)),
+        MorphingThemeIcon(
+            modifier = Modifier.size(48.dp),
+            brush = sagaBrush(gradientType = GradientType.VERTICAL),
             tint = muted,
+            glowIntensity = 0.35f,
         )
     }
 }
