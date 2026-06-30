@@ -52,6 +52,15 @@ class ReasoningSynthesizerService
                 var synthesisJob: Job? = null
                 var lastReasoning = ""
                 val terminal = AtomicBoolean(false)
+                val fallbackEmitted = AtomicBoolean(false)
+
+                if (showReasoning) {
+                    launch {
+                        if (fallbackEmitted.compareAndSet(false, true)) {
+                            useFallback(genre, this@channelFlow, terminal)
+                        }
+                    }
+                }
 
                 sourceFlow.collect { state ->
                     when (state) {
@@ -146,15 +155,13 @@ class ReasoningSynthesizerService
                     )
                     delay(3.seconds)
                 } else {
-                    Timber.w("AI Reasoning failed, using fallback...")
-                    useFallback(genre, scope, terminal)
+                    Timber.w("AI Reasoning failed, keeping fallback...")
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 if (terminal.get() || scope.isClosedForSend) return
-                Timber.w("Failed to synthesize reasoning: ${e.message}, using fallback...")
-                useFallback(genre, scope, terminal)
+                Timber.w("Failed to synthesize reasoning: ${e.message}, keeping fallback...")
             }
         }
 
@@ -185,7 +192,8 @@ class ReasoningSynthesizerService
             )
         }
 
-        private suspend fun <T> useFallback(
+        @PublishedApi
+        internal suspend fun <T> useFallback(
             genre: Genre?,
             scope: ProducerScope<StreamingState<T>>,
             terminal: AtomicBoolean = AtomicBoolean(false),

@@ -14,6 +14,7 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,14 +42,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.TextStyle
@@ -119,6 +125,62 @@ fun themeIcon(): Painter {
     val genre = LocalSagaGenre.current
     val iconRes = genre?.icon ?: R.drawable.ic_spark
     return painterResource(iconRes)
+}
+
+@Composable
+fun themeIconVector(): ImageVector {
+    val genre = LocalSagaGenre.current
+    return ImageVector.vectorResource(genre?.icon ?: R.drawable.ic_spark)
+}
+
+@Composable
+fun genreIconVector(genre: Genre): ImageVector = ImageVector.vectorResource(genre.icon)
+
+@Composable
+fun ThemeIcon(
+    modifier: Modifier = Modifier,
+    imageVector: ImageVector = themeIconVector(),
+    brush: Brush? = null,
+    tint: Color = Color.Unspecified,
+    contentDescription: String? = null,
+    glowBrush: Brush? = null,
+    glowIntensity: Float = 0f,
+    glowRadius: Dp = 14.dp,
+    iconModifier: Modifier = Modifier,
+) {
+    val clampedGlow = glowIntensity.coerceIn(0f, 1f)
+    val resolvedGlowBrush = glowBrush ?: brush
+
+    Box(
+        modifier = modifier.graphicsLayer { clip = false },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (clampedGlow > 0f && resolvedGlowBrush != null) {
+            Icon(
+                imageVector = imageVector,
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .gradientFill(resolvedGlowBrush)
+                        .graphicsLayer {
+                            clip = false
+                            alpha = 0.8f * clampedGlow
+                        }.blur(glowRadius * clampedGlow),
+            )
+        }
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = if (brush == null) tint else Color.Unspecified,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .then(if (brush != null) Modifier.gradientFill(brush) else Modifier)
+                    .then(iconModifier),
+        )
+    }
 }
 
 @Composable

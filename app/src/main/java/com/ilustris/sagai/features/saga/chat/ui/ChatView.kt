@@ -1353,8 +1353,7 @@ fun ChatList(
                                 .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .reactiveShimmer(true)
-                                .alpha(.5f),
+                                .reactiveShimmer(true),
                     )
                 }
             }

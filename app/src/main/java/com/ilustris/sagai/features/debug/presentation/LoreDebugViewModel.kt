@@ -140,7 +140,12 @@ class LoreDebugViewModel
         }
 
         private fun startGenerating(sectionId: String) {
-            _uiState.update { it.copy(generatingSections = it.generatingSections + sectionId) }
+            _uiState.update {
+                it.copy(
+                    generatingSections = it.generatingSections + sectionId,
+                    reasoning = null,
+                )
+            }
         }
 
         private fun stopGenerating() {
@@ -218,6 +223,7 @@ class LoreDebugViewModel
                         fixItemsCount = totalItems,
                         currentFixItem = 0,
                         showFixConfirmation = false,
+                        reasoning = null,
                     )
                 }
 
@@ -275,7 +281,12 @@ class LoreDebugViewModel
             section: DebugSection,
         ) {
             viewModelScope.launch {
-                _uiState.update { it.copy(generatingSections = it.generatingSections + sectionId) }
+                _uiState.update {
+                    it.copy(
+                        generatingSections = it.generatingSections + sectionId,
+                        reasoning = null,
+                    )
+                }
                 when (content) {
                     is ActMetadata -> {
                         if (section == DebugSection.ACT_INTRODUCTION) {
