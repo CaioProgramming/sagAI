@@ -45,7 +45,6 @@ import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
@@ -147,8 +146,7 @@ fun ActReader(
                         modifier =
                             Modifier
                                 .clip(shape)
-                                .selectiveColorHighlight(genre.selectiveHighlight())
-                                .effectForGenre(genre)
+                                .effectForGenre(genre, enableSelectiveHighlight = true)
                                 .fillMaxWidth()
                                 .fillParentMaxHeight(.4f),
                     )
@@ -349,8 +347,7 @@ fun ActReadingContent(
                     contentScale = ContentScale.Crop,
                     modifier =
                         Modifier
-                            .selectiveColorHighlight(genre.selectiveHighlight())
-                            .effectForGenre(genre)
+                            .effectForGenre(genre, enableSelectiveHighlight = true)
                             .fillMaxWidth()
                             .fillParentMaxHeight(.4f)
                             .clip(shape),

@@ -47,7 +47,6 @@ import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import kotlin.time.Duration.Companion.seconds
@@ -119,8 +118,7 @@ fun ChapterContentView(
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
                             .fillMaxSize()
-                            .effectForGenre(genre)
-                            .selectiveColorHighlight(genre.selectiveHighlight()),
+                            .effectForGenre(genre, enableSelectiveHighlight = true),
                 )
 
                 Box(

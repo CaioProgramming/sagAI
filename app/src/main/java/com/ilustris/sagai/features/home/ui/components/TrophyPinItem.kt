@@ -26,7 +26,6 @@ import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.themeBrushColors
 
@@ -79,8 +78,11 @@ fun TrophyPinItem(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .effectForGenre(genre, useFallBack = true)
-                            .selectiveColorHighlight(genre),
+                            .effectForGenre(
+                                genre,
+                                useFallBack = true,
+                                enableSelectiveHighlight = true,
+                            ),
                 )
             }
         }

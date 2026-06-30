@@ -40,14 +40,12 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.features.timeline.ui.components.TimelineThreadList
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 @Composable
@@ -151,8 +149,11 @@ fun AvatarTimelineIcon(
                         .fillMaxSize()
                         .clip(CircleShape)
                         .border(borderWidth, Brush.verticalGradient(brushColors), CircleShape)
-                        .effectForGenre(genre, visualConfig)
-                        .selectiveColorHighlight(genre.selectiveHighlight(visualConfig)),
+                        .effectForGenre(
+                            genre,
+                            visualConfig,
+                            enableSelectiveHighlight = true,
+                        ),
             )
         }
         if (showSpark) {

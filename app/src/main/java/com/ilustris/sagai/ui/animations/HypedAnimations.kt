@@ -38,6 +38,7 @@ import androidx.compose.ui.text.drawText
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.theme.filters.ultimateEnergyShader
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.lighter
 import kotlin.random.Random
@@ -2313,8 +2314,10 @@ fun Modifier.genreVfx(
         Genre.HEROES -> {
             this
                 .levitate(yOffset = 10f)
-                .divineAura(auraColor = MaterialTheme.colorScheme.primary.lighter(.3f))
-                .lightningStorm(lightningColor = finalPrimary.lighter(0.6f))
+                .ultimateEnergyShader(
+                    energyColor = Color(0xFF8CE8FF),
+                    outerColor = finalPrimary.lighter(0.4f),
+                )
         }
 
         Genre.SPACE_OPERA -> {

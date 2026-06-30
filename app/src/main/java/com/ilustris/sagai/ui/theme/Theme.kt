@@ -71,10 +71,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -402,10 +400,10 @@ val MaterialTheme.sagaShape: Shape
  */
 @Composable
 fun Modifier.sagaHighlight(): Modifier =
-    this.then(
-        selectiveColorHighlight(
-            LocalSagaGenre.current?.selectiveHighlight(LocalGenreVisualConfig.current),
-        ),
+    effectForGenre(
+        LocalSagaGenre.current,
+        LocalGenreVisualConfig.current,
+        enableSelectiveHighlight = true,
     )
 
 @Composable

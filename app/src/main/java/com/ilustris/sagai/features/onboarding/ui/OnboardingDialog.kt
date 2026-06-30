@@ -910,8 +910,7 @@ private fun GenreImage(
         contentDescription = null,
         modifier =
             modifier
-                .effectForGenre(genre, config)
-                .selectiveColorHighlight(genre.selectiveHighlight(config)),
+                .effectForGenre(genre, config, enableSelectiveHighlight = true),
         contentScale = ContentScale.Crop,
     )
 }

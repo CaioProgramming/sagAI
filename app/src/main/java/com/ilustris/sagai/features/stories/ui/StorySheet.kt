@@ -37,12 +37,10 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.ui.SagaBriefing
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -92,9 +90,10 @@ fun StorySheet(
                                     it.second,
                                     modifier = Modifier.fillMaxSize(),
                                     imageModifier =
-                                        Modifier
-                                            .selectiveColorHighlight(genre.selectiveHighlight())
-                                            .effectForGenre(genre),
+                                        Modifier.effectForGenre(
+                                            genre,
+                                            enableSelectiveHighlight = true,
+                                        ),
                                 ) {
                                     genre.stylisedText(
                                         sagaContent.data.title,

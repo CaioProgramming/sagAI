@@ -59,7 +59,6 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.solidGradient
@@ -146,8 +145,7 @@ fun ReviewDetails(saga: SagaContent) {
                     Modifier
                         .fillMaxWidth()
                         .fillParentMaxHeight(.4f)
-                        .effectForGenre(genre)
-                        .selectiveColorHighlight(genre.selectiveHighlight()),
+                        .effectForGenre(genre, enableSelectiveHighlight = true),
             )
         }
 
