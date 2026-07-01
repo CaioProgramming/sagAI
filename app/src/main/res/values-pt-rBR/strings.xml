@@ -361,6 +361,9 @@
     <string name="recap_chapters_lived">%d capítulos vividos</string>
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
+    <string name="recap_preparing">Preparando seu recap…</string>
+    <string name="recap_almost_ready">Seu recap está quase pronto (%1$d/%2$d)</string>
+    <string name="review_step_loading_default">Criando o próximo capítulo do seu recap…</string>
     <string name="character_details_aka">vulgo: %s</string>
     <string name="character_details_arcs_title">Arco narrativo</string>
     <string name="character_details_knowledge_title">O que sabe</string>

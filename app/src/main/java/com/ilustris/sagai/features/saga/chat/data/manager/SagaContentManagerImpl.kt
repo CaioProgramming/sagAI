@@ -53,6 +53,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCoordinator
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeEvaluationContext
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeProcessingGate
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
 import com.ilustris.sagai.features.saga.chat.presentation.model.IntroductionType
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -104,6 +105,7 @@ class SagaContentManagerImpl
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val narrativeCoordinator: NarrativeCoordinator,
         private val narrativeActionExecutor: NarrativeActionExecutor,
+        private val narrativeProcessingGate: NarrativeProcessingGate,
         private val stringResourceHelper: StringResourceHelper,
         @ApplicationContext
         private val context: Context,
@@ -151,6 +153,7 @@ class SagaContentManagerImpl
         private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
             isProcessingNarrative.set(isProcessing)
             _narrativeProcessingUiState.value = isProcessing
+            narrativeProcessingGate.setNarrativeProcessing(isProcessing)
         }
 
         override fun setDebugMode(enabled: Boolean) {
@@ -182,7 +185,7 @@ class SagaContentManagerImpl
             if (narrativeCoordinator.uiState.value.pendingAction == NarrativeAction.CreateAct) {
                 advanceNarrative()
             }
-    }
+        }
 
         private fun handleNarrativeActionFailure(
             action: NarrativeAction,

@@ -31,9 +31,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.saga.detail.data.model.isComplete
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.review.presentation.SagaReviewViewModel
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewStepLoadingPage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -55,6 +58,7 @@ fun SagaReview(
     val sagaContent by viewModel.sagaContent.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
+    val generationState by viewModel.generationState.collectAsStateWithLifecycle()
     val genre = saga.genre
 
     LaunchedEffect(saga.id) {
@@ -65,15 +69,25 @@ fun SagaReview(
         val coroutineScope = rememberCoroutineScope()
         val animatedPages = remember { mutableStateOf(setOf<Int>()) }
 
+        val review = currentContent.data.review
         val experience =
-            remember(currentContent) {
+            remember(review) {
                 ReviewExperienceFactory.createExperience(currentContent)
             }
 
         val pages = experience.pages
-        val pagerState = rememberPagerState { pages.size }
+        val hasPendingSteps = !review.isComplete()
+        val isCoordinatorGenerating = generationState is ReviewGenerationState.Generating
+        val hasLoadingSlot = hasPendingSteps && isCoordinatorGenerating
+        val pageCount = pages.size + if (hasLoadingSlot) 1 else 0
+        val pagerState = rememberPagerState { pageCount.coerceAtLeast(1) }
 
-        // Indicator logic
+        LaunchedEffect(pagerState.currentPage, pages.size, hasPendingSteps) {
+            if (hasPendingSteps && pagerState.currentPage >= (pages.size - 1).coerceAtLeast(0)) {
+                viewModel.ensureGeneration(saga.id)
+            }
+        }
+
         var paused by remember { mutableStateOf(false) }
         var shareType by remember { mutableStateOf<ShareType?>(null) }
 
@@ -104,73 +118,88 @@ fun SagaReview(
             }
         }
 
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .pointerInteropFilter { event ->
-                        when (event.action) {
-                            MotionEvent.ACTION_DOWN -> paused = true
-                            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> paused = false
-                        }
-                        false
-                    },
-        ) {
-            pages.getOrNull(pagerState.currentPage)?.Background(modifier = Modifier.fillMaxSize())
-
-            VerticalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-            ) { pageIndex ->
-                val canAnimate = pageIndex == 0 || !animatedPages.value.contains(pageIndex)
-
-                Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (pagerState.currentPage == pageIndex) {
-                        pages.getOrNull(pageIndex)?.Show(
-                            modifier = Modifier.fillMaxSize(),
-                            canAnimate = canAnimate,
-                        ) {
-                            coroutineScope.launch {
-                                handleAction(it)
-                            }
-                        }
-                    } else {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            Modifier
-                                .size(50.dp)
-                                .gradientFill(genre.gradient()),
-                        )
-                    }
-                }
-            }
-
-            IconButton(
-                onClick = {
-                    // navigate to next page or move back to first if is on last
-                    coroutineScope.launch {
-                        val isLastPage = pagerState.currentPage == pages.size - 1
-                        if (isLastPage) {
-                            onDismiss()
-                        } else {
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                        }
-                    }
-                },
+        if (pages.isNotEmpty() || hasLoadingSlot) {
+            Box(
                 modifier =
                     Modifier
-                        .align(Alignment.TopCenter)
-                        .statusBarsPadding(),
+                        .fillMaxSize()
+                        .pointerInteropFilter { event ->
+                            when (event.action) {
+                                MotionEvent.ACTION_DOWN -> paused = true
+                                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> paused = false
+                            }
+                            false
+                        },
             ) {
-                Icon(
-                    painter = painterResource(genre.icon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                )
+                if (pagerState.currentPage < pages.size) {
+                    pages
+                        .getOrNull(pagerState.currentPage)
+                        ?.Background(modifier = Modifier.fillMaxSize())
+                }
+
+                VerticalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                ) { pageIndex ->
+                    val isLoadingPage = pageIndex >= pages.size
+
+                    Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (isLoadingPage) {
+                            val reasoning =
+                                (generationState as? ReviewGenerationState.Generating)?.reasoning
+                                    ?: loadingMessage
+                            ReviewStepLoadingPage(
+                                reasoningMessage = reasoning,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else if (pagerState.currentPage == pageIndex) {
+                            val canAnimate =
+                                pageIndex == 0 || !animatedPages.value.contains(pageIndex)
+                            pages.getOrNull(pageIndex)?.Show(
+                                modifier = Modifier.fillMaxSize(),
+                                canAnimate = canAnimate,
+                            ) {
+                                coroutineScope.launch {
+                                    handleAction(it)
+                                }
+                            }
+                        } else {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                null,
+                                Modifier
+                                    .size(50.dp)
+                                    .gradientFill(genre.gradient()),
+                            )
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val isLastPage = pagerState.currentPage == pageCount - 1
+                            if (isLastPage) {
+                                onDismiss()
+                            } else {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        }
+                    },
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding(),
+                ) {
+                    Icon(
+                        painter = painterResource(genre.icon),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             }
         }
 

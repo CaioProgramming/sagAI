@@ -38,3 +38,25 @@ data class ReviewText(
     val title: String? = null,
     val subtitle: String? = null,
 )
+
+fun Review?.isComplete(): Boolean {
+    if (this == null) return false
+    return introduction != null &&
+        expressiveness != null &&
+        playstyle != null &&
+        topCharacters != null &&
+        actsInsight != null &&
+        conclusion != null
+}
+
+fun Review?.hasViewablePages(): Boolean = this?.introduction != null
+
+fun Review.completedStepCount(): Int =
+    listOf(
+        introduction,
+        expressiveness,
+        playstyle,
+        topCharacters,
+        actsInsight,
+        conclusion,
+    ).count { it != null }

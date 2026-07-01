@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.animations
 
+import android.graphics.BlurMaskFilter
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -19,6 +20,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -65,6 +69,14 @@ private fun StarryCanvas(
 ) {
     val stars = remember { mutableStateListOf<Star>() }
     val starPath = remember { Path() }
+    val glowPaint =
+        remember {
+            android.graphics.Paint().apply {
+                isAntiAlias = true
+                style = android.graphics.Paint.Style.FILL
+            }
+        }
+    val glowBlurFilters = remember { mutableMapOf<Int, BlurMaskFilter>() }
 
     val infiniteTransition = rememberInfiniteTransition(label = "starry_sky_transition")
     val animationTrigger by infiniteTransition.animateFloat(
@@ -122,7 +134,7 @@ private fun StarryCanvas(
                     currentTime + Random.nextLong(0, (twinkleDurationMillis * 0.5).toLong())
             }
 
-            drawStar(star, starColor, starPath)
+            drawStar(star, starColor, starPath, glowPaint, glowBlurFilters)
         }
     }
 }
@@ -148,6 +160,8 @@ private fun DrawScope.drawStar(
     star: Star,
     color: Color,
     starPath: Path,
+    glowPaint: android.graphics.Paint,
+    glowBlurFilters: MutableMap<Int, BlurMaskFilter>,
 ) {
     val dynamicSize = (star.baseSize * star.currentScale * (0.5f + star.alpha * 0.5f)).dp.toPx()
     if (dynamicSize <= 0f || star.alpha <= 0.01f) return
@@ -155,21 +169,18 @@ private fun DrawScope.drawStar(
     val center = Offset(star.x, star.y)
     val alpha = star.alpha
 
-    drawCircle(
-        color = color.copy(alpha = alpha * 0.14f),
-        radius = dynamicSize * 2.1f,
-        center = center,
-    )
-    drawCircle(
-        color = color.copy(alpha = alpha * 0.28f),
-        radius = dynamicSize * 1.45f,
-        center = center,
-    )
-    drawCircle(
-        color = color.copy(alpha = alpha * 0.42f),
-        radius = dynamicSize * 0.95f,
-        center = center,
-    )
+    drawIntoCanvas { canvas ->
+        val blurRadius = dynamicSize * 1.5f
+        val blurKey = (blurRadius * 4f).toInt()
+        val blurFilter =
+            glowBlurFilters.getOrPut(blurKey) {
+                BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
+            }
+        glowPaint.color = color.toArgb()
+        glowPaint.alpha = (alpha * 0.6f * 255f).toInt().coerceIn(0, 255)
+        glowPaint.maskFilter = blurFilter
+        canvas.nativeCanvas.drawCircle(center.x, center.y, dynamicSize * 1.2f, glowPaint)
+    }
 
     starPath.setSharpStar(center, dynamicSize)
     drawPath(starPath, color.copy(alpha = alpha))

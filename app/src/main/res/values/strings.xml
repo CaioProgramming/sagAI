@@ -401,6 +401,9 @@
     <string name="recap_chapters_lived">%d chapters lived</string>
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
+    <string name="recap_preparing">Preparing your recap…</string>
+    <string name="recap_almost_ready">Your recap is almost ready (%1$d/%2$d)</string>
+    <string name="review_step_loading_default">Crafting the next chapter of your recap…</string>
     <string name="character_details_aka">aka: %s</string>
     <string name="character_details_arcs_title">Story Arc</string>
     <string name="character_details_knowledge_title">What they know</string>

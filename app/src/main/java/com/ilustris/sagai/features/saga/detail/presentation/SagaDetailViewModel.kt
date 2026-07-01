@@ -18,6 +18,8 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.SagaDetailUIMapper
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +41,7 @@ class SagaDetailViewModel
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val stringResourceHelper: StringResourceHelper,
+        private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
@@ -55,6 +58,12 @@ class SagaDetailViewModel
         val initialSection = _initialSection.asStateFlow()
 
         val detailDrawer = MutableStateFlow<TimelineDrawer?>(null)
+
+        private val _reviewGenerationState =
+            MutableStateFlow<ReviewGenerationState>(ReviewGenerationState.Idle)
+        val reviewGenerationState = _reviewGenerationState.asStateFlow()
+
+        private var reviewGenerationJob: kotlinx.coroutines.Job? = null
 
         private var cachedSegmentedImage: Pair<Bitmap, Bitmap>? = null
         private var cachedIconPath: String? = null
@@ -138,6 +147,7 @@ class SagaDetailViewModel
                             }
 
                             loadInitialSection()
+                            observeReviewGeneration(sagaId)
                             detailDrawer.value =
                                 sagaDetailUIMapper.buildDrawer(
                                     data.saga,
@@ -192,6 +202,19 @@ class SagaDetailViewModel
             }
         }
 
+        private fun observeReviewGeneration(sagaId: Int) {
+            reviewGenerationJob?.cancel()
+            reviewGenerationJob =
+                viewModelScope.launch {
+                    reviewGenerationCoordinator.stateFor(sagaId).collect { state ->
+                        _reviewGenerationState.value = state
+                    }
+                }
+            if (sagaResume.value?.saga?.isEnded == true) {
+                reviewGenerationCoordinator.enqueue(sagaId)
+        }
+    }
+
         fun onDetailScreenVisible(sagaId: Int) {
             sagaImmersiveSession.push("saga_detail", sagaId)
             pendingEntryVfxSagaId = sagaId
@@ -211,6 +234,7 @@ class SagaDetailViewModel
 
         override fun onCleared() {
             pendingEntryVfxSagaId = null
+            reviewGenerationJob?.cancel()
             super.onCleared()
             sagaImmersiveSession.pop("saga_detail")
         }

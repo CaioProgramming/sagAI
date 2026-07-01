@@ -63,6 +63,7 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.DetailSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.RequestSection
 import com.ilustris.sagai.features.saga.detail.data.usecase.mapper.TimelineDrawer
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
@@ -102,6 +103,7 @@ fun SagaDetailView(
     var showEmotionalReview by remember { mutableStateOf(false) }
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     val drawer by viewModel.detailDrawer.collectAsStateWithLifecycle()
+    val reviewGenerationState by viewModel.reviewGenerationState.collectAsStateWithLifecycle()
     val gridState = rememberLazyGridState()
 
     BackHandler(enabled = true) {
@@ -189,6 +191,7 @@ fun SagaDetailView(
             initialSection = initialSection,
             resume = resume,
             drawer = drawer,
+            reviewGenerationState = reviewGenerationState,
             gridState = gridState,
             onAction = onAction,
             modifier = Modifier.fillMaxSize(),
@@ -294,6 +297,7 @@ fun SagaDetailContentView(
     initialSection: DetailSectionView.InitialSection?,
     resume: SagaDetailResume?,
     drawer: TimelineDrawer?,
+    reviewGenerationState: ReviewGenerationState,
     gridState: LazyGridState,
     onAction: (DetailAction) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -356,6 +360,7 @@ fun SagaDetailContentView(
                                     saga = baseSaga,
                                     section = initialSection!!,
                                     resume = sagaResume,
+                                    reviewGenerationState = reviewGenerationState,
                                     gridState = gridState,
                                     onAction = onAction,
                                     sharedTransitionScope = sharedTransitionScope,

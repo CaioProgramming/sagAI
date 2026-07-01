@@ -18,6 +18,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeActionExecu
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionEnvironment
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeExecutionResult
 import com.ilustris.sagai.features.saga.datasource.MessageDao
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -37,6 +38,7 @@ class NarrativeActionExecutorImpl
         private val actUseCase: ActUseCase,
         private val reasoningSynthesizerService: ReasoningSynthesizerService,
         private val messageDao: MessageDao,
+        private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
     ) : NarrativeActionExecutor {
         override suspend fun execute(
             action: NarrativeAction,
@@ -423,6 +425,7 @@ class NarrativeActionExecutorImpl
                         endedAt = System.currentTimeMillis(),
                     ),
                 )
+                reviewGenerationCoordinator.enqueue(sagaId)
             } else {
                 val fullSaga =
                     sagaHistoryUseCase.getSagaById(sagaId).first()
@@ -453,6 +456,7 @@ class NarrativeActionExecutorImpl
                             delay(1.seconds)
                             environment.onReasoningChunk(null)
                             environment.dismissMilestone()
+                            reviewGenerationCoordinator.enqueue(sagaId)
                         }
 
                         is StreamingState.Error -> {

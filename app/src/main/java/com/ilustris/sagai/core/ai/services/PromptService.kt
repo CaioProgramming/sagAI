@@ -296,7 +296,7 @@ class PromptServiceImpl
                 buckets.putAll(it)
             }
 
-            // --- Build processed template (dynamic — placeholder substitution applied) ---
+            // --- Build processed template (dynamic — placeholder substitution applied or automatic context) ---
             val processedTemplate =
                 buildString {
                     if (blueprint.template.isNotBlank()) {
@@ -308,6 +308,9 @@ class PromptServiceImpl
                                 remoteConfigKey,
                             ),
                         )
+                    } else if (variables.isNotEmpty()) {
+                        appendLine("# TASK CONTEXT")
+                        appendLine(variables.toAINormalize())
                     }
                 }.trimIndent()
 
@@ -358,7 +361,7 @@ class PromptServiceImpl
                 buckets.putAll(it)
             }
 
-            // --- Build processed template (dynamic — placeholder substitution applied) ---
+            // --- Build processed template (dynamic — placeholder substitution applied or automatic context) ---
             val processedTemplate =
                 buildString {
                     if (blueprint.examples.isNotEmpty()) {
@@ -380,6 +383,9 @@ class PromptServiceImpl
                                 remoteConfigKey,
                             ),
                         )
+                    } else {
+                        appendLine("# TASK CONTEXT")
+                        appendLine(variables.toAINormalize())
                     }
                 }.trimIndent()
 

@@ -78,6 +78,7 @@ import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -333,8 +334,7 @@ fun HeroSummaryCard(
                 .background(
                     MaterialTheme.colorScheme.onBackground,
                     shape,
-                )
-                .padding(12.dp),
+                ).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -1071,6 +1071,61 @@ fun ReviewLoadingPage(
                 modifier = Modifier.fillMaxWidth(0.6f),
                 color = MaterialTheme.colorScheme.primary,
             )
+        }
+    }
+}
+
+@Composable
+fun ReviewStepLoadingPage(
+    reasoningMessage: String?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center,
+    ) {
+        DynamicLinework(
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+            lineCount = 8,
+        )
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp),
+        ) {
+            MorphingThemeIcon(
+                modifier = Modifier.size(64.dp),
+                glowIntensity = 0.5f,
+            )
+
+            reasoningMessage?.takeIf { it.isNotBlank() }?.let { message ->
+                Text(
+                    text = message,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = MaterialTheme.typography.bodyLarge.fontFamily,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                        ),
+                    textAlign = TextAlign.Center,
+                    maxLines = 6,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.reactiveShimmer(true),
+                )
+            } ?: run {
+                Text(
+                    text = stringResource(R.string.review_step_loading_default),
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.reactiveShimmer(true),
+                )
+            }
         }
     }
 }
