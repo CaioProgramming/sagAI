@@ -3,11 +3,13 @@ package com.ilustris.sagai.features.saga.detail.review.domain
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.StreamingState
 import com.ilustris.sagai.core.ai.model.mergeInstructions
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.ai.services.GenreConfigService
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.ai.services.ReasoningSynthesizerService
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
@@ -35,7 +37,6 @@ class SagaReviewUseCaseImpl
         override suspend fun createReview(content: SagaContent): Flow<ReviewState> =
             flow {
                 executeRequest {
-                    genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
                     var currentReview = content.data.review ?: Review()
                     if (currentReview.isComplete()) {
                         emit(ReviewState.Success(content.data))
@@ -86,12 +87,21 @@ class SagaReviewUseCaseImpl
                 }
 
                 executeRequest {
-                    genreConfigService.getGenreConfig(content.data.genre, content.data.variationId)
-
                     val prompt =
                         promptService.buildSplitBlueprint(
                             step.blueprintKey,
-                            step.buildArgs(content, emptyString()),
+                            buildMap {
+                                putAll(genreConfigService.buildAesthetic(content.data.genre))
+                                put(
+                                    "Story",
+                                    content.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
+                                )
+                                put(
+                                    "MainCharacter",
+                                    content.mainCharacter!!.data.toAINormalize(ChatPrompts.CHARACTER_EXCLUSIONS),
+                                )
+                                put("Context", step.buildArgs(content).toAINormalize())
+                            },
                         )
 
                     val sourceFlow =
@@ -107,7 +117,7 @@ class SagaReviewUseCaseImpl
                     synthesizerService
                         .synthesizeReasoning(
                             sourceFlow = sourceFlow,
-                            context = step.name,
+                            context = "Creating Saga review.",
                             genre = content.data.genre,
                         ).collect { state ->
                             when (state) {

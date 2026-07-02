@@ -51,7 +51,6 @@ class SagaIdeationService
 
         suspend fun suggestUniverseEchoes() =
             executeRequest {
-                val themes = Genre.entries.joinToString(", ") { it.name }
                 val genreAesthetics = genreConfigService.formatGenreAesthetics()
                 val splitPrompt =
                     promptService.buildSplitBlueprint(
@@ -63,7 +62,7 @@ class SagaIdeationService
                 gemmaClient.generate<UniverseSuggestions>(
                     promptSplit = splitPrompt,
                     temperatureRandomness = 1f,
-                    requirement = ModelRequirement.MEDIUM,
+                    requirement = ModelRequirement.MINIMAL,
                 )!!
             }
 

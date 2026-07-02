@@ -39,7 +39,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 data class PromptBlueprint(
     val title: String = "",
     val role: String = "",
-    val template: String = "",
+    val template: String? = null,
     val directives: Map<String, String> = emptyMap(),
     val rules: Map<String, String> = emptyMap(),
     val examples: List<Map<String, String>> = emptyList(),

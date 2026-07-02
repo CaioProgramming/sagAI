@@ -59,12 +59,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -154,6 +156,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.NarrativeBa
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.ObjectiveOverlay
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
+import com.ilustris.sagai.features.saga.detail.ui.SagaReview
 import com.ilustris.sagai.features.saga.detail.ui.SagaWikiView
 import com.ilustris.sagai.features.saga.detail.ui.sagaHeaderComponent
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -197,9 +200,11 @@ fun ChatView(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val genreVfxPulse by viewModel.genreVfxPulse.collectAsStateWithLifecycle()
+    val reviewGenerationState by viewModel.reviewGenerationState.collectAsStateWithLifecycle()
     val context = LocalActivity.current
     val activity = LocalActivity.current
     var requiredPermission by remember { mutableStateOf<String?>(null) }
+    var showReview by remember { mutableStateOf(false) }
     val requestPermissionLauncher = PermissionService.rememberPermissionLauncher()
     val onAction: (ChatUiAction) -> Unit =
         remember(viewModel) {
@@ -208,6 +213,7 @@ fun ChatView(
                 when (action) {
                     is ChatUiAction.Back -> onBack()
                     is ChatUiAction.OpenSagaDetails -> onSagaDetails()
+                    is ChatUiAction.OpenReview -> showReview = true
                     is ChatUiAction.OpenCharacter -> onCharacterDetails(action.characterId)
                     else -> doNothing()
                 }
@@ -310,8 +316,25 @@ fun ChatView(
                                         padding = padding,
                                         isDebug = isDebug,
                                         genreVfxPulse = genreVfxPulse,
+                                        reviewGenerationState = reviewGenerationState,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
+                                    )
+                                }
+                            }
+
+                            if (showReview) {
+                                ModalBottomSheet(
+                                    onDismissRequest = { showReview = false },
+                                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                    containerColor = MaterialTheme.colorScheme.background,
+                                    dragHandle = null,
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    modifier = Modifier.fillMaxHeight(),
+                                ) {
+                                    SagaReview(
+                                        saga = sagaContent.data,
+                                        onDismiss = { showReview = false },
                                     )
                                 }
                             }
@@ -393,6 +416,7 @@ fun ChatContent(
     padding: PaddingValues = PaddingValues(),
     isDebug: Boolean = false,
     genreVfxPulse: Boolean = false,
+    reviewGenerationState: ReviewGenerationState = ReviewGenerationState.Idle,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
@@ -594,6 +618,7 @@ fun ChatContent(
                                 flatEvents = uiState.flatEvents,
                                 listState = listState,
                                 reasoningChunk = uiState.reasoningChunk,
+                                reviewGenerationState = reviewGenerationState,
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = animatedVisibilityScope,
                                 modifier = Modifier.fillMaxSize(),
@@ -1303,6 +1328,7 @@ fun ChatList(
     wikis: List<Wiki>,
     activeGenre: Genre?,
     flatEvents: List<Timeline>,
+    reviewGenerationState: ReviewGenerationState,
     modifier: Modifier,
     listState: LazyListState,
     onMessageAction: (MessageAction) -> Unit = {},
@@ -1379,13 +1405,13 @@ fun ChatList(
                     chaptersCount = saga.flatChapters().size,
                     charactersCount = saga.characters.size,
                     messagesCount = saga.flatMessages().size,
-                    reviewGenerationState = ReviewGenerationState.Idle,
+                    reviewGenerationState = reviewGenerationState,
                     modifier =
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
                             .height(150.dp),
-                    onClick = { onAction(ChatUiAction.OpenSagaDetails) },
+                    onClick = { onAction(ChatUiAction.OpenReview) },
                 )
             }
 

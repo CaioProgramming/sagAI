@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.vector.toPath
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import com.ilustris.sagai.R
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 /**
  * Shape that follows the filled paths of a vector drawable, scaled to the layout size.
@@ -46,6 +48,9 @@ class VectorIconShape(
         return Outline.Generic(path)
     }
 }
+
+@Composable
+fun Genre?.iconShape() = rememberVectorShape(this?.icon ?: R.drawable.ic_spark)
 
 @Composable
 fun rememberVectorShape(

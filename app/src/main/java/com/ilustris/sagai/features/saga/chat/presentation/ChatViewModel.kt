@@ -47,6 +47,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationCoordinator
+import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.wiki.data.mapper.WikiMapper
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -86,6 +88,7 @@ class ChatViewModel
         private val characterUseCase: CharacterUseCase,
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
+        private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         private val stateManager = ChatStateManager()
@@ -93,6 +96,13 @@ class ChatViewModel
 
         private val _genreVfxPulse = MutableStateFlow(false)
         val genreVfxPulse = _genreVfxPulse.asStateFlow()
+
+        private val _reviewGenerationState =
+            MutableStateFlow<ReviewGenerationState>(ReviewGenerationState.Idle)
+        val reviewGenerationState = _reviewGenerationState.asStateFlow()
+
+        private var reviewGenerationJob: kotlinx.coroutines.Job? = null
+        private var observedReviewSagaId: Int? = null
 
         val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024)
         private var audioProgressJob: kotlinx.coroutines.Job? = null
@@ -212,6 +222,9 @@ class ChatViewModel
                 }
 
                 is ChatUiAction.OpenSagaDetails -> { // UI action
+                }
+
+                is ChatUiAction.OpenReview -> { // UI action
                 }
 
                 is ChatUiAction.InjectFakeMessages -> {
@@ -334,6 +347,11 @@ class ChatViewModel
 
             sagaObserverJob?.cancel()
             sagaObserverJob = null
+
+            reviewGenerationJob?.cancel()
+            reviewGenerationJob = null
+            observedReviewSagaId = null
+            _reviewGenerationState.value = ReviewGenerationState.Idle
 
             expectedSagaId = sagaId.toInt()
             sagaLoadStatus = SagaLoadStatus.Loading
@@ -807,6 +825,11 @@ class ChatViewModel
                         sagaLoadStatus = SagaLoadStatus.Loaded
                         hasSeenResetNull = false
 
+                        ensureReviewGenerationObserved(
+                            sagaId = sagaContent.data.id,
+                            isEnded = sagaContent.data.isEnded,
+                        )
+
                         if (messagesChanged) {
                             validateMessageStatus(sagaContent)
                         }
@@ -925,9 +948,29 @@ class ChatViewModel
 
         override fun onCleared() {
             super.onCleared()
+            reviewGenerationJob?.cancel()
             sagaImmersiveSession.pop("chat")
             audioMediaPlayerManager.release()
         }
+
+        private fun ensureReviewGenerationObserved(
+            sagaId: Int,
+            isEnded: Boolean,
+        ) {
+            if (observedReviewSagaId != sagaId) {
+                observedReviewSagaId = sagaId
+                reviewGenerationJob?.cancel()
+                reviewGenerationJob =
+                    viewModelScope.launch {
+                        reviewGenerationCoordinator.stateFor(sagaId).collect { state ->
+                            _reviewGenerationState.value = state
+                        }
+                    }
+            }
+            if (isEnded) {
+                reviewGenerationCoordinator.enqueue(sagaId)
+        }
+    }
 
         private suspend fun linkCharacterMessages(saga: SagaMetadata) {
             saga

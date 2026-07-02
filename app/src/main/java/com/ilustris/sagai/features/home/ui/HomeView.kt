@@ -1,7 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.home.ui
-import androidx.activity.compose.BackHandler
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -10,12 +10,12 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,25 +39,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -66,8 +57,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -75,15 +64,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewAnnotatedString
@@ -91,6 +77,7 @@ import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaSummary
 import com.ilustris.sagai.features.home.ui.components.CreateSagaCard
+import com.ilustris.sagai.features.home.ui.components.HomeSplashLoader
 import com.ilustris.sagai.features.home.ui.components.TrophyShelf
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -99,20 +86,16 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.settings.ui.SettingsView
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.iridescentGradient
-import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeBrushColors
-import com.ilustris.sagai.ui.theme.themeShimmer
-import kotlinx.coroutines.launch
 import java.util.Calendar
-import kotlin.time.Duration.Companion.seconds
 
 /** Theme and ambient audio are owned by [com.ilustris.sagai.MainActivity] + [com.ilustris.sagai.core.theme.SagaThemeManager], not this screen. */
 @Suppress("ktlint:standard:function-naming")
@@ -121,192 +104,89 @@ import kotlin.time.Duration.Companion.seconds
 fun HomeView(
     navToNewSaga: () -> Unit,
     navToSaga: (String, Boolean) -> Unit,
-    navToProfile: () -> Unit,
-    navToFAQ: () -> Unit,
-    navToAuditLogs: () -> Unit,
-    navToPlaythrough: () -> Unit,
+    navToSettings: () -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
-    val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
-    val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
-    val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
-    val dynamicNewSagaTexts by viewModel.dynamicNewSagaTexts.collectAsStateWithLifecycle()
-    val isLoadingDynamicPrompts = dynamicNewSagaTexts == null
-    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
-    var showPremiumSheet by remember { mutableStateOf(false) }
-    var showBackupSheet by remember { mutableStateOf(viewModel.showRecoverSheet.value) }
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val isStarting by viewModel.isStarting.collectAsStateWithLifecycle()
-    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val coroutineScope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.checkForBackups()
-        viewModel.autoBackup()
-    }
-
-    BackHandler(enabled = drawerState.isOpen) {
-        if (drawerState.isOpen) {
-            coroutineScope.launch {
-                drawerState.close()
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                HomeNavigationEvent.NewSaga -> navToNewSaga()
+                is HomeNavigationEvent.Saga -> navToSaga(event.sagaId, event.isDebug)
             }
         }
     }
 
     with(sharedTransitionScope) {
-        AnimatedContent(isStarting, transitionSpec = {
-            fadeIn(tween(1200)) togetherWith fadeOut(tween(400))
-        }) {
-            if (it) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Image(
-                        painterResource(R.drawable.ic_spark),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                        modifier =
-                            Modifier
-                                .offset(y = 24.unaryMinus().dp)
-                                .size(150.dp)
-                                .sharedElement(
-                                    rememberSharedContentState("spark_icon"),
-                                    this@AnimatedContent,
-                                ).reactiveShimmer(
-                                    true,
-                                    themeShimmer(),
-                                    1.seconds,
-                                    targetValue = 250f,
-                                    repeatMode = RepeatMode.Restart,
-                                ),
+        AnimatedContent(
+            targetState = uiState.screen,
+            transitionSpec = {
+                fadeIn(
+                    tween(
+                        SAGA_THEME_TRANSITION_MS,
+                        easing = FastOutSlowInEasing,
+                    ),
+                ) togetherWith
+                    fadeOut(
+                        tween(
+                            SAGA_THEME_TRANSITION_MS,
+                            delayMillis = SAGA_THEME_TRANSITION_MS / 2,
+                            easing = LinearOutSlowInEasing,
+                        ),
+                    )
+            },
+            contentKey = { it },
+            label = "home_screen",
+        ) { screen ->
+            when (screen) {
+                HomeScreen.Splash -> {
+                    HomeSplashLoader(
+                        sharedTransitionScope = this@with,
+                        animatedContentScope = this@AnimatedContent,
                     )
                 }
-            } else {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    Box(
-                        Modifier
-                            .padding(padding)
-                            .fillMaxSize(),
-                    ) {
-                        ModalNavigationDrawer(
-                            drawerState = drawerState,
-                            drawerContent = {
-                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                    ModalDrawerSheet(
-                                        drawerContainerColor = MaterialTheme.colorScheme.background,
-                                    ) {
-                                        SettingsView(
-                                            onBack = {
-                                                coroutineScope.launch { drawerState.close() }
-                                            },
-                                            navToFAQ = navToFAQ,
-                                            navToAuditLogs = navToAuditLogs,
-                                            navToPlaythrough = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                navToPlaythrough()
-                                            },
-                                            sharedTransitionScope = sharedTransitionScope,
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                            onOpenPremiumOnboarding = {
-                                                showPremiumSheet = true
-                                                coroutineScope.launch {
-                                                    drawerState.close()
-                                                }
-                                            },
-                                        )
-                                    }
-                                }
-                            },
-                        ) {
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                val isPremium =
-                                    billingState is BillingService.BillingState.SignatureEnabled
 
-                                val visibleSagas =
-                                    if (showDebugButton.not()) {
-                                        sagas.filter { !it.data.isDebug }
-                                    } else {
-                                        sagas
-                                    }
-
-                                ChatList(
-                                    sagas = visibleSagas,
-                                    padding = padding,
-                                    showDebugButton = showDebugButton,
-                                    dynamicNewSagaTexts = dynamicNewSagaTexts,
-                                    isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-                                    isPremium = isPremium,
-                                    animatedContentScope = this@AnimatedContent,
-                                    sharedTransitionScope = sharedTransitionScope,
-                                    onCreateNewChat = {
-                                        if (BuildConfig.DEBUG) {
-                                            navToNewSaga()
-                                            return@ChatList
-                                        }
-                                        val freeSagasCount =
-                                            sagas.count { it.data.isEnded.not() }
-                                        if (freeSagasCount <= 3 || isPremium) {
-                                            navToNewSaga()
-                                        } else {
-                                            showPremiumSheet = true
-                                        }
-                                    },
-                                    onSelectSaga = { sagaData ->
-                                        navToSaga(sagaData.id.toString(), sagaData.isDebug)
-                                    },
-                                    createFakeSaga = {
-                                        viewModel.createFakeSaga()
-                                    },
-                                    openPremiumSheet = {
-                                        if (showPremiumSheet.not()) {
-                                            showPremiumSheet = true
-                                        }
-                                    },
-                                    recoverSagas = {
-                                        showBackupSheet = true
-                                    },
-                                    openSettings = {
-                                        coroutineScope.launch {
-                                            drawerState.open()
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
-                        }
-                    }
+                HomeScreen.Content -> {
+                    HomeContent(
+                        state = uiState,
+                        onAction = viewModel::handleAction,
+                        padding = padding,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedContentScope = this@AnimatedContent,
+                        openSettings = navToSettings,
+                        modifier =
+                            Modifier
+                                .padding(padding)
+                                .fillMaxSize(),
+                    )
                 }
             }
         }
     }
 
-    LaunchedEffect(startFakeSaga) {
-        startFakeSaga?.let {
-            navToSaga(it.id.toString(), true)
-        }
-    }
-
-    if (showPremiumSheet && isLoading.not()) {
+    if (uiState.showPremiumOnboarding && uiState.isLoading.not()) {
         OnboardingDialog(
             type = OnboardingType.PREMIUM_GUIDE,
             force = true,
             onDismiss = {
-                showPremiumSheet = false
+                viewModel.handleAction(HomeUiAction.DismissPremiumOnboarding)
             },
         )
     }
 
-    if (showBackupSheet) {
+    if (uiState.showBackupSheet) {
         BackupSheet(true, {
-            showBackupSheet = false
+            viewModel.handleAction(HomeUiAction.DismissBackupSheet)
         })
     }
 
     StarryLoader(
-        isLoading,
-        loadingMessage,
+        uiState.isLoading,
+        uiState.loadingMessage,
     )
 
     OnboardingDialog(type = OnboardingType.APP_INTRO)
@@ -314,37 +194,48 @@ fun HomeView(
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
+private fun HomeContent(
+    state: HomeUiState,
+    onAction: (HomeUiAction) -> Unit,
+    padding: PaddingValues,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
+    openSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ChatList(
+        state = state,
+        onAction = onAction,
+        padding = padding,
+        sharedTransitionScope = sharedTransitionScope,
+        animatedContentScope = animatedContentScope,
+        openSettings = openSettings,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalAnimationApi::class, ExperimentalSharedTransitionApi::class)
+@Composable
 private fun ChatList(
-    sagas: List<SagaSummary>,
+    state: HomeUiState,
+    onAction: (HomeUiAction) -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
-    showDebugButton: Boolean,
-    dynamicNewSagaTexts: DynamicSagaPrompt?,
-    isLoadingDynamicPrompts: Boolean,
-    isPremium: Boolean = false,
-    backupAvailable: Boolean = false,
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
-    recoverSagas: () -> Unit = {},
-    onCreateNewChat: () -> Unit = {},
-    onSelectSaga: (Saga) -> Unit = {},
-    createFakeSaga: () -> Unit = {},
-    openPremiumSheet: () -> Unit = {},
     openSettings: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
-    val activeSagas = remember(sagas) { sagas.filter { !it.data.isEnded } }
-    val completedSagas = remember(sagas) { sagas.filter { it.data.isEnded } }
 
-    LazyColumn(
-        state = listState,
-        modifier =
-            modifier
-                .animateContentSize()
-                .padding(padding),
-    ) {
-        stickyHeader {
-            with(sharedTransitionScope) {
+    with(sharedTransitionScope) {
+        LazyColumn(
+            state = listState,
+            modifier =
+                modifier
+                    .animateContentSize()
+                    .padding(padding),
+        ) {
+            stickyHeader {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -355,7 +246,7 @@ private fun ChatList(
                 ) {
                     Box(Modifier.size(24.dp))
                     AnimatedContent(
-                        isPremium,
+                        state.isPremium,
                         modifier =
                             Modifier
                                 .align(Alignment.CenterVertically)
@@ -369,8 +260,9 @@ private fun ChatList(
                                             indication = null,
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
-                                            openPremiumSheet()
-                                        }.wrapContentWidth()
+                                            onAction(HomeUiAction.OpenPremium)
+                                        }
+                                        .wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -392,9 +284,17 @@ private fun ChatList(
                         }
                     }
 
-                    IconButton(onClick = {
-                        openSettings()
-                    }, modifier = Modifier.size(32.dp)) {
+                    IconButton(
+                        onClick = {
+                            openSettings()
+                        },
+                        modifier =
+                            Modifier
+                                .sharedElement(
+                                    rememberSharedContentState("settings_title"),
+                                    animatedContentScope,
+                                ).size(32.dp),
+                    ) {
                         Icon(
                             painterResource(R.drawable.ic_settings),
                             contentDescription = stringResource(R.string.settings_title),
@@ -404,176 +304,176 @@ private fun ChatList(
                     }
                 }
             }
-        }
 
-        if (showDebugButton) {
-            item {
-                val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
-                Row(
-                    modifier =
-                        Modifier
-                            .clickable {
-                                createFakeSaga()
-                            }.padding(16.dp)
-                            .gradientFill(debugBrush)
-                            .clip(RoundedCornerShape(15.dp))
-                            .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_bug),
-                        contentDescription = stringResource(R.string.home_debug_session_icon_desc),
-                        tint = MaterialTheme.colorScheme.onBackground,
+            if (state.showDebugButton) {
+                item {
+                    val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
+                    Row(
                         modifier =
                             Modifier
-                                .padding(8.dp)
-                                .size(32.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            stringResource(R.string.home_start_debug_session_title),
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White,
-                                ),
-                        )
-
-                        Text(
-                            stringResource(R.string.home_test_with_fake_messages_subtitle),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.White.copy(alpha = 0.8f),
-                                ),
-                        )
-                    }
-                }
-            }
-        }
-
-        item {
-            TrophyShelf(
-                completedSagas = completedSagas,
-                onCompletedSagaClicked = { onSelectSaga(it.data) },
-            )
-        }
-
-        item {
-            AnimatedContent(dynamicNewSagaTexts, transitionSpec = {
-                fadeIn(tween(700)) togetherWith fadeOut(tween(400))
-            }) {
-                it?.let { dynamicContent ->
-                    CreateSagaCard(
-                        dynamicNewSagaTexts = dynamicContent,
-                        onCreateNewChat = onCreateNewChat,
-                    )
-                }
-            }
-        }
-
-        items(
-            activeSagas,
-            key = { it.data.id },
-        ) {
-            ChatCard(
-                it,
-                Modifier
-                    .animateItem()
-                    .clickable {
-                        if (!it.data.isDebug || showDebugButton) {
-                            onSelectSaga(it.data)
-                        }
-                    },
-                sharedTransitionScope = sharedTransitionScope,
-                animatedContentScope = animatedContentScope,
-            )
-        }
-
-        if (isLoadingDynamicPrompts.not()) {
-            if (isPremium.not()) {
-                item {
-                    PremiumCard(
-                        isPremium,
-                        onClick = openPremiumSheet,
-                        modifier =
-                            Modifier
-                                .animateItem()
-                                .padding(16.dp),
-                    )
-                }
-            }
-
-            if (backupAvailable) {
-                item {
-                    Box(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center,
+                                .clickable {
+                                    onAction(HomeUiAction.CreateFakeSaga)
+                                }.padding(16.dp)
+                                .gradientFill(debugBrush)
+                                .clip(RoundedCornerShape(15.dp))
+                                .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Button(onClick = {
-                            recoverSagas.invoke()
-                        }, colors = ButtonDefaults.textButtonColors()) {
-                            Icon(
-                                painterResource(R.drawable.ic_restore),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .size(24.dp),
-                            )
+                        Icon(
+                            painterResource(R.drawable.ic_bug),
+                            contentDescription = stringResource(R.string.home_debug_session_icon_desc),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .size(32.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
                             Text(
-                                stringResource(id = R.string.restore_sagas),
+                                stringResource(R.string.home_start_debug_session_title),
                                 style =
-                                    MaterialTheme.typography.labelLarge.copy(
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White,
+                                    ),
+                            )
+
+                            Text(
+                                stringResource(R.string.home_test_with_fake_messages_subtitle),
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Light,
+                                        color = Color.White.copy(alpha = 0.8f),
                                     ),
                             )
                         }
                     }
                 }
             }
-        }
 
-        item {
-            Button(
-                onClick = {
-                    onCreateNewChat()
-                },
-                shape = MaterialTheme.shapes.large,
-                colors =
-                    ButtonDefaults.buttonColors().copy(
-                        containerColor = Color.Transparent,
-                    ),
-                modifier =
-                    Modifier
-                        .padding(32.dp)
-                        .dropShadow(MaterialTheme.shapes.large) {
-                            brush =
-                                Brush.horizontalGradient(iridescentGradient)
-                            radius = 15f
-                            spread = 10f
-                        }.background(
-                            MaterialTheme.colorScheme.background,
-                            MaterialTheme.shapes.large,
-                        ).fillMaxWidth(),
-            ) {
-                Text(
-                    stringResource(R.string.home_create_new_saga_title).uppercase(),
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Black,
-                            brush =
-                                Brush.horizontalGradient(iridescentGradient),
-                        ),
+            item {
+                TrophyShelf(
+                    completedSagas = state.completedSagas,
+                    onCompletedSagaClicked = { onAction(HomeUiAction.SelectSaga(it.data)) },
                 )
             }
-        }
 
-        item {
-            Spacer(Modifier.size(24.dp))
+            item {
+                AnimatedContent(state.dynamicNewSagaTexts, transitionSpec = {
+                    fadeIn(tween(700)) togetherWith fadeOut(tween(400))
+                }) {
+                    it?.let { dynamicContent ->
+                        CreateSagaCard(
+                            dynamicNewSagaTexts = dynamicContent,
+                            onCreateNewChat = { onAction(HomeUiAction.CreateNewSaga) },
+                        )
+                    }
+                }
+            }
+
+            items(
+                state.activeSagas,
+                key = { saga -> saga.data.id },
+            ) { saga ->
+                ChatCard(
+                    saga,
+                    Modifier
+                        .animateItem()
+                        .clickable {
+                            onAction(HomeUiAction.SelectSaga(saga.data))
+                        },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedContentScope = animatedContentScope,
+                )
+            }
+
+            if (state.isLoadingDynamicPrompts.not()) {
+                if (state.isPremium.not()) {
+                    item {
+                        PremiumCard(
+                            state.isPremium,
+                            onClick = { onAction(HomeUiAction.OpenPremium) },
+                            modifier =
+                                Modifier
+                                    .animateItem()
+                                    .padding(16.dp),
+                        )
+                    }
+                }
+
+                if (state.backupAvailable) {
+                    item {
+                        Box(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Button(onClick = {
+                                onAction(HomeUiAction.RecoverSagas)
+                            }, colors = ButtonDefaults.textButtonColors()) {
+                                Icon(
+                                    painterResource(R.drawable.ic_restore),
+                                    null,
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 8.dp)
+                                            .size(24.dp),
+                                )
+                                Text(
+                                    stringResource(id = R.string.restore_sagas),
+                                    style =
+                                        MaterialTheme.typography.labelLarge.copy(
+                                            fontWeight = FontWeight.Light,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Button(
+                    onClick = {
+                        onAction(HomeUiAction.CreateNewSaga)
+                    },
+                    shape = MaterialTheme.shapes.large,
+                    colors =
+                        ButtonDefaults.buttonColors().copy(
+                            containerColor = Color.Transparent,
+                        ),
+                    modifier =
+                        Modifier
+                            .sharedElement(
+                                rememberSharedContentState("create-saga-title"),
+                                animatedContentScope,
+                            ).padding(32.dp)
+                            .dropShadow(MaterialTheme.shapes.large) {
+                                brush =
+                                    Brush.horizontalGradient(iridescentGradient)
+                                radius = 20f
+                                spread = .4f
+                            }.background(
+                                MaterialTheme.colorScheme.onBackground,
+                                MaterialTheme.shapes.large,
+                            ).fillMaxWidth(),
+                ) {
+                    Text(
+                        stringResource(R.string.home_create_new_saga_title).uppercase(),
+                        style =
+                            MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.background,
+                            ),
+                    )
+                }
+            }
+
+            item {
+                Spacer(Modifier.size(24.dp))
+            }
         }
     }
 }
@@ -611,7 +511,8 @@ fun ChatCard(
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }.size(50.dp),
+                                }
+                                .size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -621,7 +522,6 @@ fun ChatCard(
                             saga.data.title
                                 .first()
                                 .uppercase(),
-                            visualConfig = visualConfig,
                             borderWidth = 1.dp,
                             modifier =
                                 Modifier
@@ -654,7 +554,8 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedContentScope,
-                                        ).weight(1f),
+                                        )
+                                        .weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime
@@ -784,17 +685,23 @@ fun HomeViewPreview() {
                         }
                     SharedTransitionLayout {
                         ChatList(
-                            sagas = previewChats,
+                            state =
+                                HomeUiState(
+                                    screen = HomeScreen.Content,
+                                    visibleSagas = previewChats,
+                                    activeSagas = emptyList(),
+                                    completedSagas = previewChats,
+                                    showDebugButton = true,
+                                    isPremium = true,
+                                    dynamicNewSagaTexts =
+                                        DynamicSagaPrompt(
+                                            "Dynamic Title Preview",
+                                            "Dynamic Subtitle Preview",
+                                        ),
+                                ),
+                            onAction = {},
                             animatedContentScope = this@AnimatedContent,
                             sharedTransitionScope = this@SharedTransitionLayout,
-                            showDebugButton = true,
-                            isPremium = true,
-                            dynamicNewSagaTexts =
-                                DynamicSagaPrompt(
-                                    "Dynamic Title Preview",
-                                    "Dynamic Subtitle Preview",
-                                ),
-                            isLoadingDynamicPrompts = false,
                         )
                     }
                 }

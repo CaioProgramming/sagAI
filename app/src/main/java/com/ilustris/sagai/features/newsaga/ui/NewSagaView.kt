@@ -130,7 +130,13 @@ fun NewSagaView(
                 ) {
                     if (!uiState.isSaving) {
                         TopBarContent(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .sharedElement(
+                                        rememberSharedContentState("create-saga-title"),
+                                        animatedVisibilityScope,
+                                    ),
                             navigateBack = onBack,
                         )
                     }

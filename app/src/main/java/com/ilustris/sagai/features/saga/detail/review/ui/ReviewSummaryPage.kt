@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -195,17 +196,36 @@ class ReviewSummaryPage(
             }
 
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Button(
-                    onClick = {
-                        onAction(ReviewAction.Restart)
-                    },
-                    colors =
-                        ButtonDefaults.elevatedButtonColors().copy(
-                            containerColor = MaterialTheme.colorScheme.onBackground,
-                            contentColor = resolvedColor,
-                        ),
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(stringResource(id = R.string.review_restart_button))
+                    Button(
+                        onClick = {
+                            onAction(ReviewAction.Restart)
+                        },
+                        colors =
+                            ButtonDefaults.elevatedButtonColors().copy(
+                                containerColor = MaterialTheme.colorScheme.onBackground,
+                                contentColor = resolvedColor,
+                            ),
+                    ) {
+                        Text(stringResource(id = R.string.review_restart_button))
+                    }
+
+                    if (BuildConfig.DEBUG) {
+                        Button(
+                            onClick = {
+                                onAction(ReviewAction.Regenerate)
+                            },
+                            colors =
+                                ButtonDefaults.outlinedButtonColors().copy(
+                                    contentColor = MaterialTheme.colorScheme.onBackground,
+                                ),
+                        ) {
+                            Text(stringResource(id = R.string.review_regenerate_button))
+                        }
+                    }
                 }
             }
         }

@@ -40,12 +40,12 @@ class PromptServiceTest {
         }
 
     @Test
-    fun `buildSplitBlueprint with blank template should generate TASK CONTEXT`() =
+    fun `buildSplitBlueprint with null template should generate TASK CONTEXT`() =
         runBlocking {
             val blueprint =
                 PromptBlueprint(
                     title = "Test Blueprint",
-                    template = "",
+                    template = null,
                 )
             val variables = mapOf("name" to "World", "age" to "30")
             coEvery {

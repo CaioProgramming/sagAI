@@ -79,7 +79,7 @@ import com.ilustris.sagai.ui.navigation.HomeKey
 import com.ilustris.sagai.ui.navigation.Navigator
 import com.ilustris.sagai.ui.navigation.NewSagaKey
 import com.ilustris.sagai.ui.navigation.PlaythroughKey
-import com.ilustris.sagai.ui.navigation.ProfileKey
+import com.ilustris.sagai.ui.navigation.SettingsKey
 import com.ilustris.sagai.ui.navigation.createSagaEntryProvider
 import com.ilustris.sagai.ui.navigation.findNavKey
 import com.ilustris.sagai.ui.navigation.isSameDestinationAs
@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
                     topLevelRoutes =
                         setOf(
                             HomeKey,
-                            ProfileKey,
+                            SettingsKey,
                             FAQKey,
                             NewSagaKey,
                             AuditLogsKey,
@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
 
             val isNeutralScreen =
                 currentKey is HomeKey ||
-                    currentKey is ProfileKey ||
+                    currentKey is SettingsKey ||
                     currentKey is FAQKey ||
                     currentKey is NewSagaKey ||
                     currentKey is AuditLogsKey ||

@@ -81,7 +81,7 @@ import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 
-const val SAGA_THEME_TRANSITION_MS = 600
+const val SAGA_THEME_TRANSITION_MS = 700
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -134,6 +134,9 @@ fun themeIconVector(): ImageVector {
     val genre = LocalSagaGenre.current
     return ImageVector.vectorResource(genre?.icon ?: R.drawable.ic_spark)
 }
+
+@Composable
+fun themePainter() = painterResource(LocalSagaGenre.current?.icon ?: R.drawable.ic_spark)
 
 @Composable
 fun genreIconVector(genre: Genre): ImageVector = ImageVector.vectorResource(genre.icon)
@@ -472,9 +475,13 @@ fun Modifier.sagaHighlight(): Modifier =
     )
 
 @Composable
-fun Modifier.sagaShader(): Modifier =
+fun Modifier.sagaShader(enableSelectiveHighlight: Boolean = false): Modifier =
     this.then(
-        effectForGenre(LocalSagaGenre.current, LocalGenreVisualConfig.current),
+        effectForGenre(
+            LocalSagaGenre.current,
+            LocalGenreVisualConfig.current,
+            enableSelectiveHighlight = enableSelectiveHighlight,
+        ),
     )
 
 // ── Theme Extension Functions ─────────────────────────────────────────

@@ -580,6 +580,7 @@
     <!-- Extracted Strings -->
     <string name="milestone_overlay_important_characters_title">Personagens mais importantes</string>
     <string name="review_restart_button">Recomeçar</string>
+    <string name="review_regenerate_button">Regerar review</string>
 
     <!-- Review Summary Page -->
     <string name="review_summary_title">Nossa História, Recontada</string>

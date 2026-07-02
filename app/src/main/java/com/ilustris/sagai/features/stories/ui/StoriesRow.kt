@@ -114,7 +114,6 @@ fun StoryItem(
                     saga.data.title
                         .first()
                         .uppercase(),
-                    visualConfig = visualConfig,
                     borderWidth = 1.dp,
                     modifier =
                         Modifier

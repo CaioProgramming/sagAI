@@ -19,6 +19,12 @@ data class CharacterContent(
     val events: List<CharacterEventDetails> = emptyList(),
     @Relation(
         parentColumn = "id",
+        entityColumn = "characterId",
+        entity = CharacterArc::class,
+    )
+    val arcs: List<CharacterArc> = emptyList(),
+    @Relation(
+        parentColumn = "id",
         entityColumn = "characterOneId",
         entity = CharacterRelation::class,
     )

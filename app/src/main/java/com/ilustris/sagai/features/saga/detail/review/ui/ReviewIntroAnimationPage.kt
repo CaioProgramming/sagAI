@@ -46,6 +46,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.themeIcon
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -102,7 +103,7 @@ class ReviewIntroAnimationPage(
                         tween(delay, easing = EaseInCubic),
                     )
                     Image(
-                        painterResource(R.drawable.ic_spark),
+                        themeIcon(),
                         null,
                         Modifier
                             .size(iconSize)

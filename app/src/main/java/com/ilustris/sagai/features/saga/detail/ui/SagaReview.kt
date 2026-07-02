@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -30,7 +31,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.detail.data.model.isComplete
 import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationState
 import com.ilustris.sagai.features.saga.detail.review.presentation.SagaReviewViewModel
@@ -39,7 +39,6 @@ import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewStepLoadingPage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
-import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import kotlinx.coroutines.launch
@@ -77,8 +76,7 @@ fun SagaReview(
 
         val pages = experience.pages
         val hasPendingSteps = !review.isComplete()
-        val isCoordinatorGenerating = generationState is ReviewGenerationState.Generating
-        val hasLoadingSlot = hasPendingSteps && isCoordinatorGenerating
+        val hasLoadingSlot = hasPendingSteps
         val pageCount = pages.size + if (hasLoadingSlot) 1 else 0
         val pagerState = rememberPagerState { pageCount.coerceAtLeast(1) }
 
@@ -102,6 +100,11 @@ fun SagaReview(
                 }
 
                 ReviewAction.Restart -> {
+                    pagerState.animateScrollToPage(0)
+                }
+
+                ReviewAction.Regenerate -> {
+                    viewModel.resetReview(currentContent)
                     pagerState.animateScrollToPage(0)
                 }
 
@@ -191,6 +194,8 @@ fun SagaReview(
                     },
                     modifier =
                         Modifier
+                            .size(24.dp)
+                            .alpha(.6f)
                             .align(Alignment.TopCenter)
                             .statusBarsPadding(),
                 ) {
@@ -214,10 +219,4 @@ fun SagaReview(
             )
         }
     }
-
-    StarryLoader(
-        isGenerating,
-        loadingMessage,
-        brushColors = genre.colorPalette(),
-    )
 }
