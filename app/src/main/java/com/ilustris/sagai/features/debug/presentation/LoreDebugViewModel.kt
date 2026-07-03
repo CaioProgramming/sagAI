@@ -7,6 +7,8 @@ import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.ChapterMetadata
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
@@ -15,6 +17,7 @@ import com.ilustris.sagai.features.home.data.model.findAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +27,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 enum class DebugSection {
@@ -32,6 +36,24 @@ enum class DebugSection {
     CHAPTER_INTRODUCTION,
     CHAPTER_CONCLUSION,
     TIMELINE,
+}
+
+enum class ImageDebugTargetType {
+    SAGA_ICON,
+    CHARACTER,
+    CHAPTER_COVER,
+}
+
+data class ImageDebugTarget(
+    val id: String,
+    val type: ImageDebugTargetType,
+    val label: String,
+    val imagePath: String?,
+    val character: Character? = null,
+    val chapterId: Int? = null,
+) {
+    val isMissing: Boolean
+        get() = imagePath.isNullOrBlank() || !File(imagePath).exists()
 }
 
 data class LoreDebugUiState(
@@ -44,6 +66,9 @@ data class LoreDebugUiState(
     val fixItemsCount: Int = 0,
     val currentFixItem: Int = 0,
     val showFixConfirmation: Boolean = false,
+    val imageTargets: List<ImageDebugTarget> = emptyList(),
+    val showImagePager: Boolean = false,
+    val pagerInitialIndex: Int = 0,
 )
 
 @HiltViewModel
@@ -53,6 +78,8 @@ class LoreDebugViewModel
         private val sagaUseCase: SagaHistoryUseCase,
         private val actUseCase: ActUseCase,
         private val chapterUseCase: ChapterUseCase,
+        private val characterUseCase: CharacterUseCase,
+        private val sagaDetailUseCase: SagaDetailUseCase,
         private val timelineUseCase: TimelineUseCase,
         private val remoteConfigService: RemoteConfigService,
     ) : ViewModel() {
@@ -64,7 +91,13 @@ class LoreDebugViewModel
                 _uiState.update { it.copy(isLoading = true) }
                 sagaUseCase.getSagaMetadata(sagaId).collectLatest { saga ->
                     if (saga != null) {
-                        _uiState.update { it.copy(sagaMetadata = saga, isLoading = false) }
+                        _uiState.update {
+                            it.copy(
+                                sagaMetadata = saga,
+                                isLoading = false,
+                                imageTargets = buildImageTargets(saga),
+                            )
+                        }
                     } else {
                         _uiState.update { it.copy(isLoading = false, error = "Saga not found") }
                     }
@@ -157,6 +190,9 @@ class LoreDebugViewModel
             when (state) {
                 is StreamingState.Success -> {
                     stopGenerating()
+                    _uiState.value.sagaMetadata?.let { saga ->
+                        _uiState.update { it.copy(imageTargets = buildImageTargets(saga)) }
+                    }
                 }
 
                 is StreamingState.Error -> {
@@ -168,6 +204,78 @@ class LoreDebugViewModel
                     _uiState.update { it.copy(reasoning = state.chunk) }
                 }
             }
+        }
+
+        fun openImagePager(initialIndex: Int) {
+            _uiState.update { it.copy(showImagePager = true, pagerInitialIndex = initialIndex) }
+        }
+
+        fun dismissImagePager() {
+            _uiState.update { it.copy(showImagePager = false) }
+        }
+
+        fun generateImageForTarget(target: ImageDebugTarget) {
+            val sagaMetadata = _uiState.value.sagaMetadata ?: return
+            viewModelScope.launch {
+                startGenerating(target.id)
+                when (target.type) {
+                    ImageDebugTargetType.SAGA_ICON -> {
+                        sagaDetailUseCase
+                            .regenerateSagaIconStream(sagaMetadata.data.id)
+                            .collectLatest { state -> handleStreamingState(state) }
+                    }
+
+                    ImageDebugTargetType.CHARACTER -> {
+                        val character = target.character ?: return@launch
+                        characterUseCase
+                            .generateCharacterImageStream(character, sagaMetadata.data)
+                            .collectLatest { state -> handleStreamingState(state) }
+                    }
+
+                    ImageDebugTargetType.CHAPTER_COVER -> {
+                        val chapterId = target.chapterId ?: return@launch
+                        chapterUseCase
+                            .generateChapterCoverStream(chapterId)
+                            .collectLatest { state -> handleStreamingState(state) }
+                    }
+                }
+            }
+        }
+
+        private fun buildImageTargets(saga: SagaMetadata): List<ImageDebugTarget> {
+            val targets = mutableListOf<ImageDebugTarget>()
+
+            targets +=
+                ImageDebugTarget(
+                    id = "image_saga_icon",
+                    type = ImageDebugTargetType.SAGA_ICON,
+                    label = saga.data.title,
+                    imagePath = saga.data.icon.takeIf { it.isNotBlank() },
+                )
+
+            saga.characters.forEach { character ->
+                targets +=
+                    ImageDebugTarget(
+                        id = "image_char_${character.id}",
+                        type = ImageDebugTargetType.CHARACTER,
+                        label = character.name,
+                        imagePath = character.image.takeIf { it.isNotBlank() },
+                        character = character,
+                    )
+            }
+
+            saga.flatChapters().forEach { chapter ->
+                targets +=
+                    ImageDebugTarget(
+                        id = "image_chapter_${chapter.data.id}",
+                        type = ImageDebugTargetType.CHAPTER_COVER,
+                        label = chapter.data.title,
+                        imagePath = chapter.data.coverImage.takeIf { it.isNotBlank() },
+                        chapterId = chapter.data.id,
+                    )
+            }
+
+            return targets.sortedBy { !it.isMissing }
         }
 
         fun toggleFixConfirmation() {

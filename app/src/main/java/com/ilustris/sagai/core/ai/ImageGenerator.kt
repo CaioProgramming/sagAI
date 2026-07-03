@@ -8,6 +8,8 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
@@ -31,6 +33,7 @@ class ImageGeneratorImpl
     constructor(
         private val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
+        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ImageGenerator {
         private suspend fun modelName() =
             remoteConfigService.getString("imageGenModelPremium")
@@ -47,30 +50,43 @@ class ImageGeneratorImpl
             Timber.tag(TAG).i(trimmedPrompt)
             Timber.tag(TAG).i("--- COPY END ---")
 
-            return billingService.runPremiumRequest {
-                val imageModel =
-                    Firebase.ai().generativeModel(
-                        modelName = modelName,
-                        generationConfig =
-                            generationConfig {
-                                responseModalities =
-                                    listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
-                            },
-                    )
-                val promptBuilder =
-                    content {
-                        text(trimmedPrompt)
-                    }
+            if (BuildConfig.DEBUG && !billingService.isPremium()) {
+                return debugImageFallbackService.awaitManualImage(trimmedPrompt)
+            }
 
-                val content = imageModel.generateContent(promptBuilder)
-                Timber.tag(TAG).d("generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+            val apiBitmap =
+                billingService.runPremiumRequest {
+                    val imageModel =
+                        Firebase.ai().generativeModel(
+                            modelName = modelName,
+                            generationConfig =
+                                generationConfig {
+                                    responseModalities =
+                                        listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
+                                },
+                        )
+                    val promptBuilder =
+                        content {
+                            text(trimmedPrompt)
+                        }
 
-                content.candidates
-                    .firstOrNull()
-                    ?.content
-                    ?.parts
-                    ?.firstOrNull()
-                    ?.asImageOrNull()
+                    val content = imageModel.generateContent(promptBuilder)
+                    Timber
+                        .tag(TAG)
+                        .d("generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+
+                    content.candidates
+                        .firstOrNull()
+                        ?.content
+                        ?.parts
+                        ?.firstOrNull()
+                        ?.asImageOrNull()
+                }
+
+            return apiBitmap ?: if (BuildConfig.DEBUG) {
+                debugImageFallbackService.awaitManualImage(trimmedPrompt)
+            } else {
+                null
             }
         }
 

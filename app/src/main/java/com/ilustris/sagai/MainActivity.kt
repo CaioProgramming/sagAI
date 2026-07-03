@@ -71,6 +71,7 @@ import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.core.notifications.SagaNotificationRouter
 import com.ilustris.sagai.core.services.SideEffectService
 import com.ilustris.sagai.core.theme.SagaThemeManager
+import com.ilustris.sagai.features.debug.ui.ManualImageFallbackSheet
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.BlurProvider
@@ -105,6 +106,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sideEffectService: SideEffectService
+
+    @Inject
+    lateinit var debugImageFallbackService: com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 
     @Inject
     lateinit var sagaThemeManager: SagaThemeManager
@@ -493,6 +497,15 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                    }
+
+                    if (BuildConfig.DEBUG && activeSideEffect is SideEffect.DebugImageManualFallback) {
+                        val effect = activeSideEffect as SideEffect.DebugImageManualFallback
+                        ManualImageFallbackSheet(
+                            prompt = effect.prompt,
+                            debugImageFallbackService = debugImageFallbackService,
+                            onDismiss = { activeSideEffect = null },
+                        )
                     }
                 }
             }

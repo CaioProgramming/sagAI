@@ -16,15 +16,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,8 +40,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -47,20 +55,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.debug.presentation.DebugSection
+import com.ilustris.sagai.features.debug.presentation.ImageDebugTarget
+import com.ilustris.sagai.features.debug.presentation.ImageDebugTargetType
 import com.ilustris.sagai.features.debug.presentation.LoreDebugViewModel
 import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
@@ -189,6 +202,14 @@ fun LoreDebugView(
                             }
                         }
 
+                        item {
+                            ImageLabSection(
+                                targets = uiState.imageTargets,
+                                genre = genre,
+                                onTargetClick = viewModel::openImagePager,
+                            )
+                        }
+
                         items(saga.acts) {
                             StoryCard(
                                 saga = saga,
@@ -232,6 +253,18 @@ fun LoreDebugView(
                     }
                 }
             }
+        }
+
+        if (uiState.showImagePager && uiState.imageTargets.isNotEmpty()) {
+            ImageLabPagerSheet(
+                targets = uiState.imageTargets,
+                initialPage = uiState.pagerInitialIndex,
+                generatingSections = uiState.generatingSections,
+                reasoning = uiState.reasoning,
+                genre = saga?.data?.genre ?: Genre.FANTASY,
+                onDismiss = viewModel::dismissImagePager,
+                onGenerate = viewModel::generateImageForTarget,
+            )
         }
 
         if (uiState.showFixConfirmation && saga != null) {
@@ -344,6 +377,266 @@ fun LoreDebugView(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ImageLabSection(
+    targets: List<ImageDebugTarget>,
+    genre: Genre,
+    onTargetClick: (Int) -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.debug_image_lab_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+        if (targets.isEmpty()) {
+            Text(
+                text = stringResource(R.string.debug_image_lab_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            targets.chunked(3).forEachIndexed { rowIndex, row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    row.forEachIndexed { columnIndex, target ->
+                        val index = rowIndex * 3 + columnIndex
+                        ImageLabGridCell(
+                            target = target,
+                            genre = genre,
+                            onClick = { onTargetClick(index) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    repeat(3 - row.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ImageLabGridCell(
+    target: ImageDebugTarget,
+    genre: Genre,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = sagaShape()
+    Column(
+        modifier =
+            modifier
+                .aspectRatio(1f)
+                .clip(shape)
+                .border(
+                    1.dp,
+                    if (target.isMissing) {
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                    } else {
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    },
+                    shape,
+                ).background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                .clickable(onClick = onClick)
+                .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (!target.imagePath.isNullOrBlank() && !target.isMissing) {
+                AsyncImage(
+                    model = target.imagePath,
+                    contentDescription = target.label,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Icon(
+                    painter = painterResource(genre.icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                )
+            }
+        }
+
+        Text(
+            text = target.label,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        if (target.isMissing) {
+            Text(
+                text = stringResource(R.string.debug_image_lab_missing),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImageLabPagerSheet(
+    targets: List<ImageDebugTarget>,
+    initialPage: Int,
+    generatingSections: Set<String>,
+    reasoning: String?,
+    genre: Genre,
+    onDismiss: () -> Unit,
+    onGenerate: (ImageDebugTarget) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val pagerState =
+        rememberPagerState(
+            initialPage = initialPage.coerceIn(0, targets.lastIndex),
+            pageCount = { targets.size },
+        )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            )
+        },
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+                    .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(360.dp),
+            ) { page ->
+                val target = targets[page]
+                val isGenerating = generatingSections.contains(target.id)
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text =
+                            when (target.type) {
+                                ImageDebugTargetType.SAGA_ICON -> {
+                                    stringResource(R.string.debug_image_lab_saga_icon)
+                                }
+
+                                ImageDebugTargetType.CHARACTER -> {
+                                    stringResource(R.string.debug_image_lab_character)
+                                }
+
+                                ImageDebugTargetType.CHAPTER_COVER -> {
+                                    stringResource(R.string.debug_image_lab_chapter_cover)
+                                }
+                            },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Text(
+                        text = target.label,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .clip(sagaShape())
+                                .background(MaterialTheme.colorScheme.surfaceContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!target.imagePath.isNullOrBlank() && !target.isMissing) {
+                            AsyncImage(
+                                model = target.imagePath,
+                                contentDescription = target.label,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(genre.icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(72.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                            )
+                        }
+                    }
+
+                    if (isGenerating) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        reasoning?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { onGenerate(target) },
+                        enabled = !isGenerating,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = sagaShape(),
+                    ) {
+                        Text(stringResource(R.string.debug_image_lab_generate))
+                    }
+                }
+            }
+
+            Text(
+                text = "${pagerState.currentPage + 1} / ${targets.size}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

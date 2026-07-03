@@ -16,4 +16,8 @@ sealed class SideEffect {
     data class ShowAILoader(
         val message: String,
     ) : SideEffect()
+
+    data class DebugImageManualFallback(
+        val prompt: String,
+    ) : SideEffect()
 }
