@@ -26,7 +26,7 @@ data class GenreVisualConfig(
     val colorPalette: List<String> = emptyList(),
     // ── Shape ────────────────────────────────────────────────────────
     @SerializedName("cornerSizeDp")
-    val cornerSizeDp: Float = 0f,
+    val cornerSizeDp: Int = 0,
     // ── Haptics (waveform in ms, tuned per genre SFX — see Remote Config) ──
     @SerializedName("vibrationPattern")
     val vibrationPattern: List<Long> = emptyList(),

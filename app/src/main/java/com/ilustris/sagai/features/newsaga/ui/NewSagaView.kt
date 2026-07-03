@@ -56,7 +56,6 @@ import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaIntent
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaUiState
@@ -66,10 +65,12 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -118,7 +119,7 @@ fun NewSagaView(
                 Box(
                     modifier =
                         Modifier
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = .3f))
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = .6f))
                             .fillMaxSize(),
                 )
 
@@ -132,11 +133,7 @@ fun NewSagaView(
                         TopBarContent(
                             modifier =
                                 Modifier
-                                    .fillMaxWidth()
-                                    .sharedElement(
-                                        rememberSharedContentState("create-saga-title"),
-                                        animatedVisibilityScope,
-                                    ),
+                                    .fillMaxWidth(),
                             navigateBack = onBack,
                         )
                     }
@@ -148,9 +145,21 @@ fun NewSagaView(
                                 .fillMaxWidth()
                                 .verticalScroll(rememberScrollState())
                                 .animateContentSize()
-                                .padding(horizontal = 8.dp),
+                                .padding(horizontal = 8.dp)
+                                .then(
+                                    if (uiState.showEchoes) {
+                                        Modifier.padding(top = 24.dp)
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement =
+                            if (uiState.showEchoes) {
+                                Arrangement.spacedBy(16.dp, Alignment.Top)
+                            } else {
+                                Arrangement.Center
+                            },
                     ) {
                         NewSagaMainContent(
                             uiState = uiState,
@@ -351,7 +360,7 @@ fun PromptBar(
     genre: Genre?,
 ) {
     val shape = MaterialTheme.shapes.extraLarge
-    val themeBrush = Brush.horizontalGradient(genre?.colorPalette() ?: holographicGradient)
+    val themeBrush = sagaBrush()
     val primaryColor = MaterialTheme.colorScheme.primary
 
     Row(
@@ -362,10 +371,10 @@ fun PromptBar(
                 .dropShadow(shape) {
                     color = primaryColor
                     radius = 15f
-                    spread = 15f
+                    spread = 1f
                     brush = themeBrush
-                }.border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f), shape)
-                .background(MaterialTheme.colorScheme.background, shape)
+                }.border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), shape)
+                .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -438,6 +447,7 @@ fun PromptBar(
                     painter = painterResource(R.drawable.ic_send),
                     contentDescription = "Send",
                     tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }

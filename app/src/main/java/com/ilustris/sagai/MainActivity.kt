@@ -11,6 +11,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -85,6 +88,7 @@ import com.ilustris.sagai.ui.navigation.findNavKey
 import com.ilustris.sagai.ui.navigation.isSameDestinationAs
 import com.ilustris.sagai.ui.navigation.rememberNavigationState
 import com.ilustris.sagai.ui.navigation.toEntries
+import com.ilustris.sagai.ui.theme.SAGA_THEME_TRANSITION_MS
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.sagaShape
 import dagger.hilt.android.AndroidEntryPoint
@@ -312,13 +316,70 @@ class MainActivity : ComponentActivity() {
                                                 ),
                                             onBack = { navigator.goBack() },
                                             transitionSpec = {
-                                                fadeIn() togetherWith fadeOut()
+                                                fadeIn(
+                                                    tween(
+                                                        SAGA_THEME_TRANSITION_MS,
+                                                        easing = FastOutSlowInEasing,
+                                                    ),
+                                                ) togetherWith
+                                                    fadeOut(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = FastOutSlowInEasing,
+                                                        ),
+                                                    )
                                             },
                                             popTransitionSpec = {
-                                                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
+                                                slideInVertically(
+                                                    tween(
+                                                        SAGA_THEME_TRANSITION_MS,
+                                                        easing = FastOutSlowInEasing,
+                                                    ),
+                                                ) { it / 4 } +
+                                                    fadeIn(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = EaseIn,
+                                                        ),
+                                                    ) togetherWith
+                                                    slideOutVertically(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = FastOutSlowInEasing,
+                                                        ),
+                                                    ) { it / 4 } +
+                                                    fadeOut(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = EaseIn,
+                                                        ),
+                                                    )
                                             },
                                             predictivePopTransitionSpec = {
-                                                slideInVertically { it / 2 } togetherWith slideOutVertically { it }
+                                                slideInVertically(
+                                                    tween(
+                                                        SAGA_THEME_TRANSITION_MS,
+                                                        easing = FastOutSlowInEasing,
+                                                    ),
+                                                ) { it / 4 } +
+                                                    fadeIn(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = FastOutSlowInEasing,
+                                                        ),
+                                                    ) togetherWith
+                                                    slideOutVertically(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = FastOutSlowInEasing,
+                                                        ),
+                                                    ) { it / 4 } +
+                                                    fadeOut(
+                                                        tween(
+                                                            SAGA_THEME_TRANSITION_MS,
+                                                            easing = FastOutSlowInEasing,
+                                                        ),
+                                                    )
                                             },
                                         )
 

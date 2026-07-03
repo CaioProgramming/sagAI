@@ -9,29 +9,23 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,12 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.core.ai.model.LocalGenreVisualConfig
@@ -60,16 +51,19 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaIntent
 import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 val LocalSharedTransitionScope =
     staticCompositionLocalOf<SharedTransitionScope?> {
@@ -237,6 +231,7 @@ fun LibraryPager(
 
         Row(
             horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
         ) {
             repeat(books.size + if (hasMoreGenres) 1 else 0) { iteration ->
@@ -261,10 +256,14 @@ fun LibraryPager(
                             )
                         } else {
                             CircularProgressIndicator(
-                                modifier = Modifier.padding(2.dp).size(12.dp),
+                                modifier =
+                                    Modifier
+                                        .padding(2.dp)
+                                        .size(12.dp),
                                 trackColor = Color.Transparent,
                                 gapSize = 0.dp,
                                 color = color,
+                                strokeWidth = 1.dp,
                             )
                         }
                     } else {
@@ -283,87 +282,79 @@ fun LibraryPager(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun UniverseEchoesSection(
     echoes: List<Pair<UniverseEcho, GenreVisualConfig>>,
     onEchoSelected: (String) -> Unit,
 ) {
-    val maxSuggestionWidth =
-        (LocalConfiguration.current.screenWidthDp * 0.6f).dp
-
-    LazyHorizontalGrid(
-        rows = GridCells.Fixed(2),
+    Column(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 80.dp, max = 180.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(
-            items = echoes,
-            key = { (echo, _) -> echo.input },
-        ) { (echo, config) ->
-            EchoBubbleCard(
-                echo = echo,
-                visualConfig = config,
-                maxWidth = maxSuggestionWidth,
-                modifier = Modifier.animateItem(),
-                onClick = { onEchoSelected(echo.input) },
-            )
+        echoes.chunked(2).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowItems.forEach { (echo, config) ->
+                    EchoIdeaCard(
+                        echo = echo,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onEchoSelected(echo.input) },
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun EchoBubbleCard(
+private fun EchoIdeaCard(
     echo: UniverseEcho,
-    visualConfig: GenreVisualConfig,
-    maxWidth: Dp,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     SagAITheme(genre = echo.genre) {
-        val genre = echo.genre
-        val activeVisual = LocalGenreVisualConfig.current ?: visualConfig
-        val color = genre.resolveColor(activeVisual)
-        val shape = RoundedCornerShape(25.dp)
-        val genreBrush = Brush.linearGradient(genre.colorPalette(activeVisual))
+        val shape = MaterialTheme.shapes.large
+        val genreBrush = sagaBrush()
 
-        val textMaxWidth = maxWidth - 56.dp
-
-        Row(
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 modifier
-                    .widthIn(max = maxWidth)
-                    .wrapContentWidth(Alignment.Start)
+                    .padding(16.dp)
+                    .levitate(duration = 5.seconds)
+                    .fillMaxWidth()
+                    .wrapContentHeight()
                     .padding(2.dp)
                     .dropShadow(shape) {
                         brush = genreBrush
-                        radius = 15f
-                        spread = 3f
-                    }.clip(shape)
-                    .background(MaterialTheme.colorScheme.background, shape)
+                        radius = 10f
+                        spread = 1f
+                    }.border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                     .clickable(onClick = onClick)
-                    .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(12.dp),
         ) {
             Icon(
-                painterResource(genre.icon),
+                themePainter(),
                 contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(12.dp),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
             )
             Text(
                 text = echo.input,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.widthIn(max = textMaxWidth),
-                softWrap = true,
-                overflow = TextOverflow.Clip,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

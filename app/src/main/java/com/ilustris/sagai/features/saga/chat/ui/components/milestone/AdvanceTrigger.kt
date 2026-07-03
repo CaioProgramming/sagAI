@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -25,10 +27,12 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeAction
 import com.ilustris.sagai.features.saga.chat.presentation.model.toUi
-import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.progressiveBrush
-import com.ilustris.sagai.ui.theme.themeVfx
+import com.ilustris.sagai.ui.theme.rememberVectorShape
+import com.ilustris.sagai.ui.theme.themeIconVector
+import com.ilustris.sagai.ui.theme.themePainter
 
 private const val PULL_PROGRESS_ANIMATION_MS = 16
 
@@ -67,6 +71,17 @@ fun AdvancePullIndicator(
         label = "iconSize",
     )
 
+    val brush =
+        if (isGenerating) {
+            Brush.verticalGradient(morphingGradient())
+        } else {
+            progressiveBrush(
+                tintColor = primaryColor,
+                progress = dragProgress,
+                animationDuration = PULL_PROGRESS_ANIMATION_MS,
+            )
+        }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -74,32 +89,28 @@ fun AdvancePullIndicator(
             modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .alpha(contentAlpha),
+                .alpha(contentAlpha)
+                .gradientFill(
+                    brush,
+                ),
     ) {
-        val brush =
-            if (isGenerating) {
-                Brush.verticalGradient(morphingGradient())
-            } else {
-                progressiveBrush(
-                    tintColor = primaryColor,
-                    progress = dragProgress,
-                    animationDuration = PULL_PROGRESS_ANIMATION_MS,
-                )
-            }
-        MorphingThemeIcon(
+        val glowAlpha by animateFloatAsState(
+            if (isGenerating) 1f else 0f,
+        )
+
+        Icon(
+            themePainter(),
+            null,
+            tint = MaterialTheme.colorScheme.primary,
             modifier =
                 Modifier
-                    .size(iconSize)
-                    .themeVfx(isGenerating),
-            brush = brush,
-            glowIntensity = if (isGenerating) 1f else dragProgress.coerceAtLeast(0.35f),
-            tint = MaterialTheme.colorScheme.onBackground,
-            contentDescription =
-                if (isGenerating) {
-                    stringResource(R.string.milestone_loading_cd)
-                } else {
-                    null
-                },
+                    .size(iconSize * scale)
+                    .dropShadow(rememberVectorShape(themeIconVector())) {
+                        this.brush = brush
+                        this.radius = 10f
+                        this.spread = 1f
+                        this.alpha = glowAlpha
+                    },
         )
 
         AnimatedContent(isGenerating) {

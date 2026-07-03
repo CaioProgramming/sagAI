@@ -61,8 +61,8 @@ class SagaIdeationService
                     )
                 gemmaClient.generate<UniverseSuggestions>(
                     promptSplit = splitPrompt,
-                    temperatureRandomness = 1f,
-                    requirement = ModelRequirement.MINIMAL,
+                    temperatureRandomness = .5f,
+                    requirement = ModelRequirement.LOW,
                 )!!
             }
 

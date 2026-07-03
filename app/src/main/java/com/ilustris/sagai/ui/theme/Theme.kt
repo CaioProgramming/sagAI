@@ -81,7 +81,7 @@ import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
 
-const val SAGA_THEME_TRANSITION_MS = 700
+const val SAGA_THEME_TRANSITION_MS = 500
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -172,7 +172,8 @@ fun ThemeIcon(
                         .graphicsLayer {
                             clip = false
                             alpha = 0.8f * clampedGlow
-                        }.blur(glowRadius * clampedGlow),
+                        }
+                        .blur(glowRadius * clampedGlow),
             )
         }
         Icon(
@@ -225,18 +226,9 @@ private fun resolveCornerSize(
     visualConfig: GenreVisualConfig?,
 ): Dp? {
     if (genre == null) return null
-    if (visualConfig != null && visualConfig.cornerSizeDp > 0f) return visualConfig.cornerSizeDp.dp
-    return when (genre) {
-        Genre.CYBERPUNK -> 20.dp
-        Genre.FANTASY -> 16.dp
-        Genre.HORROR -> 4.dp
-        Genre.HEROES -> 14.dp
-        Genre.CRIME -> 18.dp
-        Genre.SHINOBI -> 10.dp
-        Genre.SPACE_OPERA -> 24.dp
-        Genre.COWBOY -> 12.dp
-        Genre.PUNK_ROCK -> 2.dp
-    }
+    if (visualConfig == null) return null
+    if (visualConfig.cornerSizeDp == 0) return 0.dp
+    return visualConfig.cornerSizeDp.dp
 }
 
 private fun resolveSagaThemeTargets(
@@ -429,6 +421,14 @@ fun SagAITheme(
             content = content,
         )
     }
+}
+
+@Composable
+fun ThemeCover(): String? {
+    val genre = LocalSagaGenre.current
+    val currentVisualConfig = LocalGenreVisualConfig.current
+
+    return currentVisualConfig?.imageUrl
 }
 
 // ── Theme Extension Properties ─────────────────────────────────────────

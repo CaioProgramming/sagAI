@@ -156,7 +156,8 @@ fun HomeView(
                         onAction = viewModel::handleAction,
                         padding = padding,
                         sharedTransitionScope = sharedTransitionScope,
-                        animatedContentScope = this@AnimatedContent,
+                        splashAnimatedContentScope = this@AnimatedContent,
+                        navAnimatedVisibilityScope = animatedVisibilityScope,
                         openSettings = navToSettings,
                         modifier =
                             Modifier
@@ -199,7 +200,8 @@ private fun HomeContent(
     onAction: (HomeUiAction) -> Unit,
     padding: PaddingValues,
     sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
+    splashAnimatedContentScope: AnimatedContentScope,
+    navAnimatedVisibilityScope: AnimatedContentScope,
     openSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -208,7 +210,8 @@ private fun HomeContent(
         onAction = onAction,
         padding = padding,
         sharedTransitionScope = sharedTransitionScope,
-        animatedContentScope = animatedContentScope,
+        splashAnimatedContentScope = splashAnimatedContentScope,
+        navAnimatedVisibilityScope = navAnimatedVisibilityScope,
         openSettings = openSettings,
         modifier = modifier,
     )
@@ -221,7 +224,8 @@ private fun ChatList(
     onAction: (HomeUiAction) -> Unit,
     padding: PaddingValues = PaddingValues(0.dp),
     sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
+    splashAnimatedContentScope: AnimatedContentScope,
+    navAnimatedVisibilityScope: AnimatedContentScope,
     modifier: Modifier = Modifier,
     openSettings: () -> Unit = {},
 ) {
@@ -261,13 +265,12 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             onAction(HomeUiAction.OpenPremium)
-                                        }
-                                        .wrapContentWidth()
+                                        }.wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
                                         rememberSharedContentState("spark_icon"),
-                                        animatedContentScope,
+                                        splashAnimatedContentScope,
                                     ),
                                 titleStyle =
                                     MaterialTheme.typography.titleLarge,
@@ -278,7 +281,7 @@ private fun ChatList(
                                 iconModifier =
                                     Modifier.sharedElement(
                                         rememberSharedContentState("spark_icon"),
-                                        animatedContentScope,
+                                        splashAnimatedContentScope,
                                     ),
                             )
                         }
@@ -288,12 +291,7 @@ private fun ChatList(
                         onClick = {
                             openSettings()
                         },
-                        modifier =
-                            Modifier
-                                .sharedElement(
-                                    rememberSharedContentState("settings_title"),
-                                    animatedContentScope,
-                                ).size(32.dp),
+                        modifier = Modifier.size(32.dp),
                     ) {
                         Icon(
                             painterResource(R.drawable.ic_settings),
@@ -313,7 +311,8 @@ private fun ChatList(
                             Modifier
                                 .clickable {
                                     onAction(HomeUiAction.CreateFakeSaga)
-                                }.padding(16.dp)
+                                }
+                                .padding(16.dp)
                                 .gradientFill(debugBrush)
                                 .clip(RoundedCornerShape(15.dp))
                                 .fillMaxWidth(),
@@ -384,7 +383,7 @@ private fun ChatList(
                             onAction(HomeUiAction.SelectSaga(saga.data))
                         },
                     sharedTransitionScope = sharedTransitionScope,
-                    animatedContentScope = animatedContentScope,
+                    animatedVisibilityScope = navAnimatedVisibilityScope,
                 )
             }
 
@@ -446,19 +445,18 @@ private fun ChatList(
                         ),
                     modifier =
                         Modifier
-                            .sharedElement(
-                                rememberSharedContentState("create-saga-title"),
-                                animatedContentScope,
-                            ).padding(32.dp)
+                            .padding(32.dp)
                             .dropShadow(MaterialTheme.shapes.large) {
                                 brush =
                                     Brush.horizontalGradient(iridescentGradient)
                                 radius = 20f
                                 spread = .4f
-                            }.background(
+                            }
+                            .background(
                                 MaterialTheme.colorScheme.onBackground,
                                 MaterialTheme.shapes.large,
-                            ).fillMaxWidth(),
+                            )
+                            .fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -484,7 +482,7 @@ fun ChatCard(
     saga: SagaSummary,
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
+    animatedVisibilityScope: AnimatedContentScope,
 ) {
     SagAITheme(genre = saga.data.genre) {
         val sagaData = saga.data
@@ -511,8 +509,7 @@ fun ChatCard(
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }
-                                .size(50.dp),
+                                }.size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -528,7 +525,7 @@ fun ChatCard(
                                     .fillMaxSize()
                                     .sharedBounds(
                                         rememberSharedContentState(key = "saga_${saga.data.id}_icon"),
-                                        animatedVisibilityScope = animatedContentScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
                                     ),
                         )
                     }
@@ -553,9 +550,8 @@ fun ChatCard(
                                     Modifier
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
-                                            animatedContentScope,
-                                        )
-                                        .weight(1f),
+                                            animatedVisibilityScope,
+                                        ).weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime
@@ -700,7 +696,8 @@ fun HomeViewPreview() {
                                         ),
                                 ),
                             onAction = {},
-                            animatedContentScope = this@AnimatedContent,
+                            splashAnimatedContentScope = this@AnimatedContent,
+                            navAnimatedVisibilityScope = this@AnimatedContent,
                             sharedTransitionScope = this@SharedTransitionLayout,
                         )
                     }

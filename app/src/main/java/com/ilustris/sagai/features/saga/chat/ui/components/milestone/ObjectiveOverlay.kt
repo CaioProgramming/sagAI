@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.chat.ui.components.milestone
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,8 +24,8 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.ui.theme.components.MorphingThemeIcon
 import com.ilustris.sagai.ui.theme.sagaShape
+import com.ilustris.sagai.ui.theme.themePainter
 
 @Composable
 fun ObjectiveOverlay(
@@ -55,8 +55,7 @@ fun ObjectiveOverlay(
                             color = resolvedColor,
                             offset = DpOffset.Zero,
                         ),
-                )
-                .clip(shape)
+                ).clip(shape)
                 .background(cardColor, shape)
                 .clickable(onClick = onDismiss),
     ) {
@@ -68,18 +67,12 @@ fun ObjectiveOverlay(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(40.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                MorphingThemeIcon(
-                    modifier = sparkModifier.size(22.dp),
-                    tint = resolvedColor,
-                    glowIntensity = 0.4f,
-                )
-            }
+            Icon(
+                themePainter(),
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -99,7 +92,7 @@ fun ObjectiveOverlay(
                 Text(
                     text = objective,
                     style =
-                        MaterialTheme.typography.bodySmall,
+                        MaterialTheme.typography.labelLarge,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
