@@ -164,6 +164,50 @@ class NewSagaViewModel
                 is NewSagaIntent.LoadMore -> {
                     loadMore()
                 }
+
+                is NewSagaIntent.NavigateBack -> {
+                    navigateBack()
+                }
+            }
+        }
+
+        /**
+         * @return true when the screen should pop; false when back was handled internally.
+         */
+        fun onBackPressed(): Boolean {
+            val state = _uiState.value
+            if (state.isSaving) return false
+
+            if (state.phase == NewSagaScreenPhase.Creation) {
+                navigateBack()
+                return false
+            }
+            return true
+        }
+
+        private fun navigateBack() {
+            val state = _uiState.value
+            if (state.isSaving) return
+
+            if (state.phase == NewSagaScreenPhase.Creation) {
+                promptJob?.cancel()
+                updateState {
+                    copy(
+                        phase = NewSagaScreenPhase.Suggestions,
+                        isGenerating = false,
+                        isLoadingMore = false,
+                        libraryBooks = emptyList(),
+                        lockedSaga = null,
+                        lockedCharacter = null,
+                        isReadyToSave = false,
+                        currentVisualConfig = null,
+                        statusMessage = null,
+                        error = null,
+                    )
+                }
+                if (_uiState.value.universeEchoes.isEmpty()) {
+                requestInitialEchoes()
+            }
             }
         }
 
@@ -312,6 +356,7 @@ class NewSagaViewModel
             cancelInitialEchoes()
             updateState {
                 copy(
+                    phase = NewSagaScreenPhase.Creation,
                     error = null,
                     universeEchoes = emptyList(),
                     libraryBooks = emptyList(),

@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.newsaga.data.model.UniverseEcho
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaBook
 
 data class NewSagaUiState(
+    val phase: NewSagaScreenPhase = NewSagaScreenPhase.Suggestions,
     val statusMessage: String? = null,
     val universeEchoes: List<Pair<UniverseEcho, GenreVisualConfig>> = emptyList(),
     val libraryBooks: List<Pair<SagaBook, GenreVisualConfig>> = emptyList(),

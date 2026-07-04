@@ -1,7 +1,6 @@
 package com.ilustris.sagai.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -25,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -43,32 +42,26 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.ThemeCover
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.iconDropShadow
-import com.ilustris.sagai.ui.theme.morphingGradient
-import com.ilustris.sagai.ui.theme.rememberVectorShape
-import com.ilustris.sagai.ui.theme.themeIconVector
+import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themePainter
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.isActive
+import kotlin.random.Random
 
-private const val GENRE_MEMORY_CROSSFADE_MS = 800
+private const val GENRE_MEMORY_CROSSFADE_MS = 700
+private const val GENRE_MEMORY_SCALE_MIN = 0.8f
+private const val GENRE_MEMORY_SCALE_MAX = 1f
 
 @Composable
 fun GenreMemoriesLoader(
     genresConfigs: List<Pair<Genre, GenreVisualConfig?>>,
     modifier: Modifier,
 ) {
-    var configs by remember { mutableStateOf(genresConfigs.shuffled()) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1500)
-            configs = genresConfigs.shuffled()
-        }
-    }
+    val genres = remember(genresConfigs) { genresConfigs.map { it.first }.distinct() }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -77,19 +70,18 @@ fun GenreMemoriesLoader(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         userScrollEnabled = false,
     ) {
-        items(configs, key = { it }) { genre ->
+        items(
+            items = genres,
+            key = { it.name },
+        ) { genre ->
             GenreMemoryItem(
-                genre = genre.first,
-                modifier =
-                    Modifier
-                        .padding(4.dp)
-                        .animateItem(),
+                genre = genre,
+                modifier = Modifier.padding(4.dp),
             )
         }
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun GenreMemoryItem(
     genre: Genre,
@@ -99,6 +91,20 @@ private fun GenreMemoryItem(
         val context = LocalContext.current
         val imageUrl = ThemeCover()
         var isImageLoaded by remember(imageUrl) { mutableStateOf(false) }
+        val shadowBrush = sagaBrush()
+        val animationsActive = rememberLifecycleAnimationsActive()
+        var targetScale by remember { mutableFloatStateOf(randomGenreMemoryScale()) }
+
+        LaunchedEffect(animationsActive) {
+            if (!animationsActive) {
+                targetScale = 1f
+                return@LaunchedEffect
+            }
+            while (isActive) {
+                delay(Random.nextLong(from = 1_400, until = 2_800))
+                targetScale = randomGenreMemoryScale()
+            }
+        }
 
         LaunchedEffect(imageUrl) {
             isImageLoaded = false
@@ -109,27 +115,34 @@ private fun GenreMemoryItem(
                 ) is SuccessResult
         }
 
-        val shadowBrush = Brush.verticalGradient(morphingGradient(duration = 5.seconds))
-        val sharedContentKey = "${genre.name.lowercase()}_icon"
+        val scale by animateFloatAsState(
+            targetValue = targetScale,
+            animationSpec = tween(GENRE_MEMORY_CROSSFADE_MS),
+            label = "genreMemoryScale",
+        )
 
         val imageAlpha by animateFloatAsState(
             targetValue = if (isImageLoaded) 1f else 0f,
             animationSpec = tween(GENRE_MEMORY_CROSSFADE_MS),
             label = "genreMemoryImageAlpha",
         )
+
         Box(
             modifier =
                 modifier
                     .height(100.dp)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
             contentAlignment = Alignment.Center,
         ) {
             AnimatedContent(
-                isImageLoaded,
+                targetState = isImageLoaded,
                 transitionSpec = {
                     fadeIn(tween(GENRE_MEMORY_CROSSFADE_MS)) +
                         scaleIn(tween(GENRE_MEMORY_CROSSFADE_MS / 2)) togetherWith
-
                         fadeOut(tween(GENRE_MEMORY_CROSSFADE_MS)) +
                         scaleOut(tween(GENRE_MEMORY_CROSSFADE_MS / 2))
                 },
@@ -142,13 +155,7 @@ private fun GenreMemoryItem(
                         modifier =
                             Modifier
                                 .size(40.dp)
-                                .iconDropShadow(
-                                    shape = rememberVectorShape(themeIconVector()),
-                                    brush = shadowBrush,
-                                    progress = 1f,
-                                    spreadRadius = 1.dp,
-                                    blurRadius = 20.dp,
-                                ).gradientFill(shadowBrush),
+                                .gradientFill(shadowBrush),
                     )
                 } else {
                     Box(
@@ -160,8 +167,9 @@ private fun GenreMemoryItem(
                                     radius = 20f
                                     spread = 1f
                                     brush = shadowBrush
-                                    alpha = .5f
-                                }.border(1.dp, shadowBrush, MaterialTheme.shapes.medium)
+                                    alpha = 0.5f
+                                }
+                                .border(1.dp, shadowBrush, MaterialTheme.shapes.medium)
                                 .clip(MaterialTheme.shapes.medium),
                     ) {
                         AsyncImage(
@@ -176,3 +184,7 @@ private fun GenreMemoryItem(
         }
     }
 }
+
+private fun randomGenreMemoryScale(): Float =
+    GENRE_MEMORY_SCALE_MIN +
+        Random.nextFloat() * (GENRE_MEMORY_SCALE_MAX - GENRE_MEMORY_SCALE_MIN)

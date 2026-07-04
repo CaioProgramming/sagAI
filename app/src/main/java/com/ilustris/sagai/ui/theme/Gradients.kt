@@ -464,8 +464,10 @@ fun progressiveBrush(
 fun morphingGradient(
     colors: List<Color> = themeBrushColors(),
     duration: Duration = 2.seconds,
+    isAnimating: Boolean = true,
 ): List<Color> {
     // Use a mutable state so updates trigger recomposition and the animated targets change.
+    if (isAnimating.not()) return listOf(Color.Transparent, Color.Transparent)
     var brushColors by remember { mutableStateOf(colors) }
     val animationsActive = rememberLifecycleAnimationsActive()
 
@@ -492,4 +494,35 @@ fun morphingGradient(
         }
 
     return animatedColors.map { it.value }
+}
+
+@Composable
+fun morphingColor(
+    colors: List<Color> = themeBrushColors(),
+    duration: Duration = 2.seconds,
+): Color {
+    var targetColor by remember(colors) { mutableStateOf(colors.random()) }
+    val animationsActive = rememberLifecycleAnimationsActive()
+
+    LaunchedEffect(animationsActive, colors) {
+        if (!animationsActive) return@LaunchedEffect
+        while (true) {
+            delay(duration)
+            targetColor =
+                colors
+                    .filter { it != targetColor }
+                    .randomOrNull() ?: colors.random()
+        }
+    }
+
+    return animateColorAsState(
+        targetValue = targetColor,
+        animationSpec =
+            tween(
+                durationMillis =
+                    (duration.toInt(DurationUnit.MILLISECONDS) / 2).coerceAtLeast(1),
+                easing = EaseIn,
+            ),
+        label = "morphingColor",
+    ).value
 }

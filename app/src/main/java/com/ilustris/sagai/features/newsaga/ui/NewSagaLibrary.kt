@@ -17,12 +17,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -43,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.ai.model.GenreVisualConfig
@@ -57,13 +61,11 @@ import com.ilustris.sagai.ui.components.CosmicBook
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.levitate
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 
 val LocalSharedTransitionScope =
     staticCompositionLocalOf<SharedTransitionScope?> {
@@ -286,30 +288,27 @@ fun LibraryPager(
 internal fun UniverseEchoesSection(
     echoes: List<Pair<UniverseEcho, GenreVisualConfig>>,
     onEchoSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(2),
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp),
+        verticalItemSpacing = 8.dp,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        echoes.chunked(2).forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                rowItems.forEach { (echo, config) ->
-                    EchoIdeaCard(
-                        echo = echo,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onEchoSelected(echo.input) },
-                    )
-                }
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+        items(
+            items = echoes,
+            key = { (echo, _) -> echo.input },
+        ) { (echo, _) ->
+
+            EchoIdeaCard(
+                echo = echo,
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
+                onClick = { onEchoSelected(echo.input) },
+            )
         }
     }
 }
@@ -328,32 +327,40 @@ private fun EchoIdeaCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
                 modifier
-                    .padding(16.dp)
-                    .levitate(duration = 5.seconds)
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(2.dp)
+                    .fillMaxSize()
+                    .padding(4.dp)
                     .dropShadow(shape) {
                         brush = genreBrush
                         radius = 10f
                         spread = 1f
                     }.border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
                     .clip(shape)
-                    .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                    .background(MaterialTheme.colorScheme.background, shape)
                     .clickable(onClick = onClick)
-                    .padding(12.dp),
+                    .padding(16.dp),
         ) {
-            Icon(
-                themePainter(),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(
+                    themePainter(),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+
+                Text(
+                    text = echo.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             Text(
                 text = echo.input,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
         }

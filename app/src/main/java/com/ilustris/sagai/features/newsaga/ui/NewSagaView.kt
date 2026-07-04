@@ -2,12 +2,18 @@
 
 package com.ilustris.sagai.features.newsaga.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -22,10 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,9 +61,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaIntent
+import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaScreenPhase
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaUiState
 import com.ilustris.sagai.features.newsaga.ui.presentation.NewSagaViewModel
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
@@ -65,15 +71,18 @@ import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
 import com.ilustris.sagai.ui.components.GenreMemoriesLoader
 import com.ilustris.sagai.ui.components.NewSagaBookFocus
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.morphingColor
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun NewSagaView(
@@ -104,23 +113,31 @@ fun NewSagaView(
         val reasoningMessage =
             if (uiState.isSaving) {
                 null
+            } else if (uiState.phase == NewSagaScreenPhase.Suggestions) {
+                uiState.statusMessage ?: defaultCreationMessage
             } else {
-                uiState.statusMessage ?: defaultCreationMessage.takeIf { uiState.showWelcome }
+                uiState.statusMessage
             }
 
         with(sharedTransitionScope) {
+            val surface = MaterialTheme.colorScheme.background
+            val bottomAccent = morphingColor(duration = 3.seconds)
+
             Box(
                 modifier =
                     Modifier
+                        .background(surface)
                         .fillMaxSize()
-                        .background(Brush.verticalGradient(morphingGradient()))
                         .imePadding(),
             ) {
                 Box(
-                    modifier =
-                        Modifier
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = .6f))
-                            .fillMaxSize(),
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.25f)
+                        .background(
+                            fadeGradientBottom(bottomAccent),
+                        ),
                 )
 
                 Column(
@@ -131,72 +148,46 @@ fun NewSagaView(
                 ) {
                     if (!uiState.isSaving) {
                         TopBarContent(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth(),
-                            navigateBack = onBack,
+                            modifier = Modifier.fillMaxWidth(),
+                            navigateBack = {
+                                if (viewModel.onBackPressed()) {
+                                    onBack()
+                                }
+                            },
                         )
                     }
 
-                    Column(
+                    Box(
                         modifier =
                             Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .verticalScroll(rememberScrollState())
-                                .animateContentSize()
-                                .padding(horizontal = 8.dp)
-                                .then(
-                                    if (uiState.showEchoes) {
-                                        Modifier.padding(top = 24.dp)
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement =
-                            if (uiState.showEchoes) {
-                                Arrangement.spacedBy(16.dp, Alignment.Top)
-                            } else {
-                                Arrangement.Center
-                            },
+                                .animateContentSize(),
                     ) {
-                        NewSagaMainContent(
-                            uiState = uiState,
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            onIntent = viewModel::onIntent,
-                            modifier = Modifier.weight(1f),
-                        )
+                        AnimatedContent(uiState.phase, transitionSpec = {
+                            fadeIn(tween(700)) togetherWith
+                                fadeOut(tween(1000, delayMillis = 200, easing = EaseIn))
+                        }) { phase ->
+                            when (phase) {
+                                NewSagaScreenPhase.Suggestions -> {
+                                    NewSagaSuggestionsContent(
+                                        uiState = uiState,
+                                        reasoningMessage = reasoningMessage,
+                                        onEchoSelected = { echoInput ->
+                                            userInput = echoInput
+                                            viewModel.onIntent(NewSagaIntent.SubmitPrompt(echoInput))
+                                        },
+                                    )
+                                }
 
-                        reasoningMessage?.let {
-                            NewSagaReasoning(
-                                message = it,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .reactiveShimmer(
-                                            true,
-                                            themeShimmer(),
-                                            repeatMode = RepeatMode.Restart,
-                                        ),
-                            )
-                        }
-
-                        uiState.error?.let { error ->
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(8.dp),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-
-                        if (uiState.showEchoes) {
-                            UniverseEchoesSection(uiState.universeEchoes) { echoInput ->
-                                userInput = echoInput
-                                viewModel.onIntent(NewSagaIntent.SubmitPrompt(echoInput))
+                                NewSagaScreenPhase.Creation -> {
+                                    NewSagaCreationContent(
+                                        uiState = uiState,
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        onIntent = viewModel::onIntent,
+                                    )
+                                }
                             }
                         }
                     }
@@ -215,7 +206,6 @@ fun NewSagaView(
                                 userInput = ""
                             },
                             isLoading = uiState.isGenerating || uiState.isSaving,
-                            genre = uiState.lockedSaga?.genre,
                         )
                     }
                 }
@@ -226,58 +216,212 @@ fun NewSagaView(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun NewSagaMainContent(
+private fun NewSagaSuggestionsContent(
     uiState: NewSagaUiState,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedContentScope,
-    modifier: Modifier,
-    onIntent: (NewSagaIntent) -> Unit,
+    reasoningMessage: String?,
+    onEchoSelected: (String) -> Unit,
 ) {
-    when {
-        uiState.isSaving -> {
-            val bookEntry =
-                uiState.libraryBooks.firstOrNull {
-                    it.first.draft.id == uiState.lockedSaga?.id
+    if (uiState.showEchoes) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = 8.dp),
+        ) {
+            reasoningMessage?.let { message ->
+                NewSagaReasoning(
+                    message = message,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .reactiveShimmer(
+                                true,
+                                themeShimmer(),
+                                repeatMode = RepeatMode.Restart,
+                            ),
+                )
+            }
+
+            uiState.error?.let { error ->
+                NewSagaInlineError(error)
+            }
+
+            UniverseEchoesSection(
+                echoes = uiState.universeEchoes,
+                onEchoSelected = onEchoSelected,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    } else {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(28.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_spark),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier =
+                        Modifier
+                            .size(56.dp)
+                            .gradientFill(sagaBrush()),
+                )
+
+                reasoningMessage?.let { message ->
+                    NewSagaWelcomeHero(message = message)
                 }
-            bookEntry?.let { entry ->
-                with(sharedTransitionScope) {
-                    NewSagaBookFocus(
-                        book = entry.first,
-                        visualConfig = entry.second,
-                        reasoning = uiState.statusMessage,
-                        isOpened = false,
-                        isLoading = true,
-                        lockedCharacter = uiState.lockedCharacter,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        sharedContentKey = "new-saga-book-${entry.first.draft.id}",
-                        showReasoning = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+
+                uiState.error?.let { error ->
+                    NewSagaInlineError(error)
                 }
             }
         }
+    }
+}
 
-        uiState.showGenreLoader -> {
-            GenreMemoriesLoader(
-                genresConfigs = uiState.genresVisuals ?: emptyList(),
-                modifier = modifier,
-            )
+@Composable
+private fun NewSagaWelcomeHero(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = message,
+        style =
+            MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                shadow = Shadow(Color.White, blurRadius = 15f),
+                brush = sagaBrush(),
+            ),
+        textAlign = TextAlign.Center,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun NewSagaInlineError(error: String) {
+    Text(
+        text = error,
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.padding(8.dp),
+        textAlign = TextAlign.Center,
+    )
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun NewSagaCreationContent(
+    uiState: NewSagaUiState,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedContentScope,
+    onIntent: (NewSagaIntent) -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            uiState.isSaving -> {
+                val bookEntry =
+                    uiState.libraryBooks.firstOrNull {
+                        it.first.draft.id == uiState.lockedSaga?.id
+                    }
+                bookEntry?.let { entry ->
+                    with(sharedTransitionScope) {
+                        NewSagaBookFocus(
+                            book = entry.first,
+                            visualConfig = entry.second,
+                            reasoning = uiState.statusMessage,
+                            isOpened = false,
+                            isLoading = true,
+                            lockedCharacter = uiState.lockedCharacter,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            sharedContentKey = "new-saga-book-${entry.first.draft.id}",
+                            showReasoning = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+
+            uiState.showGenreLoader -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    GenreMemoriesLoader(
+                        genresConfigs = uiState.genresVisuals ?: emptyList(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    uiState.statusMessage?.let { message ->
+                        NewSagaReasoning(
+                            message = message,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp)
+                                    .reactiveShimmer(
+                                        uiState.useShimmerReasoning,
+                                        themeShimmer(),
+                                        repeatMode = RepeatMode.Restart,
+                                    ),
+                        )
+                    }
+                }
+            }
+
+            uiState.libraryBooks.isNotEmpty() -> {
+                LibraryPager(
+                    books = uiState.libraryBooks,
+                    lockedSaga = uiState.lockedSaga,
+                    lockedCharacter = uiState.lockedCharacter,
+                    isGenerating = uiState.isGenerating,
+                    isLoadingMore = uiState.isLoadingMore,
+                    hasMoreGenres = uiState.hasMoreGenres,
+                    onLoadMore = { onIntent(NewSagaIntent.LoadMore) },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onIntent = onIntent,
+                )
+            }
+
+            uiState.statusMessage != null -> {
+                NewSagaReasoning(
+                    message = uiState.statusMessage,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .reactiveShimmer(
+                                uiState.useShimmerReasoning,
+                                themeShimmer(),
+                                repeatMode = RepeatMode.Restart,
+                            ),
+                )
+            }
         }
 
-        uiState.libraryBooks.isNotEmpty() -> {
-            LibraryPager(
-                books = uiState.libraryBooks,
-                lockedSaga = uiState.lockedSaga,
-                lockedCharacter = uiState.lockedCharacter,
-                isGenerating = uiState.isGenerating,
-                isLoadingMore = uiState.isLoadingMore,
-                hasMoreGenres = uiState.hasMoreGenres,
-                onLoadMore = { onIntent(NewSagaIntent.LoadMore) },
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
-                onIntent = onIntent,
+        uiState.error?.let { error ->
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp),
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -307,14 +451,11 @@ private fun SaveSagaButton(
     }
 }
 
-private val NewSagaUiState.showWelcome: Boolean
-    get() = libraryBooks.isEmpty() && !isGenerating && !isSaving
-
 private val NewSagaUiState.showGenreLoader: Boolean
-    get() = isGenerating && libraryBooks.isEmpty() && !isSaving
+    get() = phase == NewSagaScreenPhase.Creation && isGenerating && libraryBooks.isEmpty() && !isSaving
 
 private val NewSagaUiState.showEchoes: Boolean
-    get() = universeEchoes.isNotEmpty() && !isGenerating && !isSaving
+    get() = phase == NewSagaScreenPhase.Suggestions && universeEchoes.isNotEmpty()
 
 private val NewSagaUiState.showSaveButton: Boolean
     get() = isReadyToSave && lockedSaga != null && lockedCharacter != null
@@ -357,10 +498,9 @@ fun PromptBar(
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
     isLoading: Boolean,
-    genre: Genre?,
 ) {
     val shape = MaterialTheme.shapes.extraLarge
-    val themeBrush = sagaBrush()
+    val themeBrush = Brush.horizontalGradient(morphingGradient())
     val primaryColor = MaterialTheme.colorScheme.primary
 
     Row(
@@ -374,20 +514,10 @@ fun PromptBar(
                     spread = 1f
                     brush = themeBrush
                 }.border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), shape)
-                .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                .background(MaterialTheme.colorScheme.background, shape)
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_spark),
-            contentDescription = "Prompt",
-            tint = MaterialTheme.colorScheme.onBackground,
-            modifier =
-                Modifier
-                    .size(24.dp)
-                    .gradientFill(Brush.verticalGradient(holographicGradient)),
-        )
-
         BasicTextField(
             value = value,
             onValueChange = onValueChange,

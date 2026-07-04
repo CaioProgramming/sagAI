@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.ui.theme.levitate
@@ -39,8 +40,9 @@ fun NewSagaReasoning(
                     shadow =
                         Shadow(
                             Color.White,
-                            blurRadius = 10f,
+                            blurRadius = 15f,
                         ),
+                    fontWeight = FontWeight.SemiBold,
                 ),
             modifier =
                 Modifier

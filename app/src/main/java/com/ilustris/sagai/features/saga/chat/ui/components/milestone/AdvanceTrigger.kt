@@ -101,7 +101,7 @@ fun AdvancePullIndicator(
         Icon(
             themePainter(),
             null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.onBackground.copy(alpha = .4f),
             modifier =
                 Modifier
                     .size(iconSize * scale)

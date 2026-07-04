@@ -13,6 +13,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,6 +32,27 @@ import com.ilustris.sagai.ui.theme.ThemeIcon
 import com.ilustris.sagai.ui.theme.iconDropShadow
 import com.ilustris.sagai.ui.theme.rememberVectorShape
 import com.ilustris.sagai.ui.theme.sagaBrush
+
+@Composable
+fun AnimatedIcon(modifier: Modifier) {
+    val genre = LocalSagaGenre.current
+
+    AnimatedContent(genre, modifier) {
+        if (it == null) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_spark),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Icon(
+                imageVector = ImageVector.vectorResource(it.icon),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
 
 @Composable
 fun MorphingThemeIcon(
@@ -130,7 +152,8 @@ fun MorphingThemeIcon(
                             shape = iconShape,
                             brush = brush,
                             progress = glowProgress,
-                        ).then(iconModifier),
+                        )
+                        .then(iconModifier),
             )
         }
     }

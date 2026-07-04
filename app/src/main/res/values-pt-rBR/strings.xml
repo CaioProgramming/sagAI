@@ -8,7 +8,7 @@
     <string name="saga_description">Por onde começamos?</string>
     <string name="saga_character_description">Quem você vai ser?</string>
     <string name="saga_character_description_subtitle">Descreva seu personagem, aparência, personalidade, estilo…</string>
-    <string name="saga_description_subtitle">Vamos definir o início dessa aventura; não se preocupe com os detalhes, vamos melhorando juntos.</string>
+    <string name="saga_description_subtitle">Vamos definir o início dessa aventura.\nnão se preocupe com os detalhes, vamos melhorando juntos.</string>
     <string name="saga_description_hint">Descreva sua história…</string>
     <string name="saga_saving">Hora de construir esse mundo!</string>
     <string name="saga_saving_subtitle">Deixa comigo; vou construir seu mundo em alguns instantes,</string>
