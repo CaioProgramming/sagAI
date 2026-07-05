@@ -217,7 +217,8 @@ fun LibraryPager(
                                 Modifier
                                     .size(
                                         24.dp,
-                                    ).reactiveShimmer(
+                                    )
+                                    .reactiveShimmer(
                                         repeatMode = RepeatMode.Restart,
                                         shimmerColors = themeShimmer(),
                                         isPlaying = true,
@@ -299,7 +300,7 @@ internal fun UniverseEchoesSection(
     ) {
         items(
             items = echoes,
-            key = { (echo, _) -> echo.input },
+            key = { (echo, _) -> echo.pitch },
         ) { (echo, _) ->
 
             EchoIdeaCard(
@@ -307,7 +308,7 @@ internal fun UniverseEchoesSection(
                 modifier =
                     Modifier
                         .fillMaxWidth(),
-                onClick = { onEchoSelected(echo.input) },
+                onClick = { onEchoSelected(echo.pitch) },
             )
         }
     }
@@ -333,7 +334,8 @@ private fun EchoIdeaCard(
                         brush = genreBrush
                         radius = 10f
                         spread = 1f
-                    }.border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
+                    }
+                    .border(1.dp, MaterialTheme.colorScheme.primary.gradientFade(), shape)
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.background, shape)
                     .clickable(onClick = onClick)
@@ -358,7 +360,7 @@ private fun EchoIdeaCard(
                 )
             }
             Text(
-                text = echo.input,
+                text = echo.pitch,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 overflow = TextOverflow.Ellipsis,

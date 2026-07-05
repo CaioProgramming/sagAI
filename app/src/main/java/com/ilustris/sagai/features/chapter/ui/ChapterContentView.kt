@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -34,13 +37,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -89,12 +93,20 @@ fun ChapterContentView(
                 Modifier
                     .clickable {
                         viewModel.generateIcon(chapter.id)
-                    }
-                    .size(100.dp)
+                    }.size(100.dp)
                     .gradientFill(genre.gradient())
                     .padding(16.dp),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
             )
+
+            if (BuildConfig.DEBUG) {
+                OutlinedButton(
+                    onClick = { viewModel.generateIcon(chapter.id) },
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text(stringResource(R.string.debug_regenerate_image))
+                }
+            }
         } else {
             var imageSize by remember {
                 mutableStateOf(imageSize)

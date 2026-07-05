@@ -601,6 +601,7 @@
     <string name="audit_logs_success">Sucesso</string>
     <string name="audit_logs_error">Erro</string>
     <string name="audit_logs_empty">Nenhum log registrado ainda.</string>
+    <string name="audit_logs_loading_more">Carregando mais logs…</string>
     <string name="audit_logs_clear_dialog_title">Limpar Logs de Auditoria</string>
     <string name="audit_logs_clear_dialog_message">Tem certeza que deseja apagar todos os logs de auditoria de IA? Esta ação não pode ser desfeita.</string>
     <string name="audit_logs_clear_button">Limpar</string>

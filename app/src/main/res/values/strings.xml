@@ -391,6 +391,7 @@
     <string name="debug_image_lab_character">Character</string>
     <string name="debug_image_lab_chapter_cover">Chapter cover</string>
     <string name="debug_image_lab_empty">No image targets for this saga.</string>
+    <string name="debug_regenerate_image">Regenerate image</string>
     <string name="fake_messages_placeholder">Number of Fake Messages</string>
     <string name="current_objective">Current Objective</string>
     <string name="start_writing_saga">Start writing your saga!</string>
@@ -720,6 +721,7 @@
     <string name="audit_logs_success">Success</string>
     <string name="audit_logs_error">Error</string>
     <string name="audit_logs_empty">No logs recorded yet.</string>
+    <string name="audit_logs_loading_more">Loading more logs…</string>
     <string name="audit_logs_clear_dialog_title">Clear Audit Logs</string>
     <string name="audit_logs_clear_dialog_message">Are you sure you want to delete all AI Audit Logs? This action cannot be undone.</string>
     <string name="audit_logs_clear_button">Clear</string>

@@ -206,8 +206,8 @@ class NewSagaViewModel
                     )
                 }
                 if (_uiState.value.universeEchoes.isEmpty()) {
-                requestInitialEchoes()
-            }
+                    requestInitialEchoes()
+                }
             }
         }
 
@@ -265,7 +265,7 @@ class NewSagaViewModel
                     universeEchoes = emptyList(),
                 )
             }
-            submitUserPrompt(intent.echo.input)
+            submitUserPrompt(intent.echo.pitch)
         }
 
         private fun loadMore() {
@@ -526,7 +526,7 @@ class NewSagaViewModel
                 )
             }
             lastUserPrompt = ""
-        requestInitialEchoes()
+            requestInitialEchoes()
         }
 
         private fun navigateToSaga(saga: Saga) {

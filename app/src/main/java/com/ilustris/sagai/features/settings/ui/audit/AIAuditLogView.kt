@@ -55,6 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,6 +63,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -89,10 +91,10 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.themeBrushColors
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+
+private const val LOAD_MORE_THRESHOLD = 5
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,7 +104,10 @@ fun AIAuditLogView(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
-    val logs by viewModel.filteredLogs.collectAsState()
+    val listItems by viewModel.listItems.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val hasMore by viewModel.hasMore.collectAsState()
     val statusFilter by viewModel.statusFilter.collectAsState()
     val dataTypeFilter by viewModel.dataTypeFilter.collectAsState()
     val modelFilter by viewModel.modelFilter.collectAsState()
@@ -118,9 +123,34 @@ fun AIAuditLogView(
     var selectedSectionContent by remember { mutableStateOf<AuditLogSectionData?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
+    val hasLogEntries = listItems.any { it is AuditLogListItem.LogEntry }
 
-    LaunchedEffect(logs) {
-        if (pipelineInsight == null && logs.isNotEmpty()) viewModel.requestGlobalInsight()
+    DisposableEffect(Unit) {
+        viewModel.setScreenActive(true)
+        onDispose { viewModel.setScreenActive(false) }
+    }
+
+    LaunchedEffect(listState, hasMore) {
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            lastVisibleIndex to layoutInfo.totalItemsCount
+        }.distinctUntilChanged()
+            .collect { (lastVisibleIndex, totalItems) ->
+                if (
+                    totalItems > 0 &&
+                    lastVisibleIndex >= totalItems - LOAD_MORE_THRESHOLD &&
+                    hasMore &&
+                    !isLoadingMore
+                ) {
+                    viewModel.loadMore()
+                }
+            }
+    }
+
+    LaunchedEffect(listItems) {
+        if (pipelineInsight == null && hasLogEntries) viewModel.requestGlobalInsight()
     }
 
     var optionsExpanded by remember { mutableStateOf(false) }
@@ -134,7 +164,7 @@ fun AIAuditLogView(
                 .padding(16.dp),
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        state = rememberLazyListState(),
+        state = listState,
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -162,7 +192,7 @@ fun AIAuditLogView(
                 }
                 Box(Modifier.weight(1f))
 
-                AnimatedVisibility(logs.isNotEmpty(), enter = scaleIn(), exit = scaleOut()) {
+                AnimatedVisibility(hasLogEntries, enter = scaleIn(), exit = scaleOut()) {
                     IconButton({
                         optionsExpanded = true
                     }, modifier = Modifier.size(32.dp)) {
@@ -226,15 +256,14 @@ fun AIAuditLogView(
             )
         }
         item {
-            AnimatedVisibility(logs.isNotEmpty()) {
+            AnimatedVisibility(hasLogEntries) {
                 Row(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .horizontalScroll(
                                 rememberScrollState(),
-                            )
-                            .padding(bottom = 8.dp),
+                            ).padding(bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -299,15 +328,7 @@ fun AIAuditLogView(
             }
         }
 
-        val groupedLogs =
-            logs.groupBy {
-                SimpleDateFormat(
-                    "MMM dd, yyyy",
-                    Locale.getDefault(),
-                ).format(Date(it.timestamp))
-            }
-
-        if (logs.isEmpty()) {
+        if (!hasLogEntries && !isLoading) {
             item {
                 Text(
                     text = stringResource(R.string.audit_logs_empty),
@@ -324,30 +345,59 @@ fun AIAuditLogView(
                 )
             }
         } else {
-            groupedLogs.forEach { (dateStr, logList) ->
-                item {
-                    Text(
-                        text = dateStr,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp, start = 4.dp),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
+            items(
+                items = listItems,
+                key = { item ->
+                    when (item) {
+                        is AuditLogListItem.DateHeader -> "date-${item.date}"
+                        is AuditLogListItem.LogEntry -> "log-${item.log.id}"
+                    }
+                },
+            ) { item ->
+                when (item) {
+                    is AuditLogListItem.DateHeader -> {
+                        Text(
+                            text = item.date,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp, start = 4.dp),
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+
+                    is AuditLogListItem.LogEntry -> {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(15.dp),
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                ),
+                        ) {
+                            AuditLogItem(
+                                log = item.log,
+                                isLast = true,
+                                isLoadingSuggestion = loadingSuggestionId == item.log.id,
+                                onRequestSuggestion = { viewModel.requestSuggestion(item.log) },
+                                onShowSection = { selectedSectionContent = it },
+                            )
+                        }
+                    }
                 }
-                items(logList) { log ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(15.dp),
-                        colors =
-                            CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            ),
+            }
+
+            if (isLoadingMore) {
+                item(key = "loading-more") {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        AuditLogItem(
-                            log = log,
-                            isLast = true,
-                            isLoadingSuggestion = loadingSuggestionId == log.id,
-                            onRequestSuggestion = { viewModel.requestSuggestion(log) },
-                            onShowSection = { selectedSectionContent = it },
+                        Text(
+                            text = stringResource(R.string.audit_logs_loading_more),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                         )
                     }
                 }
@@ -413,8 +463,7 @@ fun AIAuditLogView(
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(12.dp),
-                            )
-                            .verticalScroll(rememberScrollState()),
+                            ).verticalScroll(rememberScrollState()),
                 ) {
                     if (section.isJson) {
                         JsonCodeBlock(jsonString = section.content)
@@ -545,8 +594,7 @@ fun AuditLogItem(
                                         1.dp,
                                         MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                                         RoundedCornerShape(4.dp),
-                                    )
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                    ).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                                     .padding(8.dp),
                         )
                     }
@@ -788,8 +836,7 @@ fun AuditLogItem(
                                     .background(
                                         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                         RoundedCornerShape(8.dp),
-                                    )
-                                    .padding(12.dp),
+                                    ).padding(12.dp),
                         )
                     } else {
                         Button(
@@ -939,8 +986,7 @@ fun JsonCodeBlock(jsonString: String) {
                 .background(
                     MaterialTheme.colorScheme.surfaceVariant,
                     shape = MaterialTheme.shapes.small,
-                )
-                .padding(12.dp),
+                ).padding(12.dp),
     )
 }
 
@@ -1089,8 +1135,7 @@ fun PipelineInsightCard(
                                 .alpha(alpha)
                                 .padding(
                                     16.dp,
-                                )
-                                .clickable {
+                                ).clickable {
                                     expanded = !expanded
                                 },
                     )

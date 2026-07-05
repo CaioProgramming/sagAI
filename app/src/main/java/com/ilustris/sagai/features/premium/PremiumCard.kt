@@ -11,12 +11,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -31,6 +34,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.themeBrushColors
 
 @Composable
 fun PremiumCard(
@@ -117,5 +121,57 @@ fun PremiumCard(
                 textAlign = TextAlign.Center,
             )
         }
+    }
+}
+
+@Composable
+fun MiniPremiumCard(modifier: Modifier = Modifier) {
+    val shape = MaterialTheme.shapes.medium
+    val brush = Brush.verticalGradient(themeBrushColors())
+
+    Row(
+        modifier
+            .dropShadow(shape) {
+                radius = 15f
+                this.brush = brush
+                spread = 1.5f
+            }.clip(
+                shape,
+            ).background(MaterialTheme.colorScheme.surfaceContainer, shape)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            painterResource(R.drawable.ic_spark),
+            null,
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .gradientFill(brush),
+        )
+
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            PremiumTitle(
+                titleStyle = MaterialTheme.typography.labelLarge,
+                brush = brush,
+            )
+
+            Text(
+                stringResource(R.string.premium_sign_up),
+                modifier = Modifier.alpha(.4f),
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Light,
+                    ),
+            )
+        }
+
+        Icon(
+            painterResource(R.drawable.round_arrow_forward_ios_24),
+            null,
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(12.dp),
+        )
     }
 }

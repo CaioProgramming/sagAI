@@ -3,16 +3,12 @@ package com.ilustris.sagai.features.home.ui.components
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,16 +17,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.iconShape
-import com.ilustris.sagai.ui.theme.sagaBrush
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIcon
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -43,67 +41,70 @@ fun CreateSagaCard(
     val genre = dynamicNewSagaTexts.genre
 
     SagAITheme(genre) {
-        val genreBrush = sagaBrush(gradientType = GradientType.VERTICAL)
-        Column(
-            Modifier
+        val genreBrush = Brush.verticalGradient(themeBrushColors())
+        val shape = MaterialTheme.shapes.medium
+
+        Row(
+            modifier
+                .dropShadow(shape) {
+                    this.brush = genreBrush
+                    radius = 10f
+                    spread = 2f
+                }.clip(shape)
+                .background(MaterialTheme.colorScheme.background, shape)
+                .background(fadeGradientBottom(MaterialTheme.colorScheme.primary))
                 .clickable {
                     onCreateNewChat()
-                },
+                }.padding(16.dp)
+                .alpha(0.5f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
+            Icon(
+                themeIcon(),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier =
-                    modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(15.dp))
-                        .gradientFill(genreBrush)
-                        .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    Modifier.size(12.dp),
+            )
+
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f),
             ) {
-                val themeShape = genre.iconShape()
-                Icon(
-                    themeIcon(),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier =
-                        Modifier.size(50.dp),
+                Text(
+                    text = dynamicNewSagaTexts.title,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    maxLines = 1,
                 )
 
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(
+                Text(
+                    text = dynamicNewSagaTexts.subtitle,
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Light,
+                            textAlign = TextAlign.Start,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier =
                         Modifier
-                            .weight(1f),
-                ) {
-                    Text(
-                        text = dynamicNewSagaTexts.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                    )
-
-                    Text(
-                        text = dynamicNewSagaTexts.subtitle,
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Start,
-                            ),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier =
-                            Modifier
-                                .padding(vertical = 4.dp)
-                                .fillMaxWidth()
-                                .alpha(.7f),
-                    )
-                }
+                            .padding(vertical = 4.dp)
+                            .fillMaxWidth()
+                            .alpha(.7f),
+                )
             }
 
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)),
+            Icon(
+                painterResource(R.drawable.round_arrow_forward_ios_24),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(12.dp),
             )
         }
     }

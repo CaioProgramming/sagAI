@@ -3,6 +3,8 @@ package com.ilustris.sagai.core.ai.services
 import com.ilustris.sagai.core.ai.model.GenreConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,11 +35,15 @@ class GenreConfigService
 
         suspend fun aesthetic(genre: Genre): String = getGenreConfig(genre).aesthetic
 
+        suspend fun getRandomGenreAesthetic() = mapGenreAesthetic(Genre.entries.random()).toAINormalize()
+
+        suspend fun mapGenreAesthetic(genre: Genre) = mapOf(genre.name to aesthetic(genre))
+
         suspend fun formatGenreAesthetics(): String =
             Genre.entries
                 .map {
-                    "${it.name}(${aesthetic(it)})"
-                }.joinToString()
+                    mapGenreAesthetic(it)
+                }.normalizetoAIItems(describeName = false)
 
         suspend fun conversationInstructions(genre: Genre) =
             promptService

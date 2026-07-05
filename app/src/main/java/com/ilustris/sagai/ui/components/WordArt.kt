@@ -48,7 +48,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ilustris.sagai.core.ai.model.GenreVisualConfig
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
@@ -331,7 +330,6 @@ fun Genre.stylisedText(
     text: String,
     modifier: Modifier = Modifier,
     fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
-    visualConfig: GenreVisualConfig? = null,
 ) {
     val resolvedColor = MaterialTheme.colorScheme.primary
     val resolvedIconColor = MaterialTheme.colorScheme.onPrimary
@@ -502,17 +500,17 @@ fun Genre.stylisedText(
         }
 
         Genre.PUNK_ROCK -> {
-            RansomNoteText(
+            AutoResizeText(
                 text = text,
-                genre = this,
                 modifier =
                     modifier
                         .genreVfx(this)
                         .padding(8.dp),
-                fontSize = (fontSize.value * 0.8f).sp,
-                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
-                primaryColor = resolvedColor,
-                secondaryColor = resolvedIconColor,
+                style =
+                    style.copy(
+                        brush = Brush.verticalGradient(palette),
+                        shadow = Shadow(resolvedColor.darker(), blurRadius = 15f),
+                    ),
             )
         }
 

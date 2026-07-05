@@ -86,7 +86,7 @@ fun SagaContent.toSagaInfo() =
 
 fun SagaContent.historySummary() =
     acts.joinToString(";\n---\n") {
-        "${acts.indexOf(it) + 1} - ${it.actSummary(it == acts.last())}"
+        "${acts.indexOf(it) + 1} - ${it.actSummary(false)}"
     }
 
 fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =

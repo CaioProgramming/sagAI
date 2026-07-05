@@ -78,7 +78,6 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.morphingColor
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeShimmer
@@ -271,7 +270,7 @@ private fun NewSagaSuggestionsContent(
                     modifier =
                         Modifier
                             .size(56.dp)
-                            .gradientFill(sagaBrush()),
+                            .gradientFill(Brush.verticalGradient(morphingGradient())),
                 )
 
                 reasoningMessage?.let { message ->
@@ -297,7 +296,7 @@ private fun NewSagaWelcomeHero(
             MaterialTheme.typography.titleSmall.copy(
                 fontWeight = FontWeight.SemiBold,
                 shadow = Shadow(Color.White, blurRadius = 15f),
-                brush = sagaBrush(),
+                brush = Brush.verticalGradient(morphingGradient()),
             ),
         textAlign = TextAlign.Center,
         modifier = modifier.fillMaxWidth(),

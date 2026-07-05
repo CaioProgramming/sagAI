@@ -185,6 +185,8 @@ fun DistortingBubble(
     }
 }
 
+fun sparkShape() = RoundedPolygon.star(4, rounding = CornerRounding(0f))
+
 @Composable
 fun SparkLoader(
     brush: Brush,

@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -36,12 +38,17 @@ import com.ilustris.sagai.features.saga.detail.review.domain.ReviewGenerationSta
 import com.ilustris.sagai.features.saga.detail.review.presentation.SagaReviewViewModel
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewAction
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewExperienceFactory
-import com.ilustris.sagai.features.saga.detail.review.ui.ReviewStepLoadingPage
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.levitate
+import com.ilustris.sagai.ui.theme.morphingGradient
+import com.ilustris.sagai.ui.theme.rememberVectorShape
+import com.ilustris.sagai.ui.theme.themeIconVector
+import com.ilustris.sagai.ui.theme.themePainter
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(
     ExperimentalComposeUiApi::class,
@@ -154,9 +161,21 @@ fun SagaReview(
                             val reasoning =
                                 (generationState as? ReviewGenerationState.Generating)?.reasoning
                                     ?: loadingMessage
-                            ReviewStepLoadingPage(
-                                reasoningMessage = reasoning,
-                                modifier = Modifier.fillMaxSize(),
+
+                            val brush =
+                                Brush.verticalGradient(morphingGradient(duration = 5.seconds))
+                            Icon(
+                                themePainter(),
+                                null,
+                                Modifier
+                                    .size(100.dp)
+                                    .levitate()
+                                    .dropShadow(rememberVectorShape(themeIconVector())) {
+                                        this.brush = brush
+                                        radius = 20f
+                                        spread = 1f
+                                    }.gradientFill(brush),
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         } else if (pagerState.currentPage == pageIndex) {
                             val canAnimate =

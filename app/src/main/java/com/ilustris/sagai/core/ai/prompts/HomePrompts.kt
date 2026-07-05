@@ -13,19 +13,12 @@ object HomePrompts {
 
     suspend fun dynamicSagaCreationPrompt(
         promptService: PromptService,
-        genreAesthetics: String = "",
-    ): SplitPrompt {
-        val args =
-            DynamicSagaCreationArgs(
-                genreEnumNames = genreAesthetics,
-                genreAesthetics = genreAesthetics,
-            )
-
-        return promptService.buildSplitBlueprint(
+        selectedTheme: String = "",
+    ): SplitPrompt =
+        promptService.buildSplitBlueprint(
             DYNAMIC_SAGA_CREATION_BLUEPRINT,
             mapOf(
-                "AvailableThemes" to genreAesthetics,
+                "selectedTheme" to selectedTheme,
             ),
         )
-    }
 }

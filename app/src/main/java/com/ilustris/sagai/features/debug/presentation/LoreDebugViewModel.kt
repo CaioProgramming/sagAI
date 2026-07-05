@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.debug.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -82,9 +83,21 @@ class LoreDebugViewModel
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val timelineUseCase: TimelineUseCase,
         private val remoteConfigService: RemoteConfigService,
+        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoreDebugUiState())
         val uiState: StateFlow<LoreDebugUiState> = _uiState.asStateFlow()
+
+        init {
+            debugImageFallbackService.bindImageGenerationLoadingPause(viewModelScope) {
+                _uiState.update {
+                    it.copy(
+                        generatingSections = emptySet(),
+                        reasoning = null,
+                    )
+                }
+            }
+        }
 
         fun loadSaga(sagaId: Int) {
             viewModelScope.launch {

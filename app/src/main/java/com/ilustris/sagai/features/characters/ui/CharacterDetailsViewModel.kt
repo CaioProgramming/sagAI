@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.model.ImagePalette
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.services.getNarrativeRules
@@ -36,6 +37,7 @@ class CharacterDetailsViewModel
         private val sagaThemeManager: SagaThemeManager,
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val stringResourceHelper: StringResourceHelper,
+        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ViewModel() {
         val characterDetailData = MutableStateFlow<CharacterDetailData?>(null)
         val imagePalette = MutableStateFlow<ImagePalette?>(null)
@@ -60,6 +62,18 @@ class CharacterDetailsViewModel
 
         /** Job for character arcs collection — cancelled on re-entry. */
         private var arcsJob: Job? = null
+
+        init {
+            debugImageFallbackService.bindImageGenerationLoadingPause(viewModelScope) {
+                pauseImageGenerationUi()
+            }
+        }
+
+        private fun pauseImageGenerationUi() {
+            isGenerating.value = false
+            loadingMessage.value = null
+            imageReasoning.value = null
+    }
 
         fun onCharacterScreenVisible(sagaId: Int) {
             sagaImmersiveSession.push("character_detail", sagaId)

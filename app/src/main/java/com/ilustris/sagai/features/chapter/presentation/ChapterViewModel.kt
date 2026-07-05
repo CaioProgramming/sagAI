@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.chapter.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.features.chapter.data.model.ChapterInfo
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -21,6 +22,7 @@ class ChapterViewModel
     constructor(
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val chapterUseCase: ChapterUseCase,
+        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
         val chaptersInfo = MutableStateFlow<List<ChapterInfo>>(emptyList())
@@ -28,6 +30,13 @@ class ChapterViewModel
         val isGenerating = MutableStateFlow(false)
         val reasoningMessage = MutableStateFlow<String?>(null)
         val showPremiumSheet = MutableStateFlow(false)
+
+        init {
+            debugImageFallbackService.bindImageGenerationLoadingPause(viewModelScope) {
+                isGenerating.value = false
+                reasoningMessage.value = null
+            }
+        }
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value

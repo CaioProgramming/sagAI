@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.review.domain.model
 
 import com.ilustris.sagai.core.ai.ModelRequirement
+import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.ai.prompts.ReviewPrompts
 import com.ilustris.sagai.core.utils.formatDuration
 import com.ilustris.sagai.core.utils.normalizetoAIItems
@@ -121,7 +122,10 @@ suspend fun ReviewSteps.buildArgs(saga: SagaContent): Map<String, String> {
 
         ReviewSteps.ACTS_INSIGHT -> {
             buildMap {
-                put("FullStory", saga.historySummary())
+                put(
+                    "FullStory",
+                    saga.acts.map { it.data }.normalizetoAIItems(ActPrompts.ACT_EXCLUSIONS),
+                )
             }
         }
 

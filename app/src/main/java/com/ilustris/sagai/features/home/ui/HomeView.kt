@@ -83,7 +83,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.onboarding.data.OnboardingType
 import com.ilustris.sagai.features.onboarding.ui.OnboardingDialog
-import com.ilustris.sagai.features.premium.PremiumCard
+import com.ilustris.sagai.features.premium.MiniPremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
@@ -311,8 +311,7 @@ private fun ChatList(
                             Modifier
                                 .clickable {
                                     onAction(HomeUiAction.CreateFakeSaga)
-                                }
-                                .padding(16.dp)
+                                }.padding(16.dp)
                                 .gradientFill(debugBrush)
                                 .clip(RoundedCornerShape(15.dp))
                                 .fillMaxWidth(),
@@ -366,6 +365,10 @@ private fun ChatList(
                         CreateSagaCard(
                             dynamicNewSagaTexts = dynamicContent,
                             onCreateNewChat = { onAction(HomeUiAction.CreateNewSaga) },
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
                         )
                     }
                 }
@@ -390,13 +393,14 @@ private fun ChatList(
             if (state.isLoadingDynamicPrompts.not()) {
                 if (state.isPremium.not()) {
                     item {
-                        PremiumCard(
-                            state.isPremium,
-                            onClick = { onAction(HomeUiAction.OpenPremium) },
+                        MiniPremiumCard(
                             modifier =
                                 Modifier
                                     .animateItem()
-                                    .padding(16.dp),
+                                    .padding(16.dp)
+                                    .clickable {
+                                        onAction(HomeUiAction.OpenPremium)
+                                    },
                         )
                     }
                 }
@@ -451,12 +455,10 @@ private fun ChatList(
                                     Brush.horizontalGradient(iridescentGradient)
                                 radius = 20f
                                 spread = .4f
-                            }
-                            .background(
+                            }.background(
                                 MaterialTheme.colorScheme.onBackground,
                                 MaterialTheme.shapes.large,
-                            )
-                            .fillMaxWidth(),
+                            ).fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.home_create_new_saga_title).uppercase(),

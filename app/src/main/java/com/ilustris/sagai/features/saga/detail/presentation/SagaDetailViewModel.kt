@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.StreamingState
+import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.theme.SagaImmersiveSession
 import com.ilustris.sagai.core.theme.SagaThemeManager
@@ -42,6 +43,7 @@ class SagaDetailViewModel
         private val sagaImmersiveSession: SagaImmersiveSession,
         private val stringResourceHelper: StringResourceHelper,
         private val reviewGenerationCoordinator: ReviewGenerationCoordinator,
+        private val debugImageFallbackService: DebugImageFallbackService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Success(Unit))
         val state: StateFlow<State> = _state.asStateFlow()
@@ -71,6 +73,13 @@ class SagaDetailViewModel
 
         /** One entry SFX per detail visit — cleared when the screen is hidden. */
         private var pendingEntryVfxSagaId: Int? = null
+
+        init {
+            debugImageFallbackService.bindImageGenerationLoadingPause(viewModelScope) {
+                isGenerating.value = false
+                _loadingMessage.value = null
+            }
+        }
 
         fun togglePremiumSheet() {
             showPremiumSheet.value = !showPremiumSheet.value
@@ -212,8 +221,8 @@ class SagaDetailViewModel
                 }
             if (sagaResume.value?.saga?.isEnded == true) {
                 reviewGenerationCoordinator.enqueue(sagaId)
+            }
         }
-    }
 
         fun onDetailScreenVisible(sagaId: Int) {
             sagaImmersiveSession.push("saga_detail", sagaId)

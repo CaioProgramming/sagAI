@@ -55,7 +55,7 @@ class HomeUseCaseImpl
                     val prompt =
                         HomePrompts.dynamicSagaCreationPrompt(
                             promptService,
-                            genreAesthetics = genreConfigService.formatGenreAesthetics(),
+                            selectedTheme = genreConfigService.getRandomGenreAesthetic(),
                         )
                     val result =
                         gemmaClient.generate<DynamicSagaPrompt>(
@@ -138,6 +138,6 @@ class HomeUseCaseImpl
         override fun isPremium(): Boolean = billingState.value is BillingService.BillingState.SignatureEnabled
 
         companion object {
-        private const val FREE_ACTIVE_SAGA_LIMIT = 3
-    }
+            private const val FREE_ACTIVE_SAGA_LIMIT = 3
+        }
     }
