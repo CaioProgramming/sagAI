@@ -46,7 +46,7 @@
       "tintStrength": 0.4,
       "vignetteStrength": 0.1,
       "vignetteSoftness": 0.45,
-      "chromaticAberration": 0.004,
+      "chromaticAberration": 0.05,
       "scanlineIntensity": 0.08,
       "scanlineDensity": 2.5
     },
@@ -258,7 +258,7 @@
       "tintStrength": 0.28,
       "vignetteStrength": 0.1,
       "vignetteSoftness": 0.45,
-      "chromaticAberration": 0.003,
+      "chromaticAberration": 0.0375,
       "scanlineIntensity": 0.05,
       "scanlineDensity": 2.0,
       "posterizeLevels": 6.0

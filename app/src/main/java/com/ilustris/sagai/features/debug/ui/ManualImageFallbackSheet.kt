@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.debug.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -43,8 +45,24 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.debug.DebugImageFallbackService
 import com.ilustris.sagai.core.file.readUriAsBitmap
 
-private const val GEMINI_PACKAGE = "com.google.android.apps.bard"
 private const val GEMINI_WEB_URL = "https://gemini.google.com/app"
+
+private fun openGeminiWeb(context: Context) {
+    val intent =
+        Intent(Intent.ACTION_VIEW, Uri.parse(GEMINI_WEB_URL)).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+    try {
+        context.startActivity(Intent.createChooser(intent, null))
+    } catch (_: ActivityNotFoundException) {
+        Toast
+            .makeText(
+                context,
+                R.string.debug_image_fallback_open_gemini_error,
+                Toast.LENGTH_SHORT,
+            ).show()
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,15 +178,7 @@ fun ManualImageFallbackSheet(
             }
 
             OutlinedButton(
-                onClick = {
-                    val launchIntent =
-                        context.packageManager.getLaunchIntentForPackage(GEMINI_PACKAGE)
-                    if (launchIntent != null) {
-                        context.startActivity(launchIntent)
-                    } else {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GEMINI_WEB_URL)))
-                    }
-                },
+                onClick = { openGeminiWeb(context) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
             ) {

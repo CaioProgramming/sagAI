@@ -969,8 +969,8 @@ class ChatViewModel
             }
             if (isEnded) {
                 reviewGenerationCoordinator.enqueue(sagaId)
+            }
         }
-    }
 
         private suspend fun linkCharacterMessages(saga: SagaMetadata) {
             saga
@@ -1281,7 +1281,8 @@ class ChatViewModel
                             }
                             withContext(Dispatchers.IO) {
                                 messageUseCase.updateMessage(newMessage.message.copy(status = MessageStatus.OK))
-                                sceneSummary?.let {
+                                val updatedSceneSummary = reply?.sceneSummary ?: sceneSummary
+                                updatedSceneSummary?.let {
                                     generateSuggestions(it)
                                     sagaContentManager.updateSummary(it)
                                 }
@@ -1297,7 +1298,7 @@ class ChatViewModel
                                     discovery = discovery,
                                     reply = aiReply,
                                     userMessage = message,
-                                    sceneSummary = sceneSummary,
+                                    sceneSummary = aiReply.sceneSummary ?: sceneSummary,
                                 )
                             }
                         }
@@ -1339,7 +1340,7 @@ class ChatViewModel
                 }
         }
 
-    private fun generateCharacterAndSaveReply(
+        private fun generateCharacterAndSaveReply(
             discovery: NewCharacterDiscovery,
             reply: AIReply,
             userMessage: Message,
@@ -1393,11 +1394,11 @@ class ChatViewModel
                             context.getString(R.string.try_again) to {
                                 viewModelScope.launch(Dispatchers.IO) {
                                     saveGeneratedReplyWithCharacter(reply, userMessage, character)
-                            }
-                        },
-                )
-            }
-    }
+                                }
+                            },
+                    )
+                }
+        }
 
         fun createCharacter(
             contextDescription: String,
@@ -1473,33 +1474,6 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.enableBackup(uri)
             }
-        }
-
-        fun segmentSagaCover(url: String) {
-            viewModelScope.launch(Dispatchers.IO) {
-                val cachedBitmap = segmentedImageCache.get(url)
-                if (cachedBitmap != null) {
-                    stateManager.updateState { it.copy(segmentedBitmap = cachedBitmap) }
-                    return@launch
-                }
-
-                imageSegmentationHelper.processImage(url).onSuccessAsync {
-                    stateManager.updateState { s ->
-                        s.copy(
-                            originalBitmap = it.first,
-                            segmentedBitmap = it.second,
-                        )
-                    }
-                }
-            }
-        }
-
-        fun dismissCharacter() {
-            stateManager.updateState { it.copy(revealCharacter = null) }
-        }
-
-        fun dismissNewCharacterReveal() {
-            stateManager.updateState { it.copy(newCharacterReveal = null) }
         }
 
         fun getSelectedMessages(): List<MessageContent> {

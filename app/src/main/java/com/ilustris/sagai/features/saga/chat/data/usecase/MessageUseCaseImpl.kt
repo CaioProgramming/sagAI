@@ -208,7 +208,6 @@ class MessageUseCaseImpl
                             saga = sagaContent,
                             message = message.message,
                             sceneSummary = sceneSummary,
-                            conversationDirective = emptyString(),
                             updateLimit = narrativeRules.loreUpdateLimit,
                             narrativeRules = narrativeRules,
                             characterArcsById = characterArcsById,
@@ -307,7 +306,7 @@ class MessageUseCaseImpl
                 }
             }
 
-    override suspend fun saveGeneratedReply(
+        override suspend fun saveGeneratedReply(
             saga: SagaMetadata,
             reply: AIReply,
             userMessage: Message,
@@ -337,10 +336,10 @@ class MessageUseCaseImpl
                     timelineId = saga.getCurrentTimeLine()!!.data.id,
                     status = MessageStatus.OK,
                     speakerName = speakerName,
-                characterId = character?.id,
-            ),
-        )
-    }
+                    characterId = character?.id,
+                ),
+            )
+        }
 
         private suspend fun handleAIReplyReactions(
             saga: SagaMetadata,

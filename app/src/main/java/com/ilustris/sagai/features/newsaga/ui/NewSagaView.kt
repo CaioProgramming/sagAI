@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -143,7 +144,8 @@ fun NewSagaView(
                     modifier =
                         Modifier
                             .fillMaxSize()
-                            .statusBarsPadding(),
+                            .statusBarsPadding()
+                            .navigationBarsPadding(),
                 ) {
                     if (!uiState.isSaving) {
                         TopBarContent(
@@ -442,7 +444,8 @@ private fun SaveSagaButton(
                     this.color = color
                     this.radius = 5f
                     this.spread = 5f
-                }.fillMaxWidth(),
+                }
+                .fillMaxWidth(),
         shape = buttonShape,
         enabled = enabled,
     ) {
@@ -512,7 +515,8 @@ fun PromptBar(
                     radius = 15f
                     spread = 1f
                     brush = themeBrush
-                }.border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), shape)
+                }
+                .border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), shape)
                 .background(MaterialTheme.colorScheme.background, shape)
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,

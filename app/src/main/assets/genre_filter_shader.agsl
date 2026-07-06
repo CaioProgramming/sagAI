@@ -223,7 +223,10 @@ vec3 applySharpen(vec3 color, float2 fragCoord, float alpha) {
 
 vec3 applyChromatic(vec3 color, float2 fragCoord, float alpha) {
     if (u_chromaticAberration <= 0.0001) return color;
-    float2 offset = float2(u_chromaticAberration * iResolution.x, 0.0);
+    // Intensity-style input (like bloom/vignette): 0.05 ≈ subtle fringe, 1.0 ≈ strong.
+    // Without this scale, 0.05 meant 5% of image width (~54px on 1080p).
+    const float CHROMATIC_WIDTH_SCALE = 0.08;
+    float2 offset = float2(u_chromaticAberration * iResolution.x * CHROMATIC_WIDTH_SCALE, 0.0);
     float r = composable_shader.eval(fragCoord + offset).r;
     float b = composable_shader.eval(fragCoord - offset).b;
     return vec3(

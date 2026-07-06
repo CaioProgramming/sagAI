@@ -265,7 +265,8 @@ private fun ChatList(
                                             interactionSource = remember { MutableInteractionSource() },
                                         ) {
                                             onAction(HomeUiAction.OpenPremium)
-                                        }.wrapContentWidth()
+                                        }
+                                        .wrapContentWidth()
                                         .align(Alignment.CenterVertically),
                                 iconModifier =
                                     Modifier.sharedElement(
@@ -311,7 +312,8 @@ private fun ChatList(
                             Modifier
                                 .clickable {
                                     onAction(HomeUiAction.CreateFakeSaga)
-                                }.padding(16.dp)
+                                }
+                                .padding(16.dp)
                                 .gradientFill(debugBrush)
                                 .clip(RoundedCornerShape(15.dp))
                                 .fillMaxWidth(),
@@ -390,53 +392,36 @@ private fun ChatList(
                 )
             }
 
-            if (state.isLoadingDynamicPrompts.not()) {
-                if (state.isPremium.not()) {
-                    item {
-                        MiniPremiumCard(
-                            modifier =
-                                Modifier
-                                    .animateItem()
-                                    .padding(16.dp)
-                                    .clickable {
-                                        onAction(HomeUiAction.OpenPremium)
-                                    },
-                        )
-                    }
-                }
-
-                if (state.backupAvailable) {
-                    item {
-                        Box(
-                            Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Button(onClick = {
-                                onAction(HomeUiAction.RecoverSagas)
-                            }, colors = ButtonDefaults.textButtonColors()) {
-                                Icon(
-                                    painterResource(R.drawable.ic_restore),
-                                    null,
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 8.dp)
-                                            .size(24.dp),
-                                )
-                                Text(
-                                    stringResource(id = R.string.restore_sagas),
-                                    style =
-                                        MaterialTheme.typography.labelLarge.copy(
-                                            fontWeight = FontWeight.Light,
-                                        ),
-                                )
-                            }
+            if (state.backupAvailable) {
+                item {
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Button(onClick = {
+                            onAction(HomeUiAction.RecoverSagas)
+                        }, colors = ButtonDefaults.textButtonColors()) {
+                            Icon(
+                                painterResource(R.drawable.ic_restore),
+                                null,
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 8.dp)
+                                        .size(24.dp),
+                            )
+                            Text(
+                                stringResource(id = R.string.restore_sagas),
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                            )
                         }
                     }
                 }
             }
-
             item {
                 Button(
                     onClick = {
@@ -455,10 +440,12 @@ private fun ChatList(
                                     Brush.horizontalGradient(iridescentGradient)
                                 radius = 20f
                                 spread = .4f
-                            }.background(
+                            }
+                            .background(
                                 MaterialTheme.colorScheme.onBackground,
                                 MaterialTheme.shapes.large,
-                            ).fillMaxWidth(),
+                            )
+                            .fillMaxWidth(),
                 ) {
                     Text(
                         stringResource(R.string.home_create_new_saga_title).uppercase(),
@@ -469,6 +456,18 @@ private fun ChatList(
                             ),
                     )
                 }
+            }
+
+            item {
+                MiniPremiumCard(
+                    modifier =
+                        Modifier
+                            .animateItem()
+                            .padding(horizontal = 32.dp, vertical = 16.dp)
+                            .clickable {
+                                onAction(HomeUiAction.OpenPremium)
+                            },
+                )
             }
 
             item {
@@ -511,7 +510,8 @@ fun ChatCard(
                                     color = genreColor
                                     brush = genreBrush
                                     spread = 5f
-                                }.size(50.dp),
+                                }
+                                .size(50.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         AvatarTimelineIcon(
@@ -553,7 +553,8 @@ fun ChatCard(
                                         .sharedElement(
                                             rememberSharedContentState(key = "saga_${saga.data.id}_title"),
                                             animatedVisibilityScope,
-                                        ).weight(1f),
+                                        )
+                                        .weight(1f),
                             )
 
                             val timeInMillis = saga.lastMessageTime

@@ -916,9 +916,7 @@ class SagaContentManagerImpl
                     } ?: dismissMilestone()
                 }
 
-                is NarrativeAction.CreateTimeline,
-                is NarrativeAction.EnsureTimelineSceneSummary,
-                -> {
+                is NarrativeAction.CreateTimeline -> {
                     val timeline = resultValue as? Timeline
                     if (timeline != null && timeline.hasActiveSceneSummary()) {
                         timeline.sceneSummary?.let { _sceneSummary.value = it }

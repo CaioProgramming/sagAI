@@ -5,11 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.solidGradient
@@ -51,14 +54,17 @@ fun PremiumCard(
                         10.dp,
                         Brush.verticalGradient(holographicGradient),
                     ),
-                ).border(
+                )
+                .border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
                     RoundedCornerShape(15.dp),
-                ).background(
+                )
+                .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     RoundedCornerShape(15.dp),
-                ).clickable { onClick() }
+                )
+                .clickable { onClick() }
                 .padding(16.dp),
     ) {
         Row(
@@ -75,10 +81,12 @@ fun PremiumCard(
                             1.dp,
                             MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
                             iconShape,
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.background,
                             iconShape,
-                        ).size(24.dp)
+                        )
+                        .size(24.dp)
                         .padding(4.dp)
                         .gradientFill(Brush.verticalGradient(holographicGradient)),
             )
@@ -132,13 +140,16 @@ fun MiniPremiumCard(modifier: Modifier = Modifier) {
     Row(
         modifier
             .dropShadow(shape) {
-                radius = 15f
+                radius = 20f
                 this.brush = brush
-                spread = 1.5f
-            }.clip(
+                spread = 2f
+            }
+            .clip(
                 shape,
-            ).background(MaterialTheme.colorScheme.surfaceContainer, shape)
-            .padding(12.dp),
+            ).background(MaterialTheme.colorScheme.background, shape)
+            .background(fadeGradientBottom(MaterialTheme.colorScheme.primary), shape)
+            .padding(12.dp)
+            .gradientFill(brush),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -147,25 +158,32 @@ fun MiniPremiumCard(modifier: Modifier = Modifier) {
             null,
             modifier =
                 Modifier
-                    .size(24.dp)
-                    .gradientFill(brush),
+                    .size(24.dp),
         )
 
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            PremiumTitle(
-                titleStyle = MaterialTheme.typography.labelLarge,
-                brush = brush,
-            )
+        PremiumTitle(
+            titleStyle = MaterialTheme.typography.labelLarge,
+            brush = brush,
+        )
 
-            Text(
-                stringResource(R.string.premium_sign_up),
-                modifier = Modifier.alpha(.4f),
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Light,
-                    ),
-            )
-        }
+        Box(
+            Modifier
+                .alpha(.1f)
+                .size(2.dp)
+                .background(MaterialTheme.colorScheme.onBackground, CircleShape),
+        )
+
+        Text(
+            stringResource(R.string.premium_sign_up),
+            modifier =
+                Modifier
+                    .alpha(.4f)
+                    .weight(1f),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Light,
+                ),
+        )
 
         Icon(
             painterResource(R.drawable.round_arrow_forward_ios_24),

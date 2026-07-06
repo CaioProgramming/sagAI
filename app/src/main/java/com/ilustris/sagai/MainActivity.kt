@@ -124,7 +124,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         printFirebaseInstallationAuthToken()
         enableEdgeToEdge()
-
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         val initialDeepLinkString = intent?.getStringExtra("deepLink")
         intent?.removeExtra("deepLink")
         Timber.i("onCreate: deeplinkExtra: $initialDeepLinkString")

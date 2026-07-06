@@ -6,7 +6,6 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 import android.Manifest
-import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
@@ -180,6 +179,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.sagaBrush
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import com.ilustris.sagai.ui.theme.themeIconVector
+import com.ilustris.sagai.ui.theme.themePainter
 import com.ilustris.sagai.ui.theme.themeShimmer
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -286,119 +286,129 @@ fun ChatView(
 
                 is ChatState.Success -> {
                     val sagaContent = uiState.sagaContent
+                    AnimatedContent(sagaContent) {
+                        if (it == null) {
+                            Box {}
+                        } else {
+                            if (sagaContent == null) return@AnimatedContent
+                            Box(Modifier.fillMaxSize()) {
+                                ModalNavigationDrawer(
+                                    drawerState = drawerState,
+                                    drawerContent = {
+                                        ModalDrawerSheet(
+                                            drawerShape = RoundedCornerShape(0.dp),
+                                            drawerContainerColor = MaterialTheme.colorScheme.background,
+                                        ) {
+                                            SagaWikiView(
+                                                sagaId = sagaContent.data.id.toString(),
+                                                onBack = { coroutineScope.launch { drawerState.close() } },
+                                                sharedTransitionScope = sharedTransitionScope,
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                interceptSystemBack = drawerState.isOpen,
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    with(sharedTransitionScope) {
+                                        ChatContent(
+                                            uiState = uiState,
+                                            onAction = onAction,
+                                            padding = padding,
+                                            isDebug = isDebug,
+                                            genreVfxPulse = genreVfxPulse,
+                                            reviewGenerationState = reviewGenerationState,
+                                            sharedTransitionScope = sharedTransitionScope,
+                                            animatedVisibilityScope = animatedVisibilityScope,
+                                        )
+                                    }
+                                }
+
+                                if (showReview) {
+                                    ModalBottomSheet(
+                                        onDismissRequest = { showReview = false },
+                                        sheetState =
+                                            rememberModalBottomSheetState(
+                                                skipPartiallyExpanded = true,
+                                            ),
+                                        containerColor = MaterialTheme.colorScheme.background,
+                                        dragHandle = null,
+                                        shape = MaterialTheme.shapes.extraLarge,
+                                        modifier = Modifier.fillMaxHeight(),
+                                    ) {
+                                        SagaReview(
+                                            saga = sagaContent.data,
+                                            onDismiss = { showReview = false },
+                                        )
+                                    }
+                                }
+
+                                if (showBackupSheet) {
+                                    BackupSheet(onDismiss = { showBackupSheet = false })
+                                }
+
+                                if (uiState.showAudioTranscript) {
+                                    AudioRecordingSheet(
+                                        themeBrushColors(),
+                                        onDismiss = {
+                                            onAction(ChatUiAction.RequestAudioTranscript(false))
+                                        },
+                                    ) {
+                                        onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
+                                        onAction(
+                                            ChatUiAction.SendInput(
+                                                userConfirmed = false,
+                                                isAudio = true,
+                                            ),
+                                        )
+                                        onAction(ChatUiAction.RequestAudioTranscript(false))
+                                    }
+                                }
+
+                                AnimatedVisibility(
+                                    uiState.isLoading || uiState.isGenerating,
+                                    enter = fadeIn(tween(800)) + scaleIn(),
+                                    exit = fadeOut(tween(500)),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .gradientFill(
+                                                Brush.horizontalGradient(morphingGradient()),
+                                            ),
+                                ) {
+                                    StarryTextPlaceholder(
+                                        modifier =
+                                            Modifier
+                                                .reactiveShimmer(
+                                                    true,
+                                                    duration = 2.seconds,
+                                                ).fillMaxSize(),
+                                    )
+                                }
+
+                                ShareSheet(
+                                    saga = sagaContent.data,
+                                    isVisible = uiState.showShareSheet,
+                                    shareType = ShareType.CONVERSATION,
+                                    onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
+                                )
+
+                                uiState.onboardingType?.let { onboardingType ->
+                                    OnboardingDialog(
+                                        saga = sagaContent.data,
+                                        type = onboardingType,
+                                        genre = sagaContent.data.genre,
+                                        onDismiss = {
+                                            viewModel.onOnboardingDismissed()
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
                     if (sagaContent == null) {
                         SagaChatSparkPlaceholder(modifier = Modifier.fillMaxSize())
                     } else {
-                        Box(Modifier.fillMaxSize()) {
-                            ModalNavigationDrawer(
-                                drawerState = drawerState,
-                                drawerContent = {
-                                    ModalDrawerSheet(
-                                        drawerShape = RoundedCornerShape(0.dp),
-                                        drawerContainerColor = MaterialTheme.colorScheme.background,
-                                    ) {
-                                        SagaWikiView(
-                                            sagaId = sagaContent.data.id.toString(),
-                                            onBack = { coroutineScope.launch { drawerState.close() } },
-                                            sharedTransitionScope = sharedTransitionScope,
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                            interceptSystemBack = drawerState.isOpen,
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.fillMaxSize(),
-                            ) {
-                                with(sharedTransitionScope) {
-                                    ChatContent(
-                                        uiState = uiState,
-                                        onAction = onAction,
-                                        padding = padding,
-                                        isDebug = isDebug,
-                                        genreVfxPulse = genreVfxPulse,
-                                        reviewGenerationState = reviewGenerationState,
-                                        sharedTransitionScope = sharedTransitionScope,
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                    )
-                                }
-                            }
-
-                            if (showReview) {
-                                ModalBottomSheet(
-                                    onDismissRequest = { showReview = false },
-                                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                                    containerColor = MaterialTheme.colorScheme.background,
-                                    dragHandle = null,
-                                    shape = MaterialTheme.shapes.extraLarge,
-                                    modifier = Modifier.fillMaxHeight(),
-                                ) {
-                                    SagaReview(
-                                        saga = sagaContent.data,
-                                        onDismiss = { showReview = false },
-                                    )
-                                }
-                            }
-
-                            if (showBackupSheet) {
-                                BackupSheet(onDismiss = { showBackupSheet = false })
-                            }
-
-                            if (uiState.showAudioTranscript) {
-                                AudioRecordingSheet(
-                                    themeBrushColors(),
-                                    onDismiss = {
-                                        onAction(ChatUiAction.RequestAudioTranscript(false))
-                                    },
-                                ) {
-                                    onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
-                                    onAction(
-                                        ChatUiAction.SendInput(
-                                            userConfirmed = false,
-                                            isAudio = true,
-                                        ),
-                                    )
-                                    onAction(ChatUiAction.RequestAudioTranscript(false))
-                                }
-                            }
-
-                            AnimatedVisibility(
-                                uiState.isLoading || uiState.isGenerating,
-                                enter = fadeIn(tween(800)) + scaleIn(),
-                                exit = fadeOut(tween(500)),
-                                modifier =
-                                    Modifier
-                                        .fillMaxSize()
-                                        .gradientFill(
-                                            Brush.horizontalGradient(morphingGradient()),
-                                        ),
-                            ) {
-                                StarryTextPlaceholder(
-                                    modifier =
-                                        Modifier
-                                            .reactiveShimmer(
-                                                true,
-                                                duration = 2.seconds,
-                                            ).fillMaxSize(),
-                                )
-                            }
-
-                            ShareSheet(
-                                saga = sagaContent.data,
-                                isVisible = uiState.showShareSheet,
-                                shareType = ShareType.CONVERSATION,
-                                onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
-                            )
-
-                            uiState.onboardingType?.let { onboardingType ->
-                                OnboardingDialog(
-                                    saga = sagaContent.data,
-                                    type = onboardingType,
-                                    genre = sagaContent.data.genre,
-                                    onDismiss = {
-                                        viewModel.onOnboardingDismissed()
-                                    },
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -678,8 +688,6 @@ fun ChatContent(
                                     },
                                 onAction = onAction,
                                 messageEffectsEnabled = uiState.messageEffectsEnabled,
-                                originalBitmap = uiState.originalBitmap,
-                                segmentedBitmap = uiState.segmentedBitmap,
                                 isSelectionMode = uiState.selectionState.isSelectionMode,
                                 selectedMessageIds = uiState.selectionState.selectedMessageIds,
                                 audioPlaybackState = uiState.audioPlaybackState,
@@ -929,7 +937,7 @@ fun ChatContent(
                                         progressiveBrush(resolvedColor, progressState.value)
                                     }
                                 Image(
-                                    painterResource(saga.genre.icon),
+                                    themePainter(),
                                     contentDescription = null,
                                     colorFilter =
                                         ColorFilter.tint(
@@ -1322,8 +1330,6 @@ fun ChatList(
     onMessageAction: (MessageAction) -> Unit = {},
     onAction: (ChatUiAction) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
-    originalBitmap: Bitmap? = null,
-    segmentedBitmap: Bitmap? = null,
     isSelectionMode: Boolean = false,
     selectedMessageIds: Set<Int> = emptySet(),
     audioPlaybackState: AudioPlaybackState? = null,
@@ -1379,7 +1385,6 @@ fun ChatList(
                                 .levitate()
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .reactiveShimmer(true)
                                 .alpha(.5f),
                     )
                 }

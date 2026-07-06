@@ -1,6 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.SplitPrompt
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.CHAT_REACTION_BLUEPRINT
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.REPLY_GENERATION_BLUEPRINT
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.SCENE_SUMMARIZATION_BLUEPRINT
 import com.ilustris.sagai.core.ai.services.PromptService
 import com.ilustris.sagai.core.narrative.NarrativeRules
 import com.ilustris.sagai.core.utils.asMap
@@ -16,7 +19,6 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.narrative.domain.buildChatContinuityContext
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -144,7 +146,6 @@ object ChatPrompts {
         saga: SagaContent,
         message: Message,
         sceneSummary: SceneSummary?,
-        conversationDirective: String,
         updateLimit: Int,
         narrativeRules: NarrativeRules,
         characterArcsById: Map<Int, List<CharacterArc>> = emptyMap(),
@@ -172,10 +173,10 @@ object ChatPrompts {
             buildMap {
                 put(
                     "sagaContext",
-                    saga.data.asMap(),
+                    saga.data.toAINormalize(SagaPrompts.SAGA_EXCLUDED_FIELDS),
                 )
                 sceneSummary?.let {
-                    put("currentStoryContext", sceneSummary.asMap())
+                    put("currentStoryContext", sceneSummary.toAINormalize())
                 }
                 if (narrativeContinuity.isNotEmpty()) {
                     put("narrativeContinuity", narrativeContinuity)
@@ -207,7 +208,7 @@ object ChatPrompts {
                                     .map {
                                         "${it.character.name} - ${it.event.title}\n${it.event.summary}"
                                     }.takeLast(3)
-                                    .normalizetoAIItems(),
+                                    .normalizetoAIItems(CHARACTER_EXCLUSIONS),
                             )
                             put(
                                 "relationshipsWithPresentCharacters",
@@ -225,32 +226,13 @@ object ChatPrompts {
                 if (mentionedWikis.isNotEmpty()) {
                     put("mentionedWikis", mentionedWikis.normalizetoAIItems())
                 }
-            }.toAINormalize(
-                buildList {
-                    addAll(SagaPrompts.SAGA_EXCLUDED_FIELDS)
-                    addAll(CHARACTER_EXCLUSIONS)
-                },
-            )
+            }
 
         val argsMap =
             mutableMapOf(
                 "worldContext" to worldContext,
-                "externalCharacters" to CharacterPrompts.offSceneCharacterNames(externalCharacters),
                 "conversationHistory" to conversationHistory(updateLimit, saga),
                 "latestMessage" to message.toAINormalize(messageExclusions),
-                "userToneProtocol" to
-                    """
-                    Analyze the 'latestMessage' from the user and extract its EmotionalTone.
-                    Valid tones: ${EmotionalTone.entries.joinToString { it.name }}.
-                    Return the tone in the 'userTone' field.
-                    """.trimIndent(),
-                "userReactionProtocol" to
-                    """
-                    Based on the 'latestMessage' from the user and the 'sceneSummary', generate reactions from characters present in the scene.
-                    Characters should react to what the user just said/did.
-                    Return these in the 'userReactions' field as a list of AIReaction objects { "character": "Name", "reaction": "Emoji", "thought": "Brief thought" }.
-                    Exclude the message sender from reacting to their own message.
-                    """.trimIndent(),
             )
 
         return promptService

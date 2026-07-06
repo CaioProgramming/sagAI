@@ -28,10 +28,6 @@ sealed class NarrativeAction {
         val chapter: ChapterContent,
     ) : NarrativeAction()
 
-    data class EnsureTimelineSceneSummary(
-        val timeline: TimelineContent,
-    ) : NarrativeAction()
-
     data class EvolveTimeline(
         val timeline: TimelineContent,
     ) : NarrativeAction()

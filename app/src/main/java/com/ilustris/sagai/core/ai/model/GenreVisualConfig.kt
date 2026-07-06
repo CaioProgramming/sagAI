@@ -109,6 +109,7 @@ data class ShaderParamsConfig(
     val blackPoint: Float = 0f,
     @SerializedName("whitePoint")
     val whitePoint: Float = 1f,
+    /** Horizontal RGB fringe intensity. ~0.03–0.08 subtle; 0.15+ strong. Not a 0–1 fraction of image width. */
     @SerializedName("chromaticAberration")
     val chromaticAberration: Float = 0f,
     @SerializedName("scanlineIntensity")

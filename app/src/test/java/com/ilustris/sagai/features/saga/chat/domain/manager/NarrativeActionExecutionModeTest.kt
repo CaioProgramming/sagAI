@@ -24,7 +24,6 @@ class NarrativeActionExecutionModeTest {
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CreateChapter(act).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateChapterIntro(chapter).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CreateTimeline(chapter).executionMode())
-        assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.EnsureTimelineSceneSummary(timeline).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.CloseTimeline(chapter).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.EvolveTimeline(timeline).executionMode())
         assertEquals(NarrativeExecutionMode.UserTriggered, NarrativeAction.GenerateChapter(chapter).executionMode())

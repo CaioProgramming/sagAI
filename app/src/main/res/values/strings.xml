@@ -380,7 +380,8 @@
     <string name="debug_image_fallback_copy_prompt">Copy prompt again</string>
     <string name="debug_image_fallback_expand_prompt">Show full prompt</string>
     <string name="debug_image_fallback_collapse_prompt">Collapse prompt</string>
-    <string name="debug_image_fallback_open_gemini">Open Gemini</string>
+    <string name="debug_image_fallback_open_gemini">Open Gemini (web)</string>
+    <string name="debug_image_fallback_open_gemini_error">No browser available to open Gemini</string>
     <string name="debug_image_fallback_pick_image">Pick image</string>
     <string name="debug_image_fallback_prompt_copied">Prompt copied</string>
     <string name="debug_image_fallback_pick_error">Could not read the selected image</string>
