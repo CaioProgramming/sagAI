@@ -4,6 +4,7 @@ import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeUiState
@@ -92,4 +93,14 @@ interface SagaContentManager {
     suspend fun updateSummary(sceneSummary: SceneSummary)
 
     suspend fun getSagaContent(): SagaContent?
+
+    /** Links unlinked character messages and generates new characters from [reply] in background. */
+    fun resolveReplyCharacterLinks(
+        saga: com.ilustris.sagai.features.home.data.model.SagaMetadata,
+        reply: AIReply,
+        savedMessage: Message,
+        sceneSummary: SceneSummary?,
+    )
+
+    fun linkUnlinkedCharacterMessages(saga: com.ilustris.sagai.features.home.data.model.SagaMetadata)
 }

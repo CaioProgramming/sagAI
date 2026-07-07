@@ -106,6 +106,7 @@ import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.sagaShape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.themePainter
 
 private val ChatInputTextMaxHeight = 160.dp
 
@@ -369,7 +370,7 @@ fun ChatInputView(
                             ),
                     ) {
                         Icon(
-                            painterResource(genre.icon),
+                            themePainter(),
                             null,
                             modifier =
                                 Modifier
@@ -726,7 +727,8 @@ fun ChatInputView(
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -758,17 +760,20 @@ fun ChatInputView(
                                                 1.dp,
                                                 resolvedColor.copy(alpha = .3f),
                                                 CircleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 resolvedColor.copy(alpha = .1f),
                                                 CircleShape,
-                                            ).clip(CircleShape)
+                                            )
+                                            .clip(CircleShape)
                                             .clickable {
                                                 handleWikiSelection(
                                                     wiki,
                                                     inputField,
                                                     onUpdateInput,
                                                 )
-                                            }.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -838,7 +843,8 @@ fun ChatInputView(
                                         .clickable {
                                             onSelectCharacter(character)
                                             characterMenu = false
-                                        }.padding(8.dp),
+                                        }
+                                        .padding(8.dp),
                             ) {
                                 CharacterAvatar(
                                     character,

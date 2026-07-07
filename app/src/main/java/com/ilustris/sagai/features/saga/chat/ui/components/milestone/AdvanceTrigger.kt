@@ -101,13 +101,13 @@ fun AdvancePullIndicator(
         Icon(
             themePainter(),
             null,
-            tint = MaterialTheme.colorScheme.background,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier =
                 Modifier
                     .size(iconSize * scale)
                     .dropShadow(rememberVectorShape(themeIconVector())) {
                         this.brush = brush
-                        this.radius = 10f
+                        this.radius = 20f
                         this.spread = 1f
                         this.alpha = glowAlpha
                     },

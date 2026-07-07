@@ -98,6 +98,7 @@ fun createSagaEntryProvider(
             onSagaDetails = {
                 navigator.navigate(SagaDetailKey(key.sagaId))
             },
+            onNavigate = { navigator.navigate(it) },
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
         )

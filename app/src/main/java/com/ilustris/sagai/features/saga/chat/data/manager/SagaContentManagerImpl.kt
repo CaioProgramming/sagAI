@@ -19,6 +19,7 @@ import com.ilustris.sagai.core.theme.SagaThemeManager
 import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -27,6 +28,7 @@ import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
+import com.ilustris.sagai.features.characters.data.model.fullName
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.ActMetadata
 import com.ilustris.sagai.features.home.data.model.ChapterMetadata
@@ -37,10 +39,14 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.currentActInfo
 import com.ilustris.sagai.features.home.data.model.currentChapterInfo
 import com.ilustris.sagai.features.home.data.model.currentEventInfo
+import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.findCharacterStrict
 import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -149,6 +155,7 @@ class SagaContentManagerImpl
         private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
         private var progressionCounter = 0
+        private var lastObservedMessageCount = -1
 
         private fun setNarrativeProcessingStatus(isProcessing: Boolean) {
             isProcessingNarrative.set(isProcessing)
@@ -322,9 +329,11 @@ class SagaContentManagerImpl
             notificationUpdate.value = null
             isOnboardingVisible.value = false
             content.value = null
+            lastObservedMessageCount = -1
         }
 
         override suspend fun loadSaga(sagaId: String) {
+            lastObservedMessageCount = -1
             if (content.value
                     ?.data
                     ?.id
@@ -391,29 +400,15 @@ class SagaContentManagerImpl
                                 val previousTimelineId =
                                     previousSaga?.getCurrentTimeLine()?.data?.id ?: -1
                                 val currentTimelineId = saga.getCurrentTimeLine()?.data?.id ?: -1
-                                val previousMessageCount =
-                                    messageDao.getMessagesCount(sagaId.toInt()).first()
+                                val previousMessageCount = lastObservedMessageCount
                                 val currentMessageCount =
                                     messageDao.getMessagesCount(sagaId.toInt()).first()
+                                lastObservedMessageCount = currentMessageCount
 
                                 val sceneChanged =
                                     previousSaga?.getCurrentTimeLine()?.data?.sceneSummary != saga.getCurrentTimeLine()?.data?.sceneSummary
-
-                                if (previousSaga != null &&
-                                    previousSaga.data.id == saga.data.id &&
-                                    (previousSaga.data.playTimeMs != saga.data.playTimeMs || sceneChanged) &&
-                                    previousMessageCount == currentMessageCount &&
-                                    previousTimelineId == currentTimelineId
-                                ) {
-                                    Timber.d(
-                                        "Saga update was subtle (playtime: ${previousSaga.data.playTimeMs != saga.data.playTimeMs}, scene: $sceneChanged). Skipping narrative check.",
-                                    )
-                                    saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
-                                        _sceneSummary.value = it
-                                    }
-                                    content.value = saga
-                                    return@collectLatest
-                                }
+                                val playTimeChanged =
+                                    previousSaga?.data?.playTimeMs != saga.data.playTimeMs
 
                                 content.value = saga
                                 saga.getCurrentTimeLine()?.data?.sceneSummary?.let {
@@ -421,6 +416,21 @@ class SagaContentManagerImpl
                                 }
                                 if (sagaImmersiveSession.isOwnerOnTop("chat")) {
                                     sagaThemeManager.updateTheme(saga.data.genre)
+                                }
+
+                                val skipNarrativeCheck =
+                                    previousSaga != null &&
+                                        previousSaga.data.id == saga.data.id &&
+                                        previousMessageCount == currentMessageCount &&
+                                        previousTimelineId == currentTimelineId &&
+                                        previousSaga.acts == saga.acts &&
+                                        (sceneChanged || playTimeChanged)
+
+                                if (skipNarrativeCheck) {
+                                    Timber.d(
+                                        "Saga update was subtle (playtime: $playTimeChanged, scene: $sceneChanged). Skipping narrative check.",
+                                    )
+                                    return@collectLatest
                                 }
 
                                 checkMessageNotifications(
@@ -434,6 +444,9 @@ class SagaContentManagerImpl
                                     previousSaga == null
                                 ) {
                                     checkNarrativeProgression(saga)
+                                    if (currentMessageCount > previousMessageCount) {
+                                        linkUnlinkedCharacterMessages(saga)
+                                    }
                                 }
 
                                 if (previousSaga == null) {
@@ -774,7 +787,7 @@ class SagaContentManagerImpl
                 if (milestone != null && milestone.isIntrusive) {
                     isMilestoneActive.value = true
                     narrativeCoordinator.markMilestoneActive()
-                    if (milestone.shouldPlaySoundFx) {
+                    if (milestone.shouldPlaySoundFx && !milestone.playsRevealSfx) {
                         sagaThemeManager.playVfx()
                     }
                     milestoneBackgroundNotification(milestone)?.let { emitNotification(it) }
@@ -1144,6 +1157,133 @@ class SagaContentManagerImpl
         }
 
         override suspend fun getSagaContent(): SagaContent? = sagaHistoryUseCase.getSagaById(content.value?.data?.id).first()
+
+    override fun linkUnlinkedCharacterMessages(saga: SagaMetadata) {
+            managerScope.launch {
+                linkUnlinkedCharacterMessagesInternal(saga)
+            }
+        }
+
+        override fun resolveReplyCharacterLinks(
+            saga: SagaMetadata,
+            reply: AIReply,
+            savedMessage: Message,
+            sceneSummary: SceneSummary?,
+        ) {
+            managerScope.launch {
+                val freshSaga =
+                    sagaHistoryUseCase.getSagaMetadata(savedMessage.sagaId).first()
+                        ?: content.value
+                        ?: saga
+
+                linkUnlinkedCharacterMessagesInternal(freshSaga)
+
+                if (savedMessage.characterId != null) return@launch
+
+                val linkCandidates =
+                    listOfNotNull(
+                        savedMessage.speakerName,
+                        reply.newCharacter?.name,
+                    ).distinctBy { it.trim().lowercase() }
+
+                for (candidateName in linkCandidates) {
+                    if (
+                        linkMessageToExistingCharacter(
+                            saga = freshSaga,
+                            message = savedMessage,
+                            candidateName = candidateName,
+                        )
+                    ) {
+                        return@launch
+                    }
+                }
+
+                val discovery = reply.newCharacter ?: return@launch
+                if (reply.message.senderType == SenderType.NARRATOR) return@launch
+
+                when (
+                    val result =
+                        generateCharacter(
+                            description = discovery.toAINormalize(),
+                            sceneSummary = sceneSummary,
+                            candidateName = discovery.name,
+                        )
+                ) {
+                    is RequestResult.Success -> {
+                        val character = result.value
+                        messageDao.updateMessage(
+                            savedMessage.copy(
+                                characterId = character.id,
+                                speakerName = character.fullName(),
+                            ),
+                        )
+                        sagaHistoryUseCase.getSagaMetadata(savedMessage.sagaId).first()?.let {
+                            content.value = it
+                        }
+                    }
+
+                    is RequestResult.Error -> {
+                        Timber.w(
+                            result.value,
+                            "Failed to generate character for reply message ${savedMessage.id}",
+                        )
+                        for (candidateName in linkCandidates) {
+                            if (
+                                linkMessageToExistingCharacter(
+                                    saga = freshSaga,
+                                    message = savedMessage,
+                                    candidateName = candidateName,
+                                )
+                            ) {
+                                return@launch
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private suspend fun linkUnlinkedCharacterMessagesInternal(saga: SagaMetadata) {
+            val latestSaga =
+                sagaHistoryUseCase.getSagaMetadata(saga.data.id).first()
+                    ?: content.value
+                    ?: saga
+            for (messageContent in latestSaga.flatMessages()) {
+                val message = messageContent.message
+                if (message.characterId != null ||
+                    message.senderType != SenderType.CHARACTER ||
+                    message.speakerName.isNullOrBlank()
+                ) {
+                    continue
+                }
+                linkMessageToExistingCharacter(
+                    saga = latestSaga,
+                    message = message,
+                    candidateName = message.speakerName,
+                )
+            }
+        }
+
+        private suspend fun linkMessageToExistingCharacter(
+            saga: SagaMetadata,
+            message: Message,
+            candidateName: String?,
+        ): Boolean {
+            if (candidateName.isNullOrBlank()) return false
+            val character =
+                saga.findCharacterStrict(candidateName)
+                    ?: saga.findCharacter(candidateName)
+                    ?: return false
+        if (message.characterId == character.id) return true
+        messageDao.updateMessage(
+            message.copy(
+                characterId = character.id,
+                speakerName = character.fullName(),
+            ),
+        )
+        sagaHistoryUseCase.getSagaMetadata(message.sagaId).first()?.let { content.value = it }
+        return true
+    }
 
         override suspend fun updateSummary(sceneSummary: SceneSummary) {
             val currentTimeline = content.value?.getCurrentTimeLine() ?: return

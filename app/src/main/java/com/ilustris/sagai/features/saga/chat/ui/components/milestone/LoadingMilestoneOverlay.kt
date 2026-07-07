@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,24 +15,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.ui.animations.genreVfx
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.morphingGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.rememberVectorShape
+import com.ilustris.sagai.ui.theme.shimmerize
+import com.ilustris.sagai.ui.theme.themeIconVector
+import com.ilustris.sagai.ui.theme.themePainter
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -63,17 +65,21 @@ fun LoadingMilestoneOverlay(
                         true,
                         duration = 3.seconds,
                         repeatMode = RepeatMode.Restart,
+                        shimmerColors = Color.White.shimmerize(),
                     ),
         ) {
-            Image(
-                painterResource(genre.icon),
+            val morphingBrush = Brush.horizontalGradient(morphingGradient())
+            Icon(
+                themePainter(),
                 null,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                tint = MaterialTheme.colorScheme.background,
                 modifier =
                     sparkModifier
-                        .genreVfx(genre)
-                        .padding(8.dp)
-                        .gradientFill(Brush.horizontalGradient(themeBrushColors()))
+                        .dropShadow(rememberVectorShape(themeIconVector())) {
+                            brush = morphingBrush
+                            radius = 10f
+                            spread = 0.5f
+                        }.genreVfx(genre)
                         .size(
                             50.dp,
                         ),

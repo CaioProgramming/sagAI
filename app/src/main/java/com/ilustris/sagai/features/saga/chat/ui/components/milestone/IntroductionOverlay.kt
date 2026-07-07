@@ -44,22 +44,22 @@ fun IntroductionOverlay(
 ) {
     val message = introduction.introduction
     val genre = saga.genre
-    val phaseController = rememberMilestonePhaseController(MilestonePhase.Hero)
+    val phaseController = rememberMilestonePhaseController(MilestonePhase.Spark)
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        phaseController.advance(MilestonePhase.Hero)
+        phaseController.advance(MilestonePhase.Spark)
         if (message.isNotBlank()) {
             phaseController.advanceAfter(
                 coroutineScope,
                 hold = 1.2.seconds,
-                to = MilestonePhase.Body,
+                to = MilestonePhase.Reveal,
             )
         }
     }
 
     LaunchedEffect(phaseController.currentPhase) {
-        if (phaseController.currentPhase == MilestonePhase.Hero && message.isBlank()) {
+        if (phaseController.currentPhase == MilestonePhase.Spark && message.isBlank()) {
             delay(1.5.seconds)
             onComplete()
         }
@@ -81,7 +81,7 @@ fun IntroductionOverlay(
                     .padding(horizontal = 16.dp),
         ) {
             MilestonePhaseVisibility(
-                visible = phaseController.isAtLeast(MilestonePhase.Hero),
+                visible = phaseController.isAtLeast(MilestonePhase.Spark),
                 enter = MilestoneTransitions.fadeEnter,
             ) {
                 with(sharedTransitionScope) {
@@ -97,7 +97,7 @@ fun IntroductionOverlay(
 
             if (message.isNotBlank()) {
                 MilestonePhaseVisibility(
-                    visible = phaseController.isAtLeast(MilestonePhase.Body),
+                    visible = phaseController.isAtLeast(MilestonePhase.Reveal),
                     enter = MilestoneTransitions.fadeEnter,
                 ) {
                     SimpleTypewriterText(

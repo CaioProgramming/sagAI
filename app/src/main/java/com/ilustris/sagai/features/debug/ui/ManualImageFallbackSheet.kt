@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.debug.ui
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -49,8 +48,12 @@ private const val GEMINI_WEB_URL = "https://gemini.google.com/app"
 
 private fun openGeminiWeb(context: Context) {
     val intent =
-        Intent(Intent.ACTION_VIEW, Uri.parse(GEMINI_WEB_URL)).apply {
-            addCategory(Intent.CATEGORY_BROWSABLE)
+        Intent(Intent.ACTION_MAIN).apply {
+            setClassName(
+                "com.google.android.apps.bard",
+                "com.google.android.apps.bard.shellapp.BardEntryPointActivity",
+            )
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
     try {
         context.startActivity(Intent.createChooser(intent, null))

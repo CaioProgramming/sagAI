@@ -77,25 +77,27 @@ enum class EmotionalTone(
         return RoundedPolygon.star(numVerticesPerRadius = n, rounding = CornerRounding(roundingRadius))
     }
 
+    fun getStringRes(): Int =
+        when (this) {
+            NEUTRAL -> R.string.tone_neutral
+            CALM -> R.string.tone_calm
+            CURIOUS -> R.string.tone_curious
+            HOPEFUL -> R.string.tone_hopeful
+            DETERMINED -> R.string.tone_determined
+            EMPATHETIC -> R.string.tone_empathetic
+            JOYFUL -> R.string.tone_joyful
+            CONCERNED -> R.string.tone_concerned
+            ANXIOUS -> R.string.tone_anxious
+            FRUSTRATED -> R.string.tone_frustrated
+            ANGRY -> R.string.tone_angry
+            SAD -> R.string.tone_sad
+            MELANCHOLIC -> R.string.tone_melancholic
+            CYNICAL -> R.string.tone_cynical
+        }
+
     @Composable
     fun getTitle(): String {
-        val resId =
-            when (this) {
-                NEUTRAL -> R.string.tone_neutral
-                CALM -> R.string.tone_calm
-                CURIOUS -> R.string.tone_curious
-                HOPEFUL -> R.string.tone_hopeful
-                DETERMINED -> R.string.tone_determined
-                EMPATHETIC -> R.string.tone_empathetic
-                JOYFUL -> R.string.tone_joyful
-                CONCERNED -> R.string.tone_concerned
-                ANXIOUS -> R.string.tone_anxious
-                FRUSTRATED -> R.string.tone_frustrated
-                ANGRY -> R.string.tone_angry
-                SAD -> R.string.tone_sad
-                MELANCHOLIC -> R.string.tone_melancholic
-                CYNICAL -> R.string.tone_cynical
-            }
+        val resId = getStringRes()
         return stringResource(id = resId)
     }
 

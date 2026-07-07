@@ -193,6 +193,7 @@ fun ChatView(
     onBack: () -> Unit = {},
     onSagaDetails: () -> Unit = {},
     onCharacterDetails: (Int) -> Unit = {},
+    onNavigate: (androidx.navigation3.runtime.NavKey) -> Unit = {},
     viewModel: ChatViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
@@ -286,129 +287,128 @@ fun ChatView(
 
                 is ChatState.Success -> {
                     val sagaContent = uiState.sagaContent
-                    AnimatedContent(sagaContent) {
-                        if (it == null) {
-                            Box {}
-                        } else {
-                            if (sagaContent == null) return@AnimatedContent
-                            Box(Modifier.fillMaxSize()) {
-                                ModalNavigationDrawer(
-                                    drawerState = drawerState,
-                                    drawerContent = {
-                                        ModalDrawerSheet(
-                                            drawerShape = RoundedCornerShape(0.dp),
-                                            drawerContainerColor = MaterialTheme.colorScheme.background,
-                                        ) {
-                                            SagaWikiView(
-                                                sagaId = sagaContent.data.id.toString(),
-                                                onBack = { coroutineScope.launch { drawerState.close() } },
-                                                sharedTransitionScope = sharedTransitionScope,
-                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                interceptSystemBack = drawerState.isOpen,
-                                            )
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxSize(),
-                                ) {
-                                    with(sharedTransitionScope) {
-                                        ChatContent(
-                                            uiState = uiState,
-                                            onAction = onAction,
-                                            padding = padding,
-                                            isDebug = isDebug,
-                                            genreVfxPulse = genreVfxPulse,
-                                            reviewGenerationState = reviewGenerationState,
+                    var stableSaga by remember { mutableStateOf(uiState.sagaContent) }
+                    if (sagaContent != null) {
+                        stableSaga = sagaContent
+                    }
+                    val displaySaga = sagaContent ?: stableSaga
+
+                    if (displaySaga == null) {
+                        return@AnimatedContent
+                    } else {
+                        Box(Modifier.fillMaxSize()) {
+                            ModalNavigationDrawer(
+                                drawerState = drawerState,
+                                drawerContent = {
+                                    ModalDrawerSheet(
+                                        drawerShape = RoundedCornerShape(0.dp),
+                                        drawerContainerColor = MaterialTheme.colorScheme.background,
+                                    ) {
+                                        SagaWikiView(
+                                            sagaId = displaySaga.data.id.toString(),
+                                            onBack = { coroutineScope.launch { drawerState.close() } },
                                             sharedTransitionScope = sharedTransitionScope,
                                             animatedVisibilityScope = animatedVisibilityScope,
+                                            interceptSystemBack = drawerState.isOpen,
                                         )
                                     }
-                                }
-
-                                if (showReview) {
-                                    ModalBottomSheet(
-                                        onDismissRequest = { showReview = false },
-                                        sheetState =
-                                            rememberModalBottomSheetState(
-                                                skipPartiallyExpanded = true,
-                                            ),
-                                        containerColor = MaterialTheme.colorScheme.background,
-                                        dragHandle = null,
-                                        shape = MaterialTheme.shapes.extraLarge,
-                                        modifier = Modifier.fillMaxHeight(),
-                                    ) {
-                                        SagaReview(
-                                            saga = sagaContent.data,
-                                            onDismiss = { showReview = false },
-                                        )
-                                    }
-                                }
-
-                                if (showBackupSheet) {
-                                    BackupSheet(onDismiss = { showBackupSheet = false })
-                                }
-
-                                if (uiState.showAudioTranscript) {
-                                    AudioRecordingSheet(
-                                        themeBrushColors(),
-                                        onDismiss = {
-                                            onAction(ChatUiAction.RequestAudioTranscript(false))
-                                        },
-                                    ) {
-                                        onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
-                                        onAction(
-                                            ChatUiAction.SendInput(
-                                                userConfirmed = false,
-                                                isAudio = true,
-                                            ),
-                                        )
-                                        onAction(ChatUiAction.RequestAudioTranscript(false))
-                                    }
-                                }
-
-                                AnimatedVisibility(
-                                    uiState.isLoading || uiState.isGenerating,
-                                    enter = fadeIn(tween(800)) + scaleIn(),
-                                    exit = fadeOut(tween(500)),
-                                    modifier =
-                                        Modifier
-                                            .fillMaxSize()
-                                            .gradientFill(
-                                                Brush.horizontalGradient(morphingGradient()),
-                                            ),
-                                ) {
-                                    StarryTextPlaceholder(
-                                        modifier =
-                                            Modifier
-                                                .reactiveShimmer(
-                                                    true,
-                                                    duration = 2.seconds,
-                                                ).fillMaxSize(),
-                                    )
-                                }
-
-                                ShareSheet(
-                                    saga = sagaContent.data,
-                                    isVisible = uiState.showShareSheet,
-                                    shareType = ShareType.CONVERSATION,
-                                    onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
-                                )
-
-                                uiState.onboardingType?.let { onboardingType ->
-                                    OnboardingDialog(
-                                        saga = sagaContent.data,
-                                        type = onboardingType,
-                                        genre = sagaContent.data.genre,
-                                        onDismiss = {
-                                            viewModel.onOnboardingDismissed()
-                                        },
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                with(sharedTransitionScope) {
+                                    ChatContent(
+                                        uiState = uiState,
+                                        onAction = onAction,
+                                        padding = padding,
+                                        isDebug = isDebug,
+                                        genreVfxPulse = genreVfxPulse,
+                                        reviewGenerationState = reviewGenerationState,
+                                        onNavigate = onNavigate,
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
                                     )
                                 }
                             }
+
+                            if (showReview) {
+                                ModalBottomSheet(
+                                    onDismissRequest = { showReview = false },
+                                    sheetState =
+                                        rememberModalBottomSheetState(
+                                            skipPartiallyExpanded = true,
+                                        ),
+                                    containerColor = MaterialTheme.colorScheme.background,
+                                    dragHandle = null,
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    modifier = Modifier.fillMaxHeight(),
+                                ) {
+                                    SagaReview(
+                                        saga = displaySaga.data,
+                                        onDismiss = { showReview = false },
+                                    )
+                                }
+                            }
+
+                            if (showBackupSheet) {
+                                BackupSheet(onDismiss = { showBackupSheet = false })
+                            }
+
+                            if (uiState.showAudioTranscript) {
+                                AudioRecordingSheet(
+                                    themeBrushColors(),
+                                    onDismiss = {
+                                        onAction(ChatUiAction.RequestAudioTranscript(false))
+                                    },
+                                ) {
+                                    onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
+                                    onAction(
+                                        ChatUiAction.SendInput(
+                                            userConfirmed = false,
+                                            isAudio = true,
+                                        ),
+                                    )
+                                    onAction(ChatUiAction.RequestAudioTranscript(false))
+                                }
+                            }
+
+                            AnimatedVisibility(
+                                uiState.isLoading || uiState.isGenerating,
+                                enter = fadeIn(tween(800)) + scaleIn(),
+                                exit = fadeOut(tween(500)),
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize(),
+                            ) {
+                                StarryTextPlaceholder(
+                                    modifier =
+                                        Modifier
+                                            .gradientFill(
+                                                sagaBrush(),
+                                            ).reactiveShimmer(
+                                                true,
+                                                duration = 2.seconds,
+                                            ).fillMaxSize(),
+                                )
+                            }
+
+                            ShareSheet(
+                                saga = displaySaga.data,
+                                isVisible = uiState.showShareSheet,
+                                shareType = ShareType.CONVERSATION,
+                                onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
+                            )
+
+                            uiState.onboardingType?.let { onboardingType ->
+                                OnboardingDialog(
+                                    saga = displaySaga.data,
+                                    type = onboardingType,
+                                    genre = displaySaga.data.genre,
+                                    onDismiss = {
+                                        viewModel.onOnboardingDismissed()
+                                    },
+                                )
+                            }
                         }
-                    }
-                    if (sagaContent == null) {
-                        SagaChatSparkPlaceholder(modifier = Modifier.fillMaxSize())
-                    } else {
                     }
                 }
             }
@@ -425,10 +425,15 @@ fun ChatContent(
     isDebug: Boolean = false,
     genreVfxPulse: Boolean = false,
     reviewGenerationState: ReviewGenerationState = ReviewGenerationState.Idle,
+    onNavigate: (androidx.navigation3.runtime.NavKey) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedContentScope,
 ) {
-    val content = uiState.sagaContent ?: return
+    var stableContent by remember { mutableStateOf(uiState.sagaContent) }
+    if (uiState.sagaContent != null) {
+        stableContent = uiState.sagaContent
+    }
+    val content = uiState.sagaContent ?: stableContent ?: return
     val saga = remember(content) { content.data }
     val listState = rememberLazyListState()
     var advancePullProgress by remember { mutableFloatStateOf(0f) }
@@ -470,6 +475,7 @@ fun ChatContent(
                     onDismiss = {
                         onAction(ChatUiAction.ContinueMilestone)
                     },
+                    onNavigate = onNavigate,
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
@@ -502,7 +508,8 @@ fun ChatContent(
                                     shimmerColors = themeShimmer(),
                                     duration = 10.seconds,
                                     targetValue = 1000f,
-                                ).size(100.dp)
+                                )
+                                .size(100.dp)
                                 .alpha(.4f),
                     )
 
@@ -510,7 +517,8 @@ fun ChatContent(
                         Modifier
                             .padding(
                                 top = padding.calculateTopPadding(),
-                            ).fillMaxSize(),
+                            )
+                            .fillMaxSize(),
                     ) {
                         rememberCoroutineScope()
                         val (debugControls, messages, chatInput, topBar, bottomGradient, objectiveOverlay, advancePullIndicator) =
@@ -698,7 +706,8 @@ fun ChatContent(
                             Modifier
                                 .constrainAs(bottomGradient) {
                                     bottom.linkTo(parent.bottom)
-                                }.fillMaxWidth()
+                                }
+                                .fillMaxWidth()
                                 .fillMaxHeight(.2f)
                                 .background(fadeGradientBottom(resolvedColor)),
                         )
@@ -732,7 +741,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.animateContentSize(),
+                                    }
+                                    .animateContentSize(),
                             transitionSpec = {
                                 slideInVertically { it } + fadeIn() togetherWith
                                     slideOutVertically { it } + fadeOut()
@@ -801,7 +811,8 @@ fun ChatContent(
                                             bottom.linkTo(parent.bottom)
                                             start.linkTo(parent.start)
                                             end.linkTo(parent.end)
-                                        }.padding(bottom = padding.calculateBottomPadding() + 24.dp)
+                                        }
+                                        .padding(bottom = padding.calculateBottomPadding() + 24.dp)
                                         .imePadding(),
                             )
                         }
@@ -815,7 +826,8 @@ fun ChatContent(
                                         start.linkTo(parent.start)
                                         end.linkTo(parent.end)
                                         width = Dimension.fillToConstraints
-                                    }.padding(
+                                    }
+                                    .padding(
                                         bottom = padding.calculateBottomPadding() + 16.dp,
                                         start = 16.dp,
                                         end = 16.dp,
@@ -952,11 +964,13 @@ fun ChatContent(
                                                     key = "saga_${saga.id}_spark",
                                                 ),
                                                 animatedVisibilityScope = animatedVisibilityScope,
-                                            ).size(32.dp)
+                                            )
+                                            .size(32.dp)
                                             .clip(CircleShape)
                                             .clickable {
                                                 onAction(ChatUiAction.ShowObjective)
-                                            }.gradientFill(brush),
+                                            }
+                                            .gradientFill(brush),
                                 )
                             }
 
@@ -988,7 +1002,8 @@ fun ChatContent(
                                             onAction(
                                                 ChatUiAction.OpenSagaDetails,
                                             )
-                                        }.fillMaxWidth()
+                                        }
+                                        .fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
                                     Modifier.graphicsLayer(alpha = alpha),
@@ -1089,7 +1104,8 @@ fun ChatContent(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 shape,
-                                            ).fillMaxWidth(),
+                                            )
+                                            .fillMaxWidth(),
                                     trailingIcon = {
                                         IconButton(
                                             onClick = {
@@ -1108,7 +1124,8 @@ fun ChatContent(
                                                     .background(
                                                         resolvedColor,
                                                         CircleShape,
-                                                    ).size(32.dp)
+                                                    )
+                                                    .size(32.dp)
                                                     .padding(4.dp),
                                         ) {
                                             Icon(
@@ -1310,7 +1327,8 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }.animateContentSize(),
+                    }
+                    .animateContentSize(),
         )
     }
 }
@@ -1341,10 +1359,14 @@ fun ChatList(
     val genre = saga.data.genre
     val resolvedColor = MaterialTheme.colorScheme.primary
 
-    LaunchedEffect(saga.flatMessages().size) {
-        coroutineScope.launch {
-            listState.animateScrollToItem(0)
-        }
+    LaunchedEffect(
+        saga
+            .flatMessages()
+            .lastOrNull()
+            ?.message
+            ?.id,
+    ) {
+        listState.scrollToItem(0)
     }
 
     LazyColumn(
@@ -1510,7 +1532,7 @@ fun ChatList(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Image(
-                                    painterResource(genre.icon),
+                                    themePainter(),
                                     null,
                                     colorFilter = ColorFilter.tint(resolvedColor),
                                     modifier =
@@ -1682,9 +1704,11 @@ fun CharactersTopIcons(
                                 } else {
                                     (charactersToDisplay.size - 1 - index).toFloat()
                                 },
-                            ).graphicsLayer(
+                            )
+                            .graphicsLayer(
                                 translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                            ).clip(CircleShape)
+                            )
+                            .clip(CircleShape)
                             .size(24.dp)
                             .clickable { onCharacterSelected(character) },
                 )

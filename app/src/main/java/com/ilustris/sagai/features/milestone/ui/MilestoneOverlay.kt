@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation3.runtime.NavKey
 import com.ilustris.sagai.features.home.data.model.SagaMetadata
 import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -53,6 +54,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.milestone.CinematicMi
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.EventMilestoneOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.IntroductionOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.milestone.LoadingMilestoneOverlay
+import com.ilustris.sagai.features.saga.chat.ui.components.milestone.toNavKey
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
@@ -65,12 +67,18 @@ fun MilestoneOverlay(
     isLoading: Boolean = false,
     reasoningChunk: String? = null,
     onDismiss: () -> Unit = {},
+    onNavigate: (NavKey) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val viewModel: MilestoneViewModel = hiltViewModel()
     val congratsMessage by viewModel.congratsMessage.collectAsState()
+    val dashboardItems by viewModel.dashboardItems.collectAsState()
     val genre = saga.data.genre
+
+    LaunchedEffect(milestone) {
+        viewModel.loadDashboardItems(milestone, saga.data.id)
+    }
 
     with(sharedTransitionScope) {
         AnimatedContent(milestone, transitionSpec = {
@@ -109,7 +117,10 @@ fun MilestoneOverlay(
                     EventMilestoneOverlay(
                         milestone = it,
                         genre = genre,
+                        dashboardItems = dashboardItems,
                         onDismiss = onDismiss,
+                        onRevealStarted = viewModel::onRevealStarted,
+                        onDetailAction = { onNavigate(it.toNavKey()) },
                     )
                 }
 
@@ -117,29 +128,38 @@ fun MilestoneOverlay(
                     CharacterMilestoneOverlay(
                         milestone = it,
                         genre = genre,
+                        dashboardItems = dashboardItems,
                         onDismiss = onDismiss,
+                        onRevealStarted = viewModel::onRevealStarted,
+                        onDetailAction = { onNavigate(it.toNavKey()) },
                     )
                 }
 
                 is SagaMilestone.ChapterFinished -> {
                     CinematicMilestoneOverlay(
+                        milestone = it,
                         labelTitle = stringResource(it.title),
                         stylisedTitle = it.subtitle,
-                        message = it.message ?: congratsMessage,
                         genre = genre,
+                        dashboardItems = dashboardItems,
                         sparkModifier = sparkModifier,
                         onDismiss = onDismiss,
+                        onRevealStarted = viewModel::onRevealStarted,
+                        onDetailAction = { onNavigate(it.toNavKey()) },
                     )
                 }
 
                 is SagaMilestone.ActFinished -> {
                     CinematicMilestoneOverlay(
+                        milestone = it,
                         labelTitle = stringResource(it.title),
                         stylisedTitle = it.subtitle,
-                        message = it.message ?: congratsMessage,
                         genre = genre,
+                        dashboardItems = dashboardItems,
                         sparkModifier = sparkModifier,
                         onDismiss = onDismiss,
+                        onRevealStarted = viewModel::onRevealStarted,
+                        onDetailAction = { onNavigate(it.toNavKey()) },
                     )
                 }
             }
@@ -225,10 +245,12 @@ fun MilestoneBadge(
                             start.linkTo(label.start)
                             end.linkTo(label.end)
                             width = Dimension.fillToConstraints
-                        }.background(
+                        }
+                        .background(
                             MaterialTheme.colorScheme.background,
                             shape,
-                        ).padding(4.dp)
+                        )
+                        .padding(4.dp)
                         .reactiveShimmer(
                             true,
                             repeatMode = RepeatMode.Restart,

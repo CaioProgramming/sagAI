@@ -77,6 +77,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.resolveColor
 import com.ilustris.sagai.features.newsaga.data.model.resolveIconColor
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.ui.animations.genreVfx
 import com.ilustris.sagai.ui.animations.rememberLifecycleAnimationsActive
 import com.ilustris.sagai.ui.theme.filters.effectForGenre
@@ -172,8 +173,7 @@ fun ThemeIcon(
                         .graphicsLayer {
                             clip = false
                             alpha = 0.8f * clampedGlow
-                        }
-                        .blur(glowRadius * clampedGlow),
+                        }.blur(glowRadius * clampedGlow),
             )
         }
         Icon(
@@ -493,6 +493,9 @@ fun Modifier.sagaShader(enableSelectiveHighlight: Boolean = false): Modifier =
  */
 @Composable
 fun sagaShape(): Shape = LocalSagaGenre.current.shape()
+
+@Composable
+fun themeBubble() = LocalSagaGenre.current.bubble(isNarrator = true)
 
 /**
  * Returns a gradient [Brush] for the current genre, or the brand holographic gradient.
